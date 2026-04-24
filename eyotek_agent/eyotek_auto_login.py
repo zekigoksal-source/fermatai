@@ -314,12 +314,8 @@ async def eyotek_connect_command(force: bool = False) -> str:
     # Basarisiz durumlar
     reason = result["reason"]
     if reason == "captcha":
-        return (
-            "⚠️ *Cloudflare CAPTCHA çıktı*\n\n"
-            "VPS'ten otomatik giriş yapılamadı (bot koruması).\n"
-            + MOBILE_FAZ3_HINT +
-            "\n\n_(Cloudflare Tunnel ile uzaktan CAPTCHA çözüm ileriki oturumda eklenecek.)_"
-        )
+        # Oturum 25.4 Faz 3: Cloudflare Tunnel ile mobil remote login
+        return await _start_mobile_tunnel()
     elif reason == "bad_credentials":
         return (
             "❌ *Eyotek giriş başarısız — kimlik bilgileri hatası*\n\n"
@@ -337,6 +333,89 @@ async def eyotek_connect_command(force: bool = False) -> str:
             f"❌ *Eyotek bağlantı hatası*\n\n"
             f"_{result['message'][:200]}_\n"
             + MOBILE_FAZ3_HINT
+        )
+
+
+async def _start_mobile_tunnel() -> str:
+    """
+    Oturum 25.4 Faz 3: Cloudflare Tunnel ile mobil remote Eyotek login.
+
+    Akis:
+    1. eyotek_mobile_tunnel.start_tunnel_session() arka planda calistir
+    2. Tunnel URL'sini al, Neo'ya WA mesaj olarak gonderilecek metinde ver
+    3. Neo mobilden URL'e girer -> VPS Chrome'u gorur
+    4. CAPTCHA + sifre -> login
+    5. Cookie VPS'te yakalanir (arka planda wait_for_login calisir)
+    6. Sistem devam eder, tunnel kapanir
+    """
+    try:
+        from eyotek_mobile_tunnel import start_tunnel_session
+    except ImportError as e:
+        return (
+            "❌ *Mobil tunnel modülü eksik*\n\n"
+            f"_Detay: {e}_\n\n"
+            "Sistem yöneticisine bildirin."
+        )
+
+    # Arka planda tunnel + cookie capture calistir (900s = 15 dk Neo'nun login icin)
+    # Bu cagri bloke ETMEZ — response olarak sadece URL dondurur, sonra arka plan
+    # login'i bekler.
+    try:
+        # Tunnel baslat (fire-and-forget: login capture asenkron calissin)
+        # Ama URL'yi sync gibi almaliyiz ki Neo'ya mesajda verebileyim.
+        # Cozum: TunnelSession'i manuel yonet
+        from eyotek_mobile_tunnel import TunnelSession
+        session = TunnelSession()
+        url = await session.start(timeout_sec=45)
+        if not url:
+            session.stop()
+            return (
+                "❌ *Mobil tunnel baslatilamadi*\n\n"
+                "cloudflared/Xvfb/Chromium binary'leri eksik olabilir.\n"
+                "Admin logs kontrol etsin."
+            )
+
+        # Arka planda login bekle (15 dk timeout)
+        async def _background_login_wait():
+            try:
+                cookies = await session.wait_for_login_and_capture(
+                    timeout_sec=900
+                )
+                # Login tamamlandi -> WA bildirim
+                from session_keeper import notify_admin
+                if cookies:
+                    await notify_admin(
+                        f"✅ *Eyotek login tamamlandı — {len(cookies)} cookie alındı.*\n\n"
+                        "Sistem devam ediyor, session keeper aktif."
+                    )
+                else:
+                    await notify_admin(
+                        "⏱️ *Eyotek login timeout (15 dk)*\n\n"
+                        "Tunnel kapatıldı. Tekrar dene: `eyotek baglan`"
+                    )
+            except Exception as e:
+                logger.error(f"[EYOTEK-TUNNEL] Background login wait fail: {e}")
+            finally:
+                session.stop()
+
+        asyncio.create_task(_background_login_wait())
+
+        return (
+            "🔐 *Eyotek Mobil Login — Tunnel hazır*\n\n"
+            f"📱 Şu linkten gir (15 dk geçerli):\n"
+            f"{url}\n\n"
+            "*Adımlar:*\n"
+            "1️⃣ Linke tıkla → VPS Chrome ekranını görürsün\n"
+            "2️⃣ Cloudflare kutucuğu + kullanıcı + şifre gir\n"
+            "3️⃣ Eyotek ana sayfası açılınca tarayıcıyı kapatabilirsin\n\n"
+            "_Cookie VPS'te otomatik yakalanır. Başarıda sana WA bildirim gelir._"
+        )
+
+    except Exception as e:
+        logger.error(f"[EYOTEK-TUNNEL] Başlatma fail: {e}")
+        return (
+            "❌ *Mobil tunnel hatası*\n\n"
+            f"_Detay: {str(e)[:200]}_"
         )
 
 
