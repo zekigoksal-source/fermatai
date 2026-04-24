@@ -74,14 +74,21 @@ class TunnelSession:
     def _start_proc(
         self, cmd: list, env: Optional[dict] = None, stdout=subprocess.DEVNULL
     ) -> subprocess.Popen:
-        """Proces baslat, self.procs'a ekle."""
+        """Proces baslat, self.procs'a ekle.
+        stdout=PIPE verildiginde stderr de oraya merge edilir + text mode line-buffered
+        (cloudflared output anlik okunabilmesi icin)."""
         full_env = {**os.environ, **(env or {})}
+        is_pipe = stdout == subprocess.PIPE
         p = subprocess.Popen(
             cmd,
             env=full_env,
             stdout=stdout,
-            stderr=subprocess.PIPE if stdout == subprocess.PIPE else subprocess.DEVNULL,
+            stderr=subprocess.STDOUT if is_pipe else subprocess.DEVNULL,
             start_new_session=True,
+            bufsize=1 if is_pipe else -1,
+            text=True if is_pipe else False,
+            encoding="utf-8" if is_pipe else None,
+            errors="replace" if is_pipe else None,
         )
         self.procs.append(p)
         return p
@@ -152,18 +159,21 @@ class TunnelSession:
             )
             await asyncio.sleep(2.0)
 
-            # 6. cloudflared tunnel → geçici URL
+            # 6. cloudflared tunnel → geçici URL (native asyncio subprocess, stdout+stderr merge)
+            # Oturum 25.5 fix: Popen + run_in_executor readline buffering'e takiliyordu.
+            # asyncio.create_subprocess_exec + await stdout.readline() native cozum.
             logger.info(f"[TUNNEL] cloudflared tunnel --url http://localhost:{NOVNC_PORT}")
-            cf = self._start_proc(
-                [
-                    CLOUDFLARED_BIN, "tunnel",
-                    "--url", f"http://localhost:{NOVNC_PORT}",
-                    "--no-autoupdate",
-                ],
-                stdout=subprocess.PIPE,
+            cf_async = await asyncio.create_subprocess_exec(
+                CLOUDFLARED_BIN, "tunnel",
+                "--url", f"http://localhost:{NOVNC_PORT}",
+                "--no-autoupdate",
+                "--loglevel", "info",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
             )
-            # URL'yi log'dan parse et (stdout satir satir okunur)
-            url = await self._wait_for_tunnel_url(cf, timeout_sec=30)
+            # Popen wrapper ekle (stop icin)
+            self.cloudflared_proc = cf_async
+            url = await self._wait_for_tunnel_url_async(cf_async, timeout_sec=45)
             if not url:
                 raise RuntimeError("cloudflared URL alinamadi (30s timeout)")
 
@@ -177,28 +187,32 @@ class TunnelSession:
             self.stop()
             return None
 
-    async def _wait_for_tunnel_url(
-        self, proc: subprocess.Popen, timeout_sec: int = 30
+    async def _wait_for_tunnel_url_async(
+        self, proc, timeout_sec: int = 45
     ) -> Optional[str]:
-        """cloudflared stdout'ta trycloudflare.com URL'sini yakala."""
+        """asyncio.subprocess stdout'ta trycloudflare URL'sini yakala.
+
+        Oturum 25.5: subprocess.Popen + run_in_executor readline buffering
+        icine takiliyordu. Native asyncio StreamReader ile satir bazli oku."""
         pattern = re.compile(r"(https://[a-z0-9-]+\.trycloudflare\.com)")
-        deadline = time.time() + timeout_sec
-        while time.time() < deadline and proc.poll() is None:
-            try:
-                line = await asyncio.wait_for(
-                    asyncio.get_event_loop().run_in_executor(
-                        None, proc.stderr.readline
-                    ),
-                    timeout=2.0,
-                )
-            except asyncio.TimeoutError:
-                continue
-            if not line:
-                continue
-            text = line.decode("utf-8", errors="replace") if isinstance(line, bytes) else line
-            m = pattern.search(text)
-            if m:
-                return m.group(1)
+        try:
+            deadline = time.time() + timeout_sec
+            while time.time() < deadline:
+                try:
+                    line = await asyncio.wait_for(
+                        proc.stdout.readline(),
+                        timeout=2.0,
+                    )
+                except asyncio.TimeoutError:
+                    continue
+                if not line:
+                    break  # EOF
+                txt = line.decode("utf-8", errors="replace") if isinstance(line, bytes) else line
+                m = pattern.search(txt)
+                if m:
+                    return m.group(1)
+        except Exception as e:
+            logger.warning(f"[TUNNEL] URL parse hatasi: {e}")
         return None
 
     async def wait_for_login_and_capture(
@@ -260,6 +274,16 @@ class TunnelSession:
 
     def stop(self):
         """Tum procesi temizle."""
+        # Async cloudflared subprocess (Oturum 25.5)
+        cf = getattr(self, "cloudflared_proc", None)
+        if cf is not None:
+            try:
+                if cf.returncode is None:
+                    cf.terminate()
+            except Exception:
+                pass
+            self.cloudflared_proc = None
+        # Klasik Popen subprocess'ler
         for p in self.procs:
             try:
                 if p.poll() is None:
