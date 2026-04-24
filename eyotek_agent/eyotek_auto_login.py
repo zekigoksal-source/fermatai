@@ -99,9 +99,58 @@ async def _is_authenticated(page) -> bool:
         return False
 
 
+async def _extract_turnstile_sitekey(page) -> Optional[str]:
+    """Sayfadaki Turnstile widget'tan data-sitekey'i cek."""
+    try:
+        key = await page.evaluate("""
+            () => {
+                const el = document.querySelector('.cf-turnstile, [data-sitekey]');
+                if (el && el.getAttribute) return el.getAttribute('data-sitekey');
+                // iframe src'den de parse et
+                const ifr = document.querySelector('iframe[src*="turnstile"]');
+                if (ifr) {
+                    const m = ifr.src.match(/\\?k=([A-Za-z0-9_]+)/) || ifr.src.match(/sitekey=([A-Za-z0-9_]+)/);
+                    if (m) return m[1];
+                }
+                return null;
+            }
+        """)
+        return key
+    except Exception:
+        return None
+
+
+async def _inject_turnstile_token(page, token: str) -> bool:
+    """Token'i sayfaya inject et + Turnstile callback'ini tetikle."""
+    try:
+        await page.evaluate(f"""
+            (token) => {{
+                // 1. Hidden input guncelle
+                const inputs = document.querySelectorAll(
+                    '[name="cf-turnstile-response"], [name*="turnstile"]'
+                );
+                inputs.forEach(el => {{
+                    el.value = token;
+                    el.dispatchEvent(new Event('input', {{bubbles: true}}));
+                    el.dispatchEvent(new Event('change', {{bubbles: true}}));
+                }});
+                // 2. Global callback varsa cagir
+                if (window.turnstile && window.turnstile.getResponse) {{
+                    try {{ window._cfCallback && window._cfCallback(token); }} catch(e) {{}}
+                }}
+                return true;
+            }}
+        """, token)
+        return True
+    except Exception as e:
+        logger.warning(f"[CAPSOLVER] Token inject fail: {e}")
+        return False
+
+
 async def try_auto_login(timeout_ms: int = 20000) -> dict:
     """
     Headless Chromium ile Eyotek otomatik login dene.
+    CAPTCHA varsa CapSolver ile cöz (Oturum 25.6).
 
     Returns:
         {
@@ -169,14 +218,50 @@ async def try_auto_login(timeout_ms: int = 20000) -> dict:
                     "cookies_count": len(eyotek_cookies),
                 }
 
-            # CAPTCHA var mi? (Cloudflare Turnstile vb.)
+            # CAPTCHA var mi? (Cloudflare Turnstile vb.) — Oturum 25.6 CapSolver entegrasyonu
             if await _detect_captcha(page):
-                await browser.close()
-                return {
-                    "success": False, "reason": "captcha",
-                    "message": "Cloudflare CAPTCHA tespit edildi (otomatik login imkansiz)",
-                    "cookies_count": 0,
-                }
+                logger.info("[EYOTEK] CAPTCHA tespit edildi, CapSolver deneniyor...")
+                sitekey = await _extract_turnstile_sitekey(page)
+                if not sitekey:
+                    await browser.close()
+                    return {
+                        "success": False, "reason": "captcha",
+                        "message": "CAPTCHA tespit edildi ama Turnstile sitekey bulunamadi",
+                        "cookies_count": 0,
+                    }
+                if not os.getenv("CAPSOLVER_API_KEY"):
+                    await browser.close()
+                    return {
+                        "success": False, "reason": "captcha",
+                        "message": "CAPTCHA var, CAPSOLVER_API_KEY .env'de yok (Neo eklemeli)",
+                        "cookies_count": 0,
+                    }
+                try:
+                    from capsolver_helper import solve_turnstile
+                    page_url = page.url or BASE_URL
+                    token = await solve_turnstile(page_url, sitekey, timeout_sec=90)
+                except Exception as _cs_e:
+                    logger.error(f"[CAPSOLVER] Cozum hatasi: {_cs_e}")
+                    token = None
+
+                if not token:
+                    await browser.close()
+                    return {
+                        "success": False, "reason": "captcha",
+                        "message": "CapSolver token uretemedi (90s timeout veya API hatasi)",
+                        "cookies_count": 0,
+                    }
+
+                injected = await _inject_turnstile_token(page, token)
+                if not injected:
+                    await browser.close()
+                    return {
+                        "success": False, "reason": "error",
+                        "message": "CapSolver token alindi ama sayfaya inject edilemedi",
+                        "cookies_count": 0,
+                    }
+                logger.success("[EYOTEK] CAPTCHA otomatik cozuldu (CapSolver), login akisi devam")
+                await asyncio.sleep(1.5)  # Callback'in calismasi icin
 
             # Kullanici adi + sifre doldur
             # Eyotek login: #txtUserName + #txtPassword + #btnLogin

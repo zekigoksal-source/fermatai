@@ -48,7 +48,7 @@ DISPLAY_NUM = int(os.getenv("EYOTEK_XVFB_DISPLAY", "99"))
 VNC_PORT = int(os.getenv("EYOTEK_VNC_PORT", "5900"))
 NOVNC_PORT = int(os.getenv("EYOTEK_NOVNC_PORT", "6080"))
 CDP_PORT = int(os.getenv("EYOTEK_CDP_PORT", "9333"))
-SCREEN_RES = os.getenv("EYOTEK_SCREEN_RES", "1280x800x24")
+SCREEN_RES = os.getenv("EYOTEK_SCREEN_RES", "900x700x24")  # Mobil FPS icin kucultuldu
 
 # Binary yollari
 XVFB_BIN = shutil.which("Xvfb") or "/usr/bin/Xvfb"
@@ -125,9 +125,11 @@ class TunnelSession:
                     "--no-default-browser-check",
                     "--disable-translate",
                     "--disable-background-networking",
-                    "--window-size=1280,800",
+                    "--window-size=900,700",
                     "--window-position=0,0",
                     "--start-maximized",
+                    "--kiosk",  # Tam ekran, Chrome UI yok -> sadece Eyotek gorunur
+                    "--disable-pinch",
                     BASE_URL,
                 ],
                 env={"DISPLAY": self.display},
@@ -177,8 +179,16 @@ class TunnelSession:
             if not url:
                 raise RuntimeError("cloudflared URL alinamadi (30s timeout)")
 
-            # noVNC iframe URL (auto-connect)
-            self.tunnel_url = f"{url}/vnc.html?autoconnect=true&resize=scale"
+            # noVNC iframe URL — mobil icin optimize edildi:
+            # autoconnect=true → hemen baglanir
+            # resize=scale → mobil ekrana sigdir
+            # quality=3 → FPS arttir (9 max kalite, 3 dengeli)
+            # compression=6 → bandwidth tasarrufu
+            # view_clip=true → otomatik kirp
+            self.tunnel_url = (
+                f"{url}/vnc.html?autoconnect=true&resize=scale"
+                "&quality=3&compression=6&view_clip=true"
+            )
             logger.info(f"[TUNNEL] URL: {self.tunnel_url}")
             return self.tunnel_url
 
@@ -216,14 +226,25 @@ class TunnelSession:
         return None
 
     async def wait_for_login_and_capture(
-        self, poll_interval: int = 4, timeout_sec: int = 900
+        self, poll_interval: int = 3, timeout_sec: int = 900
     ) -> Optional[list]:
-        """Neo login'ı bekle, başarıda cookie'leri Playwright ile cek."""
+        """Neo login'ı bekle, başarıda cookie'leri Playwright ile çek.
+
+        Oturum 25.6: Neo sadece Cloudflare kutucuğuna MOUSE ile tıklar,
+        klavye input GEREKMEZ. Bu metod:
+        1. Chromium'a CDP ile bağlanır
+        2. Cloudflare Turnstile token dolunca → credentials otomatik fill + submit
+        3. Login sonrası cookie'yi yakalar
+        """
         try:
             from playwright.async_api import async_playwright
         except ImportError:
             logger.error("[TUNNEL] Playwright yok")
             return None
+
+        eyotek_user = os.getenv("EYOTEK_USER", "")
+        eyotek_pass = os.getenv("EYOTEK_PASS", "")
+        credentials_submitted = False
 
         deadline = time.time() + timeout_sec
         async with async_playwright() as p:
@@ -238,6 +259,38 @@ class TunnelSession:
                         await asyncio.sleep(poll_interval)
                         continue
                     page = ctx.pages[0]
+                    cur = page.url or ""
+
+                    # ── Cloudflare geçildi mi? Credentials auto-fill ──
+                    if (
+                        not credentials_submitted
+                        and "fermat.eyotek.com" in cur
+                        and ("login" in cur.lower() or cur.rstrip("/").endswith("/v1"))
+                        and eyotek_user and eyotek_pass
+                    ):
+                        try:
+                            # Cloudflare Turnstile token dolmuş mu?
+                            cf_done = await page.evaluate("""
+                                () => {
+                                    const t = document.querySelector('[name="cf-turnstile-response"]');
+                                    return t && t.value && t.value.length > 20;
+                                }
+                            """)
+                            if cf_done:
+                                logger.info("[TUNNEL] Cloudflare gecildi, credentials fill ediliyor")
+                                await page.fill("#txtUserName", eyotek_user, timeout=3000)
+                                await page.fill("#txtPassword", eyotek_pass, timeout=3000)
+                                await asyncio.sleep(0.3)
+                                try:
+                                    await page.click("#btnLogin", timeout=3000)
+                                except Exception:
+                                    await page.keyboard.press("Enter")
+                                credentials_submitted = True
+                                await asyncio.sleep(4)  # Login redirect bekle
+                        except Exception as _cf_e:
+                            logger.debug(f"[TUNNEL] Credentials fill denendi: {_cf_e}")
+
+                    # ── Login başarılı mı? ──
                     cur = page.url or ""
                     if (
                         "fermat.eyotek.com" in cur
