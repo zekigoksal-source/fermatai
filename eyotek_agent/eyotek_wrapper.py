@@ -572,26 +572,49 @@ class EyotekWrapper:
         self._page: Page | None = None
 
     async def __aenter__(self) -> "EyotekWrapper":
+        """CDP onceligi: laptop'ta CDP acilmissa onu kullan. Aksi halde
+        (Oturum 25.4 VPS) headless Chromium'u cookie'lerle launch et."""
         self._pw = await async_playwright().start()
+        self._cdp_mode = False  # headless vs cdp ayrimini disaridan gorebilelim
+
+        # 1) CDP dene (laptop)
         try:
             self._browser = await self._pw.chromium.connect_over_cdp(CDP_URL)
+            self._context = self._browser.contexts[0]
+            self._cdp_mode = True
+            logger.info("[EYOTEK] CDP baglantisi aktif (laptop modu)")
         except Exception:
-            logger.error("Chrome'a bağlanılamadı. Chrome açık ve CDP aktif olmalı.")
-            raise
-        self._context = self._browser.contexts[0]
+            # 2) Headless fallback (VPS) — cookie'lerle yeni context
+            if not self.cookies:
+                logger.error("[EYOTEK] CDP yok + cookie yok — laptop'tan login gerek (BASLAT_EYOTEK.bat)")
+                raise RuntimeError("Eyotek oturumu yok. Laptop'tan BASLAT_EYOTEK.bat ile login.")
+            logger.info("[EYOTEK] CDP yok, headless Chromium ile cookie mode")
+            self._browser = await self._pw.chromium.launch(headless=True)
+            self._context = await self._browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                           "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                viewport={"width": 1366, "height": 768},
+                locale="tr-TR",
+            )
+
         await self._context.add_cookies(self.cookies)
-        # Her zaman yeni sayfa ac — kullanicinin acik tab'larina dokunma
         self._page = await self._context.new_page()
         return self
 
     async def __aexit__(self, *args):
-        # Sadece kendi actigimiz sayfayi kapat, browser'i KAPATMA
+        # Sayfayi kapat
         if self._page:
             try:
                 await self._page.close()
             except Exception:
                 pass
-        # CDP baglantisini birak ama Chrome'u kapatma
+        # Oturum 25.4: Headless modda browser'i da kapat (kaynak sizintisi olmasin).
+        # CDP modunda Chrome'a dokunma (kullanici tab'lari korunsun).
+        if not getattr(self, "_cdp_mode", False) and self._browser:
+            try:
+                await self._browser.close()
+            except Exception:
+                pass
         if self._pw:
             await self._pw.stop()
 

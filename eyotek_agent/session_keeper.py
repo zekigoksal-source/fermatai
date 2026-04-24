@@ -248,27 +248,56 @@ async def notify_admin(message: str):
 
 async def session_keeper_loop():
     """
-    Ana dongu: her 5 dakikada session kontrol et.
-    Online → keep-warm istegi at.
-    Offline → admin'e bildir, beklemeye gec.
+    Ana dongu: her 3 dakikada session kontrol et.
+    Online → keep-warm istegi at (ASP.NET timeout'u ertele).
+    Offline → admin'e bildir, cookie yenilemesi icin BASLAT_EYOTEK.bat iste.
+
+    Oturum 25.4 revize:
+    - VPS HTTP-only modunda calisir (Chrome/CDP gerekmez)
+    - .eyotek_session.json varsa keeper aktif (laptop'tan scp edilmis cookie'ler)
+    - Yoksa dongu her 3dk'da file kontrol eder, olustugunda aktive olur
 
     Flag'ler (.env):
-      EYOTEK_SESSION_ENABLED=false  → keeper TAMAMEN DEVRE DIŞI (VPS production)
+      EYOTEK_SESSION_ENABLED=true   → keeper aktif (VPS dahil, cookie file olmali)
+      EYOTEK_SESSION_ENABLED=false  → tamamen kapali
       SESSION_KEEPER_NOTIFY=false   → keeper çalışır ama WP bildirim göndermez
     """
     import os
-    # VPS production: Eyotek Chrome yok → keeper devre dışı, bildirim spam önle
+    # Tamamen kapali mod
     if os.getenv("EYOTEK_SESSION_ENABLED", "true").lower() in ("false", "0", "no"):
-        logger.info("Session Keeper DEVRE DIŞI (EYOTEK_SESSION_ENABLED=false) — VPS production modu")
+        logger.info("Session Keeper DEVRE DIŞI (EYOTEK_SESSION_ENABLED=false)")
         return
 
+    # VPS modu tespit: HEADLESS=true VEYA CDP port 9222 dinlemiyor
+    _vps_mode = os.getenv("HEADLESS", "false").lower() in ("true", "1", "yes")
+
     notify_enabled = os.getenv("SESSION_KEEPER_NOTIFY", "true").lower() not in ("false", "0", "no")
-    logger.info(f"Session Keeper baslatildi (notify={notify_enabled})")
+    logger.info(f"Session Keeper baslatildi (notify={notify_enabled}, vps_mode={_vps_mode})")
     was_online = False
     offline_notified = False
+    last_cookie_mtime = 0.0
+    waiting_for_cookies_notified = False
 
     while True:
         try:
+            # VPS modunda cookie dosyasi yoksa beklenti modu
+            if _vps_mode and not SESSION_FILE.exists():
+                update_status("waiting_for_cookies", "Cookie dosyasi yok — laptop'tan login bekleniyor")
+                if not waiting_for_cookies_notified and notify_enabled:
+                    logger.info("Cookie dosyasi yok, laptop'tan login bekleniyor (BASLAT_EYOTEK.bat)")
+                    waiting_for_cookies_notified = True
+                await asyncio.sleep(CHECK_INTERVAL)
+                continue
+
+            # Cookie dosyasi yenilendi mi? (laptop'tan scp gelmiş)
+            if SESSION_FILE.exists():
+                mtime = SESSION_FILE.stat().st_mtime
+                if mtime > last_cookie_mtime + 1:
+                    logger.info(f"Cookie dosyasi yenilendi (mtime={mtime}) — session dogrulama")
+                    last_cookie_mtime = mtime
+                    waiting_for_cookies_notified = False
+                    offline_notified = False  # yeni cookie ile tekrar dene
+
             is_valid = await check_session()
 
             if is_valid:
@@ -277,12 +306,12 @@ async def session_keeper_loop():
                     logger.success("Eyotek session ONLINE")
                     if offline_notified and notify_enabled:
                         await notify_admin(
-                            "[FERMAT] Eyotek session yeniden aktif! Sistem online."
+                            "✅ [FERMAT] Eyotek oturumu aktif, sistem online."
                         )
                     offline_notified = False
                 was_online = True
 
-                # Keep-warm: periyodik hafif istek
+                # Keep-warm: periyodik hafif istek (ASP.NET timeout uzat)
                 await keep_session_warm()
 
             else:
@@ -291,11 +320,20 @@ async def session_keeper_loop():
                 if not offline_notified:
                     logger.warning("Eyotek session OFFLINE!")
                     if notify_enabled:
-                        await notify_admin(
-                            "[FERMAT] Eyotek session dustu!\n\n"
-                            "Lutfen Chrome'da fermat.eyotek.com adresine giris yapin.\n"
-                            "Giris yaptiktan sonra 'eyotek tamam' yazin."
-                        )
+                        if _vps_mode:
+                            await notify_admin(
+                                "⚠️ [FERMAT] Eyotek oturumu düştü.\n\n"
+                                "Laptop'ta şunu çalıştır:\n"
+                                "`C:\\Users\\zekig\\OneDrive\\Desktop\\FermatAI\\BASLAT_EYOTEK.bat`\n\n"
+                                "Chrome açılır → Cloudflare + şifre girersin → "
+                                "cookie otomatik VPS'e aktarılır → sistem devam eder."
+                            )
+                        else:
+                            await notify_admin(
+                                "⚠️ [FERMAT] Eyotek session dustu!\n\n"
+                                "Chrome'da fermat.eyotek.com adresine giris yapin.\n"
+                                "Giris yaptiktan sonra 'eyotek tamam' yazin."
+                            )
                     offline_notified = True
 
         except Exception as e:
