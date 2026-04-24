@@ -1642,6 +1642,9 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
     if is_registered and profile:
         try:
             from db_pool import db_fetchval, db_execute, db_fetchrow
+            # Oturum 25.6 D6: datetime scope bug fix — fonksiyon icinde local rebind
+            # oluyordu, 'datetime' unbound hatasi veriyordu. Local import cozer.
+            from datetime import datetime as _dt_onb
             # ATOMIK CLAIM: welcomed_at NULL ise NOW() set et ve satırı dön
             claim_row = await db_fetchrow(
                 """
@@ -1652,7 +1655,7 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 """,
                 phone,
             )
-            welcomed = None if claim_row else datetime.now()  # claim başarılı = NULL'du = onboard et
+            welcomed = None if claim_row else _dt_onb.now()  # claim başarılı = NULL'du = onboard et
             if welcomed is None:
                 # İlk mesaj — NULL. Onboarding mesajı hazırla (ama gönderme, işle-önce)
                 role = (profile.get("role") or "ogrenci").lower()

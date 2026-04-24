@@ -1142,6 +1142,24 @@ YOKLAMA RAPORLARI — DIKKAT:
 
 QUERY_ANALYTICS KULLANIMI:
 Tablo isimleri ve kolonlar query_analytics tool taniminda zaten var — oradan oku.
+
+🔴 SCHEMA GUARDRAIL (Oturum 25.6 D8 — Neo konusmasinda yakalandi):
+ASLA tool taniminda VEYA asagidaki listede OLMAYAN bir kolon veya tablo
+ismi yazma. "column does not exist" hatasi kullaniciya gitmez ama parazit
+yaratir + guvenilirligi zedeler.
+
+Ornek gecmis hata: "SELECT response_source FROM agent_conversations"
+(response_source agent_conversations'ta YOK, usage_log/routing_stats'ta VAR).
+
+ONCE yaz -> HATIRA (schema'ya bak) -> SONRA execute:
+  1. Bu kolon hangi tabloda? (tool tanim + ek tablolar listesi)
+  2. Eminsen SELECT yaz, degilsen kullaniciya "hangi metriki istiyorsun" sor
+  3. Sorgu "column X does not exist" donerse -> SCHEMA'yi tekrar oku, yeniden yaz
+
+Hic bilmiyorsan tablonun schema'sini \\d ile ogrenme ZAHMETINE girme:
+tool tanimi + EK TABLOLAR listesi + ADMIN-ONLY listesi TAM kapsayici. Yoksa
+o tablo yok demektir.
+
 EK TABLOLAR (tool taniminda OLMAYAN — sadece burada):
 - etut_student_control: soz_no, full_name, sinif, yapildi, ogrenci_gelmedi, kontrol_edilmedi, toplam (125 ogrenci) → "En cok etut alan ogrenci" icin
 - etut_teacher_summary: ogretmen_id, ad_soyad, toplam_ders, ogrenci_sayisi, toplam_etut (16 ogretmen) → etut_history'den daha dogru

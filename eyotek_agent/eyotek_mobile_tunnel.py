@@ -1,26 +1,45 @@
 """
-Eyotek Mobile Tunnel (Faz 3) — Oturum 25.4
-==========================================
-Mobilden remote Eyotek login + CAPTCHA cozum.
+Eyotek Mobile Tunnel (noVNC FALLBACK) — Oturum 25.4 + 25.5
+============================================================
 
-Akis:
+⚠️  DURUM (Oturum 25.6 sonrasi): BU DOSYA ARTIK PRIMARY DEGIL
+
+Primary cozum: CapSolver (eyotek_auto_login.py + capsolver_helper.py)
+- Tamamen otonom, Neo hic dokunmaz
+- ~$0.001/cozum, ayda ~$0.05
+- 20 sn'de login tamamlanir, cookie yakalanir
+
+Bu dosya FALLBACK olarak tutuluyor:
+- CapSolver API anahtari eksikse / bakiye bitmisse
+- CapSolver Turnstile'i cozemezse (Cloudflare yeni bir anti-bot eklediyse)
+- Manuel login gerektiginde (ornegin parola degisikligi sonrasi test)
+
+Aktive etmek icin: eyotek_auto_login.py'da CapSolver fail durumunda
+_start_mobile_tunnel() cagrisi yapilabilir (su an comment disinda).
+
+Canli testte biliniyor ki:
+- noVNC uzerinden mobilden klavye yazmak praktik degil (FPS + input gecikme)
+- Cloudflare image challenge noVNC'de cozulemez (touch interaction)
+- Masaustu laptop'tan URL acilirsa calisir (FPS OK)
+
+Kod mimari (degismedi):
 1. Xvfb sanal ekran baslat (:99)
-2. Chromium headed modda aç + DevTools port 9222 (Eyotek login sayfasi yuklü)
+2. Chromium headed modda aç + DevTools port 9333 (Eyotek login sayfasi yuklü)
 3. x11vnc ile ekran yayini (:99 -> VNC port 5900)
 4. websockify/novnc HTTP portu (6080) uzerinden tarayici icin yayin
 5. cloudflared tunnel 6080 -> geçici trycloudflare.com URL
 6. URL'yi dondur -> WA'da Neo'ya gonderilir
 7. Neo URL'e tarayicidan girer -> VPS Chrome goruntusunu gorur
 8. Cloudflare + sifre + login -> Eyotek authenticated
-9. Playwright 9222 CDP uzerinden session cookie'lerini alir
+9. Playwright 9333 CDP uzerinden session cookie'lerini alir
 10. .eyotek_session.json kaydedilir
 11. Tunnel + Xvfb + Chromium kapatilir
 
-Bu script whatsapp_bridge'ten cagrilir:
+Kullanim (disaridan cagrildiginda — fallback scenario):
     from eyotek_mobile_tunnel import start_tunnel_session
-    tunnel_url = await start_tunnel_session(timeout_sec=900)
+    result = await start_tunnel_session(wait_login=True, login_timeout_sec=900)
 
-Gerekli paketler (VPS):
+Gerekli VPS paketler (zaten kurulu, reinstall gerekmez):
     apt install -y chromium-browser xvfb x11vnc novnc websockify fluxbox
     cloudflared (dpkg -i cloudflared-linux-amd64.deb)
 """
