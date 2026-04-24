@@ -458,11 +458,16 @@ Konusma → Anlam Cikarma → Profil Guncelleme → Sonraki Konusmada Kullanma
 
 ## Routing Dagilimi (Hedef vs Gercek)
 
-| Kaynak | Hedef | Gercek | Aciklama |
-|--------|-------|--------|----------|
-| Fast Response | %50+ | %39-50 | Selamlama, veri sorgusu, guvenlik |
-| Claude API | %30 | %41 | Tool-calling, analiz, hassas konular |
-| Ollama | %20 | %20 | Akademik konu, basit sohbet |
+**NOT — Oturum 24 sonrasi:** VPS'te Ollama yok, Groq 70B onun yerini aldi. Guncel hedef:
+
+| Kaynak | Yeni Hedef (VPS) | Aciklama |
+|--------|-----------------|----------|
+| Fast Response | %45 | Selamlama, sablonlu sorgu, guvenlik |
+| Groq 70B | %30 | Kavramsal + sohbet + (aktive edilirse) safe tool |
+| Claude API | %25 | Hassas, yazma, analiz, duygu/kriz |
+| Ollama | %0 (laptop %20) | VPS'te yok; laptop dev'de fallback |
+
+Eski (laptop Ollama) tarihi hedefi: Fast %50+ / Claude %30 / Ollama %20.
 
 ## Yeni PostgreSQL Tablolari
 
@@ -839,6 +844,70 @@ Konusma → Anlam Cikarma → Profil Guncelleme → Sonraki Konusmada Kullanma
 | OSYM Sonuc | ~3 Temmuz 2026 | 71 gun |
 | Tercih Donemi | 1 Tem - 31 Agu 2026 | 69-131 gun |
 | Yaz Kampi | 1 Eylul 2026 oncesi | 131 gun |
+
+## Tamamlanan Gorevler (24 Nisan 2026 — Oturum 24+25: VPS Regresyon + Groq Genisleme)
+
+### Oturum 24 — Baglam kaybi fix + Groq observability
+- [x] **conversation_memory baglam kaybi fix**: 3h INTERVAL penceresi kaldirildi, LIMIT 6 ile en yeni mesajlar cekilir. Temporal marker eklendi ("AKTIF"/"BUGUN/DUN"/"N gun once"). Canli analiz 17 baglam_kaybi hatasi tespit ettigi icin bu fix kritik.
+- [x] **VPS regresyon**: chat_local() Ollama-only idi, Groq 70B hic calismiyordu. is_local_available artik Groq'u da sayiyor, chat_local Groq-first + Ollama fallback.
+- [x] **Groq observability fix**: routing_stats/usage_log'a response_source='groq' DINAMIK yaziliyor (onceden "ollama" hardcoded).
+- [x] **fermat_start.py gunluk ozette** groq sayaci eklendi.
+- [x] **conversation_quality_analyzer.py** (YENI): Groq 70B ile son 72h konusma kalite denetimi. ~$0.10/50 konusma. Ilk rapor: ort 5.84/10, 33 frustration, 42 bot hatasi (17 baglam_kaybi, 17 yanlis_data, 4 halusinasyon), 25 eksik pattern.
+- [x] **RAG content expansion** --groq flag (rag_content_builder): Llama 3.3 70B ile icerik uretimi ~$0.003/konu (Claude'un 1/7'si). 15 yeni konu eklendi.
+- [x] **VPS'e Ollama + nomic-embed-text kuruldu** — RAG embedding backend; Python `ollama` paketi venv'e eklendi.
+
+### Oturum 25 — Groq tool-calling + token pass
+- [x] **ENABLE_GROQ_TOOLS env flag** (default false, production emniyeti)
+- [x] **SAFE_GROQ_TOOLS allowlist**: search_curriculum, get_class_plan, list_exam_questions, get_daily_etut (sadece read-only, dusuk risk)
+- [x] **LLMRouter.chat_groq_with_tools()** (YENI): 1-2 round tool-calling. HERHANGI bir hata (invalid JSON, whitelist disi tool, executor fail, API hatasi) → None doner, caller Claude'a sessizce fallback eder.
+- [x] **test_groq_tools.py** smoke test: 3/3 gecti VPS'te (search_curriculum dispatch + whitelist koruma + no-tool text).
+- [x] **Token sayimi (tiktoken ile)**: SYSTEM_PROMPT 27,649 tok (hedef 18k, +9.6k fazla).
+- [x] **Guvenli annotation cut**: dev annotation (dated parenthesis, Oturum refs, 22.1n kodlari) temizlendi → **168 token tasarruf**, davranis degisikligi YOK. Buyuk sikistirma A/B test oturumuna ertelendi.
+- [x] **Safety net**: git tag `oturum-24-stable` + `.baseline_o24` local dosya yedekleri.
+
+### Groq 70B Aktivasyon Recetesi (bir sonraki oturum icin)
+
+`chat_groq_with_tools` hazir ama `chat()` routing'ine wire edilmedi. Aktivasyon icin:
+1. VPS .env: `ENABLE_GROQ_TOOLS=true` ekle
+2. fermat_core_agent.py Claude tool-calling loop basinda kontrol:
+   ```python
+   if (ENABLE_GROQ_TOOLS and role == "ogrenci"
+       and all(t['name'] in SAFE_GROQ_TOOLS for t in tools_to_use)):
+       result = await self.router.chat_groq_with_tools(
+           self.history, system, tools_to_use, self._dispatch_tool)
+       if result and result.get('text'):
+           # use Groq result, log as response_source='groq'
+           ...
+       # else fall through to Claude (current behavior)
+   ```
+3. `_dispatch_tool` helper yaz (tool_name + args → str)
+4. 1-2 ogrenci ile canli test, sonuclara gore tam aktive et
+
+### Yeni Routing Hedefi (VPS + Groq sonrasi)
+
+| Kaynak | Eski Hedef | Yeni Hedef | Aciklama |
+|--------|-----------|-----------|----------|
+| Fast Response | %50 | %45 | Selamlama, veri, guvenlik (degismedi) |
+| Groq 70B | %0 | %30 | Kavramsal + basit sohbet + (aktive edilirse) safe tool |
+| Ollama | %20 | %0 | VPS'te yok (Groq onu degistirdi) |
+| Claude API | %30 | %25 | Hassas, tool-calling (write), analiz, duygu/kriz |
+
+### Yeni Dosyalar (Oturum 24+25)
+
+| Dosya | Rol |
+|-------|-----|
+| `conversation_quality_analyzer.py` | Son N saat konusma kalite denetimi (Groq 70B, ~$0.10/50 konusma) |
+| `test_groq_tools.py` | Groq tool-calling smoke test (3 senaryo) |
+| `system_prompts.py.baseline_o24` | Token kesim oncesi yedek (rollback icin) |
+| `llm_router.py.baseline_o24` | Groq degisiklikleri oncesi yedek |
+| `fermat_core_agent.py.baseline_o24` | Yedek |
+
+### Tamamlanmayan (Oncelik + Sonraki oturum)
+
+- [ ] **Token optimization tam pass**: 27k → 18k. Gerektirir: KURALLAR (3795 tok) ve KESIN YASAKLAR arasi ASLA/YASAK consolidation, TUTARSIZLIK TESPIT sadelestirme, QUERY_ANALYTICS SQL ornekleri compact. A/B test zorunlu.
+- [ ] **Groq tool-calling activation**: yukaridaki recete + canli test
+- [ ] **LGS topic_tracker**: student_exam_analysis tablosunda LGS kaydi yok. Eyotek LGS konu bazli scraper yazilmali (yeni is).
+- [ ] **17 yanlis_data + 4 halusinasyon** (kalite raporundan): bot'un sayi/veri uydurma riskine karsi prompt guardrails guclendirilmeli.
 
 ## Tamamlanan Gorevler (15 Nisan 2026 — Oturum 17: UX + Hiz + Registry)
 

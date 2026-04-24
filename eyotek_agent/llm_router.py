@@ -49,6 +49,23 @@ OLLAMA_TIMEOUT  = int(os.getenv("OLLAMA_TIMEOUT", "30"))
 ANTHROPIC_KEY   = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL    = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
 
+# Oturum 25: Groq tool-calling opt-in (default KAPALI — production guvenligi)
+# True yapildiginda: ogrenci rolunde ve SAFE_GROQ_TOOLS alt kumesi kullaniliyorsa
+# Groq 70B denenir; HER TURLU hata (invalid JSON, unknown tool, API hatasi...)
+# Claude'a sessizce fallback eder. Varsayilan davranis degismez.
+ENABLE_GROQ_TOOLS = os.getenv("ENABLE_GROQ_TOOLS", "false").lower() == "true"
+
+# Groq ile denenebilir read-only, dusuk riskli tool'lar.
+# YAZMA (write_etut, write_counsellor_note, sms_gonder, plani_takvime_ekle,
+# etut_takvime_ekle, rehber_baglantisi, tercih_*) veya hassas ACL (query_analytics,
+# finans_*, get_student_analytics) bu listede YOK — onlar daima Claude'a gider.
+SAFE_GROQ_TOOLS = {
+    "search_curriculum",       # pgvector semantik arama (kavramsal sorular)
+    "get_class_plan",          # salt okuma: ders programi
+    "list_exam_questions",     # RAG cikmis soru katalogu
+    "get_daily_etut",          # salt okuma: gunluk etut listesi
+}
+
 
 # ── Karmasiklik Siniflandirmasi ───────────────────────────────────────────────
 
@@ -910,6 +927,138 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
         # VPS'te Ollama yok, Groq var — bu kontrol sonradan chat_local'in
         # calismasini saglar, aksi halde chat_local direkt Claude'a dusuyordu.
         return self._ollama_available or self._groq_available
+
+    # ── Oturum 25: Groq Tool-Calling (opt-in, safe subset) ────────────────────
+    async def chat_groq_with_tools(
+        self,
+        messages: list,
+        system: str,
+        tools: list,
+        tool_executor,
+        max_rounds: int = 2,
+    ):
+        """Groq 70B ile 1-2 round tool-calling.
+
+        *HER* tur hata (API, invalid JSON, tool dispatch fail, white-list disi
+        tool, unknown args) → `None` doner. Caller Claude'a fallback yapmalidir.
+
+        Cok kritik: Bu metod `ENABLE_GROQ_TOOLS` flag'i olmadan da cagrilabilir,
+        cunku caller o kontrolu yapar. Standalone `chat_groq_tools` yardimcisi.
+
+        Args:
+            messages: Konusma gecmisi (Claude format)
+            system: Sistem prompt
+            tools: Claude-format tool schema listesi (name, description, input_schema)
+            tool_executor: async callable(tool_name, args_dict) -> str
+            max_rounds: Max tool-dispatch dongusu (default 2, infinite loop'a kal-
+                       kan yok)
+
+        Returns:
+            {"text": str, "provider": "groq", "response": None, "has_tool_calls": False}
+            ya da None (herhangi bir hata / guvensiz durum).
+        """
+        import json as _json
+        if not (self._groq_available and self._groq_client):
+            return None
+
+        # 1) Tool allowlist kontrolu — beyaz liste disi tool varsa iptal
+        groq_tools = []
+        for t in tools or []:
+            name = t.get("name", "")
+            if name not in SAFE_GROQ_TOOLS:
+                logger.info(f"[GROQ-TOOLS] '{name}' whitelist disi -> Claude'a fallback")
+                return None
+            groq_tools.append({
+                "type": "function",
+                "function": {
+                    "name": name,
+                    "description": t.get("description", "")[:512],
+                    "parameters": t.get("input_schema", {"type": "object", "properties": {}}),
+                },
+            })
+        if not groq_tools:
+            return None
+
+        # 2) Messages → OpenAI format
+        groq_msgs = []
+        if system:
+            groq_msgs.append({"role": "system", "content": system})
+        for m in messages:
+            c = m.get("content", "")
+            if isinstance(c, list):
+                text_parts = [p.get("text", "") for p in c
+                              if isinstance(p, dict) and p.get("type") == "text"]
+                c = " ".join(text_parts)
+            if isinstance(c, str) and c.strip():
+                groq_msgs.append({"role": m.get("role", "user"), "content": c})
+
+        try:
+            result = None
+            for round_idx in range(max_rounds):
+                result = await self._groq_client.complete_with_tools(
+                    messages=groq_msgs,
+                    tools=groq_tools,
+                    max_tokens=1500,
+                    temperature=0.3,
+                )
+                if not result.get("tool_calls"):
+                    # Tool cagrisi yok, final text
+                    self._last_local_provider = "groq"
+                    return {
+                        "text": result.get("text", ""),
+                        "provider": "groq",
+                        "response": None,
+                        "has_tool_calls": False,
+                    }
+
+                # Assistant mesajini messages'a ekle (OpenAI format)
+                groq_msgs.append({
+                    "role": "assistant",
+                    "content": result.get("text") or None,
+                    "tool_calls": [
+                        {"id": tc["id"], "type": "function",
+                         "function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                        for tc in result["tool_calls"]
+                    ],
+                })
+
+                # Her tool_call'i dispatch et
+                for tc in result["tool_calls"]:
+                    name = tc.get("name", "")
+                    if name not in SAFE_GROQ_TOOLS:
+                        logger.warning(f"[GROQ-TOOLS] mid-round whitelist disi: {name}")
+                        return None
+                    try:
+                        args = tc.get("arguments", "{}")
+                        if isinstance(args, str):
+                            args = _json.loads(args)
+                        if not isinstance(args, dict):
+                            return None
+                    except Exception as e:
+                        logger.warning(f"[GROQ-TOOLS] Invalid JSON args: {e}")
+                        return None
+                    try:
+                        tr = await tool_executor(name, args)
+                    except Exception as e:
+                        logger.warning(f"[GROQ-TOOLS] Executor fail ({name}): {e}")
+                        return None
+                    groq_msgs.append({
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": str(tr)[:4000],  # truncate long results
+                    })
+
+            # Max rounds dolduruldu — son cevabi don
+            self._last_local_provider = "groq"
+            return {
+                "text": (result or {}).get("text", ""),
+                "provider": "groq",
+                "response": None,
+                "has_tool_calls": False,
+            }
+        except Exception as e:
+            logger.warning(f"[GROQ-TOOLS] beklenmeyen hata, Claude'a fallback: {e}")
+            return None
 
     @property
     def is_cloud_available(self) -> bool:
