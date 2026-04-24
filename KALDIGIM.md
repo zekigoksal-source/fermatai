@@ -6,7 +6,7 @@
 > **LLM Routing:** fast_response %45 + Groq Llama 3.3 70B %30 + Claude Sonnet 4.6 %25 (hedef); ollama sadece embedding (nomic-embed-text)
 > **Özellikler:** + **Groq 70B primary local motor** + **Groq tool-calling (ENABLE_GROQ_TOOLS=true, 4 SAFE tool)** + **Anthropic prompt caching ephemeral** + **Baglam kaybi fix (conversation_memory 3h INTERVAL kaldirildi, temporal marker)** + **Finansal saydamlik kurali** + **Veri uydurma guardrail** + **Çok parçalı rapor "devam et" kurali** + tum eski ozellikler (iPad hybrid auth + Arsiv + Dashboard + PWA + Atlas + Query Cache + YOK Atlas 35,584 + Self-Awareness KALDIGIM + SQL AST Guard + Hack tracker + OTP brute force + Log filter)
 
-## 🆕 25-paket-son (24 Nisan 2026, ~14:00) — SELF-AWARENESS REFRESH + KALDIGIM PATH FIX
+## 🆕 OTURUM 25.2 (24 Nisan 2026, ~14:00) — SELF-AWARENESS REFRESH + KALDIGIM PATH FIX
 
 ### Neo tespiti
 > "Bot güncel farkındalığa sahip değil, self-awareness 20 Nisan'da kalmış. VPS geçişi ile ilgili düzeltmen gereken fonksiyonlar varsa tek tek incele."
@@ -43,7 +43,7 @@
 - `07420b8` — Self-awareness VPS+Groq güncel + KALDIGIM path fix
 - VPS senkron, servis active, HTTP 200
 
-## 🆕 25-paket-ana (24 Nisan 2026, ~12:00) — ROUTING FIX + GROQ TOOL-CALLING + FINANSAL + VERI GUARDRAIL
+## 🆕 OTURUM 25.1 (24 Nisan 2026, ~12:00) — ROUTING FIX + GROQ TOOL-CALLING + FINANSAL + VERI GUARDRAIL
 
 ### PROJ-2-A (commit 8dcc178) — Kavramsal sorular Groq 70B'ye
 - `llm_router.classify_complexity`: `is_conceptual` → local (Groq) yerine cloud (Claude)
@@ -77,7 +77,7 @@ Kalite raporu 17 yanlis_data + 4 halusinasyon vakasına doğrudan yanıt:
 - 3 senaryo (iyimser/orta/kötümser)
 - Örnek doğru format + yasak format
 
-## 🆕 24-paket (24 Nisan 2026, ~10:00) — VPS MIGRATION + GROQ OBSERVABILITY + CONTEXT FIX
+## 🆕 OTURUM 24.0 (24 Nisan 2026, ~10:00) — VPS MIGRATION + GROQ OBSERVABILITY + CONTEXT FIX
 
 ### PROJ-1 (commit c5d10ae) — conversation_memory bağlam kaybı fix
 - 3h INTERVAL penceresi kaldırıldı, LIMIT 6 ile en yeni mesajlar
