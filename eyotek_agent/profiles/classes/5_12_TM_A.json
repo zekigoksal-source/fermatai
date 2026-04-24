@@ -1,0 +1,49 @@
+{
+  "sinif": "[5] 12 TM A",
+  "devre": "12.Snf",
+  "ogrenci_sayisi": 7,
+  "ogrenciler": [
+    {
+      "soz_no": "191",
+      "ad": "BEYZA",
+      "soyad": "ILGIN"
+    },
+    {
+      "soz_no": "204",
+      "ad": "EDA",
+      "soyad": "KESKİNLER"
+    },
+    {
+      "soz_no": "176",
+      "ad": "EFE KAAN",
+      "soyad": "GÜLEÇ"
+    },
+    {
+      "soz_no": "137",
+      "ad": "SELİN",
+      "soyad": "COŞKUN"
+    },
+    {
+      "soz_no": "168",
+      "ad": "ZEYNEP",
+      "soyad": "KIRSAKAL"
+    },
+    {
+      "soz_no": "149",
+      "ad": "ZEYNEP",
+      "soyad": "KALFAOĞLU"
+    },
+    {
+      "soz_no": "244",
+      "ad": "ÇAĞAN",
+      "soyad": "YAKAY"
+    }
+  ],
+  "etut_toplam": 54,
+  "etut_yapildi": 11,
+  "etut_gelmedi": 1,
+  "etut_katilim_yuzdesi": 20,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

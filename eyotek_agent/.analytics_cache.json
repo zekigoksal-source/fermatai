@@ -1,0 +1,690 @@
+{
+  "_meta": {
+    "built_at": "2026-04-24T03:00:00.018391",
+    "version": 1
+  },
+  "ogretmen_listesi": [
+    {
+      "full_name": "ALPER OTÇU",
+      "brans": "Fizik",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "BÜŞRA GÜLBAHAR KAYHAN",
+      "brans": "Türkçe",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "DENİZ AKÇAP",
+      "brans": "Coğrafya",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "ELİF SUDE HUNYAS",
+      "brans": "Rehberlik",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "EMİN YİĞİT",
+      "brans": "Fizik",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "EZGİ TUNÇ",
+      "brans": "Türkçe",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "HASAN GÜNGÖR",
+      "brans": "Kimya",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "KADİR KÖKCÜR",
+      "brans": "Kimya",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "KARDELEN SAVCI",
+      "brans": "Tarih",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "MAHSUM YALÇIN",
+      "brans": "Diğer",
+      "gorev": "Yönetim Kurulu"
+    },
+    {
+      "full_name": "MEHMET DÖNMEZ",
+      "brans": "Matematik",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "MERVE OKŞAŞ",
+      "brans": "Biyoloji",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "MURAT BAŞ",
+      "brans": "Coğrafya",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "MURATHAN ŞARVAN",
+      "brans": "Diğer",
+      "gorev": "Diğer"
+    },
+    {
+      "full_name": "ORHAN DEMİRBULAT",
+      "brans": "Matematik",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "VEDAT ÖZTEKİN",
+      "brans": "Matematik",
+      "gorev": "Öğretmen"
+    },
+    {
+      "full_name": "ZEKİ GÖKSAL",
+      "brans": "Diğer",
+      "gorev": "Diğer"
+    },
+    {
+      "full_name": "ÖRSEL KOÇ",
+      "brans": "Fizik",
+      "gorev": "Öğretmen"
+    }
+  ],
+  "ogretmen_etut_toplam": [
+    {
+      "ogretmen": "ORHAN DEMİRBULAT",
+      "etut_sayisi": 443,
+      "toplam_ogrenci": 518,
+      "ilk_etut": "2025-09-10",
+      "son_etut": "2026-05-06",
+      "ders_cesidi": 2
+    },
+    {
+      "ogretmen": "MERVE OKŞAŞ",
+      "etut_sayisi": 326,
+      "toplam_ogrenci": 565,
+      "ilk_etut": "2025-09-14",
+      "son_etut": "2026-04-22",
+      "ders_cesidi": 2
+    },
+    {
+      "ogretmen": "VEDAT ÖZTEKİN",
+      "etut_sayisi": 306,
+      "toplam_ogrenci": 361,
+      "ilk_etut": "2025-09-10",
+      "son_etut": "2026-04-22",
+      "ders_cesidi": 2
+    },
+    {
+      "ogretmen": "EMİN YİĞİT",
+      "etut_sayisi": 275,
+      "toplam_ogrenci": 358,
+      "ilk_etut": "2025-09-10",
+      "son_etut": "2026-04-22",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "BÜŞRA GÜLBAHAR KAYHAN",
+      "etut_sayisi": 193,
+      "toplam_ogrenci": 195,
+      "ilk_etut": "2025-09-17",
+      "son_etut": "2026-04-22",
+      "ders_cesidi": 2
+    },
+    {
+      "ogretmen": "HASAN GÜNGÖR",
+      "etut_sayisi": 188,
+      "toplam_ogrenci": 270,
+      "ilk_etut": "2025-09-15",
+      "son_etut": "2026-04-13",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "MEHMET DÖNMEZ",
+      "etut_sayisi": 156,
+      "toplam_ogrenci": 154,
+      "ilk_etut": "2025-10-13",
+      "son_etut": "2026-04-19",
+      "ders_cesidi": 2
+    },
+    {
+      "ogretmen": "DENİZ AKÇAP",
+      "etut_sayisi": 142,
+      "toplam_ogrenci": 154,
+      "ilk_etut": "2025-09-10",
+      "son_etut": "2026-04-22",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "EZGİ TUNÇ",
+      "etut_sayisi": 140,
+      "toplam_ogrenci": 188,
+      "ilk_etut": "2025-09-13",
+      "son_etut": "2026-04-05",
+      "ders_cesidi": 2
+    },
+    {
+      "ogretmen": "KARDELEN SAVCI",
+      "etut_sayisi": 106,
+      "toplam_ogrenci": 159,
+      "ilk_etut": "2025-09-10",
+      "son_etut": "2026-04-22",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "ALPER OTÇU",
+      "etut_sayisi": 75,
+      "toplam_ogrenci": 78,
+      "ilk_etut": "2025-09-13",
+      "son_etut": "2026-01-11",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "ÖRSEL KOÇ",
+      "etut_sayisi": 62,
+      "toplam_ogrenci": 62,
+      "ilk_etut": "2026-01-15",
+      "son_etut": "2026-04-18",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "1031",
+      "etut_sayisi": 61,
+      "toplam_ogrenci": 61,
+      "ilk_etut": "2025-09-15",
+      "son_etut": "2025-12-22",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "ELİF SUDE HUNYAS",
+      "etut_sayisi": 16,
+      "toplam_ogrenci": 38,
+      "ilk_etut": "2025-11-02",
+      "son_etut": "2026-03-18",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "ORHAN  DEMİRBULAT",
+      "etut_sayisi": 13,
+      "toplam_ogrenci": 10,
+      "ilk_etut": "2026-04-12",
+      "son_etut": "2026-04-21",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "EZGİ  TUNÇ",
+      "etut_sayisi": 12,
+      "toplam_ogrenci": 12,
+      "ilk_etut": "2026-04-11",
+      "son_etut": "2026-04-21",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "HASAN  GÜNGÖR",
+      "etut_sayisi": 9,
+      "toplam_ogrenci": 9,
+      "ilk_etut": "2026-04-13",
+      "son_etut": "2026-04-21",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "KARDELEN  SAVCI",
+      "etut_sayisi": 9,
+      "toplam_ogrenci": 9,
+      "ilk_etut": "2026-04-11",
+      "son_etut": "2026-04-22",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "MURAT BAŞ",
+      "etut_sayisi": 5,
+      "toplam_ogrenci": 39,
+      "ilk_etut": "2025-09-24",
+      "son_etut": "2026-03-05",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "KADİR KÖKCÜR",
+      "etut_sayisi": 4,
+      "toplam_ogrenci": 40,
+      "ilk_etut": "2025-10-28",
+      "son_etut": "2025-10-28",
+      "ders_cesidi": 1
+    },
+    {
+      "ogretmen": "ZEKİ GÖKSAL",
+      "etut_sayisi": 1,
+      "toplam_ogrenci": 3,
+      "ilk_etut": "2026-04-07",
+      "son_etut": "2026-04-07",
+      "ders_cesidi": 1
+    }
+  ],
+  "ogretmen_etut_son30": [
+    {
+      "ogretmen": "ORHAN DEMİRBULAT",
+      "etut_sayisi": 76,
+      "toplam_ogrenci": 69
+    },
+    {
+      "ogretmen": "MERVE OKŞAŞ",
+      "etut_sayisi": 52,
+      "toplam_ogrenci": 50
+    },
+    {
+      "ogretmen": "VEDAT ÖZTEKİN",
+      "etut_sayisi": 46,
+      "toplam_ogrenci": 44
+    },
+    {
+      "ogretmen": "MEHMET DÖNMEZ",
+      "etut_sayisi": 25,
+      "toplam_ogrenci": 23
+    },
+    {
+      "ogretmen": "EMİN YİĞİT",
+      "etut_sayisi": 25,
+      "toplam_ogrenci": 25
+    },
+    {
+      "ogretmen": "BÜŞRA GÜLBAHAR KAYHAN",
+      "etut_sayisi": 23,
+      "toplam_ogrenci": 22
+    },
+    {
+      "ogretmen": "DENİZ AKÇAP",
+      "etut_sayisi": 21,
+      "toplam_ogrenci": 19
+    },
+    {
+      "ogretmen": "HASAN GÜNGÖR",
+      "etut_sayisi": 20,
+      "toplam_ogrenci": 20
+    },
+    {
+      "ogretmen": "ÖRSEL KOÇ",
+      "etut_sayisi": 18,
+      "toplam_ogrenci": 18
+    },
+    {
+      "ogretmen": "ORHAN  DEMİRBULAT",
+      "etut_sayisi": 13,
+      "toplam_ogrenci": 10
+    },
+    {
+      "ogretmen": "EZGİ  TUNÇ",
+      "etut_sayisi": 12,
+      "toplam_ogrenci": 12
+    },
+    {
+      "ogretmen": "KARDELEN SAVCI",
+      "etut_sayisi": 10,
+      "toplam_ogrenci": 9
+    },
+    {
+      "ogretmen": "HASAN  GÜNGÖR",
+      "etut_sayisi": 9,
+      "toplam_ogrenci": 9
+    },
+    {
+      "ogretmen": "KARDELEN  SAVCI",
+      "etut_sayisi": 9,
+      "toplam_ogrenci": 9
+    },
+    {
+      "ogretmen": "EZGİ TUNÇ",
+      "etut_sayisi": 7,
+      "toplam_ogrenci": 7
+    },
+    {
+      "ogretmen": "ZEKİ GÖKSAL",
+      "etut_sayisi": 1,
+      "toplam_ogrenci": 3
+    }
+  ],
+  "ders_etut_dagilimi": [
+    {
+      "ders": "Matematik",
+      "etut_sayisi": 973,
+      "toplam_ogrenci": 1100
+    },
+    {
+      "ders": "Fizik",
+      "etut_sayisi": 412,
+      "toplam_ogrenci": 498
+    },
+    {
+      "ders": "Türkçe",
+      "etut_sayisi": 343,
+      "toplam_ogrenci": 393
+    },
+    {
+      "ders": "Biyoloji",
+      "etut_sayisi": 309,
+      "toplam_ogrenci": 552
+    },
+    {
+      "ders": "Kimya",
+      "etut_sayisi": 201,
+      "toplam_ogrenci": 319
+    },
+    {
+      "ders": "Coğrafya",
+      "etut_sayisi": 147,
+      "toplam_ogrenci": 193
+    },
+    {
+      "ders": "Tarih",
+      "etut_sayisi": 115,
+      "toplam_ogrenci": 168
+    },
+    {
+      "ders": "Fen Bilimleri",
+      "etut_sayisi": 17,
+      "toplam_ogrenci": 13
+    },
+    {
+      "ders": "Rehberlik",
+      "etut_sayisi": 16,
+      "toplam_ogrenci": 38
+    },
+    {
+      "ders": "Geometri",
+      "etut_sayisi": 7,
+      "toplam_ogrenci": 7
+    },
+    {
+      "ders": "Türk Dili ve Edebiyatı",
+      "etut_sayisi": 2,
+      "toplam_ogrenci": 2
+    }
+  ],
+  "devamsizlik_top20": [
+    {
+      "adi": "DEVİN DENİZ",
+      "soyadi": "DOĞAN",
+      "sinif": "[11] MEZUN SAY B",
+      "toplam_saat": 299
+    },
+    {
+      "adi": "ALİ BARAY",
+      "soyadi": "KIRMAN",
+      "sinif": "[12] 12 MEZ SAY C",
+      "toplam_saat": 285
+    },
+    {
+      "adi": "BEHÇET OYTUN",
+      "soyadi": "ALUR",
+      "sinif": "[13] MEZUN TM A",
+      "toplam_saat": 260
+    },
+    {
+      "adi": "GÖZDE",
+      "soyadi": "YARŞİ",
+      "sinif": "[13] MEZUN TM A",
+      "toplam_saat": 240
+    },
+    {
+      "adi": "ARDA",
+      "soyadi": "AYDIN",
+      "sinif": "[12] 12 MEZ SAY C",
+      "toplam_saat": 232
+    },
+    {
+      "adi": "HÜSEYİN EFE",
+      "soyadi": "DÜZAKMAN",
+      "sinif": "[11] MEZUN SAY B",
+      "toplam_saat": 230
+    },
+    {
+      "adi": "BÜŞRA",
+      "soyadi": "ÇİFTÇİ",
+      "sinif": "[13] MEZUN TM A",
+      "toplam_saat": 228
+    },
+    {
+      "adi": "BERKAY",
+      "soyadi": "ERDOĞDU",
+      "sinif": "[13] MEZUN TM A",
+      "toplam_saat": 227
+    },
+    {
+      "adi": "DENİZ",
+      "soyadi": "KUŞ",
+      "sinif": "[7] MEZUN SAY A",
+      "toplam_saat": 222
+    },
+    {
+      "adi": "ZEYNEP",
+      "soyadi": "AKBAŞ",
+      "sinif": "[7] MEZUN SAY A",
+      "toplam_saat": 197
+    },
+    {
+      "adi": "NEHİR",
+      "soyadi": "TÜRKATALAY",
+      "sinif": "[7] MEZUN SAY A",
+      "toplam_saat": 196
+    },
+    {
+      "adi": "DURU",
+      "soyadi": "ÖZARSLAN",
+      "sinif": "[11] MEZUN SAY B",
+      "toplam_saat": 193
+    },
+    {
+      "adi": "FATMA NUR",
+      "soyadi": "ÖZIRMAK",
+      "sinif": "[5] 12 TM A",
+      "toplam_saat": 190
+    },
+    {
+      "adi": "BEGÜM",
+      "soyadi": "ÇELİK",
+      "sinif": "[5] 12 TM A",
+      "toplam_saat": 176
+    },
+    {
+      "adi": "AHMET YAVUZ",
+      "soyadi": "EKİCİ",
+      "sinif": "[11] MEZUN SAY B",
+      "toplam_saat": 165
+    },
+    {
+      "adi": "ZEHRA EYLÜL",
+      "soyadi": "YALÇIN",
+      "sinif": "[7] MEZUN SAY A",
+      "toplam_saat": 163
+    },
+    {
+      "adi": "ALİ",
+      "soyadi": "KAYNAK",
+      "sinif": "[6] LGS A",
+      "toplam_saat": 159
+    },
+    {
+      "adi": "İREM HAVVA",
+      "soyadi": "COŞKUN",
+      "sinif": "[11] MEZUN SAY B",
+      "toplam_saat": 148
+    },
+    {
+      "adi": "GÖNÜLAY",
+      "soyadi": "YAŞAR",
+      "sinif": "[13] MEZUN TM A",
+      "toplam_saat": 146
+    },
+    {
+      "adi": "AYŞE ECRİN",
+      "soyadi": "DEMİR",
+      "sinif": "[10] 10 SAY A",
+      "toplam_saat": 138
+    }
+  ],
+  "sinif_ogrenci_sayisi": [
+    {
+      "class_name": "10",
+      "ogrenci_sayisi": 6
+    },
+    {
+      "class_name": "10 SAY A",
+      "ogrenci_sayisi": 4
+    },
+    {
+      "class_name": "11 EA",
+      "ogrenci_sayisi": 4
+    },
+    {
+      "class_name": "11 SAY",
+      "ogrenci_sayisi": 21
+    },
+    {
+      "class_name": "11 SAY NXT",
+      "ogrenci_sayisi": 1
+    },
+    {
+      "class_name": "11 SAY VIB",
+      "ogrenci_sayisi": 4
+    },
+    {
+      "class_name": "11 SAY ZEN",
+      "ogrenci_sayisi": 1
+    },
+    {
+      "class_name": "12 EA",
+      "ogrenci_sayisi": 7
+    },
+    {
+      "class_name": "12 MEZ SAY C",
+      "ogrenci_sayisi": 1
+    },
+    {
+      "class_name": "12 SAY",
+      "ogrenci_sayisi": 19
+    },
+    {
+      "class_name": "7",
+      "ogrenci_sayisi": 2
+    },
+    {
+      "class_name": "8",
+      "ogrenci_sayisi": 4
+    },
+    {
+      "class_name": "9",
+      "ogrenci_sayisi": 1
+    },
+    {
+      "class_name": "LGS A",
+      "ogrenci_sayisi": 1
+    },
+    {
+      "class_name": "MEZUN SAY B",
+      "ogrenci_sayisi": 2
+    },
+    {
+      "class_name": "MEZUN TM A",
+      "ogrenci_sayisi": 3
+    },
+    {
+      "class_name": "Mezun EA",
+      "ogrenci_sayisi": 7
+    },
+    {
+      "class_name": "Mezun SAY",
+      "ogrenci_sayisi": 27
+    },
+    {
+      "class_name": "[14] 7-A",
+      "ogrenci_sayisi": 1
+    },
+    {
+      "class_name": "[3] 9 SAY A",
+      "ogrenci_sayisi": 1
+    }
+  ],
+  "genel_istatistik": {
+    "toplam_ogrenci": 125,
+    "toplam_personel": 18,
+    "toplam_etut": 2542,
+    "toplam_rehberlik": 1631,
+    "etut_tarih_araligi": {
+      "ilk": "2025-09-10",
+      "son": "2026-05-06"
+    },
+    "yoklama_alinmis": 1068,
+    "yoklama_alinmamis": 1474
+  },
+  "rehberlik_ozet": [
+    {
+      "ogretmen": "KARDELEN SAVCI",
+      "not_sayisi": 1035,
+      "ogrenci_sayisi": 61
+    },
+    {
+      "ogretmen": "ELİF SUDE HUNYAS",
+      "not_sayisi": 596,
+      "ogrenci_sayisi": 67
+    }
+  ],
+  "aylik_etut_trendi": [
+    {
+      "ay": "2025-09",
+      "etut_sayisi": 155,
+      "toplam_ogrenci": 177
+    },
+    {
+      "ay": "2025-10",
+      "etut_sayisi": 404,
+      "toplam_ogrenci": 754
+    },
+    {
+      "ay": "2025-11",
+      "etut_sayisi": 240,
+      "toplam_ogrenci": 285
+    },
+    {
+      "ay": "2025-12",
+      "etut_sayisi": 481,
+      "toplam_ogrenci": 526
+    },
+    {
+      "ay": "2026-01",
+      "etut_sayisi": 183,
+      "toplam_ogrenci": 275
+    },
+    {
+      "ay": "2026-02",
+      "etut_sayisi": 398,
+      "toplam_ogrenci": 520
+    },
+    {
+      "ay": "2026-03",
+      "etut_sayisi": 389,
+      "toplam_ogrenci": 464
+    },
+    {
+      "ay": "2026-04",
+      "etut_sayisi": 287,
+      "toplam_ogrenci": 277
+    },
+    {
+      "ay": "2026-05",
+      "etut_sayisi": 5,
+      "toplam_ogrenci": 5
+    }
+  ],
+  "sinav_istatistik": [
+    {
+      "toplam_sinav": 1963,
+      "ogrenci_sayisi": 122,
+      "ilk_sinav": "2025-08-15",
+      "son_sinav": "2026-04-10"
+    }
+  ]
+}

@@ -1,0 +1,682 @@
+{
+  "[14] 7-A": {
+    "devre": "7.Snf",
+    "ogrenci_sayisi": 5,
+    "students": [
+      {
+        "söz no": "243",
+        "adı": "BERRAK TALYA",
+        "soyadı": "ÜLCAY"
+      },
+      {
+        "söz no": "256",
+        "adı": "CEREN NAZ",
+        "soyadı": "TEK"
+      },
+      {
+        "söz no": "175",
+        "adı": "DİLA",
+        "soyadı": "SEPETLER"
+      },
+      {
+        "söz no": "264",
+        "adı": "MAYA",
+        "soyadı": "ERDEK"
+      },
+      {
+        "söz no": "241",
+        "adı": "ZEYNEP SERAY",
+        "soyadı": "ŞARVAN"
+      }
+    ]
+  },
+  "[6] LGS A": {
+    "devre": "8.Snf",
+    "ogrenci_sayisi": 5,
+    "students": [
+      {
+        "söz no": "141",
+        "adı": "ADA",
+        "soyadı": "BARIŞCAN"
+      },
+      {
+        "söz no": "190",
+        "adı": "ALİ",
+        "soyadı": "KAYNAK"
+      },
+      {
+        "söz no": "152",
+        "adı": "DENİZ BÜLENT",
+        "soyadı": "KARAEGE"
+      },
+      {
+        "söz no": "302",
+        "adı": "EGE",
+        "soyadı": "KURNAZ"
+      },
+      {
+        "söz no": "178",
+        "adı": "KAYRA",
+        "soyadı": "ALTUN"
+      }
+    ]
+  },
+  "[3] 9 SAY A": {
+    "devre": "9.Snf",
+    "ogrenci_sayisi": 2,
+    "students": [
+      {
+        "söz no": "289",
+        "adı": "ALİ HAYDAR",
+        "soyadı": "EFE"
+      },
+      {
+        "söz no": "219",
+        "adı": "İDİL",
+        "soyadı": "TÜTÜNCÜ"
+      }
+    ]
+  },
+  "[4] 11 SAY NXT": {
+    "devre": "11.Snf",
+    "ogrenci_sayisi": 10,
+    "students": [
+      {
+        "söz no": "167",
+        "adı": "ALİ",
+        "soyadı": "KÜÇÜKUYSAL"
+      },
+      {
+        "söz no": "208",
+        "adı": "ALİ DEMİR",
+        "soyadı": "ALPAY"
+      },
+      {
+        "söz no": "146",
+        "adı": "ARDA",
+        "soyadı": "AKMAN"
+      },
+      {
+        "söz no": "173",
+        "adı": "BADE",
+        "soyadı": "UÇAR"
+      },
+      {
+        "söz no": "233",
+        "adı": "BERF DENİZ",
+        "soyadı": "PEKER"
+      },
+      {
+        "söz no": "170",
+        "adı": "GÖKHAN",
+        "soyadı": "AYGÜN"
+      },
+      {
+        "söz no": "163",
+        "adı": "MEHMET ALİ",
+        "soyadı": "KARPUZ"
+      },
+      {
+        "söz no": "257",
+        "adı": "OĞULCAN",
+        "soyadı": "AŞIK"
+      },
+      {
+        "söz no": "197",
+        "adı": "YAĞIZ",
+        "soyadı": "ALPTEKİN"
+      },
+      {
+        "söz no": "301",
+        "adı": "YUNUS EMRE",
+        "soyadı": "ARMAĞAN"
+      }
+    ]
+  },
+  "[8] 11 TM A": {
+    "devre": "11.Snf",
+    "ogrenci_sayisi": 4,
+    "students": [
+      {
+        "söz no": "153",
+        "adı": "AYÇANUR",
+        "soyadı": "AKBULUT"
+      },
+      {
+        "söz no": "206",
+        "adı": "LARA",
+        "soyadı": "ŞENGÜL"
+      },
+      {
+        "söz no": "177",
+        "adı": "NİSA",
+        "soyadı": "BİLGE"
+      },
+      {
+        "söz no": "181",
+        "adı": "ZEYNEP",
+        "soyadı": "UZ"
+      }
+    ]
+  },
+  "[9] 11 SAY VIB": {
+    "devre": "11.Snf",
+    "ogrenci_sayisi": 10,
+    "students": [
+      {
+        "söz no": "269",
+        "adı": "ALİ BAŞAR",
+        "soyadı": "ÖZAY"
+      },
+      {
+        "söz no": "272",
+        "adı": "BAŞAR",
+        "soyadı": "KÖSE"
+      },
+      {
+        "söz no": "306",
+        "adı": "DERİN",
+        "soyadı": "KIRANLI"
+      },
+      {
+        "söz no": "188",
+        "adı": "DORUK TOPRAK",
+        "soyadı": "YONGUÇ"
+      },
+      {
+        "söz no": "247",
+        "adı": "ELA",
+        "soyadı": "OKUR"
+      },
+      {
+        "söz no": "158",
+        "adı": "ELA",
+        "soyadı": "CENGİZ"
+      },
+      {
+        "söz no": "161",
+        "adı": "NAZMİYE",
+        "soyadı": "BORA"
+      },
+      {
+        "söz no": "249",
+        "adı": "RÜZGAR KEMAL",
+        "soyadı": "UZUN"
+      },
+      {
+        "söz no": "261",
+        "adı": "TUNA",
+        "soyadı": "KÖPRÜLÜ"
+      },
+      {
+        "söz no": "209",
+        "adı": "YAĞIZ",
+        "soyadı": "ZORLU"
+      }
+    ]
+  },
+  "[10] 10 SAY A": {
+    "devre": "11.Snf",
+    "ogrenci_sayisi": 10,
+    "students": [
+      {
+        "söz no": "290",
+        "adı": "AHMET FATİH",
+        "soyadı": "ÇETİN"
+      },
+      {
+        "söz no": "179",
+        "adı": "AYŞE ECRİN",
+        "soyadı": "DEMİR"
+      },
+      {
+        "söz no": "237",
+        "adı": "BERAT",
+        "soyadı": "AZMAN"
+      },
+      {
+        "söz no": "169",
+        "adı": "EZGİ",
+        "soyadı": "KARADAŞ"
+      },
+      {
+        "söz no": "279",
+        "adı": "GÜL",
+        "soyadı": "ÇALIŞKANER"
+      },
+      {
+        "söz no": "285",
+        "adı": "HAVVA MERİÇ",
+        "soyadı": "ÖZTÜRK"
+      },
+      {
+        "söz no": "234",
+        "adı": "MEHMET KUTHAN",
+        "soyadı": "ŞARVAN"
+      },
+      {
+        "söz no": "236",
+        "adı": "MELİSA",
+        "soyadı": "EVCİMEN"
+      },
+      {
+        "söz no": "220",
+        "adı": "YAĞMUR",
+        "soyadı": "HAYIR"
+      },
+      {
+        "söz no": "287",
+        "adı": "ZEYNEP",
+        "soyadı": "ÜNVER"
+      }
+    ]
+  },
+  "[15] 11 SAY ZEN": {
+    "devre": "11.Snf",
+    "ogrenci_sayisi": 7,
+    "students": [
+      {
+        "söz no": "183",
+        "adı": "ADA DEFNE",
+        "soyadı": "ÖZER"
+      },
+      {
+        "söz no": "186",
+        "adı": "BEKİR AYAZ",
+        "soyadı": "HAYKIR"
+      },
+      {
+        "söz no": "172",
+        "adı": "DERYA",
+        "soyadı": "DALKILIÇ"
+      },
+      {
+        "söz no": "314",
+        "adı": "EZGİ",
+        "soyadı": "ÇÖZGÜCÜ"
+      },
+      {
+        "söz no": "155",
+        "adı": "EZGİ SILA",
+        "soyadı": "KORKMAZ"
+      },
+      {
+        "söz no": "251",
+        "adı": "HASAN ALİ",
+        "soyadı": "YAVAŞ"
+      },
+      {
+        "söz no": "200",
+        "adı": "ÖZÜM",
+        "soyadı": "GÖL"
+      }
+    ]
+  },
+  "[16] özel ders": {
+    "devre": "11.Snf",
+    "ogrenci_sayisi": 0,
+    "students": []
+  },
+  "[1] 12 SAY A": {
+    "devre": "12.Snf",
+    "ogrenci_sayisi": 11,
+    "students": [
+      {
+        "söz no": "166",
+        "adı": "CEYLİN NAZ",
+        "soyadı": "AKSOY"
+      },
+      {
+        "söz no": "160",
+        "adı": "DAMLA",
+        "soyadı": "KESKİN"
+      },
+      {
+        "söz no": "230",
+        "adı": "ECRİN",
+        "soyadı": "BELLER"
+      },
+      {
+        "söz no": "143",
+        "adı": "FATMA NUR",
+        "soyadı": "KAYGUSUZ"
+      },
+      {
+        "söz no": "174",
+        "adı": "İREM",
+        "soyadı": "GÖNÜL"
+      },
+      {
+        "söz no": "180",
+        "adı": "KAYRA",
+        "soyadı": "CEYLAN"
+      },
+      {
+        "söz no": "182",
+        "adı": "MAHMUT TAHA",
+        "soyadı": "AKKAYA"
+      },
+      {
+        "söz no": "148",
+        "adı": "MEHMET ALP",
+        "soyadı": "TURAN"
+      },
+      {
+        "söz no": "150",
+        "adı": "UĞUR",
+        "soyadı": "AKAN"
+      },
+      {
+        "söz no": "185",
+        "adı": "YİĞİT ALP",
+        "soyadı": "AKYEL"
+      },
+      {
+        "söz no": "154",
+        "adı": "ZEHRA",
+        "soyadı": "ÇETİN"
+      }
+    ]
+  },
+  "[2] 12 SAY B": {
+    "devre": "12.Snf",
+    "ogrenci_sayisi": 7,
+    "students": [
+      {
+        "söz no": "144",
+        "adı": "ADA",
+        "soyadı": "TARĞAL"
+      },
+      {
+        "söz no": "157",
+        "adı": "ALMİNA",
+        "soyadı": "ERTÜRK"
+      },
+      {
+        "söz no": "184",
+        "adı": "ATEŞ",
+        "soyadı": "KEZEL"
+      },
+      {
+        "söz no": "217",
+        "adı": "DEREN",
+        "soyadı": "SEVİM"
+      },
+      {
+        "söz no": "145",
+        "adı": "HAZAN",
+        "soyadı": "ŞENGEZER"
+      },
+      {
+        "söz no": "171",
+        "adı": "NİHAL ZEYNEP",
+        "soyadı": "EKİCİ"
+      },
+      {
+        "söz no": "165",
+        "adı": "YAĞIZ ALP",
+        "soyadı": "DEPELİ"
+      }
+    ]
+  },
+  "[5] 12 TM A": {
+    "devre": "12.Snf",
+    "ogrenci_sayisi": 7,
+    "students": [
+      {
+        "söz no": "191",
+        "adı": "BEYZA",
+        "soyadı": "ILGIN"
+      },
+      {
+        "söz no": "244",
+        "adı": "ÇAĞAN",
+        "soyadı": "YAKAY"
+      },
+      {
+        "söz no": "204",
+        "adı": "EDA",
+        "soyadı": "KESKİNLER"
+      },
+      {
+        "söz no": "176",
+        "adı": "EFE KAAN",
+        "soyadı": "GÜLEÇ"
+      },
+      {
+        "söz no": "137",
+        "adı": "SELİN",
+        "soyadı": "COŞKUN"
+      },
+      {
+        "söz no": "168",
+        "adı": "ZEYNEP",
+        "soyadı": "KIRSAKAL"
+      },
+      {
+        "söz no": "149",
+        "adı": "ZEYNEP",
+        "soyadı": "KALFAOĞLU"
+      }
+    ]
+  },
+  "[7] MEZUN SAY A": {
+    "devre": "Mezun",
+    "ogrenci_sayisi": 13,
+    "students": [
+      {
+        "söz no": "192",
+        "adı": "AZRA",
+        "soyadı": "MİMAROĞLU"
+      },
+      {
+        "söz no": "195",
+        "adı": "DEFNE",
+        "soyadı": "ŞENGÜL"
+      },
+      {
+        "söz no": "225",
+        "adı": "DENİZ",
+        "soyadı": "KUŞ"
+      },
+      {
+        "söz no": "214",
+        "adı": "ENES",
+        "soyadı": "KARADAŞ"
+      },
+      {
+        "söz no": "210",
+        "adı": "FATİH",
+        "soyadı": "ŞENGÜL"
+      },
+      {
+        "söz no": "231",
+        "adı": "GÖKTÜRK HAN",
+        "soyadı": "BAYATLIOĞLU"
+      },
+      {
+        "söz no": "239",
+        "adı": "GÜLNUR",
+        "soyadı": "ERKEN"
+      },
+      {
+        "söz no": "226",
+        "adı": "MELİS",
+        "soyadı": "EROĞLU"
+      },
+      {
+        "söz no": "211",
+        "adı": "NAZLI IRMAK",
+        "soyadı": "DAŞ"
+      },
+      {
+        "söz no": "218",
+        "adı": "NEHİR",
+        "soyadı": "TÜRKATALAY"
+      },
+      {
+        "söz no": "242",
+        "adı": "SÜLEYMAN",
+        "soyadı": "AKÇAY"
+      },
+      {
+        "söz no": "199",
+        "adı": "ZEHRA EYLÜL",
+        "soyadı": "YALÇIN"
+      },
+      {
+        "söz no": "246",
+        "adı": "ZEYNEP",
+        "soyadı": "AKBAŞ"
+      }
+    ]
+  },
+  "[11] MEZUN SAY B": {
+    "devre": "Mezun",
+    "ogrenci_sayisi": 12,
+    "students": [
+      {
+        "söz no": "245",
+        "adı": "AHMET YAVUZ",
+        "soyadı": "EKİCİ"
+      },
+      {
+        "söz no": "262",
+        "adı": "ALP KAAN",
+        "soyadı": "MUKANBAY"
+      },
+      {
+        "söz no": "196",
+        "adı": "DEVİN DENİZ",
+        "soyadı": "DOĞAN"
+      },
+      {
+        "söz no": "215",
+        "adı": "DURU",
+        "soyadı": "ÖZARSLAN"
+      },
+      {
+        "söz no": "187",
+        "adı": "EGE MİRAÇ",
+        "soyadı": "YAVUZ"
+      },
+      {
+        "söz no": "221",
+        "adı": "ENES",
+        "soyadı": "ÇÖLMEKCİ"
+      },
+      {
+        "söz no": "253",
+        "adı": "HAVİN",
+        "soyadı": "TAŞKIRAN"
+      },
+      {
+        "söz no": "198",
+        "adı": "HÜSEYİN EFE",
+        "soyadı": "DÜZAKMAN"
+      },
+      {
+        "söz no": "235",
+        "adı": "İNCİ",
+        "soyadı": "ALTINGEZ"
+      },
+      {
+        "söz no": "202",
+        "adı": "İREM HAVVA",
+        "soyadı": "COŞKUN"
+      },
+      {
+        "söz no": "260",
+        "adı": "NAZLI",
+        "soyadı": "KOYUN"
+      },
+      {
+        "söz no": "223",
+        "adı": "ÖMER ARDA",
+        "soyadı": "ŞEKERCİ"
+      }
+    ]
+  },
+  "[12] 12 MEZ SAY C": {
+    "devre": "Mezun",
+    "ogrenci_sayisi": 5,
+    "students": [
+      {
+        "söz no": "207",
+        "adı": "ALİ BARAY",
+        "soyadı": "KIRMAN"
+      },
+      {
+        "söz no": "189",
+        "adı": "AYŞE",
+        "soyadı": "YAVUZ"
+      },
+      {
+        "söz no": "288",
+        "adı": "MEHMET",
+        "soyadı": "SORMAGEÇ"
+      },
+      {
+        "söz no": "205",
+        "adı": "OSMAN KAĞAN",
+        "soyadı": "TOPAL"
+      },
+      {
+        "söz no": "252",
+        "adı": "SANİYE SULTAN",
+        "soyadı": "GÜNGÖR"
+      }
+    ]
+  },
+  "[13] MEZUN TM A": {
+    "devre": "Mezun",
+    "ogrenci_sayisi": 9,
+    "students": [
+      {
+        "söz no": "258",
+        "adı": "ADA ELİF",
+        "soyadı": "ÇETİNKAYA"
+      },
+      {
+        "söz no": "275",
+        "adı": "AHMET CAN",
+        "soyadı": "ÜLGEN"
+      },
+      {
+        "söz no": "228",
+        "adı": "BEHÇET OYTUN",
+        "soyadı": "ALUR"
+      },
+      {
+        "söz no": "201",
+        "adı": "BERKAY",
+        "soyadı": "ERDOĞDU"
+      },
+      {
+        "söz no": "240",
+        "adı": "BÜŞRA",
+        "soyadı": "ÇİFTÇİ"
+      },
+      {
+        "söz no": "259",
+        "adı": "DURU",
+        "soyadı": "İMRE"
+      },
+      {
+        "söz no": "254",
+        "adı": "GÖNÜLAY",
+        "soyadı": "YAŞAR"
+      },
+      {
+        "söz no": "213",
+        "adı": "GÖZDE",
+        "soyadı": "YARŞİ"
+      },
+      {
+        "söz no": "250",
+        "adı": "KAYRA",
+        "soyadı": "ÖZKAN"
+      }
+    ]
+  }
+}

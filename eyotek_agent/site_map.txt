@@ -1,0 +1,2040 @@
+======================================================================
+FERMAT EYOTEK SİTE HARİTASI
+======================================================================
+
+📍 6 [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/internal-message
+   Başlık: Eyotek | Mesajlar
+   📊 Tablo 0: ['İşlemler\n                                                                        \n                                                                    \n                                                                    \n                                                                        \n                                                                            \n                                                                                \n                                                                                Okundu olarak işaretle.\n                                                                            \n                                                                        \n                                                                        \n                                                                        \n                                                                            \n                                                                                \n                                                                                Sil', '1-12 Toplam 12', 'EYOTEK DESTEK', '3D YKS-3, B Kitapçığı Soru Numarası Değişikliği', '01.04.2026 14:40:31'] (13 satır)
+   📊 Tablo 1: ["Araç çubukları EditörüYazı TürüYazı TürüBoyutBoyut\xa0Yazı Rengi\xa0\xa0Kalın\xa0İtalik\xa0Altı Çizgili\xa0Numaralı Liste\xa0Geri Al\xa0Tekrarla\xa0Kes\xa0Kopyala\xa0Yapıştır\xa0Düz Metin Olarak Yapıştır\xa0Word'den Yapıştır\xa0Yatay Satır Ekle\xa0Sola Dayalı\xa0Ortalanmış\xa0Sağa Dayalı\xa0İki Kenara Yaslanmış\xa0Link Ekle/Düzenle\xa0Köprü Kaldır\xa0Bağlantı Ekle/Düzenle▲"] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:Ara', 'checkbox:?', 'checkbox:?', 'checkbox:?', 'checkbox:?']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Kapat', 'YENİ MESAJ ÖĞRENCİ']
+
+📍 Ajanda [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/agenda
+   Başlık: Eyotek | Ajanda
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbKisiSecim', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Profil Resmi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/image
+   Başlık: Eyotek | Personel - Fotoğraf Yükle
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'file:photoUpload']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'FOTOĞRAF SEÇ', 'İptal', 'Kaydet']
+
+📍 Şifre Değiştir [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/change-password
+   Başlık: Eyotek | Şifre Değiştir
+   📝 Form alanları: ['search:Eski Şifre', 'search:Yeni Şifre', 'search:Yeni Şifre Tekrar']
+   🔘 Butonlar: ['DEĞİŞTİR', 'Değiştir']
+
+📍 Sık Kullanılan Düzenle [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/favorite-pages
+   Başlık: Eyotek | Sık Kullanılanlar
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Sayfam [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/home
+   Başlık: Eyotek | Sayfam
+   📊 Tablo 0: ['PtsSalÇarPerCumCtsPaz', 'Pts', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz', '303112345678910111213141516171819202122232425262728293012345678910', '30', '31', '1', '2', '3', '4', '5', '6', '7', '8', '9'] (21 satır)
+   📊 Tablo 1: ['Pts', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz'] (1 satır)
+   📊 Tablo 3: ['30', '31', '1', '2', '3', '4', '5'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'radio:rbListeTur', 'radio:rbListeTur', 'radio:rbListeTur', 'search:ctl08$txtOgrHedef', 'search:Öğrenci Ara']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Onayla']
+
+📍 Ders & Nöbet Programı [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/timetable-watch-place
+   Başlık: Eyotek | Ders & Nöbet Programı
+   📊 Tablo 0: ['Saat', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Saat', 'Cumartesi', 'Pazar'] (16 satır)
+   📊 Tablo 1: ['Sınıf', 'Ders Saati'] (5 satır)
+   📊 Tablo 2: ['Ders', 'Ders Saati'] (2 satır)
+   📊 Tablo 3: ['Saat', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Saat', 'Cumartesi', 'Pazar'] (16 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Haftalık Çalışma Planı [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/weekly-working-plan
+   Başlık: Eyotek | Haftalık Çalışma Planı
+   📊 Tablo 0: ['Saat', 'Pazartesi 06.04.2026', 'Salı 07.04.2026', 'Çarşamba 08.04.2026', 'Perşembe 09.04.2026', 'Cuma 10.04.2026', 'Saat', 'Cumartesi 11.04.2026', 'Pazar  05.04.2026'] (16 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Kapat']
+
+📍 Mesai Takip [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/working-hours-check
+   Başlık: Eyotek | Personel - Mesai
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 SMS [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/sms
+   Başlık: Eyotek | SMS
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Bildirim [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/notification
+   Başlık: Eyotek | Bildirim
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Yemek [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/food-menu
+   Başlık: Eyotek | Yemek
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Takım Çalışması [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/my-teamwork
+   Başlık: Eyotek | Takım Çalışması
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Anket Karnem [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/poll-report
+   Başlık: Eyotek | Anket Karnem
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Online Anket [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/online-survey
+   Başlık: Eyotek | Sayfam - Online Anket
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Sayfam Düzenle [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/home-page-widget-edit
+   Başlık: Eyotek | Sayfam Düzenle
+   📊 Tablo 0: ['Pencere Adı', 'Açıklama'] (22 satır)
+   📊 Tablo 1: ['Pencere Adı', 'Sütun', 'Sıra'] (11 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EKLE', 'EKLE', 'EKLE']
+
+📍 Eyotek Destek [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/demand
+   Başlık: Eyotek | Eyotek Destek
+   📊 Tablo 0: ['Id', 'Tarih', 'Konu', 'Durum'] (10 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtFullName', 'search:TxtPhoneNumber', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbKonu']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Tamam']
+
+📍 Video Destek [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/video-support
+   Başlık: 
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Video Destek > Kullanıcı Girişi [1. seviye]
+   URL: https://fermat.eyotek.com/v1#collapse_3_1
+   Başlık: Eyotek
+   📝 Form alanları: ['search:Kullanıcı Adı', 'password:Şifre', 'image:ImageBtnTr', 'image:ImageBtnEn', 'image:ImageBtnRu']
+   🔘 Butonlar: ['GİRİŞ', 'ŞİFREMİ UNUTTUM', 'İLETİŞİM', 'İŞ BAŞVURUSU', 'ÖN KAYIT BAŞVURUSU']
+
+📍 Video Destek > Ayarlar [1. seviye]
+   URL: https://fermat.eyotek.com/v1#collapse_3_2
+   Başlık: Eyotek
+   📝 Form alanları: ['search:Kullanıcı Adı', 'password:Şifre', 'image:ImageBtnTr', 'image:ImageBtnEn', 'image:ImageBtnRu']
+   🔘 Butonlar: ['GİRİŞ', 'ŞİFREMİ UNUTTUM', 'İLETİŞİM', 'İŞ BAŞVURUSU', 'ÖN KAYIT BAŞVURUSU']
+
+📍 Video Destek > Sınav Değerlendirme [1. seviye]
+   URL: https://fermat.eyotek.com/v1#collapse_3_3
+   Başlık: Eyotek
+   📝 Form alanları: ['search:Kullanıcı Adı', 'password:Şifre', 'image:ImageBtnTr', 'image:ImageBtnEn', 'image:ImageBtnRu']
+   🔘 Butonlar: ['GİRİŞ', 'ŞİFREMİ UNUTTUM', 'İLETİŞİM', 'İŞ BAŞVURUSU', 'ÖN KAYIT BAŞVURUSU']
+
+📍 İndirilebilir İçerikler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/tools
+   Başlık: Eyotek | İndirilebilir İçerikler
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Ön Kayıt [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/pre-enrollment
+   Başlık: Eyotek | Ön Kayıt
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Ön Kayıt Liste [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/list-pre-enrollment
+   Başlık: Eyotek | Ön Kayıt Liste
+   📊 Tablo 0: ['Şube'] (30 satır)
+   📊 Tablo 1: ['KG No'] (4 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Ön Kayıt Yükle [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/pre-enrollment-upload
+   Başlık: Eyotek | Ön Kayıt Yükle
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlBranch', 'file:fileInput']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Tamam', 'ÖRNEK DOSYA FORMATI']
+
+📍 Ön Kayıt Randevu [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/list-pre-enrollment-appointment
+   Başlık: Eyotek | Ön Kayıt Randevu
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Günlük Görüşmeler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/list-pre-enrollment-interview
+   Başlık: Eyotek | Günlük Görüşmeler
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Bizi nasıl buldunuz? [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/list-pre-enrollment-how-did-you-find-us
+   Başlık: Eyotek | Bizi nasıl buldunuz? Liste
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlListType', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Hızlı Kesin Kayıt [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/quick-enrollment
+   Başlık: Eyotek | Öğrenci - Hızlı Kesin Kayıt
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'radio:rbListeTur', 'radio:rbListeTur', 'radio:rbListeTur', 'text:s2id_autogen1', 'text:s2id_autogen1_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'İleri']
+
+📍 İç Kayıt Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/interior-enrollment-control
+   Başlık: Eyotek | İç Kayıt Kontrol
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Fiyat Listesi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/price-list
+   Başlık: Eyotek | Fiyat Listesi
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtSeason', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Kapat']
+
+📍 Tanımlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/price-list-settings
+   Başlık: Eyotek | Fiyat Listesi Tanımlar
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Veli Görüşü Girişi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/customer-satisfaction-input
+   Başlık: Eyotek | Veli Görüşü Girişi
+   📊 Tablo 0: ['Konu', 'Veli Görüşü'] (17 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Sorun Çözümleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/customer-satisfaction-solution
+   Başlık: Eyotek | Sorun Çözümleri
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtAd', 'search:txtSoyad']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Raporlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/customer-satisfaction-reports
+   Başlık: Eyotek | Halkla İlişkiler Raporlar
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Öğrenciler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/student
+   Başlık: Eyotek | Öğrenci
+   📊 Tablo 0: ['Sezon', 'Şube', 'Kayıt Tarihi', 'Söz No', 'Okul No', 'Adı', 'Soyadı', 'Program', 'Devre', 'Kur', 'Sınıf', 'Kayıt', '1', '2', '3', '4', '5', '6', '7'] (23 satır)
+   📊 Tablo 1: ['1', '2', '3', '4', '5', '6', '7'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Sınıf Listesi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/class-list
+   Başlık: Eyotek | Sınıf Listesi
+   📊 Tablo 0: ['Sınıf', 'Devre', 'Öğrenci Sayısı'] (17 satır)
+   📊 Tablo 1: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 2: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:chkSchollNumber', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlListType', 'text:s2id_autogen3']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Yazdır']
+
+📍 Öğrenci Listeleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/list-students
+   Başlık: Eyotek | Öğrenci Listeleri
+   📊 Tablo 0: ['Uyruğu'] (80 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'select:lstDevreler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Hızlı Veri Girişi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/quick-data-input
+   Başlık: Eyotek | Hızlı Veri Girişi
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSeasons', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Vazgeç']
+
+📍 Hızlı Fotoğraf Girişi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/quick-photo-upload
+   Başlık: Eyotek | Hızlı Fotoğraf Girişi
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Kapat']
+
+📍 Hizmet Türü Listesi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/financial-service-type-list
+   Başlık: Eyotek | Hizmet Türü Listesi
+   📊 Tablo 0: ['Hizmet Alanlar'] (2 satır)
+   📊 Tablo 1: ['Şube'] (15 satır)
+   📊 Tablo 2: ['Id'] (5 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen4', 'text:s2id_autogen4_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Ücretli Faaliyetler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/paid-activities-list
+   Başlık: Eyotek | Ücretli Faaliyetler Liste
+   📊 Tablo 0: ['Sezon'] (18 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Boy&Kilo&Beden [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/height-weight-clothing-size-list
+   Başlık: Eyotek | Boy&Kilo&Beden
+   📊 Tablo 0: ['Sezon'] (13 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Öğrenci Karnesi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/progress-report
+   Başlık: Eyotek | Öğrenci Karnesi
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'checkbox:chkSilinmeyen', 'search:txtAd']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Kayıt Belge Listesi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/enrollment-document-list
+   Başlık: Eyotek | Kayıt Belge Listesi
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezon', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Ders Verdiğim [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/my-timetable-classes
+   Başlık: Eyotek | Öğrencilerim
+   📊 Tablo 0: ['Devre', 'Tür', 'Sınıf', 'Öğrenci Sayısı'] (4 satır)
+   📊 Tablo 1: ['5 Nisan 2026', '14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55', 'Bugün'] (3 satır)
+   📊 Tablo 2: ['5 Nisan 2026', '0:001:002:003:004:005:006:007:008:009:0010:0011:0012:0013:0014:0015:0016:0017:0018:0019:0020:0021:0022:0023:00', 'Bugün'] (3 satır)
+   📊 Tablo 3: ['Nisan 2026', 'Pzt', 'Sa', 'Çr', 'Pr', 'Cu', 'Ct', 'Pz', '30', '31', '1', '2', '3', '4', '5', 'Bugün'] (9 satır)
+   📊 Tablo 4: ['2026', 'OcaŞubMarNisMayHazTemAğuEylEkiKasAra', 'Bugün'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:tarih', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbNotTuru', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Rehberlik [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/my-counsellor-students
+   Başlık: Eyotek | Rehberlik
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 1: ['5 Nisan 2026', '14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55', 'Bugün'] (3 satır)
+   📊 Tablo 2: ['5 Nisan 2026', '0:001:002:003:004:005:006:007:008:009:0010:0011:0012:0013:0014:0015:0016:0017:0018:0019:0020:0021:0022:0023:00', 'Bugün'] (3 satır)
+   📊 Tablo 3: ['Nisan 2026', 'Pzt', 'Sa', 'Çr', 'Pr', 'Cu', 'Ct', 'Pz', '30', '31', '1', '2', '3', '4', '5', 'Bugün'] (9 satır)
+   📊 Tablo 4: ['2026', 'OcaŞubMarNisMayHazTemAğuEylEkiKasAra', 'Bugün'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtAd', 'search:txtSoyad', 'search:txtOgNo', 'search:txtOkulNo', 'text:s2id_autogen1']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Sınıf Rehberliği [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/my-counsellor-class-note
+   Başlık: Eyotek | Sınıf Rehberliği
+   📊 Tablo 0: ['Sınıf', 'Mevcut', 'Kendi Rehberlik Sayım'] (4 satır)
+   📊 Tablo 1: ['5 Nisan 2026', '14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55', 'Bugün'] (3 satır)
+   📊 Tablo 2: ['5 Nisan 2026', '0:001:002:003:004:005:006:007:008:009:0010:0011:0012:0013:0014:0015:0016:0017:0018:0019:0020:0021:0022:0023:00', 'Bugün'] (3 satır)
+   📊 Tablo 3: ['Nisan 2026', 'Pzt', 'Sa', 'Çr', 'Pr', 'Cu', 'Ct', 'Pz', '30', '31', '1', '2', '3', '4', '5', 'Bugün'] (9 satır)
+   📊 Tablo 4: ['2026', 'OcaŞubMarNisMayHazTemAğuEylEkiKasAra', 'Bugün'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:tarih', 'text:txtNot', 'checkbox:kontgec', 'checkbox:GridView1$ctl01$chkSelectAll', 'checkbox:GridView1$ctl02$chkSelectRow']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Rehberlik Notu [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/counsellor-note-list
+   Başlık: Eyotek | Rehberlik Notu
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Sınıf Rehberliği [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/counsellor-class-note-list
+   Başlık: Eyotek | Sınıf Rehberliği
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Hedef Soru [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/question-assignment-list
+   Başlık: Eyotek | Hedef Soru Takip
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Veli Randevuları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/counsellor-note-appointment-list
+   Başlık: Eyotek | Veli Randevuları
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:lstIletiTuru', 'select:txtOnizleme', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Gönder']
+
+📍 Öğrenci Yoklama Giriş [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/attendance-check-multi
+   Başlık: Eyotek | Öğrenci Yoklama Giriş
+   📊 Tablo 0: ['Devre', 'Sınıf', 'Sınıf Seçimi'] (8 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:GridView2$ctl01$chkChooseAll', 'checkbox:GridView2$ctl02$chkChoose', 'checkbox:GridView2$ctl03$chkChoose', 'checkbox:GridView2$ctl04$chkChoose', 'checkbox:GridView2$ctl05$chkChoose']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 İdari İzin Giriş [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/attendance-administrative-leave
+   Başlık: Eyotek | İdari İzin Giriş
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlBranches', 'search:TxtStudentID', 'search:TxtFirstName']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Devamsızlık Sayısı [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/attendance-count
+   Başlık: Eyotek | Devamsızlık Sayısı
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'checkbox:cbGunluk', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Sınıf Yoklama Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/attendance-class-control
+   Başlık: Eyotek | Sınıf Yoklama Kontrol
+   📊 Tablo 0: ['Şube', 'Gün', 'Sınıf', '109:00 09:35', '209:45 10:20', '310:30 11:05', '411:15 11:50', '512:00 12:35', '612:45 13:20', '714:00 14:35', '814:45 15:20', '915:30 16:05', '1016:15 16:50', '1117:00 17:35', '1217:45 18:20', '1318:30 19:05', '1419:15 19:50'] (8 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Yoklama Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/attendance-report
+   Başlık: Eyotek | Yoklama Kontrol
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Bugün Gelmeyenler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/attendance-today
+   Başlık: Eyotek | Bugün Gelmeyenler
+   📊 Tablo 0: ['Şube', 'Tarih', 'Söz No', 'Okul No', 'Adı', 'Soyadı', 'Program', 'Devre', 'Sınıf', 'Veli Adı', 'Veli Cep', 'Anne Cep', 'Baba Cep', 'Gelmedi', '1', '2'] (23 satır)
+   📊 Tablo 1: ['1', '2'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtAd', 'search:txtSoyad']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Liste eOkul [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/attendance-list
+   Başlık: Eyotek | Liste eOkul
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Yemek Yoklama [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/food-menu-check
+   Başlık: Eyotek | Yemek Yoklama
+   📊 Tablo 0: ['Devre', 'Sınıf'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbOgunler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Vazgeç']
+
+📍 Yemek Yoklama Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/food-menu-check-control
+   Başlık: Eyotek | Yemek Yoklama Kontrol
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtAd', 'search:txtSoyad']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Sınıf Yemek Yoklama Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/food-menu-check-class-control
+   Başlık: Eyotek | Sınıf Yemek Yoklama Kontrol
+   📊 Tablo 0: ['Şube', 'Sınıf', 'Sabah Kahvaltısı', 'Öğle Yemeği', 'İkindi Beslenmesi'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Uyku Yoklama [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/sleep-check
+   Başlık: Eyotek | Uyku Yoklama
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Vazgeç']
+
+📍 Uyku Yoklama Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/sleep-check-control
+   Başlık: Eyotek | Uyku Yoklama Kontrol
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtAd', 'search:txtSoyad']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Sınıf Uyku Yoklama Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/sleep-check-class-control
+   Başlık: Eyotek | Sınıf Uyku Yoklama Kontrol
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Müfredat Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/curriculum-control
+   Başlık: Eyotek | Müfredat Kontrol
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Öğrenci Özel SMS [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/communication-sms-special-text
+   Başlık: Eyotek | Öğrenci Özel SMS
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen2', 'text:s2id_autogen2_search', 'select:cmbSubeler', 'search:txtAd', 'search:txtSoyad']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Sınav Yoklama SMS [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/communication-sms-notification-test-attendance
+   Başlık: Eyotek | Sınav Yoklama SMS
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbGonderimTuru', 'checkbox:chkVeli', 'checkbox:chkAnne']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'SMS Gönder']
+
+📍 Hazır SMS [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/communication-sms-notification-prepared-text
+   Başlık: Eyotek | Hazır SMS
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'radio:rbRefNo', 'radio:rbRefNo', 'checkbox:chkOgr', 'checkbox:chkVeli', 'checkbox:chkAnne']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'TAMAM', 'İptal']
+
+📍 Bildirim Gönder [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/communication-notification-special-text
+   Başlık: Eyotek | Bildirim Gönder
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtAd', 'search:txtSoyad']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Dosyadan SMS [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/communication-sms-from-file
+   Başlık: Eyotek | Dosyadan SMS
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:SmsFromFile$DdlAddBranchForSendSmsFromFile', 'file:SmsFromFile$fileInput']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Tamam', 'ÖRNEK DOSYA FORMATI']
+
+📍 Ön Kayıt SMS [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/communication-sms-pre-enrollment
+   Başlık: Eyotek | Ön Kayıt - SMS
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Sistem İçi Mesaj [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/communication-internal-message-input
+   Başlık: Eyotek | Sistem İçi Mesaj Öğrenci
+   📊 Tablo 0: ["Araç çubukları EditörüYazı TürüYazı TürüBoyutBoyut\xa0Yazı Rengi\xa0\xa0Kalın\xa0İtalik\xa0Altı Çizgili\xa0Numaralı Liste\xa0Geri Al\xa0Tekrarla\xa0Kes\xa0Kopyala\xa0Yapıştır\xa0Düz Metin Olarak Yapıştır\xa0Word'den Yapıştır\xa0Yatay Satır Ekle\xa0Sola Dayalı\xa0Ortalanmış\xa0Sağa Dayalı\xa0İki Kenara Yaslanmış\xa0Link Ekle/Düzenle\xa0Köprü Kaldır\xa0Bağlantı Ekle/Düzenle▲"] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen2', 'text:s2id_autogen2_search', 'select:cmbSubeler', 'search:txtAd', 'search:txtSoyad']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Ders Programları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/timetable-set
+   Başlık: Eyotek | Ders Programları
+   📊 Tablo 0: ['Şube', 'Açıklama', 'Tarih', 'Aktif', 'Kopyala'] (8 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'select:txtAddExplanation', 'select:TxtCloneExplanation', 'checkbox:GrdTimetableSet$ctl02$chkSelectRow', 'checkbox:GrdTimetableSet$ctl02$chkActive', 'checkbox:GrdTimetableSet$ctl03$chkSelectRow']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Nöbet Programı Giriş [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/watch-place
+   Başlık: Eyotek | Nöbet Programı - Nöbet Programı
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'select:lstOgretmen', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSiniflar']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Öğretmen El Programı [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/timetable-staff-list
+   Başlık: Eyotek | Öğretmen El Programı
+   📊 Tablo 0: ['Id', 'Adı Soyadı', 'Branş', 'Saat'] (15 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:chkNobetProgrami', 'checkbox:chkBrans', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlBranches']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Yazdır', 'EXCEL']
+
+📍 Çarşaf Liste [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/timetable-branch-list
+   Başlık: Eyotek | Çarşaf Liste
+   📊 Tablo 0: ['Şube', 'Gün', 'Sınıf', '109:00 09:35', '209:45 10:20', '310:30 11:05', '411:15 11:50', '512:00 12:35', '612:45 13:20', '714:00 14:35', '814:45 15:20', '915:30 16:05', '1016:15 16:50', '1117:00 17:35', '1217:45 18:20', '1318:30 19:05', '1419:15 19:50'] (8 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbGun']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Çarşaf Liste N [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/watch-place-branch-list
+   Başlık: Eyotek | Çarşaf Liste N
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbGun']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Aç', 'Aç', 'EXCEL']
+
+📍 Sınıf Ders Programı [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/timetable-class-list
+   Başlık: Eyotek | Sınıf Ders Programı
+   📊 Tablo 0: ['Devre', 'Sınıf', 'Saat'] (14 satır)
+   📊 Tablo 1: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 2: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlBranches', 'checkbox:GrdClasses$ctl01$chkChooseAll', 'checkbox:GrdClasses$ctl02$chkChoose']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL', 'YAZDIR']
+
+📍 Günlük Öğretmen Planlama [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/staff-daily-planning
+   Başlık: Eyotek | Günlük Öğretmen Planlama
+   📊 Tablo 0: ['Adı Soyadı', '09:00 09:35', '09:45 10:20', '10:30 11:05', '11:15 11:50', '12:00 12:35', '12:45 13:20', '14:00 14:35', '14:45 15:20', '15:30 16:05', '16:15 16:50', '17:00 17:35', '17:45 18:20', '18:30 19:05', '19:15 19:50'] (18 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlOgretmen', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 XML Oluştur [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/timetable-export
+   Başlık: Eyotek | XML Oluştur
+   📊 Tablo 0: ['MERVE OKŞAŞ (Biyoloji)'] (17 satır)
+   📊 Tablo 1: ['Almanca'] (153 satır)
+   📊 Tablo 2: ['[14] 7-A'] (16 satır)
+   📊 Tablo 3: ['D-1'] (6 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:cbHocaSec', 'checkbox:chkLstHocalar$0', 'checkbox:chkLstHocalar$1', 'checkbox:chkLstHocalar$2', 'checkbox:chkLstHocalar$3']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Oluştur']
+
+📍 XML Yükle [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/timetable-import
+   Başlık: Eyotek | XML Yükle
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Tamam']
+
+📍 Sınavlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/test-transferred
+   Başlık: Eyotek | Sınavlar
+   📊 Tablo 0: ['Şube', 'Tarih', 'Sınav Kodu', 'Sınav Türü', 'Sınav Kategori', 'Sınav Adı', 'Devre', 'Genel Katılım', 'İl Katılım', 'İlçe Katılım', 'Şube Katılım', 'Sınıflar', '1', '2', '3', '4', '5', '6', '7'] (23 satır)
+   📊 Tablo 1: ['1', '2', '3', '4', '5', '6', '7'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtKod', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Sınav Sınıfı Düzenle [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/test-classroom-arrangement
+   Başlık: Eyotek | Sınav Sınıfı Düzenle
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Çizgi Altı Çalışması [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/below-the-line-application
+   Başlık: Eyotek | Çizgi Altı Çalışması
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSinavTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Optik Kodlama [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/omr-sheet-fill
+   Başlık: Eyotek | Optik Kodlama
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSinavYerlesim', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'YAZDIR']
+
+📍 Optik Form Ayar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/omr-sheet-fill-settings
+   Başlık: Eyotek | Optik Form Ayar
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtOmrSheetNameAdd', 'search:TxtExplanationAdd', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddFieldNameResource']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Sınav Katılım [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/test-participation
+   Başlık: Eyotek | Sınav Katılım
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTur', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Online Sınavlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/online-test
+   Başlık: Eyotek | Online Sınavlar
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtSnvKod', 'search:TextSnvAd', 'search:TxtAciklama', 'text:s2id_autogen5', 'text:s2id_autogen5_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Kaydet']
+
+📍 Yazılı Giriş [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/exam
+   Başlık: Eyotek | Yazılı Giriş
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 1: ['5 Nisan 2026', '14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55', 'Bugün'] (3 satır)
+   📊 Tablo 2: ['5 Nisan 2026', '0:001:002:003:004:005:006:007:008:009:0010:0011:0012:0013:0014:0015:0016:0017:0018:0019:0020:0021:0022:0023:00', 'Bugün'] (3 satır)
+   📊 Tablo 3: ['Nisan 2026', 'Pzt', 'Sa', 'Çr', 'Pr', 'Cu', 'Ct', 'Pz', '30', '31', '1', '2', '3', '4', '5', 'Bugün'] (9 satır)
+   📊 Tablo 4: ['2026', 'OcaŞubMarNisMayHazTemAğuEylEkiKasAra', 'Bugün'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbBransSearch', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Yazılı Liste [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/exam-grade-list
+   Başlık: Eyotek | Yazılı Notları
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtAd', 'search:txtSoyad', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbDevre']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 MEB Yazılı Notları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/grade-official-list
+   Başlık: Eyotek | Sınavlar
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlBranches', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Konu / Kazanım [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/exam-subject-outcome-list
+   Başlık: Eyotek | Konu / Kazanım
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen3', 'select:lstYaziliTur', 'text:s2id_autogen4', 'select:lstSiraSearch', 'text:s2id_autogen1']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İPTAL', 'ARA']
+
+📍 Bursluluk Sınavı [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Scholarship/scholarship
+   Başlık: Eyotek | Bursluluk Sınavı
+   📊 Tablo 0: ['Okul / Kurs'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtAddSts', 'search:txtAddSmsAd']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Hızlı Ara [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Scholarship/quick-search
+   Başlık: Eyotek | Bursluluk Sınavı - Hızlı Arama
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSTSSubeler', 'search:txtTcNo', 'search:txtAd']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Sınav Başvurusu [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Scholarship/application
+   Başlık: Eyotek | Bursluluk Sınavı - Giriş
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Kapat', 'Devam Et']
+
+📍 Genel Rapor [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Scholarship/general-report
+   Başlık: Eyotek | Genel Rapor
+   📊 Tablo 0: ['Toplam', 'Sınav Kodu', 'Okul / Kurs', 'Şube', 'Sınav Adı', 'Tarih', '7.Snf', '9.Snf', '10.Snf', '11.Snf'] (4 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Sınav Değerlendirme [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Test/test
+   Başlık: Eyotek | Sınav Değerlendirme
+   📊 Tablo 0: ['Sezon', 'Şube', 'Sınav Kodu', 'Sınav Adı', 'Sınav Türü', 'Devre', 'Tarih', 'CevAnh', 'Konu / Kazanım', 'Katılım', 'Durum', 'Tür', '1', '2'] (23 satır)
+   📊 Tablo 1: ['1', '2'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSeasonSearch', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Optik Form Tanım [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Test/omr-sheet
+   Başlık: Eyotek | Sınav Değerlendirme - Optik Form Tanım
+   📊 Tablo 0: ['LGS', 'TYT', 'YKS', 'KPSS'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlBranches', 'radio:RbTestType', 'radio:RbTestType']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'VİDEO DESTEK']
+
+📍 Puanlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Test/score-formulas
+   Başlık: Eyotek | Sınav Değerlendirme - Puanlarım
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSinavTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Sınav Deposu [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Test/stocked-tests
+   Başlık: Eyotek | Sınav Deposu
+   📊 Tablo 0: ['Sezon', 'Sınav Türü', 'Devre', 'Yayınevi', 'Sınav Adı', 'Konu / Kazanım', 'Tarih', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '...'] (23 satır)
+   📊 Tablo 1: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '...'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSinavTuruAra', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Ad Soyad Ayır [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Test/split-firstname-lastname
+   Başlık: Eyotek | Sınav Değerlendirme - Ad Soyad Ayır
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtBaslangic', 'search:txtUzunluk', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSekil']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'VİDEO DESTEK']
+
+📍 Ödev Ver [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/homework-assignment
+   Başlık: Eyotek | Ödev
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbOgretmenler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Tamam']
+
+📍 Ödev Ara [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/homework-search
+   Başlık: Eyotek | Ödev Ara
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtAd', 'search:txtSoyad']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Ödev Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/homework-check
+   Başlık: Eyotek | Ödev - Kontrol
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbOgretmenler', 'text:s2id_autogen3', 'text:s2id_autogen3_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Ödev Öğretmen [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/homework-teacher
+   Başlık: Eyotek | Ödev Öğretmen
+   📊 Tablo 0: ['Tür', 'Kod', 'Ad-Soyad', 'Sınıf', 'Branş', 'Konu', 'Açıklama', 'Veriliş Tarihi', 'Kontrol Tarihi', 'Kontrol Edildiği Tarih', 'Ödev İndir'] (4 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'checkbox:kontgec', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Ödev Raporları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/homework-reports
+   Başlık: Eyotek | Ödev - Ödev Raporları
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:lstKnt', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Online Ödevler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/online-homework
+   Başlık: Eyotek | Online Ödev - Ödev Giriş
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Proje Ödevi Giriş [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/project-homework-assignment
+   Başlık: Eyotek | Proje Ödevi Giriş
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtAd', 'search:txtSoyad', 'search:txtOgNo', 'text:s2id_autogen1', 'text:s2id_autogen1_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Proje Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/project-homework-control
+   Başlık: Eyotek | Proje Ödevleri
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtOgNo', 'search:txtAd']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Etüt Ara [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/individual-lesson
+   Başlık: Eyotek | Etüt Ara
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:chkOverlapsTimetable', 'checkbox:CbOnlyOverdueAndUnAttendedIndividualLessons', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Etüt Girişi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-input
+   Başlık: Eyotek | Etüt Girişi
+   📊 Tablo 0: ['Normal', 'Katılımlı'] (1 satır)
+   📊 Tablo 1: ['Ders No\n                        Hafta Sonu\n                        Hafta İçi', '1\n                                09:0009:35\n                                09:0009:35', '2\n                                09:4510:20\n                                09:4510:20', '3\n                                10:3011:05\n                                10:3011:05', '4\n                                11:1511:50\n                                11:1511:50', '5\n                                12:0012:35\n                                12:0012:35', '6\n                                12:4513:20\n                                12:4513:20', '7\n                                14:0014:35\n                                14:0014:35', '8\n                                14:4515:20\n                                14:4515:20', '9\n                                15:3016:05\n                                15:3016:05', '10\n                                16:1516:50\n                                16:1516:50', '11\n                                17:0017:35\n                                17:0017:35', '12\n                                17:4518:20\n                                17:4518:20', '13\n                                18:3019:05\n                                18:3019:05', '14\n                                19:1519:50\n                                19:1519:50', '15\n                                00:0000:00\n                                20:0020:35'] (15 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddStudentNameNormal', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddClassesNormal', 'select:LstAddStudentsNormal']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Çizgi Altı öğrencilerini ekle', 'Yapıştır', 'Listele']
+
+📍 Etüt Girişi 2 [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-input-alternate
+   Başlık: Eyotek | Etüt Girişi 2
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen2', 'text:s2id_autogen2_search', 'select:DdlIndLesType', 'text:s2id_autogen3', 'text:s2id_autogen3_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Vazgeç', 'Kaydet']
+
+📍 Etüt Yoklama [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-attendance
+   Başlık: Eyotek | Etüt Yoklama
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddDevre', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Kapat', 'Ödev']
+
+📍 Öğrenci Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-control-student
+   Başlık: Eyotek | Etüt - Öğrenci
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTur', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Etüt Raporları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-reports
+   Başlık: Eyotek | Etüt - Etüt Raporları
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:lstKnt', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Etüt Sms & Bildirim [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-sms-notification
+   Başlık: Eyotek | Etüt SMS & Bildirim
+   📊 Tablo 0: ['Id', 'Öğretmen', 'Tarih', 'Saat', 'Öğrenci Sayısı', 'Veriliş Tarihi'] (10 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbOgrtAd', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Bülten Yorum Giriş [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Newsletter/newsletter-text-input
+   Başlık: Eyotek | Bülten Yorum Girişi
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Bülten Yorum Ara [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Newsletter/newsletter-text-search
+   Başlık: Eyotek | Bülten Yorum Ara
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen3', 'text:s2id_autogen3_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Bültenler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Newsletter/newsletter
+   Başlık: Eyotek | Bültenler - Bülten Girişi
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtBultenAdi', 'search:txtAciklama']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ekle']
+
+📍 Başarı Belgesi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Newsletter/achievement-certificate
+   Başlık: Eyotek | Başarı Belgesi
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ekle']
+
+📍 Temalar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Newsletter/theme
+   Başlık: Eyotek | Temalar
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Set Tanımları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/Newsletter/newsletter-text-sets
+   Başlık: Eyotek | Bülten Setler
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtSetAdi', 'search:txtYorumName']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Davranış Giriş [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/behaviour-input
+   Başlık: Eyotek | Davranış Giriş
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Davranış Ara [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/behaviour-search
+   Başlık: Eyotek | Davranış Ara
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListTur', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Davranışlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/behaviour
+   Başlık: Eyotek | Davranışlar
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtAd', 'search:txtAciklama']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Set Tanımları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/behaviour-sets
+   Başlık: Eyotek | Davranış Setler
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtSetAdi', 'search:txtDavranisAdi']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Yemek Girişi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/food-menu-input
+   Başlık: Eyotek | Yemek Girişi
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtYemekGunu', 'radio:rdbOgun', 'radio:rdbOgun', 'radio:rdbOgun', 'text:s2id_autogen1']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Tamam']
+
+📍 Yemek Listesi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/food-menu-list
+   Başlık: Eyotek | Yemek Listesi
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Tamam']
+
+📍 Avukat [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/lawyer
+   Başlık: Eyotek | Avukat
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Etkinlik Giriş [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/activity-input
+   Başlık: Eyotek | Etkinlik
+   📊 Tablo 0: ['Tür', 'Sınıf'] (17 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:GridView1$ctl01$cbSelectAll', 'checkbox:GridView1$ctl02$cbSelectRow', 'checkbox:GridView1$ctl03$cbSelectRow', 'checkbox:GridView1$ctl04$cbSelectRow', 'checkbox:GridView1$ctl05$cbSelectRow']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Tamam']
+
+📍 Etkinlik Ara [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/activity-search
+   Başlık: Eyotek | Etkinlik Ara
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen3', 'text:s2id_autogen3_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Tamam']
+
+📍 Sorum Var Cevap [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/have-question-answer
+   Başlık: Eyotek | Sorum Var Cevap
+   📊 Tablo 0: ['Yükleme Tarihi', 'Ad-Soyad', 'Sınıf', 'Cevap Tarihi'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'select:txtAciklama', 'file:?']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Sil', 'Kaydet', 'Bitir']
+
+📍 Sorum Var Ara [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Student/have-question-search
+   Başlık: Eyotek | Sorum Var Ara
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 İnsan Kaynakları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/human-resources
+   Başlık: Eyotek | İnsan Kaynakları
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen5', 'text:s2id_autogen5_search', 'select:cmbSubeler', 'search:txtAd', 'search:txtSoyad']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 İK Liste [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/list-human-resources
+   Başlık: Eyotek | İK Liste
+   📊 Tablo 0: ['Şube'] (62 satır)
+   📊 Tablo 1: ['İK No'] (7 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 İK Randevu [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/list-human-resources-appointment
+   Başlık: Eyotek | İK Randevu
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSearchBranch', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 İK Görüşmeleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/list-human-resources-interview
+   Başlık: Eyotek | İK Görüşmeleri
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSearchSeason', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Personel [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/staff
+   Başlık: Eyotek | Personel
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:s2id_autogen1', 'search:s2id_autogen1_search', 'select:cmbSezon', 'search:s2id_autogen2', 'search:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Personel Listeleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/list-staffs
+   Başlık: Eyotek | Personel Listeleri
+   📊 Tablo 0: ['Şube'] (38 satır)
+   📊 Tablo 1: ['İK No'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 İzin Liste [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/permit-list
+   Başlık: Eyotek | İzin Liste
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Personel Atama Listesi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/official-contract-list
+   Başlık: Eyotek | Personel Atama Listesi
+   📊 Tablo 0: ['Şube'] (24 satır)
+   📊 Tablo 1: ['Id'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Sicil Notu Liste [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/registry-notes-list
+   Başlık: Eyotek | Sicil Notu Liste
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Toplantılar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/meeting
+   Başlık: Eyotek | Toplantılar
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Mesai Düzenle [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/working-hours-edit
+   Başlık: Eyotek | Personel - Mesai
+   📊 Tablo 0: ['Id', 'Adı Soyadı', 'Görevi', 'Branş', 'Parmak İzi Kod', 'Toplam Mesai (Haftalık-Saat)'] (19 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:CbMesaiOlmayanlar', 'checkbox:CbRandevuOlmayanlar']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Personel Devam Takip [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/working-hours-check-list
+   Başlık: Eyotek | Personel - Mesai
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen3', 'text:s2id_autogen3_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Mesai Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/working-hours-check-control
+   Başlık: Eyotek | Mesai Kontrol
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Personel Özel SMS [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/communication-sms-special-text
+   Başlık: Eyotek | Personel Özel SMS
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtTcKimlikNo', 'search:txtPersonelKodu']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Bildirim Gönder [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/communication-notification-special-text
+   Başlık: Eyotek | Bildirim Gönder
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Dosyadan SMS [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/communication-sms-from-file
+   Başlık: Eyotek | Dosyadan SMS
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:SmsFromFile$DdlAddBranchForSendSmsFromFile', 'file:SmsFromFile$fileInput']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Tamam', 'ÖRNEK DOSYA FORMATI']
+
+📍 İK SMS [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/communication-sms-human-resources
+   Başlık: Eyotek | İnsan Kaynakları - SMS
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Sistem İçi Mesaj [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/communication-internal-message-input
+   Başlık: Eyotek | Sistem İçi Mesaj Personel
+   📊 Tablo 0: ["Araç çubukları EditörüYazı TürüYazı TürüBoyutBoyut\xa0Yazı Rengi\xa0\xa0Kalın\xa0İtalik\xa0Altı Çizgili\xa0Numaralı Liste\xa0Geri Al\xa0Tekrarla\xa0Kes\xa0Kopyala\xa0Yapıştır\xa0Düz Metin Olarak Yapıştır\xa0Word'den Yapıştır\xa0Yatay Satır Ekle\xa0Sola Dayalı\xa0Ortalanmış\xa0Sağa Dayalı\xa0İki Kenara Yaslanmış\xa0Link Ekle/Düzenle\xa0Köprü Kaldır\xa0Bağlantı Ekle/Düzenle▲"] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtTcKimlikNo', 'search:txtPersonelKodu']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Takım Çalışması [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/teamwork
+   Başlık: Eyotek | Takım Çalışması
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtCalismaAdi', 'search:txtAciklamaText']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Yetki Düzenleme [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Staff/list-authority
+   Başlık: Eyotek | Yetki Düzenleme
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'radio:rbRefNo', 'radio:rbRefNo', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSeasonsSearch']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Günlük [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/financial-operation
+   Başlık: Eyotek | Muhasebe - Günlük
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSearchCurrency', 'text:s2id_autogen3', 'text:s2id_autogen3_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Gider Bul [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/expense-find
+   Başlık: Eyotek | Gider Bul
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezon', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Gider Ekle [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/expense-add
+   Başlık: Eyotek | Muhasebe - Gider Ekle
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtFirma', 'search:txtEMail', 'search:txtTelefon', 'search:txtFax', 'search:txtIban']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Tedarikçiler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/supplier
+   Başlık: Eyotek | Muhasebe - Tedarikçiler
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtFirma', 'search:txtEMail', 'search:txtTelefon', 'search:txtFax', 'search:txtIban']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Borçlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/debts
+   Başlık: Eyotek | Borçlar
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Kredi Kartı Ödeme [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/credit-card
+   Başlık: Eyotek | Muhasebe - Kredi Kartı Ödeme
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:openPastDateInput', 'search:txtOdemeTarihi', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbOdemeSekli']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Diğer Gelir Ekle [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/other-income-add
+   Başlık: Eyotek | Muhasebe - Diğer Gelir Ekle
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtFirma', 'search:txtEMail', 'search:txtTelefon', 'search:txtFax', 'search:txtIban']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Müşteriler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/customer
+   Başlık: Eyotek | Muhasebe - Müşteriler
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtFirma', 'search:txtEMail', 'search:txtTelefon', 'search:txtFax', 'search:txtIban']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Virman [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/transfer
+   Başlık: Eyotek | Muhasebe - Virman
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbTransferSekli', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Geciken Ödeme [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/overdue-student-payment
+   Başlık: Eyotek | Muhasebe - Geciken Ödeme
+   📊 Tablo 0: ['Mesaj 1'] (4 satır)
+   📊 Tablo 1: ['Tümü', 'Sezon', 'Şube', 'Söz No', 'Adı', 'Soyadı', 'Program', 'Devre', 'Veli Adı', 'Veli Cep', 'Ödeme Tipi', 'Borç', 'Taksit Sayısı', 'GS', 'EnSonGörT', 'Söz Verme Tarihi', 'Silindi', '1', '2'] (24 satır)
+   📊 Tablo 2: ['1', '2'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Öğrenci Ödeme Detay [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/student-financial-operation
+   Başlık: Eyotek | Öğrenci Ödeme Detay
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Online Kayıt Yenileme [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/list-online-enrollment
+   Başlık: Eyotek | Online Kayıt Yenileme
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSeason', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 İndirimler Liste [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/discount-list
+   Başlık: Eyotek | Muhasebe - İndirimler
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Maaş Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/salary-control-list
+   Başlık: Eyotek | Muhasebe - Maaş Kontrol
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Prim-Kesinti Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/additional-payment-deduction-control
+   Başlık: Eyotek | Muhasebe - Mesai Ek Ödeme Kontrol
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Eğitim Destek Toplu [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/batch-tuition-fee-support
+   Başlık: Eyotek | Muhasebe - Toplu Eğitim Destek Ödeme
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbBankaSecim', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ödeme Yap']
+
+📍 Maaş Ödeme Toplu [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/batch-salary
+   Başlık: Eyotek | Muhasebe - Maaş Ödeme Toplu
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:openPastDateInput', 'search:txtTarih', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbOdemeSekli']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ödeme Yap']
+
+📍 Finans Raporu [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/annual-financial-statement
+   Başlık: Eyotek | Muhasebe - Finans Raporu
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbLstTurGider', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Fatura İşleme [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/invoice-input
+   Başlık: Eyotek | Muhasebe - Fatura İşleme
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlBranchesSearch', 'text:s2id_autogen7', 'text:s2id_autogen7_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Toplu Fatura İşlemleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/invoice
+   Başlık: Eyotek | Muhasebe - Toplu Fatura İşlemleri
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlBranchesSearch', 'text:s2id_autogen5', 'text:s2id_autogen5_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Fatura İstatistik [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/invoice-reports
+   Başlık: Eyotek | Muhasebe - Fatura İstatistik
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Çek & Senet [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/cheque-bond-list
+   Başlık: Eyotek | Muhasebe - Çek & Senet
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:s2id_autogen1', 'search:s2id_autogen1_search', 'select:DdlSeasons', 'search:s2id_autogen2', 'search:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Muhasebe Notu [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/note-list
+   Başlık: Eyotek | Muhasebe Notu
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Log [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/operation-history
+   Başlık: Eyotek | Muhasebe
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbTur', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Kitaplar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/library-books
+   Başlık: Eyotek | Kilitli
+   🔘 Butonlar: ['GERİ', 'ANASAYFA']
+
+📍 Kitap Hareketleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/library-book-operations
+   Başlık: Eyotek | Kilitli
+   🔘 Butonlar: ['GERİ', 'ANASAYFA']
+
+📍 Raporlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/library-reports
+   Başlık: Eyotek | Kilitli
+   🔘 Butonlar: ['GERİ', 'ANASAYFA']
+
+📍 Set Tanımları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/library-settings
+   Başlık: Eyotek | Kütüphane Sabitleri
+   📊 Tablo 0: ['Set Adı'] (6 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtYayinevi', 'search:txtYayineviAra', 'search:txtYazar', 'search:txtYazarAra', 'search:txtTur']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Revir [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/infirmary
+   Başlık: Eyotek | Revir
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbTur', 'search:txtAdSoyad', 'search:txtAdSoyadPersonel']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Anket [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/online-survey
+   Başlık: Eyotek | Online Anket
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:OnlineSurveyCounsellor1$cmbSubelerSearch', 'search:OnlineSurveyCounsellor1$txtAnketAdiSearch', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Cevap Tanımları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/online-survey-answer-definitions
+   Başlık: Eyotek | Online Anket - Cevap Tanımları
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtGrupAdi', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Anket [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/online-survey-counsellor
+   Başlık: Eyotek | Rehberlik Anketi
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:OnlineSurveyCounsellor1$cmbSubelerSearch', 'search:OnlineSurveyCounsellor1$txtAnketAdiSearch', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Anket [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/poll
+   Başlık: Eyotek | Anket
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddBranch', 'search:txtAnketAd', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Tanımlamalar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/poll-definitions
+   Başlık: Eyotek | Form Anket - Tanımlar
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Okullar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/schools
+   Başlık: Eyotek | Genel Sabitler - Okullar
+   📊 Tablo 0: ['Şube', 'İl'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddOkulAdi', 'file:FldOkullar']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Meslekler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/professions
+   Başlık: Eyotek | Genel Sabitler - Meslekler
+   📊 Tablo 0: ['Meslek', '1', '2'] (23 satır)
+   📊 Tablo 1: ['1', '2'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddMeslek']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Dersler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/lessons
+   Başlık: Eyotek | Genel Sabitler - Dersler
+   📊 Tablo 0: ['Ders', 'Şubeler', 'Durum', 'İK Görünürlük', '1', '2', '3', '4', '5', '6', '7', '8'] (23 satır)
+   📊 Tablo 1: ['1', '2', '3', '4', '5', '6', '7', '8'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddDersAdi', 'text:s2id_autogen1', 'select:LstAddSubeGrup', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Programlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/programs
+   Başlık: Eyotek | Genel Sabitler - Programlar>
+   📊 Tablo 0: ['Program', 'Aktif'] (9 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddProgram']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Bizi nasıl buldunuz? [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/how-did-you-find-us
+   Başlık: Eyotek | Genel Sabitler - Bizi nasıl buldunuz?
+   📊 Tablo 0: ['Bizi nasıl buldunuz?', 'Tür'] (8 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddBiziNasil', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddTur']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Kütüphane [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/library
+   Başlık: Eyotek | Genel Sabitler - Kütüphane
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddAdi', 'text:s2id_autogen1', 'select:LstAddSube', 'select:LstAddMdlSube', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Kayıt Belge [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/enrollment-document
+   Başlık: Eyotek | Genel Sabitler - Kayıt Belge
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'select:LstDocument']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Ücretli Faaliyetler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/paid-activities
+   Başlık: Eyotek | Sezon Sabitleri - Ücretli Faaliyetler
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddFaaliyetAdi', 'search:TxtAddTarih', 'search:TxtAddAciklama']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Nöbet Yeri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/watch-place
+   Başlık: Eyotek | Sezon Sabitleri - Nöbet Yeri
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddNobetYeri', 'search:TxtAddKat']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Derslikler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/classroom
+   Başlık: Eyotek | Sezon Sabitleri - Derslikler
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddDerslik', 'search:TxtAddKat', 'search:TxtAddKontenjan', 'search:TxtAddKontenjanSinav']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Sınıflar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/classes
+   Başlık: Eyotek | Sezon Sabitleri - Sınıflar
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddClassCode', 'search:TxtAddClassDescription', 'text:s2id_autogen2', 'text:s2id_autogen2_search', 'select:DdlAddClassroomWatchPlace']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Ekle', 'Kapat']
+
+📍 Ekstra Sınıflar & Kulüpler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/extra-classes-clubs
+   Başlık: Eyotek | Ekstra Sınıflar & Kulüpler
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddClassCode', 'search:TxtAddClassDescription', 'text:s2id_autogen2', 'text:s2id_autogen2_search', 'select:DdlAddClassroomWatchPlace']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Saatler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/periods
+   Başlık: Eyotek | Sezon Sabitleri - Saatler
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Kulüp Tercihi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/club-choice-definitions
+   Başlık: Eyotek | Sezon Sabitleri - Kulüp Tercihi
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:txtAddCategoryName', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddCategoryQuota', 'select:LstAllLevels']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Ekle', 'İptal']
+
+📍 Proje Ödevi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/project-homework-choice
+   Başlık: Eyotek | Sezon Sabitleri - Proje Ödevi
+   📊 Tablo 0: ['[14] 7-A'] (16 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Konular [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/subject
+   Başlık: Eyotek | Sezon Sabitleri - Konular
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddSubject', 'file:FldSubjects', 'search:TxtSearchSubject', 'text:s2id_autogen1', 'text:s2id_autogen1_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 MEB Öğrenci Fiyatları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/officially-announced-prices
+   Başlık: Eyotek | Sezon Sabitleri - MEB Öğrenci Fiyatları
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddProgram', 'text:s2id_autogen2', 'select:LstAddLevels']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 İndirimler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/price-list-discounts
+   Başlık: Eyotek | Sezon Sabitleri - İndirimler
+   📊 Tablo 0: ['Şube', 'İndirim Adı', 'Tür', 'İndirim Şekli', 'Miktar', 'Aktif'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'select:LstAddBranches', 'search:TxtAddDiscountName', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Online Kayıt Yenileme [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/online-enrollment
+   Başlık: Eyotek | Online Kayıt Yenileme
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddFinancialServiceType', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Öğün [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/meal
+   Başlık: Eyotek | Sezon Sabitleri - Öğün
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddOgun', 'text:s2id_autogen2', 'select:LstAddDevreler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Yemekler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/foods
+   Başlık: Eyotek | Sezon Sabitleri - Yemekler
+   📊 Tablo 0: ['Sıra', 'Yemek Türü'] (11 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddSira', 'search:TxtAddYemekTuru', 'search:TxtAddYemek']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Kıyafet Kategori [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/clothing-type
+   Başlık: Eyotek | Sezon Sabitleri - Kıyafet Kategori
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddClothingType']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Servisler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/school-bus
+   Başlık: Eyotek | Sezon Sabitleri - Servisler
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:s2id_autogen1', 'select:LstAddBranches', 'search:TxtSchoolBusCompanyName', 'search:TxtAddFounderFullName', 'search:TxtAddPhoneNumber']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Yazılı Türleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/exam-category-branches
+   Başlık: Eyotek | Yazılı Türleri
+   📊 Tablo 0: ['CheckUp'] (11 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddBranch']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Gider Kalemleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/expense-types
+   Başlık: Eyotek | Genel Sabitler - Gider Kalemleri
+   📊 Tablo 0: ['Yemek', '1', '2'] (22 satır)
+   📊 Tablo 1: ['1', '2'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddExpenseType']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Diğer Gelir Kalemleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/income-types
+   Başlık: Eyotek | Genel Sabitler - Diğer Gelir Kalemleri
+   📊 Tablo 0: ['Diğer Satış'] (5 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddIncomeType']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Banka Hesapları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/bank-accounts
+   Başlık: Eyotek | Muhasebe Sabitleri - Banka Hesapları
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddCurrency', 'text:s2id_autogen2', 'select:LstAddBranchesID']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Kredi Kartları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/credit-cards
+   Başlık: Eyotek | Genel Sabitler - Kredi Kartları
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddCardName', 'search:TxtAddCardOwner', 'text:s2id_autogen2', 'text:s2id_autogen2_search', 'select:DdlAddCurrency']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Faturalar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/invoice-templates
+   Başlık: Eyotek | Genel Sabitler - Faturalar
+   📊 Tablo 0: ['Şube', 'Fatura Adı', 'En', 'Boy'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddInvoiceTemplateName', 'search:TxtAddWidth', 'search:TxtAddHeight', 'text:s2id_autogen1', 'select:LstAddBranches']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Hizmet Türleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/financial-service-types
+   Başlık: Eyotek | Muhasebe Sabitleri - Hizmet Türleri
+   📊 Tablo 0: ['Tür', 'Aktif', 'KDV'] (36 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Muhasebe Bilgisayarı Tanımla [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/financial-operations-computer-definition
+   Başlık: Eyotek | Muhasebe Sabitleri - Muhasebe Bilgisayarı Tanımla
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtEnterPassword', 'search:TxtEnterAntiPasswordOne', 'search:TxtEnterAntiPasswordTwo', 'search:TxtEnterAntiPasswordThree']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Anti Şifre Oluştur', 'ANTİ ŞİFRE OLUŞTUR']
+
+📍 Şubeler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/branches
+   Başlık: Eyotek | Yönetimsel - Şubeler
+   📊 Tablo 0: ['Şube Kod', 'Marka', 'Şube Ad'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Şube Resmi İsim [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/branches-official-info
+   Başlık: Eyotek | Yönetimsel - Şube Resmi İsim
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:TxtAddOfficialCode', 'search:TxtAddOfficialName', 'search:TxtAddFounderFullName', 'search:TxtAddDirectorFullName', 'select:TxtAddAdress']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Sosyal Medya [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/social-media
+   Başlık: Eyotek | Yönetimsel - Sosyal Medya
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddSocialMedia', 'search:TxtAddSocialMediaAdress', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Veli Sayfası [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/parent-menu
+   Başlık: Eyotek | Yönetimsel - Veli Sayfası
+   📊 Tablo 0: ['Sayfa', 'Şube Sayısı'] (36 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSearchBranch', 'text:s2id_autogen2', 'select:LstAddBranches']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Butonlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/login-page-buttons
+   Başlık: Eyotek | Yönetimsel - Butonlar
+   📊 Tablo 0: ['Okul / Kurs'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Bilgilendirme Metinleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/information-texts
+   Başlık: Eyotek | Yönetimsel - Bilgilendirme Metinleri
+   📊 Tablo 0: ['Okul / Kurs'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'radio:ListType', 'radio:ListType']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'İleri']
+
+📍 Öğrenci Sözleşme [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/student-contract
+   Başlık: Eyotek | Yönetimsel - Öğrenci Sözleşme
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen8', 'text:s2id_autogen8_search', 'select:DdlAddBranch', 'text:s2id_autogen9', 'text:s2id_autogen9_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Personel Sözleşme [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/staff-contract
+   Başlık: Eyotek | Yönetimsel - Personel Sözleşme
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlAddBranch', 'text:s2id_autogen4', 'text:s2id_autogen4_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Sezonlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/seasons
+   Başlık: Eyotek | Yönetimsel - Sezonlar
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Devreler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/levels
+   Başlık: Eyotek | Yönetimsel - Devreler
+   📊 Tablo 0: ['Devre', 'Durum'] (26 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 İletişim [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/contact
+   Başlık: Eyotek | Yönetimsel - İletişim
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 1: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'search:s2id_autogen1', 'search:s2id_autogen1_search', 'select:DdlAddStaffForMainPage', 'search:s2id_autogen2', 'search:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Pencereler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/home-page-widget
+   Başlık: Eyotek | Pencereler
+   📊 Tablo 0: ['Aşçı'] (30 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Genel Ayarlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/general-settings
+   Başlık: Eyotek | Yönetimsel - Genel Ayarlar
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 SMS & Bildirim Ayarları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/automatic-sms-notification
+   Başlık: Eyotek | Yönetimsel - SMS & Bildirim Ayarları
+   📊 Tablo 0: ['Şube'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'select:DdlAddStaff']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ekle']
+
+📍 Entegrasyonlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Settings/integrations
+   Başlık: Eyotek | Yönetimsel - Entegrasyonlar
+   📊 Tablo 0: ['E-Fatura'] (4 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen3', 'text:s2id_autogen3_search', 'select:DdlEInvoiceAuthPartner', 'text:s2id_autogen7', 'select:LstEInvoiceAuthBranches']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Vazgeç', 'Kaydet']
+
+📍 SMS Onay [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/sms-confirm
+   Başlık: Eyotek | SMS Onay
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 1: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 2: ['Şubeler', 'Kalan Kontör', 'Kurs', '52768'] (2 satır)
+   📊 Tablo 3: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 4: ['5 Nisan 2026', '14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55', 'Bugün'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlBranchesPast', 'search:scheduled', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Kapat', 'Kapat', 'Planla']
+
+📍 SMS Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/sms-control
+   Başlık: Eyotek | SMS Kontrol
+   📊 Tablo 0: ['Durum', 'Şube', 'Cep Tel', 'Mesaj', 'Tür', 'Kontör', 'Oluşturma Tarihi', 'Gönderim Tarihi', 'Oluşturan', 'Onaylayan', '1', '2'] (23 satır)
+   📊 Tablo 1: ['1', '2'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:txtCeptel', 'text:s2id_autogen4']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Bildirim Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/notification-control
+   Başlık: Eyotek | Bildirim Kontrol
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Mesaj Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/internal-message-control
+   Başlık: Eyotek | Mesaj Kontrol
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Ajanda Giriş [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/agenda
+   Başlık: Eyotek | Ajanda Giriş
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 1: ['5 Nisan 2026', '14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55', 'Bugün'] (3 satır)
+   📊 Tablo 2: ['5 Nisan 2026', '0:001:002:003:004:005:006:007:008:009:0010:0011:0012:0013:0014:0015:0016:0017:0018:0019:0020:0021:0022:0023:00', 'Bugün'] (3 satır)
+   📊 Tablo 3: ['Nisan 2026', 'Pzt', 'Sa', 'Çr', 'Pr', 'Cu', 'Ct', 'Pz', '30', '31', '1', '2', '3', '4', '5', 'Bugün'] (9 satır)
+   📊 Tablo 4: ['2026', 'OcaŞubMarNisMayHazTemAğuEylEkiKasAra', 'Bugün'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'select:lstSubeler', 'checkbox:chkAllStudent', 'text:s2id_autogen2', 'select:lstDevreler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Kullanım İstatistik [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/system-user-login-statistics
+   Başlık: Eyotek | Kullanım İstatistik
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbUserType', 'checkbox:cbAylik', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Turtek Panel [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/turtek-panel
+   Başlık: Eyotek | Turtek Panel
+   📊 Tablo 0: ['Sezon', 'Firma', 'Şube', 'Öğrenci Sayısı', 'Fatura'] (4 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlBranchesForRoboders', 'search:TxtRobodersUsername']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Vazgeç', 'Kaydet']
+
+📍 Kısayollar Kontrol [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/linked-web-site-search
+   Başlık: Eyotek | Kısayollar Kontrol
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSearchKisayollar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Kitaplar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/question-editor-books
+   Başlık: Eyotek | Kitaplar
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbAddSube', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Ekle', 'Kapat']
+
+📍 Soru Düzenle [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/question-editor-questions
+   Başlık: Eyotek | Soru Düzenle
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbBrans', 'text:s2id_autogen3', 'text:s2id_autogen3_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Ara']
+
+📍 Kitapçık [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Tools/booklet
+   Başlık: Eyotek | Kitapçık
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal']
+
+📍 Kasa [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/wallet
+   Başlık: Eyotek | Raporlar - Kasa
+   📊 Tablo 0: ['Şube', 'Nakit'] (2 satır)
+   📊 Tablo 1: ['Şube', 'Çek', 'Senet'] (2 satır)
+   📊 Tablo 2: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Geciken Yüzdelik [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/overdue-student-payments
+   Başlık: Eyotek | Raporlar - Geciken Yüzdelik
+   📊 Tablo 0: ['Sezon', 'Şube', '1 gün önceye kadar Ciro', '1 gün önceye kadar Geciken', 'Geciken Yüzde'] (3 satır)
+   📊 Tablo 1: ['Sezon', 'Şube', 'Geciken Yüzde', 'Sıra'] (2 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbGunGeri', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Bilanço [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/balance-for-student-future-income
+   Başlık: Eyotek | Raporlar - Bilanço
+   📊 Tablo 0: ['Sezon', 'Şube', 'Tarih', 'Ciro', 'Tahsilat', 'Kalan'] (23 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Diğer Gelirler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/other-income
+   Başlık: Eyotek | Raporlar - Diğer Gelirler
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Bilanço Ödeme Tipi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/balance-for-student-payment-type
+   Başlık: Eyotek | Raporlar - Bilanço Ödeme Tipi
+   📊 Tablo 0: ['Sezon', 'Şube', 'Tarih', 'Nakit', 'Visa', 'Banka', 'OTS', 'Mail Order', 'Çek', 'Senet', 'Ücretsiz', 'Toplam'] (23 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Tahsilat Toplam [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/collection
+   Başlık: Eyotek | Raporlar - Tahsilat Toplam
+   📊 Tablo 0: ['Sezon', 'Şube', 'Tarih', 'Nakit', 'Kredi Kartı', 'Banka', 'Çek', 'Senet', 'Toplam'] (18 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Tahsilat Hizmet Türü [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/collection-for-student-financial-service-type
+   Başlık: Eyotek | Raporlar - Tahsilat Hizmet Türü
+   📊 Tablo 0: ['Sezon', 'Şube', 'Tarih', 'Eğitim', 'Toplam'] (23 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Bilanço Ödeme Tipi VS Tahsilat [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/balance-for-student-payment-type-vs-collection-for-student
+   Başlık: Eyotek | Raporlar - Bilanço Ödeme Tipi VS Tahsilat
+   📊 Tablo 0: ['Sezon', 'Şube', 'Tarih', 'Bilanço Nakit', 'Tahsilat Nakit', 'Bilanço Visa', 'Bilanço Mail Order', 'Tahsilat Visa', 'Bilanço Banka', 'Bilanço OTS', 'Tahsilat Banka', 'Bilanço Çek', 'Tahsilat Çek', 'Bilanço Senet', 'Tahsilat Senet', 'Bilanço Toplam', 'Tahsilat Toplam', 'Tahsilat Kalan'] (23 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Yapılacak Ödemeler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/debt-for-payment-mode
+   Başlık: Eyotek | Raporlar - Yapılacak Ödemeler
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Maaşlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/staff-salary
+   Başlık: Eyotek | Raporlar - Maaşlar
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Prim - Kesinti [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/staff-additional-payment-deduction
+   Başlık: Eyotek | Raporlar - Prim - Kesinti
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 1: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Giderler Aylık [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/expense
+   Başlık: Eyotek | Raporlar - Giderler Aylık
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Finansal Risk Analizi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/financial-risk-analysis
+   Başlık: Eyotek | Raporlar - Finansal Risk Analizi
+   📊 Tablo 0: ['Sezon', 'Şube', 'Tarih', 'Ciro', 'Borç', 'Maaş', 'Fark', 'Risk'] (23 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSearchSezon', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Program Ciroları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/student-income-for-program
+   Başlık: Eyotek | Raporlar - Program Ciroları
+   📊 Tablo 0: ['Sezon', 'Şube', 'Program', 'Ciro', 'Mevcut', 'Ortalama'] (4 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:cbKaydiSilinenler', 'checkbox:cbKaydiSilinenleriCikar', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Devre Ciroları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/student-income-for-level
+   Başlık: Eyotek | Raporlar - Devre Ciroları
+   📊 Tablo 0: ['Sezon', 'Şube', 'Devre', 'Ciro', 'Mevcut', 'Ortalama'] (9 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:cbKaydiSilinenler', 'checkbox:cbKaydiSilinenleriCikar', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Sınıf Ciroları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/student-income-for-class
+   Başlık: Eyotek | Raporlar - Sınıf Ciroları
+   📊 Tablo 0: ['Sezon', 'Şube', 'Devre', 'Sınıf', 'Ciro', 'Mevcut', 'Ortalama'] (22 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 İndirimler Toplam [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/student-discounts
+   Başlık: Eyotek | Raporlar - İndirimler Toplam
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Kasa Geçmişi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/wallet-history
+   Başlık: Eyotek | Raporlar - Kasa Geçmişi
+   📊 Tablo 0: ['Şube', 'Tarih', 'Nakit', 'Toplam'] (5 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler', 'search:Başlangıç', 'search:Bitiş']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Avukata Verilen Ödemeler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/overdue-student-payments-assigned-to-lawyer
+   Başlık: Eyotek | Raporlar - Avukata Verilen Ödemeler
+   📊 Tablo 0: ['Sezon', 'Şube', 'Avukata Verilmeyen', 'Avukat', 'Toplam'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Öğrenci Sayısı [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-students
+   Başlık: Eyotek | Raporlar - Öğrenci Sayısı
+   📊 Tablo 0: ['Toplam', 'Sezon', 'Şube', '7.Snf', '8.Snf', '9.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:chkKaydiSilinenCikar', 'checkbox:chkKur', 'checkbox:chkProgram', 'text:s2id_autogen1', 'text:s2id_autogen1_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Kız-Erkek Öğrenci Sayısı [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-students-by-gender
+   Başlık: Eyotek | Raporlar - Kız-Erkek Öğrenci Sayısı >
+   📊 Tablo 0: ['Sezon', 'Şube', 'Devre', 'Sınıf', 'Kız', 'Erkek', 'Boş', 'Toplam'] (19 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:chkKaydiSilinenCikar', 'checkbox:chkKur', 'checkbox:chkProgram', 'checkbox:chkDevre', 'checkbox:chkSinif']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Sınıf Doluluk [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/class-capacity-utilization-rate
+   Başlık: Eyotek | Raporlar - Sınıf Doluluk
+   📊 Tablo 0: ['Şube', 'Tür', 'Devre', 'Sınıf', 'Öğrenci Sayısı', 'Derslik', 'Kapasite', 'Yüzde'] (18 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Derslik Doluluk [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/classroom-watchplace-capacity-utilization
+   Başlık: Eyotek | Raporlar - Derslik Doluluk
+   📊 Tablo 0: ['Şube', 'Gün', 'Saat', 'D-1'] (97 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSubeler']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Okul Öğrenci Sayıları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-students-by-school
+   Başlık: Eyotek | Raporlar - Okul Öğrenci Sayıları
+   📊 Tablo 0: ['Şube', 'Okul', 'Toplam', '7.Snf', '8.Snf', '9.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:chkSilinen', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Rehber Görüşme Sayıları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-students-and-counsellor-note-by-counsellor
+   Başlık: Eyotek | Raporlar - Rehber Görüşme Sayıları
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbTarih', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Öğretmen Görüşme Sayıları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-students-and-counsellor-note-by-teacher
+   Başlık: Eyotek | Raporlar - Öğretmen Görüşme Sayıları
+   📊 Tablo 0: ['Şube', 'Id', 'Adı', 'Soyadı', 'Görev', 'Öğrenci Sayısı', 'Toplam Görüşme', 'Tekil Görüşme', 'Yüzde'] (16 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbTarih', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Kıyafet Beden Adet [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-clothing-size
+   Başlık: Eyotek | Raporlar - Kıyafet Beden Adet
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Yemek Kişi Sayısı [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-persons-for-meal
+   Başlık: Eyotek | Yemek Kişi Sayısı
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:ChkOnlyStudentsHaveMealContract', 'checkbox:ChkOnlyStaffsHasWorkingHoursToday', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:DdlSeasons']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Bizi nasıl buldunuz? [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-how-did-you-find-us
+   Başlık: Eyotek | Raporlar - Bizi nasıl buldunuz?
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 1: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 SMS Türleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/sms-types
+   Başlık: Eyotek | Raporlar - SMS Türleri
+   📊 Tablo 0: ['Şube', 'Tür', 'Tarih', 'SMS Sayısı'] (35 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbIslemTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Kayıt Sildirenler [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-terminated-students
+   Başlık: Eyotek | Raporlar - Kayıt Sildirenler
+   📊 Tablo 0: ['Toplam', 'Sezon', 'Şube', '8.Snf', '12.Snf', 'Mezun'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:chkKur', 'checkbox:chkProgram', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Kayıt Silme Nedenleri [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-terminated-students-by-reasons
+   Başlık: Eyotek | Raporlar - Kayıt Silme Nedenleri
+   📊 Tablo 0: ['Sezon', 'Şube', 'Diğer', 'Uyum sağlayamadı'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Genel Görünüm [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/general-enrollment-view
+   Başlık: Eyotek | Raporlar - Genel Görünüm
+   📊 Tablo 0: ['Şube', 'Kayıt Sayısı', 'Dış Kayıt', 'İç Kayıt Sayısı', 'Net Kayıt Sayısı', '1,5 Yıl', 'Net İç Kayıt', 'Net Dış Kayıt', 'Ciro', 'Net Ciro', 'Ortalama', 'Net Ortalama'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'Kapat', 'İÇ KAYIT YENİLEME RAPORU']
+
+📍 Genel Görünüm 2 [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/general-enrollment-view-two
+   Başlık: Eyotek | Raporlar - Genel Görünüm 2
+   📊 Tablo 0: ['Şube', 'Toplam Kayıt', 'Net Kayıt', 'Günlük Kayıt', 'Günlük İç Kayıt', 'Günlük Dış Kayıt', 'Toplam Ciro', 'Günlük Ciro', 'Ortalama'] (3 satır)
+   📊 Tablo 1: ['Şube', 'Kayıt Geçen Yıl', 'Kayıt Bu Yıl', 'Kayıt Fark | Yüzde', 'Ciro Geçen Yıl', 'Ciro Bu Yıl', 'Ciro Fark | Yüzde', 'Ortalama Geçen Yıl', 'Ortalama Bul Yıl', 'Ortalama Fark | Yüzde'] (3 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'radio:options', 'radio:options', 'search:Gün']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'GÜNLÜK', 'GEÇEN SEZON']
+
+📍 Aylık Kayıt Sayıları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-by-number
+   Başlık: Eyotek | Raporlar - Aylık Kayıt Sayıları
+   📊 Tablo 0: ['Toplam', 'Sezon', 'Tarih', 'Şube', '7.Snf', '8.Snf', '9.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (18 satır)
+   📊 Tablo 1: ['Toplam', 'Sezon', 'Tarih', 'Şube', '8.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (16 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:CbInOut', 'checkbox:chkSilinen', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Aylık Kayıt Ciroları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-by-contract-fee
+   Başlık: Eyotek | Raporlar - Aylık Kayıt Ciroları
+   📊 Tablo 0: ['Toplam', 'Sezon', 'Tarih', 'Şube', '7.Snf', '8.Snf', '9.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (18 satır)
+   📊 Tablo 1: ['Toplam', 'Sezon', 'Tarih', 'Şube', '8.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (16 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:CbInOut', 'checkbox:chkSilinen', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Ön Kayıt Görüşmesi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/pre-enrollment-interview-versus-enrollment
+   Başlık: Eyotek | Raporlar - Ön Kayıt Görüşmesi
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 1: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Aylık Görüşme Sayıları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/monthly-pre-enrollment-interview
+   Başlık: Eyotek | Raporlar - Aylık Görüşme Sayıları
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Aylık Uyarı Sayıları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/monthly-pre-enrollment-warning
+   Başlık: Eyotek | Raporlar - Aylık Uyarı Sayıları
+   📊 Tablo 0: ['Şube', 'Tarih', 'Kayıt Kesinleşti', 'Toplam'] (26 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Aylık Kayıt Sahibi Say [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-holder-by-number
+   Başlık: Eyotek | Raporlar - Aylık Kayıt Sahibi Say
+   📊 Tablo 0: ['Toplam', 'Sezon', 'Kayıt Tarihi', 'Şube', 'Kayıt Sahibi', '7.Snf', '8.Snf', '9.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (28 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:chkSilinen', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Aylık Kayıt Sahibi Top [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-holder-by-contract-fee
+   Başlık: Eyotek | Raporlar - Aylık Kayıt Sahibi Top
+   📊 Tablo 0: ['Toplam', 'Sezon', 'Kayıt Tarihi', 'Şube', 'Kayıt Sahibi', '7.Snf', '8.Snf', '9.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (28 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:chkSilinen', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Bilanço [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/balance-for-student-future-income-general
+   Başlık: Eyotek | Raporlar - Bilanço
+   📊 Tablo 0: ['Sezon', 'Tarih', 'Ciro', 'Tahsilat', 'Kalan'] (23 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Personel Sayısı [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-staffs-by-job-title
+   Başlık: Eyotek | Raporlar - Personel Sayısı
+   📊 Tablo 0: ['Sezon', 'Görev', 'Kurs', 'Toplam'] (4 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Aylık Kayıt Sayıları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-by-number-general
+   Başlık: Eyotek | Raporlar - Aylık Kayıt Sayıları
+   📊 Tablo 0: ['Toplam', 'Sezon', 'Tarih', '7.Snf', '8.Snf', '9.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (18 satır)
+   📊 Tablo 1: ['Toplam', 'Sezon', 'Tarih', '8.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (16 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:CbInOut', 'checkbox:chkSilinen', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Aylık Kayıt Ciroları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-by-contract-fee-general
+   Başlık: Eyotek | Raporlar - Aylık Kayıt Ciroları
+   📊 Tablo 0: ['Toplam', 'Sezon', 'Tarih', '7.Snf', '8.Snf', '9.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (18 satır)
+   📊 Tablo 1: ['Toplam', 'Sezon', 'Tarih', '8.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (16 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'checkbox:CbInOut', 'checkbox:chkSilinen', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Aylık Görüşme Sayıları [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/monthly-pre-enrollment-interview-general
+   Başlık: Eyotek | Raporlar - Personel Sayısı
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Maaşlar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/staff-salary-general
+   Başlık: Eyotek | Raporlar - Toplam Maaş
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Prim - Kesinti [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/staff-additional-payment-deduction-general
+   Başlık: Eyotek | Raporlar - Prim - Kesinti
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📊 Tablo 1: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'EXCEL']
+
+📍 Personel Sicil Yazar [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/number-of-record-notes-by-creater
+   Başlık: Eyotek | Raporlar - Personel Sicil Yazar
+   📊 Tablo 0: ['Kayıt bulunamadı!'] (1 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Sınav Katılım Aylık [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/monthly-test-participation
+   Başlık: Eyotek | Raporlar - Sınav Katılım Aylık
+   📊 Tablo 0: ['Sezon', 'Şube', 'Tarih', '8.Snf', '10.Snf', '11.Snf', '12.Snf', 'Mezun'] (11 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam', 'İptal', 'Kaydet']
+
+📍 Finansal Risk Analizi [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Reports/financial-risk-analysis-general
+   Başlık: Eyotek | Raporlar - Finansal Risk Analizi
+   📊 Tablo 0: ['Sezon', 'Tarih', 'Ciro', 'Borç', 'Maaş', 'Fark', 'Risk'] (23 satır)
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbSezonlar', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']
+
+📍 Toplam [0. seviye]
+   URL: https://fermat.eyotek.com/v1/Pages/Financial/student-financial-operation?Filter=Today
+   Başlık: Eyotek | Öğrenci Ödeme Detay
+   📝 Form alanları: ['search:?', 'search:Ne yapmak istersiniz?', 'checkbox:inputChange', 'text:s2id_autogen1', 'text:s2id_autogen1_search', 'select:cmbListeTuru', 'text:s2id_autogen2', 'text:s2id_autogen2_search']
+   🔘 Butonlar: ['DEVAM ET', 'Tamam']

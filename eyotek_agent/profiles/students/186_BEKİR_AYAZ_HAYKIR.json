@@ -1,0 +1,24 @@
+{
+  "soz_no": "186",
+  "eyotek_id": "186",
+  "ad_soyad": "BEKİR AYAZ HAYKIR",
+  "sinif": "11 SAY",
+  "devre": "11.Snf",
+  "telefon": "+905380327439",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 27,
+  "etut_yapildi": 8,
+  "etut_gelmedi": 0,
+  "etut_kontrol_edilmedi": 19,
+  "etut_katilim_yuzdesi": 30,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%30)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

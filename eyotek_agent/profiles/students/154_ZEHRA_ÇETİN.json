@@ -1,0 +1,24 @@
+{
+  "soz_no": "154",
+  "eyotek_id": "154",
+  "ad_soyad": "ZEHRA ÇETİN",
+  "sinif": "12 SAY",
+  "devre": "12.Snf",
+  "telefon": "+905538916619",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 2,
+  "etut_yapildi": 0,
+  "etut_gelmedi": 0,
+  "etut_kontrol_edilmedi": 2,
+  "etut_katilim_yuzdesi": 0,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%0)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

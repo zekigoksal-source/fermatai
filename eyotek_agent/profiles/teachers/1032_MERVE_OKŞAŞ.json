@@ -1,0 +1,19 @@
+{
+  "eyotek_id": "1032",
+  "ad_soyad": "MERVE OKŞAŞ",
+  "brans": "Biyoloji",
+  "gorev": "Öğretmen",
+  "haftalik_ders_saati": 38,
+  "aylik_etut_sayisi": 18,
+  "etut_ogrenci_sayisi": 16,
+  "etut_ders_orani": 0.47,
+  "ders_programi_slot_sayisi": 38,
+  "gun_dagilimi": {
+    "Cumartesi": 13,
+    "Pazar": 6,
+    "Pazartesi": 5,
+    "Salı": 8,
+    "Çarşamba": 6
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

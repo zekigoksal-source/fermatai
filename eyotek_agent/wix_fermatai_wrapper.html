@@ -1,0 +1,233 @@
+<!--
+============================================================
+  FERMATAI — WIX AKILLI SARMALAYICI SAYFA
+============================================================
+
+NEO KULLANIM TALIMATLARI:
+
+1. Wix Editor → /fermatai sayfasına git
+2. Mevcut iframe/embed widget'i SİL
+3. "Embed → HTML iFrame / Custom Code" widget ekle
+4. Bu HTML'in TAMAMINI yapıştır
+5. Kaydet + Yayınla
+
+DAVRANIS:
+- Sayfa yüklenince 3 saniye ngrok /health endpoint'ine ping atar
+- Yanıt 200 → iframe yüklenir, gerçek chat açılır
+- Yanıt yok/timeout → "Sistem şu an dinleniyor" ekranı + WhatsApp CTA
+  → Ziyaretçi profesyonel bir offline mesajı görür, ngrok error değil.
+
+NGROK URL DEĞİŞTİĞİNDE:
+Aşağıdaki NGROK_BASE değişkenini güncelle:
+    const NGROK_BASE = "https://graphitic-samantha-overconscientiously.ngrok-free.dev";
+
+============================================================
+-->
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FermatAI</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --fg: #2a2620;
+    --fg-muted: #7a736b;
+    --accent: #c76f3e;
+    --accent-dark: #a85c30;
+    --border: #e7e5de;
+    --success: #5a8f5a;
+    --wp-green: #25d366;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  html, body { height: 100%; background: var(--bg); color: var(--fg); }
+  .wrap { width: 100%; height: 100vh; position: relative; }
+
+  /* LOADING durumu */
+  .loading {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--bg);
+    transition: opacity 0.3s;
+  }
+  .loading .spinner {
+    width: 44px; height: 44px; border: 3px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .loading .msg { margin-top: 18px; color: var(--fg-muted); font-size: 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* IFRAME (online) */
+  .chat-frame {
+    width: 100%; height: 100%; border: 0;
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .chat-frame.ready { opacity: 1; }
+
+  /* OFFLINE durumu */
+  .offline {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 24px; background: var(--bg);
+  }
+  .offline.show { display: flex; }
+  .offline .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 16px; padding: 40px 32px; max-width: 480px; width: 100%;
+    text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  }
+  .offline .icon {
+    width: 72px; height: 72px; margin: 0 auto 20px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+  }
+  .offline h1 {
+    font-size: 22px; font-weight: 600; color: var(--fg); margin-bottom: 12px;
+  }
+  .offline p {
+    font-size: 15px; color: var(--fg-muted); line-height: 1.6; margin-bottom: 8px;
+  }
+  .offline .sub {
+    font-size: 13px; color: var(--fg-muted); margin-bottom: 28px; margin-top: 8px;
+  }
+  .offline .actions { display: flex; flex-direction: column; gap: 12px; }
+  .offline a.btn-primary {
+    background: var(--wp-green); color: white;
+    padding: 14px 28px; border-radius: 10px; text-decoration: none;
+    font-size: 15px; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .offline a.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,211,102,0.25); }
+  .offline a.btn-secondary {
+    background: transparent; color: var(--fg);
+    border: 1px solid var(--border);
+    padding: 12px 24px; border-radius: 10px; text-decoration: none;
+    font-size: 14px;
+  }
+  .offline a.btn-secondary:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+  .offline .retry {
+    margin-top: 20px; font-size: 13px; color: var(--fg-muted);
+  }
+  .offline .retry button {
+    background: none; border: none; color: var(--accent); cursor: pointer;
+    font-size: 13px; text-decoration: underline; padding: 0;
+  }
+  .offline .retry button:hover { color: var(--accent-dark); }
+
+  @media (max-width: 500px) {
+    .offline .card { padding: 32px 24px; }
+    .offline h1 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 1. LOADING — ilk ekran (3sn max) -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="msg">FermatAI bağlanıyor...</div>
+  </div>
+
+  <!-- 2. CHAT IFRAME — online ise -->
+  <iframe class="chat-frame" id="chatFrame" src="about:blank"
+          allow="clipboard-read; clipboard-write; microphone"></iframe>
+
+  <!-- 3. OFFLINE — bilgisayar kapalı/ngrok down -->
+  <div class="offline" id="offline">
+    <div class="card">
+      <div class="icon">🌙</div>
+      <h1>FermatAI şu an dinleniyor</h1>
+      <p>Sistem gece bakımda. Yakında tekrar yayında olacağız.</p>
+      <p class="sub">Bizimle iletişime geçmek istersen WhatsApp'tan yazabilirsin — seninle ilgilenelim.</p>
+      <div class="actions">
+        <a class="btn-primary" href="https://wa.me/905462605446?text=Merhaba,%20FermatAI'ya%20ulaşmak%20istedim%20ama%20sistem%20kapalıydı." target="_blank" rel="noopener">
+          💬 WhatsApp'tan İletişim
+        </a>
+        <a class="btn-secondary" href="https://fermategitimkurumlari.com/randevu" target="_blank" rel="noopener">
+          📅 Randevu Al
+        </a>
+      </div>
+      <div class="retry">
+        veya <button onclick="checkAgain()">tekrar dene</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // FERMATAI — Health Check + Akıllı Yönlendirme
+  // ============================================================
+  const NGROK_BASE = "https://graphitic-samantha-overconscientiously.ngrok-free.dev";
+  const TIMEOUT_MS = 3500;
+
+  const $loading = document.getElementById("loading");
+  const $frame   = document.getElementById("chatFrame");
+  const $offline = document.getElementById("offline");
+
+  async function checkHealth() {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+    try {
+      const r = await fetch(NGROK_BASE + "/health", {
+        method: "GET",
+        signal: ctrl.signal,
+        cache: "no-store",
+        // ngrok browser warning by-pass
+        headers: { "ngrok-skip-browser-warning": "true" },
+      });
+      clearTimeout(tid);
+      return r.ok;
+    } catch (e) {
+      clearTimeout(tid);
+      return false;
+    }
+  }
+
+  async function init() {
+    $loading.style.display = "flex";
+    $offline.classList.remove("show");
+
+    const online = await checkHealth();
+
+    if (online) {
+      // ONLINE → iframe yükle (ngrok free tier uyarı sayfası atlanmış)
+      $frame.src = NGROK_BASE + "/chat?ngrok-skip-browser-warning=true";
+      $frame.onload = () => {
+        $loading.style.opacity = "0";
+        setTimeout(() => { $loading.style.display = "none"; }, 300);
+        $frame.classList.add("ready");
+      };
+    } else {
+      // OFFLINE → güzel fallback
+      $loading.style.display = "none";
+      $offline.classList.add("show");
+    }
+  }
+
+  function checkAgain() {
+    $offline.classList.remove("show");
+    $loading.style.display = "flex";
+    $loading.style.opacity = "1";
+    init();
+  }
+
+  // İlk yükleme
+  init();
+
+  // Her 2 dakikada bir otomatik retry (offline ise)
+  setInterval(() => {
+    if ($offline.classList.contains("show")) {
+      checkAgain();
+    }
+  }, 120000);
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "soz_no": "167",
+  "eyotek_id": "167",
+  "ad_soyad": "ALİ KÜÇÜKUYSAL",
+  "sinif": "11 SAY",
+  "devre": "11.Snf",
+  "telefon": "+905334644419",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 12,
+  "etut_yapildi": 5,
+  "etut_gelmedi": 1,
+  "etut_kontrol_edilmedi": 6,
+  "etut_katilim_yuzdesi": 42,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%42)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

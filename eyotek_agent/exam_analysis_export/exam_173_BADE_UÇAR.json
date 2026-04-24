@@ -1,0 +1,4116 @@
+{
+  "student": "BADE UÇAR",
+  "sozNo": "173",
+  "tables": [
+    {
+      "i": 0,
+      "h": [
+        "",
+        "Kod",
+        "Sınav Adı",
+        "Türkçe",
+        "Tarih",
+        "Coğrafya",
+        "Felsefe",
+        "DinKültürü",
+        "Matematik",
+        "Geometri",
+        "Fizik",
+        "Kimya",
+        "Biyoloji",
+        "Toplam"
+      ],
+      "r": [
+        [
+          "1",
+          "112",
+          "Deneme-1 - (İşler - Ulti) (21.11.2025)",
+          "0,00",
+          "0,00",
+          "0,00",
+          "0,00",
+          "0,00",
+          "16,25",
+          "",
+          "7,50",
+          "6,50",
+          "8,75",
+          "39,00"
+        ],
+        [
+          "2",
+          "114",
+          "11. sınıf Bilgi Sarmal 2 (16.01.2026)",
+          "0,00",
+          "0,00",
+          "0,00",
+          "0,00",
+          "0,00",
+          "18,75",
+          "",
+          "10,00",
+          "8,75",
+          "5,25",
+          "42,75"
+        ],
+        [
+          "3",
+          "115",
+          "İşler - Bilgi Sarmal 3 (24.01.2026)",
+          "0,00",
+          "0,00",
+          "0,00",
+          "0,00",
+          "0,00",
+          "12,00",
+          "",
+          "4,00",
+          "7,00",
+          "3,75",
+          "26,75"
+        ],
+        [
+          "4",
+          "999000054",
+          "EN DENEME TG TYT-1 (11.02.2026)",
+          "36,25",
+          "5,00",
+          "5,00",
+          "2,50",
+          "5,00",
+          "10,75",
+          "5,75",
+          "2,00",
+          "5,75",
+          "6,00",
+          "84,00"
+        ],
+        [
+          "5",
+          "117",
+          "11. sınıf PALME TİS 5 (20.02.2026)",
+          "0,00",
+          "0,00",
+          "0,00",
+          "0,00",
+          "0,00",
+          "21,75",
+          "",
+          "7,00",
+          "5,50",
+          "5,25",
+          "39,50"
+        ],
+        [
+          "6",
+          "999000075",
+          "ÜçDörtBeş TG BÜYÜK PROVA TYT-1 (11.03.2026)",
+          "38,75",
+          "3,75",
+          "5,00",
+          "5,00",
+          "5,00",
+          "14,75",
+          "0,00",
+          "5,75",
+          "6,00",
+          "2,50",
+          "86,50"
+        ],
+        [
+          "7",
+          "118",
+          "11. sınıf İşler - Yayın Denizi 1 (20.03.2026)",
+          "0,00",
+          "0,00",
+          "0,00",
+          "0,00",
+          "0,00",
+          "22,50",
+          "",
+          "2,75",
+          "3,00",
+          "6,50",
+          "34,75"
+        ]
+      ]
+    },
+    {
+      "i": 1,
+      "h": [
+        "Ders",
+        "Soru\nSayısı",
+        "Doğru\nCevap",
+        "Yanlış\nCevap",
+        "Boş",
+        "Net",
+        "Genel\nOrtalama",
+        "İl\nOrtalama",
+        "İlçe\nOrtalama",
+        "Şube\nOrtalama",
+        "Sınıf\nOrtalama",
+        "TYT\nKayıp Puan"
+      ],
+      "r": [
+        [
+          "TYT_Türkçe",
+          "240",
+          "76",
+          "4",
+          "160",
+          "75,00",
+          "71,48",
+          "71,31",
+          "74,68",
+          "74,68",
+          "65,00",
+          "83,31"
+        ],
+        [
+          "TYT_Türkçe",
+          "240",
+          "76",
+          "4",
+          "160",
+          "75,00",
+          "71,48",
+          "71,31",
+          "74,68",
+          "74,68",
+          "65,00",
+          "83,31"
+        ],
+        [
+          "TYT_Sosyal Bilimler",
+          "190",
+          "37",
+          "3",
+          "150",
+          "36,25",
+          "31,57",
+          "31,19",
+          "32,20",
+          "32,20",
+          "25,80",
+          "44,14"
+        ],
+        [
+          "TYT_Tarih",
+          "60",
+          "9",
+          "1",
+          "50",
+          "8,75",
+          "7,28",
+          "7,02",
+          "7,31",
+          "7,31",
+          "6,06",
+          "14,71"
+        ],
+        [
+          "TYT_Coğrafya",
+          "60",
+          "10",
+          "0",
+          "50",
+          "10,00",
+          "6,60",
+          "6,41",
+          "6,86",
+          "6,86",
+          "4,62",
+          "14,18"
+        ],
+        [
+          "TYT_Felsefe",
+          "35",
+          "8",
+          "2",
+          "25",
+          "7,50",
+          "8,04",
+          "8,15",
+          "8,42",
+          "8,42",
+          "7,62",
+          "8,16"
+        ],
+        [
+          "TYT_DinKültürü",
+          "35",
+          "10",
+          "0",
+          "25",
+          "10,00",
+          "9,65",
+          "9,61",
+          "9,61",
+          "9,61",
+          "7,50",
+          "7,09"
+        ],
+        [
+          "TYT_Matematik",
+          "230",
+          "130",
+          "30",
+          "70",
+          "122,50",
+          "113,60",
+          "111,58",
+          "116,17",
+          "116,17",
+          "121,75",
+          "75,02"
+        ],
+        [
+          "TYT_Matematik",
+          "210",
+          "124",
+          "29",
+          "57",
+          "116,75",
+          "108,41",
+          "106,87",
+          "110,38",
+          "110,38",
+          "116,83",
+          "51,65"
+        ],
+        [
+          "TYT_Geometri",
+          "20",
+          "6",
+          "1",
+          "13",
+          "5,75",
+          "5,19",
+          "4,71",
+          "5,79",
+          "5,79",
+          "4,92",
+          "23,37"
+        ],
+        [
+          "TYT_Fen Bilimleri",
+          "190",
+          "130",
+          "42",
+          "18",
+          "119,50",
+          "92,46",
+          "92,76",
+          "95,36",
+          "95,36",
+          "107,11",
+          "19,31"
+        ],
+        [
+          "TYT_Fizik",
+          "64",
+          "43",
+          "16",
+          "5",
+          "39,00",
+          "28,83",
+          "28,99",
+          "29,97",
+          "29,97",
+          "35,25",
+          "7,12"
+        ],
+        [
+          "TYT_Kimya",
+          "64",
+          "45",
+          "10",
+          "9",
+          "42,50",
+          "31,36",
+          "31,57",
+          "32,60",
+          "32,60",
+          "37,53",
+          "5,62"
+        ],
+        [
+          "TYT_Biyoloji",
+          "62",
+          "42",
+          "16",
+          "4",
+          "38,00",
+          "32,27",
+          "32,20",
+          "32,79",
+          "32,79",
+          "34,33",
+          "6,57"
+        ],
+        [
+          "Toplam",
+          "850",
+          "373",
+          "79",
+          "398",
+          "353,25",
+          "309,11",
+          "306,84",
+          "318,41",
+          "318,41",
+          "319,66",
+          "221,78"
+        ]
+      ]
+    },
+    {
+      "i": 2,
+      "h": [
+        "Konu Adı",
+        "Soru Sayısı",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "TYT\nKayıp Puan"
+      ],
+      "r": [
+        [
+          "TYT_Türkçe : Cümlenin Temel Ögeleri",
+          "19",
+          "0",
+          "18",
+          "%5,26",
+          "8,8"
+        ],
+        [
+          "TYT_Matematik : Birim Çember",
+          "25",
+          "7",
+          "4",
+          "%56,00",
+          "7,97"
+        ],
+        [
+          "TYT_Matematik : Trigonometrik Fonksiyonlar",
+          "31",
+          "4",
+          "6",
+          "%67,74",
+          "6,74"
+        ],
+        [
+          "TYT_Türkçe : Edebi Akımlar",
+          "10",
+          "0",
+          "10",
+          "%0,00",
+          "5,27"
+        ],
+        [
+          "TYT_Türkçe : Noktalama İşaretleri",
+          "14",
+          "0",
+          "10",
+          "%28,57",
+          "5,15"
+        ],
+        [
+          "TYT_Türkçe : Paragrafta Yardımcı Düşünce",
+          "19",
+          "0",
+          "10",
+          "%47,37",
+          "5"
+        ],
+        [
+          "TYT_Matematik : İkinci Dereceden Fonksiyonlar Ve Grafikleri",
+          "12",
+          "3",
+          "4",
+          "%41,67",
+          "4,57"
+        ],
+        [
+          "TYT_Türkçe : Yazım Kuralları",
+          "11",
+          "0",
+          "9",
+          "%18,18",
+          "4,48"
+        ],
+        [
+          "Toplam",
+          "47,97"
+        ]
+      ]
+    },
+    {
+      "i": 3,
+      "h": [
+        "Konu Adı",
+        "Soru Sayısı",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "TYT\nKayıp Puan"
+      ],
+      "r": [
+        [
+          "TYT_Matematik : Fonksiyon Grafiği",
+          "13",
+          "2",
+          "4",
+          "%53,85",
+          "3,77"
+        ],
+        [
+          "TYT_Matematik : Doğrunun Analitik İncelenmesi",
+          "17",
+          "1",
+          "5",
+          "%64,71",
+          "3,7"
+        ],
+        [
+          "TYT_Matematik : Fonksiyonların Grafik Çizimi",
+          "9",
+          "3",
+          "1",
+          "%55,56",
+          "2,54"
+        ],
+        [
+          "TYT_Matematik : Sayı Problemleri",
+          "10",
+          "0",
+          "5",
+          "%50,00",
+          "2,34"
+        ],
+        [
+          "TYT_Türkçe : Sözcükte Anlam",
+          "9",
+          "0",
+          "5",
+          "%44,44",
+          "2,29"
+        ],
+        [
+          "TYT_Tarih : Denizcilik Faaliyetlerinin Dünya Siyaseti ve Ticaretine Etkisi",
+          "7",
+          "0",
+          "7",
+          "%0,00",
+          "1,98"
+        ],
+        [
+          "TYT_DinKültürü : Hz. Muhammed in Örnekliği",
+          "6",
+          "0",
+          "6",
+          "%0,00",
+          "1,71"
+        ],
+        [
+          "TYT_Coğrafya : Biyoçesitlilik",
+          "6",
+          "0",
+          "6",
+          "%0,00",
+          "1,71"
+        ],
+        [
+          "TYT_Coğrafya : Şehirler Ve Fonksiyonlar",
+          "6",
+          "0",
+          "6",
+          "%0,00",
+          "1,71"
+        ],
+        [
+          "TYT_Tarih : Aydınlanma Çağı",
+          "6",
+          "0",
+          "6",
+          "%0,00",
+          "1,71"
+        ],
+        [
+          "Toplam",
+          "23,46"
+        ]
+      ]
+    },
+    {
+      "i": 4,
+      "h": [
+        "Konu Adı",
+        "Soru Sayısı",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "TYT\nKayıp Puan"
+      ],
+      "r": [
+        [
+          "TYT_Türkçe : Makale",
+          "5",
+          "0",
+          "5",
+          "%0,00",
+          "2,44"
+        ],
+        [
+          "TYT_Türkçe : Tanzimat Edebiyatı Coşku Ve Heyecanı Dile Getiren Metinler (Şiir)",
+          "4",
+          "0",
+          "4",
+          "%0,00",
+          "2,19"
+        ],
+        [
+          "TYT_DinKültürü : Dünya Hayatı Ve Ahiret",
+          "6",
+          "0",
+          "6",
+          "%0,00",
+          "1,7"
+        ],
+        [
+          "TYT_Coğrafya : Türkiye de Tarım Ve Hayvancılık",
+          "6",
+          "0",
+          "6",
+          "%0,00",
+          "1,68"
+        ],
+        [
+          "TYT_Tarih : XVII. YY Osmanlı Devleti ndeki Değişim Ve Islahatlar",
+          "5",
+          "0",
+          "5",
+          "%0,00",
+          "1,42"
+        ],
+        [
+          "TYT_Felsefe : MÖ 6. YY - MS 2. YY Felsefesinin Düşünce ve Argümanlarını Değerlendirme",
+          "5",
+          "0",
+          "5",
+          "%0,00",
+          "1,42"
+        ],
+        [
+          "TYT_Coğrafya : Nüfus Politikaları",
+          "5",
+          "0",
+          "5",
+          "%0,00",
+          "1,42"
+        ],
+        [
+          "TYT_Tarih : Osmanlı Devletin de İsyanlar ve Düzeni Koruma Çabaları",
+          "5",
+          "0",
+          "5",
+          "%0,00",
+          "1,41"
+        ],
+        [
+          "TYT_Matematik : Fonksiyonlarla İlgili Uygulamalar",
+          "12",
+          "1",
+          "1",
+          "%83,33",
+          "1,41"
+        ],
+        [
+          "TYT_Fizik : Newton un Hareket Yasaları",
+          "9",
+          "2",
+          "1",
+          "%66,67",
+          "0,92"
+        ],
+        [
+          "Toplam",
+          "16,00"
+        ]
+      ]
+    },
+    {
+      "i": 5,
+      "h": [
+        "Konu Adı",
+        "Sayı",
+        "Doğru",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "",
+        "TYTKayıp Puan"
+      ],
+      "r": [
+        [
+          "Cümlenin Temel Ögeleri",
+          "19",
+          "1",
+          "0",
+          "18",
+          "%5,26",
+          "",
+          "8,8"
+        ],
+        [
+          "Edebi Akımlar",
+          "10",
+          "0",
+          "0",
+          "10",
+          "%0,00",
+          "",
+          "5,27"
+        ],
+        [
+          "Noktalama İşaretleri",
+          "14",
+          "4",
+          "0",
+          "10",
+          "%28,57",
+          "",
+          "5,15"
+        ],
+        [
+          "Paragrafta Yardımcı Düşünce",
+          "19",
+          "9",
+          "0",
+          "10",
+          "%47,37",
+          "",
+          "5"
+        ],
+        [
+          "Yazım Kuralları",
+          "11",
+          "2",
+          "0",
+          "9",
+          "%18,18",
+          "",
+          "4,48"
+        ],
+        [
+          "Makale",
+          "5",
+          "0",
+          "0",
+          "5",
+          "%0,00",
+          "",
+          "2,44"
+        ],
+        [
+          "Sözcükte Anlam",
+          "9",
+          "4",
+          "0",
+          "5",
+          "%44,44",
+          "",
+          "2,29"
+        ],
+        [
+          "Tanzimat Edebiyatı Coşku Ve Heyecanı Dile Getiren Metinler (Şiir)",
+          "4",
+          "0",
+          "0",
+          "4",
+          "%0,00",
+          "",
+          "2,19"
+        ],
+        [
+          "Metne Sözcük Yerleştirme",
+          "4",
+          "0",
+          "0",
+          "4",
+          "%0,00",
+          "",
+          "2,04"
+        ],
+        [
+          "Cumhuriyet Dönemi Anlatmaya Bağlı Edebi Metinler (Roman Ve Hikaye)",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "1,63"
+        ],
+        [
+          "Paragrafta Anlatımın Akışını Bozan Cümle",
+          "4",
+          "1",
+          "0",
+          "3",
+          "%25,00",
+          "",
+          "1,63"
+        ],
+        [
+          "Paragrafta Ana Düşünce",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "1,62"
+        ],
+        [
+          "Sohbet (Söyleşi)",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "1,5"
+        ],
+        [
+          "Fıkra",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "1,5"
+        ],
+        [
+          "Parçadaki Numaralanmış Cümlelerin İçerik ve Özellikleri",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "1,48"
+        ],
+        [
+          "Servet-i Fünun Sanatçıları Ve Eserleri",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "1,48"
+        ],
+        [
+          "Fecr-i Ati Şiirinin Genel Özellikleri",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "1,48"
+        ],
+        [
+          "Söz Öbeklerinin Anlamı",
+          "4",
+          "1",
+          "1",
+          "2",
+          "%25,00",
+          "",
+          "1,46"
+        ],
+        [
+          "Paragrafa Özgü Soru Kökü",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "1,36"
+        ],
+        [
+          "Cumhuriyet Dönemi - Roman",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "1,11"
+        ],
+        [
+          "Cumhuriyet Dönemi Toplumcu Gerçekçi Roman-Hikayelerinin Temsilcileri Ve Eserleri",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "1,09"
+        ],
+        [
+          "Cümlelerin Anlamca Birleştirilmesi",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "1,09"
+        ],
+        [
+          "Hikaye",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "1,08"
+        ],
+        [
+          "Cumhuriyet Dönemi Türk Edebiyatı (1923-...)",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "1,08"
+        ],
+        [
+          "Cumhuriyet Dönemi Modernizmi Esas Alan Roman-Hikayenin Temsilcileri Ve Eserleri",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "1,08"
+        ],
+        [
+          "Servet-i Fünun Şiirinin Genel Özellikleri",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "1,08"
+        ],
+        [
+          "Tanzimat Dönemi şairlerini tanır.",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "1,08"
+        ],
+        [
+          "Tanzimat Şiirinin Genel Özellikleri",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "1,08"
+        ],
+        [
+          "Öz Şiir (Saf Şiir) Anlayışını Sürdüren Şiir (1920-1940)",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,96"
+        ],
+        [
+          "Paragrafı İkiye Bölme",
+          "4",
+          "2",
+          "0",
+          "2",
+          "%50,00",
+          "",
+          "0,94"
+        ],
+        [
+          "Paragrafın Ana Düşüncesi",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,94"
+        ],
+        [
+          "Parçaya Bağlı Çoklu Soru",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,81"
+        ],
+        [
+          "Anlatım Biçimleri",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,81"
+        ],
+        [
+          "Manzum Hikaye",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,55"
+        ],
+        [
+          "Metin Karşılaştırması",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,55"
+        ],
+        [
+          "Paragrafı Karşılayan Soru",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,55"
+        ],
+        [
+          "Paragrafa Cümle Yerleştirme",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,55"
+        ],
+        [
+          "Servetifünun Dönemi Şiirinin Genel Özellikleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,55"
+        ],
+        [
+          "Paragrafta Anlam Ve Ana Düşünce",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,55"
+        ],
+        [
+          "Paragrafın Yorumu",
+          "11",
+          "10",
+          "0",
+          "1",
+          "%90,91",
+          "",
+          "0,54"
+        ],
+        [
+          "Söz Öbekleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Türkiye Dışındaki Çağdaş Türk Şiiri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Milli Edebiyat Dönemi Şiirlerinin Genel Özellikleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Milli Edebiyatta Coşku Ve Heyecanı Dile Getiren Metinler (Şiir)",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Milli Edebiyatta Halkın Yaşayış Tarzını Ve Değerlerini Anlatan Manzumeler",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Cümle Yorumlama",
+          "4",
+          "3",
+          "0",
+          "1",
+          "%75,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Edebiyat ve Toplum İlişkisi",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Fecr-i Ati Sanatçıları Ve Eserleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Anlatım Teknikleri",
+          "2",
+          "1",
+          "0",
+          "1",
+          "%50,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Ana Fikir",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Cumhuriyet Dönemi Anlatmaya Bağlı Metinlerin Genel Özellikleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Cumhuriyet Dönemi Bireyin İç Dünyasını Esas Alan Roman-Hikaye Ve Temsilcileri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Cumhuriyet Dönemi Modernizmi Esas Alan Roman-Hikaye",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Cumhuriyet Dönemi Şiirinin Genel Özellikleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Cumhuriyet Dönemi Toplumcu Gerçekçi Roman-Hikaye",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Cumhuriyet Dönemi Türk Edebiyatı (1923 Ve Sonrası)",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Dil Bilgisi",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Diyalog",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Karma Dilbilgisi",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,51"
+        ],
+        [
+          "Ekler Ve Sözcük Yapısı",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,51"
+        ],
+        [
+          "Ses Bilgisi",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,51"
+        ],
+        [
+          "Tanzimat Döneminde Şiirin Genel Özellikleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,4"
+        ],
+        [
+          "Milli Edebiyatta Sade Dil Ve Hece Ölçüsüyle Yazılmış Şiirler",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,4"
+        ],
+        [
+          "Atasözleri Ve Deyimler",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,4"
+        ],
+        [
+          "Düşüncenin Akışını Bozan Cümleler",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Paragraf Tamamlama",
+          "4",
+          "4",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Cümlede Anlam",
+          "4",
+          "4",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Sözcük Türleri",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Yazım Yanlışı",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Paragrafta Düşünceyi Geliştirme Yolları",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Paragrafın Yapısı",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Paragrafta Anlam",
+          "21",
+          "21",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Toplam",
+          "83,31"
+        ]
+      ]
+    },
+    {
+      "i": 6,
+      "h": [
+        "Konu Adı",
+        "Sayı",
+        "Doğru",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "",
+        "TYTKayıp Puan"
+      ],
+      "r": [
+        [
+          "Denizcilik Faaliyetlerinin Dünya Siyaseti ve Ticaretine Etkisi",
+          "7",
+          "0",
+          "0",
+          "7",
+          "%0,00",
+          "",
+          "1,98"
+        ],
+        [
+          "Aydınlanma Çağı",
+          "6",
+          "0",
+          "0",
+          "6",
+          "%0,00",
+          "",
+          "1,71"
+        ],
+        [
+          "XVII. YY Osmanlı Devleti ndeki Değişim Ve Islahatlar",
+          "5",
+          "0",
+          "0",
+          "5",
+          "%0,00",
+          "",
+          "1,42"
+        ],
+        [
+          "Osmanlı Devletin de İsyanlar ve Düzeni Koruma Çabaları",
+          "5",
+          "0",
+          "0",
+          "5",
+          "%0,00",
+          "",
+          "1,41"
+        ],
+        [
+          "1595-1700 Yılları Arasındaki Siyasi Gelişmeler",
+          "4",
+          "0",
+          "0",
+          "4",
+          "%0,00",
+          "",
+          "1,14"
+        ],
+        [
+          "1700-1774 Yılları Arası Siyasi Gelişmeler",
+          "4",
+          "0",
+          "0",
+          "4",
+          "%0,00",
+          "",
+          "1,13"
+        ],
+        [
+          "Osmanlı Devletinin Siyasi Varlığına Yönelik Tehditler",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "0,85"
+        ],
+        [
+          "Uzun Savaşlardan Diplomasiye",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "0,85"
+        ],
+        [
+          "Değişim Çağında Avrupa ve Osmanlı",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "0,84"
+        ],
+        [
+          "İhtilaller Çağı",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,57"
+        ],
+        [
+          "Osmanlı Gerileme Dönemi",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,53"
+        ],
+        [
+          "Osmanlılarda Askeri Teşkilat",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Sanayi İnkılabı",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Uluslararası İlişkilerde Denge Stratejisi",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Fransız İhtilali",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Osmanlı Devletinde Modern Orduya geçiş",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "XVIII-XX. Yüzyıl Siyasi Gelişmeleri (1774-1914)",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Avrupa da Din Savaşlarından Modern Devlete",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Avrupada Düşünce Alanındaki Gelişmeler",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Atatürk Dönemi İç Politika",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İlk Türk Devletleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İlk Türk İslam Devletleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İlk ve Orta Çağlarda Türk Dünyası",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Milli Mücadele",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Mudanya Ateşkes Antlaşması",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Büyük Selçuklu Devleti",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Dünya Gücü Osmanlı",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Toplam",
+          "14,71"
+        ]
+      ]
+    },
+    {
+      "i": 7,
+      "h": [
+        "Konu Adı",
+        "Sayı",
+        "Doğru",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "",
+        "TYTKayıp Puan"
+      ],
+      "r": [
+        [
+          "Biyoçesitlilik",
+          "6",
+          "0",
+          "0",
+          "6",
+          "%0,00",
+          "",
+          "1,71"
+        ],
+        [
+          "Şehirler Ve Fonksiyonlar",
+          "6",
+          "0",
+          "0",
+          "6",
+          "%0,00",
+          "",
+          "1,71"
+        ],
+        [
+          "Türkiye de Tarım Ve Hayvancılık",
+          "6",
+          "0",
+          "0",
+          "6",
+          "%0,00",
+          "",
+          "1,68"
+        ],
+        [
+          "Nüfus Politikaları",
+          "5",
+          "0",
+          "0",
+          "5",
+          "%0,00",
+          "",
+          "1,42"
+        ],
+        [
+          "Su Ekosistemi",
+          "4",
+          "0",
+          "0",
+          "4",
+          "%0,00",
+          "",
+          "1,14"
+        ],
+        [
+          "Ekosistem - Madde Döngüleri",
+          "4",
+          "0",
+          "0",
+          "4",
+          "%0,00",
+          "",
+          "1,14"
+        ],
+        [
+          "Doğal Kaynaklar Ve Ekonomi",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "0,85"
+        ],
+        [
+          "Türkiyede Kır Yerleşmeleri",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "0,85"
+        ],
+        [
+          "Üretim, Dağıtım Ve Tüketim Sektörlerinin Etkileşimi",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,57"
+        ],
+        [
+          "Türkiye de Ekonomik Politikalar",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,57"
+        ],
+        [
+          "Şehirlerin Fonksiyonları Ve Etki Alanları",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,56"
+        ],
+        [
+          "Türkiyenin Madenleri Ve Enerji Kaynakları",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,56"
+        ],
+        [
+          "Türkiyenin Nüfus Politikaları",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Türkiye Ekonomisi - Ekonomi Politikaları",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Türkiye Ekonomisi - Tarım Ve Hayvancılık",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Şehirlerin Fonksiyonları - Göçler - İlk Uygarlıklar",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Doğal Unsurlar",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Harita Bilgisi",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İklim Bilgisi",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İklim Tipleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Nüfus Bilgisi",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Nüfus Özellikleri ve Önemi",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Bölge Kavramı - Ekonomik Faaliyetler",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Bölgeleri Oluşturan Özellikler",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Coğrafyanın Konusu Ve Anlamı",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Doğal Afetler",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Toplam",
+          "14,18"
+        ]
+      ]
+    },
+    {
+      "i": 8,
+      "h": [
+        "Konu Adı",
+        "Sayı",
+        "Doğru",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "",
+        "TYTKayıp Puan"
+      ],
+      "r": [
+        [
+          "MÖ 6. YY - MS 2. YY Felsefesinin Düşünce ve Argümanlarını Değerlendirme",
+          "5",
+          "0",
+          "0",
+          "5",
+          "%0,00",
+          "",
+          "1,42"
+        ],
+        [
+          "MS 2. YY - MS 15. YY Filozoflarının Felsefi Görüşlerinin Analizi",
+          "4",
+          "0",
+          "0",
+          "4",
+          "%0,00",
+          "",
+          "1,13"
+        ],
+        [
+          "MS 2. YY - 15. YY Felsefesi",
+          "4",
+          "1",
+          "0",
+          "3",
+          "%25,00",
+          "",
+          "0,84"
+        ],
+        [
+          "MS 2. YY - MS 15. YY Felsefesinin Ortaya Çıkışı",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,57"
+        ],
+        [
+          "MS 2.YY - MS 15.YY Felsefesinin Ayırıcı Nitelikleri",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,57"
+        ],
+        [
+          "MÖ 6. YY - MS 2. YY Felsefesinin Ayırıcı Nitelikleri",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,57"
+        ],
+        [
+          "18. YY - 19. YY Felsefesi",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,57"
+        ],
+        [
+          "20. YY Felsefesi",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,53"
+        ],
+        [
+          "Bilim Felsefesi Nedir?",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,53"
+        ],
+        [
+          "Felsefenin Ortaya Çıkışı",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "18. YY Aydınlanma Felsefesi",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "15. YY - 17. YY Felsefesinin Ayırıcı Nitelikleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "15. YY - 17. YY Felsefesinin Ortaya Çıkışı",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "MÖ 6. YY - MS 2. YY filozoflarının felsefi görüşlerinin analizi",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Felsefeye Giriş",
+          "5",
+          "5",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Felsefeyi Tanıma",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Varlık Felsefesi Nedir?",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Toplam",
+          "8,16"
+        ]
+      ]
+    },
+    {
+      "i": 9,
+      "h": [
+        "Konu Adı",
+        "Sayı",
+        "Doğru",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "",
+        "TYTKayıp Puan"
+      ],
+      "r": [
+        [
+          "Hz. Muhammed in Örnekliği",
+          "6",
+          "0",
+          "0",
+          "6",
+          "%0,00",
+          "",
+          "1,71"
+        ],
+        [
+          "Dünya Hayatı Ve Ahiret",
+          "6",
+          "0",
+          "0",
+          "6",
+          "%0,00",
+          "",
+          "1,7"
+        ],
+        [
+          "Hayatı Anlamlandırmada Ahiret İnancının Önemli Bir Katkı Sağladığı",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "0,85"
+        ],
+        [
+          "Ahiret Hayatının Mahiyeti",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,57"
+        ],
+        [
+          "Kuran ın Anlaşılması Ve Yorumlanması İle İlgili Meal Ve Tefsir Kavramları",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,57"
+        ],
+        [
+          "Kuran-ı Kerimdeki Bazı Kavramlar",
+          "3",
+          "1",
+          "0",
+          "2",
+          "%33,33",
+          "",
+          "0,56"
+        ],
+        [
+          "Kuran a Göre Hz. Muhammed(S.A.V)",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,56"
+        ],
+        [
+          "Ahirete Uğurlama",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Bakara suresi 153-157. Ayetler",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,28"
+        ],
+        [
+          "Din Kültürü Ve Ahlak Bilgisi",
+          "5",
+          "5",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Din ve Hayat",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Ahlaki Tutumlar",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Hz. Muhammed Ve Gençler",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İnanç",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Toplam",
+          "7,09"
+        ]
+      ]
+    },
+    {
+      "i": 10,
+      "h": [
+        "Konu Adı",
+        "Sayı",
+        "Doğru",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "",
+        "TYTKayıp Puan"
+      ],
+      "r": [
+        [
+          "Birim Çember",
+          "25",
+          "14",
+          "7",
+          "4",
+          "%56,00",
+          "",
+          "7,97"
+        ],
+        [
+          "Trigonometrik Fonksiyonlar",
+          "31",
+          "21",
+          "4",
+          "6",
+          "%67,74",
+          "",
+          "6,74"
+        ],
+        [
+          "İkinci Dereceden Fonksiyonlar Ve Grafikleri",
+          "12",
+          "5",
+          "3",
+          "4",
+          "%41,67",
+          "",
+          "4,57"
+        ],
+        [
+          "Fonksiyon Grafiği",
+          "13",
+          "7",
+          "2",
+          "4",
+          "%53,85",
+          "",
+          "3,77"
+        ],
+        [
+          "Doğrunun Analitik İncelenmesi",
+          "17",
+          "11",
+          "1",
+          "5",
+          "%64,71",
+          "",
+          "3,7"
+        ],
+        [
+          "Fonksiyonların Grafik Çizimi",
+          "9",
+          "5",
+          "3",
+          "1",
+          "%55,56",
+          "",
+          "2,54"
+        ],
+        [
+          "Sayı Problemleri",
+          "10",
+          "5",
+          "0",
+          "5",
+          "%50,00",
+          "",
+          "2,34"
+        ],
+        [
+          "Fonksiyonlarla İlgili Uygulamalar",
+          "12",
+          "10",
+          "1",
+          "1",
+          "%83,33",
+          "",
+          "1,41"
+        ],
+        [
+          "İki Nokta Arasındaki Uzaklık",
+          "8",
+          "6",
+          "1",
+          "1",
+          "%75,00",
+          "",
+          "1,41"
+        ],
+        [
+          "Kosinüs Teoremi",
+          "4",
+          "2",
+          "1",
+          "1",
+          "%50,00",
+          "",
+          "1,32"
+        ],
+        [
+          "Ters Trigonometrik Fonksiyonlar",
+          "4",
+          "2",
+          "0",
+          "2",
+          "%50,00",
+          "",
+          "1,25"
+        ],
+        [
+          "Sayı Kümeleri",
+          "2",
+          "0",
+          "1",
+          "1",
+          "%0,00",
+          "",
+          "1,05"
+        ],
+        [
+          "Kar-Zarar Problemleri",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,94"
+        ],
+        [
+          "Grafik Problemleri",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,94"
+        ],
+        [
+          "Bir Noktanın Bir Doğruya Olan Uzaklığı",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,78"
+        ],
+        [
+          "Sinüs Teoremi",
+          "2",
+          "1",
+          "0",
+          "1",
+          "%50,00",
+          "",
+          "0,62"
+        ],
+        [
+          "Temel Kavramlar",
+          "3",
+          "2",
+          "1",
+          "0",
+          "%66,67",
+          "",
+          "0,59"
+        ],
+        [
+          "Yaş Problemleri",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,59"
+        ],
+        [
+          "Faktöriyel",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,59"
+        ],
+        [
+          "Köklü İfadeler",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,59"
+        ],
+        [
+          "Küme Özellikleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Mantık",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Merkezi Eğilim Ve Yayılım Ölçüleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Mutlak Değer",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Mutlak Değerli Eşitsizlikler",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Olasılık",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Ondalık Sayılar",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Önermeler Ve Bileşik Önermeler",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Periyot",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Permütasyon - Kombinasyon",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Hareket Problemleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Hız Problemleri",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Bölünebilme Kuralları",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Bileşik Olayların Olasılıkları",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Sayma Kuralları",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Yüzde Problemleri",
+          "3",
+          "2",
+          "0",
+          "1",
+          "%66,67",
+          "",
+          "0,47"
+        ],
+        [
+          "Analiz Etme",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Aralık Kavramı ve Basit Eşitsizlikler",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Basamak Kavramı",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Basit Eşitsizlikler",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Tek Ve Çift Sayılar",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Yönlü Açılar",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Trigonometrik Fonksiyonların Grafikleri",
+          "3",
+          "3",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Üslü Sayılar",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Açı Ölçü Birimleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Çarpanlara Ayırma",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Bölme - Bölünebilme",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İçten Ve Dıştan Bölen Nokta",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Fonksiyon Çeşitleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İkinci Dereceden Denklemler",
+          "5",
+          "5",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Rasyonel Sayılar",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Rutin Olmayan Problemler",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Sayı Basamakları",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kümelerde İşlemler",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kesir Problemleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İkinci Dereceden İki Bilinmeyenli Denklem Sistemlerinin Çözüm Kümesi",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kareköklü Sayılar",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Toplam",
+          "51,65"
+        ]
+      ]
+    },
+    {
+      "i": 11,
+      "h": [
+        "Konu Adı",
+        "Sayı",
+        "Doğru",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "",
+        "TYTKayıp Puan"
+      ],
+      "r": [
+        [
+          "Benzerlik",
+          "3",
+          "0",
+          "0",
+          "3",
+          "%0,00",
+          "",
+          "1,41"
+        ],
+        [
+          "Çokgenler",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,94"
+        ],
+        [
+          "Dikdörtgen",
+          "4",
+          "2",
+          "0",
+          "2",
+          "%50,00",
+          "",
+          "0,94"
+        ],
+        [
+          "Katı Cisimler",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,94"
+        ],
+        [
+          "Uzay Geometri",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,94"
+        ],
+        [
+          "Paralelkenar",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,59"
+        ],
+        [
+          "Açılar",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Üçgende Açı",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,47"
+        ],
+        [
+          "Üçgende Alan",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Doğruda Açılar",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Toplam",
+          "6,68"
+        ]
+      ]
+    },
+    {
+      "i": 12,
+      "h": [
+        "Konu Adı",
+        "Sayı",
+        "Doğru",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "",
+        "TYTKayıp Puan"
+      ],
+      "r": [
+        [
+          "Newton un Hareket Yasaları",
+          "9",
+          "6",
+          "2",
+          "1",
+          "%66,67",
+          "",
+          "0,92"
+        ],
+        [
+          "Enerjinin Korunumu",
+          "2",
+          "0",
+          "1",
+          "1",
+          "%0,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Isı Ve Sıcaklık",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,45"
+        ],
+        [
+          "Optik",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,45"
+        ],
+        [
+          "Basınç",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,45"
+        ],
+        [
+          "Basınç - Kaldırma Kuvveti",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,45"
+        ],
+        [
+          "Elektrik Ve Manyetizma",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,45"
+        ],
+        [
+          "Bir Boyutta Sabit İvmeli Hareket",
+          "6",
+          "5",
+          "1",
+          "0",
+          "%83,33",
+          "",
+          "0,37"
+        ],
+        [
+          "Tork",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,37"
+        ],
+        [
+          "Enerji Ve Hareket",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,37"
+        ],
+        [
+          "Yatay Ve Eğik Atış Hareketleri",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,3"
+        ],
+        [
+          "İtme Ve Çizgisel Momentum",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,3"
+        ],
+        [
+          "İş İle Enerji Arasındaki İlişki",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,3"
+        ],
+        [
+          "Hareketin Göreleliği",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,3"
+        ],
+        [
+          "Bağıl Hareket",
+          "5",
+          "4",
+          "1",
+          "0",
+          "%80,00",
+          "",
+          "0,3"
+        ],
+        [
+          "Dengenin Şartları",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,3"
+        ],
+        [
+          "Elektriksel Alan",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,24"
+        ],
+        [
+          "Elektriksel Kuvvet Ve Elektrik Alan",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,24"
+        ],
+        [
+          "Elektrik Akımı",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Dalgalar",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Bileşke Kuvvet",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Hız-Zaman Grafiği Ve Özellikleri - İvme Kavramı",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Enerjinin Korunumu Ve Enerji Dönüşümleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Fizik Bilimine Giriş",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İtme - Momentum",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İki Boyutta Hareket",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kuvvet Ve Hareket",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Limit Hızı",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Madde Ve Özellikleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Mekanik Enerji",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Sabit İvmeli Hareket",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Serbest Düşme Ve Limit Hız",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Tork - Denge",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Vektörler",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Toplam",
+          "7,12"
+        ]
+      ]
+    },
+    {
+      "i": 13,
+      "h": [
+        "Konu Adı",
+        "Sayı",
+        "Doğru",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "",
+        "TYTKayıp Puan"
+      ],
+      "r": [
+        [
+          "Çözetilerin Koligatif Özellikleri",
+          "3",
+          "0",
+          "1",
+          "2",
+          "%0,00",
+          "",
+          "0,9"
+        ],
+        [
+          "Yükseltgenme Basamakları ve Elektron Dizilimleri",
+          "3",
+          "1",
+          "2",
+          "0",
+          "%33,33",
+          "",
+          "0,6"
+        ],
+        [
+          "Gaz Kanunları",
+          "7",
+          "5",
+          "1",
+          "1",
+          "%71,43",
+          "",
+          "0,54"
+        ],
+        [
+          "Çözünürlük",
+          "2",
+          "0",
+          "0",
+          "2",
+          "%0,00",
+          "",
+          "0,48"
+        ],
+        [
+          "Asitler, Bazlar ve Tuzlar",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,45"
+        ],
+        [
+          "Sıvılar",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,36"
+        ],
+        [
+          "Kinetik Teori: İdeal Gaz Özellikleri",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,3"
+        ],
+        [
+          "Koligatif Özellikler",
+          "3",
+          "2",
+          "1",
+          "0",
+          "%66,67",
+          "",
+          "0,3"
+        ],
+        [
+          "Atomun Kuantum Modeli",
+          "5",
+          "4",
+          "1",
+          "0",
+          "%80,00",
+          "",
+          "0,3"
+        ],
+        [
+          "Çözünürlüğe Sıcaklık Ve Basınç Etkisi",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,3"
+        ],
+        [
+          "Elektron Dizilimi Ve Grup İlişkisi",
+          "3",
+          "2",
+          "1",
+          "0",
+          "%66,67",
+          "",
+          "0,3"
+        ],
+        [
+          "Gaz Karışımları",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,3"
+        ],
+        [
+          "İdeal Gaz Denklemi",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,24"
+        ],
+        [
+          "Derişim Birimleri Ve Hesapları",
+          "2",
+          "1",
+          "0",
+          "1",
+          "%50,00",
+          "",
+          "0,24"
+        ],
+        [
+          "Gaz Davranışları",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Çözünürlük Ve Etki Eden Faktörler",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Derişim Birimleri",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Çözelti Derişimleri",
+          "4",
+          "4",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Atom Kuantum Modeli",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Atom Ve Periyodik Sistem",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Asitler Ve Bazlar",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İdeal Gaz Yasası",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Karışımlar",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kısmi Basınç",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kimya Bilimi",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kimyanın Temel Kanunları",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kimyasal Hesaplamalar",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kimyasal Türler Arası Etkileşimler",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Gazların Genel Özellikleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Gazların Kinetik Teorisi Ve Gazların Difüzyonu",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Maddenin Halleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Osmoz olayı",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Periyodik Özellikler",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Periyodik Özelliklerin Değişim Eğilimleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Periyodik Sistem Ve Elektron Dizilimleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Simyadan Kimyaya",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Toplam",
+          "5,62"
+        ]
+      ]
+    },
+    {
+      "i": 14,
+      "h": [
+        "Konu Adı",
+        "Sayı",
+        "Doğru",
+        "Yanlış",
+        "Boş",
+        "Yüzde",
+        "",
+        "TYTKayıp Puan"
+      ],
+      "r": [
+        [
+          "Sindirim Sistemini Oluşturan Yapı Ve Organlar",
+          "3",
+          "1",
+          "2",
+          "0",
+          "%33,33",
+          "",
+          "0,75"
+        ],
+        [
+          "Tiroit Bezi",
+          "4",
+          "2",
+          "2",
+          "0",
+          "%50,00",
+          "",
+          "0,68"
+        ],
+        [
+          "Beyin",
+          "3",
+          "1",
+          "2",
+          "0",
+          "%33,33",
+          "",
+          "0,68"
+        ],
+        [
+          "Duyu Organları",
+          "4",
+          "2",
+          "1",
+          "1",
+          "%50,00",
+          "",
+          "0,54"
+        ],
+        [
+          "Besin Maddeleri",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,45"
+        ],
+        [
+          "Hücre Zarında Madde Geçişleri",
+          "1",
+          "0",
+          "1",
+          "0",
+          "%0,00",
+          "",
+          "0,45"
+        ],
+        [
+          "Dolaşım Sistemi",
+          "3",
+          "2",
+          "1",
+          "0",
+          "%66,67",
+          "",
+          "0,37"
+        ],
+        [
+          "Sınıflandırma",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,36"
+        ],
+        [
+          "Sindirim Sistemi",
+          "3",
+          "2",
+          "1",
+          "0",
+          "%66,67",
+          "",
+          "0,3"
+        ],
+        [
+          "Omurilik",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,3"
+        ],
+        [
+          "Sindirim Sisteminin Kısımları",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,3"
+        ],
+        [
+          "İskelet Kasının Kasılma Mekanizması",
+          "3",
+          "2",
+          "1",
+          "0",
+          "%66,67",
+          "",
+          "0,3"
+        ],
+        [
+          "Kan Dolaşımı",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,3"
+        ],
+        [
+          "Gözün Yapısı",
+          "2",
+          "1",
+          "1",
+          "0",
+          "%50,00",
+          "",
+          "0,3"
+        ],
+        [
+          "Kas Sistemi",
+          "2",
+          "1",
+          "0",
+          "1",
+          "%50,00",
+          "",
+          "0,24"
+        ],
+        [
+          "Bağışıklık Sistemi",
+          "1",
+          "0",
+          "0",
+          "1",
+          "%0,00",
+          "",
+          "0,24"
+        ],
+        [
+          "Böbrek Üstü Bezi",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Canlı Alemleri Ve Özellikleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Canlıların Temel Bileşenleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Destek Ve Hareket Sistemi",
+          "3",
+          "3",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Destek Ve Hareket Sistemleri",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Hücrelerin Yapısı Ve Çesitleri",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Duyu Organlarının Yapı Ve Fonksiyonları",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Ekosistem Ekolojisi",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Endokrin Bezler Ve Hormonlar",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Görme Bozuklukları",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kemik Doku",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Mitoz Bölünme",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "İskelet Sistemi",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kalıtım",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Kalıtımın Genel İlkeleri",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Sinir Doku",
+          "2",
+          "2",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Sinir Sistemi(Beyin)",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Sinirlerde İmpuls Oluşumu Ve İletimi",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Organik Bileşikler",
+          "1",
+          "1",
+          "0",
+          "0",
+          "%100,00",
+          "",
+          "0"
+        ],
+        [
+          "Toplam",
+          "6,57"
+        ]
+      ]
+    }
+  ],
+  "fullText": " 2025.26\n Kurs\n TR\nZeki Göksal \nEYOTEK BİLGİLENDİRME PANELİ\n DEVAM ET\nAna Menü Öğretmen Menü\n Sık Kullanılanlar\n Sayfam\n Öğrenci\n Ön Kayıt\n Kayıt\n Halkla İlişkiler\n Öğrenciler\n Liste\n Rehberlik\n Yoklama\n İletişim\n Ders Programı\n Sınavlar\n Ödev\n Etüt\n Bülten & Belge\n Davranışlar\n Yemek\n Avukat\n Etkinlik\n Sorum Var\n Personel\n Muhasebe\n Araçlar\n Raporlar\nBADE UÇAR\n173\nSÖZ NO\n11.SNF\nDEVRE\n22526\nSEZON\n[4] 11 SAY NXT\nSINIF\n Ödeme\n Genel Bilgiler\n Özel Bilgiler\n Ekstra Sınıf & Kulüp\n Ders Programı\n Yoklama\n Ödev\n Etüt\n Rehberlik Notu\n Sınıf Rehberliği\n Sınav\n MEB Yazılı Notları\n Yazılı Notları\n Yazılı Konuları\n Hedef Soru\n Davranış\n Etkinlik\n Bülten\n Başarı Belgesi\n Online Anket\n Rehberlik Anketi\n Uyku\n Yemek\n Kitaplar\n Revir\n Ön Kayıt Ekranı\n İndirimler\n SMS\n Bildirim\n Servis\n Kısayollar\n Fotoğraf Yükle\n Boy & Kilo & Beden\n Şifre Değiştir\n Öğrenciler\n  KARNE  SINAVLAR\nBirleşen Sınavlar\n  \n\tKod\tSınav Adı\tTürkçe\tTarih\tCoğrafya\tFelsefe\tDinKültürü\tMatematik\tGeometri\tFizik\tKimya\tBiyoloji\tToplam\n1\t112\tDeneme-1 - (İşler - Ulti) (21.11.2025)\t0,00\t0,00\t0,00\t0,00\t0,00\t16,25\t \t7,50\t6,50\t8,75\t39,00\n2\t114\t11. sınıf Bilgi Sarmal 2 (16.01.2026)\t0,00\t0,00\t0,00\t0,00\t0,00\t18,75\t \t10,00\t8,75\t5,25\t42,75\n3\t115\tİşler - Bilgi Sarmal 3 (24.01.2026)\t0,00\t0,00\t0,00\t0,00\t0,00\t12,00\t \t4,00\t7,00\t3,75\t26,75\n4\t999000054\tEN DENEME TG TYT-1 (11.02.2026)\t36,25\t5,00\t5,00\t2,50\t5,00\t10,75\t5,75\t2,00\t5,75\t6,00\t84,00\n5\t117\t11. sınıf PALME TİS 5 (20.02.2026)\t0,00\t0,00\t0,00\t0,00\t0,00\t21,75\t \t7,00\t5,50\t5,25\t39,50\n6\t999000075\tÜçDörtBeş TG BÜYÜK PROVA TYT-1 (11.03.2026)\t38,75\t3,75\t5,00\t5,00\t5,00\t14,75\t0,00\t5,75\t6,00\t2,50\t86,50\n7\t118\t11. sınıf İşler - Yayın Denizi 1 (20.03.2026)\t0,00\t0,00\t0,00\t0,00\t0,00\t22,50\t \t2,75\t3,00\t6,50\t34,75\nPuan & Sıralama\n  \nTYT: 295,004\nHAM PUAN / SIRA\nOSYM 2025\n445.602\nOSYM 2024\n459.374\nOSYM 2023\n481.164\nTYT: 352,004\nYERLEŞME PUANI / SIRA\nOSYM 2025\n386.657\nOSYM 2024\n401.434\nOSYM 2023\n413.328\nDers & Kayıp Puan\n  \nDers\tSoru\nSayısı\tDoğru\nCevap\tYanlış\nCevap\tBoş\tNet\tGenel\nOrtalama\tİl\nOrtalama\tİlçe\nOrtalama\tŞube\nOrtalama\tSınıf\nOrtalama\tTYT\nKayıp Puan\nTYT_Türkçe\t240\t76\t4\t160\t75,00\t71,48\t71,31\t74,68\t74,68\t65,00\t83,31\n\nTYT_Türkçe\n\t240\t76\t4\t160\t75,00\t71,48\t71,31\t74,68\t74,68\t65,00\t83,31\nTYT_Sosyal Bilimler\t190\t37\t3\t150\t36,25\t31,57\t31,19\t32,20\t32,20\t25,80\t44,14\n\nTYT_Tarih\n\t60\t9\t1\t50\t8,75\t7,28\t7,02\t7,31\t7,31\t6,06\t14,71\n\nTYT_Coğrafya\n\t60\t10\t0\t50\t10,00\t6,60\t6,41\t6,86\t6,86\t4,62\t14,18\n\nTYT_Felsefe\n\t35\t8\t2\t25\t7,50\t8,04\t8,15\t8,42\t8,42\t7,62\t8,16\n\nTYT_DinKültürü\n\t35\t10\t0\t25\t10,00\t9,65\t9,61\t9,61\t9,61\t7,50\t7,09\nTYT_Matematik\t230\t130\t30\t70\t122,50\t113,60\t111,58\t116,17\t116,17\t121,75\t75,02\n\nTYT_Matematik\n\t210\t124\t29\t57\t116,75\t108,41\t106,87\t110,38\t110,38\t116,83\t51,65\n\nTYT_Geometri\n\t20\t6\t1\t13\t5,75\t5,19\t4,71\t5,79\t5,79\t4,92\t23,37\nTYT_Fen Bilimleri\t190\t130\t42\t18\t119,50\t92,46\t92,76\t95,36\t95,36\t107,11\t19,31\n\nTYT_Fizik\n\t64\t43\t16\t5\t39,00\t28,83\t28,99\t29,97\t29,97\t35,25\t7,12\n\nTYT_Kimya\n\t64\t45\t10\t9\t42,50\t31,36\t31,57\t32,60\t32,60\t37,53\t5,62\n\nTYT_Biyoloji\n\t62\t42\t16\t4\t38,00\t32,27\t32,20\t32,79\t32,79\t34,33\t6,57\nToplam\t850\t373\t79\t398\t353,25\t309,11\t306,84\t318,41\t318,41\t319,66\t221,78\nÖncelikli Konular & Konu Analizi\n  \nÖncelikli Konular\nKonu Analizi\n\nBaşarınızı daha ileriye taşıyabilmeniz için, öncelikle öğrenmeniz gereken 3 grupta toplam 28 adet konu belirledik.\n\n1. Öncelik\n(8 Konu)\nKonuları öğrenince ulaşacağınız; Ham Puan: 342,97, Ham Sıra: 183.351, Yerleşme Puanı: 399,97, Yerleşme Sırası: 169.226\nKonu Adı\tSoru Sayısı\tYanlış\tBoş\tYüzde\tTYT\nKayıp Puan\nTYT_Türkçe : Cümlenin Temel Ögeleri\t19\t0\t18\t%5,26\t8,8\nTYT_Matematik : Birim Çember\t25\t7\t4\t%56,00\t7,97\nTYT_Matematik : Trigonometrik Fonksiyonlar\t31\t4\t6\t%67,74\t6,74\nTYT_Türkçe : Edebi Akımlar\t10\t0\t10\t%0,00\t5,27\nTYT_Türkçe : Noktalama İşaretleri\t14\t0\t10\t%28,57\t5,15\nTYT_Türkçe : Paragrafta Yardımcı Düşünce\t19\t0\t10\t%47,37\t5\nTYT_Matematik : İkinci Dereceden Fonksiyonlar Ve Grafikleri\t12\t3\t4\t%41,67\t4,57\nTYT_Türkçe : Yazım Kuralları\t11\t0\t9\t%18,18\t4,48\nToplam\t47,97\n2. Öncelik\n(10 Konu)\nKonuları öğrenince ulaşacağınız; Ham Puan: 366,43, Ham Sıra: 112.097, Yerleşme Puanı: 423,43, Yerleşme Sırası: 104.755\nKonu Adı\tSoru Sayısı\tYanlış\tBoş\tYüzde\tTYT\nKayıp Puan\nTYT_Matematik : Fonksiyon Grafiği\t13\t2\t4\t%53,85\t3,77\nTYT_Matematik : Doğrunun Analitik İncelenmesi\t17\t1\t5\t%64,71\t3,7\nTYT_Matematik : Fonksiyonların Grafik Çizimi\t9\t3\t1\t%55,56\t2,54\nTYT_Matematik : Sayı Problemleri\t10\t0\t5\t%50,00\t2,34\nTYT_Türkçe : Sözcükte Anlam\t9\t0\t5\t%44,44\t2,29\nTYT_Tarih : Denizcilik Faaliyetlerinin Dünya Siyaseti ve Ticaretine Etkisi\t7\t0\t7\t%0,00\t1,98\nTYT_DinKültürü : Hz. Muhammed in Örnekliği\t6\t0\t6\t%0,00\t1,71\nTYT_Coğrafya : Biyoçesitlilik\t6\t0\t6\t%0,00\t1,71\nTYT_Coğrafya : Şehirler Ve Fonksiyonlar\t6\t0\t6\t%0,00\t1,71\nTYT_Tarih : Aydınlanma Çağı\t6\t0\t6\t%0,00\t1,71\nToplam\t23,46\n3. Öncelik\n(10 Konu)\nKonuları öğrenince ulaşacağınız; Ham Puan: 382,43, Ham Sıra: 75.000, Yerleşme Puanı: 439,43, Yerleşme Sırası: 71.746\nKonu Adı\tSoru Sayısı\tYanlış\tBoş\tYüzde\tTYT\nKayıp Puan\nTYT_Türkçe : Makale\t5\t0\t5\t%0,00\t2,44\nTYT_Türkçe : Tanzimat Edebiyatı Coşku Ve Heyecanı Dile Getiren Metinler (Şiir)\t4\t0\t4\t%0,00\t2,19\nTYT_DinKültürü : Dünya Hayatı Ve Ahiret\t6\t0\t6\t%0,00\t1,7\nTYT_Coğrafya : Türkiye de Tarım Ve Hayvancılık\t6\t0\t6\t%0,00\t1,68\nTYT_Tarih : XVII. YY Osmanlı Devleti ndeki Değişim Ve Islahatlar\t5\t0\t5\t%0,00\t1,42\nTYT_Felsefe : MÖ 6. YY - MS 2. YY Felsefesinin Düşünce ve Argümanlarını Değerlendirme\t5\t0\t5\t%0,00\t1,42\nTYT_Coğrafya : Nüfus Politikaları\t5\t0\t5\t%0,00\t1,42\nTYT_Tarih : Osmanlı Devletin de İsyanlar ve Düzeni Koruma Çabaları\t5\t0\t5\t%0,00\t1,41\nTYT_Matematik : Fonksiyonlarla İlgili Uygulamalar\t12\t1\t1\t%83,33\t1,41\nTYT_Fizik : Newton un Hareket Yasaları\t9\t2\t1\t%66,67\t0,92\nToplam\t16,00\nGrafik\n  \nPuanlar\nNet Yüzde / Netler\nTYT\n112\n114\n115\n999000054\n117\n999000075\n118\n0\n100\n200\n300\n400\n500\nTYT\nSınıf Ortalama\nGenel Ortalama\n▬▬ Sınıf Ortalama ▬▬ Genel Ortalama",
+  "sinav_sayisi": 19,
+  "katildi": 7
+}

@@ -1,0 +1,74 @@
+{
+  "sinif": "[11] MEZUN SAY B",
+  "devre": "Mezun",
+  "ogrenci_sayisi": 12,
+  "ogrenciler": [
+    {
+      "soz_no": "245",
+      "ad": "AHMET YAVUZ",
+      "soyad": "EKİCİ"
+    },
+    {
+      "soz_no": "262",
+      "ad": "ALP KAAN",
+      "soyad": "MUKANBAY"
+    },
+    {
+      "soz_no": "196",
+      "ad": "DEVİN DENİZ",
+      "soyad": "DOĞAN"
+    },
+    {
+      "soz_no": "215",
+      "ad": "DURU",
+      "soyad": "ÖZARSLAN"
+    },
+    {
+      "soz_no": "187",
+      "ad": "EGE MİRAÇ",
+      "soyad": "YAVUZ"
+    },
+    {
+      "soz_no": "221",
+      "ad": "ENES",
+      "soyad": "ÇÖLMEKCİ"
+    },
+    {
+      "soz_no": "253",
+      "ad": "HAVİN",
+      "soyad": "TAŞKIRAN"
+    },
+    {
+      "soz_no": "198",
+      "ad": "HÜSEYİN EFE",
+      "soyad": "DÜZAKMAN"
+    },
+    {
+      "soz_no": "260",
+      "ad": "NAZLI",
+      "soyad": "KOYUN"
+    },
+    {
+      "soz_no": "223",
+      "ad": "ÖMER ARDA",
+      "soyad": "ŞEKERCİ"
+    },
+    {
+      "soz_no": "235",
+      "ad": "İNCİ",
+      "soyad": "ALTINGEZ"
+    },
+    {
+      "soz_no": "202",
+      "ad": "İREM HAVVA",
+      "soyad": "COŞKUN"
+    }
+  ],
+  "etut_toplam": 64,
+  "etut_yapildi": 11,
+  "etut_gelmedi": 1,
+  "etut_katilim_yuzdesi": 17,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

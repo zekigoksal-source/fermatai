@@ -1,0 +1,24 @@
+{
+  "soz_no": "288",
+  "eyotek_id": "288",
+  "ad_soyad": "MEHMET SORMAGEÇ",
+  "sinif": "[12] 12 MEZ SAY C",
+  "devre": "Mezun",
+  "telefon": "+905334290830",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 2,
+  "etut_yapildi": 0,
+  "etut_gelmedi": 0,
+  "etut_kontrol_edilmedi": 2,
+  "etut_katilim_yuzdesi": 0,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%0)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

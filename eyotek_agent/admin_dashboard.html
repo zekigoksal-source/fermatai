@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FermatAI · BATCOMPUTER</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  /* ═══════════════════════ BATCOMPUTER THEME ═══════════════════════ */
+  :root {
+    --bg: #050811;
+    --bg-panel: #0a0f1c;
+    --bg-panel-2: #0f1626;
+    --border: #1a2540;
+    --border-hot: #ffd23f;
+    --text: #c9d5ec;
+    --text-dim: #5d6e92;
+    --bat-yellow: #ffd23f;
+    --bat-yellow-dim: #b8941a;
+    --neon-cyan: #00e5ff;
+    --neon-green: #00ff9c;
+    --neon-purple: #9d4edd;
+    --neon-red: #ff3b6b;
+    --grid: rgba(255, 210, 63, 0.04);
+    --bat-glow: 0 0 20px rgba(255, 210, 63, 0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', 'Consolas', monospace;
+    min-height: 100vh;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 50px 50px;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at top left, rgba(255, 210, 63, 0.08), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(157, 78, 221, 0.08), transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; padding: 16px 24px; max-width: 1900px; margin: 0 auto; }
+
+  /* ═══════════════════════ HEADER (BATCOMPUTER) ═══════════════════════ */
+  .header {
+    padding: 18px 28px;
+    background: linear-gradient(135deg, #0a0f1c 0%, #0f1626 100%);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--bat-yellow);
+    border-radius: 4px;
+    margin-bottom: 16px;
+    box-shadow: var(--bat-glow);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    width: 50px; height: 80%;
+    background: repeating-linear-gradient(45deg, var(--bat-yellow) 0 2px, transparent 2px 8px);
+    opacity: 0.15;
+    border-radius: 2px;
+  }
+  .logo-line { display: flex; align-items: center; gap: 18px; }
+  .bat-logo {
+    width: 38px; height: 22px;
+    fill: var(--bat-yellow);
+    filter: drop-shadow(0 0 6px var(--bat-yellow));
+  }
+  .header h1 {
+    font-size: 22px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--bat-yellow);
+    text-shadow: 0 0 12px rgba(255, 210, 63, 0.5);
+    font-weight: bold;
+  }
+  .header h1 span { color: var(--text); font-weight: normal; font-size: 16px; }
+  .header-meta { display: flex; gap: 25px; font-size: 11px; color: var(--text-dim); align-items: center; }
+  .header-meta b { color: var(--bat-yellow); }
+  .pulse {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.4); } }
+
+  /* ═══════════════════════ TIME FILTER (sticky) ═══════════════════════ */
+  .time-filter {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+    background: rgba(15, 22, 38, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 16px;
+    position: sticky;
+    top: 8px;
+    z-index: 50;
+    backdrop-filter: blur(6px);
+    align-items: center;
+  }
+  .time-filter-label {
+    font-size: 10px; color: var(--text-dim); letter-spacing: 2px;
+    text-transform: uppercase; margin-right: 12px;
+  }
+  .tf-btn {
+    padding: 7px 16px; font-size: 11px; font-family: inherit;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-dim); cursor: pointer; border-radius: 3px;
+    transition: all 0.2s; letter-spacing: 1px;
+  }
+  .tf-btn:hover { color: var(--bat-yellow); border-color: var(--bat-yellow-dim); }
+  .tf-btn.active {
+    background: var(--bat-yellow);
+    color: #050811; border-color: var(--bat-yellow);
+    font-weight: bold;
+    box-shadow: 0 0 12px rgba(255, 210, 63, 0.4);
+  }
+  .tf-period-display { margin-left: auto; font-size: 11px; color: var(--bat-yellow); letter-spacing: 1px; }
+
+  /* ═══════════════════════ GRID & PANELS ═══════════════════════ */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 14px;
+  }
+
+  .panel {
+    background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-panel-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s;
+  }
+  .panel:hover { border-color: var(--bat-yellow-dim); box-shadow: 0 0 12px rgba(255, 210, 63, 0.12); }
+  .panel::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--bat-yellow), transparent);
+    opacity: 0.3;
+  }
+  .panel.lifetime::before { opacity: 0.7; height: 2px; }
+  .panel.lifetime { border-color: rgba(255, 210, 63, 0.25); }
+
+  .panel-title {
+    font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--bat-yellow); margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .panel-title::before { content: '◆'; margin-right: 6px; color: var(--bat-yellow-dim); }
+  .panel-subtitle { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+
+  /* SECTION HEADER */
+  .section-header {
+    grid-column: span 12;
+    padding: 8px 14px;
+    margin-top: 6px;
+    font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-header::before { content: '['; color: var(--bat-yellow); }
+  .section-header::after { content: ']'; color: var(--bat-yellow); margin-left: auto; }
+
+  /* KPI */
+  .kpi-big {
+    font-size: 30px; font-weight: bold; color: var(--bat-yellow);
+    text-shadow: 0 0 12px currentColor; line-height: 1.1;
+  }
+  .kpi-med { font-size: 22px; font-weight: bold; color: var(--neon-green); line-height: 1.1; }
+  .kpi-sub { font-size: 10px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+  .kpi-cyan { color: var(--neon-cyan); }
+  .kpi-purple { color: var(--neon-purple); }
+  .kpi-red { color: var(--neon-red); }
+  .kpi-green { color: var(--neon-green); }
+
+  /* GRID SPANS */
+  .span-2 { grid-column: span 2; }
+  .span-3 { grid-column: span 3; }
+  .span-4 { grid-column: span 4; }
+  .span-6 { grid-column: span 6; }
+  .span-8 { grid-column: span 8; }
+  .span-12 { grid-column: span 12; }
+
+  /* TABLE */
+  .tbl { width: 100%; font-size: 11px; border-collapse: collapse; }
+  .tbl th {
+    text-align: left; color: var(--bat-yellow); padding: 6px 8px 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-weight: normal; letter-spacing: 1px; text-transform: uppercase; font-size: 9px;
+  }
+  .tbl td { padding: 5px 8px 5px 0; border-bottom: 1px solid rgba(26, 37, 64, 0.5); }
+
+  /* BARS */
+  .bar-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 11px; }
+  .bar-label { flex: 0 0 120px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+  .bar-track { flex: 1; height: 6px; background: rgba(26, 37, 64, 0.5); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--bat-yellow-dim), var(--bat-yellow)); border-radius: 3px; transition: width 0.6s; }
+  .bar-fill.cyan { background: linear-gradient(90deg, var(--neon-cyan), #6ee7f9); }
+  .bar-fill.green { background: linear-gradient(90deg, var(--neon-green), #67e8f9); }
+  .bar-fill.purple { background: linear-gradient(90deg, var(--neon-purple), #d8b4fe); }
+  .bar-fill.red { background: linear-gradient(90deg, var(--neon-red), #ff9bbb); }
+  .bar-val { flex: 0 0 70px; text-align: right; color: var(--text-dim); font-size: 10px; }
+
+  /* DOTS */
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .dot.ok { background: var(--neon-green); box-shadow: 0 0 5px var(--neon-green); }
+  .dot.warn { background: var(--bat-yellow); box-shadow: 0 0 5px var(--bat-yellow); }
+  .dot.err { background: var(--neon-red); box-shadow: 0 0 5px var(--neon-red); }
+
+  /* FEED */
+  .feed { max-height: 380px; overflow-y: auto; }
+  .feed::-webkit-scrollbar { width: 5px; }
+  .feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .feed-item {
+    padding: 6px 0; border-bottom: 1px solid rgba(26, 37, 64, 0.4);
+    font-size: 10px; display: grid;
+    grid-template-columns: 65px 65px 22px 60px 1fr; gap: 8px; align-items: center;
+  }
+  .feed-ts { color: var(--text-dim); }
+  .feed-kim { color: var(--neon-cyan); }
+  .feed-rol { text-align: center; }
+  .feed-src { color: var(--bat-yellow); font-size: 9px; }
+  .feed-snippet { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* GRID HEALTH */
+  .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; font-size: 11px; }
+  .health-cell { padding: 8px 10px; background: rgba(10, 15, 28, 0.6); border-left: 2px solid var(--border); border-radius: 2px; }
+  .health-cell.ok { border-left-color: var(--neon-green); }
+  .health-cell.warn { border-left-color: var(--bat-yellow); }
+  .health-cell.err { border-left-color: var(--neon-red); }
+
+  /* LOADING + UPDATE */
+  .loading {
+    text-align: center; padding: 30px; color: var(--text-dim); font-size: 11px;
+    letter-spacing: 3px;
+  }
+  .loading::after { content: '...'; animation: dots 1.5s infinite; }
+  @keyframes dots { 0%,20%{content:'.'} 40%{content:'..'} 60%,100%{content:'...'} }
+
+  .update-indicator {
+    position: fixed; bottom: 20px; right: 20px;
+    padding: 8px 16px; background: var(--bg-panel);
+    border: 1px solid var(--bat-yellow); border-radius: 20px;
+    font-size: 11px; color: var(--bat-yellow); z-index: 100;
+    box-shadow: 0 0 12px rgba(255, 210, 63, 0.2);
+  }
+
+  canvas { max-height: 220px !important; }
+
+  /* GLITCH */
+  @keyframes glitch {
+    0% { opacity: 1; }
+    50% { opacity: 0.85; text-shadow: 1.5px 0 var(--neon-red), -1.5px 0 var(--neon-cyan); }
+    100% { opacity: 1; }
+  }
+  .glitch { animation: glitch 0.3s ease; }
+
+  @media (max-width: 1200px) {
+    .span-2, .span-3, .span-4 { grid-column: span 6; }
+    .span-6, .span-8 { grid-column: span 12; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-line">
+      <svg class="bat-logo" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 5 Q40 12 30 8 Q22 6 18 12 Q22 18 24 28 Q14 22 8 30 Q6 36 12 38 Q22 36 32 40 Q40 42 50 38 Q60 42 68 40 Q78 36 88 38 Q94 36 92 30 Q86 22 76 28 Q78 18 82 12 Q78 6 70 8 Q60 12 50 5 Z"/>
+      </svg>
+      <h1>BAT<span>COMPUTER</span> · FermatAI</h1>
+    </div>
+    <div class="header-meta">
+      <span><span class="pulse"></span> ONLINE</span>
+      <span>v<b id="h-bridge-ver">--</b> · uptime <b id="h-uptime">--h</b></span>
+      <span>Eyotek <b id="h-eyotek" style="color:var(--neon-green)">?</b></span>
+      <span><b id="h-ts">--:--:--</b></span>
+    </div>
+  </div>
+
+  <!-- TIME FILTER -->
+  <div class="time-filter">
+    <div class="time-filter-label">Zaman</div>
+    <button class="tf-btn active" data-period="today">Bugün</button>
+    <button class="tf-btn" data-period="7d">7 Gün</button>
+    <button class="tf-btn" data-period="30d">30 Gün</button>
+    <button class="tf-btn" data-period="90d">90 Gün</button>
+    <button class="tf-btn" data-period="all">Tüm Zamanlar</button>
+    <div class="tf-period-display">▶ <span id="tf-display">Bugün</span></div>
+  </div>
+
+  <div class="grid">
+
+    <!-- ═════════ LIFETIME (üst altın bant) ═════════ -->
+    <div class="section-header">LIFETIME · Projenin Başından Beri</div>
+
+    <div class="panel lifetime span-2">
+      <div class="panel-title">Sistem Yaşı</div>
+      <div class="kpi-big" id="lt-yas">--</div>
+      <div class="kpi-sub">gün · ilk mesaj ile</div>
+    </div>
+    <div class="panel lifetime span-2">
+      <div class="panel-title">Toplam Mesaj</div>
+      <div class="kpi-big kpi-cyan" id="lt-mesaj">--</div>
+      <div class="kpi-sub"><span id="lt-bot">-</span> bot · <span id="lt-int">-</span> interaction</div>
+    </div>
+    <div class="panel lifetime span-2">
+      <div class="panel-title">Konuşan Kişi</div>
+      <div class="kpi-big kpi-green" id="lt-kisi">--</div>
+      <div class="kpi-sub"><span id="lt-kayit">-</span> kayıtlı · <span id="lt-ogr">-</span> öğrenci</div>
+    </div>
+    <div class="panel lifetime span-2">
+      <div class="panel-title">Toplam Token</div>
+      <div class="kpi-big kpi-purple" id="lt-token">--</div>
+      <div class="kpi-sub">Claude işlenen</div>
+    </div>
+    <div class="panel lifetime span-2">
+      <div class="panel-title">Toplam Maliyet</div>
+      <div class="kpi-big" id="lt-cost-tl">-- ₺</div>
+      <div class="kpi-sub"><span id="lt-cost-usd">-</span> USD · cache aktif</div>
+    </div>
+    <div class="panel lifetime span-2">
+      <div class="panel-title">Tasarruf</div>
+      <div class="kpi-big kpi-green" id="lt-tasarruf">-- ₺</div>
+      <div class="kpi-sub">%<span id="lt-tasarruf-pct">-</span> · cache+routing sayesinde</div>
+    </div>
+
+    <!-- LLM kaynak dağılımı (lifetime) -->
+    <div class="panel lifetime span-6">
+      <div class="panel-title">Lifetime LLM Routing Dağılımı <span class="panel-subtitle">Toplam Asistan Cevabı</span></div>
+      <div id="lt-routing"></div>
+    </div>
+    <div class="panel lifetime span-3">
+      <div class="panel-title">Claude Çağrısı</div>
+      <div class="kpi-big" id="lt-claude">--</div>
+      <div class="kpi-sub">tool-calling · pahalı katman</div>
+    </div>
+    <div class="panel lifetime span-3">
+      <div class="panel-title">Ortalama / Kullanıcı</div>
+      <div class="kpi-big kpi-cyan" id="lt-avg-user">--</div>
+      <div class="kpi-sub">mesaj/kişi · etkileşim derinliği</div>
+    </div>
+
+    <!-- ═════════ FILTRELI METRIKLER ═════════ -->
+    <div class="section-header">PERIYOT · <span id="period-label">Bugün</span></div>
+
+    <div class="panel span-3">
+      <div class="panel-title">Mesaj (User)</div>
+      <div class="kpi-med" id="p-msg-user">--</div>
+      <div class="kpi-sub"><span id="p-msg-bot">-</span> bot cevap · <span id="p-msg-kisi">-</span> kişi</div>
+    </div>
+    <div class="panel span-3">
+      <div class="panel-title">Aktif Kullanıcı</div>
+      <div class="kpi-med kpi-cyan" id="p-active">--</div>
+      <div class="kpi-sub">benzersiz konuşan</div>
+    </div>
+    <div class="panel span-3">
+      <div class="panel-title">Claude · Token · Maliyet</div>
+      <div class="kpi-med" id="p-claude">--</div>
+      <div class="kpi-sub"><span id="p-tokens">-</span> tok · <b id="p-cost-tl" style="color:var(--bat-yellow)">-- ₺</b></div>
+    </div>
+    <div class="panel span-3">
+      <div class="panel-title">Cevap Süresi</div>
+      <div class="kpi-med kpi-green" id="p-perf-avg">--</div>
+      <div class="kpi-sub">avg · p50: <span id="p-perf-p50">-</span>ms · p95: <span id="p-perf-p95">-</span>ms</div>
+    </div>
+
+    <!-- Mesaj trendi (filtreli) -->
+    <div class="panel span-8">
+      <div class="panel-title">Mesaj Trendi <span class="panel-subtitle">Periyot bazlı</span></div>
+      <canvas id="chart-trend"></canvas>
+    </div>
+    <div class="panel span-4">
+      <div class="panel-title">LLM Routing Pasta <span class="panel-subtitle">Filtreli</span></div>
+      <canvas id="chart-routing"></canvas>
+    </div>
+
+    <!-- Routing detay + Top users + Tools -->
+    <div class="panel span-4">
+      <div class="panel-title">Top Aktif Kullanıcı</div>
+      <table class="tbl" id="tbl-top">
+        <thead><tr><th>İsim</th><th>Rol</th><th>Msg</th></tr></thead>
+        <tbody><tr><td colspan="3" class="loading">yükleniyor</td></tr></tbody>
+      </table>
+    </div>
+    <div class="panel span-4">
+      <div class="panel-title">Rol Dağılımı (Aktif)</div>
+      <div id="rol-dagilim"></div>
+    </div>
+    <div class="panel span-4">
+      <div class="panel-title">Tool Kullanımı (Top 10)</div>
+      <div id="tools-list"></div>
+    </div>
+
+    <!-- ═════════ ENGINEERING ═════════ -->
+    <div class="section-header">ENGINEERING · Geliştirme Süreci</div>
+
+    <div class="panel span-2">
+      <div class="panel-title">Aktif Modül</div>
+      <div class="kpi-med kpi-cyan" id="eng-modul">--</div>
+      <div class="kpi-sub">.py dosya</div>
+    </div>
+    <div class="panel span-2">
+      <div class="panel-title">Kod Satırı</div>
+      <div class="kpi-med" id="eng-loc">--</div>
+      <div class="kpi-sub">aktif yazılı</div>
+    </div>
+    <div class="panel span-2">
+      <div class="panel-title">Test</div>
+      <div class="kpi-med kpi-green" id="eng-test">--</div>
+      <div class="kpi-sub">otomatik (pytest)</div>
+    </div>
+    <div class="panel span-2">
+      <div class="panel-title">Bridge Versiyon</div>
+      <div class="kpi-med kpi-purple" id="eng-bridge-v">--</div>
+      <div class="kpi-sub"><span id="eng-bridge-cnt">-</span> total restart</div>
+    </div>
+    <div class="panel span-2">
+      <div class="panel-title">Geliştirme Oturumu</div>
+      <div class="kpi-med" id="eng-oturum">--</div>
+      <div class="kpi-sub">çalışma seansı</div>
+    </div>
+    <div class="panel span-2">
+      <div class="panel-title">RAG Vektör</div>
+      <div class="kpi-med kpi-cyan" id="eng-rag">--</div>
+      <div class="kpi-sub">müfredat içerik</div>
+    </div>
+
+    <!-- ═════════ INFRASTRUCTURE ═════════ -->
+    <div class="section-header">INFRASTRUCTURE · Sistem Sağlığı</div>
+
+    <div class="panel span-12">
+      <div class="health-grid" id="health-grid">
+        <div class="health-cell loading">durumlar yükleniyor</div>
+      </div>
+    </div>
+
+    <!-- ═════════ SECURITY ═════════ -->
+    <div class="section-header">SECURITY · Tehdit & Anomali</div>
+
+    <div class="panel span-3">
+      <div class="panel-title">Hack Denemesi</div>
+      <div class="kpi-med kpi-red" id="sec-hack">--</div>
+      <div class="kpi-sub">prompt injection / jailbreak</div>
+    </div>
+    <div class="panel span-3">
+      <div class="panel-title">Frustration Sinyali</div>
+      <div class="kpi-med" style="color:var(--bat-yellow)" id="sec-frust">--</div>
+      <div class="kpi-sub">"yanlış / anlamadın" mesajları</div>
+    </div>
+    <div class="panel span-3">
+      <div class="panel-title">API Hata (son log)</div>
+      <div class="kpi-med kpi-red" id="sec-api">--</div>
+      <div class="kpi-sub">Anthropic 500 / timeout</div>
+    </div>
+    <div class="panel span-3">
+      <div class="panel-title">Bloklu Numara</div>
+      <div class="kpi-med" style="color:var(--bat-yellow)" id="sec-blocked">--</div>
+      <div class="kpi-sub">Neo bloklamaları</div>
+    </div>
+
+    <!-- ═════════ ACTIVITY FEED ═════════ -->
+    <div class="section-header">LIVE FEED · Son 2 Saat</div>
+    <div class="panel span-12">
+      <div class="feed" id="activity-feed">
+        <div class="loading">canlı izleniyor</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="update-indicator">
+  <span class="pulse"></span> SYNC: <span id="last-update">--:--:--</span>
+</div>
+
+<script>
+const REFRESH_MS = 30000;
+const urlParams = new URLSearchParams(window.location.search);
+const TOKEN = urlParams.get('token') || '';
+let currentPeriod = 'today';
+let charts = {};
+
+Chart.defaults.color = '#c9d5ec';
+Chart.defaults.borderColor = 'rgba(26,37,64,0.5)';
+Chart.defaults.font.family = "'Courier New', monospace";
+
+async function fetchData() {
+  try {
+    const url = `/admin/dashboard/data?period=${currentPeriod}` + (TOKEN ? `&token=${TOKEN}` : '');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    render(data);
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('tr-TR');
+    document.body.classList.add('glitch');
+    setTimeout(() => document.body.classList.remove('glitch'), 300);
+  } catch (e) {
+    console.error('fetch error', e);
+    document.getElementById('last-update').textContent = 'HATA: ' + e.message;
+  }
+}
+
+function fmt(n) {
+  if (n === undefined || n === null) return '--';
+  if (typeof n === 'number') {
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
+    if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+    return n.toString();
+  }
+  return n;
+}
+
+function render(d) {
+  // HEADER
+  set('h-ts', new Date().toLocaleTimeString('tr-TR'));
+  set('h-uptime', (d.health?.bridge_uptime_h || 0) + 'h');
+  const ey = document.getElementById('h-eyotek');
+  ey.textContent = d.health?.eyotek_status || '?';
+  ey.style.color = d.health?.eyotek_status === 'online' ? 'var(--neon-green)' : 'var(--neon-red)';
+  set('h-bridge-ver', d.engineering?.bridge_aktif_versiyon);
+
+  // PERIOD LABEL
+  set('period-label', d.period_label);
+  set('tf-display', d.period_label);
+
+  // ═════════ LIFETIME ═════════
+  const lt = d.lifetime || {};
+  set('lt-yas', lt.sistem_yasi_gun);
+  set('lt-mesaj', fmt(lt.toplam_mesaj_user));
+  set('lt-bot', fmt(lt.toplam_mesaj_bot));
+  set('lt-int', fmt(lt.toplam_interaction));
+  set('lt-kisi', lt.toplam_kisi_konusan);
+  set('lt-kayit', lt.kayitli_kullanici);
+  set('lt-ogr', lt.kayitli_ogrenci);
+  set('lt-token', fmt(lt.total_tokens));
+  set('lt-cost-tl', (lt.total_cost_tl || 0).toFixed(2) + ' ₺');
+  set('lt-cost-usd', (lt.total_cost_usd || 0).toFixed(2));
+  set('lt-tasarruf', (lt.tasarruf_tl || 0).toFixed(0) + ' ₺');
+  set('lt-tasarruf-pct', lt.tasarruf_yuzde);
+  set('lt-claude', fmt(lt.claude_total));
+  set('lt-avg-user', lt.toplam_kisi_konusan ? Math.round(lt.toplam_mesaj_user / lt.toplam_kisi_konusan) : '--');
+
+  // Lifetime routing bars
+  const ltTotal = (lt.fast_total || 0) + (lt.ollama_total || 0) + (lt.claude_total || 0);
+  const ltRouting = [
+    {label: '⚡ Fast Response (0 maliyet)', val: lt.fast_total, cls: 'green'},
+    {label: '🔬 Ollama Local (0 maliyet)', val: lt.ollama_total, cls: 'cyan'},
+    {label: '🧠 Claude API (ücretli)', val: lt.claude_total, cls: 'purple'},
+  ];
+  document.getElementById('lt-routing').innerHTML = ltRouting.map(r => {
+    const pct = ltTotal ? Math.round(r.val / ltTotal * 100) : 0;
+    return `<div class="bar-row">
+      <div class="bar-label">${r.label}</div>
+      <div class="bar-track"><div class="bar-fill ${r.cls}" style="width:${pct}%"></div></div>
+      <div class="bar-val">${fmt(r.val)} · %${pct}</div>
+    </div>`;
+  }).join('');
+
+  // ═════════ FILTRELI METRIKLER ═════════
+  set('p-msg-user', fmt(d.messages?.user));
+  set('p-msg-bot', fmt(d.messages?.bot));
+  set('p-msg-kisi', d.messages?.kisi);
+  set('p-active', d.users?.aktif);
+  set('p-claude', fmt(d.cost?.claude_calls));
+  set('p-tokens', fmt(d.cost?.total_tokens));
+  set('p-cost-tl', (d.cost?.cost_tl || 0).toFixed(2) + ' ₺');
+  set('p-perf-avg', (d.routing?.perf?.avg || 0) + 'ms');
+  set('p-perf-p50', d.routing?.perf?.p50);
+  set('p-perf-p95', d.routing?.perf?.p95);
+
+  // Trend chart
+  renderLineChart('chart-trend',
+    (d.messages?.trend || []).map(t => t.label),
+    [{label: 'Mesaj', data: (d.messages?.trend || []).map(t => t.val), color: '#ffd23f'}]
+  );
+
+  // Routing pie
+  renderPie('chart-routing',
+    ['Fast', 'Ollama', 'Claude'],
+    [d.routing?.fast || 0, d.routing?.ollama || 0, d.routing?.claude || 0],
+    ['#00ff9c', '#00e5ff', '#9d4edd']
+  );
+
+  // Top users
+  document.querySelector('#tbl-top tbody').innerHTML = (d.users?.top || []).map(u => `
+    <tr>
+      <td>${u.isim}</td>
+      <td style="color:var(--neon-purple)">${u.rol}</td>
+      <td style="color:var(--bat-yellow)">${u.msg}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="3" style="color:var(--text-dim)">--</td></tr>';
+
+  // Rol dağılım bars
+  const rolTotal = (d.users?.rol_dagilim || []).reduce((a,b) => a + b.cnt, 0);
+  document.getElementById('rol-dagilim').innerHTML =
+    (d.users?.rol_dagilim || []).map(r => {
+      const pct = rolTotal ? Math.round(r.cnt / rolTotal * 100) : 0;
+      return `<div class="bar-row">
+        <div class="bar-label">${r.rol}</div>
+        <div class="bar-track"><div class="bar-fill cyan" style="width:${pct}%"></div></div>
+        <div class="bar-val">${r.cnt} · %${pct}</div>
+      </div>`;
+    }).join('') || '<div class="kpi-sub">veri yok</div>';
+
+  // Tools
+  const toolsMax = Math.max(...(d.tools || []).map(t => t.cnt), 1);
+  document.getElementById('tools-list').innerHTML = (d.tools || []).slice(0, 10).map(t => {
+    const pct = t.cnt / toolsMax * 100;
+    return `<div class="bar-row">
+      <div class="bar-label">${t.tool}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <div class="bar-val">${t.cnt}</div>
+    </div>`;
+  }).join('') || '<div class="kpi-sub">veri yok</div>';
+
+  // ═════════ ENGINEERING ═════════
+  set('eng-modul', d.engineering?.aktif_modul);
+  set('eng-loc', fmt(d.engineering?.kod_satiri));
+  set('eng-test', d.engineering?.test_count);
+  set('eng-bridge-v', d.engineering?.bridge_aktif_versiyon);
+  set('eng-bridge-cnt', d.engineering?.bridge_toplam_restart);
+  set('eng-oturum', d.engineering?.oturum_sayisi);
+  set('eng-rag', fmt(d.engineering?.rag_kayit));
+
+  // ═════════ INFRASTRUCTURE ═════════
+  const h = d.health || {};
+  document.getElementById('health-grid').innerHTML = `
+    <div class="health-cell ${h.eyotek_status === 'online' ? 'ok' : 'err'}">
+      <span class="dot ${h.eyotek_status === 'online' ? 'ok' : 'err'}"></span>Eyotek Session
+      <div class="kpi-sub">${h.eyotek_status} · ${h.eyotek_uptime_h || 0}h</div>
+    </div>
+    <div class="health-cell ok">
+      <span class="dot ok"></span>DB Pool
+      <div class="kpi-sub">healthy · min=2 max=10</div>
+    </div>
+    <div class="health-cell ok">
+      <span class="dot ok"></span>Ollama
+      <div class="kpi-sub">qwen2.5:7b warm</div>
+    </div>
+    <div class="health-cell ${h.session_keeper === 'active' ? 'ok' : 'err'}">
+      <span class="dot ${h.session_keeper === 'active' ? 'ok' : 'err'}"></span>Session Keeper
+      <div class="kpi-sub">${h.session_keeper}</div>
+    </div>
+    <div class="health-cell ${h.cache_saglikli ? 'ok' : 'warn'}">
+      <span class="dot ${h.cache_saglikli ? 'ok' : 'warn'}"></span>Analytics Cache
+      <div class="kpi-sub">${h.cache_yas_dk}dk eski</div>
+    </div>
+    <div class="health-cell ok">
+      <span class="dot ok"></span>Bridge Uptime
+      <div class="kpi-sub">${h.bridge_uptime_h || 0} saat</div>
+    </div>
+    <div class="health-cell ${(h.log_disk_mb || 0) < 500 ? 'ok' : 'warn'}">
+      <span class="dot ${(h.log_disk_mb || 0) < 500 ? 'ok' : 'warn'}"></span>Disk · Logs
+      <div class="kpi-sub">${h.log_disk_mb || 0} MB</div>
+    </div>
+    <div class="health-cell ok">
+      <span class="dot ok"></span>Pytest
+      <div class="kpi-sub">${d.engineering?.test_count || 0} test passed</div>
+    </div>
+  `;
+
+  // ═════════ SECURITY ═════════
+  set('sec-hack', d.security?.hack_deneme);
+  set('sec-frust', d.security?.frustration);
+  set('sec-api', d.security?.api_hata_son_log);
+  set('sec-blocked', d.security?.blocked_numaralar);
+
+  // ═════════ ACTIVITY FEED ═════════
+  document.getElementById('activity-feed').innerHTML =
+    (d.activity || []).map(e => `
+      <div class="feed-item">
+        <span class="feed-ts">${e.tarih}</span>
+        <span class="feed-kim">${e.kim}</span>
+        <span class="feed-rol">${e.rol}</span>
+        <span class="feed-src">${e.kaynak}</span>
+        <span class="feed-snippet">${escape(e.snippet)}</span>
+      </div>
+    `).join('') || '<div class="loading">aktivite yok</div>';
+}
+
+function set(id, val) {
+  const el = document.getElementById(id);
+  if (el && val !== undefined && val !== null) el.textContent = val;
+}
+function escape(s) {
+  return (s || '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+}
+
+function renderLineChart(id, labels, datasets) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: datasets.map(d => ({
+        label: d.label, data: d.data,
+        borderColor: d.color, backgroundColor: d.color + '33',
+        borderWidth: 2, tension: 0.4, fill: true,
+        pointRadius: 3, pointBackgroundColor: d.color,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { font: {size: 10} } } },
+      scales: {
+        x: { grid: { color: 'rgba(26,37,64,0.3)' }, ticks: { font: {size: 9} } },
+        y: { grid: { color: 'rgba(26,37,64,0.3)' }, beginAtZero: true, ticks: { font: {size: 9} } }
+      }
+    }
+  });
+}
+
+function renderPie(id, labels, data, colors) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: colors, borderColor: '#0a0f1c', borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: {size: 10}, padding: 8 } } }
+    }
+  });
+}
+
+// TIME FILTER click
+document.querySelectorAll('.tf-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPeriod = btn.dataset.period;
+    fetchData();
+  });
+});
+
+// FIRST LOAD + POLL
+fetchData();
+setInterval(fetchData, REFRESH_MS);
+</script>
+</body>
+</html>

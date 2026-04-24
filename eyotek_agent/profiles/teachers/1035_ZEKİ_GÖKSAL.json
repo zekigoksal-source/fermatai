@@ -1,0 +1,16 @@
+{
+  "eyotek_id": "1035",
+  "ad_soyad": "ZEKİ GÖKSAL",
+  "brans": "Diğer",
+  "gorev": "Diğer",
+  "haftalik_ders_saati": 6,
+  "aylik_etut_sayisi": 1,
+  "etut_ogrenci_sayisi": 3,
+  "etut_ders_orani": 0.17,
+  "ders_programi_slot_sayisi": 6,
+  "gun_dagilimi": {
+    "Cumartesi": 4,
+    "Çarşamba": 2
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

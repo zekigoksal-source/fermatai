@@ -1,0 +1,24 @@
+{
+  "soz_no": "234",
+  "eyotek_id": "234",
+  "ad_soyad": "MEHMET KUTHAN ŞARVAN",
+  "sinif": "10",
+  "devre": "10.Snf",
+  "telefon": "+905013635526",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 14,
+  "etut_yapildi": 3,
+  "etut_gelmedi": 0,
+  "etut_kontrol_edilmedi": 11,
+  "etut_katilim_yuzdesi": 21,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%21)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

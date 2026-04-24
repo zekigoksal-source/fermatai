@@ -1,0 +1,49 @@
+{
+  "sinif": "[15] 11 SAY ZEN",
+  "devre": "11.Snf",
+  "ogrenci_sayisi": 7,
+  "ogrenciler": [
+    {
+      "soz_no": "183",
+      "ad": "ADA DEFNE",
+      "soyad": "ÖZER"
+    },
+    {
+      "soz_no": "186",
+      "ad": "BEKİR AYAZ",
+      "soyad": "HAYKIR"
+    },
+    {
+      "soz_no": "172",
+      "ad": "DERYA",
+      "soyad": "DALKILIÇ"
+    },
+    {
+      "soz_no": "314",
+      "ad": "EZGİ",
+      "soyad": "ÇÖZGÜCÜ"
+    },
+    {
+      "soz_no": "155",
+      "ad": "EZGİ SILA",
+      "soyad": "KORKMAZ"
+    },
+    {
+      "soz_no": "251",
+      "ad": "HASAN ALİ",
+      "soyad": "YAVAŞ"
+    },
+    {
+      "soz_no": "200",
+      "ad": "ÖZÜM",
+      "soyad": "GÖL"
+    }
+  ],
+  "etut_toplam": 38,
+  "etut_yapildi": 13,
+  "etut_gelmedi": 0,
+  "etut_katilim_yuzdesi": 34,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

@@ -1,0 +1,24 @@
+{
+  "soz_no": "170",
+  "eyotek_id": "170",
+  "ad_soyad": "GÖKHAN AYGÜN",
+  "sinif": "11 SAY",
+  "devre": "11.Snf",
+  "telefon": "+905313284569",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 1,
+  "etut_yapildi": 0,
+  "etut_gelmedi": 0,
+  "etut_kontrol_edilmedi": 1,
+  "etut_katilim_yuzdesi": 0,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%0)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

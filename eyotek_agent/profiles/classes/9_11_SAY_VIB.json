@@ -1,0 +1,64 @@
+{
+  "sinif": "[9] 11 SAY VIB",
+  "devre": "11.Snf",
+  "ogrenci_sayisi": 10,
+  "ogrenciler": [
+    {
+      "soz_no": "269",
+      "ad": "ALİ BAŞAR",
+      "soyad": "ÖZAY"
+    },
+    {
+      "soz_no": "272",
+      "ad": "BAŞAR",
+      "soyad": "KÖSE"
+    },
+    {
+      "soz_no": "306",
+      "ad": "DERİN",
+      "soyad": "KIRANLI"
+    },
+    {
+      "soz_no": "188",
+      "ad": "DORUK TOPRAK",
+      "soyad": "YONGUÇ"
+    },
+    {
+      "soz_no": "158",
+      "ad": "ELA",
+      "soyad": "CENGİZ"
+    },
+    {
+      "soz_no": "247",
+      "ad": "ELA",
+      "soyad": "OKUR"
+    },
+    {
+      "soz_no": "161",
+      "ad": "NAZMİYE",
+      "soyad": "BORA"
+    },
+    {
+      "soz_no": "249",
+      "ad": "RÜZGAR KEMAL",
+      "soyad": "UZUN"
+    },
+    {
+      "soz_no": "261",
+      "ad": "TUNA",
+      "soyad": "KÖPRÜLÜ"
+    },
+    {
+      "soz_no": "209",
+      "ad": "YAĞIZ",
+      "soyad": "ZORLU"
+    }
+  ],
+  "etut_toplam": 20,
+  "etut_yapildi": 7,
+  "etut_gelmedi": 0,
+  "etut_katilim_yuzdesi": 35,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

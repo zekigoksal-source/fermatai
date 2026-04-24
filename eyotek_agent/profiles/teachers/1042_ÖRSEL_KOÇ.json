@@ -1,0 +1,16 @@
+{
+  "eyotek_id": "1042",
+  "ad_soyad": "ÖRSEL KOÇ",
+  "brans": "Fizik",
+  "gorev": "Öğretmen",
+  "haftalik_ders_saati": 14,
+  "aylik_etut_sayisi": 9,
+  "etut_ogrenci_sayisi": 9,
+  "etut_ders_orani": 0.64,
+  "ders_programi_slot_sayisi": 14,
+  "gun_dagilimi": {
+    "Cumartesi": 10,
+    "Perşembe": 4
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

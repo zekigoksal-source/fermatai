@@ -1,0 +1,24 @@
+{
+  "soz_no": "200",
+  "eyotek_id": "200",
+  "ad_soyad": "ÖZÜM GÖL",
+  "sinif": "11 SAY",
+  "devre": "11.Snf",
+  "telefon": "+905510754958",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 3,
+  "etut_yapildi": 1,
+  "etut_gelmedi": 0,
+  "etut_kontrol_edilmedi": 2,
+  "etut_katilim_yuzdesi": 33,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%33)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

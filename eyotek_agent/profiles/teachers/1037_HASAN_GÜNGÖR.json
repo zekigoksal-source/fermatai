@@ -1,0 +1,17 @@
+{
+  "eyotek_id": "1037",
+  "ad_soyad": "HASAN GÜNGÖR",
+  "brans": "Kimya",
+  "gorev": "Öğretmen",
+  "haftalik_ders_saati": 22,
+  "aylik_etut_sayisi": 12,
+  "etut_ogrenci_sayisi": 12,
+  "etut_ders_orani": 0.55,
+  "ders_programi_slot_sayisi": 22,
+  "gun_dagilimi": {
+    "Pazartesi": 6,
+    "Salı": 9,
+    "Çarşamba": 7
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

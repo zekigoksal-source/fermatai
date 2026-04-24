@@ -1,0 +1,169 @@
+"""
+FermatAI Duygu Analizi & Rehber Bildirim
+=========================================
+Her konuşmadan otomatik duygu çıkarımı.
+Haftada 3+ negatif sinyal → rehber öğretmene WP bildirim.
+
+Duygu kategorileri:
+  - positive: mutlu, başarılı, enerjik
+  - negative: üzgün, mutsuz, kötü
+  - stressed: stresli, kaygılı, bunalmış
+  - angry: sinirli, kızgın, agresif
+  - crisis: intihar, kendine zarar, ciddi kriz
+  - neutral: normal, belirsiz
+"""
+
+import asyncio
+import re
+from datetime import datetime, date
+from typing import Optional
+
+from loguru import logger
+from db_pool import db_fetch, db_execute
+
+# Duygu pattern'ları
+SENTIMENT_PATTERNS = {
+    "crisis": [
+        r"intihar", r"kendimi\s*oldu", r"yasama\s*amac",
+        r"olsem\s*daha", r"kendime\s*zarar",
+    ],
+    "stressed": [
+        r"stres", r"kaygi", r"kaygı", r"baskı", r"bunalt", r"bunalım",
+        r"dayanam", r"yapamıy", r"yapamiy", r"korkuyor", r"panik",
+        r"sinav\s*kork", r"sınav\s*kork",
+    ],
+    "negative": [
+        r"mutsuz", r"uzgun", r"üzgün", r"kotuyum", r"kötüyüm",
+        r"bıktım", r"biktim", r"pes\s*ed", r"olmadi", r"olmadı",
+        r"berbat", r"kotu\s*gitti", r"kötü\s*gitti", r"düştü",
+        r"istemiy", r"sikil", r"sıkıl", r"moral\w*\s*boz",
+        r"motivasyon\w*\s*d[uü]s", r"motivasyon\w*\s*yok",
+    ],
+    "angry": [
+        r"sinir", r"kız", r"kiz", r"sacma", r"saçma",
+        r"rezalet", r"yok\s*etmek", r"yok\s*edeceg",
+    ],
+    "positive": [
+        r"mutlu", r"harika", r"super", r"süper", r"basardim", r"başardım",
+        r"cok\s*iyi", r"çok\s*iyi", r"yuksel", r"yüksel", r"artti", r"arttı",
+        r"guzel", r"güzel", r"enerjik", r"motive",
+    ],
+}
+
+
+def detect_sentiment(message: str) -> str:
+    """Mesajdan duygu tespit et."""
+    msg_lower = message.lower()
+
+    # Öncelik sırası: crisis > stressed > negative > angry > positive > neutral
+    for sentiment, patterns in SENTIMENT_PATTERNS.items():
+        for pat in patterns:
+            if re.search(pat, msg_lower):
+                return sentiment
+
+    return "neutral"
+
+
+async def log_sentiment(phone: str, soz_no: int, name: str, message: str, sentiment: str):
+    """Duygu kaydını DB'ye yaz.
+
+    22.1n-bug17: Atlas #17 fix — soz_no=0 ise phone'dan students JOIN ile lookup yap.
+    Onceden soz_no=0 kayitlari JOIN'de eslesmeyince rehber bildirimleri kayboluyordu.
+    """
+    if sentiment == "neutral":
+        return  # Nötr kaydetmeye gerek yok
+
+    # 22.1n-bug17: soz_no 0 veya gecersizse phone'dan lookup
+    if not soz_no or int(soz_no) == 0:
+        try:
+            from db_pool import db_fetchval
+            phone_clean = (phone or "").strip().replace("+", "").replace(" ", "").replace("-", "")
+            if phone_clean:
+                # acl_users'ta eyotek_id var ama soz_no yok — students direkt sorgula
+                looked_up = await db_fetchval(
+                    "SELECT soz_no FROM students WHERE REPLACE(phone,'+','') = $1 AND status='active' LIMIT 1",
+                    phone_clean
+                )
+                if looked_up:
+                    soz_no = int(looked_up)
+                    logger.debug(f"  [SENTIMENT] phone→soz_no lookup: {phone_clean} → {soz_no}")
+        except Exception as _le:
+            logger.debug(f"  Sentiment soz_no lookup hatası: {_le}")
+
+    # Hala 0 ise kayıt atlanıyor — rehber bildirimlerine gidemez, anlamsız
+    if not soz_no or int(soz_no) == 0:
+        logger.debug(f"  [SENTIMENT] soz_no bulunamadı, sinyal kaydı atlandı (phone={phone[-4:] if phone else '?'})")
+        return
+
+    # 22.1n-neo: Merkezi log fonksiyonu uzerinden (student_signals.py)
+    try:
+        from student_signals import log_student_signal
+        await log_student_signal(
+            int(soz_no), sentiment,
+            f"[{sentiment.upper()}] {name}: {message[:200]}",
+            confidence=0.8, source="sentiment_tracker"
+        )
+    except Exception as e:
+        logger.debug(f"Sentiment log hatası: {e}")
+
+
+async def check_and_alert_rehber():
+    """
+    Son 7 günde 3+ negatif sinyal veren öğrencileri tespit et
+    ve rehber öğretmene WP bildirim gönder.
+    """
+    try:
+        # Son 7 günde negatif/stressed/crisis sinyali veren öğrenciler
+        # Bug fix 22 Nisan: student_insights.soz_no=int, students.soz_no=text → cast
+        risky = await db_fetch("""
+            SELECT si.soz_no, s.full_name, s.class_name,
+                   COUNT(*) as sinyal_sayisi,
+                   STRING_AGG(DISTINCT si.insight_type, ', ') as tipler,
+                   MAX(si.created_at)::date as son_sinyal
+            FROM student_insights si
+            JOIN students s ON si.soz_no::text = s.soz_no
+            WHERE si.created_at >= CURRENT_DATE - INTERVAL '7 days'
+            AND si.insight_type IN ('negative', 'stressed', 'crisis', 'angry')
+            GROUP BY si.soz_no, s.full_name, s.class_name
+            HAVING COUNT(*) >= 3
+            ORDER BY COUNT(*) DESC
+        """)
+
+        if not risky:
+            return None
+
+        # Bildirim mesajı oluştur
+        lines = [
+            "⚠️ *Rehberlik Uyarısı — Riskli Öğrenciler*\n",
+            f"_Son 7 günde 3+ negatif sinyal veren öğrenciler:_\n",
+        ]
+
+        for r in risky:
+            sinyal = r['sinyal_sayisi']
+            tipler = r['tipler']
+            emoji = "🔴" if sinyal >= 5 or 'crisis' in tipler else "🟡"
+            lines.append(f"  {emoji} *{r['full_name']}* — {r['class_name']}")
+            lines.append(f"     {sinyal} sinyal | Tip: {tipler} | Son: {r['son_sinyal']}")
+
+        lines.append(f"\n_Lütfen bu öğrencilerle görüşme planlayın._")
+        lines.append(f"---")
+        lines.append(f"_Otomatik analiz — FermatAI_")
+
+        return "\n".join(lines)
+
+    except Exception as e:
+        logger.error(f"Rehber uyarı hatası: {e}")
+        return None
+
+
+async def main():
+    """Test: riskli öğrenci raporu oluştur."""
+    report = await check_and_alert_rehber()
+    if report:
+        print(report)
+    else:
+        print("Riskli öğrenci yok — tüm öğrenciler normal durumda.")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

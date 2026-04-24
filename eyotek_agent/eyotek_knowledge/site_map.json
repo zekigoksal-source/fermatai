@@ -1,0 +1,229 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "updated": "2026-04-16",
+    "base_url": "https://fermat.eyotek.com/v1/Pages/",
+    "total_pages": 134,
+    "description": "Eyotek LMS tam sayfa haritası — bot bu dosyayı okur, prompt'a eklenmez"
+  },
+  "sync_kaynaklar": {
+    "etut_ara": {
+      "path": "Student/individual-lesson",
+      "label": "Etüt Ara",
+      "excel": true,
+      "excel_btn": "#btnExcel",
+      "search_modal": true,
+      "search_btn": "#btnSearch",
+      "modal_open": "a.btn-circle.yellow",
+      "db_tablo": "etut_history",
+      "sync_periyot": "gunluk",
+      "son_sync": "2026-04-24T02:35:45.360274",
+      "kolonlar": [
+        "Şube",
+        "Etüt Kodu",
+        "Etüt Türü",
+        "Tarih",
+        "Öğretmen",
+        "Ders",
+        "Konu",
+        "Saat",
+        "Süre",
+        "Derslik",
+        "Öğrenci Sayısı",
+        "Yoklama",
+        "Kaydeden",
+        "Oluşturma Tarihi"
+      ]
+    },
+    "yoklama_kontrol": {
+      "path": "Student/attendance-report",
+      "label": "Yoklama Kontrol",
+      "excel": true,
+      "db_tablo": "yoklama_kontrol",
+      "sync_periyot": "gunluk"
+    },
+    "ogrenci_listesi": {
+      "path": "Student/student",
+      "label": "Öğrenciler",
+      "excel": true,
+      "db_tablo": "students",
+      "sync_periyot": "haftalik"
+    },
+    "devamsizlik": {
+      "path": "Student/attendance-class-control",
+      "label": "Sınıf Yoklama Kontrol",
+      "excel": true,
+      "db_tablo": "devamsizlik_sayisi",
+      "sync_periyot": "haftalik"
+    },
+    "rehberlik": {
+      "path": "Student/guidance",
+      "label": "Rehberlik",
+      "excel": true,
+      "db_tablo": "counsellor_notes",
+      "sync_periyot": "haftalik"
+    },
+    "ders_programi": {
+      "path": "Student/schedule",
+      "label": "Ders Programı",
+      "excel": true,
+      "db_tablo": "class_timetable",
+      "sync_periyot": "aylik"
+    },
+    "ogretmen_programi": {
+      "path": "Student/schedule-teacher",
+      "label": "Öğretmen Programı",
+      "excel": true,
+      "db_tablo": "teacher_timetable",
+      "sync_periyot": "aylik"
+    },
+    "sinav_sonuclari": {
+      "path": "Student/exam-result",
+      "label": "Sınav Sonuçları",
+      "excel": true,
+      "db_tablo": "student_exams",
+      "sync_periyot": "haftalik"
+    },
+    "etut_yoklama": {
+      "path": "Student/individual-lesson-attendance",
+      "label": "Etüt Yoklama",
+      "excel": false,
+      "note": "Excel yok, sayfa scraping gerekli",
+      "sync_periyot": "gunluk"
+    },
+    "etut_ogrenci_kontrol": {
+      "path": "Student/individual-lesson-student-control",
+      "label": "Etüt Öğrenci Kontrol",
+      "excel": true,
+      "db_tablo": "etut_student_control",
+      "sync_periyot": "haftalik"
+    }
+  },
+  "bot_komutlar": {
+    "eyotek_guncelle": {
+      "description": "Tüm verileri güncelle (günlük sync)",
+      "calistir": [
+        "etut_ara",
+        "yoklama_kontrol"
+      ]
+    },
+    "eyotek_tam_guncelle": {
+      "description": "Tüm verileri güncelle (haftalık tam sync)",
+      "calistir": [
+        "etut_ara",
+        "yoklama_kontrol",
+        "ogrenci_listesi",
+        "devamsizlik",
+        "rehberlik",
+        "sinav_sonuclari",
+        "etut_ogrenci_kontrol"
+      ]
+    },
+    "etut_yoklamaya_bak": {
+      "description": "Bugünün etüt yoklamalarını getir",
+      "calistir": [
+        "etut_ara"
+      ]
+    },
+    "sinav_guncelle": {
+      "description": "Son sınav sonuçlarını çek",
+      "calistir": [
+        "sinav_sonuclari"
+      ]
+    }
+  },
+  "tum_sayfalar": {
+    "ogrenci": {
+      "etut": [
+        {
+          "label": "Etüt Ara",
+          "path": "Student/individual-lesson"
+        },
+        {
+          "label": "Etüt Girişi",
+          "path": "Student/individual-lesson-input"
+        },
+        {
+          "label": "Etüt Girişi 2",
+          "path": "Student/individual-lesson-input-2"
+        },
+        {
+          "label": "Etüt Yoklama",
+          "path": "Student/individual-lesson-attendance"
+        },
+        {
+          "label": "Etüt Öğrenci Kontrol",
+          "path": "Student/individual-lesson-student-control"
+        },
+        {
+          "label": "Etüt Raporları",
+          "path": "Student/individual-lesson-reports"
+        },
+        {
+          "label": "Etüt SMS Bildirim",
+          "path": "Student/individual-lesson-sms-notification"
+        }
+      ],
+      "yoklama": [
+        {
+          "label": "Öğrenci Yoklama Giriş",
+          "path": "Student/attendance-check-multi"
+        },
+        {
+          "label": "Sınıf Yoklama Kontrol",
+          "path": "Student/attendance-class-control"
+        },
+        {
+          "label": "Yoklama Kontrol",
+          "path": "Student/attendance-report"
+        },
+        {
+          "label": "Yemek Yoklama",
+          "path": "Student/attendance-food"
+        },
+        {
+          "label": "Sınav Yoklama SMS",
+          "path": "Student/communication-sms-test-attendance"
+        }
+      ],
+      "sinavlar": [
+        {
+          "label": "Sınav Sonuçları",
+          "path": "Student/exam-result"
+        },
+        {
+          "label": "Sınav İstatistik",
+          "path": "Student/exam-statistic"
+        },
+        {
+          "label": "TYT Birleştir",
+          "path": "Student/exam-combine"
+        },
+        {
+          "label": "AYT Birleştir",
+          "path": "Student/exam-combine-ayt"
+        }
+      ],
+      "rehberlik": [
+        {
+          "label": "Rehberlik",
+          "path": "Student/guidance"
+        },
+        {
+          "label": "Rehberlik Arama",
+          "path": "Student/guidance-search"
+        }
+      ],
+      "ders_programi": [
+        {
+          "label": "Ders Programı",
+          "path": "Student/schedule"
+        },
+        {
+          "label": "Öğretmen Programı",
+          "path": "Student/schedule-teacher"
+        }
+      ]
+    }
+  }
+}

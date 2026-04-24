@@ -1,0 +1,97 @@
+{
+  "toplam_ogretmen": 16,
+  "tarih": "2026-04-08 13:53",
+  "brans_dagilimi": {
+    "Fizik": 3,
+    "Türkçe": 2,
+    "Coğrafya": 2,
+    "Rehberlik": 1,
+    "Kimya": 2,
+    "Tarih": 1,
+    "Matematik": 3,
+    "Biyoloji": 1,
+    "Diğer": 1
+  },
+  "etut_siralaması": [
+    {
+      "ad": "ORHAN DEMİRBULAT",
+      "etut": 53,
+      "ders": 49
+    },
+    {
+      "ad": "VEDAT ÖZTEKİN",
+      "etut": 19,
+      "ders": 28
+    },
+    {
+      "ad": "MERVE OKŞAŞ",
+      "etut": 18,
+      "ders": 38
+    },
+    {
+      "ad": "BÜŞRA GÜLBAHAR KAYHAN",
+      "etut": 14,
+      "ders": 24
+    },
+    {
+      "ad": "HASAN GÜNGÖR",
+      "etut": 12,
+      "ders": 22
+    },
+    {
+      "ad": "DENİZ AKÇAP",
+      "etut": 11,
+      "ders": 6
+    },
+    {
+      "ad": "EMİN YİĞİT",
+      "etut": 10,
+      "ders": 15
+    },
+    {
+      "ad": "ÖRSEL KOÇ",
+      "etut": 9,
+      "ders": 14
+    },
+    {
+      "ad": "KARDELEN SAVCI",
+      "etut": 6,
+      "ders": 14
+    },
+    {
+      "ad": "MEHMET DÖNMEZ",
+      "etut": 6,
+      "ders": 7
+    },
+    {
+      "ad": "EZGİ TUNÇ",
+      "etut": 4,
+      "ders": 16
+    },
+    {
+      "ad": "ZEKİ GÖKSAL",
+      "etut": 1,
+      "ders": 6
+    },
+    {
+      "ad": "ALPER OTÇU",
+      "etut": 0,
+      "ders": 0
+    },
+    {
+      "ad": "ELİF SUDE HUNYAS",
+      "etut": 0,
+      "ders": 0
+    },
+    {
+      "ad": "KADİR KÖKCÜR",
+      "etut": 0,
+      "ders": 0
+    },
+    {
+      "ad": "MURAT BAŞ",
+      "etut": 0,
+      "ders": 0
+    }
+  ]
+}

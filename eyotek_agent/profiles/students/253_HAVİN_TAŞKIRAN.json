@@ -1,0 +1,24 @@
+{
+  "soz_no": "253",
+  "eyotek_id": "253",
+  "ad_soyad": "HAVİN TAŞKIRAN",
+  "sinif": "Mezun SAY",
+  "devre": "Mezun",
+  "telefon": "+905431124771",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 19,
+  "etut_yapildi": 5,
+  "etut_gelmedi": 0,
+  "etut_kontrol_edilmedi": 14,
+  "etut_katilim_yuzdesi": 26,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%26)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

@@ -1,0 +1,91 @@
+{
+  "soz_no": 259,
+  "name": "DURU İMRE",
+  "class": "[13] MEZUN TM A",
+  "exams": [
+    {
+      "exam_code": "999000091",
+      "exam_type": "YKS",
+      "exam_name": "3D TG YKS-3",
+      "exam_date": "1.04.2026",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "999000077",
+      "exam_type": "YKS",
+      "exam_name": "ÜçDörtBeş TG BÜYÜK PROVA YKS-1",
+      "exam_date": "11.03.2026",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "999000056",
+      "exam_type": "YKS",
+      "exam_name": "EN DENEME TG YKS-1",
+      "exam_date": "11.02.2026",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "15",
+      "exam_type": "YKS",
+      "exam_name": "ORİJİNAL TG1 AYT",
+      "exam_date": "26.12.2025",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "999000034",
+      "exam_type": "YKS",
+      "exam_name": "BİLGİ SARMAL TG YKS-2",
+      "exam_date": "23.12.2025",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "11",
+      "exam_type": "YKS",
+      "exam_name": "hız ve renk ayt",
+      "exam_date": "12.12.2025",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "999000091",
+      "exam_type": "YKS",
+      "exam_name": "3D TG YKS-3",
+      "exam_date": "1.04.2026",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "999000077",
+      "exam_type": "YKS",
+      "exam_name": "ÜçDörtBeş TG BÜYÜK PROVA YKS-1",
+      "exam_date": "11.03.2026",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "999000056",
+      "exam_type": "YKS",
+      "exam_name": "EN DENEME TG YKS-1",
+      "exam_date": "11.02.2026",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "15",
+      "exam_type": "YKS",
+      "exam_name": "ORİJİNAL TG1 AYT",
+      "exam_date": "26.12.2025",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "999000034",
+      "exam_type": "YKS",
+      "exam_name": "BİLGİ SARMAL TG YKS-2",
+      "exam_date": "23.12.2025",
+      "karne": "katilmadi"
+    },
+    {
+      "exam_code": "11",
+      "exam_type": "YKS",
+      "exam_name": "hız ve renk ayt",
+      "exam_date": "12.12.2025",
+      "karne": "katilmadi"
+    }
+  ]
+}

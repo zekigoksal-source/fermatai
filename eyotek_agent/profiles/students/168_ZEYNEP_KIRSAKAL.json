@@ -1,0 +1,24 @@
+{
+  "soz_no": "168",
+  "eyotek_id": "168",
+  "ad_soyad": "ZEYNEP KIRSAKAL",
+  "sinif": "12 EA",
+  "devre": "12.Snf",
+  "telefon": "+905434080454",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 14,
+  "etut_yapildi": 4,
+  "etut_gelmedi": 1,
+  "etut_kontrol_edilmedi": 9,
+  "etut_katilim_yuzdesi": 29,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%29)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

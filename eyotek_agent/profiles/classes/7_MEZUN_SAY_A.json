@@ -1,0 +1,79 @@
+{
+  "sinif": "[7] MEZUN SAY A",
+  "devre": "Mezun",
+  "ogrenci_sayisi": 13,
+  "ogrenciler": [
+    {
+      "soz_no": "192",
+      "ad": "AZRA",
+      "soyad": "MİMAROĞLU"
+    },
+    {
+      "soz_no": "195",
+      "ad": "DEFNE",
+      "soyad": "ŞENGÜL"
+    },
+    {
+      "soz_no": "225",
+      "ad": "DENİZ",
+      "soyad": "KUŞ"
+    },
+    {
+      "soz_no": "214",
+      "ad": "ENES",
+      "soyad": "KARADAŞ"
+    },
+    {
+      "soz_no": "210",
+      "ad": "FATİH",
+      "soyad": "ŞENGÜL"
+    },
+    {
+      "soz_no": "231",
+      "ad": "GÖKTÜRK HAN",
+      "soyad": "BAYATLIOĞLU"
+    },
+    {
+      "soz_no": "239",
+      "ad": "GÜLNUR",
+      "soyad": "ERKEN"
+    },
+    {
+      "soz_no": "226",
+      "ad": "MELİS",
+      "soyad": "EROĞLU"
+    },
+    {
+      "soz_no": "211",
+      "ad": "NAZLI IRMAK",
+      "soyad": "DAŞ"
+    },
+    {
+      "soz_no": "218",
+      "ad": "NEHİR",
+      "soyad": "TÜRKATALAY"
+    },
+    {
+      "soz_no": "242",
+      "ad": "SÜLEYMAN",
+      "soyad": "AKÇAY"
+    },
+    {
+      "soz_no": "199",
+      "ad": "ZEHRA EYLÜL",
+      "soyad": "YALÇIN"
+    },
+    {
+      "soz_no": "246",
+      "ad": "ZEYNEP",
+      "soyad": "AKBAŞ"
+    }
+  ],
+  "etut_toplam": 49,
+  "etut_yapildi": 8,
+  "etut_gelmedi": 2,
+  "etut_katilim_yuzdesi": 16,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

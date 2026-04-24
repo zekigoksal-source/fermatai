@@ -1,0 +1,3895 @@
+{
+  "total_pages": 297,
+  "sections": {
+    "Staff": {
+      "count": 45,
+      "pages": {
+        "internal-message": {
+          "menu": "6",
+          "title": "Mesajlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/internal-message",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 16,
+          "headers": [
+            [
+              "İşlemler\n                                                                        \n                                                                    \n                                                                    \n                                                                        \n                                                                            \n                                                                                \n                                                                                Okundu olarak işaretle.\n                                                                            \n                                                                        \n                                                                        \n                                                                        \n                                                                            \n                                                                                \n                                                                                Sil",
+              "1-12 Toplam 12",
+              "EYOTEK DESTEK",
+              "3D YKS-3, B Kitapçığı Soru Numarası Değişikliği",
+              "01.04.2026 14:40:31"
+            ],
+            [
+              "Araç çubukları EditörüYazı TürüYazı TürüBoyutBoyut Yazı Rengi  Kalın İtalik Altı Çizgili Numaralı Liste Geri Al Tekrarla Kes Kopyala Yapıştır Düz Metin Olarak Yapıştır Word'den Yapıştır Yatay Satır Ekle Sola Dayalı Ortalanmış Sağa Dayalı İki Kenara Yaslanmış Link Ekle/Düzenle Köprü Kaldır Bağlantı Ekle/Düzenle▲"
+            ]
+          ]
+        },
+        "agenda": {
+          "menu": "Ajanda",
+          "title": "Ajanda",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/agenda",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "image": {
+          "menu": "Profil Resmi",
+          "title": "Personel - Fotoğraf Yükle",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/image",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "change-password": {
+          "menu": "Şifre Değiştir",
+          "title": "Şifre Değiştir",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/change-password",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "favorite-pages": {
+          "menu": "Sık Kullanılan Düzenle",
+          "title": "Sık Kullanılanlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/favorite-pages",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "home": {
+          "menu": "Sayfam",
+          "title": "Sayfam",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/home",
+          "has_data": true,
+          "table_count": 3,
+          "total_rows": 24,
+          "headers": [
+            [
+              "PtsSalÇarPerCumCtsPaz",
+              "Pts",
+              "Sal",
+              "Çar",
+              "Per"
+            ],
+            [
+              "Pts",
+              "Sal",
+              "Çar",
+              "Per",
+              "Cum"
+            ]
+          ]
+        },
+        "timetable-watch-place": {
+          "menu": "Ders & Nöbet Programı",
+          "title": "Ders & Nöbet Programı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/timetable-watch-place",
+          "has_data": true,
+          "table_count": 4,
+          "total_rows": 39,
+          "headers": [
+            [
+              "Saat",
+              "Pazartesi",
+              "Salı",
+              "Çarşamba",
+              "Perşembe"
+            ],
+            [
+              "Sınıf",
+              "Ders Saati"
+            ]
+          ]
+        },
+        "weekly-working-plan": {
+          "menu": "Haftalık Çalışma Planı",
+          "title": "Haftalık Çalışma Planı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/weekly-working-plan",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 16,
+          "headers": [
+            [
+              "Saat",
+              "Pazartesi 06.04.2026",
+              "Salı 07.04.2026",
+              "Çarşamba 08.04.2026",
+              "Perşembe 09.04.2026"
+            ]
+          ]
+        },
+        "working-hours-check": {
+          "menu": "Mesai Takip",
+          "title": "Personel - Mesai",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/working-hours-check",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "sms": {
+          "menu": "SMS",
+          "title": "SMS",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/sms",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "notification": {
+          "menu": "Bildirim",
+          "title": "Bildirim",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/notification",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "food-menu": {
+          "menu": "Yemek",
+          "title": "Yemek",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/food-menu",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "my-teamwork": {
+          "menu": "Takım Çalışması",
+          "title": "Takım Çalışması",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/my-teamwork",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "poll-report": {
+          "menu": "Anket Karnem",
+          "title": "Anket Karnem",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/poll-report",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "online-survey": {
+          "menu": "Online Anket",
+          "title": "Sayfam - Online Anket",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/online-survey",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "home-page-widget-edit": {
+          "menu": "Sayfam Düzenle",
+          "title": "Sayfam Düzenle",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/home-page-widget-edit",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 33,
+          "headers": [
+            [
+              "Pencere Adı",
+              "Açıklama"
+            ],
+            [
+              "Pencere Adı",
+              "Sütun",
+              "Sıra"
+            ]
+          ]
+        },
+        "my-timetable-classes": {
+          "menu": "Ders Verdiğim",
+          "title": "Öğrencilerim",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/my-timetable-classes",
+          "has_data": true,
+          "table_count": 5,
+          "total_rows": 22,
+          "headers": [
+            [
+              "Devre",
+              "Tür",
+              "Sınıf",
+              "Öğrenci Sayısı"
+            ],
+            [
+              "5 Nisan 2026",
+              "14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55",
+              "Bugün"
+            ]
+          ]
+        },
+        "my-counsellor-students": {
+          "menu": "Rehberlik",
+          "title": "Rehberlik",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/my-counsellor-students",
+          "has_data": true,
+          "table_count": 5,
+          "total_rows": 19,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ],
+            [
+              "5 Nisan 2026",
+              "14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55",
+              "Bugün"
+            ]
+          ]
+        },
+        "my-counsellor-class-note": {
+          "menu": "Sınıf Rehberliği",
+          "title": "Sınıf Rehberliği",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/my-counsellor-class-note",
+          "has_data": true,
+          "table_count": 5,
+          "total_rows": 22,
+          "headers": [
+            [
+              "Sınıf",
+              "Mevcut",
+              "Kendi Rehberlik Sayım"
+            ],
+            [
+              "5 Nisan 2026",
+              "14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55",
+              "Bugün"
+            ]
+          ]
+        },
+        "curriculum-control": {
+          "menu": "Müfredat Kontrol",
+          "title": "Müfredat Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/curriculum-control",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "homework-check": {
+          "menu": "Ödev Kontrol",
+          "title": "Ödev - Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/homework-check",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "project-homework-assignment": {
+          "menu": "Proje Ödevi Giriş",
+          "title": "Proje Ödevi Giriş",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/project-homework-assignment",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "behaviour-input": {
+          "menu": "Davranış Giriş",
+          "title": "Davranış Giriş",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/behaviour-input",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "activity-input": {
+          "menu": "Etkinlik Giriş",
+          "title": "Etkinlik",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/activity-input",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 17,
+          "headers": [
+            [
+              "Tür",
+              "Sınıf"
+            ]
+          ]
+        },
+        "have-question-answer": {
+          "menu": "Sorum Var Cevap",
+          "title": "Sorum Var Cevap",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/have-question-answer",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 3,
+          "headers": [
+            [
+              "Yükleme Tarihi",
+              "Ad-Soyad",
+              "Sınıf",
+              "Cevap Tarihi"
+            ]
+          ]
+        },
+        "human-resources": {
+          "menu": "İnsan Kaynakları",
+          "title": "İnsan Kaynakları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/human-resources",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "list-human-resources": {
+          "menu": "İK Liste",
+          "title": "İK Liste",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/list-human-resources",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 69,
+          "headers": [
+            [
+              "Şube"
+            ],
+            [
+              "İK No"
+            ]
+          ]
+        },
+        "list-human-resources-appointment": {
+          "menu": "İK Randevu",
+          "title": "İK Randevu",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/list-human-resources-appointment",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "list-human-resources-interview": {
+          "menu": "İK Görüşmeleri",
+          "title": "İK Görüşmeleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/list-human-resources-interview",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "staff": {
+          "menu": "Personel",
+          "title": "Personel",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/staff",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "list-staffs": {
+          "menu": "Personel Listeleri",
+          "title": "Personel Listeleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/list-staffs",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 41,
+          "headers": [
+            [
+              "Şube"
+            ],
+            [
+              "İK No"
+            ]
+          ]
+        },
+        "permit-list": {
+          "menu": "İzin Liste",
+          "title": "İzin Liste",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/permit-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "official-contract-list": {
+          "menu": "Personel Atama Listesi",
+          "title": "Personel Atama Listesi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/official-contract-list",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 27,
+          "headers": [
+            [
+              "Şube"
+            ],
+            [
+              "Id"
+            ]
+          ]
+        },
+        "registry-notes-list": {
+          "menu": "Sicil Notu Liste",
+          "title": "Sicil Notu Liste",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/registry-notes-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "meeting": {
+          "menu": "Toplantılar",
+          "title": "Toplantılar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/meeting",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "working-hours-edit": {
+          "menu": "Mesai Düzenle",
+          "title": "Personel - Mesai",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/working-hours-edit",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 19,
+          "headers": [
+            [
+              "Id",
+              "Adı Soyadı",
+              "Görevi",
+              "Branş",
+              "Parmak İzi Kod"
+            ]
+          ]
+        },
+        "working-hours-check-list": {
+          "menu": "Personel Devam Takip",
+          "title": "Personel - Mesai",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/working-hours-check-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "working-hours-check-control": {
+          "menu": "Mesai Kontrol",
+          "title": "Mesai Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/working-hours-check-control",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "communication-sms-special-text": {
+          "menu": "Personel Özel SMS",
+          "title": "Personel Özel SMS",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/communication-sms-special-text",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "communication-notification-special-text": {
+          "menu": "Bildirim Gönder",
+          "title": "Bildirim Gönder",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/communication-notification-special-text",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "communication-sms-from-file": {
+          "menu": "Dosyadan SMS",
+          "title": "Dosyadan SMS",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/communication-sms-from-file",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "communication-sms-human-resources": {
+          "menu": "İK SMS",
+          "title": "İnsan Kaynakları - SMS",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/communication-sms-human-resources",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "communication-internal-message-input": {
+          "menu": "Sistem İçi Mesaj",
+          "title": "Sistem İçi Mesaj Personel",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/communication-internal-message-input",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 3,
+          "headers": [
+            [
+              "Araç çubukları EditörüYazı TürüYazı TürüBoyutBoyut Yazı Rengi  Kalın İtalik Altı Çizgili Numaralı Liste Geri Al Tekrarla Kes Kopyala Yapıştır Düz Metin Olarak Yapıştır Word'den Yapıştır Yatay Satır Ekle Sola Dayalı Ortalanmış Sağa Dayalı İki Kenara Yaslanmış Link Ekle/Düzenle Köprü Kaldır Bağlantı Ekle/Düzenle▲"
+            ]
+          ]
+        },
+        "teamwork": {
+          "menu": "Takım Çalışması",
+          "title": "Takım Çalışması",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/teamwork",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "list-authority": {
+          "menu": "Yetki Düzenleme",
+          "title": "Yetki Düzenleme",
+          "url": "https://fermat.eyotek.com/v1/Pages/Staff/list-authority",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        }
+      }
+    },
+    "Tools": {
+      "count": 24,
+      "pages": {
+        "demand": {
+          "menu": "Eyotek Destek",
+          "title": "Eyotek Destek",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/demand",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 10,
+          "headers": [
+            [
+              "Id",
+              "Tarih",
+              "Konu",
+              "Durum"
+            ]
+          ]
+        },
+        "video-support": {
+          "menu": "Video Destek",
+          "title": "",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/video-support",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "tools": {
+          "menu": "İndirilebilir İçerikler",
+          "title": "İndirilebilir İçerikler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/tools",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "library-books": {
+          "menu": "Kitaplar",
+          "title": "Kilitli",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/library-books",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "library-book-operations": {
+          "menu": "Kitap Hareketleri",
+          "title": "Kilitli",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/library-book-operations",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "library-reports": {
+          "menu": "Raporlar",
+          "title": "Kilitli",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/library-reports",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "library-settings": {
+          "menu": "Set Tanımları",
+          "title": "Kütüphane Sabitleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/library-settings",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 6,
+          "headers": [
+            [
+              "Set Adı"
+            ]
+          ]
+        },
+        "infirmary": {
+          "menu": "Revir",
+          "title": "Revir",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/infirmary",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "online-survey": {
+          "menu": "Anket",
+          "title": "Online Anket",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/online-survey",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "online-survey-answer-definitions": {
+          "menu": "Cevap Tanımları",
+          "title": "Online Anket - Cevap Tanımları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/online-survey-answer-definitions",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "online-survey-counsellor": {
+          "menu": "Anket",
+          "title": "Rehberlik Anketi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/online-survey-counsellor",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "poll": {
+          "menu": "Anket",
+          "title": "Anket",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/poll",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "poll-definitions": {
+          "menu": "Tanımlamalar",
+          "title": "Form Anket - Tanımlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/poll-definitions",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "sms-confirm": {
+          "menu": "SMS Onay",
+          "title": "SMS Onay",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/sms-confirm",
+          "has_data": false,
+          "table_count": 5,
+          "total_rows": 8,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ],
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "sms-control": {
+          "menu": "SMS Kontrol",
+          "title": "SMS Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/sms-control",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 24,
+          "headers": [
+            [
+              "Durum",
+              "Şube",
+              "Cep Tel",
+              "Mesaj",
+              "Tür"
+            ],
+            [
+              "1",
+              "2"
+            ]
+          ]
+        },
+        "notification-control": {
+          "menu": "Bildirim Kontrol",
+          "title": "Bildirim Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/notification-control",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "internal-message-control": {
+          "menu": "Mesaj Kontrol",
+          "title": "Mesaj Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/internal-message-control",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "agenda": {
+          "menu": "Ajanda Giriş",
+          "title": "Ajanda Giriş",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/agenda",
+          "has_data": true,
+          "table_count": 5,
+          "total_rows": 19,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ],
+            [
+              "5 Nisan 2026",
+              "14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55",
+              "Bugün"
+            ]
+          ]
+        },
+        "system-user-login-statistics": {
+          "menu": "Kullanım İstatistik",
+          "title": "Kullanım İstatistik",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/system-user-login-statistics",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "turtek-panel": {
+          "menu": "Turtek Panel",
+          "title": "Turtek Panel",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/turtek-panel",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 4,
+          "headers": [
+            [
+              "Sezon",
+              "Firma",
+              "Şube",
+              "Öğrenci Sayısı",
+              "Fatura"
+            ]
+          ]
+        },
+        "linked-web-site-search": {
+          "menu": "Kısayollar Kontrol",
+          "title": "Kısayollar Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/linked-web-site-search",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "question-editor-books": {
+          "menu": "Kitaplar",
+          "title": "Kitaplar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/question-editor-books",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "question-editor-questions": {
+          "menu": "Soru Düzenle",
+          "title": "Soru Düzenle",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/question-editor-questions",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "booklet": {
+          "menu": "Kitapçık",
+          "title": "Kitapçık",
+          "url": "https://fermat.eyotek.com/v1/Pages/Tools/booklet",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        }
+      }
+    },
+    "Student": {
+      "count": 103,
+      "pages": {
+        "pre-enrollment": {
+          "menu": "Ön Kayıt",
+          "title": "Ön Kayıt",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/pre-enrollment",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "list-pre-enrollment": {
+          "menu": "Ön Kayıt Liste",
+          "title": "Ön Kayıt Liste",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/list-pre-enrollment",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 34,
+          "headers": [
+            [
+              "Şube"
+            ],
+            [
+              "KG No"
+            ]
+          ]
+        },
+        "pre-enrollment-upload": {
+          "menu": "Ön Kayıt Yükle",
+          "title": "Ön Kayıt Yükle",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/pre-enrollment-upload",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "list-pre-enrollment-appointment": {
+          "menu": "Ön Kayıt Randevu",
+          "title": "Ön Kayıt Randevu",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/list-pre-enrollment-appointment",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "list-pre-enrollment-interview": {
+          "menu": "Günlük Görüşmeler",
+          "title": "Günlük Görüşmeler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/list-pre-enrollment-interview",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "list-pre-enrollment-how-did-you-find-us": {
+          "menu": "Bizi nasıl buldunuz?",
+          "title": "Bizi nasıl buldunuz? Liste",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/list-pre-enrollment-how-did-you-find-us",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "quick-enrollment": {
+          "menu": "Hızlı Kesin Kayıt",
+          "title": "Öğrenci - Hızlı Kesin Kayıt",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/quick-enrollment",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "interior-enrollment-control": {
+          "menu": "İç Kayıt Kontrol",
+          "title": "İç Kayıt Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/interior-enrollment-control",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "price-list": {
+          "menu": "Fiyat Listesi",
+          "title": "Fiyat Listesi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/price-list",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "price-list-settings": {
+          "menu": "Tanımlar",
+          "title": "Fiyat Listesi Tanımlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/price-list-settings",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "customer-satisfaction-input": {
+          "menu": "Veli Görüşü Girişi",
+          "title": "Veli Görüşü Girişi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/customer-satisfaction-input",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 17,
+          "headers": [
+            [
+              "Konu",
+              "Veli Görüşü"
+            ]
+          ]
+        },
+        "customer-satisfaction-solution": {
+          "menu": "Sorun Çözümleri",
+          "title": "Sorun Çözümleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/customer-satisfaction-solution",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "customer-satisfaction-reports": {
+          "menu": "Raporlar",
+          "title": "Halkla İlişkiler Raporlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/customer-satisfaction-reports",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "student": {
+          "menu": "Öğrenciler",
+          "title": "Öğrenci",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/student",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 24,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Kayıt Tarihi",
+              "Söz No",
+              "Okul No"
+            ],
+            [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          ]
+        },
+        "class-list": {
+          "menu": "Sınıf Listesi",
+          "title": "Sınıf Listesi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/class-list",
+          "has_data": true,
+          "table_count": 3,
+          "total_rows": 19,
+          "headers": [
+            [
+              "Sınıf",
+              "Devre",
+              "Öğrenci Sayısı"
+            ],
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "list-students": {
+          "menu": "Öğrenci Listeleri",
+          "title": "Öğrenci Listeleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/list-students",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 80,
+          "headers": [
+            [
+              "Uyruğu"
+            ]
+          ]
+        },
+        "quick-data-input": {
+          "menu": "Hızlı Veri Girişi",
+          "title": "Hızlı Veri Girişi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/quick-data-input",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "quick-photo-upload": {
+          "menu": "Hızlı Fotoğraf Girişi",
+          "title": "Hızlı Fotoğraf Girişi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/quick-photo-upload",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "financial-service-type-list": {
+          "menu": "Hizmet Türü Listesi",
+          "title": "Hizmet Türü Listesi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/financial-service-type-list",
+          "has_data": true,
+          "table_count": 3,
+          "total_rows": 22,
+          "headers": [
+            [
+              "Hizmet Alanlar"
+            ],
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "paid-activities-list": {
+          "menu": "Ücretli Faaliyetler",
+          "title": "Ücretli Faaliyetler Liste",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/paid-activities-list",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 18,
+          "headers": [
+            [
+              "Sezon"
+            ]
+          ]
+        },
+        "height-weight-clothing-size-list": {
+          "menu": "Boy&Kilo&Beden",
+          "title": "Boy&Kilo&Beden",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/height-weight-clothing-size-list",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 13,
+          "headers": [
+            [
+              "Sezon"
+            ]
+          ]
+        },
+        "progress-report": {
+          "menu": "Öğrenci Karnesi",
+          "title": "Öğrenci Karnesi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/progress-report",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "enrollment-document-list": {
+          "menu": "Kayıt Belge Listesi",
+          "title": "Kayıt Belge Listesi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/enrollment-document-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "counsellor-note-list": {
+          "menu": "Rehberlik Notu",
+          "title": "Rehberlik Notu",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/counsellor-note-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "counsellor-class-note-list": {
+          "menu": "Sınıf Rehberliği",
+          "title": "Sınıf Rehberliği",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/counsellor-class-note-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "question-assignment-list": {
+          "menu": "Hedef Soru",
+          "title": "Hedef Soru Takip",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/question-assignment-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "counsellor-note-appointment-list": {
+          "menu": "Veli Randevuları",
+          "title": "Veli Randevuları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/counsellor-note-appointment-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "attendance-check-multi": {
+          "menu": "Öğrenci Yoklama Giriş",
+          "title": "Öğrenci Yoklama Giriş",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/attendance-check-multi",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 8,
+          "headers": [
+            [
+              "Devre",
+              "Sınıf",
+              "Sınıf Seçimi"
+            ]
+          ]
+        },
+        "attendance-administrative-leave": {
+          "menu": "İdari İzin Giriş",
+          "title": "İdari İzin Giriş",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/attendance-administrative-leave",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "attendance-count": {
+          "menu": "Devamsızlık Sayısı",
+          "title": "Devamsızlık Sayısı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/attendance-count",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "attendance-class-control": {
+          "menu": "Sınıf Yoklama Kontrol",
+          "title": "Sınıf Yoklama Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/attendance-class-control",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 8,
+          "headers": [
+            [
+              "Şube",
+              "Gün",
+              "Sınıf",
+              "109:00 09:35",
+              "209:45 10:20"
+            ]
+          ]
+        },
+        "attendance-report": {
+          "menu": "Yoklama Kontrol",
+          "title": "Yoklama Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/attendance-report",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "attendance-today": {
+          "menu": "Bugün Gelmeyenler",
+          "title": "Bugün Gelmeyenler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/attendance-today",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 24,
+          "headers": [
+            [
+              "Şube",
+              "Tarih",
+              "Söz No",
+              "Okul No",
+              "Adı"
+            ],
+            [
+              "1",
+              "2"
+            ]
+          ]
+        },
+        "attendance-list": {
+          "menu": "Liste eOkul",
+          "title": "Liste eOkul",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/attendance-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "food-menu-check": {
+          "menu": "Yemek Yoklama",
+          "title": "Yemek Yoklama",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/food-menu-check",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Devre",
+              "Sınıf"
+            ]
+          ]
+        },
+        "food-menu-check-control": {
+          "menu": "Yemek Yoklama Kontrol",
+          "title": "Yemek Yoklama Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/food-menu-check-control",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "food-menu-check-class-control": {
+          "menu": "Sınıf Yemek Yoklama Kontrol",
+          "title": "Sınıf Yemek Yoklama Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/food-menu-check-class-control",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube",
+              "Sınıf",
+              "Sabah Kahvaltısı",
+              "Öğle Yemeği",
+              "İkindi Beslenmesi"
+            ]
+          ]
+        },
+        "sleep-check": {
+          "menu": "Uyku Yoklama",
+          "title": "Uyku Yoklama",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/sleep-check",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "sleep-check-control": {
+          "menu": "Uyku Yoklama Kontrol",
+          "title": "Uyku Yoklama Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/sleep-check-control",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "sleep-check-class-control": {
+          "menu": "Sınıf Uyku Yoklama Kontrol",
+          "title": "Sınıf Uyku Yoklama Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/sleep-check-class-control",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "communication-sms-special-text": {
+          "menu": "Öğrenci Özel SMS",
+          "title": "Öğrenci Özel SMS",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/communication-sms-special-text",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "communication-sms-notification-test-attendance": {
+          "menu": "Sınav Yoklama SMS",
+          "title": "Sınav Yoklama SMS",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/communication-sms-notification-test-attendance",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "communication-sms-notification-prepared-text": {
+          "menu": "Hazır SMS",
+          "title": "Hazır SMS",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/communication-sms-notification-prepared-text",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "communication-notification-special-text": {
+          "menu": "Bildirim Gönder",
+          "title": "Bildirim Gönder",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/communication-notification-special-text",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "communication-sms-from-file": {
+          "menu": "Dosyadan SMS",
+          "title": "Dosyadan SMS",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/communication-sms-from-file",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "communication-sms-pre-enrollment": {
+          "menu": "Ön Kayıt SMS",
+          "title": "Ön Kayıt - SMS",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/communication-sms-pre-enrollment",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "communication-internal-message-input": {
+          "menu": "Sistem İçi Mesaj",
+          "title": "Sistem İçi Mesaj Öğrenci",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/communication-internal-message-input",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 3,
+          "headers": [
+            [
+              "Araç çubukları EditörüYazı TürüYazı TürüBoyutBoyut Yazı Rengi  Kalın İtalik Altı Çizgili Numaralı Liste Geri Al Tekrarla Kes Kopyala Yapıştır Düz Metin Olarak Yapıştır Word'den Yapıştır Yatay Satır Ekle Sola Dayalı Ortalanmış Sağa Dayalı İki Kenara Yaslanmış Link Ekle/Düzenle Köprü Kaldır Bağlantı Ekle/Düzenle▲"
+            ]
+          ]
+        },
+        "timetable-set": {
+          "menu": "Ders Programları",
+          "title": "Ders Programları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/timetable-set",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 8,
+          "headers": [
+            [
+              "Şube",
+              "Açıklama",
+              "Tarih",
+              "Aktif",
+              "Kopyala"
+            ]
+          ]
+        },
+        "watch-place": {
+          "menu": "Nöbet Programı Giriş",
+          "title": "Nöbet Programı - Nöbet Programı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/watch-place",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "timetable-staff-list": {
+          "menu": "Öğretmen El Programı",
+          "title": "Öğretmen El Programı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/timetable-staff-list",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 15,
+          "headers": [
+            [
+              "Id",
+              "Adı Soyadı",
+              "Branş",
+              "Saat"
+            ]
+          ]
+        },
+        "timetable-branch-list": {
+          "menu": "Çarşaf Liste",
+          "title": "Çarşaf Liste",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/timetable-branch-list",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 8,
+          "headers": [
+            [
+              "Şube",
+              "Gün",
+              "Sınıf",
+              "109:00 09:35",
+              "209:45 10:20"
+            ]
+          ]
+        },
+        "watch-place-branch-list": {
+          "menu": "Çarşaf Liste N",
+          "title": "Çarşaf Liste N",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/watch-place-branch-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "timetable-class-list": {
+          "menu": "Sınıf Ders Programı",
+          "title": "Sınıf Ders Programı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/timetable-class-list",
+          "has_data": true,
+          "table_count": 3,
+          "total_rows": 16,
+          "headers": [
+            [
+              "Devre",
+              "Sınıf",
+              "Saat"
+            ],
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "staff-daily-planning": {
+          "menu": "Günlük Öğretmen Planlama",
+          "title": "Günlük Öğretmen Planlama",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/staff-daily-planning",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 18,
+          "headers": [
+            [
+              "Adı Soyadı",
+              "09:00 09:35",
+              "09:45 10:20",
+              "10:30 11:05",
+              "11:15 11:50"
+            ]
+          ]
+        },
+        "timetable-export": {
+          "menu": "XML Oluştur",
+          "title": "XML Oluştur",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/timetable-export",
+          "has_data": true,
+          "table_count": 4,
+          "total_rows": 192,
+          "headers": [
+            [
+              "MERVE OKŞAŞ (Biyoloji)"
+            ],
+            [
+              "Almanca"
+            ]
+          ]
+        },
+        "timetable-import": {
+          "menu": "XML Yükle",
+          "title": "XML Yükle",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/timetable-import",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "test-transferred": {
+          "menu": "Sınavlar",
+          "title": "Sınavlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/test-transferred",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 24,
+          "headers": [
+            [
+              "Şube",
+              "Tarih",
+              "Sınav Kodu",
+              "Sınav Türü",
+              "Sınav Kategori"
+            ],
+            [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          ]
+        },
+        "test-classroom-arrangement": {
+          "menu": "Sınav Sınıfı Düzenle",
+          "title": "Sınav Sınıfı Düzenle",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/test-classroom-arrangement",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "below-the-line-application": {
+          "menu": "Çizgi Altı Çalışması",
+          "title": "Çizgi Altı Çalışması",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/below-the-line-application",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "omr-sheet-fill": {
+          "menu": "Optik Kodlama",
+          "title": "Optik Kodlama",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/omr-sheet-fill",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "omr-sheet-fill-settings": {
+          "menu": "Optik Form Ayar",
+          "title": "Optik Form Ayar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/omr-sheet-fill-settings",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "test-participation": {
+          "menu": "Sınav Katılım",
+          "title": "Sınav Katılım",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/test-participation",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "online-test": {
+          "menu": "Online Sınavlar",
+          "title": "Online Sınavlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/online-test",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "exam": {
+          "menu": "Yazılı Giriş",
+          "title": "Yazılı Giriş",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/exam",
+          "has_data": true,
+          "table_count": 5,
+          "total_rows": 19,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ],
+            [
+              "5 Nisan 2026",
+              "14:0014:0514:1014:1514:2014:2514:3014:3514:4014:4514:5014:55",
+              "Bugün"
+            ]
+          ]
+        },
+        "exam-grade-list": {
+          "menu": "Yazılı Liste",
+          "title": "Yazılı Notları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/exam-grade-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "grade-official-list": {
+          "menu": "MEB Yazılı Notları",
+          "title": "Sınavlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/grade-official-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "exam-subject-outcome-list": {
+          "menu": "Konu / Kazanım",
+          "title": "Konu / Kazanım",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/exam-subject-outcome-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "Scholarship/scholarship": {
+          "menu": "Bursluluk Sınavı",
+          "title": "Bursluluk Sınavı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Scholarship/scholarship",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Okul / Kurs"
+            ]
+          ]
+        },
+        "Scholarship/quick-search": {
+          "menu": "Hızlı Ara",
+          "title": "Bursluluk Sınavı - Hızlı Arama",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Scholarship/quick-search",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "Scholarship/application": {
+          "menu": "Sınav Başvurusu",
+          "title": "Bursluluk Sınavı - Giriş",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Scholarship/application",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "Scholarship/general-report": {
+          "menu": "Genel Rapor",
+          "title": "Genel Rapor",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Scholarship/general-report",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 4,
+          "headers": [
+            [
+              "Toplam",
+              "Sınav Kodu",
+              "Okul / Kurs",
+              "Şube",
+              "Sınav Adı"
+            ]
+          ]
+        },
+        "Test/test": {
+          "menu": "Sınav Değerlendirme",
+          "title": "Sınav Değerlendirme",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Test/test",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 24,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Sınav Kodu",
+              "Sınav Adı",
+              "Sınav Türü"
+            ],
+            [
+              "1",
+              "2"
+            ]
+          ]
+        },
+        "Test/omr-sheet": {
+          "menu": "Optik Form Tanım",
+          "title": "Sınav Değerlendirme - Optik Form Tanım",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Test/omr-sheet",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "LGS",
+              "TYT",
+              "YKS",
+              "KPSS"
+            ]
+          ]
+        },
+        "Test/score-formulas": {
+          "menu": "Puanlar",
+          "title": "Sınav Değerlendirme - Puanlarım",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Test/score-formulas",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "Test/stocked-tests": {
+          "menu": "Sınav Deposu",
+          "title": "Sınav Deposu",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Test/stocked-tests",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 24,
+          "headers": [
+            [
+              "Sezon",
+              "Sınav Türü",
+              "Devre",
+              "Yayınevi",
+              "Sınav Adı"
+            ],
+            [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          ]
+        },
+        "Test/split-firstname-lastname": {
+          "menu": "Ad Soyad Ayır",
+          "title": "Sınav Değerlendirme - Ad Soyad Ayır",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Test/split-firstname-lastname",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "homework-assignment": {
+          "menu": "Ödev Ver",
+          "title": "Ödev",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/homework-assignment",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "homework-search": {
+          "menu": "Ödev Ara",
+          "title": "Ödev Ara",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/homework-search",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "homework-teacher": {
+          "menu": "Ödev Öğretmen",
+          "title": "Ödev Öğretmen",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/homework-teacher",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 4,
+          "headers": [
+            [
+              "Tür",
+              "Kod",
+              "Ad-Soyad",
+              "Sınıf",
+              "Branş"
+            ]
+          ]
+        },
+        "homework-reports": {
+          "menu": "Ödev Raporları",
+          "title": "Ödev - Ödev Raporları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/homework-reports",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "online-homework": {
+          "menu": "Online Ödevler",
+          "title": "Online Ödev - Ödev Giriş",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/online-homework",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "project-homework-control": {
+          "menu": "Proje Kontrol",
+          "title": "Proje Ödevleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/project-homework-control",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "individual-lesson": {
+          "menu": "Etüt Ara",
+          "title": "Etüt Ara",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/individual-lesson",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "individual-lesson-input": {
+          "menu": "Etüt Girişi",
+          "title": "Etüt Girişi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-input",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 16,
+          "headers": [
+            [
+              "Normal",
+              "Katılımlı"
+            ],
+            [
+              "Ders No\n                        Hafta Sonu\n                        Hafta İçi",
+              "1\n                                09:0009:35\n                                09:0009:35",
+              "2\n                                09:4510:20\n                                09:4510:20",
+              "3\n                                10:3011:05\n                                10:3011:05",
+              "4\n                                11:1511:50\n                                11:1511:50"
+            ]
+          ]
+        },
+        "individual-lesson-input-alternate": {
+          "menu": "Etüt Girişi 2",
+          "title": "Etüt Girişi 2",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-input-alternate",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "individual-lesson-attendance": {
+          "menu": "Etüt Yoklama",
+          "title": "Etüt Yoklama",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-attendance",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "individual-lesson-control-student": {
+          "menu": "Öğrenci Kontrol",
+          "title": "Etüt - Öğrenci",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-control-student",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "individual-lesson-reports": {
+          "menu": "Etüt Raporları",
+          "title": "Etüt - Etüt Raporları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-reports",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "individual-lesson-sms-notification": {
+          "menu": "Etüt Sms & Bildirim",
+          "title": "Etüt SMS & Bildirim",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-sms-notification",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 10,
+          "headers": [
+            [
+              "Id",
+              "Öğretmen",
+              "Tarih",
+              "Saat",
+              "Öğrenci Sayısı"
+            ]
+          ]
+        },
+        "Newsletter/newsletter-text-input": {
+          "menu": "Bülten Yorum Giriş",
+          "title": "Bülten Yorum Girişi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Newsletter/newsletter-text-input",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "Newsletter/newsletter-text-search": {
+          "menu": "Bülten Yorum Ara",
+          "title": "Bülten Yorum Ara",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Newsletter/newsletter-text-search",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "Newsletter/newsletter": {
+          "menu": "Bültenler",
+          "title": "Bültenler - Bülten Girişi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Newsletter/newsletter",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "Newsletter/achievement-certificate": {
+          "menu": "Başarı Belgesi",
+          "title": "Başarı Belgesi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Newsletter/achievement-certificate",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "Newsletter/theme": {
+          "menu": "Temalar",
+          "title": "Temalar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Newsletter/theme",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "Newsletter/newsletter-text-sets": {
+          "menu": "Set Tanımları",
+          "title": "Bülten Setler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/Newsletter/newsletter-text-sets",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "behaviour-search": {
+          "menu": "Davranış Ara",
+          "title": "Davranış Ara",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/behaviour-search",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "behaviour": {
+          "menu": "Davranışlar",
+          "title": "Davranışlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/behaviour",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "behaviour-sets": {
+          "menu": "Set Tanımları",
+          "title": "Davranış Setler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/behaviour-sets",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "food-menu-input": {
+          "menu": "Yemek Girişi",
+          "title": "Yemek Girişi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/food-menu-input",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "food-menu-list": {
+          "menu": "Yemek Listesi",
+          "title": "Yemek Listesi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/food-menu-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "lawyer": {
+          "menu": "Avukat",
+          "title": "Avukat",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/lawyer",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "activity-search": {
+          "menu": "Etkinlik Ara",
+          "title": "Etkinlik Ara",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/activity-search",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "have-question-search": {
+          "menu": "Sorum Var Ara",
+          "title": "Sorum Var Ara",
+          "url": "https://fermat.eyotek.com/v1/Pages/Student/have-question-search",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        }
+      }
+    },
+    "Financial": {
+      "count": 25,
+      "pages": {
+        "financial-operation": {
+          "menu": "Günlük",
+          "title": "Muhasebe - Günlük",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/financial-operation",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "expense-find": {
+          "menu": "Gider Bul",
+          "title": "Gider Bul",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/expense-find",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "expense-add": {
+          "menu": "Gider Ekle",
+          "title": "Muhasebe - Gider Ekle",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/expense-add",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "supplier": {
+          "menu": "Tedarikçiler",
+          "title": "Muhasebe - Tedarikçiler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/supplier",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "debts": {
+          "menu": "Borçlar",
+          "title": "Borçlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/debts",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "credit-card": {
+          "menu": "Kredi Kartı Ödeme",
+          "title": "Muhasebe - Kredi Kartı Ödeme",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/credit-card",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "other-income-add": {
+          "menu": "Diğer Gelir Ekle",
+          "title": "Muhasebe - Diğer Gelir Ekle",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/other-income-add",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "customer": {
+          "menu": "Müşteriler",
+          "title": "Muhasebe - Müşteriler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/customer",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "transfer": {
+          "menu": "Virman",
+          "title": "Muhasebe - Virman",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/transfer",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "overdue-student-payment": {
+          "menu": "Geciken Ödeme",
+          "title": "Muhasebe - Geciken Ödeme",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/overdue-student-payment",
+          "has_data": true,
+          "table_count": 3,
+          "total_rows": 29,
+          "headers": [
+            [
+              "Mesaj 1"
+            ],
+            [
+              "Tümü",
+              "Sezon",
+              "Şube",
+              "Söz No",
+              "Adı"
+            ]
+          ]
+        },
+        "student-financial-operation": {
+          "menu": "Öğrenci Ödeme Detay",
+          "title": "Öğrenci Ödeme Detay",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/student-financial-operation",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "list-online-enrollment": {
+          "menu": "Online Kayıt Yenileme",
+          "title": "Online Kayıt Yenileme",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/list-online-enrollment",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "discount-list": {
+          "menu": "İndirimler Liste",
+          "title": "Muhasebe - İndirimler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/discount-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "salary-control-list": {
+          "menu": "Maaş Kontrol",
+          "title": "Muhasebe - Maaş Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/salary-control-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "additional-payment-deduction-control": {
+          "menu": "Prim-Kesinti Kontrol",
+          "title": "Muhasebe - Mesai Ek Ödeme Kontrol",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/additional-payment-deduction-control",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "batch-tuition-fee-support": {
+          "menu": "Eğitim Destek Toplu",
+          "title": "Muhasebe - Toplu Eğitim Destek Ödeme",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/batch-tuition-fee-support",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "batch-salary": {
+          "menu": "Maaş Ödeme Toplu",
+          "title": "Muhasebe - Maaş Ödeme Toplu",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/batch-salary",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "annual-financial-statement": {
+          "menu": "Finans Raporu",
+          "title": "Muhasebe - Finans Raporu",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/annual-financial-statement",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "invoice-input": {
+          "menu": "Fatura İşleme",
+          "title": "Muhasebe - Fatura İşleme",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/invoice-input",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "invoice": {
+          "menu": "Toplu Fatura İşlemleri",
+          "title": "Muhasebe - Toplu Fatura İşlemleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/invoice",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "invoice-reports": {
+          "menu": "Fatura İstatistik",
+          "title": "Muhasebe - Fatura İstatistik",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/invoice-reports",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "cheque-bond-list": {
+          "menu": "Çek & Senet",
+          "title": "Muhasebe - Çek & Senet",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/cheque-bond-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "note-list": {
+          "menu": "Muhasebe Notu",
+          "title": "Muhasebe Notu",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/note-list",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "operation-history": {
+          "menu": "Log",
+          "title": "Muhasebe",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/operation-history",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "student-financial-operation?Filter=Today": {
+          "menu": "Toplam",
+          "title": "Öğrenci Ödeme Detay",
+          "url": "https://fermat.eyotek.com/v1/Pages/Financial/student-financial-operation?Filter=Today",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        }
+      }
+    },
+    "Settings": {
+      "count": 46,
+      "pages": {
+        "schools": {
+          "menu": "Okullar",
+          "title": "Genel Sabitler - Okullar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/schools",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube",
+              "İl"
+            ]
+          ]
+        },
+        "professions": {
+          "menu": "Meslekler",
+          "title": "Genel Sabitler - Meslekler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/professions",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 24,
+          "headers": [
+            [
+              "Meslek",
+              "1",
+              "2"
+            ],
+            [
+              "1",
+              "2"
+            ]
+          ]
+        },
+        "lessons": {
+          "menu": "Dersler",
+          "title": "Genel Sabitler - Dersler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/lessons",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 24,
+          "headers": [
+            [
+              "Ders",
+              "Şubeler",
+              "Durum",
+              "İK Görünürlük",
+              "1"
+            ],
+            [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ]
+          ]
+        },
+        "programs": {
+          "menu": "Programlar",
+          "title": "Genel Sabitler - Programlar>",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/programs",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 9,
+          "headers": [
+            [
+              "Program",
+              "Aktif"
+            ]
+          ]
+        },
+        "how-did-you-find-us": {
+          "menu": "Bizi nasıl buldunuz?",
+          "title": "Genel Sabitler - Bizi nasıl buldunuz?",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/how-did-you-find-us",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 8,
+          "headers": [
+            [
+              "Bizi nasıl buldunuz?",
+              "Tür"
+            ]
+          ]
+        },
+        "library": {
+          "menu": "Kütüphane",
+          "title": "Genel Sabitler - Kütüphane",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/library",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "enrollment-document": {
+          "menu": "Kayıt Belge",
+          "title": "Genel Sabitler - Kayıt Belge",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/enrollment-document",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "paid-activities": {
+          "menu": "Ücretli Faaliyetler",
+          "title": "Sezon Sabitleri - Ücretli Faaliyetler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/paid-activities",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "watch-place": {
+          "menu": "Nöbet Yeri",
+          "title": "Sezon Sabitleri - Nöbet Yeri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/watch-place",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "classroom": {
+          "menu": "Derslikler",
+          "title": "Sezon Sabitleri - Derslikler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/classroom",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "classes": {
+          "menu": "Sınıflar",
+          "title": "Sezon Sabitleri - Sınıflar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/classes",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "extra-classes-clubs": {
+          "menu": "Ekstra Sınıflar & Kulüpler",
+          "title": "Ekstra Sınıflar & Kulüpler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/extra-classes-clubs",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "periods": {
+          "menu": "Saatler",
+          "title": "Sezon Sabitleri - Saatler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/periods",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "club-choice-definitions": {
+          "menu": "Kulüp Tercihi",
+          "title": "Sezon Sabitleri - Kulüp Tercihi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/club-choice-definitions",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "project-homework-choice": {
+          "menu": "Proje Ödevi",
+          "title": "Sezon Sabitleri - Proje Ödevi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/project-homework-choice",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 16,
+          "headers": [
+            [
+              "[14] 7-A"
+            ]
+          ]
+        },
+        "subject": {
+          "menu": "Konular",
+          "title": "Sezon Sabitleri - Konular",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/subject",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "officially-announced-prices": {
+          "menu": "MEB Öğrenci Fiyatları",
+          "title": "Sezon Sabitleri - MEB Öğrenci Fiyatları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/officially-announced-prices",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "price-list-discounts": {
+          "menu": "İndirimler",
+          "title": "Sezon Sabitleri - İndirimler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/price-list-discounts",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 3,
+          "headers": [
+            [
+              "Şube",
+              "İndirim Adı",
+              "Tür",
+              "İndirim Şekli",
+              "Miktar"
+            ]
+          ]
+        },
+        "online-enrollment": {
+          "menu": "Online Kayıt Yenileme",
+          "title": "Online Kayıt Yenileme",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/online-enrollment",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "meal": {
+          "menu": "Öğün",
+          "title": "Sezon Sabitleri - Öğün",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/meal",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "foods": {
+          "menu": "Yemekler",
+          "title": "Sezon Sabitleri - Yemekler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/foods",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 11,
+          "headers": [
+            [
+              "Sıra",
+              "Yemek Türü"
+            ]
+          ]
+        },
+        "clothing-type": {
+          "menu": "Kıyafet Kategori",
+          "title": "Sezon Sabitleri - Kıyafet Kategori",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/clothing-type",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "school-bus": {
+          "menu": "Servisler",
+          "title": "Sezon Sabitleri - Servisler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/school-bus",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "exam-category-branches": {
+          "menu": "Yazılı Türleri",
+          "title": "Yazılı Türleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/exam-category-branches",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 11,
+          "headers": [
+            [
+              "CheckUp"
+            ]
+          ]
+        },
+        "expense-types": {
+          "menu": "Gider Kalemleri",
+          "title": "Genel Sabitler - Gider Kalemleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/expense-types",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 23,
+          "headers": [
+            [
+              "Yemek",
+              "1",
+              "2"
+            ],
+            [
+              "1",
+              "2"
+            ]
+          ]
+        },
+        "income-types": {
+          "menu": "Diğer Gelir Kalemleri",
+          "title": "Genel Sabitler - Diğer Gelir Kalemleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/income-types",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 5,
+          "headers": [
+            [
+              "Diğer Satış"
+            ]
+          ]
+        },
+        "bank-accounts": {
+          "menu": "Banka Hesapları",
+          "title": "Muhasebe Sabitleri - Banka Hesapları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/bank-accounts",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "credit-cards": {
+          "menu": "Kredi Kartları",
+          "title": "Genel Sabitler - Kredi Kartları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/credit-cards",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "invoice-templates": {
+          "menu": "Faturalar",
+          "title": "Genel Sabitler - Faturalar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/invoice-templates",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube",
+              "Fatura Adı",
+              "En",
+              "Boy"
+            ]
+          ]
+        },
+        "financial-service-types": {
+          "menu": "Hizmet Türleri",
+          "title": "Muhasebe Sabitleri - Hizmet Türleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/financial-service-types",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 36,
+          "headers": [
+            [
+              "Tür",
+              "Aktif",
+              "KDV"
+            ]
+          ]
+        },
+        "financial-operations-computer-definition": {
+          "menu": "Muhasebe Bilgisayarı Tanımla",
+          "title": "Muhasebe Sabitleri - Muhasebe Bilgisayarı Tanımla",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/financial-operations-computer-definition",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "branches": {
+          "menu": "Şubeler",
+          "title": "Yönetimsel - Şubeler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/branches",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube Kod",
+              "Marka",
+              "Şube Ad"
+            ]
+          ]
+        },
+        "branches-official-info": {
+          "menu": "Şube Resmi İsim",
+          "title": "Yönetimsel - Şube Resmi İsim",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/branches-official-info",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "social-media": {
+          "menu": "Sosyal Medya",
+          "title": "Yönetimsel - Sosyal Medya",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/social-media",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "parent-menu": {
+          "menu": "Veli Sayfası",
+          "title": "Yönetimsel - Veli Sayfası",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/parent-menu",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 36,
+          "headers": [
+            [
+              "Sayfa",
+              "Şube Sayısı"
+            ]
+          ]
+        },
+        "login-page-buttons": {
+          "menu": "Butonlar",
+          "title": "Yönetimsel - Butonlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/login-page-buttons",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Okul / Kurs"
+            ]
+          ]
+        },
+        "information-texts": {
+          "menu": "Bilgilendirme Metinleri",
+          "title": "Yönetimsel - Bilgilendirme Metinleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/information-texts",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Okul / Kurs"
+            ]
+          ]
+        },
+        "student-contract": {
+          "menu": "Öğrenci Sözleşme",
+          "title": "Yönetimsel - Öğrenci Sözleşme",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/student-contract",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "staff-contract": {
+          "menu": "Personel Sözleşme",
+          "title": "Yönetimsel - Personel Sözleşme",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/staff-contract",
+          "has_data": false,
+          "table_count": 0,
+          "total_rows": 0,
+          "headers": []
+        },
+        "seasons": {
+          "menu": "Sezonlar",
+          "title": "Yönetimsel - Sezonlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/seasons",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "levels": {
+          "menu": "Devreler",
+          "title": "Yönetimsel - Devreler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/levels",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 26,
+          "headers": [
+            [
+              "Devre",
+              "Durum"
+            ]
+          ]
+        },
+        "contact": {
+          "menu": "İletişim",
+          "title": "Yönetimsel - İletişim",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/contact",
+          "has_data": false,
+          "table_count": 2,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ],
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "home-page-widget": {
+          "menu": "Pencereler",
+          "title": "Pencereler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/home-page-widget",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 30,
+          "headers": [
+            [
+              "Aşçı"
+            ]
+          ]
+        },
+        "general-settings": {
+          "menu": "Genel Ayarlar",
+          "title": "Yönetimsel - Genel Ayarlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/general-settings",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "automatic-sms-notification": {
+          "menu": "SMS & Bildirim Ayarları",
+          "title": "Yönetimsel - SMS & Bildirim Ayarları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/automatic-sms-notification",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Şube"
+            ]
+          ]
+        },
+        "integrations": {
+          "menu": "Entegrasyonlar",
+          "title": "Yönetimsel - Entegrasyonlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Settings/integrations",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 4,
+          "headers": [
+            [
+              "E-Fatura"
+            ]
+          ]
+        }
+      }
+    },
+    "Reports": {
+      "count": 51,
+      "pages": {
+        "wallet": {
+          "menu": "Kasa",
+          "title": "Raporlar - Kasa",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/wallet",
+          "has_data": false,
+          "table_count": 3,
+          "total_rows": 5,
+          "headers": [
+            [
+              "Şube",
+              "Nakit"
+            ],
+            [
+              "Şube",
+              "Çek",
+              "Senet"
+            ]
+          ]
+        },
+        "overdue-student-payments": {
+          "menu": "Geciken Yüzdelik",
+          "title": "Raporlar - Geciken Yüzdelik",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/overdue-student-payments",
+          "has_data": false,
+          "table_count": 2,
+          "total_rows": 5,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "1 gün önceye kadar Ciro",
+              "1 gün önceye kadar Geciken",
+              "Geciken Yüzde"
+            ],
+            [
+              "Sezon",
+              "Şube",
+              "Geciken Yüzde",
+              "Sıra"
+            ]
+          ]
+        },
+        "balance-for-student-future-income": {
+          "menu": "Bilanço",
+          "title": "Raporlar - Bilanço",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/balance-for-student-future-income",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 23,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Tarih",
+              "Ciro",
+              "Tahsilat"
+            ]
+          ]
+        },
+        "other-income": {
+          "menu": "Diğer Gelirler",
+          "title": "Raporlar - Diğer Gelirler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/other-income",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "balance-for-student-payment-type": {
+          "menu": "Bilanço Ödeme Tipi",
+          "title": "Raporlar - Bilanço Ödeme Tipi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/balance-for-student-payment-type",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 23,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Tarih",
+              "Nakit",
+              "Visa"
+            ]
+          ]
+        },
+        "collection": {
+          "menu": "Tahsilat Toplam",
+          "title": "Raporlar - Tahsilat Toplam",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/collection",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 18,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Tarih",
+              "Nakit",
+              "Kredi Kartı"
+            ]
+          ]
+        },
+        "collection-for-student-financial-service-type": {
+          "menu": "Tahsilat Hizmet Türü",
+          "title": "Raporlar - Tahsilat Hizmet Türü",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/collection-for-student-financial-service-type",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 23,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Tarih",
+              "Eğitim",
+              "Toplam"
+            ]
+          ]
+        },
+        "balance-for-student-payment-type-vs-collection-for-student": {
+          "menu": "Bilanço Ödeme Tipi VS Tahsilat",
+          "title": "Raporlar - Bilanço Ödeme Tipi VS Tahsilat",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/balance-for-student-payment-type-vs-collection-for-student",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 23,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Tarih",
+              "Bilanço Nakit",
+              "Tahsilat Nakit"
+            ]
+          ]
+        },
+        "debt-for-payment-mode": {
+          "menu": "Yapılacak Ödemeler",
+          "title": "Raporlar - Yapılacak Ödemeler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/debt-for-payment-mode",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "staff-salary": {
+          "menu": "Maaşlar",
+          "title": "Raporlar - Maaşlar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/staff-salary",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "staff-additional-payment-deduction": {
+          "menu": "Prim - Kesinti",
+          "title": "Raporlar - Prim - Kesinti",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/staff-additional-payment-deduction",
+          "has_data": false,
+          "table_count": 2,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ],
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "expense": {
+          "menu": "Giderler Aylık",
+          "title": "Raporlar - Giderler Aylık",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/expense",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "financial-risk-analysis": {
+          "menu": "Finansal Risk Analizi",
+          "title": "Raporlar - Finansal Risk Analizi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/financial-risk-analysis",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 23,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Tarih",
+              "Ciro",
+              "Borç"
+            ]
+          ]
+        },
+        "student-income-for-program": {
+          "menu": "Program Ciroları",
+          "title": "Raporlar - Program Ciroları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/student-income-for-program",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 4,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Program",
+              "Ciro",
+              "Mevcut"
+            ]
+          ]
+        },
+        "student-income-for-level": {
+          "menu": "Devre Ciroları",
+          "title": "Raporlar - Devre Ciroları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/student-income-for-level",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 9,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Devre",
+              "Ciro",
+              "Mevcut"
+            ]
+          ]
+        },
+        "student-income-for-class": {
+          "menu": "Sınıf Ciroları",
+          "title": "Raporlar - Sınıf Ciroları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/student-income-for-class",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 22,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Devre",
+              "Sınıf",
+              "Ciro"
+            ]
+          ]
+        },
+        "student-discounts": {
+          "menu": "İndirimler Toplam",
+          "title": "Raporlar - İndirimler Toplam",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/student-discounts",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "wallet-history": {
+          "menu": "Kasa Geçmişi",
+          "title": "Raporlar - Kasa Geçmişi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/wallet-history",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 5,
+          "headers": [
+            [
+              "Şube",
+              "Tarih",
+              "Nakit",
+              "Toplam"
+            ]
+          ]
+        },
+        "overdue-student-payments-assigned-to-lawyer": {
+          "menu": "Avukata Verilen Ödemeler",
+          "title": "Raporlar - Avukata Verilen Ödemeler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/overdue-student-payments-assigned-to-lawyer",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 3,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Avukata Verilmeyen",
+              "Avukat",
+              "Toplam"
+            ]
+          ]
+        },
+        "number-of-students": {
+          "menu": "Öğrenci Sayısı",
+          "title": "Raporlar - Öğrenci Sayısı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-students",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 3,
+          "headers": [
+            [
+              "Toplam",
+              "Sezon",
+              "Şube",
+              "7.Snf",
+              "8.Snf"
+            ]
+          ]
+        },
+        "number-of-students-by-gender": {
+          "menu": "Kız-Erkek Öğrenci Sayısı",
+          "title": "Raporlar - Kız-Erkek Öğrenci Sayısı >",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-students-by-gender",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 19,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Devre",
+              "Sınıf",
+              "Kız"
+            ]
+          ]
+        },
+        "class-capacity-utilization-rate": {
+          "menu": "Sınıf Doluluk",
+          "title": "Raporlar - Sınıf Doluluk",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/class-capacity-utilization-rate",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 18,
+          "headers": [
+            [
+              "Şube",
+              "Tür",
+              "Devre",
+              "Sınıf",
+              "Öğrenci Sayısı"
+            ]
+          ]
+        },
+        "classroom-watchplace-capacity-utilization": {
+          "menu": "Derslik Doluluk",
+          "title": "Raporlar - Derslik Doluluk",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/classroom-watchplace-capacity-utilization",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 97,
+          "headers": [
+            [
+              "Şube",
+              "Gün",
+              "Saat",
+              "D-1"
+            ]
+          ]
+        },
+        "number-of-students-by-school": {
+          "menu": "Okul Öğrenci Sayıları",
+          "title": "Raporlar - Okul Öğrenci Sayıları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-students-by-school",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 3,
+          "headers": [
+            [
+              "Şube",
+              "Okul",
+              "Toplam",
+              "7.Snf",
+              "8.Snf"
+            ]
+          ]
+        },
+        "number-of-students-and-counsellor-note-by-counsellor": {
+          "menu": "Rehber Görüşme Sayıları",
+          "title": "Raporlar - Rehber Görüşme Sayıları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-students-and-counsellor-note-by-counsellor",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "number-of-students-and-counsellor-note-by-teacher": {
+          "menu": "Öğretmen Görüşme Sayıları",
+          "title": "Raporlar - Öğretmen Görüşme Sayıları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-students-and-counsellor-note-by-teacher",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 16,
+          "headers": [
+            [
+              "Şube",
+              "Id",
+              "Adı",
+              "Soyadı",
+              "Görev"
+            ]
+          ]
+        },
+        "number-of-clothing-size": {
+          "menu": "Kıyafet Beden Adet",
+          "title": "Raporlar - Kıyafet Beden Adet",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-clothing-size",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "number-of-persons-for-meal": {
+          "menu": "Yemek Kişi Sayısı",
+          "title": "Yemek Kişi Sayısı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-persons-for-meal",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "number-of-how-did-you-find-us": {
+          "menu": "Bizi nasıl buldunuz?",
+          "title": "Raporlar - Bizi nasıl buldunuz?",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-how-did-you-find-us",
+          "has_data": false,
+          "table_count": 2,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ],
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "sms-types": {
+          "menu": "SMS Türleri",
+          "title": "Raporlar - SMS Türleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/sms-types",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 35,
+          "headers": [
+            [
+              "Şube",
+              "Tür",
+              "Tarih",
+              "SMS Sayısı"
+            ]
+          ]
+        },
+        "number-of-terminated-students": {
+          "menu": "Kayıt Sildirenler",
+          "title": "Raporlar - Kayıt Sildirenler",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-terminated-students",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 3,
+          "headers": [
+            [
+              "Toplam",
+              "Sezon",
+              "Şube",
+              "8.Snf",
+              "12.Snf"
+            ]
+          ]
+        },
+        "number-of-terminated-students-by-reasons": {
+          "menu": "Kayıt Silme Nedenleri",
+          "title": "Raporlar - Kayıt Silme Nedenleri",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-terminated-students-by-reasons",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 3,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Diğer",
+              "Uyum sağlayamadı"
+            ]
+          ]
+        },
+        "general-enrollment-view": {
+          "menu": "Genel Görünüm",
+          "title": "Raporlar - Genel Görünüm",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/general-enrollment-view",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 3,
+          "headers": [
+            [
+              "Şube",
+              "Kayıt Sayısı",
+              "Dış Kayıt",
+              "İç Kayıt Sayısı",
+              "Net Kayıt Sayısı"
+            ]
+          ]
+        },
+        "general-enrollment-view-two": {
+          "menu": "Genel Görünüm 2",
+          "title": "Raporlar - Genel Görünüm 2",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/general-enrollment-view-two",
+          "has_data": false,
+          "table_count": 2,
+          "total_rows": 6,
+          "headers": [
+            [
+              "Şube",
+              "Toplam Kayıt",
+              "Net Kayıt",
+              "Günlük Kayıt",
+              "Günlük İç Kayıt"
+            ],
+            [
+              "Şube",
+              "Kayıt Geçen Yıl",
+              "Kayıt Bu Yıl",
+              "Kayıt Fark | Yüzde",
+              "Ciro Geçen Yıl"
+            ]
+          ]
+        },
+        "monthly-enrollment-by-number": {
+          "menu": "Aylık Kayıt Sayıları",
+          "title": "Raporlar - Aylık Kayıt Sayıları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-by-number",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 34,
+          "headers": [
+            [
+              "Toplam",
+              "Sezon",
+              "Tarih",
+              "Şube",
+              "7.Snf"
+            ],
+            [
+              "Toplam",
+              "Sezon",
+              "Tarih",
+              "Şube",
+              "8.Snf"
+            ]
+          ]
+        },
+        "monthly-enrollment-by-contract-fee": {
+          "menu": "Aylık Kayıt Ciroları",
+          "title": "Raporlar - Aylık Kayıt Ciroları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-by-contract-fee",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 34,
+          "headers": [
+            [
+              "Toplam",
+              "Sezon",
+              "Tarih",
+              "Şube",
+              "7.Snf"
+            ],
+            [
+              "Toplam",
+              "Sezon",
+              "Tarih",
+              "Şube",
+              "8.Snf"
+            ]
+          ]
+        },
+        "pre-enrollment-interview-versus-enrollment": {
+          "menu": "Ön Kayıt Görüşmesi",
+          "title": "Raporlar - Ön Kayıt Görüşmesi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/pre-enrollment-interview-versus-enrollment",
+          "has_data": false,
+          "table_count": 2,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ],
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "monthly-pre-enrollment-interview": {
+          "menu": "Aylık Görüşme Sayıları",
+          "title": "Raporlar - Aylık Görüşme Sayıları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/monthly-pre-enrollment-interview",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "monthly-pre-enrollment-warning": {
+          "menu": "Aylık Uyarı Sayıları",
+          "title": "Raporlar - Aylık Uyarı Sayıları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/monthly-pre-enrollment-warning",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 26,
+          "headers": [
+            [
+              "Şube",
+              "Tarih",
+              "Kayıt Kesinleşti",
+              "Toplam"
+            ]
+          ]
+        },
+        "monthly-enrollment-holder-by-number": {
+          "menu": "Aylık Kayıt Sahibi Say",
+          "title": "Raporlar - Aylık Kayıt Sahibi Say",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-holder-by-number",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 28,
+          "headers": [
+            [
+              "Toplam",
+              "Sezon",
+              "Kayıt Tarihi",
+              "Şube",
+              "Kayıt Sahibi"
+            ]
+          ]
+        },
+        "monthly-enrollment-holder-by-contract-fee": {
+          "menu": "Aylık Kayıt Sahibi Top",
+          "title": "Raporlar - Aylık Kayıt Sahibi Top",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-holder-by-contract-fee",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 28,
+          "headers": [
+            [
+              "Toplam",
+              "Sezon",
+              "Kayıt Tarihi",
+              "Şube",
+              "Kayıt Sahibi"
+            ]
+          ]
+        },
+        "balance-for-student-future-income-general": {
+          "menu": "Bilanço",
+          "title": "Raporlar - Bilanço",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/balance-for-student-future-income-general",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 23,
+          "headers": [
+            [
+              "Sezon",
+              "Tarih",
+              "Ciro",
+              "Tahsilat",
+              "Kalan"
+            ]
+          ]
+        },
+        "number-of-staffs-by-job-title": {
+          "menu": "Personel Sayısı",
+          "title": "Raporlar - Personel Sayısı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-staffs-by-job-title",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 4,
+          "headers": [
+            [
+              "Sezon",
+              "Görev",
+              "Kurs",
+              "Toplam"
+            ]
+          ]
+        },
+        "monthly-enrollment-by-number-general": {
+          "menu": "Aylık Kayıt Sayıları",
+          "title": "Raporlar - Aylık Kayıt Sayıları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-by-number-general",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 34,
+          "headers": [
+            [
+              "Toplam",
+              "Sezon",
+              "Tarih",
+              "7.Snf",
+              "8.Snf"
+            ],
+            [
+              "Toplam",
+              "Sezon",
+              "Tarih",
+              "8.Snf",
+              "10.Snf"
+            ]
+          ]
+        },
+        "monthly-enrollment-by-contract-fee-general": {
+          "menu": "Aylık Kayıt Ciroları",
+          "title": "Raporlar - Aylık Kayıt Ciroları",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/monthly-enrollment-by-contract-fee-general",
+          "has_data": true,
+          "table_count": 2,
+          "total_rows": 34,
+          "headers": [
+            [
+              "Toplam",
+              "Sezon",
+              "Tarih",
+              "7.Snf",
+              "8.Snf"
+            ],
+            [
+              "Toplam",
+              "Sezon",
+              "Tarih",
+              "8.Snf",
+              "10.Snf"
+            ]
+          ]
+        },
+        "monthly-pre-enrollment-interview-general": {
+          "menu": "Aylık Görüşme Sayıları",
+          "title": "Raporlar - Personel Sayısı",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/monthly-pre-enrollment-interview-general",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "staff-salary-general": {
+          "menu": "Maaşlar",
+          "title": "Raporlar - Toplam Maaş",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/staff-salary-general",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "staff-additional-payment-deduction-general": {
+          "menu": "Prim - Kesinti",
+          "title": "Raporlar - Prim - Kesinti",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/staff-additional-payment-deduction-general",
+          "has_data": false,
+          "table_count": 2,
+          "total_rows": 2,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ],
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "number-of-record-notes-by-creater": {
+          "menu": "Personel Sicil Yazar",
+          "title": "Raporlar - Personel Sicil Yazar",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/number-of-record-notes-by-creater",
+          "has_data": false,
+          "table_count": 1,
+          "total_rows": 1,
+          "headers": [
+            [
+              "Kayıt bulunamadı!"
+            ]
+          ]
+        },
+        "monthly-test-participation": {
+          "menu": "Sınav Katılım Aylık",
+          "title": "Raporlar - Sınav Katılım Aylık",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/monthly-test-participation",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 11,
+          "headers": [
+            [
+              "Sezon",
+              "Şube",
+              "Tarih",
+              "8.Snf",
+              "10.Snf"
+            ]
+          ]
+        },
+        "financial-risk-analysis-general": {
+          "menu": "Finansal Risk Analizi",
+          "title": "Raporlar - Finansal Risk Analizi",
+          "url": "https://fermat.eyotek.com/v1/Pages/Reports/financial-risk-analysis-general",
+          "has_data": true,
+          "table_count": 1,
+          "total_rows": 23,
+          "headers": [
+            [
+              "Sezon",
+              "Tarih",
+              "Ciro",
+              "Borç",
+              "Maaş"
+            ]
+          ]
+        }
+      }
+    }
+  }
+}

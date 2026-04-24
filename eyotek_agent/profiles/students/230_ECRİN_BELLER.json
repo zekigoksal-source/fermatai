@@ -1,0 +1,24 @@
+{
+  "soz_no": "230",
+  "eyotek_id": "230",
+  "ad_soyad": "ECRİN BELLER",
+  "sinif": "12 SAY",
+  "devre": "12.Snf",
+  "telefon": "+905309356389",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 4,
+  "etut_yapildi": 1,
+  "etut_gelmedi": 0,
+  "etut_kontrol_edilmedi": 3,
+  "etut_katilim_yuzdesi": 25,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%25)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

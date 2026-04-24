@@ -1,0 +1,24 @@
+{
+  "soz_no": "231",
+  "eyotek_id": "231",
+  "ad_soyad": "GÖKTÜRK HAN BAYATLIOĞLU",
+  "sinif": "Mezun SAY",
+  "devre": "Mezun",
+  "telefon": "+905334939318",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 13,
+  "etut_yapildi": 5,
+  "etut_gelmedi": 0,
+  "etut_kontrol_edilmedi": 8,
+  "etut_katilim_yuzdesi": 38,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%38)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

@@ -1,0 +1,185 @@
+{
+  "classes": [
+    {
+      "devre": "",
+      "sinif": "8.Snf",
+      "saat": "[6] LGS A",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "11.Snf",
+      "saat": "[10] 10 SAY A",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "11.Snf",
+      "saat": "[15] 11 SAY ZEN",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "11.Snf",
+      "saat": "[4] 11 SAY NXT",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "11.Snf",
+      "saat": "[8] 11 TM A",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "11.Snf",
+      "saat": "[9] 11 SAY VIB",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "12.Snf",
+      "saat": "[1] 12 SAY A",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "12.Snf",
+      "saat": "[2] 12 SAY B",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "12.Snf",
+      "saat": "[5] 12 TM A",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "Mezun",
+      "saat": "[11] MEZUN SAY B",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "Mezun",
+      "saat": "[12] 12 MEZ SAY C",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "Mezun",
+      "saat": "[13] MEZUN TM A",
+      "checked": false
+    },
+    {
+      "devre": "",
+      "sinif": "Mezun",
+      "saat": "[7] MEZUN SAY A",
+      "checked": false
+    }
+  ],
+  "timetable": {
+    "headers": [
+      "",
+      "Devre",
+      "Sınıf",
+      "Saat",
+      ""
+    ],
+    "rows": [
+      [
+        "",
+        "8.Snf",
+        "[6] LGS A",
+        "15",
+        ""
+      ],
+      [
+        "",
+        "11.Snf",
+        "[10] 10 SAY A",
+        "12",
+        ""
+      ],
+      [
+        "",
+        "11.Snf",
+        "[15] 11 SAY ZEN",
+        "18",
+        ""
+      ],
+      [
+        "",
+        "11.Snf",
+        "[4] 11 SAY NXT",
+        "18",
+        ""
+      ],
+      [
+        "",
+        "11.Snf",
+        "[8] 11 TM A",
+        "14",
+        ""
+      ],
+      [
+        "",
+        "11.Snf",
+        "[9] 11 SAY VIB",
+        "18",
+        ""
+      ],
+      [
+        "",
+        "12.Snf",
+        "[1] 12 SAY A",
+        "20",
+        ""
+      ],
+      [
+        "",
+        "12.Snf",
+        "[2] 12 SAY B",
+        "20",
+        ""
+      ],
+      [
+        "",
+        "12.Snf",
+        "[5] 12 TM A",
+        "18",
+        ""
+      ],
+      [
+        "",
+        "Mezun",
+        "[11] MEZUN SAY B",
+        "24",
+        ""
+      ],
+      [
+        "",
+        "Mezun",
+        "[12] 12 MEZ SAY C",
+        "24",
+        ""
+      ],
+      [
+        "",
+        "Mezun",
+        "[13] MEZUN TM A",
+        "24",
+        ""
+      ],
+      [
+        "",
+        "Mezun",
+        "[7] MEZUN SAY A",
+        "24",
+        ""
+      ]
+    ],
+    "found": true
+  }
+}

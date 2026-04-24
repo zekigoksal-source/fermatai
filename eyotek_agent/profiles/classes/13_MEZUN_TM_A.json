@@ -1,0 +1,59 @@
+{
+  "sinif": "[13] MEZUN TM A",
+  "devre": "Mezun",
+  "ogrenci_sayisi": 9,
+  "ogrenciler": [
+    {
+      "soz_no": "258",
+      "ad": "ADA ELİF",
+      "soyad": "ÇETİNKAYA"
+    },
+    {
+      "soz_no": "275",
+      "ad": "AHMET CAN",
+      "soyad": "ÜLGEN"
+    },
+    {
+      "soz_no": "228",
+      "ad": "BEHÇET OYTUN",
+      "soyad": "ALUR"
+    },
+    {
+      "soz_no": "201",
+      "ad": "BERKAY",
+      "soyad": "ERDOĞDU"
+    },
+    {
+      "soz_no": "240",
+      "ad": "BÜŞRA",
+      "soyad": "ÇİFTÇİ"
+    },
+    {
+      "soz_no": "259",
+      "ad": "DURU",
+      "soyad": "İMRE"
+    },
+    {
+      "soz_no": "254",
+      "ad": "GÖNÜLAY",
+      "soyad": "YAŞAR"
+    },
+    {
+      "soz_no": "213",
+      "ad": "GÖZDE",
+      "soyad": "YARŞİ"
+    },
+    {
+      "soz_no": "250",
+      "ad": "KAYRA",
+      "soyad": "ÖZKAN"
+    }
+  ],
+  "etut_toplam": 43,
+  "etut_yapildi": 3,
+  "etut_gelmedi": 4,
+  "etut_katilim_yuzdesi": 7,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

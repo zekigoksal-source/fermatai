@@ -1,0 +1,69 @@
+{
+  "sinif": "[1] 12 SAY A",
+  "devre": "12.Snf",
+  "ogrenci_sayisi": 11,
+  "ogrenciler": [
+    {
+      "soz_no": "166",
+      "ad": "CEYLİN NAZ",
+      "soyad": "AKSOY"
+    },
+    {
+      "soz_no": "160",
+      "ad": "DAMLA",
+      "soyad": "KESKİN"
+    },
+    {
+      "soz_no": "230",
+      "ad": "ECRİN",
+      "soyad": "BELLER"
+    },
+    {
+      "soz_no": "143",
+      "ad": "FATMA NUR",
+      "soyad": "KAYGUSUZ"
+    },
+    {
+      "soz_no": "180",
+      "ad": "KAYRA",
+      "soyad": "CEYLAN"
+    },
+    {
+      "soz_no": "182",
+      "ad": "MAHMUT TAHA",
+      "soyad": "AKKAYA"
+    },
+    {
+      "soz_no": "148",
+      "ad": "MEHMET ALP",
+      "soyad": "TURAN"
+    },
+    {
+      "soz_no": "150",
+      "ad": "UĞUR",
+      "soyad": "AKAN"
+    },
+    {
+      "soz_no": "185",
+      "ad": "YİĞİT ALP",
+      "soyad": "AKYEL"
+    },
+    {
+      "soz_no": "154",
+      "ad": "ZEHRA",
+      "soyad": "ÇETİN"
+    },
+    {
+      "soz_no": "174",
+      "ad": "İREM",
+      "soyad": "GÖNÜL"
+    }
+  ],
+  "etut_toplam": 44,
+  "etut_yapildi": 6,
+  "etut_gelmedi": 1,
+  "etut_katilim_yuzdesi": 14,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

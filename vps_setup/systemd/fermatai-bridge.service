@@ -1,0 +1,55 @@
+[Unit]
+Description=FermatAI WhatsApp + Web Bridge (FastAPI + Uvicorn)
+Documentation=https://github.com/NEO/fermatai
+After=network-online.target docker.service postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=neo
+Group=neo
+WorkingDirectory=/opt/fermatai/eyotek_agent
+Environment="PATH=/opt/fermatai/.venv/bin:/usr/bin"
+EnvironmentFile=/opt/fermatai/.env
+
+# Uvicorn komutu — production config
+ExecStart=/opt/fermatai/.venv/bin/python -m uvicorn whatsapp_bridge:app \
+  --host 0.0.0.0 \
+  --port 8001 \
+  --workers 1 \
+  --log-level info \
+  --access-log \
+  --no-use-colors
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fermatai-bridge
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/fermatai /var/log/fermatai /tmp
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=false  # Python için gerekli
+
+# Resource limits
+MemoryMax=8G
+CPUQuota=400%
+TasksMax=512
+
+[Install]
+WantedBy=multi-user.target

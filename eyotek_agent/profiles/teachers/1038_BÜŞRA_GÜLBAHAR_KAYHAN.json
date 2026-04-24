@@ -1,0 +1,18 @@
+{
+  "eyotek_id": "1038",
+  "ad_soyad": "BÜŞRA GÜLBAHAR KAYHAN",
+  "brans": "Türkçe",
+  "gorev": "Öğretmen",
+  "haftalik_ders_saati": 24,
+  "aylik_etut_sayisi": 14,
+  "etut_ogrenci_sayisi": 14,
+  "etut_ders_orani": 0.58,
+  "ders_programi_slot_sayisi": 24,
+  "gun_dagilimi": {
+    "Pazar": 10,
+    "Pazartesi": 4,
+    "Perşembe": 8,
+    "Çarşamba": 2
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

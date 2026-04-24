@@ -1,0 +1,199 @@
+{
+  "_meta": {
+    "discovered": "2026-04-07",
+    "base": "https://fermat.eyotek.com/v1/Pages/",
+    "total_pages": 180,
+    "note": "Chrome MCP + Screenshot analizi ile kesfedildi"
+  },
+
+  "ogrenci": {
+    "_desc": "Ogrenci yonetimi — tum ogrenci islemleri",
+    "on_kayit": [
+      {"label": "On Kayit", "path": "Student/pre-enrollment"},
+      {"label": "On Kayit Liste", "path": "Student/list-pre-enrollment"},
+      {"label": "On Kayit Yonlendirme", "path": "Student/pre-enrollment-routing"}
+    ],
+    "kayit": [
+      {"label": "Kayit", "path": "Student/enrollment"},
+      {"label": "Kayit Belge Listesi", "path": "Student/enrollment-document-list"},
+      {"label": "Ogrenci Karnesi", "path": "Student/progress-report"}
+    ],
+    "halkla_iliskiler": [
+      {"label": "Veli Gorusu Girisi", "path": "Student/public-relation-input"},
+      {"label": "Sorun Cozumleri", "path": "Student/public-relation-problem"},
+      {"label": "Raporlar", "path": "Student/public-relation-report"}
+    ],
+    "ogrenciler": [
+      {"label": "Ogrenciler", "path": "Student/student"},
+      {"label": "Liste", "path": "Student/list-students"}
+    ],
+    "liste": [
+      {"label": "Sinif Listesi", "path": "Student/class-list", "wrapper_fn": "get_class_roster()"},
+      {"label": "Ogrenci Listeleri", "path": "Student/student-list-report"},
+      {"label": "Hizli Veri Girisi", "path": "Student/student-quick-data-entry"},
+      {"label": "Hizli Fotograf Girisi", "path": "Student/student-quick-photo-entry"},
+      {"label": "Hizmet Turu Listesi", "path": "Student/service-type-list"},
+      {"label": "Ucretli Faaliyetler", "path": "Student/paid-activities"},
+      {"label": "Boy Kilo Beden", "path": "Student/height-weight-body"},
+      {"label": "Ogrenci Karnesi", "path": "Student/student-report-card"},
+      {"label": "Kayit Belge Listesi", "path": "Student/registration-document-list"}
+    ],
+    "rehberlik": [
+      {"label": "Rehberlik Notu", "path": "Student/counsellor-note-list"},
+      {"label": "Sinif Rehberligi", "path": "Student/counsellor-class-note-list"},
+      {"label": "Hedef Soru", "path": "Student/question-assignment-list"},
+      {"label": "Veli Randevulari", "path": "Student/counsellor-note-appointment-list"}
+    ],
+    "yoklama": [
+      {"label": "Ogrenci Yoklama Giris", "path": "Student/attendance-check-multi"},
+      {"label": "Idari Izin Giris", "path": "Student/attendance-administrative-leave"},
+      {"label": "Devamsizlik Sayisi", "path": "Student/attendance-count"},
+      {"label": "Sinif Yoklama Kontrol", "path": "Student/attendance-class-control"},
+      {"label": "Yoklama Kontrol", "path": "Student/attendance-report"},
+      {"label": "Bugun Gelmeyenler", "path": "Student/attendance-today"},
+      {"label": "Liste eOkul", "path": "Student/attendance-list"},
+      {"label": "Yemek Yoklama", "path": "Student/attendance-food"}
+    ],
+    "iletisim": [
+      {"label": "Ogrenci Ozel SMS", "path": "Student/communication-sms-special-text"},
+      {"label": "Sinav Yoklama SMS", "path": "Student/communication-sms-test-attendance"},
+      {"label": "Hazir SMS", "path": "Student/communication-sms-ready"},
+      {"label": "Bildirim Gonder", "path": "Student/communication-notification"},
+      {"label": "Dosyadan SMS", "path": "Student/communication-sms-from-file"},
+      {"label": "On Kayit SMS", "path": "Student/communication-sms-pre-enrollment"},
+      {"label": "Sistem Ici Mesaj", "path": "Student/communication-internal-message"}
+    ],
+    "ders_programi": [
+      {"label": "Ders Programlari", "path": "Student/timetable"},
+      {"label": "Ogretmen El Programi", "path": "Student/timetable-staff-list", "wrapper_fn": "get_teacher_timetable()"},
+      {"label": "Carsaf Liste", "path": "Student/timetable-branch-list", "wrapper_fn": "get_timetable_branch_list()"},
+      {"label": "Sinif Ders Programi", "path": "Student/timetable-class-list", "wrapper_fn": "get_class_timetable()"},
+      {"label": "Nobet Programi Giris", "path": "Student/timetable-duty"},
+      {"label": "Gunluk Ogretmen Planlama", "path": "Student/timetable-daily-teacher-planning"},
+      {"label": "Carsaf Liste N", "path": "Student/timetable-branch-list-n"},
+      {"label": "XML", "path": "Student/timetable-xml"}
+    ],
+    "sinavlar": [
+      {"label": "Sinav Degerlendirme", "path": "Student/Test/test"},
+      {"label": "Optik Form Tanim", "path": "Student/Test/omr-sheet"},
+      {"label": "Puanlar", "path": "Student/Test/score-formulas"},
+      {"label": "Sinav Deposu", "path": "Student/Test/test-warehouse"},
+      {"label": "Sinav Sinifi Duzenle", "path": "Student/test-classroom-arrangement"},
+      {"label": "Cizgi Alti Calismasi", "path": "Student/below-the-line-application"},
+      {"label": "Optik Kodlama", "path": "Student/omr-sheet-fill"},
+      {"label": "Sinav Katilim", "path": "Student/test-participation"},
+      {"label": "Online Sinavlar", "path": "Student/online-test"},
+      {"label": "Yazili Giris", "path": "Student/exam"},
+      {"label": "Yazili Liste", "path": "Student/exam-grade-list"},
+      {"label": "MEB Yazili Notlari", "path": "Student/grade-official-list"},
+      {"label": "Konu Kazanim", "path": "Student/exam-subject-outcome-list"}
+    ],
+    "bursluluk": [
+      {"label": "Bursluluk Sinavi", "path": "Student/Scholarship/scholarship"},
+      {"label": "Hizli Ara", "path": "Student/Scholarship/quick-search"},
+      {"label": "Sinav Basvurusu", "path": "Student/Scholarship/application"},
+      {"label": "Genel Rapor", "path": "Student/Scholarship/general-report"}
+    ],
+    "odev": [
+      {"label": "Odev Giris", "path": "Student/homework-input"},
+      {"label": "Odev Ara", "path": "Student/homework"}
+    ],
+    "etut": [
+      {"label": "Etut Ara", "path": "Student/individual-lesson"},
+      {"label": "Etut Girisi", "path": "Student/individual-lesson-input"},
+      {"label": "Etut Girisi 2", "path": "Student/individual-lesson-input-2"},
+      {"label": "Etut Yoklama", "path": "Student/individual-lesson-attendance"},
+      {"label": "Ogrenci Kontrol", "path": "Student/individual-lesson-control-student", "wrapper_fn": "get_etut_student_control()"},
+      {"label": "Etut Raporlari", "path": "Student/individual-lesson-reports", "wrapper_fn": "get_etut_reports()"},
+      {"label": "Etut SMS Bildirim", "path": "Student/individual-lesson-sms-notification"}
+    ],
+    "davranis": [
+      {"label": "Davranis Giris", "path": "Staff/behaviour-input"},
+      {"label": "Davranis Ara", "path": "Student/behaviour-search"},
+      {"label": "Davranislar", "path": "Student/behaviour"},
+      {"label": "Set Tanimlari", "path": "Student/behaviour-sets"}
+    ]
+  },
+
+  "personel": {
+    "_desc": "Personel yonetimi",
+    "pages": [
+      {"label": "Personel", "path": "Staff/staff"},
+      {"label": "Personel Listeleri", "path": "Staff/list-staffs"},
+      {"label": "Izin Liste", "path": "Staff/permit-list"},
+      {"label": "Personel Atama Listesi", "path": "Staff/official-contract-list"},
+      {"label": "Insan Kaynaklari", "path": "Staff/human-resources"},
+      {"label": "IK Liste", "path": "Staff/list-human-resources"},
+      {"label": "IK Randevu", "path": "Staff/list-human-resources-appointment"},
+      {"label": "IK Gorusmeleri", "path": "Staff/list-human-resources-interview"}
+    ]
+  },
+
+  "muhasebe": {
+    "_desc": "Finansal islemler — ADMIN ONLY, son asama",
+    "pages": [
+      {"label": "Gunluk", "path": "Financial/daily"},
+      {"label": "Giderler", "path": "Financial/expenses"},
+      {"label": "Diger Gelirler", "path": "Financial/other-income"},
+      {"label": "Virman", "path": "Financial/transfer"},
+      {"label": "Geciken Odeme", "path": "Financial/overdue-student-payment"},
+      {"label": "Ogrenci Odeme Detay", "path": "Financial/student-payment-detail"},
+      {"label": "Online Kayit Yenileme", "path": "Financial/online-enrollment-renewal"},
+      {"label": "Indirimler Liste", "path": "Financial/discount-list"},
+      {"label": "Maas Kontrol", "path": "Financial/salary-control"},
+      {"label": "Prim-Kesinti Kontrol", "path": "Financial/bonus-deduction-control"},
+      {"label": "Egitim Destek Toplu", "path": "Financial/education-support-bulk"},
+      {"label": "Maas Odeme Toplu", "path": "Financial/salary-payment-bulk"},
+      {"label": "Finans Raporu", "path": "Financial/finance-report"},
+      {"label": "Fatura", "path": "Financial/invoice"},
+      {"label": "Cek Senet", "path": "Financial/check-bond"},
+      {"label": "Muhasebe Notu", "path": "Financial/accounting-note"},
+      {"label": "Log", "path": "Financial/log"}
+    ]
+  },
+
+  "raporlar": {
+    "_desc": "Raporlar ve analizler",
+    "muhasebe_raporlari": [
+      {"label": "Kasa", "path": "Reports/wallet"},
+      {"label": "Geciken Yuzdelik", "path": "Reports/overdue-percentage"},
+      {"label": "Bilanco", "path": "Reports/balance-for-student-future-income"},
+      {"label": "Diger Gelirler", "path": "Reports/other-income-report"},
+      {"label": "Bilanco Odeme Tipi", "path": "Reports/balance-payment-type"},
+      {"label": "Tahsilat Toplam", "path": "Reports/collection-total"},
+      {"label": "Tahsilat Hizmet Turu", "path": "Reports/collection-service-type"},
+      {"label": "Bilanco Odeme Tipi VS Tahsilat", "path": "Reports/balance-payment-vs-collection"},
+      {"label": "Yapilacak Odemeler", "path": "Reports/upcoming-payments"},
+      {"label": "Maaslar", "path": "Reports/salaries"},
+      {"label": "Prim Kesinti", "path": "Reports/bonus-deduction"},
+      {"label": "Giderler Aylik", "path": "Reports/monthly-expenses"},
+      {"label": "Finansal Risk Analizi", "path": "Reports/financial-risk-analysis"},
+      {"label": "Program Cirolari", "path": "Reports/program-revenues"},
+      {"label": "Devre Cirolari", "path": "Reports/level-revenues"},
+      {"label": "Sinif Cirolari", "path": "Reports/class-revenues"},
+      {"label": "Indirimler Toplam", "path": "Reports/discounts-total"},
+      {"label": "Kasa Gecmisi", "path": "Reports/wallet-history"},
+      {"label": "Avukata Verilen Odemeler", "path": "Reports/lawyer-payments"}
+    ],
+    "istatistik_raporlari": [
+      {"label": "Ogrenci Sayisi", "path": "Reports/student-count"},
+      {"label": "Kiz-Erkek Ogrenci Sayisi", "path": "Reports/student-gender-count"},
+      {"label": "Sinif Doluluk", "path": "Reports/class-occupancy"},
+      {"label": "Derslik Doluluk", "path": "Reports/classroom-occupancy"},
+      {"label": "Okul Ogrenci Sayilari", "path": "Reports/school-student-counts"},
+      {"label": "Rehber Gorusme Sayilari", "path": "Reports/counsellor-meeting-counts"},
+      {"label": "Ogretmen Gorusme Sayilari", "path": "Reports/teacher-meeting-counts"},
+      {"label": "Kiyafet Beden Adet", "path": "Reports/clothing-size-counts"},
+      {"label": "Yemek Kisi Sayisi", "path": "Reports/food-person-counts"},
+      {"label": "Bizi Nasil Buldunuz", "path": "Reports/how-found-us"},
+      {"label": "SMS Turleri", "path": "Reports/sms-types"},
+      {"label": "Kayit Sildirenler", "path": "Reports/enrollment-cancellations"},
+      {"label": "Kayit Silme Nedenleri", "path": "Reports/cancellation-reasons"}
+    ]
+  },
+
+  "ogrenci_profil_alt_sayfalari": {
+    "_desc": "Ogrenci bazli alt sayfalar — ST_Id parametresi ile",
+    "_ref": "student_page_map.json icinde detayli"
+  }
+}

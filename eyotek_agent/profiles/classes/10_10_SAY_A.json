@@ -1,0 +1,64 @@
+{
+  "sinif": "[10] 10 SAY A",
+  "devre": "11.Snf",
+  "ogrenci_sayisi": 10,
+  "ogrenciler": [
+    {
+      "soz_no": "290",
+      "ad": "AHMET FATİH",
+      "soyad": "ÇETİN"
+    },
+    {
+      "soz_no": "179",
+      "ad": "AYŞE ECRİN",
+      "soyad": "DEMİR"
+    },
+    {
+      "soz_no": "237",
+      "ad": "BERAT",
+      "soyad": "AZMAN"
+    },
+    {
+      "soz_no": "169",
+      "ad": "EZGİ",
+      "soyad": "KARADAŞ"
+    },
+    {
+      "soz_no": "279",
+      "ad": "GÜL",
+      "soyad": "ÇALIŞKANER"
+    },
+    {
+      "soz_no": "285",
+      "ad": "HAVVA MERİÇ",
+      "soyad": "ÖZTÜRK"
+    },
+    {
+      "soz_no": "234",
+      "ad": "MEHMET KUTHAN",
+      "soyad": "ŞARVAN"
+    },
+    {
+      "soz_no": "236",
+      "ad": "MELİSA",
+      "soyad": "EVCİMEN"
+    },
+    {
+      "soz_no": "220",
+      "ad": "YAĞMUR",
+      "soyad": "HAYIR"
+    },
+    {
+      "soz_no": "287",
+      "ad": "ZEYNEP",
+      "soyad": "ÜNVER"
+    }
+  ],
+  "etut_toplam": 27,
+  "etut_yapildi": 6,
+  "etut_gelmedi": 0,
+  "etut_katilim_yuzdesi": 22,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

@@ -1,0 +1,420 @@
+{
+  "risk_ogrenciler": [
+    {
+      "soz_no": "157",
+      "ad_soyad": "ALMİNA ERTÜRK",
+      "sinif": "12 SAY",
+      "etut_toplam": 3,
+      "gelmedi": 3,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "184",
+      "ad_soyad": "ATEŞ KEZEL",
+      "sinif": "12 SAY",
+      "etut_toplam": 3,
+      "gelmedi": 3,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "228",
+      "ad_soyad": "BEHÇET OYTUN ALUR",
+      "sinif": "Mezun EA",
+      "etut_toplam": 1,
+      "gelmedi": 1,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "246",
+      "ad_soyad": "ZEYNEP AKBAŞ",
+      "sinif": "Mezun SAY",
+      "etut_toplam": 3,
+      "gelmedi": 1,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "213",
+      "ad_soyad": "GÖZDE YARŞİ",
+      "sinif": "Mezun EA",
+      "etut_toplam": 6,
+      "gelmedi": 2,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "165",
+      "ad_soyad": "YAĞIZ ALP DEPELİ",
+      "sinif": "12 SAY",
+      "etut_toplam": 3,
+      "gelmedi": 1,
+      "katilim_yuzdesi": 67
+    },
+    {
+      "soz_no": "254",
+      "ad_soyad": "GÖNÜLAY YAŞAR",
+      "sinif": "Mezun EA",
+      "etut_toplam": 6,
+      "gelmedi": 1,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "215",
+      "ad_soyad": "DURU ÖZARSLAN",
+      "sinif": "Mezun SAY",
+      "etut_toplam": 8,
+      "gelmedi": 1,
+      "katilim_yuzdesi": 12
+    },
+    {
+      "soz_no": "217",
+      "ad_soyad": "DEREN SEVİM",
+      "sinif": "12 SAY",
+      "etut_toplam": 8,
+      "gelmedi": 1,
+      "katilim_yuzdesi": 50
+    },
+    {
+      "soz_no": "167",
+      "ad_soyad": "ALİ KÜÇÜKUYSAL",
+      "sinif": "11 SAY",
+      "etut_toplam": 12,
+      "gelmedi": 1,
+      "katilim_yuzdesi": 42
+    },
+    {
+      "soz_no": "214",
+      "ad_soyad": "ENES KARADAŞ",
+      "sinif": "Mezun SAY",
+      "etut_toplam": 13,
+      "gelmedi": 1,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "168",
+      "ad_soyad": "ZEYNEP KIRSAKAL",
+      "sinif": "12 EA",
+      "etut_toplam": 14,
+      "gelmedi": 1,
+      "katilim_yuzdesi": 29
+    },
+    {
+      "soz_no": "180",
+      "ad_soyad": "KAYRA CEYLAN",
+      "sinif": "12 SAY",
+      "etut_toplam": 30,
+      "gelmedi": 1,
+      "katilim_yuzdesi": 3
+    },
+    {
+      "soz_no": "287",
+      "ad_soyad": "ZEYNEP ÜNVER",
+      "sinif": "[10] 10 SAY A",
+      "etut_toplam": 1,
+      "gelmedi": 0,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "288",
+      "ad_soyad": "MEHMET SORMAGEÇ",
+      "sinif": "[12] 12 MEZ SAY C",
+      "etut_toplam": 2,
+      "gelmedi": 0,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "289",
+      "ad_soyad": "ALİ HAYDAR EFE",
+      "sinif": "[3] 9 SAY A",
+      "etut_toplam": 8,
+      "gelmedi": 0,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "251",
+      "ad_soyad": "HASAN ALİ YAVAŞ",
+      "sinif": "11 SAY",
+      "etut_toplam": 1,
+      "gelmedi": 0,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "234",
+      "ad_soyad": "MEHMET KUTHAN ŞARVAN",
+      "sinif": "10",
+      "etut_toplam": 14,
+      "gelmedi": 0,
+      "katilim_yuzdesi": 21
+    },
+    {
+      "soz_no": "237",
+      "ad_soyad": "BERAT AZMAN",
+      "sinif": "10",
+      "etut_toplam": 4,
+      "gelmedi": 0,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "soz_no": "235",
+      "ad_soyad": "İNCİ ALTINGEZ",
+      "sinif": "Mezun SAY",
+      "etut_toplam": 2,
+      "gelmedi": 0,
+      "katilim_yuzdesi": 0
+    }
+  ],
+  "ogretmen_karsilastirma": [
+    {
+      "ad_soyad": "ORHAN DEMİRBULAT",
+      "brans": "Matematik",
+      "ders": 49,
+      "etut": 53,
+      "ogrenci": 50,
+      "etut_ders_oran": 1.08
+    },
+    {
+      "ad_soyad": "VEDAT ÖZTEKİN",
+      "brans": "Matematik",
+      "ders": 28,
+      "etut": 19,
+      "ogrenci": 19,
+      "etut_ders_oran": 0.68
+    },
+    {
+      "ad_soyad": "MERVE OKŞAŞ",
+      "brans": "Biyoloji",
+      "ders": 38,
+      "etut": 18,
+      "ogrenci": 16,
+      "etut_ders_oran": 0.47
+    },
+    {
+      "ad_soyad": "BÜŞRA GÜLBAHAR KAYHAN",
+      "brans": "Türkçe",
+      "ders": 24,
+      "etut": 14,
+      "ogrenci": 14,
+      "etut_ders_oran": 0.58
+    },
+    {
+      "ad_soyad": "HASAN GÜNGÖR",
+      "brans": "Kimya",
+      "ders": 22,
+      "etut": 12,
+      "ogrenci": 12,
+      "etut_ders_oran": 0.55
+    },
+    {
+      "ad_soyad": "DENİZ AKÇAP",
+      "brans": "Coğrafya",
+      "ders": 6,
+      "etut": 11,
+      "ogrenci": 11,
+      "etut_ders_oran": 1.83
+    },
+    {
+      "ad_soyad": "EMİN YİĞİT",
+      "brans": "Fizik",
+      "ders": 15,
+      "etut": 10,
+      "ogrenci": 10,
+      "etut_ders_oran": 0.67
+    },
+    {
+      "ad_soyad": "ÖRSEL KOÇ",
+      "brans": "Fizik",
+      "ders": 14,
+      "etut": 9,
+      "ogrenci": 9,
+      "etut_ders_oran": 0.64
+    },
+    {
+      "ad_soyad": "MEHMET DÖNMEZ",
+      "brans": "Matematik",
+      "ders": 7,
+      "etut": 6,
+      "ogrenci": 6,
+      "etut_ders_oran": 0.86
+    },
+    {
+      "ad_soyad": "KARDELEN SAVCI",
+      "brans": "Tarih",
+      "ders": 14,
+      "etut": 6,
+      "ogrenci": 6,
+      "etut_ders_oran": 0.43
+    },
+    {
+      "ad_soyad": "EZGİ TUNÇ",
+      "brans": "Türkçe",
+      "ders": 16,
+      "etut": 4,
+      "ogrenci": 4,
+      "etut_ders_oran": 0.25
+    },
+    {
+      "ad_soyad": "ZEKİ GÖKSAL",
+      "brans": "Diğer",
+      "ders": 6,
+      "etut": 1,
+      "ogrenci": 3,
+      "etut_ders_oran": 0.17
+    }
+  ],
+  "sinif_etut_ozet": [
+    {
+      "sinif": "[10] 10 SAY A",
+      "devre": "11.Snf",
+      "ogrenci": 10,
+      "toplam_etut": 27,
+      "katilim_yuzdesi": 22
+    },
+    {
+      "sinif": "[15] 11 SAY ZEN",
+      "devre": "11.Snf",
+      "ogrenci": 7,
+      "toplam_etut": 38,
+      "katilim_yuzdesi": 34
+    },
+    {
+      "sinif": "[4] 11 SAY NXT",
+      "devre": "11.Snf",
+      "ogrenci": 10,
+      "toplam_etut": 34,
+      "katilim_yuzdesi": 21
+    },
+    {
+      "sinif": "[8] 11 TM A",
+      "devre": "11.Snf",
+      "ogrenci": 4,
+      "toplam_etut": 9,
+      "katilim_yuzdesi": 33
+    },
+    {
+      "sinif": "[9] 11 SAY VIB",
+      "devre": "11.Snf",
+      "ogrenci": 10,
+      "toplam_etut": 20,
+      "katilim_yuzdesi": 35
+    },
+    {
+      "sinif": "[1] 12 SAY A",
+      "devre": "12.Snf",
+      "ogrenci": 11,
+      "toplam_etut": 44,
+      "katilim_yuzdesi": 14
+    },
+    {
+      "sinif": "[2] 12 SAY B",
+      "devre": "12.Snf",
+      "ogrenci": 7,
+      "toplam_etut": 35,
+      "katilim_yuzdesi": 54
+    },
+    {
+      "sinif": "[5] 12 TM A",
+      "devre": "12.Snf",
+      "ogrenci": 7,
+      "toplam_etut": 54,
+      "katilim_yuzdesi": 20
+    },
+    {
+      "sinif": "[14] 7-A",
+      "devre": "7.Snf",
+      "ogrenci": 5,
+      "toplam_etut": 28,
+      "katilim_yuzdesi": 54
+    },
+    {
+      "sinif": "[6] LGS A",
+      "devre": "8.Snf",
+      "ogrenci": 5,
+      "toplam_etut": 6,
+      "katilim_yuzdesi": 50
+    },
+    {
+      "sinif": "[3] 9 SAY A",
+      "devre": "9.Snf",
+      "ogrenci": 2,
+      "toplam_etut": 8,
+      "katilim_yuzdesi": 0
+    },
+    {
+      "sinif": "[11] MEZUN SAY B",
+      "devre": "Mezun",
+      "ogrenci": 12,
+      "toplam_etut": 64,
+      "katilim_yuzdesi": 17
+    },
+    {
+      "sinif": "[12] 12 MEZ SAY C",
+      "devre": "Mezun",
+      "ogrenci": 5,
+      "toplam_etut": 15,
+      "katilim_yuzdesi": 7
+    },
+    {
+      "sinif": "[13] MEZUN TM A",
+      "devre": "Mezun",
+      "ogrenci": 9,
+      "toplam_etut": 43,
+      "katilim_yuzdesi": 7
+    },
+    {
+      "sinif": "[7] MEZUN SAY A",
+      "devre": "Mezun",
+      "ogrenci": 13,
+      "toplam_etut": 49,
+      "katilim_yuzdesi": 16
+    }
+  ],
+  "brans_etut_dagilimi": [
+    {
+      "brans": "Matematik",
+      "ogretmen_sayisi": 3,
+      "toplam_etut": 78,
+      "toplam_ders": 84
+    },
+    {
+      "brans": "Fizik",
+      "ogretmen_sayisi": 2,
+      "toplam_etut": 19,
+      "toplam_ders": 29
+    },
+    {
+      "brans": "Türkçe",
+      "ogretmen_sayisi": 2,
+      "toplam_etut": 18,
+      "toplam_ders": 40
+    },
+    {
+      "brans": "Biyoloji",
+      "ogretmen_sayisi": 1,
+      "toplam_etut": 18,
+      "toplam_ders": 38
+    },
+    {
+      "brans": "Kimya",
+      "ogretmen_sayisi": 1,
+      "toplam_etut": 12,
+      "toplam_ders": 22
+    },
+    {
+      "brans": "Coğrafya",
+      "ogretmen_sayisi": 1,
+      "toplam_etut": 11,
+      "toplam_ders": 6
+    },
+    {
+      "brans": "Tarih",
+      "ogretmen_sayisi": 1,
+      "toplam_etut": 6,
+      "toplam_ders": 14
+    },
+    {
+      "brans": "Diğer",
+      "ogretmen_sayisi": 1,
+      "toplam_etut": 1,
+      "toplam_ders": 6
+    }
+  ],
+  "oncelikli_konular": []
+}

@@ -1,0 +1,70 @@
+Sen FermatAI projesinin baş mühendisisin. Bu proje, Fermat Dershanesi için WhatsApp üzerinden çalışan bir yapay zeka LMS asistanıdır. Projeyi tam anlayarak, bağımsız devam et.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PROJE BAĞLAMI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Proje dizini: C:\Users\zekig\OneDrive\Desktop\FermatAI
+Python ortamı: eyotek_agent\.venv (Python 3.11)
+Detaylı mimari: CLAUDE.md dosyasını oku (proje kökünde)
+
+Temel bileşenler:
+- LMS: fermat.eyotek.com/v1 (ASP.NET WebForms)
+- DB: postgresql://fermat:Ze-zzg10@localhost:5432/fermatai
+- AI: Claude Sonnet tool-calling (fermat_core_agent.py)
+- Otomasyon: Playwright CDP port 9222 (eyotek_wrapper.py)
+- API anahtarı: eyotek_agent/.env içinde
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TAMAMLANAN İŞLER (önceki oturumlar)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ write_etut() v2.0 — Playwright ile 15 adımlı form doldurma
+✅ Eyotek ASP.NET pagination sonsuz döngü fix (eyotek_agent.py)
+✅ Staff modülü fix: URL=staff, needs_ara=True, PK=eyotek_id
+✅ fermat_core_agent.py: dinamik tarih context, soz_no search, sube fallback
+✅ eyotek_wrapper.py: class_name="" boşken crash fix
+✅ 125 öğrenci PostgreSQL'e yüklendi (soz_no 137–314)
+✅ 18 personel scrape edildi (staff_export.json) — import BEKLIYOR
+✅ CALISTIR.bat oluşturuldu
+✅ fermatai-daily-sync zamanlanmış görev (hafta içi 08:01)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BEKLEYEN GÖREVLER (öncelik sırasıyla)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. CALISTIR.bat çalıştır (Desktop/FermatAI klasöründe çift tıkla):
+   cleanup_db.py → import_staff.py → test_all.py
+
+2. add_admin.py çalıştır:
+   python add_admin.py +905XXXXXXXXX
+
+3. write_etut canlı test:
+   cd eyotek_agent
+   python fermat_core_agent.py "Ali Küçükuysal için yarın saat 12:00'da fizik etüt yaz"
+   (Chrome CDP açık + Eyotek oturumu aktif gerekli)
+
+4. write_counsellor_note testi
+
+5. WhatsApp bridge uçtan uca test
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ÇALIŞMA KURALLARI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Bağımsız çalış, her adımda onay bekleme
+- Hata çıkarsa düzelt ve devam et
+- Tüm Python dosyalarını değiştirince py_compile ile syntax kontrolü yap
+- PostgreSQL bağlantısı için asyncpg kullan (DATABASE_URL .env'de)
+- Playwright CDP için port 9222 (Chrome açık olmalı)
+- Türkçe karakter arama: _TR_TO_UPPER maketrans (i→İ, ı→I vb.)
+- Commit öncesi .env dosyasını .gitignore ile kontrol et
+- Önemli değişiklikleri CLAUDE.md ve CALISTIRMA_SIRASI.md'ye yaz
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+İLK ADIM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Önce CLAUDE.md ve eyotek_agent/CALISTIRMA_SIRASI.md dosyalarını oku.
+Sonra bekleyen görevleri sırayla devral ve tamamla.
+Herhangi bir kullanıcı onayı gerektiren adımda beni bilgilendir.

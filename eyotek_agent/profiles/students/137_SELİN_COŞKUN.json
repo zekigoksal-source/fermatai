@@ -1,0 +1,24 @@
+{
+  "soz_no": "137",
+  "eyotek_id": "137",
+  "ad_soyad": "SELİN COŞKUN",
+  "sinif": "12 EA",
+  "devre": "12.Snf",
+  "telefon": "+905436914211",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 29,
+  "etut_yapildi": 7,
+  "etut_gelmedi": 0,
+  "etut_kontrol_edilmedi": 22,
+  "etut_katilim_yuzdesi": 24,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%24)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

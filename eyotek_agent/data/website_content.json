@@ -1,0 +1,87 @@
+{
+  "kurum": {
+    "ad": "Fermat Egitim Kurumlari",
+    "diger_adlar": ["Fermat VIP", "Fermat YKS/LGS VIP Kurs", "Izmir Fermat VIP"],
+    "adres": "Kultur Mahallesi 1375. Sokak, Konak/Alsancak, Izmir 35220",
+    "telefon": "+90 546 260 54 46",
+    "web": ["fermategitimkurumlari.com", "fermatvip.com"],
+    "sosyal_medya": {
+      "instagram": "@fermategitimkurumlari",
+      "youtube": "@fermategitimkurumlari",
+      "tiktok": "@izmir.fermat.vip"
+    },
+    "kurucu": "ODTU mezunlari",
+    "sinif_mevcudu": "8 kisi VIP",
+    "calisma_saatleri": "Pazartesi-Pazar 08:00-22:00"
+  },
+  "programlar": [
+    {"ad": "YKS Hazirlik", "detay": "TYT+AYT odakli, 1200+ saat yillik egitim, %84 ilk 3 tercih yerlestirme, %97 universite yerlestirme"},
+    {"ad": "LGS Hazirlik", "detay": "8.sinif, 1000+ saat, 25000+ soru analizi, %88 nitelikli lise yerlestirme"},
+    {"ad": "Okula Destek", "detay": "9-10-11. siniflar, mufredat destegi + YKS altyapi"},
+    {"ad": "Ozel Ders", "detay": "Birebir, ogrenciye ozel tempo"},
+    {"ad": "Deneme Kulubu ve Kocluk", "detay": "Turkiye geneli deneme, veri analizi, gelisim raporu"},
+    {"ad": "TYT Yaz Kampi", "detay": "Yogunlastirilmis yaz programi"},
+    {"ad": "AP/SAT Hazirlik", "detay": "Uluslararasi sinav hazirligi"},
+    {"ad": "IELTS/TOEFL", "detay": "Ingilizce yeterlilik sinavi hazirligi"}
+  ],
+  "ozellikler": [
+    "8 kisilik VIP siniflar",
+    "Sinirsiz bire bir takviye (ozel ders)",
+    "Profesyonel kocluk ve mentorluk",
+    "FERMAT AI destekli egitim (yapay zeka soru analizi)",
+    "7/24 soru cozum uygulamasi",
+    "Kutuphane ve etut imkani",
+    "Turkiye geneli deneme kulubu",
+    "Ogrenci portali ile anlik takip",
+    "PDR destegi",
+    "Randevu sistemi (online)"
+  ],
+  "basari_rakamlari": {
+    "yks_ilk3_tercih": "%84",
+    "yks_universite_yerlestirme": "%97",
+    "lgs_nitelikli_lise": "%88",
+    "yillik_analiz_soru": "25000+"
+  },
+  "blog_yazilari": [
+    {
+      "baslik": "Yapay Zeka Destekli Egitim Sistemleri Nasil Calisir?",
+      "ozet": "Adaptif ogrenme, hata analizi, kavram yanilgisi tespiti, veri seffafligi. Carnegie Mellon, Daniel Kahneman Sistem 1/2, Harvard Dr. Karen Mapp referanslari. FERMAT AI platformu tanitimi.",
+      "anahtar_kavramlar": ["adaptif ogrenme", "bilissel ogretmen sistemleri", "kavram yanilgisi", "Sistem 1 ve Sistem 2", "veri seffafligi"]
+    },
+    {
+      "baslik": "Sinav Kaygisi ile Basa Cikmanin Etkili Yollari",
+      "ozet": "Amigdala hijack, norobiyoloji, BDT (Aaron Beck), 4-7-8 nefes teknigi, disavurumcu yazi (Pennebaker), simule sinav. Matthew Walker uyku, kortizol, aerobik egzersiz.",
+      "anahtar_kavramlar": ["amigdala hijack", "prefrontal korteks", "BDT", "4-7-8 nefes", "disavurumcu yazi", "uyku hijyeni"]
+    },
+    {
+      "baslik": "Universiteye Hazirlikta Psikolojik Danismanligin Onemi",
+      "ozet": "YKS hazirligi sadece akademik degil, kimlik, gelecek kaygisi ve duygusal dayaniklilik. PDR destegi.",
+      "anahtar_kavramlar": ["psikolojik danismanlik", "gelecek kaygisi", "duygusal dayaniklilik"]
+    },
+    {
+      "baslik": "Birebir Derslerin Avantajlari ve Basariya Katkisi",
+      "ozet": "Kisisellestirilmis egitim, ogrenci temposuna uyum, aninda geri bildirim.",
+      "anahtar_kavramlar": ["birebir ders", "kisisellestirilmis egitim"]
+    },
+    {
+      "baslik": "Veliler Icin Rehber: Cocugunuzun Sinav Surecine Nasil Destek Olabilirsiniz?",
+      "ozet": "Veli rolu, baski yerine destek, uyku-beslenme-egzersiz, ev iklimi.",
+      "anahtar_kavramlar": ["veli destegi", "ev iklimi", "baski yerine destek"]
+    },
+    {
+      "baslik": "LGS'ye Son 3 Ay Kala Nasil Calisilmali?",
+      "ozet": "Oz degerlendirme, 3 aylik blok sistem (konu/karma/deneme), Spitzer unutma egrisi, Bjork aralikli tekrar. Aile icin 'Kac net yaptin' yerine 'Yorulmuyor musun' onerisi.",
+      "anahtar_kavramlar": ["oz degerlendirme", "aralikli tekrar", "unutma egrisi", "3 aylik plan"]
+    },
+    {
+      "baslik": "YKS'ye Son 6 Ay Kala Stratejik Calisma Plani",
+      "ozet": "YKS son donem stratejisi, TYT-AYT dengesi.",
+      "anahtar_kavramlar": ["YKS strateji", "TYT-AYT dengesi"]
+    },
+    {
+      "baslik": "TYT ve AYT Arasindaki Farklar ve Calisma Stratejileri",
+      "ozet": "TYT genel yetenek, AYT alan bilgisi farki ve calisma yontemleri.",
+      "anahtar_kavramlar": ["TYT vs AYT", "calisma stratejisi"]
+    }
+  ]
+}

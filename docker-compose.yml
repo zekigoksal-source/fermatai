@@ -1,0 +1,44 @@
+# FermatAI Docker Compose (22.1n-neo Paket A)
+# =============================================
+# PostgreSQL + Redis + pgvector extension
+#
+# KULLANIM:
+#   docker-compose up -d
+#
+# MEVCUT DB:
+#   fermat_postgres ALREADY RUNNING (senin mevcut container'in)
+#   Bu file'da sadece Redis ekleniyor — postgres'i override etmez
+#
+# AKTIF ETME (multi-worker icin):
+#   1. docker-compose up -d redis
+#   2. .env'e ekle: REDIS_URL=redis://localhost:6379
+#   3. Bridge restart → session_store otomatik Redis'e baglanir
+#   4. Gunicorn/waitress ile 4 worker basla:
+#      waitress-serve --host 0.0.0.0 --port 8001 --threads 4 whatsapp_bridge:app
+
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: fermat_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"  # sadece localhost — guvenlik
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 60 100
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  redis_data:
+    driver: local

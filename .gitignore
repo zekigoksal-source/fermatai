@@ -1,0 +1,71 @@
+# === Secrets (ASLA commit etme) ===
+.env
+*.env
+secrets/
+*.pem
+*.key
+.eyotek_session.json
+.postgres_password
+.hetzner_token
+.claude/
+
+# === Python ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.venv/
+venv/
+*/venv/
+*/.venv/
+
+# === Node ===
+node_modules/
+
+# === Logs ===
+*.log
+logs/
+eyotek_agent/logs/
+!logs/.gitkeep
+
+# === Kaynaklar (677 MB PDF — RAG'da zaten) ===
+kaynaklar/
+eyotek_agent/kaynaklar/
+eyotek_agent/logs/ogm_*
+
+# === DB backup'ları (her biri 60+MB) ===
+backups/
+*.sql
+*.sql.gz
+*.sql.dump
+*.dump
+fermatai_*.sql
+
+# === Chrome profili (~200 MB binary cache) ===
+chrome_cdp_profile/
+*/chrome_cdp_profile/
+
+# === Screenshots (debug) ===
+*.png
+*.jpg
+*.jpeg
+!eyotek_agent/web_chat_ui.html
+# README'lerdeki embed'ler için istisna:
+!docs/**/*.png
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# === Tmp ===
+*.tmp
+*.bak
+.claude-backup/
+Ekstra Detay.txt
+API KEY.png

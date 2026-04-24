@@ -1,0 +1,4096 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>FermatAI</title>
+<!-- PWA — telefona sabitlenebilir (A10) -->
+<link rel="manifest" href="/chat/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="FermatAI">
+<meta name="theme-color" content="#C76F3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23C76F3E'/%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-size='110' font-weight='bold' fill='white' font-family='Arial'%3EF%3C/text%3E%3C/svg%3E">
+
+<!-- Markdown + LaTeX + Chart.js + Prism — web'e özel zengin format (WP'dan farklı) -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, { delimiters: [{left:'$$', right:'$$', display:true},{left:'$', right:'$', display:false}]});"></script>
+<!-- Chart.js — grafik render için -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- MathLive — denklem editörü (A5) -->
+<script defer src="https://cdn.jsdelivr.net/npm/mathlive@0.101.0/dist/mathlive.min.js"></script>
+<!-- Prism.js — kod syntax highlighting -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sql.min.js"></script>
+<style>
+/* Markdown output tables + code */
+.msg.bot table { border-collapse: collapse; margin: 10px 0; font-size: 13px; width: 100%; }
+.msg.bot th, .msg.bot td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.msg.bot th { background: var(--bg); font-weight: 600; }
+.msg.bot pre { background: #2D2A26; color: #F0EDE8; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 13px; margin: 8px 0; font-family: "SF Mono", Menlo, monospace; }
+.msg.bot code:not(pre code) { background: rgba(199,111,62,0.1); color: var(--accent-hover); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-family: "SF Mono", Menlo, monospace; }
+.msg.bot h1, .msg.bot h2, .msg.bot h3 { margin: 12px 0 6px; line-height: 1.3; }
+.msg.bot h1 { font-size: 1.3em; } .msg.bot h2 { font-size: 1.15em; } .msg.bot h3 { font-size: 1.05em; }
+.msg.bot ul, .msg.bot ol { margin: 6px 0 6px 20px; }
+.msg.bot li { margin: 3px 0; }
+.msg.bot blockquote { border-left: 3px solid var(--accent); padding-left: 12px; margin: 8px 0; color: var(--fg-muted); }
+.msg.bot a { color: var(--accent); text-decoration: underline; }
+.msg.bot hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+/* A4 Dashboard kartları */
+.dash-card {
+  background: var(--bot-bubble); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 12px; text-align: center;
+  transition: all 0.15s;
+}
+.dash-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.dash-card .dash-label {
+  font-size: 11px; color: var(--fg-muted); font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;
+}
+.dash-card .dash-value {
+  font-size: 22px; font-weight: 700; color: var(--fg);
+}
+.dash-card .dash-unit {
+  font-size: 12px; font-weight: 400; color: var(--fg-muted); margin-left: 4px;
+}
+.dash-card .dash-sub {
+  font-size: 10px; color: var(--fg-muted); margin-top: 4px;
+}
+
+/* Chart container */
+.msg.bot .chart-container {
+  background: var(--bot-bubble);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin: 12px 0;
+}
+.msg.bot .chart-title {
+  font-size: 13px; font-weight: 600; color: var(--fg); margin-bottom: 8px;
+}
+.msg.bot .chart-container canvas {
+  max-height: 280px;
+}
+
+/* Collapsible details/summary */
+.msg.bot details {
+  margin: 8px 0; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+  background: var(--bg);
+}
+.msg.bot details summary {
+  cursor: pointer; font-weight: 500; color: var(--accent);
+  padding: 4px 0; user-select: none;
+}
+.msg.bot details[open] summary { margin-bottom: 8px; }
+
+/* Prism theme override — Claude paletine uyum */
+.msg.bot pre[class*="language-"] {
+  background: #2D2A26 !important; border-radius: 8px;
+  padding: 14px !important; font-size: 13px;
+}
+.msg.bot code[class*="language-"] { font-family: "SF Mono", Menlo, monospace; }
+:root {
+  /* Claude.ai palette — sade, sıcak, rahat (LIGHT) */
+  --bg: #F5F4ED;
+  --panel: #FAFAF7;
+  --fg: #2F2F2F;
+  --fg-muted: #6B6B6B;
+  --accent: #C76F3E;
+  --accent-hover: #B05A2B;
+  --user-bubble: #D97757;
+  --bot-bubble: #FFFFFF;
+  --border: #E7E5DE;
+  --input-bg: #FFFFFF;
+  --error: #B24F3A;
+}
+
+/* DARK THEME — göz yormayan koyu mod */
+html[data-theme="dark"] {
+  --bg: #1F1F1C;
+  --panel: #262622;
+  --fg: #E8E6E0;
+  --fg-muted: #9A9A93;
+  --accent: #D97757;
+  --accent-hover: #E88E70;
+  --user-bubble: #8B4A30;
+  --bot-bubble: #2F2F2B;
+  --border: #3A3A35;
+  --input-bg: #2A2A26;
+  --error: #E07858;
+}
+
+/* Dark'da chart-container + code block renkleri de uyarlansin */
+html[data-theme="dark"] .msg.bot table th { background: #2F2F2B; }
+html[data-theme="dark"] .msg.bot pre { background: #14140F !important; }
+html[data-theme="dark"] .msg.bot code:not(pre code) { background: rgba(217,119,87,0.15); color: #F0B090; }
+html[data-theme="dark"] .chart-container { background: #262622; }
+
+/* Theme toggle button */
+.theme-toggle {
+  background: transparent; border: none; color: var(--fg-muted);
+  font-size: 18px; cursor: pointer; padding: 4px 8px; margin-right: 4px;
+  border-radius: 6px; transition: all 0.15s;
+}
+.theme-toggle:hover { background: rgba(0,0,0,0.04); color: var(--accent); }
+html[data-theme="dark"] .theme-toggle:hover { background: rgba(255,255,255,0.06); }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+/* Oturum 23 UX fix (Neo raporu): Chat altında büyük boşluk + dış scrollbar bug.
+   Klasik flex container overflow bug — child min-height:0 olmadığı için
+   chat-messages kendini content boyuna genişletiyordu, body scroll alıyordu.
+   100dvh mobile viewport için daha doğru (adres çubuğu hesabı). */
+html, body { height: 100%; background: var(--bg); color: var(--fg); font-size: 15px; }
+html, body { height: 100dvh; overflow: hidden; }  /* dvh destekli tarayıcı tercih, değilse fallback 100% */
+body { display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; min-height: 0; }
+
+/* === Login ekranı === */
+.login-wrap {
+  flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(199,111,62,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(107,142,127,0.06) 0%, transparent 40%),
+    var(--bg);
+  position: relative; overflow: hidden;
+}
+/* Subtle orbiting glow */
+.login-wrap::before {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  width: 600px; height: 600px; transform: translate(-50%,-50%);
+  background: radial-gradient(circle, rgba(199,111,62,0.04) 0%, transparent 60%);
+  animation: orbit 20s linear infinite; pointer-events: none;
+}
+@keyframes orbit {
+  0%   { transform: translate(-50%,-50%) rotate(0deg) scale(1); }
+  50%  { transform: translate(-50%,-50%) rotate(180deg) scale(1.2); }
+  100% { transform: translate(-50%,-50%) rotate(360deg) scale(1); }
+}
+
+.login-box {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 20px;
+  padding: 38px 34px; width: 100%; max-width: 440px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+  position: relative; z-index: 1;
+  backdrop-filter: blur(8px);
+  animation: loginFadeIn 0.6s ease-out;
+}
+@keyframes loginFadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* Üst etiket — "havalı" kategori */
+.login-box .tech-label {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  color: var(--accent); letter-spacing: 2px; text-transform: uppercase;
+  padding: 5px 10px; border: 1px solid var(--accent);
+  border-radius: 20px; margin-bottom: 14px;
+  background: rgba(199,111,62,0.06);
+}
+
+.login-box h1 {
+  font-size: 30px; font-weight: 700; margin-bottom: 6px; color: var(--fg);
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--fg) 0%, var(--accent) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.login-box .brand-tagline {
+  font-size: 17px; font-weight: 600; color: var(--accent);
+  margin: 6px 0 6px; letter-spacing: 0.1px;
+}
+.login-box .brand-motto {
+  font-size: 13px; color: var(--fg-muted); margin: 0 0 18px;
+  font-style: italic; line-height: 1.55;
+}
+
+/* 3 Özellik Rozeti — dikey stack (Neo: mobil/iPad layout akışı fix) */
+.login-box .feature-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-bottom: 22px;
+}
+.login-box .feature-pill {
+  padding: 12px 6px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  text-align: center; transition: all 0.2s;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 0;
+}
+.login-box .feature-pill:hover {
+  border-color: var(--accent); transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(199,111,62,0.15);
+}
+.login-box .feature-pill .fp-icon { font-size: 18px; display: block; margin-bottom: 4px; line-height: 1; }
+.login-box .feature-pill .fp-text {
+  display: block;
+  font-size: 11px; font-weight: 600; color: var(--fg); letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+.login-box .feature-pill .fp-sub {
+  display: block;
+  font-size: 8.5px; color: var(--fg-muted); margin-top: 3px;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  line-height: 1;
+}
+
+.login-box .subtitle { font-size: 13px; color: var(--fg-muted); margin-bottom: 20px; line-height: 1.55; }
+
+/* Footer rozet — Oturum 23: görsel rozet grid + minimalist alt */
+.login-box .trust-footer {
+  margin-top: 22px; padding-top: 20px;
+  border-top: 1px solid transparent;
+  background-image: linear-gradient(to right, transparent, var(--border), transparent);
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: top center;
+  text-align: center;
+}
+
+/* Rozet şeridi — Alternatif A v2: Simetrik 2x2 (num'lar sağa, label'lar sola hizalı) */
+.login-box .trust-footer .badges {
+  display: grid;
+  /* 5 kolon: num-sol | label-sol | divider | num-sağ | label-sağ */
+  grid-template-columns: max-content max-content 1px max-content max-content;
+  grid-template-rows: auto auto;
+  column-gap: 5px;
+  row-gap: 10px;
+  justify-content: center;
+  align-items: baseline;
+  margin-bottom: 16px;
+  position: relative;
+}
+/* Dikey ayraç çizgisi — 3. kolon (iki satırı da kapsar) */
+.login-box .trust-footer .badges::before {
+  content: '';
+  grid-row: 1 / 3;
+  grid-column: 3;
+  background: var(--border);
+  margin: 0 18px;
+}
+/* Rozet wrapper — sadece container, grid'e katılmıyor */
+.login-box .trust-footer .badge {
+  display: contents;
+}
+/* Num: kendi kolonunda sağa yaslı → bütün num'lar aynı dikey eksende biter */
+.login-box .trust-footer .badge .num {
+  font-size: 13px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
+  color: var(--accent);
+  line-height: 1;
+  justify-self: end;
+  opacity: 0.9;
+}
+/* Label: kendi kolonunda sola yaslı → bütün label'lar aynı dikey eksende başlar */
+.login-box .trust-footer .badge .label {
+  font-size: 9px;
+  color: var(--fg-muted);
+  letter-spacing: 0.6px;
+  font-weight: 500;
+  text-transform: uppercase;
+  justify-self: start;
+  opacity: 0.9;
+}
+/* Satır & kolon atamaları (display:contents ile num/label direkt grid item) */
+.login-box .trust-footer .badge:nth-child(1) .num   { grid-row: 1; grid-column: 1; }
+.login-box .trust-footer .badge:nth-child(1) .label { grid-row: 1; grid-column: 2; }
+.login-box .trust-footer .badge:nth-child(2) .num   { grid-row: 1; grid-column: 4; }
+.login-box .trust-footer .badge:nth-child(2) .label { grid-row: 1; grid-column: 5; }
+.login-box .trust-footer .badge:nth-child(3) .num   { grid-row: 2; grid-column: 1; }
+.login-box .trust-footer .badge:nth-child(3) .label { grid-row: 2; grid-column: 2; }
+.login-box .trust-footer .badge:nth-child(4) .num   { grid-row: 2; grid-column: 4; }
+.login-box .trust-footer .badge:nth-child(4) .label { grid-row: 2; grid-column: 5; }
+
+/* Alt blok — tek derlenmiş paragraf (Neo: bütün olarak) */
+.login-box .trust-footer .manifesto {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.7;
+  letter-spacing: 0.25px;
+  max-width: 440px;
+  margin: 0 auto;
+  opacity: 0.92;
+}
+.login-box .trust-footer .manifesto .scope {
+  color: var(--fg);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+.login-box .trust-footer .manifesto .heritage {
+  font-style: italic;
+  opacity: 0.85;
+}
+.login-box .trust-footer .manifesto .essence {
+  display: block;
+  margin-top: 3px;
+  font-style: italic;
+  color: var(--fg);
+  opacity: 0.78;
+}
+.login-box .trust-footer .brand {
+  display: block;
+  font-size: 9px; opacity: 0.5;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  margin-top: 12px;
+  font-weight: 500;
+}
+
+/* Giriş animasyonu — rozetler sırayla, sonra alt bloklar */
+@keyframes tfBadgeIn {
+  0%   { opacity: 0; transform: translateY(6px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes tfTextIn {
+  0%   { opacity: 0; transform: translateY(2px); }
+  100% { opacity: var(--tf-final, 1); transform: translateY(0); }
+}
+/* Animasyon — display:contents olduğundan num/label'a uygulanır */
+.login-box .trust-footer .badge:nth-child(1) .num,
+.login-box .trust-footer .badge:nth-child(1) .label { animation: tfBadgeIn 0.5s ease 0.10s backwards; }
+.login-box .trust-footer .badge:nth-child(2) .num,
+.login-box .trust-footer .badge:nth-child(2) .label { animation: tfBadgeIn 0.5s ease 0.20s backwards; }
+.login-box .trust-footer .badge:nth-child(3) .num,
+.login-box .trust-footer .badge:nth-child(3) .label { animation: tfBadgeIn 0.5s ease 0.30s backwards; }
+.login-box .trust-footer .badge:nth-child(4) .num,
+.login-box .trust-footer .badge:nth-child(4) .label { animation: tfBadgeIn 0.5s ease 0.40s backwards; }
+.login-box .trust-footer .manifesto { --tf-final: 0.92; animation: tfTextIn 0.7s ease 0.55s backwards; }
+.login-box .trust-footer .brand     { --tf-final: 0.5;  animation: tfTextIn 0.7s ease 0.75s backwards; }
+
+/* Dark mode — minimal şerit */
+html[data-theme="dark"] .login-box .trust-footer .badge .num {
+  color: #E8885A;
+}
+html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
+  border-left-color: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 480px) {
+  .login-box { padding: 28px 22px; }
+  .login-box h1 { font-size: 26px; }
+  .login-box .feature-row { gap: 5px; }
+  .login-box .feature-pill { padding: 10px 3px; }
+  .login-box .feature-pill .fp-icon { font-size: 16px; }
+  .login-box .feature-pill .fp-text { font-size: 10px; letter-spacing: 0.2px; }
+  .login-box .feature-pill .fp-sub { font-size: 7.5px; letter-spacing: 0.4px; }
+
+  /* Mobilde 2x2 aynen — divider margin daralsın ki dar ekranda taşmasın */
+  .login-box .trust-footer .badges::before { margin: 0 12px; }
+  .login-box .trust-footer .badge .num { font-size: 12px; }
+  .login-box .trust-footer .badge .label { font-size: 8.5px; letter-spacing: 0.5px; }
+}
+.login-box .step { display: none; }
+.login-box .step.active { display: block; }
+.login-box label { display: block; font-size: 13px; color: var(--fg-muted); margin-bottom: 6px; }
+.login-box input {
+  width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--input-bg); font-size: 15px; color: var(--fg); margin-bottom: 14px;
+  transition: border-color 0.15s;
+}
+.login-box input:focus { outline: none; border-color: var(--accent); }
+.login-box button {
+  width: 100%; padding: 13px; border: none; border-radius: 10px;
+  background: var(--accent); color: white; font-size: 15px; font-weight: 500;
+  cursor: pointer; transition: background 0.15s;
+}
+.login-box button:hover:not(:disabled) { background: var(--accent-hover); }
+.login-box button:disabled { background: #C4C4C4; cursor: not-allowed; }
+.login-box .hint { font-size: 12px; color: var(--fg-muted); margin-top: 14px; text-align: center; line-height: 1.6; }
+.login-box .error { color: var(--error); font-size: 13px; margin-top: 10px; text-align: center; }
+.login-box .back { background: transparent; color: var(--fg-muted); font-size: 13px; margin-top: 10px; padding: 6px; }
+.login-box .back:hover { background: transparent; color: var(--accent); }
+
+/* === Chat ekranı === */
+/* Oturum 23 UX: min-height:0 kritik — flex child overflow hesabı için */
+.chat-wrap { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
+.chat-wrap.active { display: flex; }
+.chat-header {
+  padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--panel);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.chat-header .header-left { display: flex; align-items: center; gap: 12px; }
+.chat-header .title { font-size: 15px; font-weight: 500; color: var(--fg); }
+.chat-header .title .dot { display: inline-block; width: 8px; height: 8px; background: #5A8F5A; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+.chat-header .user { font-size: 13px; color: var(--fg-muted); }
+.chat-header .user .logout { background: transparent; border: none; color: var(--fg-muted); cursor: pointer; margin-left: 12px; font-size: 13px; padding: 0; }
+.chat-header .user .logout:hover { color: var(--error); }
+
+.chat-messages {
+  flex: 1 1 0; overflow-y: auto; padding: 24px 16px; display: flex; flex-direction: column; gap: 18px;
+  scroll-behavior: smooth;
+  min-height: 0;  /* Oturum 23 UX: flex child overflow hesabı için ZORUNLU */
+}
+.msg { max-width: 80%; padding: 12px 16px; border-radius: 14px; line-height: 1.5; word-wrap: break-word; white-space: pre-wrap; font-size: 15px; }
+.msg.user { background: var(--user-bubble); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.msg.bot  { background: var(--bot-bubble); color: var(--fg); align-self: flex-start; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.msg.bot .cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent); margin-left: 2px; vertical-align: text-bottom; animation: blink 0.8s infinite; }
+@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+.msg-welcome { text-align: center; color: var(--fg-muted); font-size: 14px; padding: 40px 20px; line-height: 1.7; }
+.msg-welcome h2 { font-size: 20px; color: var(--fg); margin-bottom: 12px; font-weight: 600; }
+
+/* WhatsApp-style markdown */
+.msg strong, .msg b { font-weight: 600; }
+.msg em, .msg i { font-style: italic; color: var(--fg-muted); }
+
+/* Thinking placeholder — düşünce bubble */
+.msg.thinking {
+  color: var(--fg-muted); font-style: italic; background: transparent; border: 1px dashed var(--border);
+  opacity: 0.8;
+}
+.msg.thinking::before {
+  content: ""; display: inline-block; width: 6px; height: 6px; background: var(--accent);
+  border-radius: 50%; margin-right: 8px; vertical-align: middle;
+  animation: pulse 1.4s infinite;
+}
+@keyframes pulse {
+  0%, 60%, 100% { opacity: 0.4; transform: scale(1); }
+  30% { opacity: 1; transform: scale(1.3); }
+}
+
+.chat-input {
+  /* Sol: Wix WP app icon'u için güvenli alan (~72px) — 📎 butonu onun üstüne gelmesin */
+  padding: 14px 16px 20px 88px;
+  border-top: 1px solid var(--border); background: var(--panel);
+  display: flex; gap: 10px; align-items: flex-end;
+}
+.chat-input textarea {
+  flex: 1; min-height: 44px; max-height: 140px; resize: none;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--input-bg); font-size: 15px; color: var(--fg); line-height: 1.5;
+  transition: border-color 0.15s;
+}
+.chat-input textarea:focus { outline: none; border-color: var(--accent); }
+.chat-input button {
+  padding: 0 18px; height: 44px; border: none; border-radius: 12px;
+  background: var(--accent); color: white; font-size: 15px; font-weight: 500;
+  cursor: pointer; transition: background 0.15s;
+}
+.chat-input button:hover:not(:disabled) { background: var(--accent-hover); }
+.chat-input button:disabled { background: #C4C4C4; cursor: not-allowed; }
+
+/* Paperclip + Mic — aux buttons */
+.chat-input .aux-btn {
+  width: 44px; height: 44px; padding: 0; background: transparent;
+  color: var(--fg-muted); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0; transition: all 0.15s;
+}
+.chat-input .aux-btn:hover:not(:disabled) {
+  background: var(--input-bg); color: var(--accent); border-color: var(--accent);
+}
+.chat-input .aux-btn.recording {
+  background: #DC3545; color: white; border-color: #DC3545;
+  animation: micPulse 1.2s infinite;
+}
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+}
+.chat-input input[type="file"] { display: none; }
+/* Backward compat */
+.chat-input .paperclip { width: 44px; height: 44px; padding: 0; background: transparent;
+  color: var(--fg-muted); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0; }
+.chat-input .paperclip:hover:not(:disabled) {
+  background: var(--input-bg); color: var(--accent); border-color: var(--accent); }
+
+/* Foto preview çipi */
+.photo-preview {
+  display: none; align-items: center; gap: 10px;
+  padding: 8px 12px; margin: 0 16px 8px; background: var(--bot-bubble);
+  border: 1px solid var(--border); border-radius: 10px; font-size: 13px;
+}
+.photo-preview.active { display: flex; }
+.photo-preview img {
+  width: 48px; height: 48px; object-fit: cover; border-radius: 6px;
+}
+.photo-preview .file-info { flex: 1; color: var(--fg-muted); }
+.photo-preview .remove {
+  background: transparent; color: var(--error); border: none;
+  cursor: pointer; font-size: 18px; padding: 4px 8px;
+}
+
+/* User mesajinda foto thumbnail */
+.msg.user img.attached-photo {
+  max-width: 260px; max-height: 200px; border-radius: 10px;
+  margin-top: 8px; display: block;
+}
+
+.typing { font-size: 13px; color: var(--fg-muted); font-style: italic; padding: 0 16px 8px; display: none; }
+.typing.active { display: block; }
+.typing::after { content: "▌"; animation: blink 0.8s infinite; margin-left: 2px; }
+
+@media (max-width: 600px) {
+  .msg { max-width: 90%; font-size: 14px; }
+  .chat-header { padding: 10px 12px; gap: 4px; }
+  .chat-header .header-left { gap: 8px; min-width: 0; flex: 1 1 auto; }
+  .chat-header .title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-header .user {
+    font-size: 12px;
+    display: flex; align-items: center; gap: 4px;
+    flex-shrink: 0;
+  }
+  /* Mobilde "Yeni Sohbet" butonu ikon-only, yazı gizli */
+  .chat-header .user .new-chat-btn {
+    font-size: 0 !important;
+    padding: 6px 8px !important;
+    margin-right: 2px !important;
+  }
+  .chat-header .user .new-chat-btn::before {
+    content: "✨"; font-size: 14px;
+  }
+  /* Kullanıcı ismi mobilde gizli (Çıkış kalır, butona basınca çıkış) */
+  .chat-header .user #userName { display: none; }
+  /* Çıkış butonu kompakt */
+  .chat-header .user .logout {
+    margin-left: 4px; font-size: 12px; padding: 4px 8px;
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  /* Tema/admin butonları kompakt */
+  .chat-header .user .theme-toggle,
+  .chat-header .user .admin-btn {
+    font-size: 16px !important; padding: 4px 6px !important;
+  }
+
+  /* 22.1n-fikir7: mobil UX iyilestirmeleri */
+  .chart-container { height: 220px; }  /* 260px → 220px mobilde dar */
+  .chat-messages { padding: 14px 10px; gap: 12px; }
+  .dash-card { padding: 10px; min-width: 120px; }
+  .dash-card .dash-value { font-size: 18px; }
+  .dash-card .dash-label { font-size: 11px; }
+  /* Welcome alanı mobilde daha kompakt */
+  .msg-welcome h2 { font-size: 18px; }
+  .msg-welcome p { font-size: 13px; }
+  /* Dashboard kartları mobilde 2 kolon olsun (PC'de 3+) */
+  #dashboardCards > div { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Composer — sol alttaki Wix WP icon'u için güvenli alan (~68px) */
+  .chat-input {
+    padding: 10px 12px 14px 78px;
+    gap: 6px;
+  }
+  .chat-input .aux-btn,
+  .chat-input .paperclip {
+    width: 38px; height: 38px; font-size: 17px;
+  }
+  .chat-input textarea {
+    min-height: 38px; padding: 9px 12px; font-size: 14px;
+  }
+  .chat-input button#sendBtn {
+    height: 38px; padding: 0 12px; font-size: 14px;
+  }
+}
+@media (max-width: 400px) {
+  /* Cok kucuk ekran */
+  .msg { max-width: 95%; font-size: 13px; padding: 10px 12px; }
+  .chart-container { height: 200px; }
+  #dashboardCards > div { grid-template-columns: 1fr !important; }
+  /* Daha dar: tema + admin ikon gizle yer açmak için (history drawer'da zaten var) */
+  .chat-header .user .theme-toggle { display: none; }
+}
+
+/* History drawer */
+.history-btn {
+  background: transparent; border: none; color: var(--fg-muted);
+  font-size: 20px; cursor: pointer; padding: 6px 10px; margin-right: 4px;
+  border-radius: 8px;
+}
+.history-btn:hover { background: rgba(0,0,0,0.04); color: var(--accent); }
+.history-drawer {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 320px;
+  background: var(--panel); border-right: 1px solid var(--border);
+  transform: translateX(-100%); transition: transform 0.25s ease;
+  z-index: 50; display: flex; flex-direction: column;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.05);
+}
+.history-drawer.open { transform: translateX(0); }
+.history-drawer .drawer-header {
+  padding: 18px 18px 14px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.history-drawer .drawer-header h3 { font-size: 16px; font-weight: 600; }
+.history-drawer .close-drawer {
+  background: transparent; border: none; color: var(--fg-muted);
+  font-size: 20px; cursor: pointer; padding: 4px 10px;
+}
+.drawer-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.drawer-tab {
+  flex: 1; padding: 12px; background: transparent; border: none;
+  color: var(--fg-muted); font-size: 13px; font-weight: 500; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+}
+.drawer-tab:hover { background: var(--panel); color: var(--fg); }
+.drawer-tab.active {
+  color: var(--accent); border-bottom-color: var(--accent);
+  background: var(--panel);
+}
+.drawer-content { flex: 1; overflow-y: auto; padding: 10px 0; }
+
+/* Quick prompt items */
+.quick-item {
+  padding: 14px 18px; cursor: pointer; border-bottom: 1px solid var(--border);
+  transition: background 0.12s; display: flex; gap: 12px; align-items: flex-start;
+}
+.quick-item:hover { background: var(--bg); }
+.quick-item .q-emoji { font-size: 22px; flex-shrink: 0; line-height: 1.2; }
+.quick-item .q-body { flex: 1; min-width: 0; }
+.quick-item .q-title { font-size: 13px; font-weight: 600; color: var(--fg); margin-bottom: 3px; }
+.quick-item .q-desc { font-size: 11px; color: var(--fg-muted); line-height: 1.3; }
+.quick-role-badge {
+  display: inline-block; padding: 2px 8px; background: rgba(199,111,62,0.12);
+  color: var(--accent); font-size: 10px; font-weight: 600; border-radius: 10px;
+  margin: 12px 18px 4px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.history-list { flex: 1; overflow-y: auto; padding: 10px 0; }
+.history-item {
+  padding: 12px 18px; cursor: pointer; border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+}
+.history-item:hover { background: var(--bg); }
+.history-item .date { font-size: 13px; font-weight: 600; color: var(--fg); }
+.history-item .preview {
+  font-size: 12px; color: var(--fg-muted); margin-top: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.history-item .meta { font-size: 11px; color: var(--fg-muted); margin-top: 4px; }
+.history-empty { padding: 30px 18px; text-align: center; color: var(--fg-muted); font-size: 13px; }
+.drawer-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.2);
+  opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 49;
+}
+.drawer-overlay.active { opacity: 1; pointer-events: auto; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DASHBOARD (22.1i) — Sade, modern, "koç paneli" hissi
+   Neo kuralı: Chat ekranına dokunulmaz, bu overlay olarak açılır
+═══════════════════════════════════════════════════════════════════ */
+.dashboard-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(4px);
+}
+.dashboard-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 100%; max-width: 1100px; max-height: 92vh;
+  overflow-y: auto; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.dashboard-header {
+  position: sticky; top: 0; background: var(--surface);
+  padding: 18px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  z-index: 2;
+}
+.dashboard-title { font-size: 18px; font-weight: 700; color: var(--fg); }
+.dashboard-close {
+  background: transparent; border: none; color: var(--fg-muted);
+  font-size: 22px; cursor: pointer; padding: 0 8px;
+}
+.dashboard-close:hover { color: var(--fg); }
+.dashboard-content { padding: 22px 24px 30px; }
+.dashboard-loading, .dashboard-empty {
+  padding: 60px 20px; text-align: center; color: var(--fg-muted);
+}
+.dashboard-greeting {
+  font-size: 16px; color: var(--fg); margin-bottom: 16px;
+}
+.dashboard-class {
+  margin-left: 10px; padding: 2px 10px;
+  background: rgba(245,158,11,0.12); color: #f59e0b;
+  border-radius: 10px; font-size: 12px;
+}
+.dashboard-kpis {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px; margin-bottom: 18px;
+}
+.kpi-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px;
+}
+.kpi-label { font-size: 11px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.kpi-value { font-size: 28px; font-weight: 700; color: var(--fg); margin: 4px 0; }
+.kpi-sub { font-size: 12px; color: var(--fg-muted); }
+.dashboard-grid {
+  display: grid; grid-template-columns: 2fr 1fr; gap: 14px;
+}
+.dashboard-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px 18px;
+}
+.dashboard-card-wide { grid-column: 1 / -1; }
+.dashboard-card-title { font-size: 13px; font-weight: 600; color: var(--fg); margin-bottom: 10px; }
+.chart-container { position: relative; height: 260px; width: 100%; }
+.oncelik-list { display: flex; flex-direction: column; gap: 10px; }
+.oncelik-item {
+  background: rgba(255,255,255,0.02); border-radius: 8px;
+  padding: 10px 12px; border-left: 3px solid #f59e0b;
+}
+.onc-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.onc-ders { font-size: 11px; color: #f59e0b; font-weight: 600; text-transform: uppercase; }
+.onc-basari { font-size: 12px; color: var(--fg-muted); font-weight: 600; }
+.onc-konu { font-size: 13px; color: var(--fg); margin-bottom: 4px; font-weight: 500; }
+.onc-neden { font-size: 11px; color: var(--fg-muted); font-style: italic; margin-bottom: 6px; }
+.onc-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+.onc-fill { height: 100%; background: linear-gradient(90deg, #f87171, #f59e0b, #4ade80); transition: width 0.5s; }
+/* 22.1m — Chat mesaj altı aksiyon butonu (Takvime Ekle vb.) */
+.msg-action-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 10px; padding: 8px 14px;
+  background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4);
+  color: #f59e0b; border-radius: 8px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; font-family: inherit;
+}
+.msg-action-btn:hover {
+  background: rgba(245,158,11,0.25); border-color: #f59e0b;
+  transform: translateY(-1px);
+}
+/* 22.1m — Foto geçmiş grid */
+.foto-gecmis-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.foto-gecmis-item {
+  background: rgba(255,255,255,0.02); border-radius: 8px;
+  padding: 10px 12px; border-left: 3px solid #60a5fa;
+}
+.fg-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.fg-ders { font-size: 11px; color: #60a5fa; font-weight: 600; text-transform: uppercase; }
+.fg-tarih { font-size: 11px; color: var(--fg-muted); }
+.fg-konu { font-size: 13px; color: var(--fg); margin-bottom: 3px; }
+.fg-zorluk { font-size: 11px; color: var(--fg-muted); }
+/* 22.1k — Dashboard aksiyon butonlari */
+.dash-actions {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;
+  padding-top: 14px; border-top: 1px solid var(--border);
+}
+.dash-action-btn {
+  background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+  color: #f59e0b; padding: 8px 14px; border-radius: 8px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; font-family: inherit;
+}
+.dash-action-btn:hover {
+  background: rgba(245,158,11,0.2); border-color: #f59e0b;
+  transform: translateY(-1px);
+}
+.dash-action-btn:active { transform: translateY(0); }
+@media (max-width: 700px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .dashboard-kpis { grid-template-columns: 1fr; }
+  .kpi-card { padding: 10px 14px; }
+  .kpi-value { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <!-- 22.1n-marka: Ust teknoloji etiketi -->
+    <span class="tech-label">⚡ Agentic AI · Next-Gen EdTech</span>
+
+    <h1>FermatAI</h1>
+
+    <!-- Marka kimligi: Kişisel Eğitim Ajanı — LLM-tabanli, aksiyon alan, evrimlesen -->
+    <p class="brand-tagline">Kişisel Eğitim Ajanın</p>
+    <p class="brand-motto">Her cevapta seni daha iyi tanır. Her sınavda seninle evrimleşir.</p>
+
+    <!-- 3 ozellik rozeti -->
+    <div class="feature-row">
+      <div class="feature-pill" title="LLM tabanli — Claude Sonnet + Ollama hibrit">
+        <span class="fp-icon">🧠</span>
+        <span class="fp-text">Öğrenir</span>
+        <span class="fp-sub">LEARNS</span>
+      </div>
+      <div class="feature-pill" title="Aksiyon alan — etut yazma, link, analiz uretir">
+        <span class="fp-icon">⚡</span>
+        <span class="fp-text">Uygular</span>
+        <span class="fp-sub">ACTS</span>
+      </div>
+      <div class="feature-pill" title="Kendi kendini gelistiren, seninle evrimlesen">
+        <span class="fp-icon">🔄</span>
+        <span class="fp-text">Evrimleşir</span>
+        <span class="fp-sub">EVOLVES</span>
+      </div>
+    </div>
+
+    <p class="subtitle">Giriş için WhatsApp'tan <strong>"web kodu"</strong> yaz, gelen kodu aşağıya gir.</p>
+
+    <!-- Adım 1: Telefon -->
+    <div class="step active" id="step1">
+      <label>Telefon numaran</label>
+      <input type="tel" id="phoneInput" placeholder="905xxxxxxxxx veya +90 5xx..." autocomplete="tel">
+
+      <label>WhatsApp'tan gelen kod</label>
+      <input type="text" id="otpInput" placeholder="6 haneli kod" inputmode="numeric" maxlength="6" autocomplete="off">
+
+      <button id="loginBtn" onclick="doLogin()">Giriş</button>
+      <div class="error" id="loginError" style="display:none;"></div>
+
+      <p class="hint">
+        Kod almak için WhatsApp'tan <strong>"web kodu"</strong> yaz.<br>
+        Kod 15 dakika geçerli. Günde en fazla 5 kod alabilirsin.
+      </p>
+    </div>
+
+    <!-- 22.1n-marka + Oturum 23 (Neo feedback: 3 büyük rozet, kalan bilgi manifestoya derlendi) -->
+    <div class="trust-footer">
+      <div class="badges">
+        <div class="badge"><span class="num">60+</span><span class="label">AI Ajanı</span></div>
+        <div class="badge"><span class="num">48K+</span><span class="label">Akademik Veri</span></div>
+        <div class="badge"><span class="num">7/24</span><span class="label">Pedagojik Zekâ</span></div>
+        <div class="badge"><span class="num">&lt;1sn</span><span class="label">Yanıt Süresi</span></div>
+      </div>
+      <p class="manifesto">
+        <span class="scope">YKS · LGS · AYT · TYT</span>
+        <span class="heritage">— Türk eğitim tarihinin dijital hafızası.</span>
+      </p>
+      <span class="brand">
+        Fermat Eğitim Kurumları · Agentic AI · Next-Gen EdTech
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER — Hızlı Komutlar (default) + Geçmiş (tab) -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeHistoryDrawer()"></div>
+<aside class="history-drawer" id="historyDrawer">
+  <div class="drawer-header">
+    <h3 id="drawerTitle">⚡ Hızlı Komutlar</h3>
+    <button class="close-drawer" onclick="closeHistoryDrawer()">✕</button>
+  </div>
+  <!-- Tab switcher -->
+  <div class="drawer-tabs">
+    <button class="drawer-tab active" data-tab="quick" onclick="switchTab('quick')">⚡ Hızlı</button>
+    <button class="drawer-tab" data-tab="archive" onclick="switchTab('archive')">⭐ Arşivim</button>
+  </div>
+  <!-- Tab content -->
+  <div class="drawer-content" id="quickList" style="display:block;">
+    <div class="history-empty">Yükleniyor...</div>
+  </div>
+  <div class="drawer-content" id="archiveList" style="display:none;">
+    <div class="history-empty">Arşiv sekmesine geç...</div>
+  </div>
+  <!-- Eski geçmiş list div'i hala var ama kullanılmıyor (geriye dönük) -->
+  <div class="drawer-content" id="historyList" style="display:none;"></div>
+</aside>
+
+<!-- CHAT -->
+<div class="chat-wrap" id="chatWrap">
+  <div class="chat-header">
+    <!-- 22.1n-ui: FermatAI title solda, hamburger'in yaninda (onceden ortadaydi, asimetrik) -->
+    <div class="header-left">
+      <button class="history-btn" onclick="openHistoryDrawer()" title="Hızlı komutlar + geçmiş">☰</button>
+      <div class="title"><span class="dot"></span>FermatAI</div>
+    </div>
+    <div class="user">
+      <!-- Oturum 23 (Neo 18:14): Yeni Sohbet — temiz yaprak hissi. Bot bağlamı + profil korunur, sadece görsel sıfırlama. -->
+      <button class="new-chat-btn" id="newChatBtn" onclick="startNewChat()" title="Yeni sohbet başlat (geçmiş arşivde kalır, bot profilini bilmeye devam eder)" style="background:transparent;border:1px solid var(--border);color:var(--fg-muted);cursor:pointer;font-size:13px;padding:5px 12px;margin-right:8px;border-radius:8px;transition:all 0.15s;">✨ Yeni Sohbet</button>
+      <!-- 22.1n-vizyon3: Admin/Mudur Panel (diğer roller görmez) -->
+      <button class="admin-btn" id="adminBtn" onclick="openAdminPanel()" title="Admin Panel" style="display:none;background:transparent;border:none;color:var(--fg-muted);cursor:pointer;font-size:18px;padding:4px 8px;margin-right:4px;">⚙️</button>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Tema değiştir">🌙</button>
+      <span id="userName">—</span>
+      <button class="logout" onclick="doLogout()">Çıkış</button>
+    </div>
+  </div>
+
+  <div class="chat-messages" id="messages">
+    <div class="msg-welcome" id="welcomeArea">
+      <h2>Hoş geldin <span id="welcomeName">Öğrenci</span> 👋</h2>
+      <p>Akademik durumun, zayıf konuların, deneme analizin — hepsi hazır.<br>
+      Soru sor, birlikte çözelim.</p>
+      <!-- A4: Öğrenci dashboard kartları (sadece öğrenci rolünde render) -->
+      <div id="dashboardCards" style="display:none;margin-top:20px;"></div>
+    </div>
+  </div>
+
+  <!-- Foto preview (seçim sonrası) -->
+  <div class="photo-preview" id="photoPreview">
+    <img id="photoThumb" alt="">
+    <div class="file-info">
+      <div id="photoName">—</div>
+      <div id="photoSize" style="font-size: 11px;">—</div>
+    </div>
+    <button class="remove" onclick="clearPhoto()" title="Kaldır">✕</button>
+  </div>
+
+  <!-- MathLive modal (A5) -->
+  <div id="mathModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center;">
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;width:92%;max-width:520px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="font-size:15px;">∑ Denklem Yaz</h3>
+        <button onclick="closeMathModal()" style="background:transparent;border:none;font-size:18px;color:var(--fg-muted);cursor:pointer;">✕</button>
+      </div>
+      <p style="font-size:12px;color:var(--fg-muted);margin-bottom:10px;">
+        Formülü yaz, mesajına ekle: <code style="font-size:11px;">\lim</code>, <code style="font-size:11px;">\int</code>, kök, kesir tuşları altta.
+      </p>
+      <math-field id="mathField" style="width:100%;min-height:60px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);font-size:18px;"></math-field>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+        <button onclick="closeMathModal()" style="padding:8px 16px;background:transparent;border:1px solid var(--border);color:var(--fg-muted);border-radius:8px;cursor:pointer;">İptal</button>
+        <button onclick="insertMath()" style="padding:8px 16px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;">Mesaja Ekle</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-input">
+    <input type="file" id="photoInput" accept="image/*" onchange="onPhotoSelected(event)">
+    <button class="aux-btn paperclip" onclick="document.getElementById('photoInput').click()" title="Fotoğraf yükle (soru çözümü)">📎</button>
+    <button class="aux-btn mic-btn" id="micBtn" onclick="toggleMic()" title="Sesle yaz (mikrofon)">🎤</button>
+    <button class="aux-btn" onclick="openMathModal()" title="Denklem yaz (matematik/fizik formül)" style="font-size:16px;">∑</button>
+    <textarea id="chatInput" placeholder="Mesajını yaz... (Shift+Enter = yeni satır)" rows="1"></textarea>
+    <button id="sendBtn" onclick="doSend()">Gönder</button>
+  </div>
+</div>
+
+<script>
+const API_BASE = ""; // Same-origin (bridge:8001)
+
+// ─── DARK THEME (A8) — localStorage ile kalıcı tercih ─────
+const THEME_KEY = "fermat_theme";
+function getTheme() { try { return localStorage.getItem(THEME_KEY) || "light"; } catch(e){ return "light"; } }
+function applyTheme(t) {
+  try {
+    document.documentElement.setAttribute("data-theme", t);
+    const btn = document.getElementById("themeToggle");
+    if (btn) btn.textContent = t === "dark" ? "☀️" : "🌙";
+  } catch(e){}
+}
+function toggleTheme() {
+  const next = getTheme() === "dark" ? "light" : "dark";
+  try { localStorage.setItem(THEME_KEY, next); } catch(e){}
+  applyTheme(next);
+}
+// Açılışta tema uygula — sistem temasını da dinle (ilk kez)
+(function initTheme() {
+  let t = getTheme();
+  if (!t || t === "light") {
+    try {
+      // Sistem dark mode ise otomatik dark (ilk ziyaret)
+      if (!localStorage.getItem(THEME_KEY) && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        t = "dark";
+      }
+    } catch(e){}
+  }
+  applyTheme(t);
+})();
+
+// ─── iPad Safari Fix — localStorage + Authorization header ─────
+// iOS Safari ITP iframe'de 3rd-party cookie'leri blokluyor.
+// Çözüm: token'ı localStorage'da sakla, her request'e Bearer header ekle.
+// Cookie hala set ediliyor (Chrome/Firefox/Android için) — hybrid auth.
+const TOKEN_KEY = "fermat_token_v1";
+
+function getToken() {
+  try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; }
+}
+function setToken(t) {
+  try { if (t) localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
+}
+function clearToken() {
+  try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+}
+
+// Auth header ekleyici — tüm API çağrılarında kullanılır
+function authHeaders(extra = {}) {
+  const h = Object.assign({}, extra);
+  const t = getToken();
+  if (t) h["Authorization"] = "Bearer " + t;
+  return h;
+}
+
+// ─── Elements ─────────────────────────────────────────────
+const loginWrap = document.getElementById("loginWrap");
+const chatWrap  = document.getElementById("chatWrap");
+const phoneInput = document.getElementById("phoneInput");
+const otpInput   = document.getElementById("otpInput");
+const loginBtn   = document.getElementById("loginBtn");
+const loginError = document.getElementById("loginError");
+const messages   = document.getElementById("messages");
+const chatInput  = document.getElementById("chatInput");
+const sendBtn    = document.getElementById("sendBtn");
+const userName   = document.getElementById("userName");
+const welcomeName = document.getElementById("welcomeName");
+
+// ─── Format (WhatsApp markdown → HTML) ─────────────────────
+function escapeHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function formatMsg(text) {
+  if (!text) return "";
+
+  let md = text;
+
+  // ── 1. Chart blokları — markdown'a geçmeden önce placeholder ekle ──
+  // Format: ```chart\n{json}\n```  (22.1n-bugfix: CRLF ve farkli newline'lara dayanikli)
+  const chartPlaceholders = [];
+  md = md.replace(/```chart\s*\r?\n([\s\S]*?)\r?\n?```/g, (match, jsonStr) => {
+    const idx = chartPlaceholders.length;
+    chartPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="chart-pending" data-chart-idx="${idx}"></div>\n\n`;
+  });
+
+  // ── 2. Collapsible blokları — :::detay ... ::: syntax ──
+  // Format: :::detay Özet\n...\n:::
+  md = md.replace(/:::detay\s+(.+?)\n([\s\S]*?)\n?:::/g, (m, summary, content) => {
+    return `<details><summary>${escapeHtml(summary.trim())}</summary>\n\n${content}\n\n</details>`;
+  });
+
+  if (typeof marked !== "undefined") {
+    try {
+      marked.setOptions({
+        breaks: true, gfm: true, headerIds: false,
+      });
+
+      // WhatsApp-style *bold* → **bold**
+      md = md.replace(/(^|\s)\*([^*\n]{1,120})\*(\s|$|[.,;!?])/g, "$1**$2**$3");
+      // Başlık pattern'i
+      md = md.replace(/^\*\*([^*\n]{2,80})\*\*\s*$/gm, "### $1");
+
+      let html = marked.parse(md);
+
+      // Chart placeholder'ları geri çevir — data-chart attribute'u ile
+      chartPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(
+          new RegExp(`<div class="chart-pending" data-chart-idx="${i}"></div>`, 'g'),
+          `<div class="chart-pending" data-chart="${escaped}"></div>`
+        );
+      });
+
+      // DOMPurify — chart-pending div'ine izin ver
+      if (typeof DOMPurify !== "undefined") {
+        html = DOMPurify.sanitize(html, {
+          ADD_TAGS: ["span", "details", "summary"],
+          ADD_ATTR: ["class", "data-chart", "data-chart-idx", "open"],
+          ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+        });
+      }
+      return html;
+    } catch (e) {
+      console.warn("Markdown parse hatası:", e);
+    }
+  }
+
+  // Fallback
+  let t = escapeHtml(text);
+  t = t.replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>");
+  t = t.replace(/_([^_\n]+)_/g, "<em>$1</em>");
+  return t;
+}
+
+// Mesaj DOM'a eklendikten sonra KaTeX render çağır
+function rerenderMath(el) {
+  try {
+    if (typeof renderMathInElement === "function" && el) {
+      renderMathInElement(el, {
+        delimiters: [
+          {left: "$$", right: "$$", display: true},
+          {left: "$", right: "$", display: false},
+          {left: "\\[", right: "\\]", display: true},
+          {left: "\\(", right: "\\)", display: false},
+        ],
+        throwOnError: false,
+      });
+    }
+  } catch (e) { /* ignore */ }
+}
+
+// Chart.js render — ```chart\n{...}``` bloklarını canvas'a dönüştür
+let _chartCounter = 0;
+const _chartRegistry = new Map(); // canvas-id → Chart instance (re-render için)
+
+function rerenderCharts(el) {
+  if (!el || typeof Chart === "undefined") return;
+
+  // Oturum 23 (Neo arşiv raporu): Arşivden yüklenen içerikte chart-container
+  // VAR ama canvas boş (çünkü kayıt anındaki canvas bitmap'i innerHTML'e sığmaz).
+  // O container'ları chart-pending'e geri çevir ki aynı render akışı işlesin.
+  el.querySelectorAll(".chart-container[data-chart]").forEach((oldWrap) => {
+    try {
+      const raw = oldWrap.getAttribute("data-chart");
+      if (!raw) return;
+      const pending = document.createElement("div");
+      pending.className = "chart-pending";
+      pending.setAttribute("data-chart", raw);
+      oldWrap.replaceWith(pending);
+    } catch (e) { /* sessiz */ }
+  });
+
+  // "Pending" chart placeholder'larını bul
+  el.querySelectorAll(".chart-pending").forEach((placeholder) => {
+    try {
+      const raw = placeholder.getAttribute("data-chart") || "";
+      const config = JSON.parse(raw);
+
+      // Claude palet renkleri
+      const palette = ["#C76F3E","#6B8E7F","#B08968","#5C6B8C","#A66B9C","#6B9E8E","#D4A574"];
+
+      // Normalize: title, labels, datasets varsa Chart.js config'e dönüştür
+      const chartType = config.type || "line";
+      const chartData = {
+        labels: config.labels || [],
+        datasets: (config.datasets || []).map((ds, i) => ({
+          label: ds.label || "Veri",
+          data: ds.data || [],
+          backgroundColor: ds.backgroundColor || (chartType === "line" ? palette[i % palette.length] + "33" : palette[i % palette.length]),
+          borderColor: ds.borderColor || palette[i % palette.length],
+          borderWidth: 2,
+          tension: 0.3,
+          fill: chartType === "line",
+        })),
+      };
+      const chartOpts = {
+        type: chartType,
+        data: chartData,
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: "top", labels: { font: { size: 12 } } } },
+          scales: (chartType === "radar" || chartType === "pie" || chartType === "doughnut") ? {} : {
+            y: { beginAtZero: true, grid: { color: "#E7E5DE" } },
+            x: { grid: { display: false } },
+          },
+          ...(config.options || {}),
+        },
+      };
+
+      // Container oluştur
+      const wrap = document.createElement("div");
+      wrap.className = "chart-container";
+      // Oturum 23 (Neo arşiv raporu): Orijinal JSON'u container'a da KORU.
+      // Arşive alma sırasında innerHTML kaydediliyor; canvas boş serialize oluyordu
+      // çünkü Chart.js canvas'a bitmap çiziyor, DOM'da data yok. Şimdi data-chart
+      // attribute'u chart-container'da kalıyor — arşivden geri yüklenirken
+      // rerenderCharts() aynı placeholder mantığıyla yeniden render edebilir.
+      wrap.setAttribute("data-chart", raw);
+      if (config.title) {
+        const t = document.createElement("div");
+        t.className = "chart-title";
+        t.textContent = config.title;
+        wrap.appendChild(t);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.id = "chart-" + (++_chartCounter);
+      wrap.appendChild(canvas);
+
+      placeholder.replaceWith(wrap);
+
+      // Canvas render (zaman ver — appendChild sonrası boyut settle etsin)
+      requestAnimationFrame(() => {
+        try {
+          const chart = new Chart(canvas.getContext("2d"), chartOpts);
+          _chartRegistry.set(canvas.id, chart);
+        } catch (e) {
+          console.warn("Chart render hatası:", e);
+          wrap.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Grafik render edilemedi]</div>';
+        }
+      });
+    } catch (e) {
+      console.warn("Chart parse hatası:", e);
+      placeholder.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Grafik verisi hatalı]</div>';
+      placeholder.classList.remove("chart-pending");
+    }
+  });
+}
+
+// Prism syntax highlight
+function rerenderCode(el) {
+  if (!el || typeof Prism === "undefined") return;
+  try { Prism.highlightAllUnder(el); } catch (e) { /* ignore */ }
+}
+
+// A6 — Proaktif chart önerisi: veri-odakli cevaplar icin "Grafikle goster" butonu
+// Cevap deneme/net/trend/TYT/AYT ile ilgili ama chart YOKSA → buton ekle
+const _CHART_KEYWORDS = /\b(deneme|net|trend|tyt|ayt|puan|siralama|sıralama|kıyas|karsilastir|karşılaştır|zayıf|performans|devamsız)/i;
+
+function suggestChartIfRelevant(botEl) {
+  if (!botEl) return;
+  // Zaten chart varsa atla
+  if (botEl.querySelector(".chart-container") || botEl.querySelector(".chart-pending")) return;
+  const text = botEl.textContent || "";
+  if (text.length < 100) return; // çok kısa
+  if (!_CHART_KEYWORDS.test(text)) return;
+
+  // Öneri butonu zaten eklenmişse atla
+  if (botEl.querySelector(".chart-suggest")) return;
+
+  const btn = document.createElement("button");
+  btn.className = "chart-suggest";
+  btn.style.cssText = `
+    margin-top: 10px; padding: 6px 14px; background: transparent;
+    border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 20px; cursor: pointer; font-size: 12px;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+  `;
+  btn.innerHTML = "📊 Grafikle göster";
+  btn.onmouseover = () => { btn.style.background = "var(--accent)"; btn.style.color = "white"; };
+  btn.onmouseout  = () => { btn.style.background = "transparent"; btn.style.color = "var(--accent)"; };
+  btn.onclick = () => {
+    // 22.1n-bugfix: Parent mesajin verisini payload'a ekle (Neo bildirdi 00:23)
+    // Onceki: generic "TYT trendimi goster" → bot "hangi ogrenci?" diye soruyordu
+    // Simdi: parent mesaj metnini extract et (max 1200 char) ve Claude'a baglam olarak gonder
+
+    // Parent mesajin text halini al (buton dahil degil — buton kaldirilmadan oncekini)
+    const parentText = (botEl.innerText || botEl.textContent || "").trim();
+
+    // Son 1200 karakter yeterli (mesaj cok uzunsa baslangic daha az onemli)
+    const contextSlice = parentText.length > 1200
+      ? "...\n" + parentText.slice(-1200)
+      : parentText;
+
+    // Konu tespiti — hangi tur grafik istenirse
+    let grafikTuru = "uygun bir grafik (bar/line/radar)";
+    if (/ayt|tyt|deneme|trend|net/i.test(text)) grafikTuru = "line grafigi (trend)";
+    else if (/zayif|zayıf|konu\b/i.test(text)) grafikTuru = "radar veya bar grafigi";
+    else if (/ögretmen|öğretmen|etut|etüt|performans/i.test(text)) grafikTuru = "bar grafigi (karsilastirmali)";
+    else if (/sira|sıra|ranking/i.test(text)) grafikTuru = "sorted bar grafigi";
+
+    // Tam prompt: Claude icin bag­lam korumali istek
+    const prompt =
+      "Yukardaki cevaptaki verileri " + grafikTuru + " olarak grafikle goster. " +
+      "Hangi ogrenci/ders/kurum belirsizse sorma — yukardaki AYNI veriyi kullan.\n\n" +
+      "---\n" +
+      "[Parent cevap ozeti]:\n" + contextSlice;
+
+    btn.remove();
+    chatInput.value = prompt;
+    doSend();
+  };
+  botEl.appendChild(btn);
+}
+
+// Tüm external link'lere target=_blank ekle (güvenli yeni sekme)
+function fixExternalLinks(el) {
+  if (!el) return;
+  el.querySelectorAll("a[href^='http']").forEach((a) => {
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    // Emoji 📄 ile başlayanları özel vurgula
+    if (a.textContent.trim().startsWith("📄")) {
+      a.style.display = "inline-block";
+      a.style.padding = "2px 8px";
+      a.style.background = "rgba(199,111,62,0.08)";
+      a.style.border = "1px solid rgba(199,111,62,0.3)";
+      a.style.borderRadius = "6px";
+      a.style.textDecoration = "none";
+      a.style.fontSize = "0.9em";
+      a.style.margin = "2px 2px";
+    }
+  });
+}
+
+// Bot mesajını final haline getir — chart + math + kod + link + chart önerisi + arşiv
+function finalizeBotMsg(el) {
+  if (!el) return;
+  rerenderCharts(el);
+  rerenderMath(el);
+  rerenderCode(el);
+  fixExternalLinks(el);
+  // A6: veri odakli cevaba chart onerisi ekle (chart yoksa)
+  suggestChartIfRelevant(el);
+  // Arşiv butonu ekle (kısa cevaplara hariç)
+  addArchiveButton(el);
+  // D1: 👍/👎 feedback butonları
+  addFeedbackButtons(el);
+}
+
+// 👍/👎 Geribildirim butonları — D1 (Neo 19 Nisan 00:10)
+// Her bot mesajına eklenir, tek seçim, değiştirilebilir.
+function addFeedbackButtons(botEl) {
+  if (!botEl || botEl.querySelector(".feedback-row")) return;
+  const text = botEl.textContent || "";
+  if (text.length < 60) return; // çok kısa cevaplara feedback yok
+
+  // Basit hash (ilk 200 char + uzunluk)
+  const msgHash = simpleHash(text.slice(0, 200) + "_" + text.length);
+
+  // User'ın sorusunu bul (son user mesajı)
+  const allMsgs = messages.querySelectorAll(".msg");
+  let userPrompt = "";
+  for (let i = allMsgs.length - 1; i >= 0; i--) {
+    if (allMsgs[i] === botEl) continue;
+    if (allMsgs[i].classList.contains("user")) {
+      userPrompt = (allMsgs[i].textContent || "").trim();
+      break;
+    }
+  }
+
+  const row = document.createElement("div");
+  row.className = "feedback-row";
+  row.style.cssText = `
+    display: flex; gap: 6px; margin-top: 6px; opacity: 0.55;
+    transition: opacity 0.2s;
+  `;
+  row.onmouseenter = () => { row.style.opacity = "1"; };
+  row.onmouseleave = () => { row.style.opacity = "0.55"; };
+
+  const btnUp = mkFbBtn("👍", "up", msgHash, text, userPrompt, row);
+  const btnDown = mkFbBtn("👎", "down", msgHash, text, userPrompt, row);
+  row.appendChild(btnUp);
+  row.appendChild(btnDown);
+  botEl.appendChild(row);
+}
+
+function mkFbBtn(emoji, value, msgHash, text, userPrompt, row) {
+  const b = document.createElement("button");
+  b.className = "fb-btn";
+  b.dataset.value = value;
+  b.style.cssText = `
+    background: transparent; border: 1px solid var(--border);
+    color: var(--fg-muted); border-radius: 14px; padding: 3px 10px;
+    font-size: 13px; cursor: pointer; transition: all 0.15s;
+  `;
+  b.textContent = emoji;
+  b.onclick = async () => {
+    // Kardeş butonu sıfırla
+    row.querySelectorAll(".fb-btn").forEach(x => {
+      x.style.background = "transparent"; x.style.borderColor = "var(--border)";
+    });
+    // Bu butonu işaretle
+    b.style.background = value === "up" ? "rgba(34,197,94,0.12)" : "rgba(220,53,69,0.12)";
+    b.style.borderColor = value === "up" ? "#22C55E" : "#DC3545";
+    b.disabled = true;
+    setTimeout(() => { b.disabled = false; }, 800); // debounce
+
+    try {
+      await fetch(API_BASE + "/chat/feedback", {
+        method: "POST", credentials: "include",
+        headers: authHeaders({"Content-Type": "application/json"}),
+        body: JSON.stringify({
+          message_hash: msgHash,
+          user_prompt: userPrompt.slice(0, 500),
+          bot_response_preview: text.slice(0, 500),
+          feedback: value,
+          category: detectCategory(text, userPrompt),
+        }),
+      });
+    } catch (e) { /* sessiz */ }
+  };
+  return b;
+}
+
+function simpleHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h) + str.charCodeAt(i);
+    h |= 0;
+  }
+  return "h" + Math.abs(h).toString(36);
+}
+
+function detectCategory(botText, userPrompt) {
+  const combined = (botText + " " + userPrompt).toLowerCase();
+  if (/çalışma planı|haftalık plan/i.test(combined)) return "calisma_plani";
+  if (/deneme|net|trend/i.test(combined)) return "deneme";
+  if (/formül|nedir|kavram|anlat/i.test(combined)) return "konu_anlatimi";
+  if (/analiz|rapor|sıralama/i.test(combined)) return "analiz";
+  return "genel";
+}
+
+// ⭐ Arşive ekle butonu — bot mesajının altına eklenir
+// Oturum 23 (Neo): Arşive eklenirken kullanıcı başlık/kategori/etiket düzenleyebilir.
+// Random heuristic başlıklar YOK — her arşiv kaydı kullanıcının tanımladığı isim ile.
+function addArchiveButton(botEl) {
+  if (!botEl || botEl.querySelector(".archive-btn")) return;
+  const text = botEl.textContent || "";
+  if (text.length < 150) return; // çok kısa cevaplar arşivlenmez
+
+  const btn = document.createElement("button");
+  btn.className = "archive-btn";
+  btn.style.cssText = `
+    margin-top: 8px; padding: 4px 10px; background: transparent;
+    border: 1px solid var(--border); color: var(--fg-muted);
+    border-radius: 14px; cursor: pointer; font-size: 11px;
+    transition: all 0.15s; display: inline-flex; gap: 4px; align-items: center;
+  `;
+  btn.innerHTML = "⭐ Arşive ekle";
+  btn.onmouseover = () => { btn.style.borderColor = "var(--accent)"; btn.style.color = "var(--accent)"; };
+  btn.onmouseout  = () => { btn.style.borderColor = "var(--border)"; btn.style.color = "var(--fg-muted)"; };
+  btn.onclick = () => {
+    // Kullanıcının kendi sorusunu bul (kontekst için)
+    const allMsgs = messages.querySelectorAll(".msg");
+    let lastUserPrompt = "";
+    for (let i = allMsgs.length - 1; i >= 0; i--) {
+      if (allMsgs[i] === botEl) continue;
+      if (allMsgs[i].classList.contains("user")) {
+        lastUserPrompt = allMsgs[i].textContent.trim();
+        break;
+      }
+    }
+
+    // Otomatik başlık önerisi (h2/h3 → user prompt → text)
+    let suggestedTitle = "";
+    const h2 = botEl.querySelector("h2, h3");
+    if (h2) suggestedTitle = h2.textContent.trim().slice(0, 80);
+    else if (lastUserPrompt) suggestedTitle = lastUserPrompt.slice(0, 80);
+    else suggestedTitle = text.slice(0, 60);
+
+    // Kategori tahmini (dropdown default'u için)
+    let suggestedCategory = "genel";
+    const lower = text.toLowerCase();
+    if (/çalışma planı|haftalık plan/i.test(lower)) suggestedCategory = "calisma_plani";
+    else if (/deneme|net|trend/i.test(lower)) suggestedCategory = "deneme";
+    else if (/formül|nedir|kavram|anlat/i.test(lower)) suggestedCategory = "konu_anlatimi";
+    else if (/analiz|rapor/i.test(lower)) suggestedCategory = "analiz";
+
+    openArchiveEditModal({
+      suggestedTitle,
+      suggestedCategory,
+      lastUserPrompt,
+      botEl,
+      btn,
+    });
+  };
+  botEl.appendChild(btn);
+}
+
+// ─── Arşive Kaydet Modal (Oturum 23 — Neo) ──────────────────────────
+function openArchiveEditModal({ suggestedTitle, suggestedCategory, lastUserPrompt, botEl, btn }) {
+  // Mevcut modal varsa kaldır
+  const existing = document.getElementById("archiveEditModal");
+  if (existing) existing.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "archiveEditModal";
+  modal.style.cssText =
+    "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;" +
+    "display:flex;align-items:center;justify-content:center;padding:20px;";
+  modal.innerHTML = `
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;
+                padding:22px;width:100%;max-width:520px;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="font-size:16px;color:var(--fg);font-weight:600;">⭐ Arşive Kaydet</h3>
+        <button id="archEditClose" style="background:transparent;border:none;font-size:20px;color:var(--fg-muted);cursor:pointer;padding:0 4px;">✕</button>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;color:var(--fg-muted);margin-bottom:6px;font-weight:500;">
+          📝 Başlık <span style="color:var(--error);">*</span>
+        </label>
+        <input type="text" id="archEditTitle" maxlength="100"
+               style="width:100%;padding:10px 12px;border:1px solid var(--border);
+                      border-radius:8px;background:var(--input-bg);color:var(--fg);font-size:14px;"
+               placeholder="Bu içerik neyin kaydı?">
+        <div style="font-size:11px;color:var(--fg-muted);margin-top:4px;">
+          Arşivde bu başlığı göreceksin. Açıklayıcı bir isim ver, 1 ay sonra da hatırlayabilmelisin.
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;color:var(--fg-muted);margin-bottom:6px;font-weight:500;">
+          📂 Kategori
+        </label>
+        <select id="archEditCategory"
+                style="width:100%;padding:10px 12px;border:1px solid var(--border);
+                       border-radius:8px;background:var(--input-bg);color:var(--fg);font-size:14px;cursor:pointer;">
+          <option value="genel">🔹 Genel</option>
+          <option value="calisma_plani">📅 Çalışma Planı</option>
+          <option value="deneme">📊 Deneme / Net Analizi</option>
+          <option value="konu_anlatimi">📚 Konu Anlatımı</option>
+          <option value="analiz">🔍 Analiz / Rapor</option>
+          <option value="soru_cozum">✏️ Soru Çözümü</option>
+          <option value="kaynak">🔗 Kaynak Paketi</option>
+          <option value="not">📝 Not / Hatırlatma</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label style="display:block;font-size:12px;color:var(--fg-muted);margin-bottom:6px;font-weight:500;">
+          🏷 Etiketler <span style="color:var(--fg-muted);font-weight:400;">(opsiyonel)</span>
+        </label>
+        <input type="text" id="archEditTags" maxlength="80"
+               style="width:100%;padding:10px 12px;border:1px solid var(--border);
+                      border-radius:8px;background:var(--input-bg);color:var(--fg);font-size:14px;"
+               placeholder="fizik, türev, ayt — virgülle ayır">
+        <div style="font-size:11px;color:var(--fg-muted);margin-top:4px;">
+          Aramayı kolaylaştırır. Boş bırakabilirsin.
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="archEditCancel" style="padding:10px 18px;background:transparent;
+                border:1px solid var(--border);color:var(--fg-muted);border-radius:8px;
+                cursor:pointer;font-size:13px;">İptal</button>
+        <button id="archEditSave" style="padding:10px 20px;background:var(--accent);
+                color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;">
+          💾 Kaydet
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Default değerleri koy
+  const titleInput = document.getElementById("archEditTitle");
+  const catSelect = document.getElementById("archEditCategory");
+  const tagsInput = document.getElementById("archEditTags");
+  titleInput.value = suggestedTitle;
+  catSelect.value = suggestedCategory;
+  // Focus başlığa + hepsini seç (kullanıcı hemen üzerine yazabilsin)
+  setTimeout(() => { titleInput.focus(); titleInput.select(); }, 50);
+
+  const close = () => modal.remove();
+  document.getElementById("archEditClose").onclick = close;
+  document.getElementById("archEditCancel").onclick = close;
+  modal.onclick = (ev) => { if (ev.target === modal) close(); };
+
+  // Enter = Kaydet
+  titleInput.onkeydown = tagsInput.onkeydown = (ev) => {
+    if (ev.key === "Enter") { ev.preventDefault(); document.getElementById("archEditSave").click(); }
+    if (ev.key === "Escape") close();
+  };
+
+  document.getElementById("archEditSave").onclick = async () => {
+    const title = titleInput.value.trim();
+    if (!title) {
+      titleInput.style.borderColor = "var(--error)";
+      titleInput.focus();
+      return;
+    }
+    const category = catSelect.value;
+    const tags = tagsInput.value.trim();
+    const saveBtn = document.getElementById("archEditSave");
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = "⏳ Kaydediliyor...";
+
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Kaydediliyor...";
+
+    try {
+      const r = await fetch(API_BASE + "/chat/archive", {
+        method: "POST", credentials: "include",
+        headers: authHeaders({"Content-Type": "application/json"}),
+        body: JSON.stringify({
+          title: title,
+          content: botEl.innerHTML,
+          category: category,
+          context_prompt: lastUserPrompt,
+          tags: tags,  // backend opsiyonel alır
+        })
+      });
+      const d = await r.json();
+      if (d.success) {
+        btn.innerHTML = "✅ Arşive eklendi";
+        btn.style.borderColor = "var(--accent)";
+        btn.style.color = "var(--accent)";
+        _archiveLoaded = false;
+        close();
+      } else {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = "💾 Kaydet";
+        alert("Kayıt başarısız: " + (d.message || "bilinmeyen hata"));
+        btn.innerHTML = "⭐ Arşive ekle";
+        btn.disabled = false;
+      }
+    } catch (e) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = "💾 Kaydet";
+      alert("Bağlantı hatası: " + e.message);
+      btn.innerHTML = "⭐ Arşive ekle";
+      btn.disabled = false;
+    }
+  };
+}
+
+function addMsg(text, role, extraHtml = "") {
+  // welcome'u temizle
+  const welcome = messages.querySelector(".msg-welcome");
+  if (welcome) welcome.remove();
+
+  const div = document.createElement("div");
+  div.className = "msg " + role;
+  div.innerHTML = formatMsg(text) + extraHtml;
+  messages.appendChild(div);
+
+  // 22.1m — Bot mesajinda calisma plani varsa Takvime Ekle butonu
+  if (role === "bot" && text && text.length > 200) {
+    const parsed = parseStudyPlan(text);
+    if (parsed && parsed.length >= 3) {
+      const btn = document.createElement("button");
+      btn.className = "msg-action-btn";
+      btn.innerHTML = "📆 Takvime Ekle (.ics)";
+      btn.onclick = () => downloadPlanIcs(parsed);
+      div.appendChild(btn);
+    }
+  }
+
+  // User kendi mesajını attıysa → her zaman scroll (yeni mesaj onun kendi)
+  // Bot ise smartScroll (kullanıcı yukarıdaysa zorlamaz)
+  if (role === "user") {
+    messages.scrollTop = messages.scrollHeight;
+  } else {
+    if (typeof smartScroll === "function") smartScroll();
+    else messages.scrollTop = messages.scrollHeight;
+  }
+
+  // 23 Nisan (Neo bug raporu): Sohbet persist — harici link tıklayınca sayfa
+  // yenilenirse sohbet kaybolmasın. Her yeni mesajda snapshot localStorage'a.
+  // Streaming bot mesajları için saveChatSnapshot streaming bitince ayrı çağrılır.
+  if (role === "user") {
+    saveChatSnapshot();  // user mesajı tamam, kaydet
+  }
+  return div;
+}
+
+// ─── 23 Nisan — Sohbet Kalıcılığı (Bug Fix) ────────────────
+// Neo raporu: YouTube linkine tıklayınca geri döndüğünde sohbet sıfırlanıyordu.
+// Mobile Safari/Chrome agresif memory management — sekme arka plana atılınca
+// sayfa yeniden yüklenebilir. Sohbeti localStorage'a saklarız, her girişte geri yükleriz.
+const CHAT_SNAPSHOT_KEY = "fermat_chat_snapshot_v1";
+const CHAT_SNAPSHOT_MAX_AGE_MS = 6 * 60 * 60 * 1000;  // 6 saat
+
+function saveChatSnapshot() {
+  try {
+    const msgs = [];
+    messages.querySelectorAll(".msg").forEach((m) => {
+      if (m.classList.contains("msg-welcome")) return;
+      const role = m.classList.contains("user") ? "user" : "bot";
+      // innerHTML olduğu gibi — render edilmiş halde saklanır
+      msgs.push({ role, html: m.innerHTML });
+    });
+    // En fazla son 50 mesaj (storage boyutu)
+    const toSave = msgs.slice(-50);
+    localStorage.setItem(CHAT_SNAPSHOT_KEY, JSON.stringify({
+      ts: Date.now(),
+      count: toSave.length,
+      msgs: toSave,
+    }));
+  } catch (e) {
+    // localStorage dolu veya disabled — sessiz geç
+  }
+}
+
+function restoreChatSnapshot() {
+  try {
+    const raw = localStorage.getItem(CHAT_SNAPSHOT_KEY);
+    if (!raw) return false;
+    const snap = JSON.parse(raw);
+    if (!snap || !snap.msgs || !snap.msgs.length) return false;
+    // Çok eski sohbeti gösterme — 6 saati geçmişse sil
+    if (Date.now() - (snap.ts || 0) > CHAT_SNAPSHOT_MAX_AGE_MS) {
+      localStorage.removeItem(CHAT_SNAPSHOT_KEY);
+      return false;
+    }
+    // Welcome sil
+    const welcome = messages.querySelector(".msg-welcome");
+    if (welcome) welcome.remove();
+    snap.msgs.forEach((m) => {
+      const div = document.createElement("div");
+      div.className = "msg " + m.role;
+      div.innerHTML = m.html;
+      messages.appendChild(div);
+    });
+    // Restore sonrası chart/math rerender
+    if (typeof finalizeBotMsg === "function") {
+      messages.querySelectorAll(".msg.bot").forEach((el) => {
+        try { finalizeBotMsg(el); } catch (e) {}
+      });
+    }
+    messages.scrollTop = messages.scrollHeight;
+    // "Sohbet devam ediyor" bandı
+    const banner = document.createElement("div");
+    banner.style.cssText = "text-align:center;padding:8px;font-size:12px;color:var(--fg-muted);border-bottom:1px dashed var(--border);margin:4px 0;";
+    banner.textContent = "— Önceki sohbete devam —";
+    messages.insertBefore(banner, messages.firstChild);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function clearChatSnapshot() {
+  try { localStorage.removeItem(CHAT_SNAPSHOT_KEY); } catch (e) {}
+}
+
+// 22.1m — Çalışma planını bot mesajından parse et (heuristik)
+// Bot plan formatinda: "📅 *PAZARTESİ* (3 saat)" vb. bloklar, her konu icin saat + ders + konu
+const _GUN_REGEX = /(Pazartesi|Salı|Sali|Çarşamba|Carsamba|Perşembe|Persembe|Cuma|Cumartesi|Pazar)/gi;
+
+function parseStudyPlan(text) {
+  // Gun regex ile bloklar bul
+  const matches = [...text.matchAll(_GUN_REGEX)];
+  if (matches.length < 3) return null;  // min 3 gun olmali
+
+  const plan = [];
+  let currentGun = null;
+  const gunMap = {
+    "pazartesi":"Pazartesi","sali":"Salı","salı":"Salı",
+    "carsamba":"Çarşamba","çarşamba":"Çarşamba",
+    "persembe":"Perşembe","perşembe":"Perşembe",
+    "cuma":"Cuma","cumartesi":"Cumartesi","pazar":"Pazar"
+  };
+
+  const lines = text.split("\n");
+  for (const line of lines) {
+    const gunMatch = line.match(_GUN_REGEX);
+    if (gunMatch) {
+      currentGun = gunMap[gunMatch[0].toLowerCase()] || gunMatch[0];
+      continue;
+    }
+    if (!currentGun) continue;
+
+    // Line icinde saat + sure + konu varsa plan item
+    // Ornek: "🔴 *45dk* Türev — 30 soru çöz"
+    // veya:  "60dk Matematik - Integral"
+    const sureMatch = line.match(/(\d{2,3})\s*dk/i);
+    if (!sureMatch) continue;
+    const sure_dk = parseInt(sureMatch[1]);
+    if (sure_dk < 10 || sure_dk > 300) continue;
+
+    // Ders + konu cikar — "dk" sonrasi metinden
+    const afterSure = line.split(/dk/i)[1] || "";
+    const cleaned = afterSure.replace(/[*🔴🟡🟢🔵⏸️📝🎯📌🔷]/g, "").trim();
+    const parts = cleaned.split(/[—\-:]/);
+    const dersKonu = parts[0] ? parts[0].trim() : "Çalışma";
+    const yontem = parts[1] ? parts.slice(1).join(" - ").trim() : "Tekrar ve soru çözümü";
+
+    // Ders vs konu ayir
+    const dersMatches = dersKonu.match(/^(Matematik|Türkçe|Turkce|Fizik|Kimya|Biyoloji|Tarih|Coğrafya|Cografya|Felsefe|Din|İngilizce|Geometri|Edebiyat)/i);
+    let ders = "", konu = "";
+    if (dersMatches) {
+      ders = dersMatches[0];
+      konu = dersKonu.substring(dersMatches[0].length).replace(/^[\s—\-:]+/, "").trim() || ders;
+    } else {
+      ders = "Çalışma";
+      konu = dersKonu;
+    }
+
+    // Varsayılan saat: akşam 19:00 (öğrenci sabah okul)
+    const saatDefault = "19:00";
+    plan.push({
+      gun: currentGun,
+      saat: saatDefault,
+      sure_dk,
+      ders,
+      konu: konu.substring(0, 100),
+      yontem: yontem.substring(0, 200),
+    });
+  }
+  return plan.length >= 3 ? plan : null;
+}
+
+async function downloadPlanIcs(plan) {
+  try {
+    const r = await fetch(API_BASE + "/chat/plan-ics", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ plan, weeks: 4 }),
+    });
+    if (!r.ok) {
+      addMsg("⚠ Takvim dosyasi olusturulamadi. Tekrar deneyin.", "bot");
+      return;
+    }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "fermat_calisma_plani.ics";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    addMsg("✅ Takvim dosyasi indirildi! Acarken Google Calendar, Apple Calendar veya Outlook'a ekleyebilirsin.", "bot");
+  } catch (e) {
+    addMsg("⚠ Hata: " + e.message, "bot");
+  }
+}
+
+// ─── Foto upload (Vision) ──────────────────────────────────
+let _selectedPhoto = null;
+const photoInput = document.getElementById("photoInput");
+const photoPreview = document.getElementById("photoPreview");
+const photoThumb = document.getElementById("photoThumb");
+const photoName = document.getElementById("photoName");
+const photoSize = document.getElementById("photoSize");
+
+function onPhotoSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Boyut kontrolü (10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    addMsg("📸 Fotoğraf çok büyük (max 10MB). Daha küçük bir görsel seç.", "bot");
+    photoInput.value = "";
+    return;
+  }
+  if (!file.type.startsWith("image/")) {
+    addMsg("📸 Sadece görsel (JPG/PNG) kabul ediliyor.", "bot");
+    photoInput.value = "";
+    return;
+  }
+
+  _selectedPhoto = file;
+  photoName.textContent = file.name;
+  photoSize.textContent = (file.size / 1024).toFixed(0) + " KB";
+  const reader = new FileReader();
+  reader.onload = (ev) => { photoThumb.src = ev.target.result; };
+  reader.readAsDataURL(file);
+  photoPreview.classList.add("active");
+  chatInput.placeholder = "Soruya dair bir not ekle (opsiyonel)... veya direkt Gönder";
+  chatInput.focus();
+}
+
+function clearPhoto() {
+  _selectedPhoto = null;
+  photoInput.value = "";
+  photoPreview.classList.remove("active");
+  photoThumb.src = "";
+  chatInput.placeholder = "Mesajını yaz... (Shift+Enter = yeni satır)";
+}
+
+// ─── Ses girdisi (Web Speech API) ──────────────────────────
+let _recognition = null;
+let _isRecording = false;
+
+function toggleMic() {
+  if (_isRecording) {
+    stopMic();
+    return;
+  }
+  startMic();
+}
+
+function startMic() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    addMsg("🎤 Tarayıcın ses girişini desteklemiyor (Chrome veya Edge öneriyoruz).", "bot");
+    return;
+  }
+
+  _recognition = new SpeechRecognition();
+  _recognition.lang = "tr-TR";
+  _recognition.continuous = true;        // uzun konuşma
+  _recognition.interimResults = true;    // anlık kelime gösterimi
+
+  let finalTranscript = "";
+  const originalText = chatInput.value;
+
+  _recognition.onstart = () => {
+    _isRecording = true;
+    document.getElementById("micBtn").classList.add("recording");
+    chatInput.placeholder = "🎙 Dinliyorum... (mic'e tekrar bas, durdur)";
+  };
+
+  _recognition.onresult = (event) => {
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript + " ";
+      } else {
+        interim += transcript;
+      }
+    }
+    chatInput.value = (originalText + " " + finalTranscript + interim).trim();
+    // Auto-resize
+    chatInput.style.height = "auto";
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + "px";
+  };
+
+  _recognition.onerror = (event) => {
+    console.warn("Ses tanıma hatası:", event.error);
+    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+      addMsg("🎤 Mikrofon izni gerekli. Tarayıcı ayarlarından izin ver.", "bot");
+    } else if (event.error === "no-speech") {
+      // sessizlik — normal, durdur
+    } else {
+      addMsg("🎤 Ses tanıma kesintiye uğradı: " + event.error, "bot");
+    }
+    stopMic();
+  };
+
+  _recognition.onend = () => {
+    _isRecording = false;
+    document.getElementById("micBtn").classList.remove("recording");
+    chatInput.placeholder = "Mesajını yaz... (Shift+Enter = yeni satır)";
+    chatInput.focus();
+  };
+
+  try {
+    _recognition.start();
+  } catch (e) {
+    console.warn("Mic başlatma hatası:", e);
+    addMsg("🎤 Mikrofon başlatılamadı: " + e.message, "bot");
+  }
+}
+
+function stopMic() {
+  if (_recognition) {
+    try { _recognition.stop(); } catch (e) {}
+  }
+  _isRecording = false;
+  document.getElementById("micBtn").classList.remove("recording");
+  chatInput.placeholder = "Mesajını yaz... (Shift+Enter = yeni satır)";
+}
+
+async function sendPhotoWithCaption(caption) {
+  const file = _selectedPhoto;
+  if (!file) return;
+
+  // User bubble — foto thumbnail ile birlikte
+  const thumbUrl = photoThumb.src;
+  const thumbHtml = `<img class="attached-photo" src="${thumbUrl}" alt="Soru">`;
+  addMsg(caption || "📸 Foto soru çözümü", "user", thumbHtml);
+
+  // Reset input
+  chatInput.value = "";
+  chatInput.style.height = "auto";
+  clearPhoto();
+  sendBtn.disabled = true;
+
+  // Thinking bubble
+  const thinkingMsg = document.createElement("div");
+  thinkingMsg.className = "msg bot thinking";
+  thinkingMsg.textContent = "📸 Fotoğrafı okuyorum...";
+  messages.appendChild(thinkingMsg);
+  smartScroll();
+
+  try {
+    const formData = new FormData();
+    formData.append("photo", file);
+    if (caption) formData.append("caption", caption);
+
+    const r = await fetch(API_BASE + "/chat/upload-photo", {
+      method: "POST",
+      credentials: "include",
+      headers: authHeaders(),
+      body: formData,
+    });
+
+    thinkingMsg.remove();
+
+    if (r.status === 401) {
+      addMsg("🔓 Oturumun başka bir cihazdan açıldı — bu oturum kapandı. Yeni giriş için tekrar \"web kodu\" iste.", "bot");
+      setTimeout(() => location.reload(), 3500);
+      return;
+    }
+    if (r.status === 429) {
+      const d = await r.json();
+      addMsg(d.message || "📸 Günlük foto hakkın doldu.", "bot");
+      return;
+    }
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      addMsg(d.message || "Fotoğraf çözümlenemedi. Tekrar dene.", "bot");
+      return;
+    }
+
+    const d = await r.json();
+    if (d.success && d.solution) {
+      let footer = "";
+      if (d.kalan_hak !== undefined && d.daily_limit && d.daily_limit < 100) {
+        footer = `\n\n_Bugün kalan foto hakkın: ${d.kalan_hak}/${d.daily_limit}_`;
+      }
+      const solBubble = addMsg(d.solution + footer, "bot");
+      finalizeBotMsg(solBubble);
+    } else {
+      addMsg(d.message || "Çözüm oluşturulamadı.", "bot");
+    }
+  } catch (e) {
+    thinkingMsg.remove();
+    addMsg("Bağlantı hatası: " + e.message, "bot");
+  } finally {
+    sendBtn.disabled = false;
+    chatInput.focus();
+  }
+}
+
+// ─── Login ─────────────────────────────────────────────────
+async function doLogin() {
+  const phone = phoneInput.value.trim();
+  const otp   = otpInput.value.trim();
+  if (!phone || !otp) {
+    showError("Telefon ve kod gerekli.");
+    return;
+  }
+  if (otp.length !== 6) {
+    showError("Kod 6 haneli olmalı.");
+    return;
+  }
+  loginBtn.disabled = true;
+  loginError.style.display = "none";
+  try {
+    const r = await fetch(API_BASE + "/chat/verify-otp", {
+      method: "POST",
+      credentials: "include",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({phone, otp}),
+    });
+    const d = await r.json();
+    if (!d.success) {
+      showError(d.message || "Giriş başarısız.");
+      loginBtn.disabled = false;
+      return;
+    }
+    // iPad Safari Fix: Token'ı localStorage'a kaydet (cookie yanında)
+    if (d.token) setToken(d.token);
+    // Başarılı — chat aç
+    localStorage.setItem("fermat_name", d.name || "Öğrenci");
+    localStorage.setItem("fermat_role", d.role || "ogrenci");
+    showChat(d.name);
+
+    // Eski cihaz kapatıldıysa bilgilendir (tek oturum modeli)
+    if (d.kicked_previous && d.kicked_previous > 0) {
+      setTimeout(() => {
+        addMsg(`🔒 Güvenlik: *${d.kicked_previous}* önceki oturum kapatıldı. Aynı anda tek cihazdan giriş — WhatsApp Web mantığı.`, "bot");
+      }, 600);
+    }
+  } catch (e) {
+    showError("Bağlantı hatası: " + e.message);
+    loginBtn.disabled = false;
+  }
+}
+
+function showError(msg) {
+  loginError.textContent = msg;
+  loginError.style.display = "block";
+}
+
+function showChat(name) {
+  loginWrap.style.display = "none";
+  chatWrap.classList.add("active");
+  userName.textContent = name;
+  welcomeName.textContent = (name || "Öğrenci").split(" ")[0];
+  chatInput.focus();
+  // A4: Öğrenci rolündeyse dashboard kartları yükle
+  const role = localStorage.getItem("fermat_role") || "";
+  if (role === "ogrenci") {
+    loadDashboard();
+  }
+  // 22.1n-vizyon3: Admin/Mudur ise admin butonunu göster
+  const adminBtn = document.getElementById("adminBtn");
+  if (adminBtn && (role === "admin" || role === "mudur")) {
+    adminBtn.style.display = "inline-block";
+  }
+  // 23 Nisan (Neo bug fix): Önceki sohbeti restore et (YouTube link vb. tıklayıp dönünce)
+  try {
+    if (typeof restoreChatSnapshot === "function") {
+      restoreChatSnapshot();
+    }
+  } catch (e) {}
+}
+
+// ─── A4 — Öğrenci Dashboard Kartları ──────────────────────
+async function loadDashboard() {
+  try {
+    const r = await fetch(API_BASE + "/chat/dashboard", { credentials: "include", headers: authHeaders() });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (!d.success) return;
+
+    const cards = document.getElementById("dashboardCards");
+    if (!cards) return;
+
+    let html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px;max-width:600px;margin-left:auto;margin-right:auto;">`;
+
+    const yksGun = d.yks ? d.yks.tyt_gun : 0;
+    if (yksGun > 0) {
+      html += `<div class="dash-card"><div class="dash-label">🎯 YKS'ye Kalan</div><div class="dash-value">${yksGun}<span class="dash-unit">gün</span></div></div>`;
+    }
+    if (d.last_exam) {
+      html += `<div class="dash-card"><div class="dash-label">📊 Son Deneme</div><div class="dash-value">${d.last_exam.toplam.toFixed(1)}<span class="dash-unit">net</span></div><div class="dash-sub">${escapeHtml(d.last_exam.date || "")}</div></div>`;
+    }
+    const devColor = d.devamsizlik_saat > 100 ? "#DC3545" : (d.devamsizlik_saat > 50 ? "#F59E0B" : "#22C55E");
+    html += `<div class="dash-card"><div class="dash-label">⏱ Devamsızlık</div><div class="dash-value" style="color:${devColor}">${d.devamsizlik_saat}<span class="dash-unit">saat</span></div></div>`;
+    if (d.ayt_yerlesme_puani) {
+      html += `<div class="dash-card"><div class="dash-label">🎓 AYT Puan</div><div class="dash-value">${d.ayt_yerlesme_puani}</div><div class="dash-sub">Resmi yerleşme</div></div>`;
+    }
+    if (d.weak_topics && d.weak_topics.length) {
+      html += `<div class="dash-card" onclick="chatInput.value='zayıf konularım';doSend();" style="cursor:pointer;"><div class="dash-label">📉 Zayıf Konu</div><div class="dash-value">${d.weak_topics.length}</div><div class="dash-sub" style="color:var(--accent)">Detay için tıkla</div></div>`;
+    }
+    // 22.1n-bug9: Puan tahmin kartı — tıklayınca Claude tool çağırır
+    html += `<div class="dash-card" onclick="chatInput.value='şu an tahmini puanım ne olacak';doSend();" style="cursor:pointer;"><div class="dash-label">📈 Puan Tahmini</div><div class="dash-value" style="font-size:14px;color:var(--accent)">Göster</div><div class="dash-sub">Tıkla — mevcut trendden tahmin</div></div>`;
+    // 22.1n-bug9: OGM Kaynak kartı — MEB resmi yönlendirme
+    html += `<div class="dash-card" onclick="chatInput.value='tyt matematik soru bankası';doSend();" style="cursor:pointer;"><div class="dash-label">🎓 MEB OGM</div><div class="dash-value" style="font-size:14px;color:var(--accent)">Kaynaklar</div><div class="dash-sub">Soru bankası + PDF</div></div>`;
+    html += `</div><p style="text-align:center;color:var(--fg-muted);font-size:12px;margin-top:14px;">Aşağıya yaz ya da ☰ menüsünden hızlı komut seç.</p>`;
+
+    cards.innerHTML = html;
+    cards.style.display = "block";
+  } catch (e) { /* sessiz */ }
+}
+
+// ─── Akıllı scroll — kullanıcı yukarı kaydırdıysa zorlamayız ─────
+// Kullanıcı bot cevabı gelirken geçmişi okumak için yukarı kaydırabilir.
+// Bot her chunk geldiğinde zorla aşağı çekerse kullanıcıyı engeller.
+// Kural: kullanıcı son 80px içindeyse "takip etmek istiyor" kabul et, scroll et.
+// Daha fazla yukarıdaysa "okuma modundadır" → scroll YAPMA.
+function isNearBottom() {
+  return messages.scrollHeight - messages.scrollTop - messages.clientHeight < 80;
+}
+function smartScroll() {
+  if (isNearBottom()) {
+    messages.scrollTop = messages.scrollHeight;
+  }
+}
+// Yeni mesaj bildirimi çipi (kullanıcı yukarıda iken yeni cevap gelirse)
+let _newMsgChip = null;
+function showNewMessageChip() {
+  if (_newMsgChip || isNearBottom()) return;
+  _newMsgChip = document.createElement("div");
+  _newMsgChip.textContent = "↓ Yeni mesaj";
+  _newMsgChip.style.cssText = `
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px;
+    font-size: 13px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 100; font-weight: 500;
+  `;
+  _newMsgChip.onclick = () => {
+    messages.scrollTop = messages.scrollHeight;
+    hideNewMessageChip();
+  };
+  document.body.appendChild(_newMsgChip);
+}
+function hideNewMessageChip() {
+  if (_newMsgChip) {
+    _newMsgChip.remove();
+    _newMsgChip = null;
+  }
+}
+// Kullanıcı en alta scroll ettiğinde chip'i kaldır
+messages.addEventListener("scroll", () => {
+  if (isNearBottom()) hideNewMessageChip();
+});
+
+// ─── Send (Streaming + Thinking) ───────────────────────────
+async function doSend() {
+  const text = chatInput.value.trim();
+  const hasPhoto = _selectedPhoto !== null;
+  if ((!text && !hasPhoto) || sendBtn.disabled) return;
+
+  // Foto varsa önce Vision API'ye at
+  if (hasPhoto) {
+    await sendPhotoWithCaption(text);
+    return;
+  }
+
+  addMsg(text, "user");
+  chatInput.value = "";
+  chatInput.style.height = "auto";
+  sendBtn.disabled = true;
+
+  let botMsg = null;
+  let thinkingMsg = null;
+  let accumulated = "";
+
+  // Helper: thinking bubble göster (grup halinde)
+  function showThinking(txt) {
+    if (!thinkingMsg) {
+      const welcome = messages.querySelector(".msg-welcome");
+      if (welcome) welcome.remove();
+      thinkingMsg = document.createElement("div");
+      thinkingMsg.className = "msg bot thinking";
+      messages.appendChild(thinkingMsg);
+    }
+    thinkingMsg.textContent = txt;
+    smartScroll();
+  }
+  function clearThinking() {
+    if (thinkingMsg) {
+      thinkingMsg.remove();
+      thinkingMsg = null;
+    }
+  }
+
+  try {
+    // 22.1n-fikir4: Arşiv sohbet devam — archive_day state'i varsa gönder
+    const _body = {message: text};
+    if (window._currentArchiveDay) {
+      _body.archive_day = window._currentArchiveDay;
+    }
+    const r = await fetch(API_BASE + "/chat/stream", {
+      method: "POST",
+      credentials: "include",
+      headers: authHeaders({"Content-Type": "application/json"}),
+      body: JSON.stringify(_body),
+    });
+
+    if (r.status === 401) {
+      addMsg("🔓 Oturumun başka bir cihazdan açıldı — bu oturum kapandı. Yeni giriş için tekrar \"web kodu\" iste.", "bot");
+      setTimeout(() => location.reload(), 3500);
+      return;
+    }
+
+    if (!r.ok || !r.body) {
+      throw new Error("HTTP " + r.status);
+    }
+
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, {stream: true});
+
+      const events = buffer.split("\n\n");
+      buffer = events.pop() || "";
+
+      for (const evt of events) {
+        const line = evt.trim();
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload) continue;
+
+        let d;
+        try { d = JSON.parse(payload); } catch { continue; }
+
+        // ── start: ilk event, hiçbir şey yapmıyoruz (fast/slow path belirlenene kadar)
+        if (d.start) {
+          // pass — fast path'de hemen chunk gelecek, slow path'de thinking
+        }
+
+        // ── thinking: yavaş path placeholder (Claude beklerken)
+        if (d.thinking) {
+          showThinking(d.thinking);
+        }
+        if (d.thinking_clear) {
+          clearThinking();
+        }
+
+        // ── chunk: asıl cevap — token token
+        if (d.chunk) {
+          clearThinking(); // fast path'de thinking hiç olmaz, slow'da olsa temizle
+          if (!botMsg) {
+            const welcome = messages.querySelector(".msg-welcome");
+            if (welcome) welcome.remove();
+            botMsg = document.createElement("div");
+            botMsg.className = "msg bot";
+            botMsg.innerHTML = '<span class="cursor"></span>';
+            messages.appendChild(botMsg);
+          }
+          accumulated += d.chunk;
+          botMsg.innerHTML = formatMsg(accumulated) + '<span class="cursor"></span>';
+          smartScroll();
+          if (!isNearBottom()) showNewMessageChip();
+        }
+
+        if (d.done) {
+          if (botMsg) {
+            botMsg.innerHTML = formatMsg(accumulated);
+            finalizeBotMsg(botMsg);
+            smartScroll();
+            // 23 Nisan bug fix: Bot yanıt tamamlandı → sohbeti kaydet
+            try { saveChatSnapshot(); } catch(e) {}
+          }
+        }
+      }
+    }
+  } catch (e) {
+    clearThinking();
+    if (botMsg && accumulated) {
+      botMsg.innerHTML = formatMsg(accumulated);
+      try { saveChatSnapshot(); } catch(err) {}
+    } else {
+      addMsg("Bağlantı hatası: " + e.message, "bot");
+    }
+  } finally {
+    clearThinking();
+    sendBtn.disabled = false;
+    chatInput.focus();
+  }
+}
+
+// ─── Logout ────────────────────────────────────────────────
+// ─── Yeni Sohbet (Neo 23 Nisan 18:14 talimatı) ──────────────────────
+// SADECE GÖRSEL TEMİZLİK (Neo 18:36 netleştirdi).
+// Backend/bot bağlamı aynen kalır — bot öğrencini/seni hâlâ tanır, konuşma
+// memory (cache) aynen çalışır. Ekrandan bunalmış kullanıcıya nefes açar.
+function startNewChat() {
+  try {
+    // Ekran temizle + welcome göster
+    messages.innerHTML = "";
+    const welcome = document.createElement("div");
+    welcome.className = "msg-welcome";
+    welcome.id = "welcomeArea";
+    const name = (localStorage.getItem("fermat_name") || "Öğrenci").split(" ")[0];
+    welcome.innerHTML =
+      '<h2>Yeni sohbet ✨</h2>' +
+      '<p>Hoş geldin <strong>' + escapeHtml(name) + '</strong>. Temiz yaprak.</p>' +
+      '<div id="dashboardCards" style="display:none;margin-top:20px;"></div>';
+    messages.appendChild(welcome);
+
+    // Snapshot da temizle — kullanıcı yeni sohbet dedi, F5 sonrası eski ekran gelmesin
+    try { clearChatSnapshot(); } catch(e) {}
+
+    // Dashboard tekrar yükle (öğrenci ise)
+    const role = localStorage.getItem("fermat_role") || "";
+    if (role === "ogrenci") {
+      loadDashboard();
+    }
+
+    chatInput.focus();
+  } catch (e) {
+    console.error("startNewChat hatası:", e);
+  }
+}
+
+
+async function doLogout() {
+  try {
+    await fetch(API_BASE + "/chat/logout", {method: "POST", credentials: "include", headers: authHeaders()});
+    clearToken();
+  } catch (e) {}
+  localStorage.removeItem("fermat_name");
+  localStorage.removeItem("fermat_role");
+  // 23 Nisan bug fix: Logout'ta sohbet snapshot'ını da sil (güvenlik)
+  try { clearChatSnapshot(); } catch (e) {}
+  location.reload();
+}
+
+// ─── Keyboard: Enter gönder, Shift+Enter yeni satır ─────────
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    doSend();
+  }
+});
+
+// Auto-resize textarea
+chatInput.addEventListener("input", () => {
+  chatInput.style.height = "auto";
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + "px";
+});
+
+// Enter on login inputs
+[phoneInput, otpInput].forEach(inp => {
+  inp.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") doLogin();
+  });
+});
+
+// ─── A5 — MathLive denklem editörü ──────────────────────
+function openMathModal() {
+  const modal = document.getElementById("mathModal");
+  modal.style.display = "flex";
+  const field = document.getElementById("mathField");
+  if (field) {
+    field.value = "";
+    setTimeout(() => field.focus(), 100);
+  }
+}
+function closeMathModal() {
+  document.getElementById("mathModal").style.display = "none";
+}
+function insertMath() {
+  const field = document.getElementById("mathField");
+  if (!field) return;
+  const latex = field.value || "";
+  if (latex.trim()) {
+    // LaTeX'i $...$ ile sar (inline math) — KaTeX render eder
+    const existing = chatInput.value;
+    chatInput.value = existing + (existing ? " " : "") + "$" + latex.trim() + "$ ";
+    chatInput.style.height = "auto";
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + "px";
+    chatInput.focus();
+  }
+  closeMathModal();
+}
+// Escape ile kapat
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const m = document.getElementById("mathModal");
+    if (m && m.style.display === "flex") closeMathModal();
+  }
+});
+
+// ─── A9 — PDF rapor indirme ─────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// DASHBOARD MODAL (22.1i) — rol-bazli overlay panel
+// Neo kurali: Chat ekrani sade kalir, dashboard yan menuden acilir
+// Grafikler: Chart.js (zaten yukludu)
+// ═══════════════════════════════════════════════════════════════════
+
+let _dashboardCharts = {};  // aktif chart'lari track et
+
+async function openDashboard() {
+  let overlay = document.getElementById("dashboardOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "dashboardOverlay";
+    overlay.className = "dashboard-overlay";
+    overlay.innerHTML = `
+      <div class="dashboard-panel">
+        <div class="dashboard-header">
+          <div class="dashboard-title">📊 Gelişim Paneli</div>
+          <button class="dashboard-close" onclick="closeDashboard()">✕</button>
+        </div>
+        <div class="dashboard-content" id="dashboardContent">
+          <div class="dashboard-loading">Yükleniyor...</div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (e) => {
+      if (e.target.id === "dashboardOverlay") closeDashboard();
+    });
+  }
+  overlay.style.display = "flex";
+  await loadDashboardData();
+}
+
+function closeDashboard() {
+  const o = document.getElementById("dashboardOverlay");
+  if (o) o.style.display = "none";
+  // Chart'lari temizle (memory leak onleme)
+  for (const k in _dashboardCharts) {
+    try { _dashboardCharts[k].destroy(); } catch(e) {}
+  }
+  _dashboardCharts = {};
+}
+
+async function loadDashboardData() {
+  const content = document.getElementById("dashboardContent");
+  try {
+    const r = await fetch(API_BASE + "/chat/dashboard", {
+      credentials: "include", headers: authHeaders()
+    });
+    const d = await r.json();
+    if (!d.success) {
+      content.innerHTML = `<div class="dashboard-empty">${escapeHtml(d.message || "Dashboard yüklenemedi.")}</div>`;
+      return;
+    }
+    renderDashboard(d);
+  } catch (e) {
+    content.innerHTML = `<div class="dashboard-empty">Hata: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderDashboard(d) {
+  // 22.1i2 — Rol-bazli render: ogretmen/rehber/mudur/admin/yonetim icin
+  // ogrenci kismi alt kisimda kaliyor (orijinal)
+  if (d.role === "ogretmen") return renderOgretmenDashboard(d);
+  if (d.role === "rehber") return renderRehberDashboard(d);
+  if (d.role === "admin" || d.role === "mudur" || d.role === "yonetim") return renderAdminDashboard(d);
+  // 22.1m — LGS ögrencisi özel render
+  if (d.is_lgs) return renderLgsDashboard(d);
+  // default: ogrenci YKS
+  return renderOgrenciDashboard(d);
+}
+
+// 22.1k — Dashboard Aksiyon Helper: kart/liste tıklanınca dashboard kapansın + chat'e prompt gönder
+function dashboardAction(promptText) {
+  closeDashboard();
+  setTimeout(() => {
+    if (chatInput) {
+      chatInput.value = promptText;
+      doSend();
+    }
+  }, 200);
+}
+
+// Aksiyon butonu HTML uretici
+function actionBtn(label, promptText, emoji) {
+  const safe = (promptText || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
+  return `<button class="dash-action-btn" onclick="dashboardAction('${safe}')">${emoji || "💬"} ${escapeHtml(label)}</button>`;
+}
+
+function renderOgrenciDashboard(d) {
+  const content = document.getElementById("dashboardContent");
+  const last = d.last_exam || {};
+  const sinyal = d.sinyal || {};
+  const sinyalColor = sinyal.yon === "yukselis" ? "#4ade80" :
+                      sinyal.yon === "dusus" ? "#f87171" : "#a3a3a3";
+  const sinyalIcon = sinyal.yon === "yukselis" ? "📈" :
+                     sinyal.yon === "dusus" ? "📉" : "➡️";
+
+  // HTML
+  content.innerHTML = `
+    <div class="dashboard-greeting">
+      Selam <b>${escapeHtml((d.name||"").split(" ")[0])}</b> 👋
+      <span class="dashboard-class">${escapeHtml(d.class || "")}</span>
+    </div>
+
+    <div class="dashboard-kpis">
+      <div class="kpi-card">
+        <div class="kpi-label">Son Deneme</div>
+        <div class="kpi-value">${last.toplam ? last.toplam.toFixed(1) : "-"}</div>
+        <div class="kpi-sub">${escapeHtml(last.name || "Veri yok")}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">TYT'ye Kalan</div>
+        <div class="kpi-value">${d.yks?.tyt_gun || "-"}</div>
+        <div class="kpi-sub">gün</div>
+      </div>
+      <div class="kpi-card" style="border-left: 3px solid ${sinyalColor};">
+        <div class="kpi-label">Trend</div>
+        <div class="kpi-value" style="font-size:22px;">${sinyalIcon}</div>
+        <div class="kpi-sub">${escapeHtml(sinyal.mesaj || "")}</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="dashboard-card dashboard-card-wide">
+        <div class="dashboard-card-title">📈 Son 10 Deneme — Ders Bazlı Trend</div>
+        <div class="chart-container"><canvas id="dashTrendChart"></canvas></div>
+      </div>
+      <div class="dashboard-card">
+        <div class="dashboard-card-title">🎯 Ders Güç Profili</div>
+        <div class="chart-container"><canvas id="dashRadarChart"></canvas></div>
+      </div>
+      <div class="dashboard-card">
+        <div class="dashboard-card-title">🔴 Bu Hafta Öncelik 3 Konu</div>
+        <div id="dashOncelikList" class="oncelik-list"></div>
+      </div>
+      <div class="dashboard-card dashboard-card-wide">
+        <div class="dashboard-card-title">📸 Son Çözdüğüm Fotoğraf Soruları</div>
+        <div id="dashFotoGecmis"></div>
+      </div>
+    </div>
+  `;
+
+  // Grafik: trend
+  const trend = d.trend || [];
+  if (trend.length && typeof Chart !== "undefined") {
+    const labels = trend.map(t => t.date);
+    _dashboardCharts.trend = new Chart(document.getElementById("dashTrendChart"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          {label:"Toplam", data: trend.map(t=>t.toplam), borderColor:"#f59e0b", backgroundColor:"rgba(245,158,11,0.1)", borderWidth:3, tension:0.3, pointRadius:4},
+          {label:"Türkçe", data: trend.map(t=>t.turkce), borderColor:"#60a5fa", borderWidth:2, tension:0.3, pointRadius:2},
+          {label:"Matematik", data: trend.map(t=>t.matematik), borderColor:"#4ade80", borderWidth:2, tension:0.3, pointRadius:2},
+          {label:"Fen", data: trend.map(t=>t.fen), borderColor:"#f87171", borderWidth:2, tension:0.3, pointRadius:2},
+          {label:"Sosyal", data: trend.map(t=>t.sosyal), borderColor:"#a78bfa", borderWidth:2, tension:0.3, pointRadius:2},
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:"bottom", labels:{color:"#e5e7eb", boxWidth:10, font:{size:11}}}},
+        scales:{
+          x:{ticks:{color:"#9ca3af", font:{size:10}}, grid:{color:"rgba(255,255,255,0.05)"}},
+          y:{ticks:{color:"#9ca3af"}, grid:{color:"rgba(255,255,255,0.05)"}}
+        }
+      }
+    });
+  } else {
+    document.getElementById("dashTrendChart").parentElement.innerHTML =
+      '<div class="dashboard-empty">Henüz deneme verisi yok</div>';
+  }
+
+  // Radar
+  const r = d.radar || {};
+  if (Object.keys(r).length && typeof Chart !== "undefined") {
+    _dashboardCharts.radar = new Chart(document.getElementById("dashRadarChart"), {
+      type: "radar",
+      data: {
+        labels: Object.keys(r),
+        datasets: [{
+          label: "Ortalama Net (son 3 deneme)",
+          data: Object.values(r),
+          backgroundColor: "rgba(245,158,11,0.2)",
+          borderColor: "#f59e0b", borderWidth: 2, pointBackgroundColor: "#f59e0b"
+        }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales: {r: {
+          angleLines:{color:"rgba(255,255,255,0.1)"},
+          grid:{color:"rgba(255,255,255,0.1)"},
+          pointLabels:{color:"#e5e7eb", font:{size:11}},
+          ticks:{color:"#9ca3af", backdropColor:"transparent"}
+        }}
+      }
+    });
+  }
+
+  // Öncelik liste
+  const oncList = document.getElementById("dashOncelikList");
+  const onc = d.oncelik_3_konu || [];
+  if (!onc.length) {
+    oncList.innerHTML = '<div class="dashboard-empty">Henüz zayıf konu verisi yok</div>';
+  } else {
+    oncList.innerHTML = onc.map(k => `
+      <div class="oncelik-item">
+        <div class="onc-head">
+          <span class="onc-ders">${escapeHtml(k.ders || "")}</span>
+          <span class="onc-basari">%${Math.round(k.basari)}</span>
+        </div>
+        <div class="onc-konu">${escapeHtml(k.konu || "")}</div>
+        <div class="onc-neden">${escapeHtml(k.neden || "")}</div>
+        <div class="onc-bar"><div class="onc-fill" style="width:${Math.max(5, k.basari)}%;"></div></div>
+      </div>
+    `).join("");
+  }
+
+  // 22.1m — Foto soru gecmisi listele
+  const fotoEl = document.getElementById("dashFotoGecmis");
+  const fotoList = d.foto_gecmis || [];
+  if (!fotoList.length) {
+    fotoEl.innerHTML = '<div class="dashboard-empty">Henüz foto soru çözmemişsin. WhatsApp\'tan fotoğraf at!</div>';
+  } else {
+    fotoEl.innerHTML = '<div class="foto-gecmis-grid">' + fotoList.map(f => `
+      <div class="foto-gecmis-item">
+        <div class="fg-header">
+          <span class="fg-ders">${escapeHtml(f.ders || "—")}</span>
+          <span class="fg-tarih">${escapeHtml(f.tarih)}</span>
+        </div>
+        <div class="fg-konu">${escapeHtml(f.konu)}</div>
+        ${f.zorluk ? `<div class="fg-zorluk">Zorluk: ${escapeHtml(f.zorluk)}</div>` : ""}
+      </div>
+    `).join("") + '</div>';
+  }
+
+  // 22.1k — Aksiyon butonlari (öğrenci)
+  const firstWeak = (d.oncelik_3_konu && d.oncelik_3_konu[0]) || null;
+  const lastExamName = d.last_exam && d.last_exam.name ? d.last_exam.name : null;
+  const actionsHtml = `
+    <div class="dash-actions">
+      ${actionBtn("Haftalık plan yap", "haftalık çalışma planı yap", "📅")}
+      ${firstWeak ? actionBtn(`${firstWeak.konu.slice(0,20)} çalış`, `${firstWeak.ders} ${firstWeak.konu} konusunu anlat`, "📖") : ""}
+      ${lastExamName ? actionBtn("Son denememi analiz et", `son denememi detaylı analiz et`, "📊") : ""}
+      ${actionBtn("Hedef üniversite", "netlerimle hangi üniversiteye girebilirim", "🎯")}
+      ${actionBtn("AYT/TYT durumu", "ayt ve tyt puanlarımı göster", "🏆")}
+    </div>
+  `;
+  content.insertAdjacentHTML("beforeend", actionsHtml);
+}
+
+// ─── LGS ÖĞRENCİ DASHBOARD (22.1m) ─────────────────────────────────
+function renderLgsDashboard(d) {
+  const content = document.getElementById("dashboardContent");
+  const last = d.last_exam || {};
+  const sinyal = d.sinyal || {};
+  const sinyalColor = sinyal.yon === "yukselis" ? "#4ade80" :
+                      sinyal.yon === "dusus" ? "#f87171" : "#a3a3a3";
+  const sinyalIcon = sinyal.yon === "yukselis" ? "📈" :
+                     sinyal.yon === "dusus" ? "📉" : "➡️";
+
+  content.innerHTML = `
+    <div class="dashboard-greeting">
+      Selam <b>${escapeHtml((d.name||"").split(" ")[0])}</b> 👋
+      <span class="dashboard-class" style="background:rgba(96,165,250,0.12);color:#60a5fa;">🎒 LGS</span>
+    </div>
+
+    <div class="dashboard-kpis">
+      <div class="kpi-card">
+        <div class="kpi-label">Son Deneme</div>
+        <div class="kpi-value">${last.toplam ? last.toplam.toFixed(1) : "-"}</div>
+        <div class="kpi-sub">${escapeHtml(last.name || "Veri yok")}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">LGS'ye Kalan</div>
+        <div class="kpi-value">${d.lgs?.gun ?? "-"}</div>
+        <div class="kpi-sub">gün (${escapeHtml(d.lgs?.tarih || "")})</div>
+      </div>
+      <div class="kpi-card" style="border-left:3px solid ${sinyalColor};">
+        <div class="kpi-label">Trend</div>
+        <div class="kpi-value" style="font-size:22px;">${sinyalIcon}</div>
+        <div class="kpi-sub">${escapeHtml(sinyal.mesaj || "")}</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="dashboard-card dashboard-card-wide">
+        <div class="dashboard-card-title">📈 Son Denemeler — Ders Bazlı Trend</div>
+        <div class="chart-container"><canvas id="dashLgsTrendChart"></canvas></div>
+      </div>
+      <div class="dashboard-card">
+        <div class="dashboard-card-title">📋 LGS Soru Dağılımı</div>
+        <div id="dashLgsDagilim"></div>
+      </div>
+      <div class="dashboard-card">
+        <div class="dashboard-card-title">🔴 Bu Hafta Öncelik 3 Konu</div>
+        <div id="dashLgsOncelik" class="oncelik-list"></div>
+      </div>
+      <div class="dashboard-card dashboard-card-wide">
+        <div class="dashboard-card-title">📸 Son Çözdüğüm Fotoğraf Soruları</div>
+        <div id="dashLgsFoto"></div>
+      </div>
+    </div>
+  `;
+
+  // Trend chart — LGS 6 ders gruplu
+  const trend = d.trend || [];
+  if (trend.length && typeof Chart !== "undefined") {
+    _dashboardCharts.lgsTrend = new Chart(document.getElementById("dashLgsTrendChart"), {
+      type: "line",
+      data: {
+        labels: trend.map(t => t.date),
+        datasets: [
+          {label:"Toplam", data: trend.map(t=>t.toplam), borderColor:"#60a5fa", backgroundColor:"rgba(96,165,250,0.1)", borderWidth:3, tension:0.3, pointRadius:4},
+          {label:"Türkçe", data: trend.map(t=>t.turkce), borderColor:"#f59e0b", borderWidth:2, tension:0.3, pointRadius:2},
+          {label:"Matematik", data: trend.map(t=>t.matematik), borderColor:"#4ade80", borderWidth:2, tension:0.3, pointRadius:2},
+          {label:"Fen", data: trend.map(t=>t.fen), borderColor:"#f87171", borderWidth:2, tension:0.3, pointRadius:2},
+          {label:"Sosyal/Din", data: trend.map(t=>t.sosyal), borderColor:"#a78bfa", borderWidth:2, tension:0.3, pointRadius:2},
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:"bottom", labels:{color:"#e5e7eb", boxWidth:10, font:{size:11}}}},
+        scales:{
+          x:{ticks:{color:"#9ca3af", font:{size:10}}, grid:{color:"rgba(255,255,255,0.05)"}},
+          y:{ticks:{color:"#9ca3af"}, grid:{color:"rgba(255,255,255,0.05)"}}
+        }
+      }
+    });
+  }
+
+  // Ders dağılımı
+  const dagilim = d.ders_dagilim || {};
+  const dagilimEl = document.getElementById("dashLgsDagilim");
+  dagilimEl.innerHTML = Object.entries(dagilim).map(([ders, soru]) => `
+    <div class="oncelik-item" style="border-left-color:#60a5fa;">
+      <div class="onc-head">
+        <span class="onc-ders">${escapeHtml(ders)}</span>
+        <span class="onc-basari">${soru} soru</span>
+      </div>
+    </div>
+  `).join("");
+
+  // Öncelik
+  const oncList = document.getElementById("dashLgsOncelik");
+  const onc = d.oncelik_3_konu || [];
+  if (!onc.length) {
+    oncList.innerHTML = '<div class="dashboard-empty">Henüz zayıf konu verisi yok — denemelere girdikçe oluşacak</div>';
+  } else {
+    oncList.innerHTML = onc.map(k => `
+      <div class="oncelik-item">
+        <div class="onc-head">
+          <span class="onc-ders">${escapeHtml(k.ders || "")}</span>
+          <span class="onc-basari">%${Math.round(k.basari)}</span>
+        </div>
+        <div class="onc-konu">${escapeHtml(k.konu || "")}</div>
+        <div class="onc-neden">${escapeHtml(k.neden || "")}</div>
+        <div class="onc-bar"><div class="onc-fill" style="width:${Math.max(5, k.basari)}%;"></div></div>
+      </div>
+    `).join("");
+  }
+
+  // Foto geçmiş
+  const fotoEl = document.getElementById("dashLgsFoto");
+  const fotoList = d.foto_gecmis || [];
+  if (!fotoList.length) {
+    fotoEl.innerHTML = '<div class="dashboard-empty">Henüz foto soru çözmemişsin. WhatsApp\'tan fotoğraf at!</div>';
+  } else {
+    fotoEl.innerHTML = '<div class="foto-gecmis-grid">' + fotoList.map(f => `
+      <div class="foto-gecmis-item">
+        <div class="fg-header">
+          <span class="fg-ders">${escapeHtml(f.ders || "—")}</span>
+          <span class="fg-tarih">${escapeHtml(f.tarih)}</span>
+        </div>
+        <div class="fg-konu">${escapeHtml(f.konu)}</div>
+      </div>
+    `).join("") + '</div>';
+  }
+
+  // Aksiyon butonları
+  const firstWeak = onc[0] || null;
+  const actionsHtml = `
+    <div class="dash-actions">
+      ${actionBtn("Haftalık LGS plan yap", "haftalık lgs çalışma planı yap", "📅")}
+      ${firstWeak ? actionBtn(`${firstWeak.konu.slice(0,20)} çalış`, `${firstWeak.ders} ${firstWeak.konu} konusunu anlat`, "📖") : ""}
+      ${actionBtn("Son denememi analiz et", "son denememi detaylı analiz et", "📊")}
+      ${actionBtn("LGS'ye kaç gün", "lgs'ye kaç gün kaldı", "⏰")}
+    </div>
+  `;
+  content.insertAdjacentHTML("beforeend", actionsHtml);
+}
+
+
+// ─── OGRETMEN DASHBOARD ─────────────────────────────────────────────
+function renderOgretmenDashboard(d) {
+  const content = document.getElementById("dashboardContent");
+  const kpi = d.kpi || {};
+  const prog = d.program || [];
+  const sinif = d.siniflar || [];
+  const progByGun = {};
+  for (const p of prog) {
+    if (!progByGun[p.gun]) progByGun[p.gun] = [];
+    progByGun[p.gun].push(p);
+  }
+  content.innerHTML = `
+    <div class="dashboard-greeting">
+      Hoca <b>${escapeHtml((d.name||"").split(" ")[0])}</b>
+      <span class="dashboard-class">${escapeHtml(d.gorev || "")}</span>
+    </div>
+    <div class="dashboard-kpis">
+      <div class="kpi-card"><div class="kpi-label">Toplam Etüt</div>
+        <div class="kpi-value">${kpi.toplam_etut ?? "-"}</div><div class="kpi-sub">bu sezon</div></div>
+      <div class="kpi-card"><div class="kpi-label">Son 30 gün</div>
+        <div class="kpi-value">${kpi.son_30_etut ?? "-"}</div><div class="kpi-sub">etüt</div></div>
+      <div class="kpi-card"><div class="kpi-label">Öğrenci</div>
+        <div class="kpi-value">${kpi.ogrenci_sayisi ?? "-"}</div><div class="kpi-sub">farklı öğrenci</div></div>
+    </div>
+    <div class="dashboard-grid">
+      <div class="dashboard-card dashboard-card-wide">
+        <div class="dashboard-card-title">📅 Haftalık Program</div>
+        <div id="dashProgram"></div>
+      </div>
+      <div class="dashboard-card dashboard-card-wide">
+        <div class="dashboard-card-title">🎓 Sınıf Performansı (son 60 gün)</div>
+        <div id="dashSiniflar"></div>
+      </div>
+    </div>
+  `;
+  const progEl = document.getElementById("dashProgram");
+  if (!prog.length) {
+    progEl.innerHTML = '<div class="dashboard-empty">Program verisi yok</div>';
+  } else {
+    const gunler = ["Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","Pazar"];
+    progEl.innerHTML = gunler.filter(g => progByGun[g]).map(gun => `
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;color:#f59e0b;font-weight:600;margin-bottom:6px;">${gun}</div>
+        ${progByGun[gun].map(p => `
+          <div style="display:flex;justify-content:space-between;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:6px;margin-bottom:3px;font-size:12px;">
+            <span style="color:var(--fg-muted);">${escapeHtml(p.saat||"")}</span>
+            <span style="color:var(--fg);">${escapeHtml(p.sinif||"")}</span>
+            <span style="color:var(--fg-muted);">${escapeHtml(p.ders||"")}</span>
+          </div>`).join("")}
+      </div>
+    `).join("");
+  }
+  const sinifEl = document.getElementById("dashSiniflar");
+  if (!sinif.length) {
+    sinifEl.innerHTML = '<div class="dashboard-empty">Sınıf performans verisi yok</div>';
+  } else {
+    sinifEl.innerHTML = sinif.map(s => `
+      <div class="oncelik-item">
+        <div class="onc-head">
+          <span class="onc-ders">${escapeHtml(s.sinif)}</span>
+          <span class="onc-basari">${s.etut_sayi || 0} etüt</span>
+        </div>
+        <div class="onc-neden">${s.toplam_katilim || 0} katılım • son 60 gün</div>
+      </div>`).join("");
+  }
+
+  // 22.1k — Ogretmen aksiyonlari
+  const actionsHtml = `
+    <div class="dash-actions">
+      ${actionBtn("Bugünkü derslerim", "bugün hangi dersler var programımda", "📅")}
+      ${actionBtn("Etüt istatistiğim", "bu sezon kaç etüt yaptım istatistik ver", "📊")}
+      ${actionBtn("Sınıfımın durumu", "sınıfımdaki öğrencilerin son deneme performansı", "🎯")}
+      ${actionBtn("Zayıf konu haritası", "branşımda sınıf geneli en zayıf konular", "📉")}
+    </div>
+  `;
+  content.insertAdjacentHTML("beforeend", actionsHtml);
+}
+
+// ─── REHBER DASHBOARD ───────────────────────────────────────────────
+function renderRehberDashboard(d) {
+  const content = document.getElementById("dashboardContent");
+  const kpi = d.kpi || {};
+  const duygu = d.duygu_risk || [];
+  const dusus = d.net_dusus || [];
+  const dev = d.yuksek_devamsizlik || [];
+  content.innerHTML = `
+    <div class="dashboard-greeting">
+      Rehber Paneli
+      <span class="dashboard-class">Risk Radarı</span>
+    </div>
+    <div class="dashboard-kpis">
+      <div class="kpi-card" style="border-left:3px solid #f87171;">
+        <div class="kpi-label">Duygu Riski</div>
+        <div class="kpi-value">${kpi.risk_duygu ?? 0}</div>
+        <div class="kpi-sub">son 7 gün</div></div>
+      <div class="kpi-card" style="border-left:3px solid #f59e0b;">
+        <div class="kpi-label">Net Düşüşü</div>
+        <div class="kpi-value">${kpi.net_dusus ?? 0}</div>
+        <div class="kpi-sub">son 2 denemede -5+</div></div>
+      <div class="kpi-card" style="border-left:3px solid #fbbf24;">
+        <div class="kpi-label">Y. Devamsız</div>
+        <div class="kpi-value">${kpi.yuksek_dev ?? 0}</div>
+        <div class="kpi-sub">150+ saat</div></div>
+    </div>
+    <div class="dashboard-grid">
+      <div class="dashboard-card dashboard-card-wide">
+        <div class="dashboard-card-title">💙 Duygu Sinyali Veren Öğrenciler</div>
+        <div id="dashDuyguRisk"></div>
+      </div>
+      <div class="dashboard-card">
+        <div class="dashboard-card-title">📉 Net Düşüşü</div>
+        <div id="dashNetDusus"></div>
+      </div>
+      <div class="dashboard-card">
+        <div class="dashboard-card-title">⏰ Devamsızlık (Yüksek)</div>
+        <div id="dashDevamsiz"></div>
+      </div>
+    </div>
+  `;
+  const duyguEl = document.getElementById("dashDuyguRisk");
+  duyguEl.innerHTML = duygu.length ? duygu.map(r => `
+    <div class="oncelik-item" style="border-left-color:#f87171;">
+      <div class="onc-head">
+        <span class="onc-ders" style="color:#f87171;">${escapeHtml(r.tip)}</span>
+        <span class="onc-basari">${escapeHtml(r.gun)}</span>
+      </div>
+      <div class="onc-konu">${escapeHtml(r.name)} — ${escapeHtml(r.sinif)}</div>
+      <div class="onc-neden">${escapeHtml(r.note)}</div>
+    </div>`).join("") : '<div class="dashboard-empty">Risk sinyali yok</div>';
+
+  const dusEl = document.getElementById("dashNetDusus");
+  dusEl.innerHTML = dusus.length ? dusus.map(r => `
+    <div class="oncelik-item" style="border-left-color:#f59e0b;">
+      <div class="onc-head">
+        <span class="onc-ders">${escapeHtml(r.name)}</span>
+        <span class="onc-basari" style="color:#f87171;">${r.fark.toFixed(1)}</span>
+      </div>
+      <div class="onc-neden">${escapeHtml(r.sinif)} • ${r.onceki.toFixed(1)} → ${r.son.toFixed(1)}</div>
+    </div>`).join("") : '<div class="dashboard-empty">Düşüş yok</div>';
+
+  const devEl = document.getElementById("dashDevamsiz");
+  devEl.innerHTML = dev.length ? dev.map(r => `
+    <div class="oncelik-item" style="border-left-color:#fbbf24;">
+      <div class="onc-head">
+        <span class="onc-ders">${escapeHtml(r.name)}</span>
+        <span class="onc-basari" style="color:#fbbf24;">${r.saat}s</span>
+      </div>
+      <div class="onc-neden">${escapeHtml(r.sinif)}</div>
+    </div>`).join("") : '<div class="dashboard-empty">Liste boş</div>';
+
+  // 22.1k — Rehber aksiyonlari + 22.1l direkt etüt butonu
+  const firstRisk = (duygu && duygu[0]) || null;
+  const firstDusus = (dusus && dusus[0]) || null;
+  const actionsHtml = `
+    <div class="dash-actions">
+      ${firstRisk ? actionBtn(`${firstRisk.name.split(" ")[0]} ile görüş`, `${firstRisk.name} için detaylı profil analizi yap ve görüşme önerisi hazırla`, "💬") : ""}
+      ${firstDusus ? actionBtn(`${firstDusus.name.split(" ")[0]} için etüt planla`, `${firstDusus.name} net düşüşünde olan dersi tespit et, uygun hocayla etüt planı hazırla (hazirla_etut_talebi tool kullan)`, "📝") : ""}
+      ${firstDusus ? actionBtn(`${firstDusus.name.split(" ")[0]} düşüşü`, `${firstDusus.name} için son 2 denemede neden düştüğünü analiz et`, "📉") : ""}
+      ${actionBtn("Kriz listesi detay", "son 7 günde negatif duygu sinyali veren öğrencilerin tam listesi ve önerilen müdahaleler", "🚨")}
+      ${actionBtn("Motivasyon düşük", "motivasyon sinyali zayıf öğrenciler için haftalık destek planı", "💙")}
+    </div>
+  `;
+  content.insertAdjacentHTML("beforeend", actionsHtml);
+}
+
+// ─── ADMIN / MUDUR / YONETIM DASHBOARD ──────────────────────────────
+function renderAdminDashboard(d) {
+  const content = document.getElementById("dashboardContent");
+  const kpi = d.kpi || {};
+  const sinif = d.sinif_perf || [];
+  const top = d.top_10 || [];
+  const riskli = d.riskli || [];
+  const sistem = d.sistem || {};
+  const isAdmin = d.role === "admin";
+  const roleLabel = d.role === "admin" ? "Admin" : d.role === "mudur" ? "Müdür" : "Yönetim";
+
+  content.innerHTML = `
+    <div class="dashboard-greeting">
+      <b>${roleLabel} Paneli</b>
+      <span class="dashboard-class">${isAdmin ? "Full System View" : "Kurum KPI"}</span>
+    </div>
+    <div class="dashboard-kpis">
+      <div class="kpi-card"><div class="kpi-label">Öğrenci</div>
+        <div class="kpi-value">${kpi.ogrenci ?? "-"}</div><div class="kpi-sub">aktif</div></div>
+      <div class="kpi-card"><div class="kpi-label">Personel</div>
+        <div class="kpi-value">${kpi.personel ?? "-"}</div><div class="kpi-sub">kurumda</div></div>
+      <div class="kpi-card"><div class="kpi-label">Sınıf</div>
+        <div class="kpi-value">${kpi.sinif ?? "-"}</div><div class="kpi-sub">aktif</div></div>
+      <div class="kpi-card"><div class="kpi-label">Etüt 30g</div>
+        <div class="kpi-value">${kpi.etut_30g ?? "-"}</div><div class="kpi-sub">son 30 gün</div></div>
+    </div>
+    <div class="dashboard-grid">
+      <div class="dashboard-card dashboard-card-wide">
+        <div class="dashboard-card-title">🎓 Sınıf Performansı (TYT, son 60 gün)</div>
+        <div class="chart-container"><canvas id="dashSinifChart"></canvas></div>
+      </div>
+      <div class="dashboard-card">
+        <div class="dashboard-card-title">🏆 En Başarılı 10</div>
+        <div id="dashTop10"></div>
+      </div>
+      <div class="dashboard-card">
+        <div class="dashboard-card-title">🚨 Riskli Öğrenciler</div>
+        <div id="dashRiskli"></div>
+      </div>
+      ${isAdmin ? `
+      <div class="dashboard-card dashboard-card-wide">
+        <div class="dashboard-card-title">⚙️ Sistem Health (24 saat)</div>
+        <div class="chart-container"><canvas id="dashRoutingChart"></canvas></div>
+      </div>
+      <div class="dashboard-card">
+        <div class="dashboard-card-title">📊 Kalite Grade (7g)</div>
+        <div class="chart-container"><canvas id="dashGradeChart"></canvas></div>
+      </div>
+      <div class="dashboard-card">
+        <div class="dashboard-card-title">🧠 Atlas Durumu</div>
+        <div id="dashAtlas"></div>
+      </div>
+      ` : ""}
+    </div>
+  `;
+
+  // Sinif performans — bar chart
+  if (sinif.length && typeof Chart !== "undefined") {
+    _dashboardCharts.sinif = new Chart(document.getElementById("dashSinifChart"), {
+      type: "bar",
+      data: {
+        labels: sinif.map(s => s.sinif),
+        datasets: [{label:"Ortalama Net", data: sinif.map(s=>s.ort), backgroundColor:"rgba(245,158,11,0.6)", borderColor:"#f59e0b", borderWidth:2}]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{color:"#9ca3af", font:{size:10}}, grid:{color:"rgba(255,255,255,0.05)"}},
+          y:{ticks:{color:"#9ca3af"}, grid:{color:"rgba(255,255,255,0.05)"}}
+        }
+      }
+    });
+  }
+
+  // Top 10 liste
+  const topEl = document.getElementById("dashTop10");
+  topEl.innerHTML = top.length ? top.map((r,i) => `
+    <div class="oncelik-item" style="border-left-color:${i<3 ? '#fbbf24' : '#a3a3a3'};">
+      <div class="onc-head">
+        <span class="onc-ders">${i+1}. ${escapeHtml(r.name)}</span>
+        <span class="onc-basari" style="color:#4ade80;">${r.puan}</span>
+      </div>
+      <div class="onc-neden">${escapeHtml(r.sinif)}</div>
+    </div>`).join("") : '<div class="dashboard-empty">Sıralama yok</div>';
+
+  // Riskli liste
+  const riskEl = document.getElementById("dashRiskli");
+  riskEl.innerHTML = riskli.length ? riskli.map(r => `
+    <div class="oncelik-item" style="border-left-color:#f87171;">
+      <div class="onc-head">
+        <span class="onc-ders">${escapeHtml(r.name)}</span>
+        <span class="onc-basari" style="color:#f87171;">${r.saat}s</span>
+      </div>
+      <div class="onc-neden">${escapeHtml(r.sinif)}</div>
+    </div>`).join("") : '<div class="dashboard-empty">Riskli yok</div>';
+
+  // Admin: sistem health
+  if (isAdmin) {
+    // Routing dagilimi
+    if (typeof Chart !== "undefined") {
+      const fast = sistem.fast_24h || 0, ollama = sistem.ollama_24h || 0, claude = sistem.claude_24h || 0;
+      if (fast + ollama + claude > 0) {
+        _dashboardCharts.routing = new Chart(document.getElementById("dashRoutingChart"), {
+          type: "doughnut",
+          data: {
+            labels:["Fast Response","Ollama","Claude API"],
+            datasets:[{data:[fast, ollama, claude], backgroundColor:["#4ade80","#60a5fa","#f59e0b"], borderWidth:0}]
+          },
+          options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins:{legend:{position:"bottom", labels:{color:"#e5e7eb", padding:10, font:{size:11}}}}
+          }
+        });
+      }
+      // Grade
+      const gr = sistem.quality_grade || {};
+      if (Object.keys(gr).length) {
+        _dashboardCharts.grade = new Chart(document.getElementById("dashGradeChart"), {
+          type: "bar",
+          data: {
+            labels: ["A","B","C","D","F"],
+            datasets: [{label:"Sayı", data: ["A","B","C","D","F"].map(g => gr[g]||0), backgroundColor:["#4ade80","#60a5fa","#a3a3a3","#fbbf24","#f87171"]}]
+          },
+          options: {
+            responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+            scales:{x:{ticks:{color:"#9ca3af"}, grid:{color:"rgba(255,255,255,0.05)"}},
+                    y:{ticks:{color:"#9ca3af"}, grid:{color:"rgba(255,255,255,0.05)"}}}
+          }
+        });
+      }
+    }
+    // Atlas durumu
+    const atlasEl = document.getElementById("dashAtlas");
+    atlasEl.innerHTML = `
+      <div class="oncelik-item" style="border-left-color:#60a5fa;">
+        <div class="onc-head"><span class="onc-ders">Yeni Öneri</span><span class="onc-basari">${sistem.atlas_yeni ?? 0}</span></div>
+        <div class="onc-neden">açık, incelenmemiş</div>
+      </div>
+      <div class="oncelik-item" style="border-left-color:#f87171;">
+        <div class="onc-head"><span class="onc-ders">Regresyon</span><span class="onc-basari" style="color:#f87171;">${sistem.atlas_regresyon ?? 0}</span></div>
+        <div class="onc-neden">daha önce çözüldü, tekrar geldi</div>
+      </div>
+      <div class="oncelik-item" style="border-left-color:#4ade80;margin-top:8px;">
+        <div class="onc-head"><span class="onc-ders">Toplam Mesaj 24h</span><span class="onc-basari">${sistem.routing_24h ?? 0}</span></div>
+        <div class="onc-neden">routing_stats kayıtları</div>
+      </div>
+    `;
+  }
+
+  // 22.1k — Admin/Mudur aksiyonlari
+  const topStudent = (top && top[0]) ? top[0] : null;
+  const firstRiskli = (riskli && riskli[0]) ? riskli[0] : null;
+  const adminExtra = isAdmin ? `
+      ${actionBtn("Atlas yeni öneriler", "atlas_suggestions yeni uyarıları detaylı göster", "🧠")}
+      ${actionBtn("Günlük rapor", "bugünün kullanım raporu — mesaj + kullanıcı + maliyet", "📈")}
+      ${actionBtn("Sistem durum", "sistem anlık durum ve son 24 saat özet", "⚙️")}
+  ` : "";
+  const actionsHtml = `
+    <div class="dash-actions">
+      ${actionBtn("Riskli öğrenciler detay", "riskli öğrenciler için öneri listesi ve müdahale planı", "🚨")}
+      ${firstRiskli ? actionBtn(`${firstRiskli.name.split(" ")[0]} analizi`, `${firstRiskli.name} için detaylı profil ve öneri`, "👤") : ""}
+      ${topStudent ? actionBtn("Başarı listesi", "sınıf bazlı en başarılı 20 öğrenci detay", "🏆") : ""}
+      ${actionBtn("Sınıf karşılaştır", "sınıflar arası net ortalaması karşılaştırması, adalet kuralı uygulanmış", "📊")}
+      ${actionBtn("Öğretmen performansı", "öğretmenlerin aylık etüt ve sınıf performansı raporu", "👨‍🏫")}
+      ${adminExtra}
+    </div>
+  `;
+  content.insertAdjacentHTML("beforeend", actionsHtml);
+}
+
+async function downloadPdfReport(sozNo) {
+  addMsg("📄 PDF raporun hazırlanıyor... (~10-15 saniye)", "bot");
+  try {
+    const url = sozNo ? `/chat/pdf-report?soz_no=${sozNo}` : `/chat/pdf-report`;
+    const r = await fetch(API_BASE + url, {
+      credentials: "include", headers: authHeaders()
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      addMsg("⚠ " + (d.message || "PDF oluşturulamadı."), "bot");
+      return;
+    }
+    // Blob olarak al + indir
+    const blob = await r.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = `fermatai_rapor_${Date.now()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    addMsg("✅ Rapor indirildi. Paylaşmak için dosya yöneticine bak.", "bot");
+  } catch (e) {
+    addMsg("⚠ Bağlantı hatası: " + e.message, "bot");
+  }
+}
+
+// ─── A13 — Hızlı Komutlar + Arşiv drawer ──────────────────
+let _activeTab = "quick";  // default: hızlı komutlar
+let _quickLoaded = false;
+let _archiveLoaded = false;
+
+function switchTab(tab) {
+  _activeTab = tab;
+  document.querySelectorAll(".drawer-tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.tab === tab);
+  });
+  document.getElementById("quickList").style.display = (tab === "quick") ? "block" : "none";
+  document.getElementById("archiveList").style.display = (tab === "archive") ? "block" : "none";
+  document.getElementById("drawerTitle").textContent = (tab === "quick") ? "⚡ Hızlı Komutlar" : "⭐ Arşivim";
+
+  // Lazy load arşiv
+  if (tab === "archive" && !_archiveLoaded) {
+    loadArchiveTab();
+  }
+}
+
+async function loadArchiveTab() {
+  const list = document.getElementById("archiveList");
+  list.innerHTML = '<div class="history-empty">Yükleniyor...</div>';
+  try {
+    const r = await fetch(API_BASE + "/chat/archive", { credentials: "include", headers: authHeaders() });
+    if (!r.ok) { list.innerHTML = '<div class="history-empty">Arşiv yüklenemedi.</div>'; return; }
+    const d = await r.json();
+    if (!d.success || !d.items || d.items.length === 0) {
+      list.innerHTML = `
+        <div style="padding: 30px 20px; text-align: center; color: var(--fg-muted); font-size: 13px; line-height: 1.6;">
+          📭 <strong>Arşivin boş</strong><br><br>
+          Önemli bulduğun cevapların altındaki<br>
+          <span style="color: var(--accent); font-weight: 600;">⭐ Arşive ekle</span> butonuna tıklayarak<br>
+          kalıcı olarak saklayabilirsin.<br><br>
+          <small>Çalışma planları, konu anlatımları, analiz raporları<br>tek tıkla burada buluşur.</small>
+        </div>
+      `;
+      _archiveLoaded = true;
+      return;
+    }
+    list.innerHTML = "";
+
+    // Oturum 23 (Neo öneri 2): Arama kutusu — başlık + etiket + kategori filtre
+    _archiveItems = d.items;  // global cache (filter için)
+    const searchBar = document.createElement("div");
+    searchBar.style.cssText = "padding:10px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--panel);z-index:5;";
+    searchBar.innerHTML = `
+      <input type="text" id="archiveSearch" placeholder="🔍 Başlık / etiket / kategori ara..."
+             style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;
+                    background:var(--input-bg);color:var(--fg);font-size:13px;">
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <button onclick="exportArchivePdf()"
+                style="padding:6px 12px;background:var(--accent);color:white;border:none;
+                       border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;"
+                title="Tüm arşivini PDF olarak indir">📥 PDF indir</button>
+        <span id="archiveCountBadge" style="padding:6px 10px;background:rgba(199,111,62,0.08);
+              color:var(--fg-muted);border-radius:8px;font-size:12px;"></span>
+      </div>
+    `;
+    list.appendChild(searchBar);
+
+    const itemsWrap = document.createElement("div");
+    itemsWrap.id = "archiveItemsWrap";
+    list.appendChild(itemsWrap);
+
+    renderArchiveItems(d.items);
+
+    // Arama olayı
+    document.getElementById("archiveSearch").oninput = (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) { renderArchiveItems(_archiveItems); return; }
+      const filtered = _archiveItems.filter(a => {
+        const title = (a.title || "").toLowerCase();
+        const tags = (a.tags || "").toLowerCase();
+        const cat = (a.category || "").toLowerCase();
+        const ctx = (a.context_prompt || "").toLowerCase();
+        return title.includes(q) || tags.includes(q) || cat.includes(q) || ctx.includes(q);
+      });
+      renderArchiveItems(filtered);
+    };
+
+    _archiveLoaded = true;
+  } catch (e) {
+    list.innerHTML = '<div class="history-empty">Hata: ' + e.message + '</div>';
+  }
+}
+
+// Oturum 23 A3 — Arşiv PDF export
+async function exportArchivePdf() {
+  // Arama aktif mi? Filtrelenmiş ID'leri gönder
+  const searchVal = (document.getElementById("archiveSearch") || {}).value || "";
+  const url = API_BASE + "/chat/archive/export.pdf";
+  // Auth header ile fetch + blob
+  try {
+    const btn = event.target;
+    const oldText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Hazırlanıyor...";
+    const r = await fetch(url, {
+      credentials: "include",
+      headers: authHeaders(),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({detail: "Bilinmeyen hata"}));
+      alert("PDF oluşturulamadı: " + (err.detail || r.statusText));
+      btn.disabled = false; btn.innerHTML = oldText;
+      return;
+    }
+    const blob = await r.blob();
+    const dlUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = dlUrl;
+    a.download = "FermatAI_Arsiv_" + new Date().toISOString().slice(0,10) + ".pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(dlUrl), 500);
+    btn.innerHTML = "✅ İndirildi";
+    setTimeout(() => { btn.innerHTML = oldText; btn.disabled = false; }, 2000);
+  } catch (e) {
+    alert("Bağlantı hatası: " + e.message);
+    if (event.target) {
+      event.target.disabled = false;
+      event.target.innerHTML = "📥 PDF indir";
+    }
+  }
+}
+
+// Oturum 23 (Neo: tek kayıt PDF) — her arşiv kartından tek PDF indir
+async function downloadSingleArchivePdf(archiveId, title, btn) {
+  const url = API_BASE + "/chat/archive/export.pdf?ids=" + encodeURIComponent(archiveId);
+  const origLabel = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "⏳";
+  btn.style.opacity = "0.6";
+  try {
+    const r = await fetch(url, { credentials: "include", headers: authHeaders() });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({detail: "Bilinmeyen hata"}));
+      alert("PDF oluşturulamadı: " + (err.detail || r.statusText));
+      btn.innerHTML = origLabel; btn.disabled = false; btn.style.opacity = "";
+      return;
+    }
+    const blob = await r.blob();
+    const dlUrl = URL.createObjectURL(blob);
+    // Dosya adını Content-Disposition header'dan al, yoksa title'dan türet
+    const cd = r.headers.get("Content-Disposition") || "";
+    let filename = "";
+    const m = cd.match(/filename="?([^"]+)"?/);
+    if (m) filename = m[1];
+    if (!filename) {
+      const safeTitle = (title || "kayit").replace(/[^\w\sğüşöçıİĞÜŞÖÇ-]/g, "").replace(/\s+/g, "-").slice(0, 50);
+      filename = `FermatAI_${safeTitle}_${new Date().toISOString().slice(0,10)}.pdf`;
+    }
+    const a = document.createElement("a");
+    a.href = dlUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(dlUrl), 500);
+    btn.innerHTML = "✅";
+    setTimeout(() => { btn.innerHTML = origLabel; btn.disabled = false; btn.style.opacity = ""; }, 1500);
+  } catch (e) {
+    alert("Bağlantı hatası: " + e.message);
+    btn.innerHTML = origLabel; btn.disabled = false; btn.style.opacity = "";
+  }
+}
+
+// Oturum 23 — Arşiv liste render (arama filtresi sonrası yeniden çağrılır)
+let _archiveItems = [];
+function renderArchiveItems(items) {
+  const wrap = document.getElementById("archiveItemsWrap");
+  if (!wrap) return;
+  // Count badge güncelle
+  const badge = document.getElementById("archiveCountBadge");
+  if (badge) badge.textContent = `${items.length} kayıt`;
+  wrap.innerHTML = "";
+  const categoryLabels = {
+    genel: "🔹", calisma_plani: "📅", deneme: "📊", konu_anlatimi: "📚",
+    analiz: "🔍", soru_cozum: "✏️", kaynak: "🔗", not: "📝"
+  };
+  if (!items.length) {
+    wrap.innerHTML = '<div style="padding:30px 20px;text-align:center;color:var(--fg-muted);font-size:13px;">🔍 Eşleşme yok.</div>';
+    return;
+  }
+  for (const a of items) {
+    const div = document.createElement("div");
+    div.className = "history-item";
+    const icon = categoryLabels[a.category] || "⭐";
+    const dt = new Date(a.created_at);
+    const dateStr = dt.toLocaleDateString("tr-TR", {day:"numeric", month:"short"});
+    let tagsHtml = "";
+    if (a.tags && a.tags.trim()) {
+      const tagList = a.tags.split(",").map(t => t.trim()).filter(Boolean).slice(0, 5);
+      if (tagList.length) {
+        tagsHtml = '<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">' +
+          tagList.map(t => `<span style="background:rgba(199,111,62,0.12);color:var(--accent);
+            padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;cursor:pointer;"
+            onclick="event.stopPropagation();document.getElementById('archiveSearch').value='${escapeHtml(t)}';document.getElementById('archiveSearch').dispatchEvent(new Event('input'));">
+            ${escapeHtml(t)}</span>`
+          ).join("") + '</div>';
+      }
+    }
+    div.innerHTML = `
+      <div class="date">${icon} ${escapeHtml(a.title)}</div>
+      <div class="preview">${escapeHtml(a.preview.substring(0, 120))}...</div>
+      ${tagsHtml}
+      <div class="meta" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>${escapeHtml(dateStr)}</span>
+        <div style="display:flex;gap:6px;">
+          <button class="arch-pdf-btn" style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:2px 6px;"
+                  onclick="event.stopPropagation();downloadSingleArchivePdf(${a.id}, ${JSON.stringify(a.title || '').replace(/"/g, '&quot;')}, this)" title="Bu kaydı PDF indir">📄</button>
+          <button style="background:transparent;border:none;color:var(--fg-muted);cursor:pointer;font-size:14px;padding:2px 6px;"
+                  onclick="event.stopPropagation();renameArchive(${a.id})" title="İsim/kategori değiştir">✏️</button>
+          <button style="background:transparent;border:none;color:var(--error);cursor:pointer;font-size:15px;padding:2px 6px;"
+                  onclick="event.stopPropagation();deleteArchive(${a.id}, this)" title="Kaldır">🗑</button>
+        </div>
+      </div>
+    `;
+    div.onclick = () => showArchiveItem(a);
+    wrap.appendChild(div);
+  }
+}
+
+// Oturum 23 (Neo öneri 1): Rename — eski kayıtları da yeniden isimlendir
+function renameArchive(archiveId) {
+  const a = (_archiveItems || []).find(x => x.id === archiveId);
+  if (!a) return;
+  // openArchiveEditModal'ı yeniden kullan ama save'de PATCH yapacak şekilde
+  openArchiveRenameModal(a);
+}
+
+function openArchiveRenameModal(existing) {
+  const prev = document.getElementById("archiveEditModal");
+  if (prev) prev.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "archiveEditModal";
+  modal.style.cssText =
+    "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;" +
+    "display:flex;align-items:center;justify-content:center;padding:20px;";
+  modal.innerHTML = `
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;
+                padding:22px;width:100%;max-width:520px;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="font-size:16px;color:var(--fg);font-weight:600;">✏️ Arşiv Kaydını Düzenle</h3>
+        <button id="archRnClose" style="background:transparent;border:none;font-size:20px;color:var(--fg-muted);cursor:pointer;padding:0 4px;">✕</button>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;color:var(--fg-muted);margin-bottom:6px;font-weight:500;">
+          📝 Başlık <span style="color:var(--error);">*</span>
+        </label>
+        <input type="text" id="archRnTitle" maxlength="100"
+               style="width:100%;padding:10px 12px;border:1px solid var(--border);
+                      border-radius:8px;background:var(--input-bg);color:var(--fg);font-size:14px;">
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;color:var(--fg-muted);margin-bottom:6px;font-weight:500;">
+          📂 Kategori
+        </label>
+        <select id="archRnCategory"
+                style="width:100%;padding:10px 12px;border:1px solid var(--border);
+                       border-radius:8px;background:var(--input-bg);color:var(--fg);font-size:14px;cursor:pointer;">
+          <option value="genel">🔹 Genel</option>
+          <option value="calisma_plani">📅 Çalışma Planı</option>
+          <option value="deneme">📊 Deneme / Net Analizi</option>
+          <option value="konu_anlatimi">📚 Konu Anlatımı</option>
+          <option value="analiz">🔍 Analiz / Rapor</option>
+          <option value="soru_cozum">✏️ Soru Çözümü</option>
+          <option value="kaynak">🔗 Kaynak Paketi</option>
+          <option value="not">📝 Not / Hatırlatma</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label style="display:block;font-size:12px;color:var(--fg-muted);margin-bottom:6px;font-weight:500;">
+          🏷 Etiketler <span style="color:var(--fg-muted);font-weight:400;">(opsiyonel, virgülle)</span>
+        </label>
+        <input type="text" id="archRnTags" maxlength="80"
+               style="width:100%;padding:10px 12px;border:1px solid var(--border);
+                      border-radius:8px;background:var(--input-bg);color:var(--fg);font-size:14px;"
+               placeholder="fizik, türev, ayt">
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="archRnCancel" style="padding:10px 18px;background:transparent;
+                border:1px solid var(--border);color:var(--fg-muted);border-radius:8px;
+                cursor:pointer;font-size:13px;">İptal</button>
+        <button id="archRnSave" style="padding:10px 20px;background:var(--accent);
+                color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;">
+          💾 Güncelle
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const titleInput = document.getElementById("archRnTitle");
+  const catSelect = document.getElementById("archRnCategory");
+  const tagsInput = document.getElementById("archRnTags");
+  titleInput.value = existing.title || "";
+  catSelect.value = existing.category || "genel";
+  tagsInput.value = existing.tags || "";
+  setTimeout(() => { titleInput.focus(); titleInput.select(); }, 50);
+
+  const close = () => modal.remove();
+  document.getElementById("archRnClose").onclick = close;
+  document.getElementById("archRnCancel").onclick = close;
+  modal.onclick = (ev) => { if (ev.target === modal) close(); };
+  titleInput.onkeydown = tagsInput.onkeydown = (ev) => {
+    if (ev.key === "Enter") { ev.preventDefault(); document.getElementById("archRnSave").click(); }
+    if (ev.key === "Escape") close();
+  };
+
+  document.getElementById("archRnSave").onclick = async () => {
+    const title = titleInput.value.trim();
+    if (!title) {
+      titleInput.style.borderColor = "var(--error)";
+      titleInput.focus();
+      return;
+    }
+    const saveBtn = document.getElementById("archRnSave");
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = "⏳ Kaydediliyor...";
+    try {
+      const r = await fetch(API_BASE + "/chat/archive/" + existing.id, {
+        method: "PATCH", credentials: "include",
+        headers: authHeaders({"Content-Type": "application/json"}),
+        body: JSON.stringify({
+          title: title,
+          category: catSelect.value,
+          tags: tagsInput.value.trim(),
+        })
+      });
+      const d = await r.json();
+      if (d.success) {
+        close();
+        _archiveLoaded = false;
+        loadArchiveTab();  // yeniden yükle
+      } else {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = "💾 Güncelle";
+        alert("Güncelleme başarısız: " + (d.message || "bilinmeyen hata"));
+      }
+    } catch (e) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = "💾 Güncelle";
+      alert("Bağlantı hatası: " + e.message);
+    }
+  };
+}
+
+function showArchiveItem(item) {
+  closeHistoryDrawer();
+  // Messages'ın üstüne (pre-pend) değil, normal akışa ekle
+  const welcome = messages.querySelector(".msg-welcome");
+  if (welcome) welcome.remove();
+
+  // Context: orijinal soru (user)
+  if (item.context_prompt) {
+    const uDiv = document.createElement("div");
+    uDiv.className = "msg user";
+    uDiv.style.opacity = "0.7";
+    uDiv.innerHTML = "⭐ <em>Arşivden:</em> " + escapeHtml(item.context_prompt);
+    messages.appendChild(uDiv);
+  }
+  // Arşivlenmiş bot cevabı
+  const bDiv = document.createElement("div");
+  bDiv.className = "msg bot";
+  bDiv.style.borderLeft = "3px solid var(--accent)";
+  bDiv.innerHTML = item.content;
+  messages.appendChild(bDiv);
+
+  // Render chart/math/code
+  finalizeBotMsg(bDiv);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+async function deleteArchive(id, btn) {
+  if (!confirm("Bu arşiv kaydını silmek istiyor musun?")) return;
+  try {
+    const r = await fetch(API_BASE + "/chat/archive/" + id, {
+      method: "DELETE", credentials: "include", headers: authHeaders()
+    });
+    if (r.ok) {
+      btn.closest(".history-item").remove();
+      _archiveLoaded = false; // yeniden yükle
+    }
+  } catch (e) { /* ignore */ }
+}
+
+async function loadQuickPrompts() {
+  const list = document.getElementById("quickList");
+  try {
+    const r = await fetch(API_BASE + "/chat/quick-prompts", { credentials: "include", headers: authHeaders() });
+    if (!r.ok) {
+      list.innerHTML = '<div class="history-empty">Komutlar yüklenemedi.</div>';
+      return;
+    }
+    const d = await r.json();
+    if (!d.prompts || d.prompts.length === 0) {
+      list.innerHTML = '<div class="history-empty">Henüz tanımlı komut yok.</div>';
+      return;
+    }
+    list.innerHTML = "";
+    const roleLabels = {ogrenci:"Öğrenci", mudur:"Müdür", rehber:"Rehber", ogretmen:"Öğretmen", yonetim:"Yönetim", admin:"Admin"};
+    const roleDiv = document.createElement("div");
+    roleDiv.className = "quick-role-badge";
+    roleDiv.textContent = roleLabels[d.role] || d.role;
+    list.appendChild(roleDiv);
+
+    const intro = document.createElement("div");
+    intro.style.cssText = "padding: 0 18px 10px; color: var(--fg-muted); font-size: 12px;";
+    intro.textContent = "Tıkla, soru direkt gönderilir — yazmaya gerek yok.";
+    list.appendChild(intro);
+
+    for (const p of d.prompts) {
+      const item = document.createElement("div");
+      item.className = "quick-item";
+      item.innerHTML = `
+        <div class="q-emoji">${escapeHtml(p.emoji || "💬")}</div>
+        <div class="q-body">
+          <div class="q-title">${escapeHtml(p.title)}</div>
+          <div class="q-desc">${escapeHtml(p.desc || "")}</div>
+        </div>
+      `;
+      item.onclick = () => {
+        closeHistoryDrawer();
+        // 22.1i — Action tipi: dashboard aç (chat'e komut yazmaz)
+        if (p.action === "open_dashboard") {
+          openDashboard();
+          return;
+        }
+        // Özel: __pdf_report__ → direkt PDF indir
+        if (p.prompt === "__pdf_report__") {
+          downloadPdfReport();
+          return;
+        }
+        // Prompt ya [öğrenci adı] gibi placeholder'lı mı? Öyleyse input'a koy, göndermeden
+        if ((p.prompt || "").includes("[") || (p.prompt || "").endsWith(": ")) {
+          chatInput.value = p.prompt;
+          chatInput.focus();
+          chatInput.style.height = "auto";
+          chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + "px";
+        } else {
+          chatInput.value = p.prompt;
+          doSend();
+        }
+      };
+      list.appendChild(item);
+    }
+    _quickLoaded = true;
+  } catch (e) {
+    list.innerHTML = '<div class="history-empty">Hata: ' + e.message + '</div>';
+  }
+}
+
+async function loadHistoryTab() {
+  const list = document.getElementById("historyList");
+  list.innerHTML = '<div class="history-empty">Yükleniyor...</div>';
+  try {
+    const r = await fetch(API_BASE + "/chat/history", { credentials: "include", headers: authHeaders() });
+    if (!r.ok) { list.innerHTML = '<div class="history-empty">Geçmiş yüklenemedi.</div>'; return; }
+    const d = await r.json();
+    if (!d.success || !d.history || d.history.length === 0) {
+      list.innerHTML = '<div class="history-empty">Henüz sohbet geçmişin yok — ilk mesajı gönder!</div>';
+      return;
+    }
+    list.innerHTML = "";
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    for (const h of d.history) {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      let dateLabel = h.gun;
+      if (h.gun === today) dateLabel = "Bugün";
+      else if (h.gun === yesterday) dateLabel = "Dün";
+      else {
+        const dt = new Date(h.gun);
+        dateLabel = dt.toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "short" });
+      }
+      div.innerHTML = `
+        <div class="date">${escapeHtml(dateLabel)}</div>
+        <div class="preview">${escapeHtml(h.ilk_soru || "—")}</div>
+        <div class="meta">${h.mesaj_sayisi} mesaj · ${escapeHtml(h.saat)} başladı</div>
+      `;
+      div.onclick = () => loadHistoryDay(h.gun);
+      list.appendChild(div);
+    }
+    _historyLoaded = true;
+  } catch (e) {
+    list.innerHTML = '<div class="history-empty">Bağlantı hatası: ' + e.message + '</div>';
+  }
+}
+
+async function openHistoryDrawer() {
+  const drawer = document.getElementById("historyDrawer");
+  const overlay = document.getElementById("drawerOverlay");
+  drawer.classList.add("open");
+  overlay.classList.add("active");
+
+  // Default tab: hızlı komutlar (Neo talebi)
+  switchTab(_activeTab);
+  if (_activeTab === "quick" && !_quickLoaded) await loadQuickPrompts();
+  if (_activeTab === "archive" && !_archiveLoaded) await loadArchiveTab();
+
+  // Eski kodun geri kalanı — kullanılmayan (geriye dönük)
+  return;
+  const list = document.getElementById("historyList");
+  list.innerHTML = '<div class="history-empty">Yükleniyor...</div>';
+
+  try {
+    const r = await fetch(API_BASE + "/chat/history", { credentials: "include", headers: authHeaders() });
+    if (!r.ok) {
+      list.innerHTML = '<div class="history-empty">Geçmiş yüklenemedi.</div>';
+      return;
+    }
+    const d = await r.json();
+    if (!d.success || !d.history || d.history.length === 0) {
+      list.innerHTML = '<div class="history-empty">Henüz sohbet geçmişin yok — ilk mesajı gönder!</div>';
+      return;
+    }
+
+    // Gün bazlı liste
+    list.innerHTML = "";
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+
+    for (const h of d.history) {
+      const div = document.createElement("div");
+      div.className = "history-item";
+
+      let dateLabel = h.gun;
+      if (h.gun === today) dateLabel = "Bugün";
+      else if (h.gun === yesterday) dateLabel = "Dün";
+      else {
+        const dt = new Date(h.gun);
+        dateLabel = dt.toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "short" });
+      }
+
+      div.innerHTML = `
+        <div class="date">${escapeHtml(dateLabel)}</div>
+        <div class="preview">${escapeHtml(h.ilk_soru || "—")}</div>
+        <div class="meta">${h.mesaj_sayisi} mesaj · ${escapeHtml(h.saat)} başladı</div>
+      `;
+      div.onclick = () => loadHistoryDay(h.gun);
+      list.appendChild(div);
+    }
+  } catch (e) {
+    list.innerHTML = '<div class="history-empty">Bağlantı hatası: ' + e.message + '</div>';
+  }
+}
+
+function closeHistoryDrawer() {
+  document.getElementById("historyDrawer").classList.remove("open");
+  document.getElementById("drawerOverlay").classList.remove("active");
+}
+
+async function loadHistoryDay(gun) {
+  closeHistoryDrawer();
+  // 22.1n-fikir4: Arşiv sohbet devam flag — yeni mesajlarda archive_day olarak gider
+  window._currentArchiveDay = gun;
+  // Messages temizle
+  messages.innerHTML = '<div class="msg-welcome"><p style="color:var(--fg-muted)">📅 <strong>' + escapeHtml(gun) + '</strong> sohbetleri yükleniyor...</p></div>';
+
+  try {
+    const r = await fetch(API_BASE + "/chat/history/" + encodeURIComponent(gun), { credentials: "include", headers: authHeaders() });
+    if (!r.ok) { addMsg("Geçmiş yüklenemedi.", "bot"); return; }
+    const d = await r.json();
+    if (!d.success || !d.messages || d.messages.length === 0) {
+      messages.innerHTML = '<div class="msg-welcome"><p>Bu gün için mesaj bulunamadı.</p></div>';
+      return;
+    }
+
+    // Welcome'u temizle + mesajları yükle
+    messages.innerHTML = "";
+    const header = document.createElement("div");
+    header.className = "msg-welcome";
+    // 22.1n-fikir4: Artık salt okunur değil — yeni mesaj atınca arşiv context Claude'a gider
+    header.innerHTML = `<h2>📅 ${escapeHtml(gun)}</h2>
+      <p>Bu günün sohbetini görüyorsun. <strong style="color:var(--accent)">Üstüne yazarak devam edebilirsin</strong> — Bot o günkü bağlamı hatırlar.</p>
+      <button onclick="window._currentArchiveDay=null;location.reload();" style="margin-top:8px;padding:6px 14px;background:transparent;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;color:var(--fg-muted);">← Yeni oturum başlat</button>`;
+    messages.appendChild(header);
+
+    for (const m of d.messages) {
+      const div = document.createElement("div");
+      div.className = "msg " + m.role;
+      // 22.1n-bugfix: raw content'i sakla (fallback re-render icin)
+      if (m.role === "bot" && m.content) {
+        div.setAttribute("data-raw-content", m.content);
+      }
+      div.innerHTML = formatMsg(m.content);
+      if (m.time) {
+        const t = document.createElement("div");
+        t.style.cssText = "font-size:10px;color:var(--fg-muted);margin-top:4px;opacity:0.7";
+        t.textContent = m.time;
+        div.appendChild(t);
+      }
+      messages.appendChild(div);
+      if (m.role === "bot") finalizeBotMsg(div);
+    }
+    // 22.1n-bugfix (Neo 00:30): Arsiv bot mesajlarinda chart/math/code bazen render edilmiyor
+    // (marked.parse + DOMPurify pipeline sirasiyla yarista kalabiliyor). Ikinci pass yap.
+    requestAnimationFrame(() => {
+      messages.querySelectorAll(".msg.bot").forEach((el) => {
+        // Zaten canvas varsa atla — cift render riski yok
+        if (el.querySelector(".chart-container canvas")) return;
+        // Pending chart veya raw ```chart blok kaldi mi?
+        if (el.querySelector(".chart-pending") || (el.textContent || "").includes("```chart")) {
+          // Raw chart kaldiysa innerHTML'i yeniden formatMsg ile isle
+          const raw = el.getAttribute("data-raw-content");
+          if (raw) el.innerHTML = formatMsg(raw);
+          rerenderCharts(el);
+          rerenderMath(el);
+          rerenderCode(el);
+        }
+      });
+    });
+    messages.scrollTop = messages.scrollHeight;
+  } catch (e) {
+    addMsg("Geçmiş yükleme hatası: " + e.message, "bot");
+  }
+}
+
+// ─── Açılışta session kontrol ───────────────────────────────
+// Query param auto-fill — B5 deep link desteği
+// URL: /chat?phone=905xx&otp=123456 → form otomatik dolar, 300ms sonra Giriş
+(function autoFillFromQuery() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const qPhone = params.get("phone");
+    const qOtp = params.get("otp");
+    if (qPhone && /^\d{10,15}$/.test(qPhone)) {
+      phoneInput.value = qPhone;
+    }
+    if (qOtp && /^\d{6}$/.test(qOtp)) {
+      otpInput.value = qOtp;
+    }
+    // İkisi de varsa — otomatik giriş dene (300ms sonra UI render olsun diye)
+    if (qPhone && qOtp && /^\d{6}$/.test(qOtp)) {
+      setTimeout(() => {
+        try { doLogin(); } catch (e) { /* manual click fallback */ }
+      }, 350);
+      // URL'den query param'ı temizle (güvenlik + temiz URL)
+      try { history.replaceState({}, "", location.pathname); } catch (e) {}
+    }
+  } catch (e) { /* ignore */ }
+})();
+
+// 22.1m — URL hash/query deep link handler
+// Örn: https://.../chat?panel=dashboard → giriş sonrası dashboard otomatik aç
+function handleDeepLink() {
+  const params = new URLSearchParams(window.location.search);
+  const panel = params.get("panel") || window.location.hash.replace("#", "");
+  if (panel === "dashboard") {
+    setTimeout(() => {
+      if (typeof openDashboard === "function") openDashboard();
+    }, 800);
+  }
+}
+
+(async function checkSession() {
+  try {
+    const r = await fetch(API_BASE + "/chat/me", {credentials: "include", headers: authHeaders()});
+    if (r.ok) {
+      const d = await r.json();
+      if (d.authenticated) {
+        showChat(d.name || localStorage.getItem("fermat_name") || "Öğrenci");
+        handleDeepLink();  // 22.1m
+      } else {
+        // Önceden oturum açık idiyse (localStorage'da name var) ama şimdi authenticated=false
+        // → muhtemelen başka cihazdan giriş oldu → kullanıcıyı bilgilendir
+        const prevName = localStorage.getItem("fermat_name");
+        if (prevName) {
+          // Login ekranındayız zaten; küçük bir not gösterelim
+          const note = document.createElement("div");
+          note.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#F5F4ED;border:1px solid #C76F3E;color:#2F2F2F;padding:10px 18px;border-radius:10px;font-size:13px;max-width:340px;text-align:center;z-index:200;box-shadow:0 4px 16px rgba(0,0,0,0.08)";
+          note.innerHTML = "🔓 Önceki oturumun kapandı — başka bir cihazdan giriş yapılmış olabilir.<br><small>Yeni giriş için WP'den <b>\"web kodu\"</b> iste.</small>";
+          document.body.appendChild(note);
+          setTimeout(() => note.remove(), 8000);
+          localStorage.removeItem("fermat_name");
+        }
+      }
+    }
+  } catch (e) { /* stay on login */ }
+})();
+
+// ─── Periyodik session kontrol — başka cihazdan giriş yapıldığını farket ─────
+// 60sn'de bir /chat/me — authenticated=false dönerse kullanıcıyı uyar
+setInterval(async () => {
+  // Sadece chat ekranı açıkken çalış (login ekranında anlamsız)
+  if (chatWrap.style.display === "none") return;
+  try {
+    const r = await fetch(API_BASE + "/chat/me", {credentials: "include", headers: authHeaders()});
+    if (r.ok) {
+      const d = await r.json();
+      if (!d.authenticated) {
+        // Oturum başka cihazdan kapatılmış
+        addMsg("🔓 Oturumun başka bir cihazdan açıldı — bu oturum kapandı. Yeni giriş için WP'den \"web kodu\" iste.", "bot");
+        setTimeout(() => location.reload(), 4000);
+      }
+    }
+  } catch (e) { /* sessiz, network olabilir */ }
+}, 60000);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 22.1n-vizyon3: ADMIN PANEL (Insight + Outreach)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function openAdminPanel() {
+  let modal = document.getElementById("adminModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "adminModal";
+    modal.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+    `;
+    modal.innerHTML = `
+      <div style="background:var(--panel);border-radius:12px;width:90%;max-width:800px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.25);">
+        <div style="padding:16px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <h2 style="font-size:17px;font-weight:700;color:var(--fg);margin:0;">⚙️ Admin Panel</h2>
+          <button onclick="closeAdminPanel()" style="background:transparent;border:none;color:var(--fg-muted);font-size:22px;cursor:pointer;padding:0 6px;">✕</button>
+        </div>
+        <div style="border-bottom:1px solid var(--border);display:flex;">
+          <button class="admin-tab active" data-adm-tab="insights" onclick="adminSwitchTab('insights')" style="flex:1;padding:12px;background:var(--panel);border:none;border-bottom:2px solid var(--accent);color:var(--accent);cursor:pointer;font-size:14px;font-weight:600;">🧠 Insight İnceleme</button>
+          <button class="admin-tab" data-adm-tab="outreach" onclick="adminSwitchTab('outreach')" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--fg-muted);cursor:pointer;font-size:14px;">📨 Outreach Queue</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:18px 22px;" id="adminContent"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.onclick = (e) => { if (e.target === modal) closeAdminPanel(); };
+  }
+  modal.style.display = "flex";
+  adminSwitchTab("insights");
+}
+
+function closeAdminPanel() {
+  const m = document.getElementById("adminModal");
+  if (m) m.style.display = "none";
+}
+
+function adminSwitchTab(tab) {
+  // Tab buton active state
+  document.querySelectorAll(".admin-tab").forEach(b => {
+    const active = b.dataset.admTab === tab;
+    b.style.color = active ? "var(--accent)" : "var(--fg-muted)";
+    b.style.borderBottomColor = active ? "var(--accent)" : "transparent";
+    b.style.fontWeight = active ? "600" : "400";
+  });
+  if (tab === "insights") renderAdminInsights();
+  else if (tab === "outreach") renderAdminOutreach();
+}
+
+// ─── INSIGHT TAB ─────────────────────────────────────────────────
+async function renderAdminInsights() {
+  const content = document.getElementById("adminContent");
+  content.innerHTML = `
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <input id="adminInsSozNo" type="number" placeholder="Öğrenci soz_no (ör: 174)"
+             style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font-size:14px;"
+             onkeypress="if(event.key==='Enter')loadAdminInsights()">
+      <button onclick="loadAdminInsights()"
+              style="padding:10px 20px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Ara</button>
+    </div>
+    <div id="adminInsResult" style="color:var(--fg-muted);font-size:13px;">
+      soz_no gir, öğrencinin tüm insight'larını (aktif + pasif, decay skorları ile) gör.
+    </div>
+  `;
+}
+
+async function loadAdminInsights() {
+  const sozNo = document.getElementById("adminInsSozNo").value.trim();
+  if (!sozNo) return;
+  const div = document.getElementById("adminInsResult");
+  div.innerHTML = '<div style="color:var(--fg-muted);font-size:13px;">Yükleniyor...</div>';
+
+  try {
+    const r = await fetch(API_BASE + "/chat/admin/insights/" + encodeURIComponent(sozNo), {
+      credentials: "include", headers: authHeaders(),
+    });
+    if (r.status === 403) { div.innerHTML = '<div style="color:var(--error)">Yetkin yok</div>'; return; }
+    const d = await r.json();
+    if (!d.success) { div.innerHTML = `<div style="color:var(--error)">Hata: ${escapeHtml(d.error || "?")}</div>`; return; }
+
+    const stu = d.student || {};
+    let html = `<div style="padding:12px;background:var(--bg);border-radius:8px;margin-bottom:14px;">
+      <div style="font-weight:600;color:var(--fg);">${escapeHtml(stu.full_name || "?")}</div>
+      <div style="font-size:12px;color:var(--fg-muted);margin-top:4px;">${escapeHtml(stu.class_name || "?")} · soz_no ${d.soz_no} · Aktif: <b>${d.aktif_sayi}</b>/${d.toplam}</div>
+    </div>`;
+
+    if (!d.insights.length) {
+      html += '<div style="text-align:center;padding:24px;color:var(--fg-muted);font-size:13px;">Bu öğrenci için insight yok.</div>';
+    } else {
+      html += `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="text-align:left;color:var(--fg-muted);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">
+          <th style="padding:8px 6px;border-bottom:1px solid var(--border);">Tip</th>
+          <th style="padding:8px 6px;border-bottom:1px solid var(--border);">İçerik</th>
+          <th style="padding:8px 6px;border-bottom:1px solid var(--border);width:60px;text-align:center;">Güven</th>
+          <th style="padding:8px 6px;border-bottom:1px solid var(--border);width:80px;text-align:center;">Durum</th>
+        </tr></thead><tbody>`;
+      for (const ins of d.insights) {
+        const activeBadge = ins.aktif
+          ? '<span style="color:var(--success);font-size:11px;font-weight:600;">AKTİF</span>'
+          : `<span style="color:var(--fg-muted);font-size:11px;">${ins.stale_reason || "pasif"}</span>`;
+        const guvColor = ins.guven > 0.7 ? "var(--success)" : ins.guven > 0.4 ? "var(--accent)" : "var(--fg-muted)";
+        html += `<tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px 6px;"><code style="font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px;">${escapeHtml(ins.tip)}</code></td>
+          <td style="padding:8px 6px;color:var(--fg);">${escapeHtml(ins.icerik)}</td>
+          <td style="padding:8px 6px;text-align:center;color:${guvColor};font-weight:600;">${ins.guven}</td>
+          <td style="padding:8px 6px;text-align:center;">${activeBadge}</td>
+        </tr>`;
+      }
+      html += "</tbody></table>";
+    }
+    div.innerHTML = html;
+  } catch (e) {
+    div.innerHTML = `<div style="color:var(--error)">Bağlantı hatası: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+// ─── OUTREACH TAB ─────────────────────────────────────────────────
+async function renderAdminOutreach() {
+  const content = document.getElementById("adminContent");
+  content.innerHTML = '<div style="color:var(--fg-muted);">Yükleniyor...</div>';
+
+  try {
+    const r = await fetch(API_BASE + "/chat/admin/outreach-pending", {
+      credentials: "include", headers: authHeaders(),
+    });
+    if (r.status === 403) { content.innerHTML = '<div style="color:var(--error)">Yetkin yok</div>'; return; }
+    const d = await r.json();
+    if (!d.success) { content.innerHTML = `<div style="color:var(--error)">Hata: ${escapeHtml(d.error || "?")}</div>`; return; }
+
+    const bekleyen = d.bekleyen || 0;
+    let html = `<div style="padding:12px;background:var(--bg);border-radius:8px;margin-bottom:14px;">
+      <div style="font-weight:600;color:var(--fg);">Bekleyen outreach: <b style="color:var(--accent);">${bekleyen}</b></div>`;
+
+    if (d.ozet_gerekce?.length) {
+      html += '<div style="font-size:12px;color:var(--fg-muted);margin-top:6px;">Gerekçeler: ';
+      html += d.ozet_gerekce.map(o => `${escapeHtml(o.reason)} (${o.count})`).join(", ");
+      html += '</div>';
+    }
+    html += "</div>";
+
+    if (!bekleyen) {
+      html += '<div style="text-align:center;padding:32px;color:var(--fg-muted);font-size:13px;">🎉 Bekleyen outreach yok — herşey yolunda.</div>';
+      content.innerHTML = html;
+      return;
+    }
+
+    // Toplu aksiyon bar
+    html += `<div style="display:flex;gap:10px;margin-bottom:14px;">
+      <button onclick="outreachBulk('approve')" style="flex:1;padding:10px;background:var(--success);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">✓ Seçilenleri Onayla</button>
+      <button onclick="outreachBulk('reject')" style="flex:1;padding:10px;background:var(--error);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">✕ Seçilenleri Reddet</button>
+      <button onclick="outreachBulkAll('reject')" style="padding:10px 16px;background:transparent;color:var(--error);border:1px solid var(--error);border-radius:8px;cursor:pointer;font-size:13px;">Tümünü Reddet</button>
+    </div>`;
+
+    // Liste
+    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    for (const m of d.mesajlar) {
+      html += `<label style="display:flex;gap:10px;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;align-items:flex-start;">
+        <input type="checkbox" class="outr-chk" data-id="${m.id}" style="margin-top:3px;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;justify-content:space-between;gap:8px;">
+            <span style="font-size:11px;color:var(--fg-muted);">→ ...${escapeHtml(m.to_suffix)} · <code>${escapeHtml(m.reason || "?")}</code></span>
+            <span style="font-size:11px;color:var(--fg-muted);">${new Date(m.blocked_at).toLocaleString('tr-TR')}</span>
+          </div>
+          <div style="font-size:13px;color:var(--fg);margin-top:6px;white-space:pre-wrap;word-break:break-word;">${escapeHtml(m.text || "").slice(0,400)}${m.text.length>400?"...":""}</div>
+        </div>
+      </label>`;
+    }
+    html += "</div>";
+
+    // Hatırlatma
+    html += `<div style="margin-top:14px;padding:10px;background:rgba(199,111,62,0.08);border-left:3px solid var(--accent);border-radius:4px;font-size:12px;color:var(--fg-muted);">
+      ⚠️ <b>İki aşamalı güvenlik:</b> Onaylasan bile <code>OUTREACH_ENABLED=false</code> iken fiili gönderim yapılmaz. Önce onayla, sonra env flag'i aç.
+    </div>`;
+
+    content.innerHTML = html;
+  } catch (e) {
+    content.innerHTML = `<div style="color:var(--error)">Bağlantı hatası: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function outreachBulk(action) {
+  const selected = Array.from(document.querySelectorAll(".outr-chk:checked")).map(c => parseInt(c.dataset.id));
+  if (!selected.length) { alert("Önce bir şey seç"); return; }
+  if (!confirm(`${selected.length} mesaj ${action === "approve" ? "ONAYLANACAK" : "REDDEDİLECEK"}. Emin misin?`)) return;
+  await outreachSubmit(action, selected);
+}
+
+async function outreachBulkAll(action) {
+  if (!confirm(`TÜM bekleyen mesajlar ${action === "approve" ? "ONAYLANACAK" : "REDDEDİLECEK"}. Emin misin?`)) return;
+  await outreachSubmit(action, []);
+}
+
+async function outreachSubmit(action, ids) {
+  try {
+    const r = await fetch(API_BASE + "/chat/admin/outreach-action", {
+      method: "POST", credentials: "include",
+      headers: authHeaders({"Content-Type": "application/json"}),
+      body: JSON.stringify({action, ids}),
+    });
+    const d = await r.json();
+    if (d.success) {
+      alert(`✓ ${d.updated} mesaj ${action === "approve" ? "onaylandı" : "reddedildi"}.`);
+      renderAdminOutreach();
+    } else {
+      alert("Hata: " + (d.error || "?"));
+    }
+  } catch (e) { alert("Bağlantı hatası: " + e.message); }
+}
+
+</script>
+
+</body>
+</html>

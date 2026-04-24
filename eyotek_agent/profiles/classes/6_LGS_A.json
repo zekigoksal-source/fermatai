@@ -1,0 +1,39 @@
+{
+  "sinif": "[6] LGS A",
+  "devre": "8.Snf",
+  "ogrenci_sayisi": 5,
+  "ogrenciler": [
+    {
+      "soz_no": "141",
+      "ad": "ADA",
+      "soyad": "BARIŞCAN"
+    },
+    {
+      "soz_no": "190",
+      "ad": "ALİ",
+      "soyad": "KAYNAK"
+    },
+    {
+      "soz_no": "152",
+      "ad": "DENİZ BÜLENT",
+      "soyad": "KARAEGE"
+    },
+    {
+      "soz_no": "302",
+      "ad": "EGE",
+      "soyad": "KURNAZ"
+    },
+    {
+      "soz_no": "178",
+      "ad": "KAYRA",
+      "soyad": "ALTUN"
+    }
+  ],
+  "etut_toplam": 6,
+  "etut_yapildi": 3,
+  "etut_gelmedi": 0,
+  "etut_katilim_yuzdesi": 50,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

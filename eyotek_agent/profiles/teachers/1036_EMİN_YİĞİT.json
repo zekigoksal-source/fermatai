@@ -1,0 +1,17 @@
+{
+  "eyotek_id": "1036",
+  "ad_soyad": "EMİN YİĞİT",
+  "brans": "Fizik",
+  "gorev": "Öğretmen",
+  "haftalik_ders_saati": 15,
+  "aylik_etut_sayisi": 10,
+  "etut_ogrenci_sayisi": 10,
+  "etut_ders_orani": 0.67,
+  "ders_programi_slot_sayisi": 15,
+  "gun_dagilimi": {
+    "Pazartesi": 7,
+    "Salı": 3,
+    "Çarşamba": 5
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

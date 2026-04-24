@@ -1,0 +1,20 @@
+{
+  "eyotek_id": "1027",
+  "ad_soyad": "ORHAN DEMİRBULAT",
+  "brans": "Matematik",
+  "gorev": "Öğretmen",
+  "haftalik_ders_saati": 49,
+  "aylik_etut_sayisi": 53,
+  "etut_ogrenci_sayisi": 50,
+  "etut_ders_orani": 1.08,
+  "ders_programi_slot_sayisi": 49,
+  "gun_dagilimi": {
+    "Cumartesi": 12,
+    "Pazar": 6,
+    "Pazartesi": 9,
+    "Perşembe": 8,
+    "Salı": 8,
+    "Çarşamba": 6
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

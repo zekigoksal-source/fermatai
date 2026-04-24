@@ -1,0 +1,18 @@
+{
+  "eyotek_id": "1039",
+  "ad_soyad": "EZGİ TUNÇ",
+  "brans": "Türkçe",
+  "gorev": "Öğretmen",
+  "haftalik_ders_saati": 16,
+  "aylik_etut_sayisi": 4,
+  "etut_ogrenci_sayisi": 4,
+  "etut_ders_orani": 0.25,
+  "ders_programi_slot_sayisi": 16,
+  "gun_dagilimi": {
+    "Cumartesi": 10,
+    "Pazar": 3,
+    "Pazartesi": 1,
+    "Salı": 2
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

@@ -1,0 +1,19 @@
+{
+  "eyotek_id": "1028",
+  "ad_soyad": "VEDAT ÖZTEKİN",
+  "brans": "Matematik",
+  "gorev": "Öğretmen",
+  "haftalik_ders_saati": 28,
+  "aylik_etut_sayisi": 19,
+  "etut_ogrenci_sayisi": 19,
+  "etut_ders_orani": 0.68,
+  "ders_programi_slot_sayisi": 28,
+  "gun_dagilimi": {
+    "Pazar": 9,
+    "Pazartesi": 4,
+    "Perşembe": 4,
+    "Salı": 7,
+    "Çarşamba": 4
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

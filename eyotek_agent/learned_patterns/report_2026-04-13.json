@@ -1,0 +1,226 @@
+{
+  "generated_at": "2026-04-13T23:26:59.221558",
+  "period": "Son 7 gün",
+  "total_messages": 1366,
+  "role_distribution": {
+    "admin": 472,
+    "mudur": 229,
+    "ogrenci": 551,
+    "ogretmen": 32
+  },
+  "top_topics": {
+    "nasıl": 79,
+    "ders": 51,
+    "kaç": 50,
+    "etüt": 44,
+    "deneme": 33,
+    "hoca": 30,
+    "akademik": 28,
+    "öğrenci": 27,
+    "en çok": 25,
+    "analiz": 23,
+    "ogrenci": 20,
+    "nasil": 19,
+    "sınıf": 18,
+    "gün": 18,
+    "kac": 15,
+    "öğretmen": 10,
+    "bilgi": 10,
+    "sınav": 10,
+    "hafta": 10,
+    "program": 10
+  },
+  "question_patterns": {
+    "[ISIM] nasıl/durumu": 160,
+    "[ISIM] hoca [SORU]": 64,
+    "kaç tane [KONU]": 62,
+    "en çok/fazla [KONU]": 37
+  },
+  "usage_stats": {
+    "fast_response": {
+      "count": 391,
+      "avg_ms": 5
+    },
+    "": {
+      "count": 55,
+      "avg_ms": 0
+    },
+    "ollama": {
+      "count": 129,
+      "avg_ms": 2000
+    },
+    "claude": {
+      "count": 806,
+      "avg_ms": 5594
+    },
+    "claude_vision": {
+      "count": 13,
+      "avg_ms": 0
+    }
+  },
+  "error_count": 708,
+  "gaps": [
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 15:21:53.885342"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 15:30:41.352898"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 15:48:19.927737"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 17:18:32.424885"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 17:29:59.940854"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 18:08:28.514949"
+    },
+    {
+      "type": "english_response",
+      "suggestion": "Ollama İngilizce yanıt verdi — eskalasyon veya Türkçe prompt güçlendirmesi gerekli",
+      "timestamp": "2026-04-09 18:18:02.347021",
+      "sample": "İşte son 1 saatin özeti Zeki Bey! 😊\n\n---\n\n👨‍🎓 *Son 1 Saat — Öğrenci Aktivitesi*\n"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 18:31:46.494564"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 21:14:09.088834"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 15:21:56.106062"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 15:30:45.255521"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 17:18:35.269910"
+    },
+    {
+      "type": "wrong_search",
+      "searched_term": "en%iyi%denemeleri",
+      "suggestion": "'en%iyi%denemeleri' kelimesi stop-word olarak eklenmeli veya farklı handler'a yönlendirilmeli",
+      "timestamp": "2026-04-09 19:09:36.377481"
+    },
+    {
+      "type": "generic_intro",
+      "suggestion": "Jenerik tanıtım yanıtı — bağlam anlaşılmamış, eskalasyon gerekli",
+      "timestamp": "2026-04-09 11:41:37.248063"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 15:21:58.669352"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 15:30:52.696826"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 17:18:41.098333"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 18:21:21.975467"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 22:02:54.627013"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-09 15:22:02.171207"
+    }
+  ],
+  "suggestions": [
+    {
+      "pattern": "[ISIM] nasıl/durumu",
+      "frequency": 160,
+      "action": "fast_response pattern olarak ekle"
+    },
+    {
+      "pattern": "[ISIM] hoca [SORU]",
+      "frequency": 64,
+      "action": "fast_response pattern olarak ekle"
+    },
+    {
+      "pattern": "kaç tane [KONU]",
+      "frequency": 62,
+      "action": "fast_response pattern olarak ekle"
+    },
+    {
+      "pattern": "en çok/fazla [KONU]",
+      "frequency": 37,
+      "action": "fast_response pattern olarak ekle"
+    },
+    {
+      "pattern": "stop_words_update",
+      "terms": [
+        "12.sinifta",
+        "yoğun%öğretmen",
+        "12.",
+        "hangi",
+        "11.sinif",
+        "11.sınıfları",
+        "11.sınıf",
+        "öğrencilerini%sınırlarına%göre%ayır",
+        "bana",
+        "11",
+        "12",
+        "sınıflar%arasında",
+        "kurumdaki%sınıfları",
+        "en%iyi%denemeleri",
+        "mezun"
+      ],
+      "action": "Bu kelimeler stop-word olarak eklenmeli: 12.sinifta, yoğun%öğretmen, 12., hangi, 11.sinif, 11.sınıfları, 11.sınıf, öğrencilerini%sınırlarına%göre%ayır, bana, 11, 12, sınıflar%arasında, kurumdaki%sınıfları, en%iyi%denemeleri, mezun"
+    }
+  ]
+}

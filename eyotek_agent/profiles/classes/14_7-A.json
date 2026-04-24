@@ -1,0 +1,39 @@
+{
+  "sinif": "[14] 7-A",
+  "devre": "7.Snf",
+  "ogrenci_sayisi": 5,
+  "ogrenciler": [
+    {
+      "soz_no": "243",
+      "ad": "BERRAK TALYA",
+      "soyad": "ÜLCAY"
+    },
+    {
+      "soz_no": "256",
+      "ad": "CEREN NAZ",
+      "soyad": "TEK"
+    },
+    {
+      "soz_no": "175",
+      "ad": "DİLA",
+      "soyad": "SEPETLER"
+    },
+    {
+      "soz_no": "264",
+      "ad": "MAYA",
+      "soyad": "ERDEK"
+    },
+    {
+      "soz_no": "241",
+      "ad": "ZEYNEP SERAY",
+      "soyad": "ŞARVAN"
+    }
+  ],
+  "etut_toplam": 28,
+  "etut_yapildi": 15,
+  "etut_gelmedi": 0,
+  "etut_katilim_yuzdesi": 54,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

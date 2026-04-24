@@ -1,0 +1,64 @@
+{
+  "sinif": "[4] 11 SAY NXT",
+  "devre": "11.Snf",
+  "ogrenci_sayisi": 10,
+  "ogrenciler": [
+    {
+      "soz_no": "167",
+      "ad": "ALİ",
+      "soyad": "KÜÇÜKUYSAL"
+    },
+    {
+      "soz_no": "208",
+      "ad": "ALİ DEMİR",
+      "soyad": "ALPAY"
+    },
+    {
+      "soz_no": "146",
+      "ad": "ARDA",
+      "soyad": "AKMAN"
+    },
+    {
+      "soz_no": "173",
+      "ad": "BADE",
+      "soyad": "UÇAR"
+    },
+    {
+      "soz_no": "233",
+      "ad": "BERF DENİZ",
+      "soyad": "PEKER"
+    },
+    {
+      "soz_no": "170",
+      "ad": "GÖKHAN",
+      "soyad": "AYGÜN"
+    },
+    {
+      "soz_no": "163",
+      "ad": "MEHMET ALİ",
+      "soyad": "KARPUZ"
+    },
+    {
+      "soz_no": "257",
+      "ad": "OĞULCAN",
+      "soyad": "AŞIK"
+    },
+    {
+      "soz_no": "197",
+      "ad": "YAĞIZ",
+      "soyad": "ALPTEKİN"
+    },
+    {
+      "soz_no": "301",
+      "ad": "YUNUS EMRE",
+      "soyad": "ARMAĞAN"
+    }
+  ],
+  "etut_toplam": 34,
+  "etut_yapildi": 7,
+  "etut_gelmedi": 1,
+  "etut_katilim_yuzdesi": 21,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

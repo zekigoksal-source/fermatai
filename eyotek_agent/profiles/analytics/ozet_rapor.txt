@@ -1,0 +1,55 @@
+FermatAI Analitik Ozet — 2026-04-08 13:53
+============================================================
+
+OGRETMEN ETUT YOGUNLUGU:
+  ORHAN DEMİRBULAT          Matematik    ders=49   etut=53   ogrenci=50
+  VEDAT ÖZTEKİN             Matematik    ders=28   etut=19   ogrenci=19
+  MERVE OKŞAŞ               Biyoloji     ders=38   etut=18   ogrenci=16
+  BÜŞRA GÜLBAHAR KAYHAN     Türkçe       ders=24   etut=14   ogrenci=14
+  HASAN GÜNGÖR              Kimya        ders=22   etut=12   ogrenci=12
+  DENİZ AKÇAP               Coğrafya     ders=6    etut=11   ogrenci=11
+  EMİN YİĞİT                Fizik        ders=15   etut=10   ogrenci=10
+  ÖRSEL KOÇ                 Fizik        ders=14   etut=9    ogrenci=9
+  MEHMET DÖNMEZ             Matematik    ders=7    etut=6    ogrenci=6
+  KARDELEN SAVCI            Tarih        ders=14   etut=6    ogrenci=6
+  EZGİ TUNÇ                 Türkçe       ders=16   etut=4    ogrenci=4
+  ZEKİ GÖKSAL               Diğer        ders=6    etut=1    ogrenci=3
+
+SINIF ETUT KATILIM:
+  [10] 10 SAY A             11.Snf     etut=27    katilim=%22
+  [15] 11 SAY ZEN           11.Snf     etut=38    katilim=%34
+  [4] 11 SAY NXT            11.Snf     etut=34    katilim=%21
+  [8] 11 TM A               11.Snf     etut=9     katilim=%33
+  [9] 11 SAY VIB            11.Snf     etut=20    katilim=%35
+  [1] 12 SAY A              12.Snf     etut=44    katilim=%14
+  [2] 12 SAY B              12.Snf     etut=35    katilim=%54
+  [5] 12 TM A               12.Snf     etut=54    katilim=%20
+  [14] 7-A                  7.Snf      etut=28    katilim=%54
+  [6] LGS A                 8.Snf      etut=6     katilim=%50
+  [3] 9 SAY A               9.Snf      etut=8     katilim=%0
+  [11] MEZUN SAY B          Mezun      etut=64    katilim=%17
+  [12] 12 MEZ SAY C         Mezun      etut=15    katilim=%7
+  [13] MEZUN TM A           Mezun      etut=43    katilim=%7
+  [7] MEZUN SAY A           Mezun      etut=49    katilim=%16
+
+BRANS BAZLI ETUT:
+  Matematik       ogretmen=3   etut=78    ders=84
+  Fizik           ogretmen=2   etut=19    ders=29
+  Türkçe          ogretmen=2   etut=18    ders=40
+  Biyoloji        ogretmen=1   etut=18    ders=38
+  Kimya           ogretmen=1   etut=12    ders=22
+  Coğrafya        ogretmen=1   etut=11    ders=6
+  Tarih           ogretmen=1   etut=6     ders=14
+  Diğer           ogretmen=1   etut=1     ders=6
+
+RISK ALTINDAKI OGRENCILER (en dusuk katilim):
+  ALMİNA ERTÜRK             12 SAY          etut=3    gelmedi=3   katilim=%0
+  ATEŞ KEZEL                12 SAY          etut=3    gelmedi=3   katilim=%0
+  BEHÇET OYTUN ALUR         Mezun EA        etut=1    gelmedi=1   katilim=%0
+  ZEYNEP AKBAŞ              Mezun SAY       etut=3    gelmedi=1   katilim=%0
+  GÖZDE YARŞİ               Mezun EA        etut=6    gelmedi=2   katilim=%0
+  YAĞIZ ALP DEPELİ          12 SAY          etut=3    gelmedi=1   katilim=%67
+  GÖNÜLAY YAŞAR             Mezun EA        etut=6    gelmedi=1   katilim=%0
+  DURU ÖZARSLAN             Mezun SAY       etut=8    gelmedi=1   katilim=%12
+  DEREN SEVİM               12 SAY          etut=8    gelmedi=1   katilim=%50
+  ALİ KÜÇÜKUYSAL            11 SAY          etut=12   gelmedi=1   katilim=%42

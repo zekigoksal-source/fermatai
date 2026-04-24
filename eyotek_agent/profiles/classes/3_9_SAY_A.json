@@ -1,0 +1,24 @@
+{
+  "sinif": "[3] 9 SAY A",
+  "devre": "9.Snf",
+  "ogrenci_sayisi": 2,
+  "ogrenciler": [
+    {
+      "soz_no": "289",
+      "ad": "ALİ HAYDAR",
+      "soyad": "EFE"
+    },
+    {
+      "soz_no": "219",
+      "ad": "İDİL",
+      "soyad": "TÜTÜNCÜ"
+    }
+  ],
+  "etut_toplam": 8,
+  "etut_yapildi": 0,
+  "etut_gelmedi": 0,
+  "etut_katilim_yuzdesi": 0,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

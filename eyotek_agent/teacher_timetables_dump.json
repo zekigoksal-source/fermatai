@@ -1,0 +1,128 @@
+{
+  "teachers": [],
+  "timetable": {
+    "headers": [
+      "",
+      "Id",
+      "Adı Soyadı",
+      "Branş",
+      "Saat",
+      ""
+    ],
+    "rows": [
+      [
+        "",
+        "1038",
+        "BÜŞRA GÜLBAHAR KAYHAN",
+        "Türkçe",
+        "24",
+        ""
+      ],
+      [
+        "",
+        "1040",
+        "DENİZ AKÇAP",
+        "Coğrafya",
+        "6",
+        ""
+      ],
+      [
+        "",
+        "1036",
+        "EMİN YİĞİT",
+        "Fizik",
+        "15",
+        ""
+      ],
+      [
+        "",
+        "1039",
+        "EZGİ TUNÇ",
+        "Türkçe",
+        "16",
+        ""
+      ],
+      [
+        "",
+        "1037",
+        "HASAN GÜNGÖR",
+        "Kimya",
+        "22",
+        ""
+      ],
+      [
+        "",
+        "1029",
+        "KADİR KÖKCÜR",
+        "Kimya",
+        "6",
+        ""
+      ],
+      [
+        "",
+        "1026",
+        "KARDELEN SAVCI",
+        "Tarih",
+        "14",
+        ""
+      ],
+      [
+        "",
+        "1041",
+        "MEHMET DÖNMEZ",
+        "Matematik",
+        "7",
+        ""
+      ],
+      [
+        "",
+        "1032",
+        "MERVE OKŞAŞ",
+        "Biyoloji",
+        "38",
+        ""
+      ],
+      [
+        "",
+        "1030",
+        "MURAT BAŞ",
+        "Coğrafya",
+        "4",
+        ""
+      ],
+      [
+        "",
+        "1027",
+        "ORHAN DEMİRBULAT",
+        "Matematik",
+        "49",
+        ""
+      ],
+      [
+        "",
+        "1042",
+        "ÖRSEL KOÇ",
+        "Fizik",
+        "14",
+        ""
+      ],
+      [
+        "",
+        "1028",
+        "VEDAT ÖZTEKİN",
+        "Matematik",
+        "28",
+        ""
+      ],
+      [
+        "",
+        "1035",
+        "ZEKİ GÖKSAL",
+        "Diğer",
+        "6",
+        ""
+      ]
+    ],
+    "found": true
+  }
+}

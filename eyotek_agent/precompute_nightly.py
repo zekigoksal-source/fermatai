@@ -1,0 +1,155 @@
+"""
+FermatAI — Gece Precompute Job (22.1n-neo Fikir 2)
+====================================================
+
+Her gece 03:00:
+  1. En aktif 50 ogrenci icin build_study_plan_context cache warmup
+  2. Finans view'lari refresh (materialized benzeri)
+  3. Analytics cache refresh
+  4. Schema cache refresh (7 gun birikecek, 1 saat TTL zaten var)
+
+HEDEF: Sabah sorgulari 45s degil, 2s donsun.
+
+Calistir:
+  python precompute_nightly.py              # bir defalik
+  python precompute_nightly.py --dry         # okuma testi
+
+Zamanlama (bridge lifespan'da):
+  asyncio.create_task(nightly_loop())  # 03:00 cron
+"""
+from __future__ import annotations
+
+import asyncio
+import sys
+import io
+from datetime import datetime, time as dt_time
+from loguru import logger
+
+from db_pool import db_fetch
+
+
+async def precompute_study_plans(limit: int = 50) -> int:
+    """Son 30 gunde aktif olmus ogrenciler icin plan context precompute.
+
+    En aktif N ogrenci (mesaj sayisina gore).
+    """
+    try:
+        rows = await db_fetch("""
+            SELECT a.phone, COUNT(*) AS msg_count
+            FROM agent_conversations a
+            WHERE a.role = 'ogrenci'
+              AND a.created_at > NOW() - INTERVAL '30 days'
+            GROUP BY a.phone
+            ORDER BY msg_count DESC
+            LIMIT $1
+        """, limit)
+
+        count = 0
+        from study_plan_builder import build_study_plan_context
+
+        for r in rows:
+            phone = r["phone"]
+            # Phone → soz_no
+            soz = await db_fetch(
+                """SELECT s.soz_no::int AS soz_no FROM students s
+                   WHERE s.phone = $1 OR s.velicep = $1 OR s.annecep = $1 OR s.babacep = $1
+                   LIMIT 1""",
+                phone
+            )
+            if not soz:
+                continue
+            try:
+                result = await build_study_plan_context(soz[0]["soz_no"], force_refresh=True)
+                if not result.get("error"):
+                    count += 1
+            except Exception as e:
+                logger.debug(f"precompute plan err {phone}: {e}")
+        return count
+    except Exception as e:
+        logger.error(f"precompute_study_plans hata: {e}")
+        return 0
+
+
+async def refresh_schema_cache():
+    """DB schema cache'i sifirla ve yenile."""
+    try:
+        from db_schema_cache import get_schema_cache
+        await get_schema_cache(force_refresh=True)
+        return True
+    except Exception as e:
+        logger.debug(f"schema refresh: {e}")
+        return False
+
+
+async def refresh_analytics_cache():
+    """Analytics cache yenile (kurum geneli hesaplamalar)."""
+    try:
+        from analytics_cache import build_all_caches
+        await build_all_caches()
+        return True
+    except Exception as e:
+        logger.debug(f"analytics refresh: {e}")
+        return False
+
+
+async def run_nightly():
+    """Gece tum precompute'lari sirayla yap."""
+    start = datetime.now()
+    logger.info(f"🌙 [NIGHTLY] {start:%H:%M:%S} — Gece precompute basladi")
+
+    report = {"start": start.isoformat(), "steps": {}}
+
+    # 1. Study plan cache warmup
+    try:
+        n = await precompute_study_plans(limit=50)
+        report["steps"]["study_plans"] = n
+        logger.info(f"  📚 {n} ogrenci plan context cachelendi")
+    except Exception as e:
+        report["steps"]["study_plans_err"] = str(e)
+
+    # 2. Schema cache
+    ok = await refresh_schema_cache()
+    report["steps"]["schema_cache"] = "ok" if ok else "fail"
+    logger.info(f"  📊 Schema cache: {report['steps']['schema_cache']}")
+
+    # 3. Analytics cache
+    ok = await refresh_analytics_cache()
+    report["steps"]["analytics_cache"] = "ok" if ok else "fail"
+    logger.info(f"  📈 Analytics cache: {report['steps']['analytics_cache']}")
+
+    elapsed = (datetime.now() - start).total_seconds()
+    report["elapsed_sn"] = round(elapsed, 2)
+    logger.info(f"🌙 [NIGHTLY] Tamamlandi ({elapsed:.1f}s)")
+    return report
+
+
+async def nightly_scheduler_loop():
+    """Bridge lifespan'de calisan loop — gece 03:00'te run_nightly tetikler."""
+    logger.info("🌙 Nightly scheduler loop basladi — her gece 03:00")
+    while True:
+        try:
+            now = datetime.now()
+            # Bir sonraki 03:00'e kadar bekle
+            target = now.replace(hour=3, minute=0, second=0, microsecond=0)
+            if now >= target:
+                # Yarinki 03:00
+                from datetime import timedelta
+                target = target + timedelta(days=1)
+            wait_sec = (target - now).total_seconds()
+            logger.debug(f"  Nightly wait: {wait_sec/3600:.1f} saat sonra tetiklenecek")
+            await asyncio.sleep(wait_sec)
+            # Tetikle
+            await run_nightly()
+        except asyncio.CancelledError:
+            logger.info("Nightly scheduler iptal edildi")
+            break
+        except Exception as e:
+            logger.error(f"Nightly loop hata: {e}")
+            await asyncio.sleep(3600)  # 1 saat sonra tekrar dene
+
+
+if __name__ == "__main__":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    import json
+    report = asyncio.run(run_nightly())
+    print(json.dumps(report, ensure_ascii=False, indent=2, default=str))

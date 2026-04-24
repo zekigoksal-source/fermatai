@@ -1,0 +1,17 @@
+{
+  "eyotek_id": "1026",
+  "ad_soyad": "KARDELEN SAVCI",
+  "brans": "Tarih",
+  "gorev": "Öğretmen",
+  "haftalik_ders_saati": 14,
+  "aylik_etut_sayisi": 6,
+  "etut_ogrenci_sayisi": 6,
+  "etut_ders_orani": 0.43,
+  "ders_programi_slot_sayisi": 14,
+  "gun_dagilimi": {
+    "Cumartesi": 7,
+    "Perşembe": 4,
+    "Salı": 3
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

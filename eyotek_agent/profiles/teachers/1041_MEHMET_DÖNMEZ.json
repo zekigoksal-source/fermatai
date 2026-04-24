@@ -1,0 +1,16 @@
+{
+  "eyotek_id": "1041",
+  "ad_soyad": "MEHMET DÖNMEZ",
+  "brans": "Matematik",
+  "gorev": "Öğretmen",
+  "haftalik_ders_saati": 7,
+  "aylik_etut_sayisi": 6,
+  "etut_ogrenci_sayisi": 6,
+  "etut_ders_orani": 0.86,
+  "ders_programi_slot_sayisi": 7,
+  "gun_dagilimi": {
+    "Pazar": 4,
+    "Salı": 3
+  },
+  "profil_tarihi": "2026-04-08 13:53"
+}

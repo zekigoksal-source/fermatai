@@ -1,0 +1,34 @@
+{
+  "sinif": "[8] 11 TM A",
+  "devre": "11.Snf",
+  "ogrenci_sayisi": 4,
+  "ogrenciler": [
+    {
+      "soz_no": "153",
+      "ad": "AYÇANUR",
+      "soyad": "AKBULUT"
+    },
+    {
+      "soz_no": "206",
+      "ad": "LARA",
+      "soyad": "ŞENGÜL"
+    },
+    {
+      "soz_no": "177",
+      "ad": "NİSA",
+      "soyad": "BİLGE"
+    },
+    {
+      "soz_no": "181",
+      "ad": "ZEYNEP",
+      "soyad": "UZ"
+    }
+  ],
+  "etut_toplam": 9,
+  "etut_yapildi": 3,
+  "etut_gelmedi": 0,
+  "etut_katilim_yuzdesi": 33,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

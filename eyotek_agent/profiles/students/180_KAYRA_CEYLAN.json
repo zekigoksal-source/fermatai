@@ -1,0 +1,24 @@
+{
+  "soz_no": "180",
+  "eyotek_id": "180",
+  "ad_soyad": "KAYRA CEYLAN",
+  "sinif": "12 SAY",
+  "devre": "12.Snf",
+  "telefon": "+905416414250",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 30,
+  "etut_yapildi": 1,
+  "etut_gelmedi": 1,
+  "etut_kontrol_edilmedi": 28,
+  "etut_katilim_yuzdesi": 3,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%3)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

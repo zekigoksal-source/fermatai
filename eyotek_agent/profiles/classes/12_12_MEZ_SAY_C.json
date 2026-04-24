@@ -1,0 +1,39 @@
+{
+  "sinif": "[12] 12 MEZ SAY C",
+  "devre": "Mezun",
+  "ogrenci_sayisi": 5,
+  "ogrenciler": [
+    {
+      "soz_no": "207",
+      "ad": "ALİ BARAY",
+      "soyad": "KIRMAN"
+    },
+    {
+      "soz_no": "189",
+      "ad": "AYŞE",
+      "soyad": "YAVUZ"
+    },
+    {
+      "soz_no": "288",
+      "ad": "MEHMET",
+      "soyad": "SORMAGEÇ"
+    },
+    {
+      "soz_no": "205",
+      "ad": "OSMAN KAĞAN",
+      "soyad": "TOPAL"
+    },
+    {
+      "soz_no": "252",
+      "ad": "SANİYE SULTAN",
+      "soyad": "GÜNGÖR"
+    }
+  ],
+  "etut_toplam": 15,
+  "etut_yapildi": 1,
+  "etut_gelmedi": 0,
+  "etut_katilim_yuzdesi": 7,
+  "sinav_puan_ortalamasi": 0,
+  "sinav_sayisi": 0,
+  "profil_tarihi": "2026-04-08 13:53"
+}

@@ -1,0 +1,24 @@
+{
+  "soz_no": "246",
+  "eyotek_id": "246",
+  "ad_soyad": "ZEYNEP AKBAŞ",
+  "sinif": "Mezun SAY",
+  "devre": "Mezun",
+  "telefon": "+905524271017",
+  "rehber": "",
+  "danisman": "",
+  "etut_toplam": 3,
+  "etut_yapildi": 0,
+  "etut_gelmedi": 1,
+  "etut_kontrol_edilmedi": 2,
+  "etut_katilim_yuzdesi": 0,
+  "sinav_sayisi": 0,
+  "son_sinav_puan": "",
+  "son_sinav_siralama": "",
+  "oncelikli_konular": "",
+  "risk_seviyesi": "orta",
+  "risk_faktorleri": [
+    "Dusuk etut katilimi (%0)"
+  ],
+  "profil_tarihi": "2026-04-08 13:53"
+}

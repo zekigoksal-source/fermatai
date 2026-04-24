@@ -1,0 +1,210 @@
+{
+  "generated_at": "2026-04-19T14:44:27.578068",
+  "period": "Son 7 gün",
+  "total_messages": 1131,
+  "role_distribution": {
+    "admin": 585,
+    "mudur": 101,
+    "ogrenci": 379,
+    "ogretmen": 0
+  },
+  "top_topics": {
+    "nasıl": 50,
+    "kaç": 30,
+    "analiz": 27,
+    "öğrenci": 27,
+    "deneme": 25,
+    "ders": 22,
+    "hoca": 17,
+    "en çok": 11,
+    "gün": 11,
+    "ogrenci": 10,
+    "akademik": 10,
+    "sınıf": 9,
+    "bilgi": 9,
+    "sınav": 8,
+    "rapor": 7,
+    "kac": 7,
+    "program": 6,
+    "durum": 6,
+    "toplam": 5,
+    "kıyasla": 3
+  },
+  "question_patterns": {
+    "[ISIM] nasıl/durumu": 121,
+    "kaç tane [KONU]": 40,
+    "[ISIM] hoca [SORU]": 21,
+    "en çok/fazla [KONU]": 13
+  },
+  "usage_stats": {
+    "fast_response": {
+      "count": 279,
+      "avg_ms": 5
+    },
+    "": {
+      "count": 90,
+      "avg_ms": 0
+    },
+    "pedagojik_koc": {
+      "count": 2,
+      "avg_ms": 10
+    },
+    "ollama": {
+      "count": 109,
+      "avg_ms": 2000
+    },
+    "claude": {
+      "count": 728,
+      "avg_ms": 5703
+    },
+    "claude_vision": {
+      "count": 19,
+      "avg_ms": 0
+    }
+  },
+  "error_count": 381,
+  "gaps": [
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 17:40:44.212307"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 17:40:45.802949"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 17:40:48.565705"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: search_students]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 20:47:44.344167"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 00:48:30.263417"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 01:04:52.449002"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: get_class_plan]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 12:33:19.244099"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 14:07:19.972475"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 14:10:00.049484"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 16:21:00.775450"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 16:21:03.523505"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 16:22:42.987329"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: get_class_plan]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 16:59:57.001495"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 17:00:01.289670"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 17:04:14.419997"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 17:04:17.557169"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: search_students]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 17:04:19.589632"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 17:04:22.555167"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 17:04:25.624316"
+    },
+    {
+      "type": "too_short",
+      "content": "[tool_calls: query_analytics]",
+      "suggestion": "Çok kısa yanıt — eskalasyon tetiklenmeli",
+      "timestamp": "2026-04-12 17:04:28.595116"
+    }
+  ],
+  "suggestions": [
+    {
+      "pattern": "[ISIM] nasıl/durumu",
+      "frequency": 121,
+      "action": "fast_response pattern olarak ekle"
+    },
+    {
+      "pattern": "kaç tane [KONU]",
+      "frequency": 40,
+      "action": "fast_response pattern olarak ekle"
+    },
+    {
+      "pattern": "[ISIM] hoca [SORU]",
+      "frequency": 21,
+      "action": "fast_response pattern olarak ekle"
+    },
+    {
+      "pattern": "en çok/fazla [KONU]",
+      "frequency": 13,
+      "action": "fast_response pattern olarak ekle"
+    }
+  ]
+}
