@@ -36,7 +36,8 @@ load_dotenv(override=True)
 BASE_URL = os.getenv("EYOTEK_URL", "https://fermat.eyotek.com/v1")
 EYOTEK_USER = os.getenv("EYOTEK_USER", "")
 EYOTEK_PASS = os.getenv("EYOTEK_PASS", "")
-SESSION_FILE = Path(__file__).resolve().parent / ".eyotek_session.json"
+# Oturum 25.6: Proje root'unda tek dosya (bridge + keeper + auto_login hepsi ayni yere baksin)
+SESSION_FILE = Path(__file__).resolve().parent.parent / ".eyotek_session.json"
 QUIET_START = int(os.getenv("EYOTEK_QUIET_START", "22"))  # 22:00
 QUIET_END = int(os.getenv("EYOTEK_QUIET_END", "8"))        # 08:00
 MOBILE_FAZ3_HINT = (

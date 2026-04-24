@@ -20,7 +20,8 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 # Config
-SESSION_FILE = Path(os.getenv("SESSION_FILE", ".eyotek_session.json"))
+# Oturum 25.6: Absolute path — tüm modüller tek dosyaya baksın
+SESSION_FILE = Path(os.getenv("SESSION_FILE") or (Path(__file__).resolve().parent.parent / ".eyotek_session.json"))
 STATUS_FILE = Path(".eyotek_status.json")
 BASE_URL = "https://fermat.eyotek.com/v1"
 CHECK_INTERVAL = 180  # 3 dakika — ASP.NET session ~20-30dk timeout, 3dk yeterli

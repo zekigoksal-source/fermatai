@@ -1,10 +1,85 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 24 Nisan 2026, ~17:20 — OTURUM 25.5 — Eyotek mobil remote login (cloudflared + noVNC), bot üzerinden tetikleme
+> **Son güncelleme:** 24 Nisan 2026, ~18:10 — OTURUM 25.6 — Talimat #85: CapSolver Turnstile otomatik çözüm (sıfır manuel müdahale)
 > **Bridge:** CANLI VPS 116.203.117.106, systemd (fermatai-bridge.service), port 8001, Docker Postgres 16 + pgvector 0.8
 > **Mimari:** Hetzner CCX33 VPS (Nuremberg) — laptop artık 7/24 çalışmıyor
 > **LLM Routing:** fast_response %45 + Groq Llama 3.3 70B %30 + Claude Sonnet 4.6 %25 (hedef); ollama sadece embedding (nomic-embed-text)
 > **Özellikler:** + **Groq 70B primary local motor** + **Groq tool-calling (ENABLE_GROQ_TOOLS=true, 4 SAFE tool)** + **Anthropic prompt caching ephemeral** + **Baglam kaybi fix (conversation_memory 3h INTERVAL kaldirildi, temporal marker)** + **Finansal saydamlik kurali** + **Veri uydurma guardrail** + **Çok parçalı rapor "devam et" kurali** + tum eski ozellikler (iPad hybrid auth + Arsiv + Dashboard + PWA + Atlas + Query Cache + YOK Atlas 35,584 + Self-Awareness KALDIGIM + SQL AST Guard + Hack tracker + OTP brute force + Log filter)
+
+## 🆕 OTURUM 25.6 (24 Nisan 2026, ~18:10) — TALIMAT #85: CAPSOLVER OTOMATIK CAPTCHA ÇÖZÜM
+
+### Neo'nun karari (bot konusmasi 15:02-15:03)
+> "Mantıklı bunu yapalım düşük maliyet boşuna uğraşmayalım manuel ek işlemlerle"
+> "Tamam bu çözümü kaydet uygulayalım sonrada hep sistem online kalsın hiç manuel müdahele gerekmeden"
+
+### noVNC tunnel çıkmaz sokak çıktı (Oturum 25.5 sonu)
+- FPS mobilden düşük, klavye input çalışmıyor
+- Cloudflare image challenge (bisiklet/araba seç) pratik değil
+- Bot önerdi: **CapSolver API**, ~$0.001/çözüm, ayda ~$0.05, %95 güvenilir
+
+### Uygulama (commit `9da96fa`)
+
+**Yeni `capsolver_helper.py`:**
+- `solve_turnstile(url, sitekey) -> token` — AntiTurnstileTaskProxyLess API
+- 2sn/poll, 90s timeout, httpx async client
+- `get_balance()` izleme için
+
+**`eyotek_auto_login.py` güncellendi:**
+- `_extract_turnstile_sitekey(page)` — DOM'dan `data-sitekey` / iframe src parse
+- `_inject_turnstile_token(page, token)` — `cf-turnstile-response`'a value inject + event fire + callback
+- `try_auto_login` CAPTCHA branch:
+  1. CAPTCHA tespit → sitekey ekstrak
+  2. `CAPSOLVER_API_KEY` kontrol (yoksa fallback mesaj)
+  3. `solve_turnstile()` çağır → token
+  4. Token inject → 1.5sn bekle (callback)
+  5. Devam: user/pass fill + submit + cookie yakala
+
+**noVNC tunnel kod olarak korundu** (CapSolver fail durumunda fallback).
+
+### Neo'ya net adımlar (sonraki oturumda VEYA Neo tek başına)
+
+1. **CapSolver hesabı:** https://capsolver.com
+   - 5 dakika kayıt (Google/email)
+   - Dashboard → Deposit $5 (minimum)
+   - Dashboard → API Keys → Copy API key
+
+2. **VPS'e ekle:**
+   ```bash
+   ssh neo@116.203.117.106
+   echo 'CAPSOLVER_API_KEY=your_key_here' | sudo tee -a /opt/fermatai/.env
+   sudo systemctl restart fermatai-bridge
+   ```
+
+3. **Test:** WA'dan "eyotek baglan"
+   - ~30 saniyede: "✅ Eyotek bağlandı" otomatik
+   - Cloudflare, kullanıcı, şifre — hepsi otonom
+   - Neo hiç dokunmaz
+
+### Beklenen çalışma
+- Haftada 1-3 CAPTCHA → ayda ~$0.05 (pratik olarak sıfır)
+- Session keeper heartbeat ile gün boyu online
+- Cookie düşünce CapSolver tekrar çözer
+- **24/7 otonom**, Neo hiç manuel iş yapmaz
+
+### ✅ CANLI TEST SONUCU (24 Nisan 21:42 UTC)
+Neo API key verdi: `CAP-A9F...7D8A`, bakiye $6.
+Deploy + restart + test akışı:
+```
+[CAPSOLVER] Task created -> 7 saniyede token alındı (837 char)
+[EYOTEK] CAPTCHA otomatik çözüldü, login akışı devam
+[EYOTEK] Cookie kaydedildi: .eyotek_session.json (8 cookie)
+session_keeper.check_session() -> True ✅
+```
+- Maliyet: $6 → $5.9988 (1 solve = $0.0012)
+- 20 saniye uctan uca, sıfır manuel iş
+
+### Path unification (bug fix sırasında)
+`eyotek_auto_login.py` session dosyayı `eyotek_agent/` altına yazıyordu ama `whatsapp_bridge` + `session_keeper` `/opt/fermatai/` root'u bekliyordu. Üçü de artık `Path(__file__).parent.parent / ".eyotek_session.json"` kullanıyor → tek kaynak gerçek `/opt/fermatai/.eyotek_session.json`.
+
+### Fallback zinciri (CapSolver fail ederse)
+1. CapSolver token üretemedi → hata mesajı WA'ya
+2. Manuel fallback: `eyotek cookie <json>` (henüz yazılmadı, gerekirse)
+3. Tunnel URL (çok yavaş ama çalışır) — kod korundu
 
 ## 🆕 OTURUM 25.5 (24 Nisan 2026, ~17:20) — EYOTEK MOBIL REMOTE LOGIN (Faz 3 tamamlandı)
 
