@@ -1,10 +1,96 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 24 Nisan 2026, ~16:20 — OTURUM 25.4 — Eyotek VPS bridge (laptop cookie + WA auto-login + CAPTCHA fallback)
+> **Son güncelleme:** 24 Nisan 2026, ~17:20 — OTURUM 25.5 — Eyotek mobil remote login (cloudflared + noVNC), bot üzerinden tetikleme
 > **Bridge:** CANLI VPS 116.203.117.106, systemd (fermatai-bridge.service), port 8001, Docker Postgres 16 + pgvector 0.8
 > **Mimari:** Hetzner CCX33 VPS (Nuremberg) — laptop artık 7/24 çalışmıyor
 > **LLM Routing:** fast_response %45 + Groq Llama 3.3 70B %30 + Claude Sonnet 4.6 %25 (hedef); ollama sadece embedding (nomic-embed-text)
 > **Özellikler:** + **Groq 70B primary local motor** + **Groq tool-calling (ENABLE_GROQ_TOOLS=true, 4 SAFE tool)** + **Anthropic prompt caching ephemeral** + **Baglam kaybi fix (conversation_memory 3h INTERVAL kaldirildi, temporal marker)** + **Finansal saydamlik kurali** + **Veri uydurma guardrail** + **Çok parçalı rapor "devam et" kurali** + tum eski ozellikler (iPad hybrid auth + Arsiv + Dashboard + PWA + Atlas + Query Cache + YOK Atlas 35,584 + Self-Awareness KALDIGIM + SQL AST Guard + Hack tracker + OTP brute force + Log filter)
+
+## 🆕 OTURUM 25.5 (24 Nisan 2026, ~17:20) — EYOTEK MOBIL REMOTE LOGIN (Faz 3 tamamlandı)
+
+### Neo hedefi
+> "Bot üzerinden WA veya web chat'te 'eyotek bağlan' yazdığımda link gelsin, mobilden/masaüstünden linke tıklayıp CAPTCHA çözeyim, sistem online olsun. Old school .bat dosyasını bırakalım, bot etkileşimi olsun iki platformda."
+
+### Yapılanlar (commit `3cbe669`)
+
+**VPS altyapı kurulumu:**
+- apt stack: `chromium-browser + xvfb + x11vnc + novnc + websockify + fluxbox`
+- cloudflared 2026.3.0 (`/usr/local/bin/cloudflared`)
+- Tüm binary'ler PATH'te
+
+**`eyotek_mobile_tunnel.py` (YENİ, 329 satır):**
+- `TunnelSession` class — orchestration
+  - Xvfb `:99` sanal ekran
+  - Chromium headed mode (Eyotek login sayfası yüklü, CDP 9333)
+  - x11vnc `:99 → 5900`
+  - websockify/noVNC `6080 → 5900`
+  - cloudflared tunnel `6080 → https://*.trycloudflare.com`
+- `wait_for_login_and_capture()` — Playwright CDP ile Neo login'i bekler, cookie yakalar
+- `stop()` — tüm process'leri temizler (PID grup SIGTERM)
+- `start_tunnel_session()` üst seviye API
+
+**`eyotek_auto_login.py` entegrasyon:**
+- CAPTCHA tespit → `_start_mobile_tunnel()` çağır
+- Tunnel URL üret (~3-5 saniye)
+- Neo'ya WA mesaj: URL + 3 adım talimat
+- Arka planda (`asyncio.create_task`) 15dk login bekler
+- Login tamamlanınca WA bildirim: "Eyotek bağlandı, X cookie alındı"
+
+### Akış (iki platform da aynı)
+
+```
+Neo WhatsApp/web chat'ten "eyotek bağlan"
+  ↓
+process_message → handler aynı
+  ↓
+VPS auto-login dener
+  ├─ CAPTCHA yok → ✅ otomatik bağlandı (nadir)
+  └─ CAPTCHA var (genelde) → _start_mobile_tunnel()
+                    ↓
+            Xvfb + Chromium (Eyotek açık) + VNC + tunnel
+                    ↓
+            trycloudflare.com URL → WA'ya mesaj
+                    ↓
+            Neo linke tıklar (mobil veya masaüstü)
+                    ↓
+            Tarayıcıda VPS Chrome ekranı görür
+                    ↓
+            Cloudflare kutucuğu + kullanıcı + şifre
+                    ↓
+            Eyotek /Pages/Staff/home açılır
+                    ↓
+            Playwright CDP cookie'yi yakalar
+                    ↓
+            .eyotek_session.json yazılır
+                    ↓
+            Session keeper heartbeat başlar
+                    ↓
+            WA: "✅ Eyotek bağlandı, X cookie"
+                    ↓
+            Sistem online, Neo tarayıcıyı kapatabilir
+```
+
+### Canlı smoke test (doğrulandı)
+```bash
+python -c "asyncio.run(start_tunnel_session(wait_login=False))"
+```
+Çıktı:
+- Xvfb :99 ✅
+- Chromium CDP=9333 + Eyotek login yüklendi ✅
+- x11vnc :99 → 5900 ✅
+- websockify 6080 → 5900 ✅
+- cloudflared → `https://lloyd-chances-diamonds-operator.trycloudflare.com/vnc.html?autoconnect=true&resize=scale` ✅
+
+### End-to-end test bekleniyor (Neo akşam)
+- Neo WA'dan `eyotek baglan` yazacak
+- URL gelecek, telefondan tıklayıp login
+- Cookie yakalanıp session keeper başlayacak
+
+### Komutlar (WA + web chat)
+- `eyotek baglan` → tunnel URL
+- `eyotek baglan zorla` → mevcut session'ı ignore et, yeniden
+- `eyotek durum` → cookie + session heartbeat durumu
+- `eyotek kapat` → cookie sil, oturumu kapat
 
 ## 🆕 OTURUM 25.4 (24 Nisan 2026, ~16:20) — EYOTEK VPS BRIDGE (laptop + WA + auto-login + fallback)
 
