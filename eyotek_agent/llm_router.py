@@ -321,7 +321,17 @@ class LLMRouter:
     def __init__(self):
         self._ollama_available = False
         self._anthropic_available = bool(ANTHROPIC_KEY)
+        self._groq_available = bool(os.getenv("GROQ_API_KEY"))
+        self._groq_client = None
         self._check_ollama()
+        if self._groq_available:
+            try:
+                from groq_handler import GroqClient
+                self._groq_client = GroqClient()
+                logger.info("Groq hazir: llama-3.3-70b-versatile")
+            except Exception as e:
+                logger.warning(f"Groq baslatilamadi: {e}")
+                self._groq_available = False
 
     def _check_ollama(self) -> None:
         """Ollama sunucusunun erisilebilir olup olmadigini kontrol et."""
@@ -541,6 +551,67 @@ Biliyor musun, *arastirmalar* gosteriyor ki gunesli gunlerde ogrencilerin *odakl
 
 _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
 
+    def chat_groq(
+        self,
+        messages: list[dict],
+        system: str = "",
+        model: str = "",
+    ) -> str:
+        """
+        Groq (Llama 3.3 70B) ile hızlı yanıt al.
+        Ollama'ya alternatif — VPS production'da default.
+        ~23x Claude'dan hızlı, ~200x ucuz.
+        """
+        import asyncio
+
+        # System prompt hazırla (Ollama ile aynı sadelestirilmis)
+        local_system = self._LOCAL_SYSTEM
+        if "ARAYAN ADI:" in system:
+            import re
+            name_match = re.search(r"ARAYAN ADI:\s*(.+)", system)
+            role_match = re.search(r"ARAYAN ROLÜ:\s*(\w+)", system)
+            caller_name = name_match.group(1).strip() if name_match else ""
+            caller_role = role_match.group(1).strip() if role_match else ""
+            if caller_name:
+                local_system = (
+                    f"ONEMLI — ARAYAN KISI: *{caller_name}*\n"
+                    f"Bu kisiye HER ZAMAN \"{caller_name.split()[0]}\" diye hitap et.\n"
+                    f"Rol: {caller_role}\n\n"
+                ) + local_system
+
+        # Messages OpenAI-format (Groq uyumlu)
+        groq_messages = []
+        for m in messages:
+            c = m.get("content", "")
+            if isinstance(c, list):
+                # Claude formatındaki çok parçalı içerik → text birleştir
+                text_parts = [p.get("text", "") for p in c if isinstance(p, dict) and p.get("type") == "text"]
+                c = " ".join(text_parts)
+            if isinstance(c, str) and c.strip():
+                groq_messages.append({"role": m.get("role", "user"), "content": c})
+
+        # Async çağrıyı sync context'te çalıştır
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Async contextten çağrıldık, nested run kullan
+                import nest_asyncio
+                nest_asyncio.apply()
+                result = loop.run_until_complete(
+                    self._groq_client.complete(messages=groq_messages, system=local_system, max_tokens=1500)
+                )
+            else:
+                result = loop.run_until_complete(
+                    self._groq_client.complete(messages=groq_messages, system=local_system, max_tokens=1500)
+                )
+        except RuntimeError:
+            # Yeni loop oluştur
+            result = asyncio.run(
+                self._groq_client.complete(messages=groq_messages, system=local_system, max_tokens=1500)
+            )
+
+        return result.get("text", "")
+
     def chat_local(
         self,
         messages: list[dict],
@@ -757,19 +828,33 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
         elif complexity == "auto":
             complexity = "cloud"  # admin/ogretmen icin guvenli taraf
 
-        # ── YEREL (Ollama) ────────────────────────────────────────────────
-        if complexity == "local" and self._ollama_available:
-            try:
-                text = self.chat_local(messages, system)
-                return {
-                    "text": text,
-                    "provider": "ollama",
-                    "response": None,
-                    "has_tool_calls": False,
-                }
-            except Exception:
-                logger.warning("Ollama basarisiz — Claude'a geciyor (fallback)")
-                # Fallback to cloud
+        # ── YEREL-BENZERİ (Groq öncelikli, Ollama fallback) ─────────────
+        if complexity == "local":
+            # 1) Groq tercih edilen (VPS production — Ollama yok, daha hızlı + ucuz)
+            if self._groq_available and self._groq_client:
+                try:
+                    text = self.chat_groq(messages, system)
+                    return {
+                        "text": text,
+                        "provider": "groq",
+                        "response": None,
+                        "has_tool_calls": False,
+                    }
+                except Exception as e:
+                    logger.warning(f"Groq basarisiz: {e} — Ollama/Claude fallback")
+            # 2) Ollama ikinci seçenek (laptop dev için)
+            if self._ollama_available:
+                try:
+                    text = self.chat_local(messages, system)
+                    return {
+                        "text": text,
+                        "provider": "ollama",
+                        "response": None,
+                        "has_tool_calls": False,
+                    }
+                except Exception:
+                    logger.warning("Ollama basarisiz — Claude'a geciyor (fallback)")
+            # Ikisi de yoksa Claude'a düş
 
         # ── BULUT (Claude API) ────────────────────────────────────────────
         if self._anthropic_available:
@@ -808,6 +893,8 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
             "provider": LLM_PROVIDER,
             "ollama": self._ollama_available,
             "ollama_model": OLLAMA_MODEL,
+            "groq": self._groq_available,
+            "groq_model": os.getenv("GROQ_MODEL_PRIMARY", "llama-3.3-70b-versatile"),
             "anthropic": self._anthropic_available,
             "claude_model": CLAUDE_MODEL,
         }
