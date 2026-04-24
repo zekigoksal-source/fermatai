@@ -1727,6 +1727,53 @@ async def admin_insights(
         return {"success": False, "error": str(e)[:100]}
 
 
+@router.get("/admin/conversations", response_class=HTMLResponse)
+async def admin_conversations(
+    request: Request,
+    days: int = 7,
+    phone: Optional[str] = None,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """Oturum 25.6: Admin konusma log HTML viewer.
+
+    Query params:
+      - days=7 (default) | 1 | 3 | 30 | 0 (tum gecmis)
+      - phone=905xxxxx (opsiyonel, tek kisi filtrele)
+
+    Erisim: admin veya mudur rolu (_require_admin).
+    Ornek: https://api.fermategitimkurumlari.com/admin/conversations?days=2
+    """
+    token = _extract_token(request, fermat_session)
+    sess = await get_session(token) if token else None
+    if not sess:
+        # Session yoksa /chat/login-tarzi redirect
+        raise HTTPException(status_code=401, detail="Oturum yok — önce /chat'e giriş yapın")
+    _require_admin(sess)
+
+    # Guvenlik: days makul araliga sabitle
+    try:
+        days = max(0, min(int(days), 365))
+    except Exception:
+        days = 7
+
+    try:
+        from conversation_viewer import get_conversations, generate_html
+        conversations, users, period_label = await get_conversations(days=days)
+        # Phone filtre — tek kisiye daralt
+        if phone:
+            phone_clean = phone.replace("+", "").strip()
+            conversations = {
+                p: msgs for p, msgs in conversations.items()
+                if p == phone_clean or p.endswith(phone_clean[-4:])
+            }
+            period_label += f" | Filtre: {phone[-4:]}"
+        html_out = generate_html(conversations, users, period_label)
+        return HTMLResponse(content=html_out, status_code=200)
+    except Exception as e:
+        logger.error(f"admin_conversations hata: {e}")
+        raise HTTPException(status_code=500, detail=f"HTML üretilemedi: {str(e)[:100]}")
+
+
 @router.get("/admin/outreach-pending")
 async def admin_outreach_pending(
     request: Request,
