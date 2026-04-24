@@ -39,9 +39,11 @@ EYOTEK_PASS = os.getenv("EYOTEK_PASS", "")
 SESSION_FILE = Path(__file__).resolve().parent / ".eyotek_session.json"
 QUIET_START = int(os.getenv("EYOTEK_QUIET_START", "22"))  # 22:00
 QUIET_END = int(os.getenv("EYOTEK_QUIET_END", "8"))        # 08:00
-LAPTOP_FALLBACK_HINT = (
-    "\nLaptop'tan çalıştırmayı dene:\n"
-    "`C:\\Users\\zekig\\OneDrive\\Desktop\\FermatAI\\BASLAT_EYOTEK.bat`"
+MOBILE_FAZ3_HINT = (
+    "\n\n_Eyotek her login'de Cloudflare CAPTCHA istiyor — VPS otomatik çözemez._\n"
+    "_Mobil remote-login sistemi (cloudflared tunnel + headed Chromium) kurulumu_\n"
+    "_sonraki oturumda yapılacak. O zamana kadar Eyotek yazma işlemleri pasif,_\n"
+    "_sistem DB cache ile okuma yapar (son 18 gün veri mevcut)._"
 )
 
 
@@ -125,11 +127,22 @@ async def try_auto_login(timeout_ms: int = 20000) -> dict:
 
     async with async_playwright() as p:
         try:
-            browser = await p.chromium.launch(headless=True)
+            # Oturum 25.4 fix: systemd hardening (PrivateTmp + RestrictNamespaces)
+            # Chromium sandbox'ini engelliyor. --no-sandbox + --disable-dev-shm-usage gerekli.
+            # Interactive user'da calisir ama service'te fail ediyordu.
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-setuid-sandbox",
+                    "--disable-gpu",
+                ],
+            )
         except Exception as e:
             return {
                 "success": False, "reason": "error",
-                "message": f"Chromium baslatilamadi: {e}", "cookies_count": 0,
+                "message": f"Chromium baslatilamadi: {str(e)[:300]}", "cookies_count": 0,
             }
 
         ctx = await browser.new_context(
@@ -304,7 +317,7 @@ async def eyotek_connect_command(force: bool = False) -> str:
         return (
             "⚠️ *Cloudflare CAPTCHA çıktı*\n\n"
             "VPS'ten otomatik giriş yapılamadı (bot koruması).\n"
-            + LAPTOP_FALLBACK_HINT +
+            + MOBILE_FAZ3_HINT +
             "\n\n_(Cloudflare Tunnel ile uzaktan CAPTCHA çözüm ileriki oturumda eklenecek.)_"
         )
     elif reason == "bad_credentials":
@@ -317,13 +330,13 @@ async def eyotek_connect_command(force: bool = False) -> str:
         return (
             "⏱️ *Eyotek yanıt vermedi (timeout)*\n\n"
             "Geçici bağlantı sorunu olabilir. Tekrar dene: 'eyotek baglan'\n"
-            + LAPTOP_FALLBACK_HINT
+            + MOBILE_FAZ3_HINT
         )
     else:
         return (
             f"❌ *Eyotek bağlantı hatası*\n\n"
             f"_{result['message'][:200]}_\n"
-            + LAPTOP_FALLBACK_HINT
+            + MOBILE_FAZ3_HINT
         )
 
 

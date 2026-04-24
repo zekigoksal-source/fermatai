@@ -323,10 +323,10 @@ async def session_keeper_loop():
                         if _vps_mode:
                             await notify_admin(
                                 "⚠️ [FERMAT] Eyotek oturumu düştü.\n\n"
-                                "Laptop'ta şunu çalıştır:\n"
-                                "`C:\\Users\\zekig\\OneDrive\\Desktop\\FermatAI\\BASLAT_EYOTEK.bat`\n\n"
-                                "Chrome açılır → Cloudflare + şifre girersin → "
-                                "cookie otomatik VPS'e aktarılır → sistem devam eder."
+                                "Mobil remote-login sistemi henüz kurulmadı "
+                                "(Faz 3: cloudflared tunnel + headed Chromium).\n"
+                                "Bu oturum kurulana kadar Eyotek yazma pasif, "
+                                "sistem DB cache'ten okuma yapar."
                             )
                         else:
                             await notify_admin(
