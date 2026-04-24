@@ -2503,6 +2503,42 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
     lower = text.strip().lower()
 
     # ── Admin sistem komutlari ────────────────────────────────────────────────
+    # Oturum 25.4 Faz 2: Eyotek VPS auto-login komutlari
+    if lower in ("eyotek baglan", "eyotek bağlan", "eyotek connect", "eyotek aç", "eyotek ac"):
+        from fermat_core_agent import _get_caller_profile
+        prof = await _get_caller_profile(phone)
+        if prof.get("role") == "admin":
+            try:
+                from eyotek_auto_login import eyotek_connect_command
+                force = "zorla" in lower or "force" in lower
+                return await eyotek_connect_command(force=force)
+            except Exception as e:
+                return f"❌ Eyotek baglanti hatasi: {e}"
+        return "Bu komut sadece admin icin."
+
+    if lower in ("eyotek durum", "eyotek status", "eyotek durumu"):
+        from fermat_core_agent import _get_caller_profile
+        prof = await _get_caller_profile(phone)
+        if prof.get("role") in ("admin", "mudur"):
+            try:
+                from eyotek_auto_login import eyotek_status_command
+                return await eyotek_status_command()
+            except Exception as e:
+                return f"❌ Durum sorgu hatasi: {e}"
+        return "Bu komut sadece yoneticiler icin."
+
+    if lower in ("eyotek kapat", "eyotek disconnect", "eyotek kes"):
+        from fermat_core_agent import _get_caller_profile
+        prof = await _get_caller_profile(phone)
+        if prof.get("role") == "admin":
+            try:
+                from eyotek_auto_login import eyotek_disconnect_command
+                return await eyotek_disconnect_command()
+            except Exception as e:
+                return f"❌ Kapatma hatasi: {e}"
+        return "Bu komut sadece admin icin."
+
+    # Eski "eyotek tamam" komutu (laptop CDP cookie refresh) — geriye dönük uyumlu
     if lower in ("eyotek tamam", "eyotek onayla", "session yenile"):
         from fermat_core_agent import _get_caller_profile
         prof = await _get_caller_profile(phone)
@@ -2511,8 +2547,11 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 from eyotek_wrapper import get_session
                 cookies = await get_session()
                 if cookies:
-                    return "Eyotek session yenilendi! Sistem online."
-                return "Session alinamadi. Chrome CDP acik mi?"
+                    return "✅ Eyotek session yenilendi (laptop CDP)."
+                return (
+                    "⚠️ Laptop CDP'den session alınamadı.\n\n"
+                    "VPS otomatik login için: `eyotek baglan`"
+                )
             except Exception as e:
                 return f"Session yenileme hatasi: {e}"
         return "Bu komut sadece yoneticiler icin."

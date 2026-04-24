@@ -1,0 +1,373 @@
+"""
+Eyotek Auto-Login (VPS) — Oturum 25.4 Faz 2
+=============================================
+Neo WhatsApp'tan "eyotek baglan" yazinca cagrilir.
+
+Mimari (Neo brief, 24 Nisan 2026):
+1. Playwright headless Chromium baslat
+2. Eyotek login sayfasina git
+3. Credentials (env'den) otomatik doldur
+4. Submit et
+5. Sonucu tespit:
+   - BASARILI (URL /Pages/'a gecti) -> cookie kaydet + WA "Eyotek baglandi"
+   - CAPTCHA tespit edildi -> fallback: Neo'ya "Laptop'tan BASLAT_EYOTEK.bat calistir"
+   - HATA -> WA hata mesaji
+
+Not: Cloudflare Tunnel ile remote CAPTCHA cozum ileri faz isi (cloudflared binary
+kurulu olmadigi icin). Su an CAPTCHA cikarsa laptop fallback.
+
+Saat kurallari:
+- SESSIZ_SAATLER (22:00 - 08:00): bildirim gonderme, sadece log
+- GUNDUZ (08:00 - 22:00): WA bildirim aktif
+"""
+from __future__ import annotations
+import asyncio
+import json
+import os
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+from loguru import logger
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
+
+BASE_URL = os.getenv("EYOTEK_URL", "https://fermat.eyotek.com/v1")
+EYOTEK_USER = os.getenv("EYOTEK_USER", "")
+EYOTEK_PASS = os.getenv("EYOTEK_PASS", "")
+SESSION_FILE = Path(__file__).resolve().parent / ".eyotek_session.json"
+QUIET_START = int(os.getenv("EYOTEK_QUIET_START", "22"))  # 22:00
+QUIET_END = int(os.getenv("EYOTEK_QUIET_END", "8"))        # 08:00
+LAPTOP_FALLBACK_HINT = (
+    "\nLaptop'tan çalıştırmayı dene:\n"
+    "`C:\\Users\\zekig\\OneDrive\\Desktop\\FermatAI\\BASLAT_EYOTEK.bat`"
+)
+
+
+def is_quiet_hour(now: Optional[datetime] = None) -> bool:
+    """Gece saatinde WA bildirim gonderme (Neo trafikteyse rahatsiz etme)."""
+    now = now or datetime.now()
+    h = now.hour
+    if QUIET_START > QUIET_END:
+        # 22-08 wrap (gece)
+        return h >= QUIET_START or h < QUIET_END
+    return QUIET_START <= h < QUIET_END
+
+
+async def _notify_admin(message: str, quiet_bypass: bool = False) -> None:
+    """WA admin'e bildirim. quiet_bypass=True -> sessiz saati yoksay (kritik)."""
+    if not quiet_bypass and is_quiet_hour():
+        logger.info(f"[EYOTEK] Sessiz saat — WA atlandi: {message[:60]}")
+        return
+    try:
+        from session_keeper import notify_admin
+        await notify_admin(message)
+    except Exception as e:
+        logger.warning(f"[EYOTEK] WA bildirim fail: {e}")
+
+
+async def _detect_captcha(page) -> bool:
+    """Sayfada Cloudflare Turnstile / reCAPTCHA tespit et."""
+    try:
+        return await page.evaluate("""
+            () => {
+                const t = document.querySelector('[name="cf-turnstile-response"], .cf-turnstile, iframe[src*="turnstile"], iframe[src*="cloudflare"]');
+                const r = document.querySelector('[id*="recaptcha"], iframe[src*="recaptcha"], .g-recaptcha');
+                return !!(t || r);
+            }
+        """)
+    except Exception:
+        return False
+
+
+async def _is_authenticated(page) -> bool:
+    """URL /Pages/ altinda ve login form yok mu?"""
+    try:
+        url = page.url
+        if "login" in url.lower() or "default.aspx" in url.lower():
+            return False
+        if "/Pages/" not in url:
+            return False
+        has_login_form = await page.evaluate(
+            "() => !!document.getElementById('btnLogin') || !!document.querySelector('input[type=password]')"
+        )
+        return not has_login_form
+    except Exception:
+        return False
+
+
+async def try_auto_login(timeout_ms: int = 20000) -> dict:
+    """
+    Headless Chromium ile Eyotek otomatik login dene.
+
+    Returns:
+        {
+            "success": bool,
+            "reason": "ok" | "captcha" | "bad_credentials" | "timeout" | "error",
+            "message": str,
+            "cookies_count": int,
+        }
+    """
+    if not (EYOTEK_USER and EYOTEK_PASS):
+        return {
+            "success": False, "reason": "error",
+            "message": "EYOTEK_USER/EYOTEK_PASS .env'de yok", "cookies_count": 0,
+        }
+
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        return {
+            "success": False, "reason": "error",
+            "message": "Playwright kurulu degil", "cookies_count": 0,
+        }
+
+    async with async_playwright() as p:
+        try:
+            browser = await p.chromium.launch(headless=True)
+        except Exception as e:
+            return {
+                "success": False, "reason": "error",
+                "message": f"Chromium baslatilamadi: {e}", "cookies_count": 0,
+            }
+
+        ctx = await browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                       "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            viewport={"width": 1366, "height": 768},
+            locale="tr-TR",
+        )
+        page = await ctx.new_page()
+
+        try:
+            await page.goto(BASE_URL, wait_until="domcontentloaded", timeout=timeout_ms)
+            await asyncio.sleep(2)
+
+            # Zaten authenticated mi?
+            if await _is_authenticated(page):
+                cookies = await ctx.cookies()
+                eyotek_cookies = [c for c in cookies if "eyotek" in c.get("domain", "").lower()]
+                _save_cookies(eyotek_cookies)
+                await browser.close()
+                return {
+                    "success": True, "reason": "already_authenticated",
+                    "message": f"Zaten giris yapili ({len(eyotek_cookies)} cookie)",
+                    "cookies_count": len(eyotek_cookies),
+                }
+
+            # CAPTCHA var mi? (Cloudflare Turnstile vb.)
+            if await _detect_captcha(page):
+                await browser.close()
+                return {
+                    "success": False, "reason": "captcha",
+                    "message": "Cloudflare CAPTCHA tespit edildi (otomatik login imkansiz)",
+                    "cookies_count": 0,
+                }
+
+            # Kullanici adi + sifre doldur
+            # Eyotek login: #txtUserName + #txtPassword + #btnLogin
+            user_filled = False
+            pass_filled = False
+            try:
+                await page.fill("#txtUserName", EYOTEK_USER, timeout=5000)
+                user_filled = True
+            except Exception:
+                # Generic fallback
+                try:
+                    await page.fill("input[type='text'], input[name*='user' i]", EYOTEK_USER, timeout=3000)
+                    user_filled = True
+                except Exception:
+                    pass
+
+            try:
+                await page.fill("#txtPassword", EYOTEK_PASS, timeout=5000)
+                pass_filled = True
+            except Exception:
+                try:
+                    await page.fill("input[type='password']", EYOTEK_PASS, timeout=3000)
+                    pass_filled = True
+                except Exception:
+                    pass
+
+            if not (user_filled and pass_filled):
+                await browser.close()
+                return {
+                    "success": False, "reason": "error",
+                    "message": f"Login formu bulunamadi (user={user_filled}, pass={pass_filled})",
+                    "cookies_count": 0,
+                }
+
+            # Submit (btnLogin veya form submit)
+            try:
+                await page.click("#btnLogin", timeout=3000)
+            except Exception:
+                try:
+                    await page.keyboard.press("Enter")
+                except Exception:
+                    pass
+
+            # Login sonucu bekle (URL degisimi veya CAPTCHA cikmasi)
+            await asyncio.sleep(4)
+
+            # Submit sonrasi CAPTCHA tekrar kontrol
+            if await _detect_captcha(page):
+                await browser.close()
+                return {
+                    "success": False, "reason": "captcha",
+                    "message": "Login sonrasi CAPTCHA cikti",
+                    "cookies_count": 0,
+                }
+
+            # Authenticated mi?
+            if await _is_authenticated(page):
+                cookies = await ctx.cookies()
+                eyotek_cookies = [c for c in cookies if "eyotek" in c.get("domain", "").lower()]
+                _save_cookies(eyotek_cookies)
+                await browser.close()
+                return {
+                    "success": True, "reason": "ok",
+                    "message": f"Login basarili ({len(eyotek_cookies)} cookie, otomatik)",
+                    "cookies_count": len(eyotek_cookies),
+                }
+
+            # Kredensiyel yanlisi mi? (login sayfasinda hata mesaji olabilir)
+            err_text = await page.evaluate("""
+                () => {
+                    const e = document.querySelector('.alert-danger, .error, [class*="error"], #lblError');
+                    return e ? (e.innerText || e.textContent || '').trim().slice(0, 120) : '';
+                }
+            """)
+            await browser.close()
+            if err_text:
+                return {
+                    "success": False, "reason": "bad_credentials",
+                    "message": f"Login hatasi: {err_text}",
+                    "cookies_count": 0,
+                }
+            return {
+                "success": False, "reason": "timeout",
+                "message": "Login denemesi sonrasi sayfa dogrulanamadi",
+                "cookies_count": 0,
+            }
+
+        except Exception as e:
+            try:
+                await browser.close()
+            except Exception:
+                pass
+            return {
+                "success": False, "reason": "error",
+                "message": f"Exception: {str(e)[:200]}",
+                "cookies_count": 0,
+            }
+
+
+def _save_cookies(cookies: list[dict]) -> None:
+    SESSION_FILE.write_text(
+        json.dumps(cookies, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    logger.info(f"[EYOTEK] Cookie kaydedildi: {SESSION_FILE.name} ({len(cookies)} cookie)")
+
+
+async def eyotek_connect_command(force: bool = False) -> str:
+    """
+    WhatsApp "eyotek baglan" handler.
+    Dönen string: Neo'ya WA cevap olarak gonderilecek mesaj.
+    """
+    logger.info(f"[EYOTEK] connect command, force={force}, quiet_hour={is_quiet_hour()}")
+
+    # Zaten aktif mi?
+    if SESSION_FILE.exists() and not force:
+        try:
+            from session_keeper import check_session
+            if await check_session():
+                return "✅ *Eyotek zaten bağlı.*\n\n_Yeniden bağlanmak için: 'eyotek baglan zorla'_"
+        except Exception:
+            pass
+
+    # Otomatik login dene
+    result = await try_auto_login()
+
+    if result["success"]:
+        msg = (
+            f"✅ *Eyotek bağlandı!*\n\n"
+            f"_{result['message']}_\n"
+            f"_Session süresi: ~20-30dk, keeper heartbeat ile uzar._"
+        )
+        # Sessiz saatte de basarili bildirim ok (kullanici zaten istemis)
+        return msg
+
+    # Basarisiz durumlar
+    reason = result["reason"]
+    if reason == "captcha":
+        return (
+            "⚠️ *Cloudflare CAPTCHA çıktı*\n\n"
+            "VPS'ten otomatik giriş yapılamadı (bot koruması).\n"
+            + LAPTOP_FALLBACK_HINT +
+            "\n\n_(Cloudflare Tunnel ile uzaktan CAPTCHA çözüm ileriki oturumda eklenecek.)_"
+        )
+    elif reason == "bad_credentials":
+        return (
+            "❌ *Eyotek giriş başarısız — kimlik bilgileri hatası*\n\n"
+            f"_Detay: {result['message'][:100]}_\n\n"
+            ".env dosyasında EYOTEK_USER ve EYOTEK_PASS doğru mu?"
+        )
+    elif reason == "timeout":
+        return (
+            "⏱️ *Eyotek yanıt vermedi (timeout)*\n\n"
+            "Geçici bağlantı sorunu olabilir. Tekrar dene: 'eyotek baglan'\n"
+            + LAPTOP_FALLBACK_HINT
+        )
+    else:
+        return (
+            f"❌ *Eyotek bağlantı hatası*\n\n"
+            f"_{result['message'][:200]}_\n"
+            + LAPTOP_FALLBACK_HINT
+        )
+
+
+async def eyotek_status_command() -> str:
+    """WA 'eyotek durum' handler."""
+    if not SESSION_FILE.exists():
+        return (
+            "🔴 *Eyotek oturumu yok*\n\n"
+            "Bağlanmak için: `eyotek baglan`"
+        )
+
+    age_min = (datetime.now().timestamp() - SESSION_FILE.stat().st_mtime) / 60
+    try:
+        from session_keeper import check_session
+        is_active = await check_session()
+    except Exception:
+        is_active = None
+
+    status_icon = "🟢" if is_active else "🔴"
+    status_text = "AKTİF" if is_active else ("PASİF" if is_active is False else "BİLİNMİYOR")
+
+    return (
+        f"{status_icon} *Eyotek durumu: {status_text}*\n\n"
+        f"Son cookie güncelleme: ~{age_min:.0f} dakika önce\n"
+        f"Session keeper: 3dk periyot HTTP heartbeat\n\n"
+        f"_Yenileme: `eyotek baglan`_"
+    )
+
+
+async def eyotek_disconnect_command() -> str:
+    """WA 'eyotek kapat' handler."""
+    if SESSION_FILE.exists():
+        try:
+            SESSION_FILE.unlink()
+            return "🔴 *Eyotek oturumu kapatıldı* (cookie dosyası silindi)"
+        except Exception as e:
+            return f"❌ Silinemedi: {e}"
+    return "ℹ️ Zaten oturum yoktu."
+
+
+if __name__ == "__main__":
+    # CLI test: python eyotek_auto_login.py
+    async def _main():
+        print("Auto-login deneniyor...")
+        r = await try_auto_login()
+        print(json.dumps(r, ensure_ascii=False, indent=2))
+    asyncio.run(_main())
