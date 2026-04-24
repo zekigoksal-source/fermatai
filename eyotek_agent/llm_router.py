@@ -55,6 +55,12 @@ CLAUDE_MODEL    = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
 # Claude'a sessizce fallback eder. Varsayilan davranis degismez.
 ENABLE_GROQ_TOOLS = os.getenv("ENABLE_GROQ_TOOLS", "false").lower() == "true"
 
+# Oturum 25 PROJ-2-A: Kavramsal sorular (nedir/anlat/formul) Groq 70B'ye.
+# Oturum 19'da Ollama halusinasyon yapiyordu -> cloud'a tasinmisti.
+# Groq 70B ile hallusilasyon riski dusuk, %25-30 Claude trafigi Groq'a kayabilir.
+# Sorun olursa false yap, eski davranisa doneriz (env: GROQ_CONCEPTUAL=false)
+GROQ_CONCEPTUAL = os.getenv("GROQ_CONCEPTUAL", "true").lower() == "true"
+
 # Groq ile denenebilir read-only, dusuk riskli tool'lar.
 # YAZMA (write_etut, write_counsellor_note, sms_gonder, plani_takvime_ekle,
 # etut_takvime_ekle, rehber_baglantisi, tercih_*) veya hassas ACL (query_analytics,
@@ -217,8 +223,10 @@ def classify_complexity(text: str) -> str:
 
     # KAVRAMSAL AÇIKLAMA — sadece SAF KAVRAM sorguları Ollama'ya
     # "turev nedir" OK, "benim son denemem acikla" CLOUD (personal zaten yakalandi yukarida)
+    # Oturum 25 PROJ-2-A: Trailing \b kaldirildi — Turkce suffix'ler (anlatir, ornegi,
+    # formulu, aciklar) artik yakaniyor. "anlat", "ornek" gibi stemleri esnek yakala.
     is_conceptual = bool(re.search(
-        r'\b(nedir|ne\s*demek|nasil\s*calisir|nasıl\s*çalışır|acikla|açıkla|anlat|ogret|öğret|tanimla|tanımla|tanim|tanım|ornek|örnek|farki|farkı|ozet|özet)\b',
+        r'\b(nedir|ne\s*demek|nasil\s*calisir|nasıl\s*çalışır|acikla|açıkla|anlat|ogret|öğret|tanim|tanım|ornek|örnek|formul|formül|farki|farkı|ozet|özet)',
         text_lower,
     ))
     # ANALIZ/DURUM sorgusu var mi? (cloud gerektirir — "durumu nasil", "performans", "sonuc" vb)
@@ -229,13 +237,19 @@ def classify_complexity(text: str) -> str:
         r'hangi\s*(ogrenci|öğrenci|ders|sinav)|kac\s*(ogrenci|net|saat|sinav)|kaç\s*(öğrenci|net|saat|sınav))',
         text_lower,
     ))
-    # Kavramsal sorular → CLOUD (Oturum 19: Ollama kavramsal sorularda halüsinasyon yapıyor)
-    # "öz indüksiyon nedir" → Ollama matematik indüksiyon anlattı (FİZİK konusuydu)
-    # "bitki" → Ollama "bakteriyemik koşullar" uydurdu
-    # Neo kuralı: "Ollama kendi kafasına göre içerik üretmesin, sadece Claude şablonuna bağlı kalsın"
-    # Ollama SADECE selamlama/teşekkür/kısa sohbet — kavramsal sorular Claude'a (RAG + doğru bilgi)
-    if is_conceptual:
-        return "cloud"  # Claude search_curriculum + RAG ile doğru cevap verir
+    # Oturum 25 revize: Kavramsal sorular artik GROQ 70B'ye (local).
+    # Oturum 19 tarihinde Ollama halusinasyon yapiyordu (oz indiksiyon -> matematik),
+    # ama Groq 70B'de bu risk dusuk. Local path'i kullanirsak Groq 70B cevaplayacak
+    # (chat_local() Groq-first). GROQ_CONCEPTUAL=false ile Oturum 19 davranisina doneriz.
+    #
+    # KRITIK: needs_analysis=True varsa (durum/performans/kiyasla/trend), hala cloud
+    # (Groq veri+analiz multi-step'te Claude kadar iyi degil).
+    if is_conceptual and not needs_analysis:
+        if GROQ_CONCEPTUAL:
+            return "local"
+        return "cloud"
+    if is_conceptual and needs_analysis:
+        return "cloud"  # analiz gerektiren kavramsal → Claude (eski davranis korundu)
 
     # KESIN CLOUD: tool-calling gerektiren spesifik istekler
     # "soru X coz/goster/getir" → search_curriculum + send_exam_image
