@@ -251,8 +251,19 @@ async def session_keeper_loop():
     Ana dongu: her 5 dakikada session kontrol et.
     Online → keep-warm istegi at.
     Offline → admin'e bildir, beklemeye gec.
+
+    Flag'ler (.env):
+      EYOTEK_SESSION_ENABLED=false  → keeper TAMAMEN DEVRE DIŞI (VPS production)
+      SESSION_KEEPER_NOTIFY=false   → keeper çalışır ama WP bildirim göndermez
     """
-    logger.info("Session Keeper baslatildi")
+    import os
+    # VPS production: Eyotek Chrome yok → keeper devre dışı, bildirim spam önle
+    if os.getenv("EYOTEK_SESSION_ENABLED", "true").lower() in ("false", "0", "no"):
+        logger.info("Session Keeper DEVRE DIŞI (EYOTEK_SESSION_ENABLED=false) — VPS production modu")
+        return
+
+    notify_enabled = os.getenv("SESSION_KEEPER_NOTIFY", "true").lower() not in ("false", "0", "no")
+    logger.info(f"Session Keeper baslatildi (notify={notify_enabled})")
     was_online = False
     offline_notified = False
 
@@ -264,7 +275,7 @@ async def session_keeper_loop():
                 update_status("online", "Session aktif")
                 if not was_online:
                     logger.success("Eyotek session ONLINE")
-                    if offline_notified:
+                    if offline_notified and notify_enabled:
                         await notify_admin(
                             "[FERMAT] Eyotek session yeniden aktif! Sistem online."
                         )
@@ -279,11 +290,12 @@ async def session_keeper_loop():
                 was_online = False
                 if not offline_notified:
                     logger.warning("Eyotek session OFFLINE!")
-                    await notify_admin(
-                        "[FERMAT] Eyotek session dustu!\n\n"
-                        "Lutfen Chrome'da fermat.eyotek.com adresine giris yapin.\n"
-                        "Giris yaptiktan sonra 'eyotek tamam' yazin."
-                    )
+                    if notify_enabled:
+                        await notify_admin(
+                            "[FERMAT] Eyotek session dustu!\n\n"
+                            "Lutfen Chrome'da fermat.eyotek.com adresine giris yapin.\n"
+                            "Giris yaptiktan sonra 'eyotek tamam' yazin."
+                        )
                     offline_notified = True
 
         except Exception as e:
