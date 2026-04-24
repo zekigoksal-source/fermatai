@@ -3424,6 +3424,56 @@ class FermatCoreAgent:
                 logger.warning(f"  Ollama basarisiz, Claude'a geciliyor: {e}")
                 # Fallback — asagidaki Claude akisina devam et
 
+        # ── Oturum 25 PROJ-C: Groq tool-calling pre-check (opt-in) ───────────
+        # ENABLE_GROQ_TOOLS aktif + ogrenci rolü + SAFE_GROQ_TOOLS icindeki araclar
+        # kullanilabiliyorsa Groq 70B'yi dene. Herhangi bir hata/invalid output'ta
+        # Claude akisina sessizce dus (asagidaki MAX_TURNS loop'u).
+        try:
+            from llm_router import ENABLE_GROQ_TOOLS, SAFE_GROQ_TOOLS
+            if (ENABLE_GROQ_TOOLS and role == "ogrenci"
+                    and getattr(self.router, "_groq_available", False)):
+                _safe_tools_subset = [t for t in TOOLS
+                                      if t.get("name") in SAFE_GROQ_TOOLS]
+                if _safe_tools_subset:
+                    async def _groq_exec(name, args):
+                        return await run_tool(
+                            name, args,
+                            caller_phone=self._caller_phone,
+                            caller_role=role,
+                            caller_channel=getattr(self, "_channel", "whatsapp"),
+                        )
+                    _gt0 = time.time()
+                    _groq_r = await self.router.chat_groq_with_tools(
+                        messages=self.history,
+                        system=_role_aware_prompt,
+                        tools=_safe_tools_subset,
+                        tool_executor=_groq_exec,
+                    )
+                    _gt_ms = int((time.time() - _gt0) * 1000)
+                    if _groq_r and _groq_r.get("text") and len(_groq_r["text"].strip()) >= 20:
+                        answer = _groq_r["text"].strip()
+                        logger.info(f"  [GROQ-TOOLS] Basarili {_gt_ms}ms, {len(answer)} char")
+                        self.history.append({"role": "assistant", "content": answer})
+                        try:
+                            await _log_conversation(
+                                self.session_id, caller_phone, role,
+                                "assistant", answer, ["groq_tools"],
+                            )
+                        except Exception:
+                            pass
+                        try:
+                            from usage_tracker import log_event
+                            await log_event(
+                                phone=caller_phone, role=role, full_name=caller_name,
+                                event_type="message", response_source="groq", response_ms=_gt_ms,
+                            )
+                        except Exception:
+                            pass
+                        return answer
+                    # _groq_r None ya da cok kisa -> Claude'a dus (sessiz)
+        except Exception as _gt_err:
+            logger.warning(f"  [GROQ-TOOLS] pre-check hatasi, Claude'a dusuyor: {_gt_err}")
+
         MAX_TURNS = 10
         for turn in range(MAX_TURNS):
             # KRITIK: Anthropic SDK sync — event loop'u bloke etmemesi icin

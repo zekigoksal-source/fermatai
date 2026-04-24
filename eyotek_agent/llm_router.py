@@ -49,11 +49,11 @@ OLLAMA_TIMEOUT  = int(os.getenv("OLLAMA_TIMEOUT", "30"))
 ANTHROPIC_KEY   = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL    = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
 
-# Oturum 25: Groq tool-calling opt-in (default KAPALI — production guvenligi)
-# True yapildiginda: ogrenci rolunde ve SAFE_GROQ_TOOLS alt kumesi kullaniliyorsa
-# Groq 70B denenir; HER TURLU hata (invalid JSON, unknown tool, API hatasi...)
-# Claude'a sessizce fallback eder. Varsayilan davranis degismez.
-ENABLE_GROQ_TOOLS = os.getenv("ENABLE_GROQ_TOOLS", "false").lower() == "true"
+# Oturum 25: Groq tool-calling (ogrenci + SAFE_GROQ_TOOLS alt kumesi).
+# Oturum 25 ikinci revize: Neo onayi ile default=true yapildi. 4 read-only tool
+# icin Groq denenir; hata durumunda Claude'a sessizce fallback eder.
+# Devre disi birakmak icin: ENABLE_GROQ_TOOLS=false env.
+ENABLE_GROQ_TOOLS = os.getenv("ENABLE_GROQ_TOOLS", "true").lower() == "true"
 
 # Oturum 25 PROJ-2-A: Kavramsal sorular (nedir/anlat/formul) Groq 70B'ye.
 # Oturum 19'da Ollama halusinasyon yapiyordu -> cloud'a tasinmisti.
