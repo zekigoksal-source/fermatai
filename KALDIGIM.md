@@ -1,9 +1,110 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 20 Nisan 2026, ~16:50 — OTURUM 22.1n-audit — Mimari audit + config.py + teknik borç raporu
-> **Bridge:** CANLI PID 27632 (v109), 30 tool, Eyotek online, session keeper 3dk
-> **Bridge:** CANLI PID 20988 (v105), 23 tool, Eyotek online, session keeper 3dk, Ollama warm
-> **Özellikler:** iPad hybrid auth + Arşiv + Dashboard + PWA + Dark + Hızlı Komutlar + MathLive + PDF + Multi-device + Feedback + Telafi + Atlas (Neo-only) + Query Cache bge-m3 semantic + Rol-aware SYSTEM_PROMPT + YÖK Atlas 35,584 kayıt + EA-TYT-Fen adalet kuralı + **Self-Awareness (KALDIGIM canlı okuyucu)** + **SQL AST Guard (sqlglot)** + **Hack tracker DB persistent** + **OTP brute force koruma** + **Log filter hassas veri maskeleme** + **Response cleaner (ToolBlock+meta)**
+> **Son güncelleme:** 24 Nisan 2026, ~14:00 — OTURUM 24+25 — VPS migration + Groq 70B primary + Self-awareness refresh
+> **Bridge:** CANLI VPS 116.203.117.106, systemd (fermatai-bridge.service), port 8001, Docker Postgres 16 + pgvector 0.8
+> **Mimari:** Hetzner CCX33 VPS (Nuremberg) — laptop artık 7/24 çalışmıyor
+> **LLM Routing:** fast_response %45 + Groq Llama 3.3 70B %30 + Claude Sonnet 4.6 %25 (hedef); ollama sadece embedding (nomic-embed-text)
+> **Özellikler:** + **Groq 70B primary local motor** + **Groq tool-calling (ENABLE_GROQ_TOOLS=true, 4 SAFE tool)** + **Anthropic prompt caching ephemeral** + **Baglam kaybi fix (conversation_memory 3h INTERVAL kaldirildi, temporal marker)** + **Finansal saydamlik kurali** + **Veri uydurma guardrail** + **Çok parçalı rapor "devam et" kurali** + tum eski ozellikler (iPad hybrid auth + Arsiv + Dashboard + PWA + Atlas + Query Cache + YOK Atlas 35,584 + Self-Awareness KALDIGIM + SQL AST Guard + Hack tracker + OTP brute force + Log filter)
+
+## 🆕 25-paket-son (24 Nisan 2026, ~14:00) — SELF-AWARENESS REFRESH + KALDIGIM PATH FIX
+
+### Neo tespiti
+> "Bot güncel farkındalığa sahip değil, self-awareness 20 Nisan'da kalmış. VPS geçişi ile ilgili düzeltmen gereken fonksiyonlar varsa tek tek incele."
+
+### Kritik bug: KALDIGIM.md path
+- `system_awareness.py:21` ve `whatsapp_bridge.py:486` hardcoded `C:\Users\zekig\...\KALDIGIM.md`
+- VPS'te bu path yok → `get_recent_system_updates` tool her çağrıda **fail**
+- Bot statik prompt'a düşüyordu → "Ollama dönemi" eski narrative anlatıyordu
+- **Fix:** `Path(__file__).resolve().parent.parent / "KALDIGIM.md"` (laptop+VPS uyumlu)
+- Canlı test: `/opt/fermatai/KALDIGIM.md` okunuyor ✅
+
+### Self-awareness bloğu tam rewrite (system_prompts.py)
+- ~110 satır eski narrative ("Ollama'ya yatırım yaptık", "laptop artığı") **SİLİNDİ**
+- Yenisi: VPS+Groq 70B primary gerçeği, Oturum 25 routing hedefleri, ENABLE_GROQ_TOOLS=true durumu
+- Uyarı: routing_stats'taki eski `ollama` kayıtları 24 Nisan öncesi laptop trafiği, yanılsamaya düşme
+- Güncel filter örneği: `created_at > '2026-04-24 09:00'`
+
+### routing_engine.py kavramsal routing fix (PROJ-2-A ayna bug)
+- Önceki oturumda sadece `llm_router.py`'yı düzeltmiştim
+- Ama `routing_engine.decide_route()` ondan önce çalışıyordu ve kavramsal → "claude" döndürüyordu
+- **Fix:** routing_engine da kavramsal → "ollama" (=local, Groq 70B)
+- GROQ_CONCEPTUAL=false env ile geri alınabilir
+
+### Türkçe suffix regex
+- `ornek` → `orne[kg]` / `örne[kğ]` alternatifi (k→g ünsüz yumuşaması)
+- "ornegi", "örneği", "ornegini" artık yakalanıyor (kavramsal intent)
+
+### Diğer eski referans temizlikleri (prompt)
+- TEKNIK TERIMLER listesine Groq eklendi
+- GUVENLIK KATMANLARI → SAFE_GROQ_TOOLS allowlist
+- routing_stats schema comment → 'groq' eklendi
+
+### Commit
+- `07420b8` — Self-awareness VPS+Groq güncel + KALDIGIM path fix
+- VPS senkron, servis active, HTTP 200
+
+## 🆕 25-paket-ana (24 Nisan 2026, ~12:00) — ROUTING FIX + GROQ TOOL-CALLING + FINANSAL + VERI GUARDRAIL
+
+### PROJ-2-A (commit 8dcc178) — Kavramsal sorular Groq 70B'ye
+- `llm_router.classify_complexity`: `is_conceptual` → local (Groq) yerine cloud (Claude)
+- GROQ_CONCEPTUAL=true flag (reversible)
+- Türkçe suffix regex fix: trailing \b kaldırıldı
+
+### PROJ-1-B (commit c0d410d) — "Devam et" çok parçalı rapor kuralı
+- Neo L1393 bug'ı: Bot TYT+AYT raporu istendiğinde TYT bitince "devam et" dendi, bot TYT'yi baştan yazdı
+- Yeni kural: history'deki kendi önceki yanıtına bak, kaldığın yeri bul, AYT'yi yaz
+
+### PROJ-C (commit ccf12a0) — Groq tool-calling wire-in
+- `fermat_core_agent.py` Claude akışından ÖNCE pre-check (+50 satır)
+- ENABLE_GROQ_TOOLS=true default (Neo onayı)
+- Öğrenci + SAFE_GROQ_TOOLS (search_curriculum, get_class_plan, list_exam_questions, get_daily_etut) → Groq dener
+- Herhangi hata/boş çıktı → Claude sessizce devralır
+- test_groq_tools 3/3 geçti
+
+### PROJ-D (commit ccf12a0) — Veri uydurma/halüsinasyon guardrail (+1.2k tok)
+Kalite raporu 17 yanlis_data + 4 halusinasyon vakasına doğrudan yanıt:
+1. Veri yoksa "yok" de, uydurma
+2. Soru metni için önce RAG'da ara (list_exam_questions)
+3. Durum/selamlama sorularında context dahil cevap
+4. Sayılarda kaynak belirt
+5. Duplicate engel
+6. Öz-kontrol testi
+
+### PROJ-E (commit ccf12a0) — Finansal transparency (+1k tok)
+- FINANSAL ANALIZ SAYDAMLIK KURALI bölümü
+- Gerçek veri + tahmin ayrımı
+- Varsayım disclosure zorunlu ("bu tahmin %X enflasyon + %Y attrition varsayıyor")
+- 3 senaryo (iyimser/orta/kötümser)
+- Örnek doğru format + yasak format
+
+## 🆕 24-paket (24 Nisan 2026, ~10:00) — VPS MIGRATION + GROQ OBSERVABILITY + CONTEXT FIX
+
+### PROJ-1 (commit c5d10ae) — conversation_memory bağlam kaybı fix
+- 3h INTERVAL penceresi kaldırıldı, LIMIT 6 ile en yeni mesajlar
+- last_msg_age_h temporal marker ("AKTIF/GUNCEL/BUGUN/N gun once/UZUN ARA")
+- Öğrenci günde 1x yazsa bile bağlam kurulabiliyor
+- Canlı test: 5 gün önceki öğrenci için context dönüyor ✅
+
+### VPS Regression fix
+- `chat_local()` sadece Ollama'yı deniyordu → VPS'te Ollama yok → Groq hiç kullanılmıyordu
+- `is_local_available` artık Groq'u da sayıyor
+- `chat_local`'da Groq-first + Ollama fallback
+- `_last_local_provider` tracking (observability)
+
+### Groq Observability
+- routing_stats + usage_log artık `response_source='groq'` dinamik yazıyor
+- fermat_start.py günlük özet: groq sayacı eklendi
+
+### VPS altyapı
+- Ollama + nomic-embed-text kuruldu (RAG embedding için)
+- Python `ollama` paketi venv'de eklendi
+- 15 yeni RAG konusu Groq ile üretildi ($0.045)
+
+### Kalite analizi (Groq 70B ile)
+- `conversation_quality_analyzer.py` — son 72h 25 konuşma
+- Pedagojik puan 5.84/10
+- 33 frustration, 42 bot hatası (17 bağlam_kaybı + 17 yanlis_data + 4 halüsinasyon)
+- Bu bulgular Oturum 25'te adresleni
 
 ## 🆕 22.1n-derin (19 Nisan 23:00) — KONUŞMA DERİN ANALİZ + 4 PROJE
 
