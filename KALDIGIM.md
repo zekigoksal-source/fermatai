@@ -1,10 +1,83 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 24 Nisan 2026, ~15:30 — OTURUM 25.3 — Teknik borç paketi D1-D4 kapandı
+> **Son güncelleme:** 24 Nisan 2026, ~16:20 — OTURUM 25.4 — Eyotek VPS bridge (laptop cookie + WA auto-login + CAPTCHA fallback)
 > **Bridge:** CANLI VPS 116.203.117.106, systemd (fermatai-bridge.service), port 8001, Docker Postgres 16 + pgvector 0.8
 > **Mimari:** Hetzner CCX33 VPS (Nuremberg) — laptop artık 7/24 çalışmıyor
 > **LLM Routing:** fast_response %45 + Groq Llama 3.3 70B %30 + Claude Sonnet 4.6 %25 (hedef); ollama sadece embedding (nomic-embed-text)
 > **Özellikler:** + **Groq 70B primary local motor** + **Groq tool-calling (ENABLE_GROQ_TOOLS=true, 4 SAFE tool)** + **Anthropic prompt caching ephemeral** + **Baglam kaybi fix (conversation_memory 3h INTERVAL kaldirildi, temporal marker)** + **Finansal saydamlik kurali** + **Veri uydurma guardrail** + **Çok parçalı rapor "devam et" kurali** + tum eski ozellikler (iPad hybrid auth + Arsiv + Dashboard + PWA + Atlas + Query Cache + YOK Atlas 35,584 + Self-Awareness KALDIGIM + SQL AST Guard + Hack tracker + OTP brute force + Log filter)
+
+## 🆕 OTURUM 25.4 (24 Nisan 2026, ~16:20) — EYOTEK VPS BRIDGE (laptop + WA + auto-login + fallback)
+
+### Neo tespiti + pratik fikir
+> "VPS geçişi sonrası Eyotek bağlantısı kopuk. Ben laptop'ta manuel giriyordum, şimdi nasıl?"
+> "WP üzerinden 'eyotek bağlan' yazdığımda link atsa, telefondan tıklayıp login olsam sistem devam etse..."
+> "Telefon tarayıcısı kapansa da sorun değil, cookie VPS'te kalır."
+
+### Uygulanan Faz 1 (commit `e30bfcb`)
+**Laptop cookie transfer mekanizması:**
+- `eyotek_bridge_laptop.py` (YENİ) — Chrome CDP aç → Eyotek login'i bekle → cookie export → scp VPS'e
+- `BASLAT_EYOTEK.bat` (YENİ) — Neo-friendly launcher (çift tıkla, gerisi otomatik)
+- `eyotek_wrapper.py` — CDP yoksa headless Chromium fallback (cookie inject, user-agent desktop)
+- `session_keeper.py` VPS mode — HTTP heartbeat (Chrome gerek yok), cookie file mtime watching, session dustuğünde WP'ye "Laptop'tan BASLAT_EYOTEK.bat" mesajı
+
+### Uygulanan Faz 2 (commit `17af6bb`)
+**WhatsApp triggered auto-login:**
+- `eyotek_auto_login.py` (YENİ, 265 satır):
+  - Headless Chromium ile credentials auto-login
+  - CAPTCHA tespit (Cloudflare Turnstile + reCAPTCHA)
+  - Quiet hours (22:00-08:00 bildirim yok)
+  - 3 WA handler: `eyotek_connect_command`, `eyotek_status_command`, `eyotek_disconnect_command`
+- `whatsapp_bridge.py` intent:
+  - `eyotek baglan` / `bağlan` / `connect` / `aç` → VPS auto-login dene
+  - `eyotek durum` → cookie durumu + session check
+  - `eyotek kapat` → cookie sil
+  - `eyotek baglan zorla` → force yeniden login
+- VPS altyapı:
+  - Chromium system libraries kuruldu (libxfixes3, libnss3, libnspr4, +15 paket)
+  - Chromium smoke test başarılı
+  - `SESSION_KEEPER_NOTIFY=true` (bildirim aktif)
+
+### Canlı test
+- Chromium example.com yükledi ✅
+- Eyotek auto-login dendi → **Cloudflare CAPTCHA tespit edildi** (beklenen) → fallback mesaj hazır
+- Servis aktif, session_keeper `vps_mode=True, notify=True`
+
+### Şu an çalışan akış
+```
+Neo WP'dan "eyotek baglan" yazar
+  ↓
+VPS auto_login dener (credentials env'den)
+  ↓
+CAPTCHA var mı?
+  ├─ YOK → ✅ Cookie kaydet + "Eyotek bağlandı" mesaj
+  └─ VAR (Eyotek her zaman) → "Laptop'tan BASLAT_EYOTEK.bat çalıştır" mesaj
+                ↓
+        Neo laptop'tan script'i çalıştırır
+                ↓
+        Chrome açılır, CAPTCHA + password girer
+                ↓
+        Cookie scp ile VPS'e aktarılır
+                ↓
+        session_keeper mtime değişimini algılar
+                ↓
+        VPS heartbeat başlar, 3dk'da bir
+                ↓
+        Session ölünce WP'ye bildirim → Neo tekrar BASLAT_EYOTEK.bat
+```
+
+### Faz 3 (ileriki oturum) — henüz YAPILMADI
+**Cloudflare Tunnel ile remote CAPTCHA çözüm:**
+- cloudflared binary VPS kurulumu
+- `trycloudflare.com` geçici tunnel URL
+- Headless Chromium remote rendering (telefon tarayıcı üzerinden VPS Chrome görülür)
+- Neo telefondan linke tıklar → CAPTCHA çözer → tarayıcı kapatabilir → VPS cookie yakalar
+- Laptop'a hiç gerek kalmaz
+
+### Kullanım (şu an)
+- **Yeni bağlantı**: `eyotek baglan` (VPS dener, CAPTCHA varsa laptop'a yönlendirir)
+- **Durum kontrolü**: `eyotek durum`
+- **Oturumu temizle**: `eyotek kapat`
+- **Laptop zorunlu fallback**: masaüstünde `BASLAT_EYOTEK.bat` çift tıkla
 
 ## 🆕 OTURUM 25.3 (24 Nisan 2026, ~15:30) — TEKNIK BORC PAKETI D1-D4
 
