@@ -357,66 +357,74 @@ async def _start_mobile_tunnel() -> str:
             "Sistem yöneticisine bildirin."
         )
 
-    # Arka planda tunnel + cookie capture calistir (900s = 15 dk Neo'nun login icin)
-    # Bu cagri bloke ETMEZ — response olarak sadece URL dondurur, sonra arka plan
-    # login'i bekler.
-    try:
-        # Tunnel baslat (fire-and-forget: login capture asenkron calissin)
-        # Ama URL'yi sync gibi almaliyiz ki Neo'ya mesajda verebileyim.
-        # Cozum: TunnelSession'i manuel yonet
-        from eyotek_mobile_tunnel import TunnelSession
-        session = TunnelSession()
-        url = await session.start(timeout_sec=45)
-        if not url:
-            session.stop()
-            return (
-                "❌ *Mobil tunnel baslatilamadi*\n\n"
-                "cloudflared/Xvfb/Chromium binary'leri eksik olabilir.\n"
-                "Admin logs kontrol etsin."
+    # Oturum 25.5 Faz 3 revize: Tunnel start 30-45sn sürebilir, webhook 20s timeout
+    # nedeniyle Meta duplicate retry gönderir. Tum tunnel flow (start + login bekle)
+    # arka planda yapilir, Neo'ya iki asamali WA mesaj gonderilir:
+    #   1) "Tunnel baslatiyorum, URL 30 sn'de gelecek" (hemen)
+    #   2) "URL hazir: xxx" (arka planda)
+    #   3) "Eyotek baglandi" (login tamamlandiginda)
+
+    async def _fire_and_forget_tunnel():
+        try:
+            from eyotek_mobile_tunnel import TunnelSession
+            from session_keeper import notify_admin
+
+            session = TunnelSession()
+            url = await session.start(timeout_sec=60)
+            if not url:
+                session.stop()
+                await notify_admin(
+                    "❌ *Mobil tunnel başlatılamadı*\n\n"
+                    "Cloudflared / Xvfb / Chromium kurulumunda sorun olabilir.\n"
+                    "`eyotek durum` komutu ile kontrol et."
+                )
+                return
+
+            # URL hazır — Neo'ya gönder
+            await notify_admin(
+                "🔐 *Eyotek Mobil Login — Tunnel Hazır*\n\n"
+                f"📱 Şu linkten gir (15 dk geçerli):\n"
+                f"{url}\n\n"
+                "*Adımlar:*\n"
+                "1️⃣ Linke tıkla → VPS Chrome ekranını görürsün\n"
+                "2️⃣ Cloudflare + kullanıcı + şifre\n"
+                "3️⃣ Ana sayfa açılınca tarayıcıyı kapatabilirsin\n\n"
+                "_Cookie otomatik yakalanır, sonuç WA'dan gelir._"
             )
 
-        # Arka planda login bekle (15 dk timeout)
-        async def _background_login_wait():
-            try:
-                cookies = await session.wait_for_login_and_capture(
-                    timeout_sec=900
+            # Login bekle (15 dk)
+            cookies = await session.wait_for_login_and_capture(timeout_sec=900)
+            session.stop()
+
+            if cookies:
+                await notify_admin(
+                    f"✅ *Eyotek bağlandı — {len(cookies)} cookie alındı*\n\n"
+                    "Session keeper aktif, sistem çalışıyor."
                 )
-                # Login tamamlandi -> WA bildirim
+            else:
+                await notify_admin(
+                    "⏱️ *Eyotek login timeout (15 dk)*\n\n"
+                    "Tunnel kapatıldı. Tekrar dene: `eyotek baglan`"
+                )
+        except Exception as e:
+            logger.error(f"[EYOTEK-TUNNEL] Background fail: {e}")
+            try:
                 from session_keeper import notify_admin
-                if cookies:
-                    await notify_admin(
-                        f"✅ *Eyotek login tamamlandı — {len(cookies)} cookie alındı.*\n\n"
-                        "Sistem devam ediyor, session keeper aktif."
-                    )
-                else:
-                    await notify_admin(
-                        "⏱️ *Eyotek login timeout (15 dk)*\n\n"
-                        "Tunnel kapatıldı. Tekrar dene: `eyotek baglan`"
-                    )
-            except Exception as e:
-                logger.error(f"[EYOTEK-TUNNEL] Background login wait fail: {e}")
-            finally:
-                session.stop()
+                await notify_admin(
+                    f"❌ *Tunnel hatası*\n\n_{str(e)[:200]}_"
+                )
+            except Exception:
+                pass
 
-        asyncio.create_task(_background_login_wait())
+    # Fire-and-forget: arka planda başlat, hemen döndür
+    asyncio.create_task(_fire_and_forget_tunnel())
 
-        return (
-            "🔐 *Eyotek Mobil Login — Tunnel hazır*\n\n"
-            f"📱 Şu linkten gir (15 dk geçerli):\n"
-            f"{url}\n\n"
-            "*Adımlar:*\n"
-            "1️⃣ Linke tıkla → VPS Chrome ekranını görürsün\n"
-            "2️⃣ Cloudflare kutucuğu + kullanıcı + şifre gir\n"
-            "3️⃣ Eyotek ana sayfası açılınca tarayıcıyı kapatabilirsin\n\n"
-            "_Cookie VPS'te otomatik yakalanır. Başarıda sana WA bildirim gelir._"
-        )
-
-    except Exception as e:
-        logger.error(f"[EYOTEK-TUNNEL] Başlatma fail: {e}")
-        return (
-            "❌ *Mobil tunnel hatası*\n\n"
-            f"_Detay: {str(e)[:200]}_"
-        )
+    return (
+        "⏳ *Eyotek Mobil Login başlatılıyor...*\n\n"
+        "VPS'te Chromium + Cloudflare Tunnel hazırlanıyor.\n"
+        "30 saniye içinde sana link göndereceğim.\n\n"
+        "_(Link hazır olunca ayrı bir mesaj gelecek.)_"
+    )
 
 
 async def eyotek_status_command() -> str:

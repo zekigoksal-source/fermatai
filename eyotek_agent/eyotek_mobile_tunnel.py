@@ -101,24 +101,32 @@ class TunnelSession:
                 await asyncio.sleep(0.8)
 
             # 3. Chromium (headed, CDP port acik, Eyotek acilir)
+            # systemd sandbox (PrivateTmp/RestrictNamespaces) Chromium setuid sandbox'i
+            # engelliyor → --no-sandbox + --disable-dev-shm-usage zorunlu.
             logger.info(f"[TUNNEL] Chromium baslatiliyor, CDP={CDP_PORT}")
             user_data = f"/tmp/eyotek_chrome_{int(time.time())}"
             self._start_proc(
                 [
                     CHROMIUM_BIN,
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
                     f"--user-data-dir={user_data}",
                     f"--remote-debugging-port={CDP_PORT}",
+                    "--remote-debugging-address=127.0.0.1",
                     "--no-first-run",
                     "--no-default-browser-check",
                     "--disable-translate",
                     "--disable-background-networking",
                     "--window-size=1280,800",
                     "--window-position=0,0",
+                    "--start-maximized",
                     BASE_URL,
                 ],
                 env={"DISPLAY": self.display},
+                stdout=subprocess.PIPE,  # Debug icin hata capture
             )
-            await asyncio.sleep(4.0)  # Chromium + Eyotek yuklu bekle
+            await asyncio.sleep(5.0)  # Chromium + Eyotek yuklu bekle (longer for headed)
 
             # 4. x11vnc (ekran -> VNC port)
             logger.info(f"[TUNNEL] x11vnc baslatiliyor: {self.display} -> {VNC_PORT}")
