@@ -177,13 +177,18 @@ def decide_route(
     ):
         return "claude"
 
-    # ── 4. Kavramsal sorular → Claude (Ollama halüsinasyon riski) ──
+    # ── 4. Kavramsal sorular → Oturum 25: Groq 70B'ye (local).
+    # Eskiden "claude" dondururduk cunku Ollama halusinasyon riski vardi.
+    # Groq 70B ile bu risk dusuk; trailing \b kaldirildi (Turkce suffix: anlatir/ornegi/formulu).
+    # GROQ_CONCEPTUAL=false ile eski davranisi aktive edebilirsin.
+    import os as _os
+    _groq_conceptual = _os.getenv("GROQ_CONCEPTUAL", "true").lower() == "true"
     is_conceptual = bool(re.search(
-        r'\b(nedir|ne\s*demek|nasil\s*calisir|acikla|açıkla|anlat|ogret|tanimla|ornek|farki|ozet)\b',
+        r'\b(nedir|ne\s*demek|nasil\s*calisir|acikla|açıkla|anlat|ogret|tanim|orne[kg]|örne[kğ]|farki|ozet|formul|formül)',
         msg_lower,
     ))
     if is_conceptual:
-        return "claude"
+        return "ollama" if _groq_conceptual else "claude"
 
     # ── 5. Varsayılan: fast_responses dene, yakalamasa llm_router.classify ──
     # 19 Nisan refactor: "auto" yerine final karar don (bridge karmasikligi azalir)

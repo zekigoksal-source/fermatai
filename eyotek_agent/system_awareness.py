@@ -18,7 +18,10 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-KALDIGIM_PATH = Path(r"C:\Users\zekig\OneDrive\Desktop\FermatAI\KALDIGIM.md")
+# Oturum 25 VPS fix: Laptop-specific Windows path kaldirildi.
+# Path(__file__) ile dinamik: eyotek_agent/../KALDIGIM.md
+# Laptop: C:\...\FermatAI\KALDIGIM.md | VPS: /opt/fermatai/KALDIGIM.md
+KALDIGIM_PATH = Path(__file__).resolve().parent.parent / "KALDIGIM.md"
 
 
 def get_recent_updates(max_sessions: int = 3, max_chars: int = 4000,

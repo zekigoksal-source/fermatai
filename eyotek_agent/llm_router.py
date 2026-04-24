@@ -224,9 +224,9 @@ def classify_complexity(text: str) -> str:
     # KAVRAMSAL AÇIKLAMA — sadece SAF KAVRAM sorguları Ollama'ya
     # "turev nedir" OK, "benim son denemem acikla" CLOUD (personal zaten yakalandi yukarida)
     # Oturum 25 PROJ-2-A: Trailing \b kaldirildi — Turkce suffix'ler (anlatir, ornegi,
-    # formulu, aciklar) artik yakaniyor. "anlat", "ornek" gibi stemleri esnek yakala.
+    # formulu, aciklar) artik yakaniyor. "ornek" stem'i k→g donusumu icin orne[kg] alternatifi.
     is_conceptual = bool(re.search(
-        r'\b(nedir|ne\s*demek|nasil\s*calisir|nasıl\s*çalışır|acikla|açıkla|anlat|ogret|öğret|tanim|tanım|ornek|örnek|formul|formül|farki|farkı|ozet|özet)',
+        r'\b(nedir|ne\s*demek|nasil\s*calisir|nasıl\s*çalışır|acikla|açıkla|anlat|ogret|öğret|tanim|tanım|orne[kg]|örne[kğ]|formul|formül|farki|farkı|ozet|özet)',
         text_lower,
     ))
     # ANALIZ/DURUM sorgusu var mi? (cloud gerektirir — "durumu nasil", "performans", "sonuc" vb)

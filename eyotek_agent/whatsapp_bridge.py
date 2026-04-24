@@ -483,7 +483,8 @@ async def lifespan(app: FastAPI):
             _version = "auto"
             try:
                 from pathlib import Path as _P
-                _kp = _P(r"C:\Users\zekig\OneDrive\Desktop\FermatAI\KALDIGIM.md")
+                # Oturum 25 VPS fix: Dinamik path (laptop Windows / VPS Linux ikisi de calisir)
+                _kp = _P(__file__).resolve().parent.parent / "KALDIGIM.md"
                 if _kp.exists():
                     _full = _kp.read_text(encoding="utf-8")
                     # İlk H1'den sonra ilk H2 (🌟/🔥 ile başlayan en son oturum) blokunu al
