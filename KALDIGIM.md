@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 24 Nisan 2026, ~18:10 — OTURUM 25.6 — Talimat #85: CapSolver Turnstile otomatik çözüm (sıfır manuel müdahale)
+> **Son güncelleme:** 24 Nisan 2026, ~22:00 — OTURUM 25.6 FINAL — CapSolver otonom + admin log viewer + teknik borç D5-D8 kapandı
 > **Bridge:** CANLI VPS 116.203.117.106, systemd (fermatai-bridge.service), port 8001, Docker Postgres 16 + pgvector 0.8
 > **Mimari:** Hetzner CCX33 VPS (Nuremberg) — laptop artık 7/24 çalışmıyor
 > **LLM Routing:** fast_response %45 + Groq Llama 3.3 70B %30 + Claude Sonnet 4.6 %25 (hedef); ollama sadece embedding (nomic-embed-text)
@@ -75,6 +75,21 @@ session_keeper.check_session() -> True ✅
 
 ### Path unification (bug fix sırasında)
 `eyotek_auto_login.py` session dosyayı `eyotek_agent/` altına yazıyordu ama `whatsapp_bridge` + `session_keeper` `/opt/fermatai/` root'u bekliyordu. Üçü de artık `Path(__file__).parent.parent / ".eyotek_session.json"` kullanıyor → tek kaynak gerçek `/opt/fermatai/.eyotek_session.json`.
+
+### Admin Log Viewer (commit `70173e5`)
+- Endpoint: `GET /chat/admin/conversations?days=N&phone=X`
+- Auth: session cookie + `_require_admin` (admin/mudur)
+- Neo login sonrası aynı browser'da `/chat/admin/conversations` → HTML
+- Query: `days=1/3/7/30/0` + opsiyonel `phone=9050xx`
+- Masaüstü `Desktop/logs/` silindi, `FermatAI/logs/admin_dumps/` altına taşındı
+
+### Teknik Borç D5-D8 kapandı (commit `e567af6`)
+- **D5:** `vps_setup/.env.production.template` → `CAPSOLVER_API_KEY` placeholder + yorum
+- **D6:** `whatsapp_bridge.py:1655` datetime scope bug → local `from datetime import datetime as _dt_onb`
+- **D7:** `eyotek_mobile_tunnel.py` docstring → "PRIMARY DEGIL, CapSolver primary, bu fallback" notu
+- **D8:** `system_prompts.py` → SCHEMA GUARDRAIL bölümü (bot uydurma kolon yazmasın)
+
+Son durum: teknik borç listesi = **BOŞ** 🎯
 
 ### Fallback zinciri (CapSolver fail ederse)
 1. CapSolver token üretemedi → hata mesajı WA'ya
