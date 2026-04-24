@@ -1,10 +1,40 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 24 Nisan 2026, ~14:00 — OTURUM 24+25 — VPS migration + Groq 70B primary + Self-awareness refresh
+> **Son güncelleme:** 24 Nisan 2026, ~15:30 — OTURUM 25.3 — Teknik borç paketi D1-D4 kapandı
 > **Bridge:** CANLI VPS 116.203.117.106, systemd (fermatai-bridge.service), port 8001, Docker Postgres 16 + pgvector 0.8
 > **Mimari:** Hetzner CCX33 VPS (Nuremberg) — laptop artık 7/24 çalışmıyor
 > **LLM Routing:** fast_response %45 + Groq Llama 3.3 70B %30 + Claude Sonnet 4.6 %25 (hedef); ollama sadece embedding (nomic-embed-text)
 > **Özellikler:** + **Groq 70B primary local motor** + **Groq tool-calling (ENABLE_GROQ_TOOLS=true, 4 SAFE tool)** + **Anthropic prompt caching ephemeral** + **Baglam kaybi fix (conversation_memory 3h INTERVAL kaldirildi, temporal marker)** + **Finansal saydamlik kurali** + **Veri uydurma guardrail** + **Çok parçalı rapor "devam et" kurali** + tum eski ozellikler (iPad hybrid auth + Arsiv + Dashboard + PWA + Atlas + Query Cache + YOK Atlas 35,584 + Self-Awareness KALDIGIM + SQL AST Guard + Hack tracker + OTP brute force + Log filter)
+
+## 🆕 OTURUM 25.3 (24 Nisan 2026, ~15:30) — TEKNIK BORC PAKETI D1-D4
+
+### Neo talimatı
+> "D1, D2, D3, D4 hepsini bitir."
+
+### Yapılanlar (commit `d958e40`)
+
+**D4 — `.baseline_o24` yedek dosyalar**
+- 3 dosya silindi (fermat_core_agent + llm_router + system_prompts), ~330KB free
+- Git tag `oturum-24-stable` ve commit history yeterli rollback koruması
+
+**D2 — response_source fallback akıllı**
+- `fermat_core_agent.py:3392` hardcoded `"ollama"` → dinamik
+- Öncelik: `_last_local_provider` > groq (VPS) > ollama (laptop) > "local"
+- Observability parazit bitti
+
+**D1 — Hardcoded Windows path 3 dosyada**
+- `db_backup.py:29`: `Path(__file__).parent.parent / "backups"` + `FERMAT_BACKUP_DIR` env override
+- `fermat_start.py:352`: `shutil.which("ollama")` + `sys.platform=="win32"` (non-Windows'ta systemd varsayılır, skip)
+- `setup_fermat.py`: `$PSScriptRoot` (PowerShell script kendi konumunu alır)
+
+**D3 — Kavramsal routing DRY**
+- `routing_engine.py`'dan kavramsal `is_conceptual` erken-çıkış silindi (12 satır)
+- Tek kaynak: `llm_router.classify_complexity` (PROJ-2-A fix zaten orada)
+- 8/8 regression test yeşil
+
+### Canlı durum
+- VPS active, HTTP 200, error log temiz
+- Kalan teknik borç: yok (4/4 kapandı)
 
 ## 🆕 OTURUM 25.2 (24 Nisan 2026, ~14:00) — SELF-AWARENESS REFRESH + KALDIGIM PATH FIX
 
