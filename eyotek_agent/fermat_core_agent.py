@@ -3279,7 +3279,9 @@ class FermatCoreAgent:
                 pass
 
         if complexity == "local" and self.router.is_local_available:
-            logger.info(f"  [YEREL] Ollama ile yanitlaniyor (0 maliyet)")
+            # Oturum 24: Router Groq tercih ediyor, Ollama fallback
+            _hangi = "Groq" if self.router._groq_available else "Ollama"
+            logger.info(f"  [YEREL] {_hangi} ile yanitlaniyor (dusuk maliyet)")
             try:
                 answer = self.router.chat_local(
                     messages=self.history,
@@ -3386,22 +3388,24 @@ class FermatCoreAgent:
                         if len(lines) > 3:
                             answer = '\n'.join(lines[:-1])
 
+                    # Oturum 24: Gercek provider'i router'dan oku (groq/ollama)
+                    _local_provider = getattr(self.router, "_last_local_provider", None) or "ollama"
                     self.history.append({"role": "assistant", "content": answer})
                     await _log_conversation(
                         self.session_id, caller_phone, role,
-                        "assistant", answer, ["ollama_local"],
+                        "assistant", answer, [f"{_local_provider}_local"],
                     )
                     try:
                         from usage_tracker import log_event
                         await log_event(phone=caller_phone, role=role, full_name=caller_name,
-                                        event_type="message", response_source="ollama", response_ms=2000)
+                                        event_type="message", response_source=_local_provider, response_ms=2000)
                     except Exception:
                         pass
                     # Self-Observation: kalite degerlendirmesi
                     try:
                         from self_observer import log_quality
                         await log_quality(self.session_id, caller_phone, role,
-                                          user_input, answer, "ollama")
+                                          user_input, answer, _local_provider)
                     except Exception:
                         pass
                     # ── QUERY CACHE YAZ — Ollama conceptual cevap, cache'e ekle ──

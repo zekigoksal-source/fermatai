@@ -93,16 +93,16 @@ async def get_student_context(phone: str) -> Optional[dict]:
                 FROM student_exams WHERE soz_no = $1
                 ORDER BY exam_date DESC NULLS LAST LIMIT 1
             """, soz_no),
-            # Oturum 23 (Neo UX): 200 → 1200 char. 200 char bot'un kendi önceki
-            # uzun pedagojik cevaplarının SADECE başını görmesine yol açıyordu.
-            # Sonuç: "aynı şeyi tekrar söylüyor" semptomu. 1200 char çoğu cevabın
-            # SONUNU içerir (başı zaten tekrarlanmasa bile), bot bağlamı tutar.
+            # Oturum 23 (Neo UX): 200 -> 1200 char. 200 char bot'un kendi onceki
+            # uzun pedagojik cevaplarinin SADECE basini gormesine yol aciyordu.
+            # Oturum 24 (Neo bug): 3 saat INTERVAL kaldirildi. WhatsApp ogrencileri
+            # gunde 1-2 kez yaziyor; 3h filtre cogu zaman bos sonuc donduruyordu.
+            # LIMIT 6 ile en yeni 6 mesaj cekilir, tarih farki prompt'ta belirtilir.
             _fetch("""
-                SELECT message_role, LEFT(content, 1200) as content
+                SELECT message_role, LEFT(content, 1200) as content, created_at
                 FROM agent_conversations
                 WHERE phone = $1 AND message_role IN ('user','assistant')
                 AND content NOT LIKE '[tool_calls%'
-                AND created_at >= NOW() - INTERVAL '3 hours'
                 ORDER BY created_at DESC LIMIT 6
             """, phone_clean),
             _fetchval(
@@ -225,6 +225,17 @@ async def get_student_context(phone: str) -> Optional[dict]:
         except Exception:
             pass
 
+        # Oturum 24: son mesajin yasi (saat). Bot'un "bugun mu, dun mu konustuk"
+        # ayrimi yapabilmesi icin prompt'a belirtilir.
+        last_msg_age_h = None
+        try:
+            if recent_msgs:
+                _latest_ts = recent_msgs[0].get('created_at')
+                if _latest_ts:
+                    last_msg_age_h = (datetime.now(_latest_ts.tzinfo) - _latest_ts).total_seconds() / 3600
+        except Exception:
+            last_msg_age_h = None
+
         context = {
             "name": name,
             "class": profile.get('class_name', '?'),
@@ -240,6 +251,7 @@ async def get_student_context(phone: str) -> Optional[dict]:
             "active_insights": active_insights,  # 22.1n-fikir1 doğal sohbet çıkarımı
             "session_messages": len([m for m in recent_msgs if m['message_role'] == 'user']),
             "last_active": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "last_msg_age_h": last_msg_age_h,  # Oturum 24: son mesajdan sonra gecen saat
             # 22.1n-neo: Foto context (Fatma bug fix) — varsa prompt'a eklenir
             "photo_ctx": get_photo_context(phone),
             "_ts": time.time(),
@@ -307,6 +319,22 @@ def build_context_prompt(context: dict) -> str:
         return ""
 
     parts = ["\n\nÖĞRENCİ BAĞLAM BİLGİSİ (bu bilgileri doğrudan tool_call yapmadan kullan):"]
+
+    # Oturum 24: Temporal marker — bot'un "ne zaman konusmustuk" ayrimi
+    age_h = context.get("last_msg_age_h")
+    if age_h is not None:
+        if age_h < 0.5:
+            parts.append("Zaman: AKTIF oturum (son mesaj <30dk once) — ayni konusmanin devami")
+        elif age_h < 3:
+            parts.append(f"Zaman: GUNCEL oturum (son mesaj ~{age_h:.0f}sa once) — konusma devam ediyor")
+        elif age_h < 24:
+            parts.append(f"Zaman: BUGUN/DUN konusuldu (~{age_h:.0f}sa once) — hatirlatarak baglam kur")
+        elif age_h < 72:
+            gun = int(age_h / 24)
+            parts.append(f"Zaman: {gun} GUN once konusuldu — 'gecen gunku konumuzdan devam edelim mi?' ile bagla")
+        else:
+            gun = int(age_h / 24)
+            parts.append(f"Zaman: UZUN ARA ({gun} gun onceki konusma) — yeni baslangic gibi davran, eski konulari zorlamadan an")
 
     if context.get("recent_summary"):
         parts.append(f"Durum: {context['recent_summary']}")

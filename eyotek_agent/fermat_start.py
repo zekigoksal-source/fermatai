@@ -152,6 +152,7 @@ async def get_usage_today() -> dict:
                 COUNT(*) FILTER (WHERE response_source='fast_response') as fast,
                 COUNT(*) FILTER (WHERE response_source='claude') as claude,
                 COUNT(*) FILTER (WHERE response_source='ollama') as ollama,
+                COUNT(*) FILTER (WHERE response_source='groq') as groq,
                 COALESCE(AVG(response_ms) FILTER (WHERE response_ms>0),0)::int as avg_ms
             FROM usage_log WHERE created_at::date = CURRENT_DATE
         """)

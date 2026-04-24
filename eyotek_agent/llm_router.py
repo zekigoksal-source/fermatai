@@ -323,6 +323,9 @@ class LLMRouter:
         self._anthropic_available = bool(ANTHROPIC_KEY)
         self._groq_available = bool(os.getenv("GROQ_API_KEY"))
         self._groq_client = None
+        # Oturum 24: chat_local cagrilarinda gercek provider takibi icin
+        # (observability: routing_stats'a response_source=groq veya ollama yazmak icin)
+        self._last_local_provider = None
         self._check_ollama()
         if self._groq_available:
             try:
@@ -618,7 +621,28 @@ _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
         system: str = "",
         model: str = "",
     ) -> str:
-        """Ollama ile yerel LLM yaniti al."""
+        """Hizli/ucuz LLM yaniti al.
+
+        Oturum 24: Groq 70B tercih edilen, Ollama fallback.
+        VPS'te Ollama yok — Groq aktif. Laptop'ta Ollama var — Groq downsa fallback.
+        Caller (fermat_core_agent) gercek provider'i `self._last_local_provider`
+        uzerinden okur, routing_stats'a dogru kaydeder.
+        """
+        # 1) Groq oncelik (VPS production, 70B, ~1s, $0.0001/msg)
+        if self._groq_available and self._groq_client:
+            try:
+                text = self.chat_groq(messages, system, model=model)
+                self._last_local_provider = "groq"
+                return text
+            except Exception as e:
+                logger.warning(f"chat_local: Groq basarisiz ({e}), Ollama'ya dusuyor")
+
+        # 2) Ollama fallback (laptop dev)
+        if not self._ollama_available:
+            # Iki provider da yok — Claude caller'da halletmeli
+            self._last_local_provider = None
+            raise RuntimeError("chat_local: Groq ve Ollama ikisi de kullanilamaz")
+
         import ollama as _ollama
 
         model = model or OLLAMA_MODEL
@@ -739,6 +763,7 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
             elapsed = time.time() - start
             answer = response.get("message", {}).get("content", "")
             logger.info(f"[LOCAL] Ollama yanit: {elapsed:.1f}s, {len(answer)} char")
+            self._last_local_provider = "ollama"
             return answer
         except Exception as e:
             logger.error(f"Ollama hatasi (timeout={OLLAMA_TIMEOUT}s): {e}")
@@ -881,7 +906,10 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
 
     @property
     def is_local_available(self) -> bool:
-        return self._ollama_available
+        # Oturum 24: Groq de "local" olarak sayilir (ucuz + hizli + cloud ama API)
+        # VPS'te Ollama yok, Groq var — bu kontrol sonradan chat_local'in
+        # calismasini saglar, aksi halde chat_local direkt Claude'a dusuyordu.
+        return self._ollama_available or self._groq_available
 
     @property
     def is_cloud_available(self) -> bool:
