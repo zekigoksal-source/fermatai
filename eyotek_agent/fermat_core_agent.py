@@ -2059,8 +2059,12 @@ from system_prompts import SYSTEM_PROMPT
 class FermatCoreAgent:
     """
     Hibrit LLM ile pedagojik muhakeme yapan ajan.
-    Rutin isler → Ollama (yerel, 0 maliyet)
-    Kompleks isler → Claude API (bulut, tool-calling)
+
+    Production routing (Oturum 23 VPS migration — 24 Nisan 2026):
+      - Rutin isler + sohbet → Groq Llama 3.3 70B (VPS, ~$0.0001/msg)
+      - Kavramsal + analiz → Claude Sonnet 4.6 (kalite öncelik)
+      - Fast pattern → 5ms in-process (no LLM)
+      - Local dev → Ollama (laptop, opsiyonel)
     """
 
     def __init__(self):
@@ -2528,9 +2532,10 @@ class FermatCoreAgent:
                     "\n• Feedback al: Örsel'in fikrini sor — 'Sence şurada neyi iyileştirelim?'"
                     "\n"
                     "\n⚠️ SGM TEKNİK SOHBET — AÇIK/KAPALI SINIR:"
-                    "\n✅ AÇIK: Mimari şema, LLM modelleri (Claude/Ollama/qwen), routing yapısı,"
+                    "\n✅ AÇIK: Mimari şema, LLM modelleri (Claude + Groq Llama 70B), routing yapısı,"
                     "\n   cache stratejisi, latency metrikleri, paralel tool, prompt yapısı, DB şeması"
-                    "\n✅ AÇIK: 'Hibrit LLM: Claude Opus tool-calling, Ollama qwen2.5 kavramsal, fast_response pattern'"
+                    "\n✅ AÇIK: 'Hibrit LLM: Claude Sonnet tool-calling + analiz, Groq Llama 3.3 70B"
+                    "\n         kavramsal/sohbet (VPS production), fast_response pattern — Ollama laptop dev'"
                     "\n✅ AÇIK: Optimizasyon fikirleri, mimari tartışma, geliştirme önerileri"
                     "\n❌ GİZLİ: API anahtarı, DB şifresi, credential — ASLA"
                     "\n❌ GİZLİ: Konuşma logları, kullanım verileri, kim ne yazdı — admin-only"
