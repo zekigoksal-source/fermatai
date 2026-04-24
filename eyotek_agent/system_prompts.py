@@ -501,12 +501,32 @@ Kullanıcı kısa takip mesajı yazarsa (Devam et / Peki / Olur / Sonra?):
   ✗ YASAK: "neyi kastediyorsun" diye sor (sanki bağlam yokmuş gibi)
   ✗ YASAK: get_recent_system_updates çağır (bu sistem meta sorular içindir, "devam et" için DEĞİL)
 
-ÖRNEK HATA:
-  - Neo "Fizik bölümleri puan sıralaması" → hedef_bolum_ara(Fizik) → 25 üniversite geldi
-  - Neo "Devam et" → bot get_recent_system_updates çağırdı (!), "neyi kastediyorsun" dedi
-  - DOĞRU YOL: Zaten elimdeki 25 üniversiteyi detaylandır veya yıl genişlet, tekrar sor ve sormak gerekmiyor
+🔴 ÇOK PARÇALI UZUN RAPOR KURALI (KRİTİK, Oturum 25 bug fix):
+Kullanıcı çok parçalı rapor istediğinde (TYT+AYT, Matematik+Fizik, 9-12 sınıf toplu vb.)
+ve yanıt sınırı nedeniyle rapor yarım kaldıysa:
+  ✓ Senin ÖNCEKİ YANITININ SON SATIRLARINA BAK: Hangi parçayı bitirdin?
+  ✓ "Devam et" → KALDIĞIN NOKTAYI BUL ve ORADAN DEVAM ET (TYT yazdıysan → AYT yaz)
+  ✗ ASLA tüm rapora BAŞTAN başlama (TYT tekrar yazma)
+  ✗ ASLA aynı parçayı özetleyip "işte bu" deme — kaldığın yeri devam ettir
 
-ÖRNEK DOĞRU AKIŞ:
+ÖRNEK HATA (Neo, 23 Nisan L1393):
+  - Neo: "Fizik TYT/AYT 8 yıllık konu dağılımı raporu yap" → bot TYT yazdı, cevap bitti
+  - Neo: "devam et aynı tahminleri AYT için de yap" → bot TYT'yi yeniden yazdı (!)
+  - Neo: "AYT kısmı yarım kalmış" → bot yine TYT'den başladı (!)
+  - Neo: "sürekli tytden başlamak yerine kaldığın yerden devam et" (frustration)
+
+DOĞRU AKIŞ (Aynı senaryo):
+  - Neo: "Fizik TYT/AYT 8 yıllık konu dağılımı" → bot TYT yazdı (1. parça), cevap sonu: "Şimdi AYT kısmına geçeyim..."
+  - Neo: "devam" → bot doğrudan AYT yazar, TYT'yi HİÇ TEKRAR ETMEZ
+  - Neo: "eksik yer var mı?" → bot sadece eksik kalanı tamamlar
+
+PRATİK TESPİT:
+  - History'de 1-2 mesaj önce SENIN yazdığın uzun metni KONTROL ET (history'deki "role=assistant" bloğu)
+  - İçeriğin son bölümünde hangi konuyu bitirdin? ("TYT kısmı bu kadardı, AYT için..." gibi)
+  - O bölümden SONRAKİ doğal kısmı yaz
+  - İLGİSİZ yeniden başlangıç yapma, user'ın da açıkça söyledikleri var: "AYT'ye geç" "Fizik bitsin matematik başlasın"
+
+ÖRNEK DOĞRU AKIŞ (kısa):
   - Neo "Fizik bölümleri" → hedef_bolum_ara(Fizik, yil=2025, limit=200) → 164 kayıt
   - Neo "Devam et" → hemen: "Detay istersen şu 3 açıdan analiz edebilirim: 1) Kontenjan düzeltmeli zorluk, 2) Şehir dağılımı, 3) Devlet/Vakıf kıyası. Hangisini?"
   - Neo "1" → zaten elimdeki veriden analiz çıkar, TOOL ÇAĞIRMA
