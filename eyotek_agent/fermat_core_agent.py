@@ -3388,8 +3388,18 @@ class FermatCoreAgent:
                         if len(lines) > 3:
                             answer = '\n'.join(lines[:-1])
 
-                    # Oturum 24: Gercek provider'i router'dan oku (groq/ollama)
-                    _local_provider = getattr(self.router, "_last_local_provider", None) or "ollama"
+                    # Oturum 24 + 25: Gercek provider'i router'dan oku.
+                    # Fallback: router'a bakip hangisi yuklu ise o (VPS'te groq primary,
+                    # laptop'ta ollama). "ollama" hardcoded fallback'u kaldirildi.
+                    _last = getattr(self.router, "_last_local_provider", None)
+                    if _last:
+                        _local_provider = _last
+                    elif getattr(self.router, "_groq_available", False):
+                        _local_provider = "groq"
+                    elif getattr(self.router, "_ollama_available", False):
+                        _local_provider = "ollama"
+                    else:
+                        _local_provider = "local"  # bilinmeyen ama yerel-benzeri
                     self.history.append({"role": "assistant", "content": answer})
                     await _log_conversation(
                         self.session_id, caller_phone, role,

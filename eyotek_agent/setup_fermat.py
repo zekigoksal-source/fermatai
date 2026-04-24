@@ -1,7 +1,9 @@
-# FermatAI Setup & Fix Script
+# FermatAI Setup & Fix Script (LAPTOP-ONLY, PowerShell)
+# Not: VPS'te fermat_start.py/systemd kullanildi, bu script sadece laptop-dev icin.
 # Calistir: cd eyotek_agent dizinine gec, sonra: .\setup_fermat.ps1
 
-$eyotekDir = "C:\Users\zekig\OneDrive\Desktop\FermatAI\eyotek_agent"
+# Oturum 25 D1 fix: Hardcoded path yerine script konumundan türet
+$eyotekDir = $PSScriptRoot
 $envFile   = "$eyotekDir\.env"
 
 Write-Host "`n=== FermatAI Setup Script ===" -ForegroundColor Cyan

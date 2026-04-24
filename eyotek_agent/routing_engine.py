@@ -177,21 +177,13 @@ def decide_route(
     ):
         return "claude"
 
-    # ── 4. Kavramsal sorular → Oturum 25: Groq 70B'ye (local).
-    # Eskiden "claude" dondururduk cunku Ollama halusinasyon riski vardi.
-    # Groq 70B ile bu risk dusuk; trailing \b kaldirildi (Turkce suffix: anlatir/ornegi/formulu).
-    # GROQ_CONCEPTUAL=false ile eski davranisi aktive edebilirsin.
-    import os as _os
-    _groq_conceptual = _os.getenv("GROQ_CONCEPTUAL", "true").lower() == "true"
-    is_conceptual = bool(re.search(
-        r'\b(nedir|ne\s*demek|nasil\s*calisir|acikla|açıkla|anlat|ogret|tanim|orne[kg]|örne[kğ]|farki|ozet|formul|formül)',
-        msg_lower,
-    ))
-    if is_conceptual:
-        return "ollama" if _groq_conceptual else "claude"
+    # ── 4. KALDIRILDI (Oturum 25 D3): Kavramsal sorular burada dubleydi —
+    # llm_router.classify_complexity asagida zaten "local" donduruyor (Oturum 25
+    # PROJ-2-A fix'i + GROQ_CONCEPTUAL flag orada). Tek kaynak, DRY.
 
-    # ── 5. Varsayılan: fast_responses dene, yakalamasa llm_router.classify ──
+    # ── 5. Varsayılan: llm_router.classify_complexity (merkezi karar) ──
     # 19 Nisan refactor: "auto" yerine final karar don (bridge karmasikligi azalir)
+    # Oturum 25 D3: Kavramsal dahil tum karar burada.
     try:
         from llm_router import classify_complexity
         complexity = classify_complexity(message)

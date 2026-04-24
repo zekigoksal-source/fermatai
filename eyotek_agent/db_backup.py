@@ -25,8 +25,13 @@ from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-# Ayarlar
-BACKUP_DIR = Path(r"C:\Users\zekig\OneDrive\Desktop\FermatAI\backups")
+# Ayarlar — platform-bagimsiz path (Oturum 25 D1 fix)
+# Laptop: C:\...\FermatAI\backups | VPS: /opt/fermatai/backups
+# Override: FERMAT_BACKUP_DIR env
+BACKUP_DIR = Path(
+    os.getenv("FERMAT_BACKUP_DIR")
+    or (Path(__file__).resolve().parent.parent / "backups")
+)
 CONTAINER_NAME = "fermat_postgres"
 DB_NAME = "fermatai"
 DB_USER = "fermat"

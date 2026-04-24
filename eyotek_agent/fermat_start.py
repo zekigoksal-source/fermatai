@@ -345,11 +345,19 @@ def start_ollama():
         print(f"  {G}Ollama zaten calisiyor{X}")
         return True
     print(f"  {Y}Ollama baslatiliyor...{X}")
+    # Oturum 25 D1 fix: Windows-only path kaldirildi. Platform check + PATH lookup.
+    # Sadece laptop-dev icin; VPS'te fermat_start.py kullanilmiyor (systemd).
+    import shutil
+    ollama_bin = shutil.which("ollama") or r"C:\Users\zekig\AppData\Local\Programs\Ollama\ollama.exe"
+    if sys.platform != "win32":
+        # Linux/Mac: systemd service zaten calistiriyor, bu fonksiyona gerek yok
+        print(f"  {Y}Non-Windows platformu, Ollama baslatma atlaniyor (systemd varsayiliyor){X}")
+        return True
     si = sp.STARTUPINFO()
     si.dwFlags |= sp.STARTF_USESHOWWINDOW
     si.wShowWindow = 0  # SW_HIDE — pencere acilir ama gorunmez
     sp.Popen(
-        [r"C:\Users\zekig\AppData\Local\Programs\Ollama\ollama.exe", "serve"],
+        [ollama_bin, "serve"],
         stdout=sp.DEVNULL, stderr=sp.DEVNULL,
         startupinfo=si,
         creationflags=0x00000010,  # CREATE_NEW_CONSOLE (gerekli) ama SW_HIDE ile gorunmez
