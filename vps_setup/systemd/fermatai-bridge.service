@@ -10,6 +10,7 @@ User=neo
 Group=neo
 WorkingDirectory=/opt/fermatai/eyotek_agent
 Environment="PATH=/opt/fermatai/.venv/bin:/usr/bin"
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/fermatai/.playwright-browsers
 EnvironmentFile=/opt/fermatai/.env
 
 # Uvicorn komutu — production config
