@@ -1,0 +1,12 @@
+[Unit]
+Description=FermatAI - Full backup (DB + files + Atlas-2)
+Documentation=Oturum 25.9 T5
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/fermatai
+ExecStart=/bin/bash /opt/fermatai/vps_setup/scripts/backup_full.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fermatai-backup

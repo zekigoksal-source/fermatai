@@ -1,0 +1,12 @@
+[Unit]
+Description=FermatAI - Smart sync timer (Carsamba 04:30 UTC = 07:30 Istanbul)
+Documentation=Oturum 25.9 T6 — Eyotek login (04:00) sonrasi 30 dk
+
+[Timer]
+# Pazartesi (1) ve Persembe (4) 04:30 UTC — haftada 2 kez
+OnCalendar=Mon,Thu *-*-* 04:30:00 UTC
+Persistent=true
+Unit=fermatai-smart-sync.service
+
+[Install]
+WantedBy=timers.target

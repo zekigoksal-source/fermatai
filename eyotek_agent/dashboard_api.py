@@ -237,38 +237,84 @@ async def token_budget(
     days: int = 7,
 ):
     await _require_admin_session(request, fermat_session)
-    # usage_log'dan source başına maliyet tahmini
-    # Maliyet katsayıları (rough):
-    #   fast_response: $0
-    #   ollama: $0
-    #   groq: $0.0001 per message (avg 200 tok)
-    #   claude: $0.003 per message (avg 500 tok)
+    # T2 (Oturum 25.9): GERCEK token sayilarindan maliyet
+    # Fiyat tablosu (USD per 1M token):
+    #   Claude Sonnet 4.6: input $3, output $15 (cached: $0.30 in)
+    #   Claude Vision:     input $3, output $15 (image tokens dahil)
+    #   Groq Llama 3.3 70B: input $0.59, output $0.79
+    #   fast_response, query_cache, ollama: $0
+    PRICES = {
+        "claude":         {"in": 3.0,  "out": 15.0},
+        "claude_vision":  {"in": 3.0,  "out": 15.0},
+        "groq":           {"in": 0.59, "out": 0.79},
+        "ollama":         {"in": 0,    "out": 0},
+        "fast_response":  {"in": 0,    "out": 0},
+        "query_cache":    {"in": 0,    "out": 0},
+    }
+
     rows = await db_fetch(
         f"""SELECT phone, full_name, role,
-                   COUNT(*) FILTER (WHERE response_source='claude') as claude_cnt,
-                   COUNT(*) FILTER (WHERE response_source='groq') as groq_cnt,
-                   COUNT(*) FILTER (WHERE response_source='fast_response') as fast_cnt,
-                   COUNT(*) as total_cnt
+                   response_source,
+                   COUNT(*) as cnt,
+                   COALESCE(SUM(token_input),0) as tok_in,
+                   COALESCE(SUM(token_output),0) as tok_out
             FROM usage_log
             WHERE created_at >= NOW() - INTERVAL '{int(days)} days'
-            GROUP BY phone, full_name, role
-            ORDER BY claude_cnt DESC LIMIT 50""",
+              AND phone IS NOT NULL
+            GROUP BY phone, full_name, role, response_source""",
     )
-    items = []
+
+    by_user: dict = {}
     for r in (rows or []):
-        cost_usd = (r['claude_cnt'] or 0) * 0.003 + (r['groq_cnt'] or 0) * 0.0001
-        items.append({
-            "phone": r['phone'],
-            "full_name": r['full_name'],
-            "role": r['role'],
-            "claude": r['claude_cnt'],
-            "groq": r['groq_cnt'],
-            "fast": r['fast_cnt'],
-            "total": r['total_cnt'],
-            "cost_usd": round(cost_usd, 4),
-        })
-    total_cost = sum(i['cost_usd'] for i in items)
-    return {"days": days, "users": items, "total_cost_usd": round(total_cost, 2)}
+        key = r['phone']
+        if key not in by_user:
+            by_user[key] = {
+                "phone": r['phone'],
+                "full_name": r['full_name'],
+                "role": r['role'],
+                "claude": 0, "groq": 0, "fast": 0, "ollama": 0,
+                "vision": 0, "total": 0,
+                "tok_in": 0, "tok_out": 0,
+                "cost_usd": 0.0,
+            }
+        u = by_user[key]
+        src = r['response_source'] or "unknown"
+        cnt = r['cnt'] or 0
+        ti = r['tok_in'] or 0
+        to = r['tok_out'] or 0
+
+        u["total"] += cnt
+        u["tok_in"] += ti
+        u["tok_out"] += to
+
+        # Source bucket count
+        if src == "claude":
+            u["claude"] += cnt
+        elif src == "groq":
+            u["groq"] += cnt
+        elif src == "fast_response":
+            u["fast"] += cnt
+        elif src == "ollama":
+            u["ollama"] += cnt
+        elif src == "claude_vision":
+            u["vision"] += cnt
+
+        # Cost
+        p = PRICES.get(src, {"in": 0, "out": 0})
+        cost = (ti * p["in"] + to * p["out"]) / 1_000_000.0
+        u["cost_usd"] += cost
+
+    items = sorted(by_user.values(), key=lambda x: -x["cost_usd"])[:50]
+    for i in items:
+        i["cost_usd"] = round(i["cost_usd"], 4)
+    total_cost = sum(i['cost_usd'] for i in by_user.values())
+
+    return {
+        "days": days,
+        "users": items,
+        "total_cost_usd": round(total_cost, 2),
+        "pricing": "Sonnet 4.6: $3/$15, Groq Llama 70B: $0.59/$0.79 per 1M tok",
+    }
 
 
 # ── ATLAS-2 PROMPT SUGGESTIONS ─────────────────────────────────────────────

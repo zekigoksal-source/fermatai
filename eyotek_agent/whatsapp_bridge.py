@@ -746,6 +746,14 @@ async def lifespan(app: FastAPI):
 
 _FASTAPI_DOCS_ENABLED = os.getenv("FASTAPI_DOCS", "false").lower() in ("1", "true", "yes")
 
+# T3 (Oturum 25.9): Structured JSON logging — opt-in, default kapali
+if os.getenv("JSON_LOGGING", "false").lower() in ("1", "true", "yes"):
+    try:
+        from json_logging import setup_json_logging
+        setup_json_logging(min_level=os.getenv("JSON_LOG_LEVEL", "INFO"))
+    except Exception as _jle:
+        logger.warning(f"json_logging setup fail: {_jle}")
+
 app = FastAPI(
     title="FermatAI WhatsApp Bridge",
     version="1.0.0",

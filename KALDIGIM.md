@@ -1,7 +1,134 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 25 Nisan 2026, ~20:25 — OTURUM 25.8 FINAL — Konusma analiz fix paketi TAMAM (P1-P10, 6 bug)
+> **Son güncelleme:** 25 Nisan 2026, ~20:25 — **OTURUM 25.9 — MEGA GENISLEME** (5 yeni sistem + 5 teknik borç kapatıldı)
 > **Son konusma analizi timestamp:** `2026-04-25 17:49` (bir sonraki "konusmalari kontrol et" bu noktadan baslamali)
+
+## 🚀 OTURUM 25.9 (25 Nisan 2026, ~20:25) — MEGA GENISLEME
+
+### Neo'nun talebi
+> "1. Adaptive Intelligence + 2. Predictive Performance + 3. Dashboard + 4. Atlas-2 + 5. Knowledge Graph
+>  bu sectiklerime direk giris kontrol sende sisteme zarar vermemek icin dikkatli ol
+>  yaptigin isleri test et problem varsa revize et calisitiğina emin olana kadar süreci yönet"
+> Sonra: "T2-T6 teknik borclari da bitir, hepsini eksiksiz kapat"
+
+### 🆕 5 YENI SISTEM (canli production)
+
+**1. ADAPTIVE INTELLIGENCE ENGINE** (`adaptive_engine.py`)
+- ELO Rating: her ogrenci × konu icin dinamik zorluk seviyesi
+- SM-2 Spaced Repetition: konu tekrar zamanlamasi (klasik SuperMemo)
+- Misconception Detection: kavram yanılgısı tespit + takip
+- 1 fonksiyon ile 3 katmani guncelle: `observe_answer(soz_no, ders, konu, dogru, ...)`
+- Live test: ELO 1200→1216 (zor doğru +27), SM-2 1g→6g→16g progression OK
+
+**2. PREDICTIVE PERFORMANCE MODEL** (`predictive_model.py`)
+- YKS puan tahmin (TYT + AYT + yerlesme puani + confidence)
+- Linear trend + devamsizlik penalty + zayif konu boost + stress penalty
+- Hedef bolum tutturma olasiligi (universite_taban entegrasyonu)
+- Haftalık batch (Pazar 04:00 cron — predict_all_students)
+- Live test soz_no=137: TYT 25.6, AYT 31.0, yerlesme 215.4, confidence 0.65, 56 gun
+
+**3. KNOWLEDGE GRAPH** (`knowledge_graph.py`)
+- 77 concept node + 72 edge (YKS müfredati seed)
+- 6 ders: Mat 25, Geo 7, Fizik 13, Kimya 12, Bio 8, Türkçe 12
+- On kosul iliskileri (Türev←Limit, İntegral←Türev, Logaritma←Üs)
+- ELO → mastery_level otomatik turetme (gece 03:30 cron)
+- Bot context icin "guclu/zayif konu agi" + dashboard d3.js gorseli icin hazır
+- Live test: 77 node aktif, mastery 0.34 (3 konu çalışılmış)
+
+**4. SELF-IMPROVING PROMPTS / ATLAS-2** (`prompt_optimizer.py`)
+- Her gece 02:00 son 24h konusmalardan problem tespit (frustration, missed_intent, repeated_response)
+- Groq 70B prompt iyilestirme onerisi uretir
+- prompt_suggestions tablosu (status: pending/approved/rejected/applied)
+- **Auto-apply YOK** — Neo onayi zorunlu (dashboard'dan tek tık)
+- PROTECTED_PATTERNS guard (KVKK/ASLA/YASAK silmeyi engelle)
+- Cron: 02:00 daily (yarın sabah ilk öneri set'i Neo'yu bekleyecek)
+
+**5. KURUMSAL ZEKA DASHBOARD** (`dashboard_api.py` + `dashboard_ui.html`)
+- 8 tab: Genel, Bildirimler, Routing, Sınıflar, Öğretmenler, Maliyet, Atlas-2, Öğrenci
+- Bildirim merkezi (WP spam yerine panel — Neo'nun istediği)
+- Routing dağılımı (24h doughnut chart) + cohort analiz + öğretmen verimlilik + token bütçe
+- Atlas-2 öneri inceleme: onayla/reddet
+- Öğrenci detay: prediction + adaptive summary + KG stats
+- URL: `/admin/dashboard` (auth: web_chat session, admin/mudur)
+
+### 📊 DB SCHEMA — 9 yeni tablo (`schema_oturum_25_9.sql`)
+- student_topic_elo, student_review_schedule, student_misconceptions
+- student_predictions
+- notifications
+- prompt_suggestions
+- concept_nodes, concept_edges, student_concept_mastery
+- schema_migrations (versiyon takibi)
+
+### 🛠️ T2-T6 TEKNIK BORCLAR — TAMAMLANDI
+
+**T2 — Token budget per-user** (`dashboard_api.py` token-budget endpoint)
+- usage_log token_input/output kolonları zaten dolduruluyordu (5.9M tok 7g)
+- GERCEK token bazlı maliyet: Sonnet $3/$15, Groq $0.59/$0.79 per 1M
+- Her kullanıcı için maliyet + breakdown (claude/groq/fast/vision)
+
+**T3 — Structured JSON logging** (`json_logging.py`)
+- Opt-in env: `JSON_LOGGING=true` (default kapali — bridge'i bozmasın)
+- /opt/fermatai/logs/structured/{YYYY-MM-DD}.jsonl (rotated daily)
+- query_log_file() helper (jq + grep dostu)
+
+**T4 — Test suite** (`tests/test_*.py`)
+- pytest 23/23 PASSED
+- sinav_takvimi (6), adaptive_engine (7), predictive_model (6), format_whatsapp (4)
+- conftest.py: env isolation + mock fixtures
+
+**T5 — Backup automation** (`vps_setup/scripts/backup_full.sh` + systemd)
+- 3 katman: PG dump (29MB) + .env/cookie + Atlas-2 snapshot
+- Tarball + 14 gun retention sliding
+- fermatai-backup.timer aktif (her gece 03:00 UTC)
+- Manuel test: 29MB tar.gz uretildi, /opt/fermatai/backups/
+
+**T6 — Eyotek delta-sync timer** (`fermatai-smart-sync.timer`)
+- smart_sync.py zaten incremental (sınav sayısı değişmemişse skip)
+- Mon+Thu 04:30 UTC (07:30 Istanbul) — login cron'unun 30dk sonrası
+- --resume mode: kaldığı yerden devam
+- İlk tetik: Pazartesi 27 Nisan 04:30 UTC
+
+### ⚙️ ENTEGRASYON
+
+**Tool definitions** (`tool_definitions.py`):
+- 4 yeni Claude tool: `predict_yks_score`, `get_adaptive_summary`,
+  `get_knowledge_graph`, `observe_student_answer`
+
+**fermat_core_agent.py**:
+- TOOL_DISPATCH'e 4 wrapper eklendi
+- _tool_predict_yks_score, _tool_get_adaptive_summary, _tool_get_knowledge_graph,
+  _tool_observe_student_answer
+
+**whatsapp_bridge.py**:
+- Dashboard router include
+- 3 yeni cron: Atlas-2 (02:00), Predictive batch (Pazar 04:00), KG mastery (03:30)
+- JSON logging opt-in setup
+
+### 🔬 CANLI DOGRULAMA
+
+```
+✓ 9/9 yeni tablo VPS'te aktif
+✓ Bridge restart sonrası /admin/dashboard HTTP 200
+✓ /admin/api/notifications HTTP 401 (auth correct)
+✓ Adaptive Engine: ELO matematik doğru, SM-2 progression OK
+✓ Predictive Model: TYT/AYT/yerleşme + suggested_focus üretildi
+✓ Knowledge Graph: 77 node + mastery turetme çalışıyor
+✓ pytest 23/23 PASS
+✓ Backup tarball: 29MB, fermatai-backup.timer aktif
+✓ Smart sync timer: Mon/Thu 04:30 UTC aktif
+```
+
+### 📦 COMMIT'LER
+- `0f11287` — Oturum 25.9 MEGA GENISLEME (5 yeni sistem)
+- (next) Final: T2-T6 + KALDIGIM update
+
+### 🎯 SONRAKI ADIMLAR (Neo'ya kalan)
+1. Sabah 02:00'dan sonra Atlas-2 öneri set'i hazır olacak — `/admin/dashboard` aç, Atlas-2 sekmesinden bak
+2. Pazartesi 04:30 UTC sonrası: smart_sync log'unu izle (`journalctl -u fermatai-smart-sync`)
+3. API key güvenlik paketi (Neo daha sonra yapacak — sen yanindayken)
+4. UI testleri: bir öğrenci seç (örn 137), prediction/adaptive/KG karşılaştır
+
+
 > **Bridge:** CANLI VPS 116.203.117.106, systemd (fermatai-bridge.service), port 8001, Docker Postgres 16 + pgvector 0.8
 > **Mimari:** Hetzner CCX33 VPS (Nuremberg) — laptop artık 7/24 çalışmıyor
 > **LLM Routing:** fast_response %45 + Groq Llama 3.3 70B %30 + Claude Sonnet 4.6 %25 (hedef); ollama sadece embedding (nomic-embed-text)
