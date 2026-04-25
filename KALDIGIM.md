@@ -1,7 +1,86 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 25 Nisan 2026, ~20:25 — **OTURUM 25.9 — MEGA GENISLEME** (5 yeni sistem + 5 teknik borç kapatıldı)
+> **Son güncelleme:** 25 Nisan 2026, ~21:00 — **OTURUM 25.10 — Groq Pay Genişletme** (mimari revizyon)
 > **Son konusma analizi timestamp:** `2026-04-25 17:49` (bir sonraki "konusmalari kontrol et" bu noktadan baslamali)
+
+## 🎯 OTURUM 25.10 (25 Nisan 2026, ~21:00) — GROQ PAY GENİŞLETME
+
+### Neo'nun talebi
+> "Şu an groq kısmı neredeyse yok gibi bir sistem var halbuki 70b kapasite mimaride çok etkili yer alabilir.
+> Burada mimarimiz güzel ama pratikte herşeyi claude üzerine yüklüyoruz. Kalite birinci öncelik ama
+> bunu kaybetmeden groq biraz daha anlamlı rol alabiliyor olmalı"
+
+### Production verisi (önce)
+- Claude: %77.7 (461 mesaj, ortalama 22.6 saniye yanıt!)
+- Fast: %20.1 (119 mesaj, 5ms)
+- Ollama (legacy): %2.0
+- **Groq: %0** ← anomali
+
+### Tespit edilen 3 kök sorun
+1. `classify_complexity` `has_data_query` çok geniş — `kac/kim/hangi/nasil` kavramsal sorularda da var
+2. `decide_route` "auto" döner → fast match yoksa **Claude default** → Groq atlanıyor
+3. Groq lane'i tanımsız — sohbet, meta-direktif, kibarlık tipi mesajlar bypass
+
+### Çözüm — `groq_lanes.py` (yeni modül, 7 lane)
+| Lane | Örnek | Eskiden | Yeni |
+|------|-------|---------|------|
+| **kavramsal_kisa** | "türev nedir", "propanoik asit IUPAC" | Claude | **Groq** |
+| **sohbet** | "selam", "Balık çorbası rezillik mi" | Claude | **Groq** |
+| **meta_direktif** | "İngilizce devam", "emoji koymadan" | Claude | **Groq** |
+| **kibarlik** | "Süper", "Fen full geldi" | Claude | **Groq** |
+| **egitim_icerik** | "YKS stratejisi nasıl olmalı" | Claude | **Groq** |
+| **red_generik** | "Galatasaray analizi" | Claude | **Groq** |
+| **kisa_motivasyon** | "yapamıyorum" (kriz değil) | Claude | **Groq** |
+
+### Groq-NO-GO (Claude zorunlu, korunuyor)
+- personal_data ("benim netim", "matematikte nasılım")
+- tool_required ("etut yaz")
+- kriz_duygu ("intihar etmek istiyorum")
+- frustration ("kabasın", "anlamadın", "kaba", "boş yapıyor")
+- multi_step (5 öğrenci kıyasla)
+- identity_locked (KVKK)
+
+### Routing değişiklikleri
+- **`routing_engine.decide_route`**:
+  - 3b adımı: ogrenci için `classify_lane` → "ollama"
+  - "auto" davranışı: ogrenci ise "ollama" (eskiden Claude default)
+- **`_FRUSTRATION_KEYWORDS`** genişletildi: kaba, kabasın, yine boş, anlatamıyorum, hala anlamadın
+- **`fermat_core_agent.chat_local`**: lane-spesifik system addon enjekte
+
+### Lane-spesifik system addon'lar (Groq tutarlılığı için)
+- **kavramsal_kisa**: "max 150 kelime, formül LaTeX YERINE düz metin (^2 = kare), kişiselleştirme YAPMA"
+- **sohbet**: "samimi ama kısa (max 50 kelime), akademik konuya zorlama"
+- **meta_direktif**: "talimatı kabul et, KISA onayla (10-20 kelime), aşırı özür dileme"
+- **egitim_icerik**: "kişiselleştirilmemiş genel rehberlik, prensip bazlı (max 200 kelime)"
+- **red_generik**: "kibar+net 'uzmanlık dışı', öğretmen rolü hatırlat"
+- **kisa_motivasyon**: "empati + 1 somut öneri, ASLA kriz analizi yapma"
+
+### Test sonuçları
+```
+Routing 14 vaka: 13/14 doğru (tek miss mudur tarih sorusu — fast yakalamalı)
+Groq lane classifier: 23/23 PASS
+Live Groq yanıt:
+  "türev nedir" → 1.3s, doğru kavramsal cevap
+  "propanoik asit IUPAC" → 1.3s, CH₃CH₂COOH formülü doğru
+  "YKS stratejisi" → 14s, pedagojik rehberlik (Claude kalitesinde)
+```
+
+### Beklenen yeni dağılım (24h sonra ölçülecek)
+- Claude: %78 → **%35-40** (kişisel veri + tool + kriz + admin)
+- Groq: %0 → **%30-40** (7 lane)
+- Fast: %20 → korunur
+
+### Güvenlik
+- Mevcut Groq quality check korundu (İngilizce/halüsinasyon/çok-kısa → Claude eskale)
+- Frustration keyword genişledi → kullanıcı şikayet ederse Claude eskalation garantili
+- Identity_lock kontrolü Atlas-2 öncesi → kişisel veri sızıntısı yok
+- Personal data regex → "benim", "ben(de|im)", "kendi", "sahip oldug" Claude'a
+
+### Commit
+- `adecfa3` — Oturum 25.10 Groq pay genişletme
+- VPS deploy + restart sonrası canlı test PASS
+
+
 
 ## 🚀 OTURUM 25.9 (25 Nisan 2026, ~20:25) — MEGA GENISLEME
 
