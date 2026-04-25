@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 25 Nisan 2026, ~19:50 — OTURUM 25.8 — Bugun konusma analiz fix paketi (KVKK + YKS tarih + fast bagılam)
+> **Son güncelleme:** 25 Nisan 2026, ~20:25 — OTURUM 25.8 FINAL — Konusma analiz fix paketi TAMAM (P1-P10, 6 bug)
 > **Son konusma analizi timestamp:** `2026-04-25 17:49` (bir sonraki "konusmalari kontrol et" bu noktadan baslamali)
 > **Bridge:** CANLI VPS 116.203.117.106, systemd (fermatai-bridge.service), port 8001, Docker Postgres 16 + pgvector 0.8
 > **Mimari:** Hetzner CCX33 VPS (Nuremberg) — laptop artık 7/24 çalışmıyor
@@ -62,10 +62,47 @@ Pedagojik akış kırıldı.
   - quiz signals: "f'(", "kaç eder", "cevap", "eğim", "türevi", "hesapla"
   - varsa `return None` → Claude bağlamla cevaplasın
 
-### Tespit edilen ama fix edilmeyen (sabah)
-- **P5** Müdür "Fen öncelikli konularım" dedi, bot AYT mat verdi
-- **P9** WP'de chart bloğu render olmuyor, kullanıcı kodu okur
-- **P10** Mezun öğrenciler başarı sıralamasında karışıyor
+### P5 — BILESIK DERS FILTRE (Deren 07:14 olayi) — DÜZELTILDI (commit `1304f8d`)
+**Olay:** Deren "Fen kısmında öncelikli konularım?" sordu, bot tüm dersleri
+karma verdi (Geometri 🔴, Mat 🔴, Türkçe 🟡). "Fen" filter listede yoktu.
+
+**Fix:**
+- `ogrenci_zayif_konular()` artik bilesik filtre alır:
+  - "fen" → fizik+kimya+biyoloji
+  - "sosyal" → tarih+cografya+felsefe+din
+  - "sayisal" → mat+geo+fizik+kimya+bio
+  - "ea" → mat+edebiyat+tarih+cografya
+  - "soz" → edebiyat+tarih+cografya+felsefe+din
+- SQL `LOWER(ders) = ANY(ARRAY[...])` ile birden fazla ders filtrelenir
+- 3 detection point'inde (`zayif_konular`, `ayt_zayif`, `sinav_ders_zayif`) bilesik kelimeler eklendi
+
+### P9 — WP CHART BLOK CLEANER (Ceylin 12:26 olayi) — DÜZELTILDI
+**Olay:** Bot 4 chart bloğu gönderdi, format_for_whatsapp ` ``` ` markerlarini sildi
+ama JSON content kaldı, Ceylin `{"type":"line","title":"AYT Matematik..."}` text gördü.
+
+**Fix:**
+- `format_whatsapp.py` regex: `` ```chart\s*\n?(.*?)``` `` (DOTALL)
+- title bulursa `📊 *Title*` (emoji + WP bold) ile değiştir
+- title yoksa tamamen sil
+- Web chat'te orijinal chart render zaten oluyor, WP'de artik kullanici sade text görüyor
+
+### P10 — MEZUN AYRIM KURALI (Zeki 17:48 olayi) — DÜZELTILDI
+**Olay:** Zeki "Öğrencilerin başarı performans siralamasini yap" dedi, bot
+mezun Enes (469), Zeynep (462), Taha'yı sıralamanın başına koydu.
+Kurum şu an 2026 hazırlığı süreci, mezunlar 2025'te yerleşti.
+
+**Fix:**
+- `system_prompts.py` MEZUN AYRIM KURALI bloğu eklendi
+- `tool_definitions.py` query_analytics tanımına: default `WHERE class_name NOT ILIKE '%mezun%' AND class_name NOT ILIKE '%mez %'`
+- Kullanici "mezunlar dahil" demediyse aktif öğrencileri sıralar
+- 40 mezun öğrenci varmış DB'de — artık karışmıyor
+
+### Canli dogrulama (commit `1304f8d` push + restart)
+- ✅ P5 bilesik filtre: `DERS_BILESIK` ve "fen" var (VPS test)
+- ✅ P9 chart with title: `📊 *AYT Mat Yıllık*` (VPS test)
+- ✅ P9 chart no title: tamamen silindi (VPS test)
+- ✅ P10 mezun kurali system_prompts ve tool_definitions'da (VPS test)
+- ✅ fermatai-bridge active
 
 ### KALICI YENİ KURALLAR (Neo bugün öğretti)
 1. **VPS IP doğrusu:** `116.203.117.106` (5.75.x SAÇMA, başka müşteri sunucusu)
