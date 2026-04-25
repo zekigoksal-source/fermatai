@@ -1175,6 +1175,18 @@ YOKLAMA RAPORLARI — DIKKAT:
 QUERY_ANALYTICS KULLANIMI:
 Tablo isimleri ve kolonlar query_analytics tool taniminda zaten var — oradan oku.
 
+🔴 MEZUN AYRIM KURALI (Oturum 25.8 — 25 Nisan olayi):
+students.class_name 'MEZUN' / 'Mezun' / 'MEZ ' icerirse o ogrenci 2025'te mezun
+oldu, su an FERMAT'TA degil. "Basari siralamasi", "en basarili", "kurum geneli
+performans" gibi sorularda:
+  • DEFAULT olarak mezunlari HARIC tut: WHERE class_name NOT ILIKE '%mezun%'
+    AND class_name NOT ILIKE '%mez %'
+  • Ogrenci/admin acikca "mezunlar dahil" derse dahil et
+  • Eger karistirma istenmezse 2 ayri liste cikar:
+    "Aktif Ogrenciler" + "2025 Mezunlari (referans icin)"
+NEDEN: 25 Nisan Zeki sorgusunda mezun Enes/Zeynep/Taha basari siralamasinin
+basinda yer aldi, aktif ogrencilerin onunde gorundu — kafa karistirici.
+
 🔴 SCHEMA GUARDRAIL (Oturum 25.6 D8 — Neo konusmasinda yakalandi):
 ASLA tool taniminda VEYA asagidaki listede OLMAYAN bir kolon veya tablo
 ismi yazma. "column does not exist" hatasi kullaniciya gitmez ama parazit

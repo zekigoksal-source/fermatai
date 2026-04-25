@@ -66,6 +66,22 @@ def format_for_whatsapp(text: str, source: str = "claude") -> str:
     # ── 1. Markdown → WhatsApp ──
     text = re.sub(r'\*\*([^*]+)\*\*', r'*\1*', text)
     text = re.sub(r'^#{1,6}\s*(.+?)$', r'*\1*', text, flags=re.MULTILINE)
+
+    # 25.8 fix: ```chart {...}``` blokları WP'de render olmaz → JSON ham gozukur.
+    # Ceylin 12:26 olayi: 3 chart bloguna karsi chart JSON gordu. WP'de bash icerik
+    # silinmeli, baslik bulunabiliyorsa "📊 *Title*" ile degistirilmeli (web'de
+    # render olur, WP'de duz text). dotall flag — multiline JSON'i da yakalar.
+    def _strip_chart_block(m: "re.Match") -> str:
+        body = m.group(1) or ""
+        # title cikarmaya calis (json'dan)
+        title_m = re.search(r'"title"\s*:\s*"([^"]+)"', body)
+        if title_m:
+            return f"\n📊 *{title_m.group(1)}*\n"
+        return ""  # baslik yoksa tamamen sil
+    text = re.sub(r'```chart\s*\n?(.*?)```', _strip_chart_block, text, flags=re.DOTALL)
+
+    # Diger ``` blokları (kod, json, yaml vs.) — WP code block desteklemez,
+    # sadece marker'lari sil, icerik kalsin (asagidaki replace zaten yapiyor)
     text = re.sub(r'```[\w]*\n', '', text)
     text = text.replace('```', '')
     text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'\1 (\2)', text)

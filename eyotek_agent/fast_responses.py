@@ -618,7 +618,9 @@ async def ogrenci_lgs_konu_durumu(soz_no: int, name: str) -> str:
 async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", sinav_turu: str = "") -> str:
     """'Zayif konularim neler?', 'neye calismam lazim', 'fizikteki eksiklerim'
     22.1n-bugfix: sinav_turu (TYT/AYT/YDT) parametresi — ogrenci 'AYT kimya zayif' dediginde
-    sadece AYT Kimya gelir; onceden TYT Kimya da geliyordu (kafa karisikligi)."""
+    sadece AYT Kimya gelir; onceden TYT Kimya da geliyordu (kafa karisikligi).
+    25.8 fix: 'fen' / 'sosyal' / 'sayisal' bilesik filtre destegi (Deren 07:14 olayi:
+    'fen kismindaki' dedi, bot Geometri/Mat/Turkce verdi)."""
     # sinav_turu normalize
     st_filter = ""
     if sinav_turu:
@@ -626,12 +628,31 @@ async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", s
         if su in ("TYT", "AYT", "YDT"):
             st_filter = su
 
+    # 25.8 fix: bileşik ders filtresi — "fen" → 3 ders, "sosyal" → 4 ders
+    DERS_BILESIK = {
+        "fen": ["fizik", "kimya", "biyoloji"],
+        "sosyal": ["tarih", "cografya", "felsefe", "din"],
+        "sosyal2": ["tarih", "cografya", "felsefe", "din"],
+        "say": ["matematik", "geometri", "fizik", "kimya", "biyoloji"],
+        "sayisal": ["matematik", "geometri", "fizik", "kimya", "biyoloji"],
+        "ea": ["matematik", "edebiyat", "tarih", "cografya"],
+        "esit agirlik": ["matematik", "edebiyat", "tarih", "cografya"],
+        "soz": ["edebiyat", "tarih", "cografya", "felsefe", "din"],
+    }
+    bilesik_listesi = DERS_BILESIK.get((ders_filtre or "").lower().strip(), None)
+
     # WHERE clause dinamik
     # 23 Nisan E6: 'metadata' status'lü satırları haric tut (1193 kayıt temizlendi)
     conds = ["soz_no=$1", "tamamlandi=FALSE", "COALESCE(status,'') != 'metadata'"]
     params = [soz_no]
     idx = 2
-    if ders_filtre:
+    if bilesik_listesi:
+        # Birden fazla ders OR'la
+        ph = ",".join(f"${idx + i}" for i in range(len(bilesik_listesi)))
+        conds.append(f"LOWER(ders) = ANY(ARRAY[{ph}])")
+        params.extend([d.lower() for d in bilesik_listesi])
+        idx += len(bilesik_listesi)
+    elif ders_filtre:
         conds.append(f"LOWER(ders) LIKE LOWER(${idx})")
         params.append(f"%{ders_filtre}%")
         idx += 1
@@ -1995,8 +2016,12 @@ async def _dispatch_registry_handler(
                 except Exception:
                     pass  # LGS check fail ederse YKS akışına düş
                 ders_filtre = ""
-                for ders in ("fizik", "matematik", "mat", "turkce", "turkce",
-                             "kimya", "biyoloji", "geometri", "tarih", "cografya"):
+                # 25.8: "fen", "sosyal", "say", "ea" bilesik gruplari ONCE kontrol et
+                # (tek ders adlari da gecebilir ama bilesik daha spesifik)
+                for ders in ("fen", "sosyal2", "sosyal", "sayisal", "esit agirlik",
+                             "fizik", "matematik", "mat", "turkce", "türkçe",
+                             "kimya", "biyoloji", "geometri", "tarih", "cografya",
+                             "edebiyat", "tde", "felsefe", "din"):
                     if ders in msg_lower:
                         ders_filtre = ders
                         break
@@ -2424,9 +2449,11 @@ async def try_fast_response(
                     elif handler == "ayt_zayif":
                         # 22.1n-bugfix: ayt ders_filtre DEGIL sinav_turu — ayni zamanda
                         # mesajda "ayt kimya zayif" gibi ders de gecebilir
+                        # 25.8 fix: bilesik filtre ("fen", "sosyal") destegi
                         ders_detected = ""
-                        for d in ["fizik","matematik","mat","turkce","türkçe","kimya","biyoloji",
-                                  "geometri","tarih","cografya","coğrafya","felsefe","edebiyat","tde"]:
+                        for d in ["fen", "sosyal2", "sosyal", "sayisal", "esit agirlik",
+                                  "fizik","matematik","mat","turkce","türkçe","kimya","biyoloji",
+                                  "geometri","tarih","cografya","coğrafya","felsefe","edebiyat","tde","din"]:
                             if d in msg_lower:
                                 ders_detected = d
                                 break
@@ -2446,9 +2473,12 @@ async def try_fast_response(
                         return await ogrenci_deneme_kiyasla(soz_no, name, count)
                     elif handler == "zayif_konular":
                         # Ders filtresi: "fizikteki eksiklerim" → ders_filtre="fizik"
+                        # 25.8 fix: bilesik filtre ("fen kismindaki", "sosyalde") destegi
                         ders_filtre = ""
-                        for ders_adi in ["fizik", "matematik", "mat", "turkce", "türkçe", "kimya", "biyoloji",
-                                         "geometri", "tarih", "cografya", "coğrafya", "felsefe", "din"]:
+                        for ders_adi in ["fen", "sosyal2", "sosyal", "sayisal", "esit agirlik",
+                                         "fizik", "matematik", "mat", "turkce", "türkçe", "kimya", "biyoloji",
+                                         "geometri", "tarih", "cografya", "coğrafya", "felsefe", "din",
+                                         "edebiyat", "tde"]:
                             if ders_adi in msg_lower:
                                 ders_filtre = ders_adi
                                 break
