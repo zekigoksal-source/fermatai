@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FermatAI — Kurumsal Zeka Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #7d8590;
+  --accent: #C76F3E;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --red: #f85149;
+  --blue: #58a6ff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+.container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+}
+header h1 { font-size: 1.5rem; }
+header h1 span { color: var(--accent); }
+.tab-row { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.tab {
+  padding: 10px 18px; background: var(--card); border: 1px solid var(--border);
+  color: var(--muted); cursor: pointer; border-radius: 6px;
+  font-size: 0.9rem; transition: all 0.2s;
+}
+.tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tab:hover:not(.active) { background: #21262d; color: var(--text); }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 20px;
+}
+.card h2 {
+  font-size: 0.95rem; color: var(--muted); margin-bottom: 12px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.metric { font-size: 2.2rem; font-weight: 700; color: var(--text); }
+.metric.green { color: var(--green); }
+.metric.yellow { color: var(--yellow); }
+.metric.red { color: var(--red); }
+.metric.accent { color: var(--accent); }
+.metric-label { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+.notification-list { max-height: 400px; overflow-y: auto; }
+.notification {
+  display: flex; gap: 12px; padding: 12px;
+  border-bottom: 1px solid var(--border); align-items: start;
+}
+.notification:last-child { border-bottom: none; }
+.notification.unread { background: rgba(88, 166, 255, 0.05); }
+.notif-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 0.9rem; font-weight: 700;
+}
+.notif-icon.critical { background: var(--red); color: #fff; }
+.notif-icon.warning { background: var(--yellow); color: #000; }
+.notif-icon.info { background: var(--blue); color: #fff; }
+.notif-icon.success { background: var(--green); color: #fff; }
+.notif-content { flex: 1; min-width: 0; }
+.notif-title { font-weight: 600; font-size: 0.9rem; }
+.notif-body { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+.notif-time { color: var(--muted); font-size: 0.75rem; margin-top: 4px; }
+.notif-actions { display: flex; gap: 6px; margin-top: 6px; }
+.btn {
+  padding: 4px 10px; background: transparent; border: 1px solid var(--border);
+  color: var(--muted); cursor: pointer; border-radius: 4px;
+  font-size: 0.75rem; transition: all 0.2s;
+}
+.btn:hover { background: var(--border); color: var(--text); }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn.danger { color: var(--red); border-color: var(--red); }
+table {
+  width: 100%; border-collapse: collapse; font-size: 0.85rem;
+}
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.chart-wrap { position: relative; height: 250px; }
+.empty {
+  text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.9rem;
+}
+.suggestion {
+  padding: 16px; border: 1px solid var(--border); border-radius: 6px;
+  margin-bottom: 12px; background: rgba(255,255,255,0.02);
+}
+.suggestion-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.suggestion-title { font-weight: 600; font-size: 0.95rem; }
+.severity-badge {
+  padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase;
+}
+.severity-badge.high { background: rgba(248, 81, 73, 0.2); color: var(--red); }
+.severity-badge.medium { background: rgba(210, 153, 34, 0.2); color: var(--yellow); }
+.severity-badge.low { background: rgba(63, 185, 113, 0.2); color: var(--green); }
+.suggestion-desc { color: var(--muted); font-size: 0.85rem; margin-bottom: 8px; }
+.suggestion-change {
+  background: var(--bg); padding: 10px; border-radius: 4px;
+  font-family: monospace; font-size: 0.8rem; color: var(--text);
+  white-space: pre-wrap; overflow-x: auto; max-height: 200px; overflow-y: auto;
+}
+.suggestion-actions { display: flex; gap: 8px; margin-top: 12px; }
+.refresh-btn {
+  background: transparent; color: var(--muted); border: 1px solid var(--border);
+  padding: 6px 12px; cursor: pointer; border-radius: 4px; font-size: 0.8rem;
+}
+.refresh-btn:hover { color: var(--accent); border-color: var(--accent); }
+.spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid var(--border); border-top: 2px solid var(--accent);
+  border-radius: 50%; animation: spin 1s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.kg-svg { width: 100%; height: 600px; background: var(--bg); border-radius: 8px; }
+input, select {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 12px; border-radius: 4px; font-size: 0.9rem;
+}
+input:focus, select:focus { outline: none; border-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Fermat<span>AI</span> — Kurumsal Zeka Dashboard</h1>
+  <div>
+    <button class="refresh-btn" onclick="refreshAll()">↻ Yenile</button>
+    <a href="/chat" class="refresh-btn" style="text-decoration:none;display:inline-block">← Sohbet</a>
+  </div>
+</header>
+
+<div class="tab-row">
+  <button class="tab active" data-tab="overview">📊 Genel</button>
+  <button class="tab" data-tab="notifications">🔔 Bildirimler <span id="unread-badge"></span></button>
+  <button class="tab" data-tab="routing">🚦 Routing</button>
+  <button class="tab" data-tab="cohorts">👥 Sınıflar</button>
+  <button class="tab" data-tab="teachers">👨‍🏫 Öğretmenler</button>
+  <button class="tab" data-tab="budget">💰 Maliyet</button>
+  <button class="tab" data-tab="atlas">🤖 Atlas-2</button>
+  <button class="tab" data-tab="student">🎓 Öğrenci</button>
+</div>
+
+<!-- TAB: GENEL -->
+<div class="tab-content active" id="tab-overview">
+  <div class="grid">
+    <div class="card">
+      <h2>👥 Aktif Kullanıcı (24h)</h2>
+      <div class="metric green" id="m-users-24h">--</div>
+      <div class="metric-label" id="m-msgs-24h">-- mesaj</div>
+    </div>
+    <div class="card">
+      <h2>⏱️ Ortalama Yanıt</h2>
+      <div class="metric accent" id="m-avg-ms">--</div>
+      <div class="metric-label">milisaniye</div>
+    </div>
+    <div class="card">
+      <h2>🔔 Okunmamış Bildirim</h2>
+      <div class="metric yellow" id="m-unread">--</div>
+      <div class="metric-label" id="m-critical">-- kritik</div>
+    </div>
+    <div class="card">
+      <h2>💰 Maliyet (7g)</h2>
+      <div class="metric red" id="m-cost-7d">--</div>
+      <div class="metric-label">USD</div>
+    </div>
+    <div class="card" style="grid-column: span 2;">
+      <h2>🚦 Routing Dağılımı (24h)</h2>
+      <div class="chart-wrap"><canvas id="chart-routing"></canvas></div>
+    </div>
+    <div class="card" style="grid-column: span 2;">
+      <h2>📈 Mesaj Sayısı (Trend)</h2>
+      <div class="chart-wrap"><canvas id="chart-trend"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: BILDIRIMLER -->
+<div class="tab-content" id="tab-notifications">
+  <div class="card">
+    <h2>🔔 Bildirim Merkezi</h2>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn" onclick="loadNotifications(false)">Tümü</button>
+      <button class="btn primary" onclick="loadNotifications(true)">Sadece Okunmamış</button>
+    </div>
+    <div class="notification-list" id="notifications-list"><div class="empty">Yükleniyor...</div></div>
+  </div>
+</div>
+
+<!-- TAB: ROUTING -->
+<div class="tab-content" id="tab-routing">
+  <div class="grid">
+    <div class="card">
+      <h2>🚦 Son 24 Saat</h2>
+      <div class="chart-wrap"><canvas id="chart-routing-2"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>📊 Detay</h2>
+      <table id="routing-table"><thead><tr><th>Kaynak</th><th>Sayı</th><th>Yüzde</th><th>Ort ms</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: COHORTS -->
+<div class="tab-content" id="tab-cohorts">
+  <div class="card">
+    <h2>👥 Sınıf / Kohort Analizi</h2>
+    <table id="cohort-table">
+      <thead><tr><th>Sınıf</th><th>Öğrenci</th><th>TYT Ort</th><th>AYT Ort</th></tr></thead>
+      <tbody><tr><td colspan="4" class="empty">Yükleniyor...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB: TEACHERS -->
+<div class="tab-content" id="tab-teachers">
+  <div class="card">
+    <h2>👨‍🏫 Öğretmen Verimlilik (30g)</h2>
+    <table id="teacher-table">
+      <thead><tr><th>Öğretmen</th><th>Etüt #</th><th>Farklı Konu</th><th>Ort Süre (dk)</th></tr></thead>
+      <tbody><tr><td colspan="4" class="empty">Yükleniyor...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB: BUDGET -->
+<div class="tab-content" id="tab-budget">
+  <div class="card">
+    <h2>💰 Token Bütçe (7g)</h2>
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px;">Toplam: <span id="total-cost">--</span> USD</p>
+    <table id="budget-table">
+      <thead><tr><th>Telefon</th><th>İsim</th><th>Rol</th><th>Claude</th><th>Groq</th><th>Fast</th><th>Toplam</th><th>Maliyet (USD)</th></tr></thead>
+      <tbody><tr><td colspan="8" class="empty">Yükleniyor...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB: ATLAS-2 -->
+<div class="tab-content" id="tab-atlas">
+  <div class="card">
+    <h2>🤖 Atlas-2 — Bekleyen Prompt Önerileri</h2>
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;">
+      Bot her gece 02:00 son 24h konuşmaları analiz edip prompt iyileştirme önerisi üretir.
+      Onay bekleyen öneriler aşağıda. <strong>Auto-apply YOK</strong> — sen onaylayınca uygulanır.
+    </p>
+    <div id="suggestions-list"><div class="empty">Yükleniyor...</div></div>
+  </div>
+</div>
+
+<!-- TAB: STUDENT -->
+<div class="tab-content" id="tab-student">
+  <div class="card">
+    <h2>🎓 Öğrenci Detay</h2>
+    <div style="margin-bottom:16px;display:flex;gap:8px;align-items:center;">
+      <label>soz_no:</label>
+      <input id="student-input" type="number" placeholder="örn 137" style="width:120px;">
+      <button class="btn primary" onclick="loadStudent()">Yükle</button>
+    </div>
+    <div id="student-detail"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+let routingChart = null, trendChart = null, routingChart2 = null;
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const id = 'tab-' + t.dataset.tab;
+    document.getElementById(id).classList.add('active');
+    loadTab(t.dataset.tab);
+  });
+});
+
+async function api(path, opts={}) {
+  const r = await fetch(path, {credentials:'include', ...opts});
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+async function loadOverview() {
+  try {
+    const u = await api('/admin/api/usage-summary');
+    document.getElementById('m-users-24h').textContent = u['24h']?.users || 0;
+    document.getElementById('m-msgs-24h').textContent = (u['24h']?.msgs || 0) + ' mesaj';
+    document.getElementById('m-avg-ms').textContent = u['24h']?.avg_ms || 0;
+  } catch(e) { console.error(e); }
+
+  try {
+    const n = await api('/admin/api/notifications?only_unread=true&limit=1');
+    document.getElementById('m-unread').textContent = n.counts?.unread || 0;
+    document.getElementById('m-critical').textContent = (n.counts?.critical || 0) + ' kritik';
+    const badge = document.getElementById('unread-badge');
+    if (n.counts?.unread > 0) {
+      badge.textContent = ' (' + n.counts.unread + ')';
+      badge.style.color = 'var(--accent)';
+    } else { badge.textContent = ''; }
+  } catch(e) { console.error(e); }
+
+  try {
+    const b = await api('/admin/api/token-budget?days=7');
+    document.getElementById('m-cost-7d').textContent = '$' + (b.total_cost_usd || 0).toFixed(2);
+  } catch(e) { console.error(e); }
+
+  try {
+    const r = await api('/admin/api/routing-stats?hours=24');
+    drawRouting('chart-routing', r.distribution || []);
+  } catch(e) { console.error(e); }
+}
+
+function drawRouting(canvasId, data) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  const colors = {fast_response:'#3fb950', groq:'#58a6ff', claude:'#C76F3E', ollama:'#7d8590'};
+  const chartData = {
+    labels: data.map(d => d.source || 'unknown'),
+    datasets: [{
+      data: data.map(d => d.count),
+      backgroundColor: data.map(d => colors[d.source] || '#7d8590'),
+    }],
+  };
+  const config = {
+    type: 'doughnut',
+    data: chartData,
+    options: {responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom', labels:{color:'#e6edf3'}}}},
+  };
+  if (canvasId === 'chart-routing' && routingChart) routingChart.destroy();
+  if (canvasId === 'chart-routing-2' && routingChart2) routingChart2.destroy();
+  const ch = new Chart(ctx, config);
+  if (canvasId === 'chart-routing') routingChart = ch;
+  if (canvasId === 'chart-routing-2') routingChart2 = ch;
+}
+
+async function loadNotifications(onlyUnread = false) {
+  const list = document.getElementById('notifications-list');
+  list.innerHTML = '<div class="empty">Yükleniyor...</div>';
+  try {
+    const data = await api('/admin/api/notifications?limit=50' + (onlyUnread?'&only_unread=true':''));
+    if (!data.items?.length) {
+      list.innerHTML = '<div class="empty">Bildirim yok ✅</div>';
+      return;
+    }
+    list.innerHTML = data.items.map(n => `
+      <div class="notification ${n.is_read ? '' : 'unread'}">
+        <div class="notif-icon ${n.severity}">${n.severity[0].toUpperCase()}</div>
+        <div class="notif-content">
+          <div class="notif-title">${escapeHTML(n.title)}</div>
+          <div class="notif-body">${escapeHTML(n.body || '')}</div>
+          <div class="notif-time">${formatTime(n.created_at)} · ${n.category}</div>
+          <div class="notif-actions">
+            ${!n.is_read ? `<button class="btn" onclick="markRead(${n.id})">✓ Okundu</button>` : ''}
+            <button class="btn danger" onclick="dismiss(${n.id})">× Kapat</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { list.innerHTML = '<div class="empty">Hata: ' + e.message + '</div>'; }
+}
+
+async function markRead(id) {
+  await api('/admin/api/notifications/'+id+'/read', {method:'POST'});
+  loadNotifications();
+  loadOverview();
+}
+
+async function dismiss(id) {
+  await api('/admin/api/notifications/'+id+'/dismiss', {method:'POST'});
+  loadNotifications();
+  loadOverview();
+}
+
+async function loadRouting() {
+  try {
+    const r = await api('/admin/api/routing-stats?hours=24');
+    drawRouting('chart-routing-2', r.distribution || []);
+    const tbody = document.querySelector('#routing-table tbody');
+    tbody.innerHTML = (r.distribution || []).map(d =>
+      `<tr><td>${d.source}</td><td>${d.count}</td><td>%${d.pct}</td><td>${d.avg_ms || '-'}</td></tr>`
+    ).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadCohorts() {
+  try {
+    const r = await api('/admin/api/cohort-analysis');
+    const tbody = document.querySelector('#cohort-table tbody');
+    if (!r.cohorts?.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Veri yok</td></tr>'; return; }
+    tbody.innerHTML = r.cohorts.map(c =>
+      `<tr><td>${escapeHTML(c.class_name||'')}</td><td>${c.ogr_sayisi||0}</td>
+       <td>${c.tyt_ort?Number(c.tyt_ort).toFixed(1):'-'}</td>
+       <td>${c.ayt_ort?Number(c.ayt_ort).toFixed(1):'-'}</td></tr>`
+    ).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadTeachers() {
+  try {
+    const r = await api('/admin/api/teacher-effectiveness');
+    const tbody = document.querySelector('#teacher-table tbody');
+    if (!r.teachers?.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Veri yok</td></tr>'; return; }
+    tbody.innerHTML = r.teachers.map(t =>
+      `<tr><td>${escapeHTML(t.ogretmen||'')}</td><td>${t.etut_sayisi||0}</td>
+       <td>${t.farkli_konu||0}</td><td>${t.ort_sure_dk||'-'}</td></tr>`
+    ).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadBudget() {
+  try {
+    const r = await api('/admin/api/token-budget?days=7');
+    document.getElementById('total-cost').textContent = (r.total_cost_usd||0).toFixed(2);
+    const tbody = document.querySelector('#budget-table tbody');
+    if (!r.users?.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">Veri yok</td></tr>'; return; }
+    tbody.innerHTML = r.users.map(u =>
+      `<tr><td>${u.phone}</td><td>${escapeHTML(u.full_name||'')}</td><td>${u.role}</td>
+       <td>${u.claude}</td><td>${u.groq}</td><td>${u.fast}</td><td>${u.total}</td>
+       <td>$${(u.cost_usd||0).toFixed(4)}</td></tr>`
+    ).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function loadAtlas() {
+  const list = document.getElementById('suggestions-list');
+  list.innerHTML = '<div class="empty">Yükleniyor...</div>';
+  try {
+    const r = await api('/admin/api/atlas-suggestions');
+    if (!r.suggestions?.length) {
+      list.innerHTML = '<div class="empty">Bekleyen öneri yok ✨ Atlas-2 her gece 02:00\'da çalışır.</div>';
+      return;
+    }
+    list.innerHTML = r.suggestions.map(s => `
+      <div class="suggestion">
+        <div class="suggestion-header">
+          <div class="suggestion-title">${escapeHTML(s.title)}</div>
+          <span class="severity-badge ${s.severity}">${s.severity}</span>
+        </div>
+        <div class="suggestion-desc">${escapeHTML(s.description)}</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;">
+          📌 Pattern: ${escapeHTML(s.affected_pattern || '-')}
+        </div>
+        <div class="suggestion-change">${escapeHTML(s.suggested_prompt_change || '')}</div>
+        <div style="font-size:0.8rem;color:var(--green);margin-top:8px;">
+          📈 Beklenen etki: ${escapeHTML(s.expected_impact || '-')}
+        </div>
+        <div class="suggestion-actions">
+          <button class="btn primary" onclick="approveSug(${s.id})">✓ Onayla</button>
+          <button class="btn danger" onclick="rejectSug(${s.id})">× Reddet</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { list.innerHTML = '<div class="empty">Hata: ' + e.message + '</div>'; }
+}
+
+async function approveSug(id) {
+  if (!confirm('Onaylıyor musun? (uygulanmaz, sadece status güncellenir)')) return;
+  await api('/admin/api/atlas-suggestions/'+id+'/approve', {method:'POST'});
+  loadAtlas();
+}
+
+async function rejectSug(id) {
+  const note = prompt('Red sebebi (opsiyonel):') || '';
+  await api('/admin/api/atlas-suggestions/'+id+'/reject', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({note}),
+  });
+  loadAtlas();
+}
+
+async function loadStudent() {
+  const sn = document.getElementById('student-input').value.trim();
+  if (!sn) return;
+  const det = document.getElementById('student-detail');
+  det.innerHTML = '<div class="empty">Yükleniyor... <span class="spinner"></span></div>';
+  try {
+    const [p, a, kg] = await Promise.all([
+      api('/admin/api/student/'+sn+'/prediction'),
+      api('/admin/api/student/'+sn+'/adaptive-summary'),
+      api('/admin/api/student/'+sn+'/knowledge-graph'),
+    ]);
+    let html = '';
+    if (p.error) {
+      html += `<div class="card"><h2>📈 Tahmin</h2><div class="empty">${escapeHTML(p.message||p.error)}</div></div>`;
+    } else {
+      html += `<div class="card">
+        <h2>📈 YKS Puan Tahmini</h2>
+        <div class="grid">
+          <div><div class="metric green">${p.predicted_tyt}</div><div class="metric-label">TYT Net</div></div>
+          <div><div class="metric accent">${p.predicted_ayt}</div><div class="metric-label">AYT Net</div></div>
+          <div><div class="metric yellow">${p.predicted_yerlesme_puani}</div><div class="metric-label">Yerleşme Puanı</div></div>
+          <div><div class="metric ${p.confidence>0.7?'green':p.confidence>0.4?'yellow':'red'}">${(p.confidence*100).toFixed(0)}%</div><div class="metric-label">Güven</div></div>
+        </div>
+        <p style="margin-top:12px;color:var(--muted);font-size:0.85rem;">💡 ${escapeHTML(p.suggested_focus||'')}</p>
+      </div>`;
+    }
+    html += `<div class="card" style="margin-top:16px;">
+      <h2>🧠 Adaptive Özeti</h2>
+      <p>Ortalama ELO: <strong>${a.avg_rating||0}</strong> | İncelenmiş konu: <strong>${a.total_topics_studied||0}</strong></p>
+      <p style="margin-top:8px;">Bugün tekrarlanmasi gereken: <strong>${(a.due_today||[]).length}</strong> konu</p>
+      <p>Aktif yanılgı: <strong>${(a.active_misconceptions||[]).length}</strong></p>
+    </div>`;
+    html += `<div class="card" style="margin-top:16px;">
+      <h2>🕸️ Knowledge Graph</h2>
+      <p>Toplam node: <strong>${kg.stats?.total_nodes||0}</strong> |
+        Çalışılmış: <strong>${kg.stats?.studied_nodes||0}</strong> |
+        Ortalama mastery: <strong>${(kg.stats?.avg_mastery||0).toFixed(2)}</strong></p>
+      <p>🔴 Zayıf: ${kg.stats?.weak_count||0} | 🟢 Güçlü: ${kg.stats?.strong_count||0}</p>
+    </div>`;
+    det.innerHTML = html;
+  } catch(e) { det.innerHTML = '<div class="empty">Hata: ' + e.message + '</div>'; }
+}
+
+function loadTab(name) {
+  if (name === 'overview') loadOverview();
+  else if (name === 'notifications') loadNotifications();
+  else if (name === 'routing') loadRouting();
+  else if (name === 'cohorts') loadCohorts();
+  else if (name === 'teachers') loadTeachers();
+  else if (name === 'budget') loadBudget();
+  else if (name === 'atlas') loadAtlas();
+}
+
+function refreshAll() {
+  const active = document.querySelector('.tab.active');
+  if (active) loadTab(active.dataset.tab);
+}
+
+function escapeHTML(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'şimdi';
+  if (diff < 3600) return Math.floor(diff/60) + ' dk önce';
+  if (diff < 86400) return Math.floor(diff/3600) + ' saat önce';
+  return d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+}
+
+// Auto-refresh notifications every 60s
+setInterval(() => {
+  if (document.querySelector('.tab.active')?.dataset.tab === 'overview') {
+    loadOverview();
+  }
+}, 60000);
+
+// Initial load
+loadOverview();
+</script>
+</body>
+</html>

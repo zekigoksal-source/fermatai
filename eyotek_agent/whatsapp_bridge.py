@@ -259,6 +259,44 @@ async def _run_scheduled_tasks():
                 except Exception as e:
                     logger.warning(f"profile refresh hatası: {e}")
 
+            # ── Oturum 25.9 SCHEDULER ──
+            # Gece 02:00 — Atlas-2 prompt iyilestirme analizi
+            if now.hour == 2 and now.minute < 10:
+                try:
+                    from prompt_optimizer import analyze_and_suggest
+                    result = await analyze_and_suggest(hours=24)
+                    logger.info(f"🤖 Atlas-2 oneri analizi: {result}")
+                except Exception as e:
+                    logger.warning(f"Atlas-2 hatası: {e}")
+
+            # Pazar 04:00 — haftalik predictive model batch (tum aktif ogrenciler)
+            if now.weekday() == 6 and now.hour == 4 and now.minute < 10:
+                try:
+                    from predictive_model import predict_all_students
+                    result = await predict_all_students(limit=200)
+                    logger.info(f"📈 Haftalik puan tahmin: {result}")
+                except Exception as e:
+                    logger.warning(f"Predictive batch hatası: {e}")
+
+            # Gece 03:30 — knowledge graph mastery refresh (ELO -> mastery)
+            if now.hour == 3 and now.minute >= 25 and now.minute < 35:
+                try:
+                    from knowledge_graph import update_student_mastery_from_elo
+                    rows = await db_fetch(
+                        "SELECT DISTINCT soz_no FROM student_topic_elo WHERE games_played > 0"
+                    )
+                    cnt = 0
+                    for r in (rows or []):
+                        try:
+                            await update_student_mastery_from_elo(r['soz_no'])
+                            cnt += 1
+                        except Exception:
+                            pass
+                    if cnt > 0:
+                        logger.info(f"🧠 Knowledge graph mastery refresh: {cnt} ogrenci")
+                except Exception as e:
+                    logger.warning(f"KG mastery refresh hatası: {e}")
+
             # Duygu/motivasyon takibi — 6 saatte bir (08, 14, 20)
             if now.hour in (8, 14, 20) and now.minute < 10:
                 try:
@@ -746,6 +784,14 @@ try:
 except Exception as _wcerr:
     import logging as _lg
     _lg.warning(f"web_chat router yuklenemedi: {_wcerr}")
+
+# ── Dashboard API Router (Oturum 25.9) ──
+try:
+    from dashboard_api import router as _dashboard_router
+    app.include_router(_dashboard_router)
+except Exception as _dberr:
+    import logging as _lg
+    _lg.warning(f"dashboard_api router yuklenemedi: {_dberr}")
 
 # 22.1n-neo Paket A: HybridDict wrapper — memory mode davranisi aynen, Redis aktif
 # olunca (REDIS_URL set) otomatik multi-worker shared state.

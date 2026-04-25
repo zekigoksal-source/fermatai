@@ -1342,4 +1342,95 @@ TOOLS: list[dict] = [
             "required": ["soz_no"],
         },
     },
+    # ── OTURUM 25.9 — ADAPTIVE INTELLIGENCE / PREDICTIVE / KG ──
+    {
+        "name": "predict_yks_score",
+        "description": (
+            "Bir ogrencinin YKS puan TAHMINI — predictive_model.predict_student. "
+            "Trend + zayif konular + devamsizlik + ELO bazli. "
+            "Returns: predicted_tyt, predicted_ayt, predicted_yerlesme_puani, "
+            "confidence (0-1), bottleneck_topics, suggested_focus. "
+            "Ogrenci/admin 'YKS'de ne alirim', 'hedef bolum tutar mi', "
+            "'su anki gidisla nereye girerim' derse KULLAN. KVKK: ogrenci sadece kendi tahminini gorur."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Ogrenci soz_no"},
+                "target_taban_puan": {
+                    "type": "number",
+                    "description": "Opsiyonel: hedef bolumun gecen yil taban puani (probability hesabi icin)",
+                },
+            },
+            "required": ["soz_no"],
+        },
+    },
+    {
+        "name": "get_adaptive_summary",
+        "description": (
+            "Adaptive Intelligence ozeti — adaptive_engine.get_adaptive_summary. "
+            "Ogrencinin: ELO bazli zayif konulari, bugun tekrarlanmasi gereken konular (SM-2), "
+            "aktif kavram yanılgıları (misconceptions). "
+            "Ogrenci 'bugun ne calismaliyim', 'neyi tekrar etmem gerekir', "
+            "'hangi konuyu yanlis anliyorum' sorularinda KULLAN."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Ogrenci soz_no"},
+            },
+            "required": ["soz_no"],
+        },
+    },
+    {
+        "name": "get_knowledge_graph",
+        "description": (
+            "Ogrencinin knowledge graph'i — knowledge_graph.get_student_graph. "
+            "Konu agi (nodes + edges), ustalık seviyesi, on kosul iliskileri. "
+            "Returns: nodes (id, ders, konu, mastery 0-1), edges (prerequisite agi), stats. "
+            "Bot 'X konusunu anlayamiyorsun cunku Y on kosul eksik' tarzinda pedagojik gerekce verebilir. "
+            "Ogrenci 'beyin haritami goster' / 'hangi konularim guclu' / 'hangi konuya gecsem' derse KULLAN."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Ogrenci soz_no"},
+                "seviye": {
+                    "type": "string",
+                    "enum": ["TYT", "AYT", "LGS"],
+                    "description": "Opsiyonel: sadece bu seviyenin grafigi",
+                },
+            },
+            "required": ["soz_no"],
+        },
+    },
+    {
+        "name": "observe_student_answer",
+        "description": (
+            "Ogrenci bir soru cozdugunde 3 katmani guncelle — adaptive_engine.observe_answer. "
+            "ELO + SM-2 review + misconception kayit. Foto soru cozum sonrasinda "
+            "veya ogrenci 'bu soruyu cozdum' diyince KULLAN. "
+            "Ders/konu Vision'dan veya ogrenciden alinir."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer"},
+                "ders": {"type": "string", "description": "Matematik/Fizik/Kimya..."},
+                "konu": {"type": "string", "description": "Türev/Limit/Kuvvet..."},
+                "dogru": {"type": "boolean"},
+                "zorluk": {"type": "string", "enum": ["kolay", "orta", "zor", "cok_zor"], "default": "orta"},
+                "quality": {
+                    "type": "integer",
+                    "minimum": 0, "maximum": 5,
+                    "description": "SM-2 quality 0-5 (yoksa dogru/yanlis bazli default)",
+                },
+                "misconception": {
+                    "type": "string",
+                    "description": "Yanlissa kavram yanılgısı (örn. 'integralı türevin tersi unutuyor')",
+                },
+            },
+            "required": ["soz_no", "ders", "konu", "dogru"],
+        },
+    },
 ]

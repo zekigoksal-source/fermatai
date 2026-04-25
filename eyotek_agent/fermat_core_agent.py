@@ -1942,7 +1942,67 @@ TOOL_DISPATCH = {
     "tercih_listesi_uret":        lambda p: _tool_tercih_listesi_uret(**p),
     "bolum_karsilastir":          lambda p: _tool_bolum_karsilastir(**p),
     "tercih_donemi_durum":        lambda p: _tool_tercih_donemi_durum(**p),
+    # ── Oturum 25.9 — ADAPTIVE INTELLIGENCE / PREDICTIVE / KG ──
+    "predict_yks_score":          lambda p: _tool_predict_yks_score(**p),
+    "get_adaptive_summary":       lambda p: _tool_get_adaptive_summary(**p),
+    "get_knowledge_graph":        lambda p: _tool_get_knowledge_graph(**p),
+    "observe_student_answer":     lambda p: _tool_observe_student_answer(**p),
 }
+
+
+# ── Oturum 25.9 Tool Wrappers ──────────────────────────────────────────────
+
+async def _tool_predict_yks_score(soz_no: int, target_taban_puan: float = 0, **_) -> dict:
+    """YKS puan tahmin — predictive_model."""
+    try:
+        from predictive_model import predict_student, predict_target_probability
+        if target_taban_puan and target_taban_puan > 0:
+            return await predict_target_probability(int(soz_no), float(target_taban_puan))
+        return await predict_student(int(soz_no))
+    except Exception as e:
+        logger.error(f"[predict_yks_score] {e}")
+        return {"error": str(e)}
+
+
+async def _tool_get_adaptive_summary(soz_no: int, **_) -> dict:
+    """Adaptive Intelligence ozeti — adaptive_engine."""
+    try:
+        from adaptive_engine import get_adaptive_summary
+        return await get_adaptive_summary(int(soz_no))
+    except Exception as e:
+        logger.error(f"[get_adaptive_summary] {e}")
+        return {"error": str(e)}
+
+
+async def _tool_get_knowledge_graph(soz_no: int, seviye: str = None, **_) -> dict:
+    """Knowledge graph — knowledge_graph."""
+    try:
+        from knowledge_graph import get_student_graph, update_student_mastery_from_elo
+        try:
+            await update_student_mastery_from_elo(int(soz_no))
+        except Exception:
+            pass
+        return await get_student_graph(int(soz_no), seviye=seviye)
+    except Exception as e:
+        logger.error(f"[get_knowledge_graph] {e}")
+        return {"error": str(e)}
+
+
+async def _tool_observe_student_answer(
+    soz_no: int, ders: str, konu: str, dogru: bool,
+    zorluk: str = "orta", quality: int = None,
+    misconception: str = None, **_
+) -> dict:
+    """Soru cozumu sonrasi 3 katmani guncelle."""
+    try:
+        from adaptive_engine import observe_answer
+        return await observe_answer(
+            int(soz_no), ders, konu, bool(dogru),
+            zorluk=zorluk, quality=quality, misconception=misconception,
+        )
+    except Exception as e:
+        logger.error(f"[observe_student_answer] {e}")
+        return {"error": str(e)}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
