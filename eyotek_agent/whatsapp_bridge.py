@@ -733,13 +733,12 @@ async def lifespan(app: FastAPI):
     # Bu yuzden bridge lifespan'da ayrica unload GEREKMEZ — mevcut davranisi KORUYORUZ.
     # Neo: "yeni ozellik ekleme, mevcudu koru" (21 Nisan 01:45)
 
-    # DB pool kapat
-    global _DB_POOL
-    if _DB_POOL is not None:
-        try:
-            await _DB_POOL.close()
-        except Exception:
-            pass
+    # DB pool kapat (Oturum 25.10b fix: db_pool modulu kullaniyoruz, _DB_POOL global yok)
+    try:
+        from db_pool import close_pool
+        await close_pool()
+    except Exception as _cp_e:
+        logger.debug(f"DB pool kapatma hatasi (yok sayildi): {_cp_e}")
     logger.info("🛑  FermatAI Bridge kapanıyor — aktif session sayısı: "
                 f"{len(_AGENT_SESSIONS)}")
 
