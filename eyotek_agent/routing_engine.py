@@ -126,16 +126,22 @@ def decide_route(
     """
     Mesajın nereye gideceğini belirle.
 
-    Döner: "fast" | "ollama" | "claude"
+    Döner: "fast" | "local" | "claude"
+
+    NAMING NOTU (Oturum 25.10): "local" döndüğünde gerçekte chat_local()
+    çağrılır. chat_local Groq-first: VPS'te Groq 70B Llama 3.3 cevaplar,
+    Groq fail olursa Ollama (laptop dev) fallback. "ollama" eski isim,
+    backwards compat icin halen kabul edilir ama yeni kod "local" kullanir.
 
     Öncelik sırası:
     1. Admin → selamlama/not_et fast, geri kalan Claude
-    2. SGM → kısa+basit Ollama, geri kalan Claude
+    2. SGM → kısa+basit local, geri kalan Claude
     3. Tüm roller → fast_responses pattern match dene
-    4. Kavramsal sorular → Claude (Ollama halüsinasyon riski)
+    3b. Ogrenci → groq_lanes.classify_lane → 7 Groq-safe lane (Oturum 25.10)
+    4. Kavramsal sorular → local (Groq 70B halüsinasyon dusük)
     5. Cloud keywords → Claude
-    6. Kısa+basit → Ollama
-    7. Belirsiz → Claude (güvenli taraf)
+    6. Kısa+basit → local
+    7. Belirsiz (auto/ogrenci) → local; admin/mudur → claude
     """
     msg_lower = message.lower().strip()
 
@@ -169,7 +175,7 @@ def decide_route(
                 'sinav', 'deneme', 'performans', 'plan', 'guncelle', 'gozlem',
             ])
         )
-        return "ollama" if is_simple else "claude"
+        return "local" if is_simple else "claude"
 
     # ── 3. Fast response pattern kontrolü → try_fast_response'a bırak ──
     # (fast_responses.py handler match yaparsa "fast" döner)
@@ -186,14 +192,14 @@ def decide_route(
     # Production verisinden tespit: Claude'a giden trafiğin %50'si Groq-safe.
     # 7 lane: kavramsal_kisa, sohbet, meta_direktif, kibarlik, egitim_icerik,
     #         red_generik, kisa_motivasyon
-    # Lane match → ollama (Groq-first) → quality fail olursa caller Claude'a eskale
+    # Lane match → "local" (chat_local Groq-first) → quality fail olursa Claude eskale
     # Sadece ogrenci rolu (admin/mudur Claude'da kalsin)
     if role == "ogrenci":
         try:
             from groq_lanes import classify_lane
             _lane = classify_lane(message, role=role, phone=phone)
             if _lane:
-                return "ollama"
+                return "local"
         except Exception:
             pass
 
@@ -205,20 +211,20 @@ def decide_route(
     # 19 Nisan refactor: "auto" yerine final karar don (bridge karmasikligi azalir)
     # Oturum 25 D3: Kavramsal dahil tum karar burada.
     # Oturum 25.10: "auto" davranisi degisti — fast miss durumunda Claude'a default
-    # dusurmek yerine ollama (Groq) deneme sansi verelim. Quality fail olursa caller
-    # Claude'a eskale eder. Boylece Groq'un anlamli pay almasini saglariz.
+    # dusurmek yerine "local" (chat_local Groq-first) deneme sansi. Quality fail
+    # olursa caller Claude'a eskale eder. Boylece Groq anlamli pay alir.
     try:
         from llm_router import classify_complexity
         complexity = classify_complexity(message)
-        # local → ollama, cloud → claude, auto → ollama (Groq dene)
+        # local → "local" (Groq), cloud → claude, auto → "local" (Groq dene)
         if complexity == "cloud":
             return "claude"
         if complexity == "local":
-            return "ollama"
+            return "local"
         # auto: ogrenci icin Groq dene (kalite fail eskale eder)
         # admin/mudur "auto" ise Claude (kompleks olabilir)
         if role == "ogrenci":
-            return "ollama"
+            return "local"
         return "claude"
     except Exception:
         return "claude"

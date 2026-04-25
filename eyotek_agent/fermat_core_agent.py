@@ -3309,11 +3309,14 @@ class FermatCoreAgent:
         # Admin/SGM/kavramsal/kisisel/kisa kararlari hepsi iceride
         from routing_engine import decide_route
         _route = decide_route(user_input, role, caller_phone, soz_no)
-        # decide_route dondurur: "fast" | "claude" | "ollama" | "auto"
-        # "claude" → cloud, "ollama" → local, diger → auto degerlendir (fallback cloud)
+        # decide_route dondurur: "fast" | "claude" | "local" | "auto"
+        # "local" → chat_local (Groq-first, Ollama fallback). Eski "ollama"
+        # string'i halen kabul (backwards compat). "auto" → fallback cloud.
         if _route == "claude":
             complexity = "cloud"
-        elif _route == "ollama":
+        elif _route in ("local", "ollama"):
+            # "local" yeni isim (Oturum 25.10), "ollama" backwards compat.
+            # Ikisinde de chat_local() cagrilir → Groq-first, Ollama fallback.
             complexity = "local"
         else:
             # "auto" veya "fast" → guvenli tarafa duy (Claude) — fast_responses zaten daha erken
