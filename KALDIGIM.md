@@ -1,10 +1,74 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 24 Nisan 2026, ~22:00 — OTURUM 25.6 FINAL — CapSolver otonom + admin log viewer + teknik borç D5-D8 kapandı
+> **Son güncelleme:** 25 Nisan 2026, ~09:05 — OTURUM 25.7 — CapSolver akıllı orchestration (cooldown + quiet hours + cron + DB log)
 > **Bridge:** CANLI VPS 116.203.117.106, systemd (fermatai-bridge.service), port 8001, Docker Postgres 16 + pgvector 0.8
 > **Mimari:** Hetzner CCX33 VPS (Nuremberg) — laptop artık 7/24 çalışmıyor
 > **LLM Routing:** fast_response %45 + Groq Llama 3.3 70B %30 + Claude Sonnet 4.6 %25 (hedef); ollama sadece embedding (nomic-embed-text)
 > **Özellikler:** + **Groq 70B primary local motor** + **Groq tool-calling (ENABLE_GROQ_TOOLS=true, 4 SAFE tool)** + **Anthropic prompt caching ephemeral** + **Baglam kaybi fix (conversation_memory 3h INTERVAL kaldirildi, temporal marker)** + **Finansal saydamlik kurali** + **Veri uydurma guardrail** + **Çok parçalı rapor "devam et" kurali** + tum eski ozellikler (iPad hybrid auth + Arsiv + Dashboard + PWA + Atlas + Query Cache + YOK Atlas 35,584 + Self-Awareness KALDIGIM + SQL AST Guard + Hack tracker + OTP brute force + Log filter)
+
+## 🆕 OTURUM 25.7 (25 Nisan 2026, ~09:05) — CAPSOLVER AKILLI ORCHESTRATION
+
+### Neo'nun tespiti
+> "Eyotek her düştüğünde defalarca girmesinin anlamı yok aslında ben günde bir kere girer en fazla sistem online tutulur diye düşünmüştüm. Eğer kopup tekrar boşuna girip kredi tüketiyorsa bu sıkıntı olur"
+
+### Mevcut analiz (sorun YOK ama gelecek riski vardı)
+- Otomatik retry/loop YOK (sadece manuel `eyotek baglan` ile)
+- Cookie 8-12 saat dayanıyor, gece 12 saatte CapSolver hiç tetiklenmemiş
+- Bakiye sabit $5.9976 — gece harcama olmamış
+- Neo doğru ön gördü: gelecekte retry eklersek döngü riski
+
+### Uygulanan kurallar (commit `8247063`)
+
+**1. CapSolver DB usage tracking** (`capsolver_usage` tablosu):
+- Her solve_turnstile çağrısı log'lanır
+- timestamp, success, duration_ms, balance_before/after, trigger_source, sitekey
+- Neo `SELECT * FROM capsolver_usage ORDER BY created_at DESC LIMIT 30` ile kullanım izleyebilir
+
+**2. Cooldown 30 dakika** (`eyotek_auto_login._cooldown_active`):
+- Son login denemesinden min 30 dk geçmeden tekrar yok
+- `LAST_LOGIN_FILE` ile persist (restart-safe)
+- "force" ile bypass (`eyotek baglan zorla`)
+- Döngü engeli — kredi koruma
+
+**3. Quiet hours 23:00-07:00**:
+- Bu saatlerde otomatik login devre dışı
+- "force" ile manuel istisna
+- Cron sabah 07:00'de devreye girer
+
+**4. Systemd cron timer** (`fermatai-eyotek-daily.{service,timer}`):
+- 04:00 UTC = 07:00 Istanbul
+- `Persistent=true` (kapalı kalan tetiklemeleri yakala)
+- `OnBootSec=60s` (servis restart sonrası 1dk içinde dene)
+- `trigger_source="cron_daily_07"` DB log
+
+**5. Tool call otomatik login YOK**:
+- Eyotek tool çağrısı (eyotek_read, write_etut) sırasında otomatik retry yok
+- Cookie yoksa fail → kullanıcıya "Eyotek kapalı" mesajı
+- CapSolver sadece: cron sabah + manuel komut
+
+### Canlı doğrulama (25 Nisan 09:00)
+```
+fermatai-eyotek-daily[562741]: CAPTCHA tespit edildi, CapSolver deneniyor
+fermatai-eyotek-daily[562741]: Token alindi (816 char, 10025ms) ✅
+fermatai-eyotek-daily[562741]: CAPTCHA otomatik cozuldu, login akisi devam
+
+DB: capsolver_usage(success=t, duration=10025ms, balance_after=$5.9964, trigger=cron_daily_07)
+Bakiye: $5.9976 -> $5.9964 (1 solve = $0.0012)
+```
+
+### Beklenen maliyet/davranış
+- Sabah 07:00: 1 CapSolver call (~$0.001)
+- Gün boyu Eyotek çalışır
+- Akşam düşse de bekler, gece sessiz
+- Ertesi sabah tekrar
+- **Aylık ~$0.04** (30 sabah × $0.0012 + nadir manuel)
+- **Yıllık ~$0.50**
+
+### Komutlar
+- `eyotek baglan` → cooldown + quiet hours guard ile dener
+- `eyotek baglan zorla` → guard'ları bypass, hemen dene
+- `eyotek durum` → cookie + session durum
+- DB sorgu (admin): `SELECT * FROM capsolver_usage ORDER BY created_at DESC LIMIT 10`
 
 ## 🆕 OTURUM 25.6 (24 Nisan 2026, ~18:10) — TALIMAT #85: CAPSOLVER OTOMATIK CAPTCHA ÇÖZÜM
 
