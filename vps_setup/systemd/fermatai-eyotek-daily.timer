@@ -1,0 +1,15 @@
+[Unit]
+Description=FermatAI - Daily Eyotek login timer (07:00 Europe/Istanbul)
+Documentation=Oturum 25.7 — gunde 1 kez sabah, CapSolver tasarrufu
+
+[Timer]
+# Her gun 07:00 (server time = UTC+0; Istanbul UTC+3 -> 04:00 UTC = 07:00 Istanbul)
+OnCalendar=*-*-* 04:00:00 UTC
+# Boot sonrasi cabuk calistir (1dk sonra) varsa kayip oturum yakala
+OnBootSec=60s
+# Persistent: kapali kalan timer trigger'i bir sonraki uygun zamanda calistir
+Persistent=true
+Unit=fermatai-eyotek-daily.service
+
+[Install]
+WantedBy=timers.target

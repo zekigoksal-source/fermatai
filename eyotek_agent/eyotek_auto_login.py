@@ -38,8 +38,11 @@ EYOTEK_USER = os.getenv("EYOTEK_USER", "")
 EYOTEK_PASS = os.getenv("EYOTEK_PASS", "")
 # Oturum 25.6: Proje root'unda tek dosya (bridge + keeper + auto_login hepsi ayni yere baksin)
 SESSION_FILE = Path(__file__).resolve().parent.parent / ".eyotek_session.json"
-QUIET_START = int(os.getenv("EYOTEK_QUIET_START", "22"))  # 22:00
-QUIET_END = int(os.getenv("EYOTEK_QUIET_END", "8"))        # 08:00
+QUIET_START = int(os.getenv("EYOTEK_QUIET_START", "23"))  # 23:00 (Oturum 25.7: 22 -> 23)
+QUIET_END = int(os.getenv("EYOTEK_QUIET_END", "7"))        # 07:00 (Oturum 25.7: 8 -> 7)
+# Oturum 25.7: Otomatik login cooldown — son denemeden min N dakika gecmeden tekrar yok
+LOGIN_COOLDOWN_MIN = int(os.getenv("EYOTEK_LOGIN_COOLDOWN_MIN", "30"))
+LAST_LOGIN_FILE = Path(__file__).resolve().parent.parent / ".eyotek_last_login.json"
 MOBILE_FAZ3_HINT = (
     "\n\n_Eyotek her login'de Cloudflare CAPTCHA istiyor — VPS otomatik çözemez._\n"
     "_Mobil remote-login sistemi (cloudflared tunnel + headed Chromium) kurulumu_\n"
@@ -53,9 +56,46 @@ def is_quiet_hour(now: Optional[datetime] = None) -> bool:
     now = now or datetime.now()
     h = now.hour
     if QUIET_START > QUIET_END:
-        # 22-08 wrap (gece)
+        # 23-07 wrap (gece)
         return h >= QUIET_START or h < QUIET_END
     return QUIET_START <= h < QUIET_END
+
+
+def _read_last_login() -> Optional[datetime]:
+    """Son login denemesi timestamp'ini oku (file based, restart-safe)."""
+    if not LAST_LOGIN_FILE.exists():
+        return None
+    try:
+        data = json.loads(LAST_LOGIN_FILE.read_text(encoding="utf-8"))
+        ts = data.get("last_attempt")
+        if ts:
+            return datetime.fromisoformat(ts)
+    except Exception:
+        pass
+    return None
+
+
+def _write_last_login() -> None:
+    """Son login denemesi timestamp'ini yaz."""
+    try:
+        LAST_LOGIN_FILE.write_text(
+            json.dumps({"last_attempt": datetime.now().isoformat()}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except Exception as e:
+        logger.warning(f"[EYOTEK] Last-login write fail: {e}")
+
+
+def _cooldown_active() -> tuple[bool, int]:
+    """Son login'den bu yana LOGIN_COOLDOWN_MIN dakika gecti mi?
+    Returns: (cooldown_active, kalan_dakika)"""
+    last = _read_last_login()
+    if not last:
+        return False, 0
+    elapsed_min = (datetime.now() - last).total_seconds() / 60
+    if elapsed_min < LOGIN_COOLDOWN_MIN:
+        return True, int(LOGIN_COOLDOWN_MIN - elapsed_min)
+    return False, 0
 
 
 async def _notify_admin(message: str, quiet_bypass: bool = False) -> None:
@@ -148,7 +188,7 @@ async def _inject_turnstile_token(page, token: str) -> bool:
         return False
 
 
-async def try_auto_login(timeout_ms: int = 20000) -> dict:
+async def try_auto_login(timeout_ms: int = 20000, trigger_source: str = "manual") -> dict:
     """
     Headless Chromium ile Eyotek otomatik login dene.
     CAPTCHA varsa CapSolver ile cöz (Oturum 25.6).
@@ -240,7 +280,10 @@ async def try_auto_login(timeout_ms: int = 20000) -> dict:
                 try:
                     from capsolver_helper import solve_turnstile
                     page_url = page.url or BASE_URL
-                    token = await solve_turnstile(page_url, sitekey, timeout_sec=90)
+                    token = await solve_turnstile(
+                        page_url, sitekey, timeout_sec=90,
+                        trigger_source=trigger_source,
+                    )
                 except Exception as _cs_e:
                     logger.error(f"[CAPSOLVER] Cozum hatasi: {_cs_e}")
                     token = None
@@ -384,6 +427,29 @@ async def eyotek_connect_command(force: bool = False) -> str:
                 return "✅ *Eyotek zaten bağlı.*\n\n_Yeniden bağlanmak için: 'eyotek baglan zorla'_"
         except Exception:
             pass
+
+    # Oturum 25.7: Cooldown guard — kredi tasarrufu, dongu engeli
+    if not force:
+        cd_active, cd_remain = _cooldown_active()
+        if cd_active:
+            return (
+                f"⏳ *Eyotek bağlantı denemesi cooldown'da*\n\n"
+                f"Son deneme {LOGIN_COOLDOWN_MIN-cd_remain} dk önce yapıldı.\n"
+                f"_{cd_remain} dakika sonra tekrar denenebilir veya 'eyotek baglan zorla' ile geç._\n\n"
+                f"_(CapSolver kredi tasarrufu için.)_"
+            )
+
+    # Quiet hours guard (manuel komuta saygi: force ile gecilebilir)
+    if is_quiet_hour() and not force:
+        return (
+            f"🌙 *Şu an sessiz saat ({QUIET_START}:00-{QUIET_END:02d}:00)*\n\n"
+            f"Otomatik login bu saatlerde devre dışı.\n"
+            f"Acil ise: 'eyotek baglan zorla' ile manuel tetikle.\n\n"
+            f"_(Cron job sabah {QUIET_END:02d}:00'de otomatik bağlanır.)_"
+        )
+
+    # Cooldown timestamp guncelle (basari/fail farketmez, deneme yapildi)
+    _write_last_login()
 
     # Otomatik login dene
     result = await try_auto_login()

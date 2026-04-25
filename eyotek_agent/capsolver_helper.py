@@ -39,10 +39,40 @@ class CapSolverError(Exception):
     """CapSolver API hatalari."""
 
 
+async def _log_usage(
+    success: bool,
+    duration_ms: int,
+    balance_before: Optional[float],
+    balance_after: Optional[float],
+    trigger_source: str = "manual",
+    sitekey: str = "",
+    error_msg: Optional[str] = None,
+) -> None:
+    """capsolver_usage tablosuna kayit ekle (Oturum 25.7 — usage tracking)."""
+    try:
+        from db_pool import db_execute
+        await db_execute(
+            """INSERT INTO capsolver_usage
+               (success, error_msg, duration_ms, balance_before, balance_after,
+                trigger_source, sitekey)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+            success,
+            (error_msg or "")[:500] if not success else None,
+            duration_ms,
+            balance_before,
+            balance_after,
+            trigger_source[:50],
+            (sitekey or "")[:100],
+        )
+    except Exception as e:
+        logger.warning(f"[CAPSOLVER] DB log fail (devam): {e}")
+
+
 async def solve_turnstile(
     website_url: str,
     website_key: str,
     timeout_sec: int = DEFAULT_TIMEOUT,
+    trigger_source: str = "manual",
 ) -> Optional[str]:
     """
     Cloudflare Turnstile challenge'i CapSolver ile cöz.
@@ -59,6 +89,10 @@ async def solve_turnstile(
     if not CAPSOLVER_API_KEY:
         logger.warning("[CAPSOLVER] CAPSOLVER_API_KEY .env'de yok")
         return None
+
+    import time as _time
+    _t_start = _time.time()
+    _balance_before = await get_balance()
 
     # 1. Task olustur
     create_payload = {
@@ -110,16 +144,41 @@ async def solve_turnstile(
                 solution = result.get("solution", {})
                 token = solution.get("token") or solution.get("cf_turnstile_token")
                 if token:
-                    logger.success(f"[CAPSOLVER] Token alindi ({len(token)} char)")
+                    duration_ms = int((_time.time() - _t_start) * 1000)
+                    _balance_after = await get_balance()
+                    logger.success(f"[CAPSOLVER] Token alindi ({len(token)} char, {duration_ms}ms)")
+                    await _log_usage(
+                        success=True, duration_ms=duration_ms,
+                        balance_before=_balance_before, balance_after=_balance_after,
+                        trigger_source=trigger_source, sitekey=website_key,
+                    )
                     return token
-                logger.error(f"[CAPSOLVER] Ready ama token yok: {solution}")
+                err = f"Ready ama token yok: {solution}"
+                logger.error(f"[CAPSOLVER] {err}")
+                await _log_usage(
+                    success=False, duration_ms=int((_time.time() - _t_start) * 1000),
+                    balance_before=_balance_before, balance_after=None,
+                    trigger_source=trigger_source, sitekey=website_key, error_msg=err,
+                )
                 return None
             elif status == "failed":
-                logger.error(f"[CAPSOLVER] Task fail: {result.get('errorDescription', '')}")
+                err = result.get("errorDescription", "")
+                logger.error(f"[CAPSOLVER] Task fail: {err}")
+                await _log_usage(
+                    success=False, duration_ms=int((_time.time() - _t_start) * 1000),
+                    balance_before=_balance_before, balance_after=None,
+                    trigger_source=trigger_source, sitekey=website_key, error_msg=err,
+                )
                 return None
             # status == "processing" -> devam et
 
-        logger.error(f"[CAPSOLVER] Timeout ({timeout_sec}s) — token gelmedi")
+        err = f"Timeout ({timeout_sec}s) — token gelmedi"
+        logger.error(f"[CAPSOLVER] {err}")
+        await _log_usage(
+            success=False, duration_ms=int((_time.time() - _t_start) * 1000),
+            balance_before=_balance_before, balance_after=None,
+            trigger_source=trigger_source, sitekey=website_key, error_msg=err,
+        )
         return None
 
 

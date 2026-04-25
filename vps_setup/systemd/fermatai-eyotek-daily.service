@@ -1,0 +1,21 @@
+[Unit]
+Description=FermatAI - Daily Eyotek auto-login (Oturum 25.7)
+Documentation=Sabah 07:00'de Eyotek session'i CapSolver ile otomatik yenile
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=neo
+Group=neo
+WorkingDirectory=/opt/fermatai/eyotek_agent
+Environment="PATH=/opt/fermatai/.venv/bin:/usr/bin"
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/fermatai/.playwright-browsers
+EnvironmentFile=/opt/fermatai/.env
+
+ExecStart=/opt/fermatai/.venv/bin/python -c "import asyncio; from eyotek_auto_login import try_auto_login; r = asyncio.run(try_auto_login(trigger_source='cron_daily_07')); print(r)"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fermatai-eyotek-daily
