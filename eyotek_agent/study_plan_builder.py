@@ -24,8 +24,10 @@ from db_pool import (
     db_fetchval as _fetchval,
 )
 
-# YKS 2026 tarihi
-YKS_DATE = date(2026, 6, 13)  # TYT: 13 Haziran 2026
+# Oturum 25.8 fix — Tek kaynak (sinav_takvimi.py).
+# Onceden 13 Haziran hardcoded idi; resmi OSYM 2026 takvimi 20 Haziran (Cumartesi).
+# Deren'in plani 25 Nisan'da 49 gune kalibre edilmisti -> dogrusu 56 gun.
+from sinav_takvimi import TYT_DATE as YKS_DATE  # 20 Haziran 2026
 
 # 22.1n-neo Paket B: build_study_plan_context sonuc cache
 # Damla Keskin gibi tekrarlanan plan dusenlemeleri icin 30dk TTL

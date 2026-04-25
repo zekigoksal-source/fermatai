@@ -197,8 +197,8 @@ async def sinav_bilgi(name: str, message: str) -> str:
     from datetime import date
 
     # YKS/TYT/AYT tarihi ve geri sayım
-    yks_date = date(2026, 6, 13)  # TYT: 13 Haziran, AYT: 14 Haziran
-    lgs_date = date(2026, 6, 7)   # LGS: 7 Haziran
+    # Oturum 25.8 fix — Tek kaynak (sinav_takvimi.py)
+    from sinav_takvimi import TYT_DATE as yks_date, LGS_DATE as lgs_date
     today = date.today()
 
     # "ne zaman", "kaç gün kaldı", "tarih" soruları
@@ -214,12 +214,13 @@ async def sinav_bilgi(name: str, message: str) -> str:
                 f"_Her gün değerli {name.split()[0] if name else ''}! Hedefe odaklan._ 💪"
             )
         else:
+            from sinav_takvimi import AYT_DATE
             days_tyt = (yks_date - today).days
-            days_ayt = days_tyt + 1
+            days_ayt = (AYT_DATE - today).days
             return (
                 f"📅 *YKS 2026 Tarihi*\n\n"
                 f"🗓️ *TYT:* {yks_date.strftime('%d Haziran %Y')} (Cumartesi)\n"
-                f"🗓️ *AYT:* 14 Haziran 2026 (Pazar)\n\n"
+                f"🗓️ *AYT:* {AYT_DATE.strftime('%d Haziran %Y')} (Pazar)\n\n"
                 f"⏰ TYT'ye kalan: *{days_tyt} gün*\n"
                 f"⏰ AYT'ye kalan: *{days_ayt} gün*\n\n"
                 f"_Her gün bir adım daha yakın {name.split()[0] if name else ''}! Sen yapabilirsin._ 💪🎯"
@@ -2572,6 +2573,35 @@ async def try_fast_response(
 
     # Sadece rakam (ogrenci numarasi degilse)
     if re.match(r'^\d{1,6}$', stripped) and len(stripped) < 7:
+        # Oturum 25.8 fix — Bot az once matematik sorusu sorduysa, bu rakam
+        # cevaptir, "anlayamadim" deme. 25 Nisan Deren olayi: bot "f(x)=x^2,
+        # f'(2)=?" sordu, Deren "4" yazdi, bot "anlayamadim" dedi. Claude'a yolla.
+        if caller_phone:
+            try:
+                from db_pool import db_fetchval as _dfv
+                last_bot = await _dfv(
+                    """SELECT content FROM agent_conversations
+                       WHERE phone = $1 AND message_role = 'assistant'
+                       ORDER BY created_at DESC LIMIT 1""",
+                    caller_phone.replace("+", "").strip(),
+                )
+                if last_bot:
+                    lb = last_bot.lower()
+                    # Matematik/quiz sorusu sinyalleri: bot bir cevap bekliyor
+                    quiz_signals = (
+                        "f'(", "f(x)", "kac eder", "kaç eder", "kacin", "kaçın",
+                        "cevap", "cevabin", "cevabını", "cevabı ne",
+                        "ne bulursun", "ne olur", "kac olur", "kaç olur",
+                        "egim", "eğim", "turevi", "türevi", "integralı",
+                        "sonucu", "deger", "değer", "bulun", "hesapla",
+                        "iste sana", "işte sana", "sayisi nedir", "sayısı nedir",
+                        "x = ", "x=", "= ?", "=?",
+                    )
+                    if any(s in lb for s in quiz_signals):
+                        return None  # Claude'a yolla, baglamla cevapla
+            except Exception:
+                pass
+
         if role == "ogrenci" and name:
             return (
                 f"{name}, bir sayi yazdin ama tam olarak ne demek istedigini anlayamadim. 😊\n\n"
