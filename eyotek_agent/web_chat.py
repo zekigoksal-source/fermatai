@@ -34,11 +34,12 @@ HTML_FILE = Path(__file__).parent / "web_chat_ui.html"
 COOKIE_NAME = "fermat_session"
 
 
-# ─── iPad/Safari Hybrid Auth — Cookie VEYA Authorization header ──
+# ─── Hybrid Auth — Cookie VEYA Header VEYA URL ?token= ──
 # iOS Safari ITP iframe 3rd-party cookie'yi blokluyor. Fallback olarak
 # Authorization: Bearer {token} header'ı da kabul ediyoruz.
+# Oturum 25.10c (Neo dev erisimi): URL ?token= parametresi de destek
 def _extract_token(request: Request, cookie_token: Optional[str]) -> Optional[str]:
-    """Request'ten token çıkar: önce cookie, yoksa Authorization header."""
+    """Request'ten token çıkar: önce cookie, yoksa header, en son URL ?token=."""
     if cookie_token:
         return cookie_token
     auth_header = request.headers.get("authorization", "")
@@ -48,6 +49,10 @@ def _extract_token(request: Request, cookie_token: Optional[str]) -> Optional[st
     custom = request.headers.get("x-fermat-token", "")
     if custom:
         return custom.strip()
+    # URL ?token= parametresi (Neo dev hizli erisim icin)
+    qp_token = request.query_params.get("token", "")
+    if qp_token:
+        return qp_token.strip()
     return None
 
 

@@ -235,8 +235,26 @@ async def get_session(token: str) -> Optional[dict]:
     Cookie'deki session_token'dan profil çöz.
 
     Returns: {"phone", "name", "role"} veya None (geçersiz/süresi dolmuş)
+
+    Oturum 25.10c (Neo karari): ADMIN_API_KEY env eslemesi varsa direkt admin
+    session olusturur. URL ?token=xxx ile dashboard'a hizli erisim icin.
+    Kullanim: https://api.fermategitimkurumlari.com/admin/dashboard?token=ADMIN_API_KEY
     """
-    if not token or len(token) < 20:
+    if not token or len(token) < 8:
+        return None
+
+    # Oturum 25.10c: ADMIN_API_KEY shortcut (Neo dev erisimi icin)
+    import os
+    _admin_key = os.getenv("ADMIN_API_KEY") or os.getenv("AGENT_API_KEY")
+    if _admin_key and token == _admin_key:
+        return {
+            "phone": "905051256802",
+            "full_name": "Neo (API key)",
+            "role": "admin",
+            "name": "Neo",
+        }
+
+    if len(token) < 20:
         return None
 
     row = await db_fetchrow(

@@ -279,6 +279,9 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 </div>
 
 <script>
+// Oturum 25.10c — URL ?token= varsa sakla, her API çağrısına ekle
+const URL_TOKEN = new URLSearchParams(location.search).get('token') || '';
+
 let routingChart = null, trendChart = null, routingChart2 = null;
 
 // Tab switching
@@ -294,7 +297,12 @@ document.querySelectorAll('.tab').forEach(t => {
 });
 
 async function api(path, opts={}) {
-  const r = await fetch(path, {credentials:'include', ...opts});
+  // Oturum 25.10c — URL token varsa her API çağrısına ekle
+  let url = path;
+  if (URL_TOKEN) {
+    url += (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(URL_TOKEN);
+  }
+  const r = await fetch(url, {credentials:'include', ...opts});
   if (!r.ok) throw new Error(r.status);
   return r.json();
 }
