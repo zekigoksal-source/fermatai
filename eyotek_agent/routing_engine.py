@@ -40,6 +40,11 @@ _FRUSTRATION_KEYWORDS = [
     "tekrar", "yine yanlış", "yine yanlis", "olmadı", "olmadi",
     # Agresif
     "kafamı bozma", "kafami bozma", "uyma", "bana ne",
+    # Oturum 25.10 — kalite analiz sonrasi eklenenler
+    "kaba", "kabasın", "kabasin", "kabasınız", "kabaca",
+    "yine boş", "yine bos", "boş yapıyor", "bos yapiyor",
+    "anlatamıyorum", "anlatamiyorum", "kimse anlamıyor", "kimse anlamiyor",
+    "hala anlamadın", "hala anlamadin",
 ]
 
 
@@ -177,6 +182,21 @@ def decide_route(
     ):
         return "claude"
 
+    # ── 3b. GROQ-SAFE LANE KONTROLU (Oturum 25.10 — Neo karari) ──
+    # Production verisinden tespit: Claude'a giden trafiğin %50'si Groq-safe.
+    # 7 lane: kavramsal_kisa, sohbet, meta_direktif, kibarlik, egitim_icerik,
+    #         red_generik, kisa_motivasyon
+    # Lane match → ollama (Groq-first) → quality fail olursa caller Claude'a eskale
+    # Sadece ogrenci rolu (admin/mudur Claude'da kalsin)
+    if role == "ogrenci":
+        try:
+            from groq_lanes import classify_lane
+            _lane = classify_lane(message, role=role, phone=phone)
+            if _lane:
+                return "ollama"
+        except Exception:
+            pass
+
     # ── 4. KALDIRILDI (Oturum 25 D3): Kavramsal sorular burada dubleydi —
     # llm_router.classify_complexity asagida zaten "local" donduruyor (Oturum 25
     # PROJ-2-A fix'i + GROQ_CONCEPTUAL flag orada). Tek kaynak, DRY.
@@ -184,17 +204,24 @@ def decide_route(
     # ── 5. Varsayılan: llm_router.classify_complexity (merkezi karar) ──
     # 19 Nisan refactor: "auto" yerine final karar don (bridge karmasikligi azalir)
     # Oturum 25 D3: Kavramsal dahil tum karar burada.
+    # Oturum 25.10: "auto" davranisi degisti — fast miss durumunda Claude'a default
+    # dusurmek yerine ollama (Groq) deneme sansi verelim. Quality fail olursa caller
+    # Claude'a eskale eder. Boylece Groq'un anlamli pay almasini saglariz.
     try:
         from llm_router import classify_complexity
         complexity = classify_complexity(message)
-        # local → ollama, cloud → claude, auto → fast (fast_responses bridge'de dener)
+        # local → ollama, cloud → claude, auto → ollama (Groq dene)
         if complexity == "cloud":
             return "claude"
         if complexity == "local":
             return "ollama"
-        return "auto"  # fast_responses uygulayicisi karar versin
+        # auto: ogrenci icin Groq dene (kalite fail eskale eder)
+        # admin/mudur "auto" ise Claude (kompleks olabilir)
+        if role == "ogrenci":
+            return "ollama"
+        return "claude"
     except Exception:
-        return "auto"
+        return "claude"
 
 
 def is_admin_only_claude(role: str) -> bool:

@@ -3341,11 +3341,25 @@ class FermatCoreAgent:
         if complexity == "local" and self.router.is_local_available:
             # Oturum 24: Router Groq tercih ediyor, Ollama fallback
             _hangi = "Groq" if self.router._groq_available else "Ollama"
+
+            # Oturum 25.10 — Lane-specific system addon (Groq tutarliligi icin)
+            _lane_system = system
+            try:
+                from groq_lanes import classify_lane, get_lane_system_addon
+                _lane = classify_lane(user_input, role=role, phone=caller_phone)
+                if _lane:
+                    _addon = get_lane_system_addon(_lane)
+                    if _addon:
+                        _lane_system = _lane_system + "\n\n[LANE TALIMATI]\n" + _addon
+                        logger.info(f"  [YEREL] Lane: {_lane} ({_hangi} aciliyor)")
+            except Exception:
+                pass
+
             logger.info(f"  [YEREL] {_hangi} ile yanitlaniyor (dusuk maliyet)")
             try:
                 answer = self.router.chat_local(
                     messages=self.history,
-                    system=system,
+                    system=_lane_system,
                 )
                 # ── Kalite kontrolu — Ollama yaniti yetersizse Claude'a eskale et ──
                 _needs_escalation = False
