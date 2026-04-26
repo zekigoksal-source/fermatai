@@ -272,6 +272,42 @@ async def get_student_context(phone: str) -> Optional[dict]:
         except Exception:
             pass
 
+        # Oturum 25.13: Öğrenci günlük takip kompakt özeti — bot proaktif olabilsin
+        # Öğrencinin web panelden girdiği bugünkü çalışma + açık to-do + mood
+        daily_brief = None
+        try:
+            from student_daily import get_today_stats, get_todos, get_recent_notes
+            stats_today, todos_open, notes_recent = await asyncio.gather(
+                get_today_stats(soz_no),
+                get_todos(soz_no, only_open=True),
+                get_recent_notes(soz_no, days=2),
+                return_exceptions=True,
+            )
+            if isinstance(stats_today, Exception): stats_today = {}
+            if isinstance(todos_open, Exception): todos_open = []
+            if isinstance(notes_recent, Exception): notes_recent = []
+
+            today_mood = None
+            today_note = None
+            from datetime import date as _d
+            for n in (notes_recent or []):
+                if str(n.get("log_date")) == str(_d.today()):
+                    today_mood = n.get("mood")
+                    today_note = (n.get("note") or "")[:120]
+                    break
+
+            daily_brief = {
+                "today_minutes": stats_today.get("total_minutes", 0) if isinstance(stats_today, dict) else 0,
+                "today_questions": stats_today.get("questions_solved", 0) if isinstance(stats_today, dict) else 0,
+                "today_ders_breakdown": stats_today.get("ders_breakdown", {}) if isinstance(stats_today, dict) else {},
+                "open_todos_count": len(todos_open) if isinstance(todos_open, list) else 0,
+                "open_todos_titles": [t.get("title", "") for t in (todos_open[:3] if isinstance(todos_open, list) else [])],
+                "today_mood": today_mood,
+                "today_note": today_note,
+            }
+        except Exception:
+            pass
+
         # Oturum 24: son mesajin yasi (saat). Bot'un "bugun mu, dun mu konustuk"
         # ayrimi yapabilmesi icin prompt'a belirtilir.
         last_msg_age_h = None
@@ -296,6 +332,7 @@ async def get_student_context(phone: str) -> Optional[dict]:
             "ayt_last": ayt_last,             # son AYT deneme
             "recent_topics": recent_topics,   # Atlas #10 konu hafizasi (14 gun)
             "active_insights": active_insights,  # 22.1n-fikir1 doğal sohbet çıkarımı
+            "daily_brief": daily_brief,       # Oturum 25.13: günlük panel özeti
             "session_messages": len([m for m in recent_msgs if m['message_role'] == 'user']),
             "last_active": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "last_msg_age_h": last_msg_age_h,  # Oturum 24: son mesajdan sonra gecen saat
@@ -440,6 +477,39 @@ def build_context_prompt(context: dict) -> str:
 
     if context.get("last_topic"):
         parts.append(f"Son konuştukları konu: {context['last_topic']} — devam ediyorsa bağlamı koru")
+
+    # Oturum 25.13: Öğrenci günlük takip paneli özeti (PROAKTİF kullanım için)
+    db = context.get("daily_brief")
+    if db:
+        d_lines = []
+        if db.get("today_minutes") or db.get("today_questions"):
+            mins = db.get("today_minutes", 0)
+            qs = db.get("today_questions", 0)
+            ders_bd = db.get("today_ders_breakdown") or {}
+            ders_str = ""
+            if ders_bd:
+                top_d = sorted(ders_bd.items(), key=lambda x: -x[1])[:3]
+                ders_str = " (" + ", ".join(f"{k}:{v}dk" for k, v in top_d) + ")"
+            d_lines.append(f"  📊 Bugün panele girdi: {mins}dk + {qs} soru{ders_str}")
+        if db.get("open_todos_count"):
+            cnt = db["open_todos_count"]
+            titles = db.get("open_todos_titles") or []
+            t_str = ", ".join(t[:30] for t in titles[:2])
+            d_lines.append(f"  ✅ Açık to-do: {cnt} tane ({t_str})")
+        if db.get("today_mood"):
+            d_lines.append(f"  💭 Bugünkü mood: {db['today_mood']}")
+        if db.get("today_note"):
+            d_lines.append(f"  📝 Bugünkü not: \"{db['today_note']}\"")
+        if d_lines:
+            parts.append(
+                "Öğrencinin Çalışmam panelinden BUGÜNKÜ veriler (proaktif kullan!):\n" +
+                "\n".join(d_lines) +
+                "\nKurallar:\n"
+                "  • Plan/öneri yaparken bu veriyi REFERANS al — 'bugün 30dk Mat çalıştın'\n"
+                "  • Yeni öneri panele eklenebilir → 'şunu programına ekleyeyim mi?' sor\n"
+                "  • Mood 'yorgun/stresli' iken ağır plan yapma, 'verimli' iken ileri sür\n"
+                "  • Hiç giriş yoksa SORGULAMA — empati: 'paneli kullanmak ister misin?'"
+            )
 
     # Atlas #10: son 14 gunde bahsedilen konular (hafiza, tamamlanma DEGIL)
     recent_topics = context.get("recent_topics", [])

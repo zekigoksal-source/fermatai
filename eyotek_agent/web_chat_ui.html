@@ -901,6 +901,8 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     <div class="user">
       <!-- Oturum 23 (Neo 18:14): Yeni Sohbet — temiz yaprak hissi. Bot bağlamı + profil korunur, sadece görsel sıfırlama. -->
       <button class="new-chat-btn" id="newChatBtn" onclick="startNewChat()" title="Yeni sohbet başlat (geçmiş arşivde kalır, bot profilini bilmeye devam eder)" style="background:transparent;border:1px solid var(--border);color:var(--fg-muted);cursor:pointer;font-size:13px;padding:5px 12px;margin-right:8px;border-radius:8px;transition:all 0.15s;">✨ Yeni Sohbet</button>
+      <!-- Oturum 25.13: Öğrenci günlük takip linki (sadece öğrenci rolünde görünür) -->
+      <button class="study-btn" id="studyBtn" onclick="openStudyDashboard()" title="Çalışmam — günlük program, soru, alışkanlık takibi" style="display:none;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;color:#1a0d00;cursor:pointer;font-size:13px;padding:6px 14px;margin-right:8px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(245,158,11,0.25);">📚 Çalışmam</button>
       <!-- 22.1n-vizyon3: Admin/Mudur Panel (diğer roller görmez) -->
       <button class="admin-btn" id="adminBtn" onclick="openAdminPanel()" title="Admin Panel" style="display:none;background:transparent;border:none;color:var(--fg-muted);cursor:pointer;font-size:18px;padding:4px 8px;margin-right:4px;">⚙️</button>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Tema değiştir">🌙</button>
@@ -2071,6 +2073,11 @@ function showChat(name) {
   const role = localStorage.getItem("fermat_role") || "";
   if (role === "ogrenci") {
     loadDashboard();
+  }
+  // Oturum 25.13: Öğrenci/Admin/Mudur — Çalışmam butonu görünür (admin başka öğrenci görüntüleyebilir)
+  const studyBtn = document.getElementById("studyBtn");
+  if (studyBtn && (role === "ogrenci" || role === "admin" || role === "mudur")) {
+    studyBtn.style.display = "inline-block";
   }
   // 22.1n-vizyon3: Admin/Mudur ise admin butonunu göster
   const adminBtn = document.getElementById("adminBtn");
@@ -3876,6 +3883,19 @@ setInterval(async () => {
     }
   } catch (e) { /* sessiz, network olabilir */ }
 }, 60000);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Oturum 25.13: ÖĞRENCİ ÇALIŞMAM PANEL (yeni sekme açıyor — token transfer)
+// ═══════════════════════════════════════════════════════════════════════════
+function openStudyDashboard() {
+  // Auth token (cookie + localStorage) URL parametresine ekleyerek yeni sekme aç
+  // Aynı sekmede yönlendirsek state kaybı olur (bot conversation history)
+  const token = localStorage.getItem(TOKEN_KEY) || "";
+  let url = "/student/daily/dashboard";
+  if (token) url += "?token=" + encodeURIComponent(token);
+  window.open(url, "_blank", "noopener");
+}
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 22.1n-vizyon3: ADMIN PANEL (Insight + Outreach)
