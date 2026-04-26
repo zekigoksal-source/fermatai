@@ -188,12 +188,29 @@ async def cohort_analysis(
     fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
 ):
     await _require_admin_session(request, fermat_session)
-    # Sınıf bazında ortalama performans
-    # Oturum 25.14e fix: students.soz_no TEXT, student_exams.soz_no INTEGER cast
-    # Oturum 25.14f (Neo): TUM ogrenciler dahil — mezun + sinifsiz + 1 kisilik
-    # Sayilar TUTARLI olsun (toplam = 125 hedef)
+    # Oturum 25.14h (Neo karari): "net olarak ortalama daha anlamli" (puan'da okul puani vb. degiskenler giriyor).
+    # TYT net ort: student_exams (exam_type='TYT', toplam max 120, temiz veri).
+    # AYT net ort: student_exam_analysis.ders_netleri_ayt JSONB Toplam.net / (soru/80) — pure AYT.
+    # Neden student_exams.toplam[exam_type='AYT'] kullanmiyoruz: TG (Tam Gun) kayitlari TYT+AYT birlesik (~109 max).
     rows = await db_fetch(
-        """SELECT
+        """WITH tyt_avg AS (
+              SELECT soz_no::text AS soz_no, AVG(toplam) AS net
+              FROM student_exams
+              WHERE exam_type='TYT' AND toplam > 0
+              GROUP BY soz_no
+           ),
+           ayt_avg AS (
+              SELECT
+                sea.soz_no,
+                (REPLACE(elem->>'net', ',', '.'))::NUMERIC
+                  / NULLIF((elem->>'soru')::INT / 80.0, 0) AS net
+              FROM student_exam_analysis sea,
+                   LATERAL jsonb_array_elements(sea.ders_netleri_ayt) AS elem
+              WHERE sea.ders_netleri_ayt IS NOT NULL
+                AND elem->>'ders' = 'Toplam'
+                AND (elem->>'soru')::INT > 0
+           )
+           SELECT
               CASE
                 WHEN s.class_name IS NULL OR s.class_name = '' THEN '(Sınıf yok)'
                 WHEN s.class_name ILIKE '%mezun%' OR s.class_name ILIKE '%mez %'
@@ -201,21 +218,23 @@ async def cohort_analysis(
                 ELSE s.class_name
               END as class_name,
               CASE
-                WHEN s.class_name IS NULL OR s.class_name = '' THEN 2  -- sınıfsız sona
-                WHEN s.class_name ILIKE '%mezun%' OR s.class_name ILIKE '%mez %' THEN 1  -- mezun ortaya
-                ELSE 0  -- aktif yukarı
+                WHEN s.class_name IS NULL OR s.class_name = '' THEN 2
+                WHEN s.class_name ILIKE '%mezun%' OR s.class_name ILIKE '%mez %' THEN 1
+                ELSE 0
               END as kategori,
               COUNT(DISTINCT s.soz_no) as ogr_sayisi,
-              AVG(se.toplam) FILTER (WHERE se.exam_type='TYT' AND se.status='valid') as tyt_ort,
-              AVG(se.toplam) FILTER (WHERE se.exam_type='AYT' AND se.status='valid') as ayt_ort
+              ROUND(AVG(tyt_avg.net)::NUMERIC, 2) as tyt_net_ort,
+              ROUND(AVG(ayt_avg.net)::NUMERIC, 2) as ayt_net_ort,
+              COUNT(tyt_avg.net) as tyt_veri_sayisi,
+              COUNT(ayt_avg.net) as ayt_veri_sayisi
            FROM students s
-           LEFT JOIN student_exams se ON se.soz_no::text = s.soz_no
+           LEFT JOIN tyt_avg ON tyt_avg.soz_no = s.soz_no
+           LEFT JOIN ayt_avg ON ayt_avg.soz_no = s.soz_no
            WHERE s.status='active'
            GROUP BY 1, 2
-           ORDER BY kategori ASC, ogr_sayisi DESC, tyt_ort DESC NULLS LAST""",
+           ORDER BY kategori ASC, ogr_sayisi DESC, tyt_net_ort DESC NULLS LAST""",
     )
     items = [dict(r) for r in (rows or [])]
-    # Toplam satırı (frontend için ayrı field)
     total = sum(r['ogr_sayisi'] for r in items)
     by_kat = {0: 0, 1: 0, 2: 0}
     for r in items:
@@ -228,6 +247,7 @@ async def cohort_analysis(
             "mezun": by_kat.get(1, 0),
             "sinifsiz": by_kat.get(2, 0),
         },
+        "puan_kaynak": "TYT net: student_exams (max 120) | AYT net: student_exam_analysis.ders_netleri_ayt Toplam (max 80)",
     }
 
 

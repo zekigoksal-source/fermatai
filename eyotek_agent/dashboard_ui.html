@@ -223,9 +223,10 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
     <h2>👥 Sınıf / Kohort Analizi</h2>
     <div id="cohort-summary" style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;font-size:0.9rem;"></div>
     <table id="cohort-table">
-      <thead><tr><th>Sınıf</th><th>Kategori</th><th>Öğrenci</th><th>TYT Ort</th><th>AYT Ort</th></tr></thead>
+      <thead><tr><th>Sınıf</th><th>Kategori</th><th>Öğrenci</th><th>TYT Net Ort<br><span style="font-size:0.7rem;font-weight:400;opacity:.6;">/120</span></th><th>AYT Net Ort<br><span style="font-size:0.7rem;font-weight:400;opacity:.6;">/80</span></th></tr></thead>
       <tbody><tr><td colspan="5" class="empty">Yükleniyor...</td></tr></tbody>
     </table>
+    <div style="margin-top:10px;font-size:0.75rem;opacity:.55;font-style:italic;">Kaynak: TYT net = öğrenci başına deneme ortalaması · AYT net = TG denemelerinden ayrıştırılmış pure AYT</div>
   </div>
 </div>
 
@@ -444,12 +445,16 @@ async function loadCohorts() {
       const rowOpacity = c.kategori === 2 ? '0.7' : '1';
       // Sınıf adından [Mezun] prefix'i temizle (kategori sütunu var)
       const cleanName = (c.class_name || '').replace(/^\[Mezun\]\s*/, '');
+      const tytNet = c.tyt_net_ort ? Number(c.tyt_net_ort).toFixed(2) : '-';
+      const aytNet = c.ayt_net_ort ? Number(c.ayt_net_ort).toFixed(2) : '-';
+      const tytSuffix = c.tyt_veri_sayisi ? `<span style="opacity:.5;font-size:0.75rem;"> (${c.tyt_veri_sayisi})</span>` : '';
+      const aytSuffix = c.ayt_veri_sayisi ? `<span style="opacity:.5;font-size:0.75rem;"> (${c.ayt_veri_sayisi})</span>` : '';
       return `<tr style="opacity:${rowOpacity};">
         <td>${escapeHTML(cleanName)}</td>
         <td><span style="color:${katColor};font-weight:600;font-size:0.85rem;">${kat}</span></td>
         <td><strong>${c.ogr_sayisi||0}</strong></td>
-        <td>${c.tyt_ort?Number(c.tyt_ort).toFixed(1):'-'}</td>
-        <td>${c.ayt_ort?Number(c.ayt_ort).toFixed(1):'-'}</td>
+        <td><strong>${tytNet}</strong>${tytSuffix}</td>
+        <td><strong>${aytNet}</strong>${aytSuffix}</td>
       </tr>`;
     }).join('');
   } catch(e) { console.error(e); }
