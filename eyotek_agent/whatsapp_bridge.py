@@ -3312,7 +3312,16 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 _last = await _conn3.fetchval(
                     "SELECT tools_used::text FROM agent_conversations WHERE phone=$1 AND message_role='assistant' ORDER BY created_at DESC LIMIT 1",
                     phone)
-                _src = "ollama" if _last and "ollama" in str(_last) else "claude"
+                # 25.14k (Neo GROQ_INVISIBILITY): groq destekli source detection
+                # Eski: sadece ollama/claude ayrımı → groq'lu mesajlar 'claude' olarak kayit
+                # Yeni: tools_used'da groq_local/ollama_local var mi? Yoksa default claude.
+                _last_str = str(_last or "")
+                if "groq_local" in _last_str or "groq" in _last_str.lower():
+                    _src = "groq"
+                elif "ollama" in _last_str.lower():
+                    _src = "ollama"
+                else:
+                    _src = "claude"
                 _src_for_admin = _src
                 # 22.1n-neo: Claude icin handler_name = son tool_call adi (tools_used'dan parse)
                 _claude_tool = None
