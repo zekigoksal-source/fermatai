@@ -61,7 +61,12 @@ MIN_CONFIDENCE_EXAM_COUNT = 3       # 3 sınavdan az ise confidence düşer
 
 
 async def _get_exam_history(soz_no: int, exam_type: str = "TYT", limit: int = 5) -> list[dict]:
-    """Son N denemeyi getir (en yeni en başta)."""
+    """Son N denemeyi getir (en yeni en başta).
+
+    UYARI (Oturum 25.14h): exam_type='AYT' satirlari TG (Tam Gun, TYT+AYT birlesik)
+    icerigi tasiyor — toplam max 109. PURE AYT icin _get_pure_ayt_stats() kullan.
+    Bu fonksiyon TYT icin guvenli, AYT trend icin uygun degil.
+    """
     rows = await _fetch(
         """SELECT exam_date, exam_name, toplam, turkce, matematik, fizik, kimya, biyoloji, tarih, geometri
            FROM student_exams
@@ -70,6 +75,31 @@ async def _get_exam_history(soz_no: int, exam_type: str = "TYT", limit: int = 5)
         soz_no, exam_type, limit,
     )
     return [dict(r) for r in (rows or [])]
+
+
+async def _get_pure_ayt_stats(soz_no: int) -> dict:
+    """Pure AYT net (TG karistirilmadan) — student_exam_analysis JSONB kaynak.
+
+    Returns: {avg_net, exam_count, has_data} — trend turetilmiyor (cumulative)
+    """
+    row = await _fetchrow(
+        """SELECT
+              (REPLACE(elem->>'net', ',', '.'))::NUMERIC AS cum_net,
+              (elem->>'soru')::INT AS cum_soru
+           FROM student_exam_analysis sea,
+                LATERAL jsonb_array_elements(sea.ders_netleri_ayt) AS elem
+           WHERE sea.soz_no = $1::text
+             AND sea.ders_netleri_ayt IS NOT NULL
+             AND elem->>'ders' = 'Toplam'
+             AND (elem->>'soru')::INT > 0
+           LIMIT 1""",
+        str(soz_no),
+    )
+    if not row or not row['cum_soru']:
+        return {"avg_net": 0.0, "exam_count": 0, "has_data": False}
+    exam_count = max(1, int(row['cum_soru']) // 80)
+    avg_net = float(row['cum_net']) / exam_count
+    return {"avg_net": round(avg_net, 2), "exam_count": exam_count, "has_data": True}
 
 
 def _linear_trend(values: list[float]) -> tuple[float, float]:
@@ -147,22 +177,23 @@ async def predict_student(soz_no: int) -> dict:
     }
     """
     # 1. Veri topla — paralel
-    tyt_history, ayt_history, weak_count, devamsiz_saat = await asyncio.gather(
+    # Oturum 25.14h: AYT icin PURE AYT (TG karistirilmadan) — _get_pure_ayt_stats
+    tyt_history, pure_ayt, weak_count, devamsiz_saat = await asyncio.gather(
         _get_exam_history(soz_no, "TYT", 5),
-        _get_exam_history(soz_no, "AYT", 5),
+        _get_pure_ayt_stats(soz_no),
         _count_weak_topics(soz_no),
         _devamsizlik_saat(soz_no),
         return_exceptions=True,
     )
 
     if isinstance(tyt_history, Exception): tyt_history = []
-    if isinstance(ayt_history, Exception): ayt_history = []
+    if isinstance(pure_ayt, Exception): pure_ayt = {"avg_net": 0.0, "exam_count": 0, "has_data": False}
     if isinstance(weak_count, Exception): weak_count = 0
     if isinstance(devamsiz_saat, Exception): devamsiz_saat = 0
 
     # Yetersiz veri — confidence düşür
     tyt_count = len(tyt_history)
-    ayt_count = len(ayt_history)
+    ayt_count = pure_ayt.get("exam_count", 0)
 
     if tyt_count == 0 and ayt_count == 0:
         return {
@@ -175,9 +206,11 @@ async def predict_student(soz_no: int) -> dict:
     tyt_nets = [float(e['toplam']) for e in reversed(tyt_history) if e.get('toplam')]
     tyt_slope, tyt_projected = _linear_trend(tyt_nets) if tyt_nets else (0, 0)
 
-    # 3. AYT tahmin
-    ayt_nets = [float(e['toplam']) for e in reversed(ayt_history) if e.get('toplam')]
-    ayt_slope, ayt_projected = _linear_trend(ayt_nets) if ayt_nets else (0, 0)
+    # 3. AYT tahmin (PURE AYT — cumulative average, trend yok)
+    ayt_avg = pure_ayt.get("avg_net", 0.0)
+    ayt_nets = [ayt_avg] * ayt_count if ayt_count > 0 else []
+    ayt_slope = 0.0  # Cumulative kaynaktan trend turetilemiyor
+    ayt_projected = ayt_avg
 
     # 4. Penalty / boost uygulamalari
     devam_penalty = (devamsiz_saat / 50.0) * DEVAMSIZLIK_PENALTY_PER_50H
