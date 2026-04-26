@@ -241,8 +241,11 @@ def get_tools_for_tier(tier: str, full_tools: list) -> list:
 # TELEMETRY — tier seçimini logla (gözlem için)
 # ═══════════════════════════════════════════════════════════════════
 
-import logging
-_log = logging.getLogger(__name__)
+try:
+    from loguru import logger as _log
+except ImportError:
+    import logging
+    _log = logging.getLogger(__name__)
 
 
 def log_tier_decision(
