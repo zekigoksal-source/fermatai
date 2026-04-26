@@ -1,10 +1,98 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 26 Nisan 2026, öğleden sonra — **OTURUM 25.14h — Cohort NET Halüsilasyon Fix**
-> **Son commit:** `f28c4fb` (akşam plani güncel) · Önemli fix commit: `a10bea2`
+> **Son güncelleme:** 26 Nisan 2026, akşam — **OTURUM 25.14i — P1.5+P3+P4+Mobile Fix Tamamı**
+> **Son commit:** `c387dfd` (P4 + mobile)  · Onceki: `e2165a1` (predictive AYT fix), `a10bea2` (cohort fix)
 > **Backup tag:** `oturum-25-14h-stable`
-> **Son konusma analizi timestamp:** `2026-04-25 17:49`
-> **Sistem:** ✅ bridge active, 4/4 endpoint 200, 3 timer kurulu, DB temiz (123 öğr / 1963 sınav / 5562 RAG)
+> **Sistem:** ✅ bridge active, 4/4 endpoint 200, tool 55 kayitli (add_to_student_program dahil)
+
+## 🆕 OTURUM 25.14i (26 Nisan akşam, Neo başında değil) — P1.5+P3+P4+MOBILE BIR ARADA
+
+Neo: "yapılması gereken işleri tamamla ve bitir — P1.5+P3+P4 hepsi"
+
+### P1.5 — Admin Tab Veri Kalite Sweep (yapildi)
+Cohort'taki yöntemle 9 endpoint DB ham veri ile karşılaştırıldı:
+| Endpoint | Sonuc |
+|---|---|
+| /api/notifications | ✅ 1 unread, 0 critical (DB ile match) |
+| /api/routing-stats (24h) | ✅ claude 30, fast 5, burst_limit 1 (match) |
+| /api/usage-summary | ✅ 24h: 4u/46msg, 7d: 26u/644msg (match) |
+| /api/cohort-analysis | ✅ az önce düzeltildi (a10bea2) |
+| /api/teacher-effectiveness | ✅ ORHAN/MERVE/VEDAT top3 (match) |
+| /api/token-budget (7d) | ✅ $20.08 toplam (match — 5M in/324K out claude) |
+| /api/atlas-suggestions | ✅ 0 pending |
+| /api/student/{soz_no}/prediction | 🚨 **HALÜSİLASYON BULUNDU** |
+| /api/student/{soz_no}/knowledge-graph | ✅ format OK |
+
+**🚨 BULGU 2 (cohort fix'in devami):** `predictive_model.py` da ayni TG combined hatasi:
+- soz_no 211 (Nazli, top student): predicted_ayt **82.4** (max 80 → imkansiz)
+- Kök sebep: `_get_exam_history(soz_no, "AYT")` → student_exams.toplam[exam_type='AYT'] TG combined
+- **Düzeltme** (commit `e2165a1`): yeni `_get_pure_ayt_stats()` — student_exam_analysis.ders_netleri_ayt JSONB
+  Toplam.net / (soru/80). Trade-off: cumulative kaynak, exam basina trend turetilemiyor (ayt_slope=0).
+- **Yeni**: predicted_ayt **20.0** (gercekci, cohort'taki Mezun SAY 15.5 ile uyumlu)
+
+### P4 — Bot Çalışmam Programa Yazma Tool (yapildi)
+**Yeni:** `add_to_student_program` Claude tool — bot "evet ekle" deyince DB'ye yazar.
+
+Kod degisiklikleri:
+- `tool_definitions.py`: schema (soz_no, title, start_time, +ders/konu/end_time/notes/plan_date)
+- `fermat_core_agent.py`: `_tool_add_to_student_program()` wrapper + ACL gate
+- `fermat_core_agent.py`: TOOL_DISPATCH branch (caller_role + caller_soz_no inject)
+- `role_access.py`: admin/mudur/rehber/ogrenci'ye açık (ogretmen+veli yasak — DOĞRULANDI)
+
+ACL kuralı: ogrenci sadece kendi soz_no, admin/mudur/rehber override.
+
+### P3 — LLM Proaktif Test (CANLI KANITLANDI)
+Test akışı (soz_no 211, gerçek öğrenci, sahte data sonra silindi):
+1. `log_study_session(211, minutes=30, questions=10, ders='Matematik')` → DB'ye yazıldı ✅
+2. `add_todo(211, 'TEST: Paragraf 20 soru')` → DB'ye yazıldı ✅
+3. `get_student_context(phone_211)` çağrıldı:
+   ```
+   daily_brief: {"today_minutes": 30, "today_questions": 10,
+                 "today_ders_breakdown": {"Matematik": 30},
+                 "open_todos_count": 1, "open_todos_titles": ["TEST: Paragraf 20 soru"]}
+   ```
+4. `build_context_prompt(ctx)` → Claude system prompt'a şu enjekte oldu:
+   ```
+   📊 Bugün panele girdi: 30dk + 10 soru (Matematik:30dk)
+   ✅ Açık to-do: 1 tane (TEST: Paragraf 20 soru)
+   Kurallar:
+   • Plan/öneri yaparken bu veriyi REFERANS al — 'bugün 30dk Mat çalıştın'
+   • Yeni öneri panele eklenebilir → 'şunu programına ekleyeyim mi?' sor
+   • Mood 'yorgun/stresli' iken ağır plan yapma
+   • Hiç giriş yoksa SORGULAMA — empati: 'paneli kullanmak ister misin?'
+   ```
+5. **Test verisi temizlendi** (3 satır deleted: program/todo/study_stats)
+
+**P3+P4 entegrasyonu mükemmel:** prompt zaten "şunu programına ekleyeyim mi?" diyor — Claude bu öneriyi yaptıktan sonra "evet" gelince P4 tool'unu çağırabilir. Otomatik akış.
+
+### Mobile Fix (Neo bildirim "mobilde sag üstteki menü ile yeni sayfa açma tuşu iç içe geçmiş")
+- @media (max-width: 600px): `study-btn` ve `admin-dash-btn` ikon-only (📚, 📊)
+- @media (max-width: 400px): admin-btn (eski modal ⚙️) gizlendi, marginlar daraldı
+- Eskiden mobilde tasıyordu: ✨📚 Çalışmam | 📊 Yönetim Paneli | ⚙️ | 🌙 | userName | Çıkış
+- Yeni: ✨ | 📚 | 📊 | 🌙 | Çıkış (kompakt)
+
+### Commit Geçmişi (öğleden sonra → akşam)
+- `d0bac43` — Cohort 71 → 123
+- `a10bea2` — Cohort NET ortalama (puan halüsilasyon fix) ⭐
+- `f28c4fb` — Akşam planı güncel
+- `751f493` — KALDIGIM 25.14h
+- `e2165a1` — predictive_model AYT pure (TG fix devam) ⭐
+- `c387dfd` — P4 add_to_student_program tool + mobile header fix ⭐
+
+### P1 — UX Test (otomatik smoke)
+Gerçek kullanıcı testi yapamadım (Neo başında yok), HTTP smoke ile verify:
+- 4/4 endpoint 200
+- Header'da study-btn::before + admin-dash-btn::before (mobil ikon CSS) deploy
+- add_to_student_program tool 55 tool listesinde, ACL doğru rollerde
+
+**Akşam Neo başına gelince P1 manuel UX test:** Çalışmam'a veri gir → bot'a "plan yap" yaz → bot "bugün 30dk Mat çalıştın" diyor mu?
+
+### Bir Sonraki Oturum İlk İş
+1. Neo gerçek kullanıcı UX testi (P1 manuel)
+2. P3 canlı dialog testi: "matematik 16:00 ekle" → bot tool çağırıyor mu?
+3. Atlas-2 sabah cron (02:00 UTC = 05:00 TR) çıktısını incele
+
+---
 
 ## 🆕 OTURUM 25.14g+h (26 Nisan öğleden sonra) — COHORT NET HALÜSİLASYON FIX
 
