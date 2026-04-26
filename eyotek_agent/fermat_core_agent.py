@@ -3610,6 +3610,16 @@ class FermatCoreAgent:
                                         event_type="message", response_source=_local_provider, response_ms=2000)
                     except Exception:
                         pass
+                    # 25.14k: routing_stats'a da yazalim (bridge code path subprocess'te tetiklenmiyor)
+                    try:
+                        from db_pool import db_execute
+                        await db_execute(
+                            "INSERT INTO routing_stats (phone, role, message, response_source, response_ms, handler_name) VALUES ($1,$2,$3,$4,$5,$6)",
+                            caller_phone, role, (user_input or "")[:200],
+                            _local_provider, 2000, f"local_{_local_provider}"
+                        )
+                    except Exception as _rs_err:
+                        logger.debug(f"routing_stats yazim hata (local): {_rs_err}")
                     # Self-Observation: kalite degerlendirmesi
                     try:
                         from self_observer import log_quality
