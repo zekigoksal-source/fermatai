@@ -44,7 +44,7 @@ MODEL         = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
 
 
 # Arac Tanimlari (22.1n-split: tool_definitions.py modulune tasindi)
-from tool_definitions import TOOLS
+from tool_definitions import TOOLS, TOOLS_ACTIVE, get_tools
 
 
 # ─── Araç Uygulamaları ────────────────────────────────────────────────────────
@@ -3461,8 +3461,8 @@ class FermatCoreAgent:
                         answer = _re_fmt.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', answer)
                         # ** ve ### web'de markdown — BIRAK
                     else:
-                        # WP kanalı: WP formatı zorla
-                        answer = _clean_ollama_format(answer)
+                        # WP kanalı: WP formatı zorla (Oturum 25.11: _clean_local_format)
+                        answer = _clean_local_format(answer)
                         answer = _re_fmt.sub(r'###\s*', '', answer)  # ### kaldır
                         answer = _re_fmt.sub(r'##\s*', '', answer)   # ## kaldır
                         answer = _re_fmt.sub(r'\*\*([^*]+)\*\*', r'*\1*', answer)  # **text** → *text*
@@ -3592,7 +3592,8 @@ class FermatCoreAgent:
                         {"type": "text", "text": dynamic_context,
                          "cache_control": {"type": "ephemeral"}},  # C15
                     ],
-                    tools     = TOOLS,
+                    # Oturum 25.11: Role-aware tools — DEAD_TOOLS hariç (~5400 tok tasarruf)
+                    tools     = get_tools(role=role),
                     messages  = self.history,
                 )
                 try:
@@ -3630,7 +3631,8 @@ class FermatCoreAgent:
                             "cache_control": {"type": "ephemeral"},  # C15 eklendi
                         },
                     ],
-                    tools     = TOOLS,
+                    # Oturum 25.11: Role-aware tools — DEAD_TOOLS hariç (~5400 tok tasarruf)
+                    tools     = get_tools(role=role),
                     messages  = self.history,
                 )
 
@@ -3796,14 +3798,20 @@ _COMMON_FAKE_NAMES = [
     "Kaan", "Mert", "Arda", "Yusuf", "Kerem", "Beren", "Defne", "Ela",
 ]
 
-def _clean_ollama_format(answer: str) -> str:
-    """Ollama formatter — format_whatsapp.py'a delegation (Oturum 20 refactor).
-    Eski fonksiyon korundu ama artık merkezi formatter kullanılıyor."""
+def _clean_local_format(answer: str) -> str:
+    """Yerel LLM (Groq/Ollama) formatter — format_whatsapp.py'a delegation.
+    Oturum 25.11: 'ollama' isim 'local'a yeniden adlandirildi (Groq production).
+    Eski isim _clean_ollama_format alias olarak korundu (geri uyumluluk)."""
     try:
         from format_whatsapp import format_for_whatsapp
-        return format_for_whatsapp(answer, source="ollama")
+        # source="local" Groq+Ollama icin ayni enforcer'i tetikler
+        return format_for_whatsapp(answer, source="local")
     except Exception:
         pass  # fallback: eski kod çalışır
+
+
+# Backwards-compat alias — eski kod _clean_ollama_format çağırırsa hata vermesin
+_clean_ollama_format = _clean_local_format
 
     """Eski fallback:
     - ** bold ** → * bold *  (WhatsApp bold)

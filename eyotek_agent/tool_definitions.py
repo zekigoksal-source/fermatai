@@ -1434,3 +1434,48 @@ TOOLS: list[dict] = [
         },
     },
 ]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Oturum 25.11 — Tool Compact (Token Tasarruf)
+# ═══════════════════════════════════════════════════════════════════════════
+# Production verisinden (son 30g routing_stats) ≤2 cagri alan tool'lar tespit
+# edildi. Sistem prompt'a yer almamaları icin TOOLS_ACTIVE'den filtrelenir.
+# TOOL_DISPATCH'te wrapper'lari KORUNUR — eger Claude bir sekilde tahmin edip
+# cagirirsa hata vermez. Geri eklemek icin: DEAD_TOOLS set'ten cikar.
+#
+# Tahmini tasarruf: 15 tool × ~30 satir desc × ~12 token = ~5400 token/cagri
+# Aylik 500 mesaj × 5400 tok × $3/1M = ~$8/ay + Claude response hizi
+DEAD_TOOLS: set[str] = {
+    "youtube_oner",                  # 1 cagri
+    "get_career_info",               # 1
+    "plan_kaydet",                   # 1
+    "plan_getir",                    # 1
+    "transfer_failure_analiz",       # 1
+    "proaktif_sgm_kademe_bildirimi", # 1
+    "ogrenci_borc_detay",            # 1 — Neo onay verirse acilabilir
+    "aylik_borc_detay",              # 2
+    "geciken_odemeler",              # 2
+    "web_upload",                    # 2
+    "eyotek_read",                   # 2
+    "pedagojik_koc",                 # 2
+    "puan_tahmin",                   # 2 — yeni puan_tahmin yerine predict_yks_score var
+    "konu_kaynak_paketi",            # 2
+    "ogrenci_nereye_girebilir",      # 2 — yeni predict_yks_score + universite_taban
+}
+
+# Active TOOLS — Claude system prompt'a gonderilen liste
+TOOLS_ACTIVE: list[dict] = [t for t in TOOLS if t.get("name") not in DEAD_TOOLS]
+
+
+def get_tools(role: str = "ogrenci", include_dead: bool = False) -> list[dict]:
+    """Role-aware tool listesi.
+
+    role: 'admin' → tum tool'lar (finans dahil)
+          'ogrenci'/'mudur'/'rehber'/'ogretmen' → DEAD_TOOLS hariç
+          'veli' → cok kisitli (gelecek sezon)
+    include_dead=True → DEAD dahil (debug/admin tam liste icin)
+    """
+    if include_dead or role == "admin":
+        return TOOLS
+    return TOOLS_ACTIVE
