@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 26 Nisan 2026, ~13:30 — **OTURUM 25.11 (devamı) — MIMARI.md + REFACTOR_PLAN.md + Test 53/53**
+> **Son güncelleme:** 26 Nisan 2026, ~14:30 — **OTURUM 25.11 FINAL — REFACTOR_PLAN P1.1+P3.1+P3.3 uygulandı (88/88 test)**
 > **Son konusma analizi timestamp:** `2026-04-25 17:49`
 
 ## 🚨 OTURUM 25.11 (26 Nisan ~12:00) — SISTEM AUDIT + KRITIK BUG FIX
@@ -201,6 +201,64 @@ benim gelisimim     → claude  12427ms (personal data + tool calling)
 
 Groq production'da **2 saniyenin altında** cevap veriyor. Claude tool-calling
 gerektiren kompleks sorularda hala devrede. Hedef routing dağılımı tutuyor.
+
+### 🎯 P1.1 + P3.1 + P3.3 UYGULAMA (commit'ler 6b662b8 + 8b85484 + f029df6)
+
+**P1.1 — Tool Compact (token tasarruf):**
+- `tool_definitions.py`: DEAD_TOOLS set (15 tool, ≤2 çağrı/30g)
+- TOOLS_ACTIVE = TOOLS - DEAD (52 active)
+- get_tools(role) helper: admin=64, ogrenci/mudur=52
+- fermat_core_agent: `tools=get_tools(role)` Claude API'ye gider
+- TOOL_DISPATCH wrapper'ları KORUNDU (geri uyumluluk)
+- **Tasarruf:** ~12 tool × ~350 tok = ~4200 tok/çağrı
+- **Aylık tasarruf:** ~$6/ay (500 mesaj × 4200 × $3/1M)
+
+**P3.1 — 'ollama' naming legacy:**
+- `_clean_ollama_format` → `_clean_local_format` (alias geri uyumlu)
+- `format_for_whatsapp` source 'groq'/'local' kabul
+- Cosmetic: davranış değişmedi
+
+**P3.3 — Test 53 → 88 (+35 yeni test):**
+- test_admin_notify_extended (3) — quiet hours boundary
+- test_format_whatsapp_extended (9) — groq source + chart + table + linkler
+- test_tool_definitions (10) — DEAD_TOOLS + role-aware
+- test_knowledge_graph (7) — müfredat seed + ön koşul ilişkileri
+- test_role_access (5) — ACL matrix admin/ogrenci/mudur
+
+**🚨 2 HOTFIX (audit sırası tespit + düzeltildi):**
+1. `_clean_ollama_format` rename sırasında eski body yetim kaldı (90 satır,
+   IndentationError) — silindi commit `8b85484`
+2. `import time` modül başında eksikti, `[GROQ-TOOLS] pre-check` her zaman
+   NameError veriyordu (silent regression) — eklendi commit `f029df6`
+
+### CANLI E2E VERIFY (HOTFIX SONRASI)
+```
+selam              → fast      56ms  (template)
+turev nedir        → groq    1143ms  ✓ (lane fix + uvloop async çalışıyor)
+limit anlat        → groq    1214ms  ✓
+benim gelisimim    → cache     7ms   (önceki Claude cevabı cached)
+```
+
+### ❌ ATLANAN — REFACTOR_PLAN'a alındı
+- **P1.2 System prompt cleanup** — eski oturum yorumları temizlik. Risk: bir
+  satır kural silinirse bot davranışı değişir. Manuel review gerekiyor.
+- **P2.1 fast_responses.py modülerleştirme** (3289 → 5+ alt-modül)
+- **P2.2 fermat_core_agent.py bölme** (4150 → dispatcher+claude_loop)
+- **P2.3 whatsapp_bridge.py bölme** (4215 → app+webhook+scheduler)
+
+**Sebep:** Neo emri "sisteme zarar verme, ciddi kazanımlarımız var". P2.x
+8000+ satır taşıma demek, test coverage 88 hala yetersiz, regression yakalama
+riski var. Sırasıyla yapılmalı, her adım canlı verify gerektiriyor.
+REFACTOR_PLAN.md detaylı yol haritası içeriyor.
+
+### Commit zinciri
+- `60f39b5` — uvloop + admin_notify (Oturum 25.10d-e)
+- `5bb1099` — KALDIGIM 25.11 audit raporu
+- `af12342` — MIMARI.md + REFACTOR_PLAN.md + 30 yeni test
+- `c5ec987` — KALDIGIM follow-up
+- `6b662b8` — P1.1+P3.1+P3.3 paketi (88 test)
+- `8b85484` — HOTFIX yetim body
+- `f029df6` — HOTFIX import time
 
 ## 🎯 OTURUM 25.10 (25 Nisan 2026, ~21:00) — GROQ PAY GENİŞLETME
 
