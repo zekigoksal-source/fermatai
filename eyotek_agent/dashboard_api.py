@@ -189,24 +189,46 @@ async def cohort_analysis(
 ):
     await _require_admin_session(request, fermat_session)
     # Sınıf bazında ortalama performans
-    # Oturum 25.14e fix: students.soz_no TEXT, student_exams.soz_no INTEGER —
-    # ters cast: students tarafını cast et (text → int)
+    # Oturum 25.14e fix: students.soz_no TEXT, student_exams.soz_no INTEGER cast
+    # Oturum 25.14f (Neo): TUM ogrenciler dahil — mezun + sinifsiz + 1 kisilik
+    # Sayilar TUTARLI olsun (toplam = 125 hedef)
     rows = await db_fetch(
-        """SELECT s.class_name,
-                  COUNT(DISTINCT s.soz_no) as ogr_sayisi,
-                  AVG(se.toplam) FILTER (WHERE se.exam_type='TYT' AND se.status='valid') as tyt_ort,
-                  AVG(se.toplam) FILTER (WHERE se.exam_type='AYT' AND se.status='valid') as ayt_ort
+        """SELECT
+              CASE
+                WHEN s.class_name IS NULL OR s.class_name = '' THEN '(Sınıf yok)'
+                WHEN s.class_name ILIKE '%mezun%' OR s.class_name ILIKE '%mez %'
+                  THEN '[Mezun] ' || s.class_name
+                ELSE s.class_name
+              END as class_name,
+              CASE
+                WHEN s.class_name IS NULL OR s.class_name = '' THEN 2  -- sınıfsız sona
+                WHEN s.class_name ILIKE '%mezun%' OR s.class_name ILIKE '%mez %' THEN 1  -- mezun ortaya
+                ELSE 0  -- aktif yukarı
+              END as kategori,
+              COUNT(DISTINCT s.soz_no) as ogr_sayisi,
+              AVG(se.toplam) FILTER (WHERE se.exam_type='TYT' AND se.status='valid') as tyt_ort,
+              AVG(se.toplam) FILTER (WHERE se.exam_type='AYT' AND se.status='valid') as ayt_ort
            FROM students s
            LEFT JOIN student_exams se ON se.soz_no::text = s.soz_no
            WHERE s.status='active'
-             AND s.class_name NOT ILIKE '%mezun%'
-             AND s.class_name NOT ILIKE '%mez %'
-             AND s.class_name IS NOT NULL
-           GROUP BY s.class_name
-           HAVING COUNT(DISTINCT s.soz_no) >= 2
-           ORDER BY tyt_ort DESC NULLS LAST""",
+           GROUP BY 1, 2
+           ORDER BY kategori ASC, ogr_sayisi DESC, tyt_ort DESC NULLS LAST""",
     )
-    return {"cohorts": [dict(r) for r in (rows or [])]}
+    items = [dict(r) for r in (rows or [])]
+    # Toplam satırı (frontend için ayrı field)
+    total = sum(r['ogr_sayisi'] for r in items)
+    by_kat = {0: 0, 1: 0, 2: 0}
+    for r in items:
+        by_kat[r['kategori']] = by_kat.get(r['kategori'], 0) + r['ogr_sayisi']
+    return {
+        "cohorts": items,
+        "total": total,
+        "by_category": {
+            "aktif": by_kat.get(0, 0),
+            "mezun": by_kat.get(1, 0),
+            "sinifsiz": by_kat.get(2, 0),
+        },
+    }
 
 
 # ── TEACHER EFFECTIVENESS ──────────────────────────────────────────────────

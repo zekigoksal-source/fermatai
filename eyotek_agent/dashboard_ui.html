@@ -221,9 +221,10 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 <div class="tab-content" id="tab-cohorts">
   <div class="card">
     <h2>👥 Sınıf / Kohort Analizi</h2>
+    <div id="cohort-summary" style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;font-size:0.9rem;"></div>
     <table id="cohort-table">
-      <thead><tr><th>Sınıf</th><th>Öğrenci</th><th>TYT Ort</th><th>AYT Ort</th></tr></thead>
-      <tbody><tr><td colspan="4" class="empty">Yükleniyor...</td></tr></tbody>
+      <thead><tr><th>Sınıf</th><th>Kategori</th><th>Öğrenci</th><th>TYT Ort</th><th>AYT Ort</th></tr></thead>
+      <tbody><tr><td colspan="5" class="empty">Yükleniyor...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -414,12 +415,43 @@ async function loadCohorts() {
   try {
     const r = await api('/admin/api/cohort-analysis');
     const tbody = document.querySelector('#cohort-table tbody');
-    if (!r.cohorts?.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Veri yok</td></tr>'; return; }
-    tbody.innerHTML = r.cohorts.map(c =>
-      `<tr><td>${escapeHTML(c.class_name||'')}</td><td>${c.ogr_sayisi||0}</td>
-       <td>${c.tyt_ort?Number(c.tyt_ort).toFixed(1):'-'}</td>
-       <td>${c.ayt_ort?Number(c.ayt_ort).toFixed(1):'-'}</td></tr>`
-    ).join('');
+    const summary = document.getElementById('cohort-summary');
+
+    // Üst özet — kategori bazlı toplam
+    if (r.by_category) {
+      summary.innerHTML = `
+        <span style="padding:6px 14px;background:rgba(63,185,113,0.15);color:var(--green);border-radius:8px;font-weight:600;">
+          🟢 Aktif: <strong>${r.by_category.aktif||0}</strong>
+        </span>
+        <span style="padding:6px 14px;background:rgba(199,111,62,0.15);color:var(--accent);border-radius:8px;font-weight:600;">
+          🎓 Mezun: <strong>${r.by_category.mezun||0}</strong>
+        </span>
+        <span style="padding:6px 14px;background:rgba(125,133,144,0.15);color:var(--muted);border-radius:8px;font-weight:600;">
+          ❓ Sınıfsız: <strong>${r.by_category.sinifsiz||0}</strong>
+        </span>
+        <span style="padding:6px 14px;background:rgba(88,166,255,0.15);color:var(--blue);border-radius:8px;font-weight:600;margin-left:auto;">
+          📊 Toplam: <strong>${r.total||0}</strong> öğrenci
+        </span>
+      `;
+    }
+
+    if (!r.cohorts?.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Veri yok</td></tr>'; return; }
+
+    tbody.innerHTML = r.cohorts.map(c => {
+      // Kategori badge: 0=aktif, 1=mezun, 2=sınıfsız
+      const kat = c.kategori === 1 ? '🎓 Mezun' : (c.kategori === 2 ? '❓ Sınıfsız' : '🟢 Aktif');
+      const katColor = c.kategori === 1 ? 'var(--accent)' : (c.kategori === 2 ? 'var(--muted)' : 'var(--green)');
+      const rowOpacity = c.kategori === 2 ? '0.7' : '1';
+      // Sınıf adından [Mezun] prefix'i temizle (kategori sütunu var)
+      const cleanName = (c.class_name || '').replace(/^\[Mezun\]\s*/, '');
+      return `<tr style="opacity:${rowOpacity};">
+        <td>${escapeHTML(cleanName)}</td>
+        <td><span style="color:${katColor};font-weight:600;font-size:0.85rem;">${kat}</span></td>
+        <td><strong>${c.ogr_sayisi||0}</strong></td>
+        <td>${c.tyt_ort?Number(c.tyt_ort).toFixed(1):'-'}</td>
+        <td>${c.ayt_ort?Number(c.ayt_ort).toFixed(1):'-'}</td>
+      </tr>`;
+    }).join('');
   } catch(e) { console.error(e); }
 }
 
