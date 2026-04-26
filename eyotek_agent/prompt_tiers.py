@@ -290,6 +290,20 @@ def select_tier(
         if role in _FULL_FORCING_ROLES:
             return "full"
 
+        # 25.18 Faz 4: intent_classifier hint kullan (varsa)
+        # Eğer intent FULL-zorunlu kategorideyse (injection/role/finans/hassas) → full
+        # Eğer intent NORMAL'a uyumlu ve mode aktifse → normal
+        try:
+            from intent_classifier import get_intent_tier_hint, classify_intent
+            # Intent yoksa hesapla
+            if not intent:
+                intent = classify_intent(user_input or "") or ""
+            tier_hint = get_intent_tier_hint(intent) if intent else None
+            if tier_hint == "full":
+                return "full"  # intent FULL gerektiriyor
+        except Exception:
+            tier_hint = None
+
         # 2. Şüpheli keyword → FULL (sızıntı önle)
         for kw in _SUSPICIOUS_KEYWORDS:
             if kw in text_lower:
@@ -389,12 +403,14 @@ _NORMAL_TIER_TOOLS = {
 # - finans_ozet_v2 vs (yeni finans tools)
 
 
-def get_tools_for_tier(tier: str, full_tools: list) -> list:
-    """Tier'a göre tool subset dön.
+def get_tools_for_tier(tier: str, full_tools: list, intent: str = None) -> list:
+    """Tier'a göre tool subset dön. Intent verilirse daha sıkı filtre.
 
     Args:
         tier: 'light' / 'normal' / 'full'
         full_tools: mevcut tool listesi (TOOLS_ACTIVE, role-filtered)
+        intent: opsiyonel intent etiketi (intent_classifier.classify_intent)
+                Verilirse intent-spesifik tool subset uygulanır (Faz 4)
 
     Returns:
         Tier'a uygun tool listesi (whitelist intersect)
@@ -402,8 +418,22 @@ def get_tools_for_tier(tier: str, full_tools: list) -> list:
     if tier == "light":
         return []  # LIGHT'ta hiç tool yok — escalate ettirir
     if tier == "normal":
-        # NORMAL: whitelist intersect — sadece izinli tool'lar
-        return [t for t in full_tools if t.get("name") in _NORMAL_TIER_TOOLS]
+        # NORMAL whitelist intersect (KVKK + finans/admin hariç)
+        normal_subset = [t for t in full_tools if t.get("name") in _NORMAL_TIER_TOOLS]
+        # 25.18 Faz 4: Intent-based ek filtre (gerçek intent-tool routing)
+        if intent:
+            try:
+                from intent_classifier import get_intent_tool_subset
+                intent_tools = get_intent_tool_subset(intent)
+                if intent_tools is not None and intent_tools:
+                    # Intent'e ait spesifik tool seti var — kesişim al
+                    return [t for t in normal_subset if t.get("name") in intent_tools]
+                # intent_tools = empty set → LIGHT yeterli, tool yok
+                if intent_tools is not None and not intent_tools:
+                    return []
+            except Exception:
+                pass  # intent_classifier yoksa whitelist'e düş
+        return normal_subset
     # full: tam liste (rol-filtered zaten dışarıda)
     return full_tools
 

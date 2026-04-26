@@ -3393,9 +3393,9 @@ class FermatCoreAgent:
             except Exception:
                 pass
 
-        # ── 25.17 FAZ 3: Lane + intent erken hesaplama ─────────────────
-        # Eskiden _lane sadece local path'te hesaplanırdı, Claude path'te
-        # tier seçimine boş gidiyordu. Şimdi her durumda hesaplanır.
+        # ── 25.18 FAZ 4: Lane + intent erken hesaplama (zenginleştirilmiş) ─
+        # Lane: Groq path için (groq_lanes.classify_lane)
+        # Intent: tier seçimi + tool subset için (intent_classifier — 30+ etiket)
         _lane = None
         _intent = None
         try:
@@ -3403,27 +3403,9 @@ class FermatCoreAgent:
             _lane = classify_lane(user_input, role=role, phone=caller_phone)
         except Exception:
             _lane = None
-        # Hafif intent tespiti (kısaca, regex bazlı — ağır intent_parser'a
-        # gerek yok, tier seçimi için yeterli)
         try:
-            _ui_low = (user_input or "").lower()
-            if any(k in _ui_low for k in ["plan yap", "plan istiyorum", "plan ver",
-                                           "calisma plan", "çalışma plan",
-                                           "program yap", "haftalik plan", "haftalık plan"]):
-                _intent = "plan_yap"
-            elif any(k in _ui_low for k in ["analiz", "kiyasla", "kıyasla",
-                                             "karşılaştır", "karsilastir"]):
-                _intent = "analiz"
-            elif any(k in _ui_low for k in ["son denemem", "netim", "netlerim",
-                                             "puanim", "puanım", "deneme analiz",
-                                             "deneme sonuc"]):
-                _intent = "deneme_analiz"
-            elif any(k in _ui_low for k in ["limit nedir", "türev nedir", "turev nedir",
-                                             "fotosentez", "açıkla", "acikla", "anlat"]):
-                _intent = "kavram_aciklama"
-            elif any(k in _ui_low for k in ["merhaba", "selam", "hey", "iyi günler",
-                                             "iyi gunler", "naber"]):
-                _intent = "selamlama"
+            from intent_classifier import classify_intent
+            _intent = classify_intent(user_input or "")
         except Exception:
             _intent = None
 
@@ -3762,7 +3744,8 @@ class FermatCoreAgent:
                     has_personal_data_query=_has_pers,
                 )
                 _claude_prompt = get_prompt_for_tier(_selected_tier, _role_aware_prompt)
-                _claude_tools = get_tools_for_tier(_selected_tier, get_tools(role=role))
+                # 25.18 Faz 4: intent ile gerçek intent-based tool subset routing
+                _claude_tools = get_tools_for_tier(_selected_tier, get_tools(role=role), intent=_intent_for_tier)
                 log_tier_decision(_selected_tier, user_input or "", role or "ogrenci",
                                   _lane_for_tier, _intent_for_tier,
                                   reason=f"pers={_has_pers}")
