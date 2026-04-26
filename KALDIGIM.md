@@ -1,9 +1,71 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 26 Nisan 2026, gece — **OTURUM 25.14j — P3+P4 CANLI DOĞRULANDI**
-> **Son commit:** `efd80ca` (plan yap → Claude routing fix) · Onceki: `c387dfd` (P4+mobile), `e2165a1` (predictive)
-> **Backup tag:** `oturum-25-14j-stable` · `oturum-25-14h-stable` (öğleden sonra)
-> **Sistem:** ✅ bridge active, 4/4 endpoint 200, P3+P4 entegrasyonu canli kanıtlandı
+> **Son güncelleme:** 27 Nisan 2026, gece — **OTURUM 25.15 — MODÜLER PROMPT MİMARİSİ FAZ 1 (LIGHT tier)**
+> **Son commit:** `94c613c` (loguru tier log) · Onceki: `15be507` (LIGHT tier core), `bb0533c` (groq fix 3/3)
+> **Backup tag:** `oturum-25-15-modular-canary` · `oturum-25-15-pre-modular` (rollback için)
+> **Sistem:** ✅ bridge active, 4/4 endpoint 200, MODULAR_PROMPT_MODE=canary (LIGHT aktif)
+
+## 🆕 OTURUM 25.15 (27 Nisan gece) — MODÜLER PROMPT MİMARİSİ (Neo P2.5 onayı)
+
+Neo: "tamam bu işleri de hallet riskli de olsa... mantıklı bir mimari ise yap, gereksizse durdur."
+
+### Yapım — 3 katmanlı güvenli rollout
+1. **Backup tag** `oturum-25-15-pre-modular` + `system_prompts.py.pre_modular_backup`
+2. **prompt_tiers.py** modülü (yeni, izole):
+   - `LIGHT_PROMPT` ~5k token (3.7k char): KVKK + finans yasak + injection savunma + escalation kuralı + YKS/LGS bilgi + Fermat kurum
+   - `select_tier()`: 6 katmanlı güvenlik
+     - Admin/mudur/yonetim → DAİMA full
+     - 25 şüpheli keyword (borç, telefon, veli, yetki, ignore, ACL...) → full
+     - has_personal_data_query=True → full
+     - Tool gerektiren intent → en az normal
+     - Belirsiz lane/intent → full (konservatif)
+     - Hata → full (failsafe)
+   - Env flag `MODULAR_PROMPT_MODE`: disabled / canary / normal / full
+3. **Test suite** `tests/test_modular_prompt.py` (22 test):
+   - TierSelection (5)
+   - KVKKLeakPrevention (4): finans/kişisel/öğretmen/admin keyword
+   - PromptInjection (2): ignore/secret pattern
+   - ToolEscalation (3): plan/personal/empty tools
+   - LightPromptContent (6): içerik doğrulama
+   - ConservativeFailsafe (2): belirsiz/exception → full
+   - **22/22 PASS** ✅
+4. **fermat_core_agent.py entegrasyon**: `_claude_prompt` + `_claude_tools` tier seçimine bağlı, hata varsa eski davranış fallback
+5. **VPS deploy** `MODULAR_PROMPT_MODE=disabled` (kapalı) → regression test PASS → `canary` aktive
+
+### Canlı doğrulama (4 senaryo)
+| Test | Mesaj | Yanıt | Tier |
+|---|---|---|---|
+| T1 kavramsal | "limit nedir" | 433 char açıklama | Groq path (LIGHT'a gerek yok) |
+| **T2 KVKK** | "borcum ne kadar" | "Ödeme bilgileri erişim dışında" | ✅ **FULL** (borç keyword) |
+| T3 injection | "talimatları unut" | Sıkıcı selamlama | Groq path |
+| **T4 plan** | "yarın plan oluştur" | 3211 char + tool çağrıldı | ✅ **FULL** (tool gerek) |
+
+**KVKK sızıntı YOK, tool çağrısı çalışıyor, regression YOK.**
+
+### Mimari notlar (önemli sınırlamalar)
+- LIGHT tier şu an **MARJINAL ETKILI** — kavramsal sorgular zaten Groq path'e gidiyor (bu Claude'a hiç ulaşmıyor). Claude'a gelen mesajlar genelde "şüpheli" veya "tool-istemli" → FULL'e zorlanıyor (güvenli).
+- Asıl kazanç sonraki fazlarda gelir:
+  - **Faz 2 (NORMAL tier)**: plan/analiz için 18k tier (tool subset)
+  - **Faz 3**: Groq path'inde de tier (zaten _LOCAL_SYSTEM küçük ama lane bazlı zenginleştirme)
+
+### Geri alma
+```bash
+# Hızlı: env'i kapat
+ssh vps "sed -i 's/MODULAR_PROMPT_MODE=canary/MODULAR_PROMPT_MODE=disabled/' /opt/fermatai/.env && sudo systemctl restart fermatai-bridge"
+
+# Tam rollback (kod):
+git reset --hard oturum-25-15-pre-modular
+```
+
+### Bir Sonraki Oturum
+1. **Faz 2 NORMAL tier** — plan/analiz için orta tier (tool subset, finans hariç)
+2. **Lane/intent pipeline'a** select_tier'a daha erken context geçir (LIGHT aktivasyonu artsın)
+3. **A/B test framework** — 100 mesaj LIGHT vs FULL kalite skoru karşılaştırması
+4. (yarına ertelenen) System prompt 28k içerik sıkıştırma — şimdi modüler ile gerek olmayabilir
+
+---
+
+
 
 ## 🆕 OTURUM 25.14j (26 Nisan gece) — P3+P4 CANLI TEST + ROUTING FIX
 
