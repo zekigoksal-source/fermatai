@@ -96,6 +96,15 @@ _CLOUD_KEYWORDS = [
     "eyotek", "lms", "sisteme yaz",
     # Coklu arac gerektiren
     "planla", "organize et", "duzenleme", "düzenleme",
+    # 25.14i (Neo P3 test): plan/program istegi — daily_brief'i proaktif kullanmak icin Claude zorunlu
+    "plan yap", "plan istiyorum", "plan yapsana", "plan yarat", "plan ver",
+    "calisma plan", "çalışma plan", "calismam plan", "çalışmam plan",
+    "program yap", "program olustur", "program oluştur", "programimi yap",
+    "haftalik plan", "haftalık plan", "gunluk plan", "günlük plan",
+    "ne calisayim", "ne çalışayım", "ne yapayim", "ne yapayım",
+    # Calismam paneli ekle/yaz isteklerinde de Claude (P4 tool sadece Claude'da)
+    "programa ekle", "calismama ekle", "çalışmama ekle", "panele ekle",
+    "ekleyebilir misin", "ekle lutfen", "ekle lütfen",
     # Kisisel veri sorgusu — daha spesifik (tek kelime degil, baglam)
     "ders program", "haftalik program", "haftalık program",
     "deneme analiz", "deneme sonuc", "son deneme",
