@@ -2,715 +2,1060 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Çalışmam · FermatAI</title>
-<!-- Oturum 25.13: ui-ux-pro-max onerisi — Fira Code (data) + Fira Sans (body) -->
+<meta name="theme-color" content="#020203">
+
+<!-- ui-ux-pro-max: "Modern Dark (Cinema Mobile)" + "Dashboard Data" typography -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
 <style>
+/* ═════════════════════════════════════════════════════════════════════════
+   FERMAT AI — STUDENT DAILY DASHBOARD
+   Style: Modern Dark Cinema Mobile + Glassmorphism + Premium
+   Skill: ui-ux-pro-max v1.0 (50 styles + 21 palettes + UX best practices)
+   ═════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  --bg-base: #0F172A;     /* ui-ux-pro-max trust+modern palette */
-  --bg-elevated: rgba(255,255,255,0.04);
-  --bg-card: rgba(255,255,255,0.06);
-  --border: rgba(255,255,255,0.10);
-  --border-hover: rgba(255,255,255,0.20);
-  --text: #f0f4ff;
-  --text-secondary: rgba(240,244,255,0.65);
-  --text-tertiary: rgba(240,244,255,0.35);
-  --accent: #C76F3E;
-  --accent-glow: rgba(199,111,62,0.4);
-  --green: #34d399;
-  --green-glow: rgba(52,211,153,0.3);
-  --yellow: #fbbf24;
-  --red: #f87171;
-  --blue: #60a5fa;
-  --purple: #a78bfa;
-  --gradient-primary: linear-gradient(135deg, #C76F3E 0%, #f59e0b 100%);
-  --gradient-secondary: linear-gradient(135deg, #6366f1 0%, #a78bfa 100%);
-  --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-  --gradient-bg: radial-gradient(at 27% 37%, hsla(215, 50%, 25%, 0.4) 0px, transparent 50%),
-                 radial-gradient(at 97% 21%, hsla(15, 40%, 25%, 0.3) 0px, transparent 50%),
-                 radial-gradient(at 52% 99%, hsla(265, 50%, 30%, 0.3) 0px, transparent 50%);
+  /* Cinema-Mobile palette (skill önerisi) */
+  --bg-deep: #020203;
+  --bg-base: #050506;
+  --bg-elevated: #0a0a0c;
+  --surface-1: rgba(255, 255, 255, 0.025);
+  --surface-2: rgba(255, 255, 255, 0.05);
+  --surface-3: rgba(255, 255, 255, 0.08);
+
+  /* Brand — Fermat altın + Cinema indigo */
+  --brand-gold: #f59e0b;
+  --brand-amber: #fbbf24;
+  --brand-glow: rgba(245, 158, 11, 0.35);
+  --accent-indigo: #5E6AD2;
+  --accent-purple: #8B5CF6;
+  --accent-violet: #A78BFA;
+
+  /* Semantic */
+  --success: #10b981;
+  --success-glow: rgba(16, 185, 129, 0.3);
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* Foreground */
+  --fg: #ededef;
+  --fg-muted: #a8aab2;
+  --fg-tertiary: #6b6e78;
+
+  /* Border / radius / motion */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --radius-sm: 8px;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+  --easing: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Gradients */
+  --gradient-gold: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #f59e0b 100%);
+  --gradient-violet: linear-gradient(135deg, #5E6AD2 0%, #8B5CF6 100%);
+  --gradient-success: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  --gradient-cinema: linear-gradient(180deg, #0a0a0f 0%, #020203 100%);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html { background: var(--bg-deep); }
 
 body {
-  font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: var(--bg-base);
-  background-image: var(--gradient-bg);
-  color: var(--text);
+  font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: var(--gradient-cinema);
+  color: var(--fg);
   min-height: 100vh;
-  line-height: 1.5;
-  overflow-x: hidden;
   letter-spacing: -0.011em;
+  overflow-x: hidden;
+  font-feature-settings: "ss01", "cv11";
 }
 
-/* Animated background orbs */
-body::before, body::after {
-  content: '';
+/* Mono font for data */
+.mono, .stat-value, .timestamp, .number {
+  font-family: 'Fira Code', 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═════ AMBIENT LIGHT BLOBS (skill: cinema mobile prensibi) ═════ */
+.blob-container {
   position: fixed;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.4;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
-  animation: float 20s ease-in-out infinite;
+  overflow: hidden;
 }
-body::before {
-  top: -10%; left: -10%;
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(199,111,62,0.3), transparent);
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.18;
+  will-change: transform;
 }
-body::after {
-  bottom: -15%; right: -15%;
+.blob-1 {
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, var(--brand-gold), transparent 60%);
+  top: -200px; left: -200px;
+  animation: blob-1 28s var(--easing) infinite;
+}
+.blob-2 {
   width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(99,102,241,0.25), transparent);
-  animation-delay: -10s;
+  background: radial-gradient(circle, var(--accent-indigo), transparent 60%);
+  bottom: -150px; right: -150px;
+  animation: blob-2 32s var(--easing) infinite;
 }
-@keyframes float {
-  0%, 100% { transform: translate(0,0) scale(1); }
-  33% { transform: translate(60px,-40px) scale(1.05); }
-  66% { transform: translate(-40px,60px) scale(0.95); }
+.blob-3 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--accent-purple), transparent 60%);
+  top: 40%; left: 50%;
+  animation: blob-3 24s var(--easing) infinite;
+}
+@keyframes blob-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(120px, 60px) scale(1.1); }
+  66%      { transform: translate(-60px, 100px) scale(0.95); }
+}
+@keyframes blob-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-120px, -80px) scale(1.05); }
+}
+@keyframes blob-3 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%      { transform: translate(-30%, -60%) scale(1.15); }
 }
 
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 32px 24px;
-  position: relative;
+/* Mouse-tracked spotlight (premium feel) */
+.spotlight {
+  position: fixed;
+  inset: 0;
   z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    600px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(245, 158, 11, 0.04),
+    transparent 40%
+  );
+  transition: background 0.3s var(--easing);
 }
 
-/* Header */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--border);
-  animation: fadeIn 0.6s ease-out;
+/* Grain texture overlay (cinema feel) */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='0.5'/></svg>");
 }
-.header h1 {
-  font-size: 1.75rem;
+
+/* ═════ LAYOUT ═════ */
+.page {
+  position: relative;
+  z-index: 10;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+/* ═════ HEADER ═════ */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 36px;
+  padding: 14px 22px;
+  background: var(--surface-1);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: slide-down 0.6s var(--easing);
+}
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-weight: 700;
+  font-size: 1.05rem;
   letter-spacing: -0.02em;
 }
-.header h1 .icon {
-  display: inline-block;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  margin-right: 8px;
-  font-size: 1.6rem;
+.brand-mark {
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: var(--gradient-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1a0d00;
+  box-shadow: 0 4px 16px var(--brand-glow),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  letter-spacing: -0.05em;
 }
-.header-actions { display: flex; gap: 12px; }
-.btn-icon {
+.brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.brand-text small { font-size: 0.7rem; color: var(--fg-muted); font-weight: 500; }
+
+.nav-actions { display: flex; gap: 8px; }
+.nav-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  background: var(--bg-card);
+  padding: 9px 18px;
+  background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 0.85rem;
+  border-radius: var(--radius-pill);
+  color: var(--fg);
   text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
   font-weight: 500;
+  transition: all 0.3s var(--easing);
 }
-.btn-icon:hover {
-  background: var(--bg-elevated);
-  border-color: var(--accent);
+.nav-btn:hover {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px var(--accent-glow);
+}
+.nav-btn.primary {
+  background: var(--gradient-gold);
+  color: #1a0d00;
+  border-color: transparent;
+  font-weight: 600;
+  box-shadow: 0 4px 20px var(--brand-glow);
+}
+.nav-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px var(--brand-glow);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Quick stats — top row 4 cards */
-.quick-stats {
+/* ═════ HERO STATS ROW ═════ */
+.hero-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
-  margin-bottom: 32px;
-  animation: fadeIn 0.7s ease-out 0.1s both;
+  margin-bottom: 28px;
+  animation: fade-up 0.7s var(--easing) 0.1s both;
 }
-.stat-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-card {
   position: relative;
+  padding: 22px 24px;
+  background: var(--surface-1);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s var(--easing);
 }
-.stat-card::before {
-  content: '';
+.hero-card::before {
+  content: "";
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 3px;
-  background: var(--gradient-primary);
-  opacity: 0.7;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
-.stat-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--border-hover);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+.hero-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at top right,
+    var(--brand-glow) 0%,
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity 0.4s var(--easing);
+  pointer-events: none;
 }
-.stat-card .label {
-  color: var(--text-secondary);
-  font-size: 0.75rem;
+.hero-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+              0 0 40px rgba(245, 158, 11, 0.08);
+}
+.hero-card:hover::after { opacity: 0.6; }
+
+.hero-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
+  color: var(--fg-muted);
   margin-bottom: 12px;
 }
-.stat-card .value {
-  /* ui-ux-pro-max onerisi: Mono font for data display */
+.hero-icon {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  background: var(--surface-3);
+}
+.hero-value {
   font-family: 'Fira Code', monospace;
-  font-size: 2.25rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  background: var(--gradient-primary);
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  line-height: 1.1;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.stat-card .sub { color: var(--text-tertiary); font-size: 0.8rem; margin-top: 4px; }
-
-/* 7 Module Cards Grid */
-.modules-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-  gap: 20px;
-  animation: fadeIn 0.8s ease-out 0.2s both;
+.hero-card.violet .hero-value { background: var(--gradient-violet); -webkit-background-clip: text; background-clip: text; }
+.hero-card.success .hero-value { background: var(--gradient-success); -webkit-background-clip: text; background-clip: text; }
+.hero-suffix {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--fg-tertiary);
+  font-size: 1rem;
+  font-weight: 400;
+}
+.hero-trend {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-trend .pill {
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
 }
 
-.module-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 24px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* ═════ MODULES GRID (12-COL) ═════ */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+  animation: fade-up 0.8s var(--easing) 0.2s both;
+}
+.module {
   position: relative;
+  background: var(--surface-1);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  transition: all 0.4s var(--easing);
   overflow: hidden;
 }
-.module-card::before {
-  content: '';
+.module::before {
+  content: "";
   position: absolute;
-  top: -50%; right: -50%;
-  width: 200%; height: 200%;
-  background: radial-gradient(circle at center, var(--accent-glow), transparent 50%);
-  opacity: 0;
-  transition: opacity 0.4s;
-  pointer-events: none;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
 }
-.module-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent);
+.module:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+  transform: translateY(-2px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
-.module-card:hover::before { opacity: 0.15; }
 
-.module-header {
+/* Span sizes */
+.col-12 { grid-column: span 12; }
+.col-8  { grid-column: span 8; }
+.col-6  { grid-column: span 6; }
+.col-4  { grid-column: span 4; }
+
+@media (max-width: 1024px) {
+  .col-8, .col-6, .col-4 { grid-column: span 12; }
+}
+
+.module-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
-  position: relative;
 }
 .module-title {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 1.05rem;
+  gap: 14px;
+  font-size: 1rem;
   font-weight: 600;
+  letter-spacing: -0.015em;
 }
-.module-icon {
+.module-glyph {
   width: 40px; height: 40px;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  background: var(--gradient-primary);
-  box-shadow: 0 4px 16px var(--accent-glow);
+  font-size: 1.15rem;
+  background: var(--gradient-gold);
+  box-shadow: 0 6px 20px var(--brand-glow),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  position: relative;
+  overflow: hidden;
 }
-.module-icon.green { background: var(--gradient-success); box-shadow: 0 4px 16px var(--green-glow); }
-.module-icon.purple { background: var(--gradient-secondary); box-shadow: 0 4px 16px rgba(167,139,250,0.4); }
+.module-glyph::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, transparent 50%);
+}
+.module-glyph.violet { background: var(--gradient-violet); box-shadow: 0 6px 20px rgba(94, 106, 210, 0.4); }
+.module-glyph.success { background: var(--gradient-success); box-shadow: 0 6px 20px var(--success-glow); }
+.module-glyph.dark {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
 
-.module-body { min-height: 140px; max-height: 320px; overflow-y: auto; }
+.module-meta {
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
 
-/* Custom scrollbar */
-.module-body::-webkit-scrollbar { width: 4px; }
+.module-body {
+  min-height: 140px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.module-body::-webkit-scrollbar { width: 5px; }
 .module-body::-webkit-scrollbar-track { background: transparent; }
-.module-body::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 2px; }
+.module-body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
 
-.module-footer {
+/* ═════ ROW ITEMS (re-usable) ═════ */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  transition: all 0.25s var(--easing);
+  cursor: pointer;
+  position: relative;
+}
+.row:hover {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+  transform: translateX(2px);
+}
+.row.completed {
+  opacity: 0.45;
+  text-decoration: line-through;
+  text-decoration-color: var(--fg-tertiary);
+}
+
+.checkbox {
+  width: 22px; height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--border-strong);
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s var(--spring);
+  background: var(--surface-1);
+}
+.checkbox:hover {
+  border-color: var(--brand-gold);
+  transform: scale(1.05);
+}
+.checkbox.checked {
+  background: var(--gradient-success);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 14px var(--success-glow);
+}
+.checkbox.checked::after {
+  content: "✓";
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.time-badge {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand-amber);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  min-width: 70px;
+}
+.row-title { flex: 1; font-size: 0.92rem; font-weight: 500; line-height: 1.4; }
+.row-meta { font-size: 0.75rem; color: var(--fg-muted); margin-top: 2px; }
+
+.priority-pill {
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.priority-pill.urgent { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+.priority-pill.high   { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+.priority-pill.normal { background: rgba(94, 106, 210, 0.18); color: #a5b4fc; }
+.priority-pill.low    { background: rgba(255, 255, 255, 0.08); color: var(--fg-muted); }
+
+.day-badge {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(94, 106, 210, 0.15);
+  color: #a5b4fc;
+  min-width: 60px;
+  text-align: center;
+}
+.day-badge.urgent { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+.day-badge.warn { background: rgba(245, 158, 11, 0.15); color: var(--brand-amber); }
+
+.delete-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%) scale(0);
+  background: rgba(239, 68, 68, 0.15);
+  border: none;
+  color: #fca5a5;
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s var(--spring);
+}
+.row:hover .delete-btn { transform: translateY(-50%) scale(1); }
+.delete-btn:hover { background: rgba(239, 68, 68, 0.3); }
+
+/* ═════ ADD FORMS ═════ */
+.add-row {
+  display: flex;
+  gap: 8px;
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Item rows */
-.item-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  margin-bottom: 6px;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-.item-row:hover { background: var(--bg-elevated); }
-.item-row.completed {
-  opacity: 0.5;
-  text-decoration: line-through;
-}
-.item-row .checkbox {
-  width: 20px; height: 20px;
-  border-radius: 5px;
-  border: 1.5px solid var(--border-hover);
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.item-row .checkbox.checked {
-  background: var(--gradient-success);
-  border-color: transparent;
-  color: white;
-}
-.item-row .checkbox.checked::after { content: '✓'; font-size: 12px; font-weight: 700; }
-.item-row .time {
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-  min-width: 70px;
-}
-.item-row .title { flex: 1; font-size: 0.92rem; }
-.item-row .priority-badge {
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-.item-row .priority-badge.urgent { background: rgba(248,113,113,0.18); color: var(--red); }
-.item-row .priority-badge.high { background: rgba(251,191,36,0.18); color: var(--yellow); }
-.item-row .priority-badge.normal { background: rgba(96,165,250,0.18); color: var(--blue); }
-.item-row .delete-btn {
-  opacity: 0;
-  background: none;
-  border: none;
-  color: var(--red);
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-}
-.item-row:hover .delete-btn { opacity: 1; }
-.item-row .delete-btn:hover { background: rgba(248,113,113,0.15); }
-
-/* Add item input */
-.add-form {
-  display: flex;
-  gap: 8px;
-  width: 100%;
 }
 .add-input {
   flex: 1;
-  padding: 10px 14px;
+  padding: 11px 14px;
   background: var(--bg-base);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
+  border-radius: 10px;
+  color: var(--fg);
+  font-family: inherit;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: all 0.2s var(--easing);
 }
 .add-input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  border-color: var(--brand-gold);
+  background: var(--bg-deep);
+  box-shadow: 0 0 0 3px var(--brand-glow);
 }
-.add-input::placeholder { color: var(--text-tertiary); }
+.add-input::placeholder { color: var(--fg-tertiary); }
 .add-btn {
-  padding: 10px 16px;
-  background: var(--gradient-primary);
+  padding: 11px 18px;
+  background: var(--gradient-gold);
   border: none;
-  border-radius: 8px;
-  color: white;
+  border-radius: 10px;
+  color: #1a0d00;
+  font-family: inherit;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: all 0.25s var(--spring);
+  box-shadow: 0 4px 14px var(--brand-glow);
 }
 .add-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px var(--accent-glow);
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 20px var(--brand-glow);
 }
+.add-btn:active { transform: scale(0.98); }
 
-/* Empty state */
-.empty-state {
-  text-align: center;
-  padding: 30px 20px;
-  color: var(--text-tertiary);
-  font-size: 0.85rem;
+/* Habit grid */
+.habit-block {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: all 0.3s var(--easing);
 }
-.empty-state .emoji { font-size: 2rem; margin-bottom: 10px; opacity: 0.5; }
-
-/* Habit grid (7 days) */
+.habit-block:hover {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+}
+.habit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.habit-name { font-size: 0.92rem; font-weight: 600; }
+.habit-streak {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--brand-amber);
+  font-weight: 600;
+}
+.habit-streak.hot { background: var(--gradient-gold); color: #1a0d00; box-shadow: 0 0 16px var(--brand-glow); }
 .habit-week {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  margin-top: 8px;
+  gap: 5px;
 }
 .habit-day {
-  height: 28px;
-  border-radius: 6px;
+  aspect-ratio: 1;
+  min-height: 32px;
+  border-radius: 8px;
   background: var(--bg-base);
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
-  color: var(--text-tertiary);
-  transition: all 0.2s;
+  color: var(--fg-tertiary);
   cursor: pointer;
+  transition: all 0.25s var(--spring);
+  font-family: 'Fira Code', monospace;
+  font-weight: 600;
+}
+.habit-day:hover {
+  border-color: var(--brand-gold);
+  transform: scale(1.05);
 }
 .habit-day.done {
   background: var(--gradient-success);
-  color: white;
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 8px var(--success-glow);
+}
+.habit-day.today {
+  border-color: var(--brand-gold);
+  border-width: 2px;
+}
+
+/* Stats / chart */
+.chart-wrapper {
+  position: relative;
+  height: 200px;
+  margin: 14px 0;
+}
+.log-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.6fr auto;
+  gap: 8px;
+  align-items: end;
+}
+.log-form .field { display: flex; flex-direction: column; gap: 4px; }
+.log-form label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.log-form input {
+  padding: 10px 12px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--fg);
+  font-family: 'Fira Code', monospace;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  transition: all 0.2s;
+}
+.log-form input:focus { outline: none; border-color: var(--brand-gold); }
+.log-form input[type="text"] { font-family: inherit; }
+
+/* Activity card */
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  transition: all 0.2s var(--easing);
+}
+.activity-row:hover { background: var(--surface-3); }
+.activity-row .date {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  min-width: 50px;
+}
+.activity-row .name { flex: 1; font-size: 0.88rem; }
+.activity-row .duration {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.85rem;
+  color: var(--success);
   font-weight: 600;
 }
 
-/* Quick log button (study session) */
-.quick-log {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 12px;
+/* Notes / mood */
+.note-area {
+  width: 100%;
+  min-height: 90px;
+  padding: 14px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 0.92rem;
+  resize: vertical;
+  transition: all 0.2s var(--easing);
+  line-height: 1.6;
 }
-.quick-log .input-group label {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
+.note-area:focus {
+  outline: none;
+  border-color: var(--brand-gold);
+  box-shadow: 0 0 0 3px var(--brand-glow);
+}
+.mood-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+.mood-pill {
+  padding: 8px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all 0.25s var(--spring);
+  user-select: none;
+}
+.mood-pill:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+.mood-pill.selected {
+  background: var(--gradient-gold);
+  color: #1a0d00;
+  border-color: transparent;
+  box-shadow: 0 4px 16px var(--brand-glow);
+}
+
+/* Empty state */
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--fg-tertiary);
+}
+.empty .glyph {
+  font-size: 2.6rem;
+  margin-bottom: 12px;
+  opacity: 0.4;
   display: block;
 }
-.quick-log input {
-  padding: 8px 12px;
-  background: var(--bg-base);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  font-size: 0.9rem;
-  width: 100%;
-}
+.empty p { font-size: 0.88rem; margin-bottom: 4px; }
+.empty small { font-size: 0.75rem; opacity: 0.7; }
 
-/* Mood selector */
-.mood-selector {
-  display: flex;
-  gap: 6px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
-.mood-chip {
-  padding: 6px 12px;
-  background: var(--bg-base);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  transition: all 0.2s;
-}
-.mood-chip:hover { border-color: var(--accent); }
-.mood-chip.selected {
-  background: var(--gradient-primary);
-  border-color: transparent;
-  color: white;
-}
-
-/* Note textarea */
-.note-input {
-  width: 100%;
-  min-height: 80px;
-  padding: 12px;
-  background: var(--bg-base);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  font-family: inherit;
-  font-size: 0.9rem;
-  resize: vertical;
-}
-.note-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-/* Activity item */
-.activity-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--bg-elevated);
-  border-radius: 8px;
-  margin-bottom: 6px;
-  font-size: 0.88rem;
-}
-.activity-item .date { color: var(--text-tertiary); font-size: 0.75rem; min-width: 60px; }
-.activity-item .duration { color: var(--green); font-weight: 600; min-width: 60px; }
-
-/* Chart container */
-.chart-wrap {
-  position: relative;
-  height: 180px;
-  margin-top: 12px;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .container { padding: 20px 16px; }
-  .header h1 { font-size: 1.4rem; }
-  .modules-grid { grid-template-columns: 1fr; }
-  .quick-stats { grid-template-columns: repeat(2, 1fr); }
-  .stat-card .value { font-size: 1.75rem; }
-}
-
-/* Loading spinner */
-.spinner {
-  width: 16px; height: 16px;
-  border: 2px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Toast notification */
+/* Toast */
 .toast {
   position: fixed;
   bottom: 32px;
   right: 32px;
-  padding: 14px 20px;
+  padding: 14px 22px;
   background: var(--gradient-success);
-  color: white;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-  z-index: 1000;
+  color: #fff;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5),
+              0 0 30px var(--success-glow);
   transform: translateX(120%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-weight: 500;
+  transition: transform 0.4s var(--spring);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .toast.show { transform: translateX(0); }
-.toast.error { background: linear-gradient(135deg, #f87171, #ef4444); }
+.toast.error {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  box-shadow: 0 16px 40px rgba(239, 68, 68, 0.4);
+}
+
+/* Spinner */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--brand-gold);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Loading state */
+.loading-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  width: 0;
+  background: var(--gradient-gold);
+  box-shadow: 0 0 10px var(--brand-glow);
+  z-index: 9999;
+  transition: width 0.3s var(--easing);
+}
+.loading-bar.active { width: 80%; }
+.loading-bar.done { width: 100%; opacity: 0; transition: width 0.2s, opacity 0.4s 0.2s; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page { padding: 20px 14px 60px; }
+  .topbar { padding: 10px 14px; flex-wrap: wrap; gap: 10px; }
+  .brand-text small { display: none; }
+  .nav-btn { padding: 8px 14px; font-size: 0.8rem; }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .hero-card { padding: 18px; }
+  .hero-value { font-size: 2rem; }
+  .module { padding: 18px; }
+  .log-form { grid-template-columns: 1fr 1fr; }
+}
 </style>
 </head>
 <body>
 
-<div class="container">
+<!-- Background ambient layers -->
+<div class="loading-bar" id="loadingBar"></div>
+<div class="blob-container">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+<div class="spotlight"></div>
+<div class="grain"></div>
 
-  <header class="header">
-    <h1><span class="icon">📚</span>Çalışmam</h1>
-    <div class="header-actions">
-      <a href="/chat" class="btn-icon">
+<main class="page">
+
+  <!-- Top navigation -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">F</div>
+      <div class="brand-text">
+        <span>Çalışmam</span>
+        <small>FermatAI · Öğrenci Paneli</small>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <button class="nav-btn" onclick="refreshAll()">
+        <span class="mono">↻</span> Yenile
+      </button>
+      <a href="/chat" class="nav-btn primary">
         <span>💬</span> Sohbet
       </a>
-      <button class="btn-icon" onclick="refreshAll()">
-        <span>↻</span> Yenile
-      </button>
     </div>
   </header>
 
-  <!-- Quick stats: bugün özeti -->
-  <section class="quick-stats">
-    <div class="stat-card">
-      <div class="label">Bugün Çalışma</div>
-      <div class="value" id="stat-minutes">0</div>
-      <div class="sub">dakika</div>
+  <!-- Hero stats: 4 KPI -->
+  <section class="hero-stats">
+    <div class="hero-card">
+      <div class="hero-label"><span class="hero-icon">⏱</span>Bugün Çalışma</div>
+      <div class="hero-value"><span id="stat-minutes">0</span><span class="hero-suffix">dk</span></div>
+      <div class="hero-trend"><span class="pill" id="stat-minutes-trend">+0</span>haftalık ortalamaya göre</div>
     </div>
-    <div class="stat-card">
-      <div class="label">Çözülen Soru</div>
-      <div class="value" id="stat-questions">0</div>
-      <div class="sub">bugün</div>
+    <div class="hero-card violet">
+      <div class="hero-label"><span class="hero-icon">📐</span>Çözülen Soru</div>
+      <div class="hero-value"><span id="stat-questions">0</span><span class="hero-suffix">soru</span></div>
+      <div class="hero-trend">bugün</div>
     </div>
-    <div class="stat-card">
-      <div class="label">Açık Görev</div>
-      <div class="value" id="stat-todos">0</div>
-      <div class="sub">to-do</div>
+    <div class="hero-card success">
+      <div class="hero-label"><span class="hero-icon">✓</span>Açık Görev</div>
+      <div class="hero-value"><span id="stat-todos">0</span></div>
+      <div class="hero-trend" id="stat-todos-trend">to-do listesi</div>
     </div>
-    <div class="stat-card">
-      <div class="label">Yaklaşan Sınav</div>
-      <div class="value" id="stat-events">0</div>
-      <div class="sub">30 gün</div>
+    <div class="hero-card">
+      <div class="hero-label"><span class="hero-icon">🎓</span>Yaklaşan Sınav</div>
+      <div class="hero-value"><span id="stat-events">0</span></div>
+      <div class="hero-trend" id="stat-events-trend">30 gün içinde</div>
     </div>
   </section>
 
-  <!-- 7 modül grid -->
-  <section class="modules-grid">
+  <!-- 7 module dashboard grid -->
+  <section class="dashboard-grid">
 
-    <!-- 1. GÜNLÜK PROGRAM -->
-    <div class="module-card">
-      <div class="module-header">
+    <!-- 1. GÜNLÜK PROGRAM (col-8) -->
+    <div class="module col-8">
+      <div class="module-head">
         <div class="module-title">
-          <div class="module-icon">📅</div>
+          <div class="module-glyph">📅</div>
           <div>Günlük Program</div>
         </div>
+        <div class="module-meta" id="program-date"></div>
       </div>
       <div class="module-body" id="program-list"></div>
-      <div class="module-footer">
-        <form class="add-form" onsubmit="event.preventDefault(); addProgram();">
-          <input class="add-input" id="program-time" type="text" placeholder="09:00" style="max-width:80px;" maxlength="5">
-          <input class="add-input" id="program-title" type="text" placeholder="AYT Matematik 35. Video" required>
-          <button class="add-btn" type="submit">Ekle</button>
-        </form>
-      </div>
+      <form class="add-row" onsubmit="event.preventDefault(); addProgram();">
+        <input class="add-input" id="program-time" type="text" placeholder="09:00" maxlength="5" style="max-width:90px;text-align:center;font-family:'Fira Code',monospace;">
+        <input class="add-input" id="program-title" type="text" placeholder="AYT Matematik 35. Video" required>
+        <button class="add-btn" type="submit">Ekle</button>
+      </form>
     </div>
 
-    <!-- 2. TO DO LIST -->
-    <div class="module-card">
-      <div class="module-header">
+    <!-- 2. TODO (col-4) -->
+    <div class="module col-4">
+      <div class="module-head">
         <div class="module-title">
-          <div class="module-icon green">✅</div>
+          <div class="module-glyph success">✅</div>
           <div>Yapılacaklar</div>
         </div>
       </div>
       <div class="module-body" id="todo-list"></div>
-      <div class="module-footer">
-        <form class="add-form" onsubmit="event.preventDefault(); addTodo();">
-          <input class="add-input" id="todo-title" type="text" placeholder="Yeni görev ekle..." required>
-          <button class="add-btn" type="submit">Ekle</button>
-        </form>
-      </div>
+      <form class="add-row" onsubmit="event.preventDefault(); addTodo();">
+        <input class="add-input" id="todo-title" type="text" placeholder="Yeni görev..." required>
+        <button class="add-btn" type="submit">+</button>
+      </form>
     </div>
 
-    <!-- 3. ALIŞKANLIKLAR -->
-    <div class="module-card">
-      <div class="module-header">
+    <!-- 3. ALIŞKANLIK (col-4) -->
+    <div class="module col-4">
+      <div class="module-head">
         <div class="module-title">
-          <div class="module-icon purple">🎯</div>
+          <div class="module-glyph violet">🎯</div>
           <div>Alışkanlıklar</div>
         </div>
       </div>
       <div class="module-body" id="habits-list"></div>
-      <div class="module-footer">
-        <form class="add-form" onsubmit="event.preventDefault(); addHabit();">
-          <input class="add-input" id="habit-name" type="text" placeholder="30 dk paragraf çözümü" required>
-          <button class="add-btn" type="submit">Ekle</button>
-        </form>
-      </div>
+      <form class="add-row" onsubmit="event.preventDefault(); addHabit();">
+        <input class="add-input" id="habit-name" type="text" placeholder="30 dk paragraf çözümü" required>
+        <button class="add-btn" type="submit">+</button>
+      </form>
     </div>
 
-    <!-- 4. SINAV/ÖDEV TAKVİMİ -->
-    <div class="module-card">
-      <div class="module-header">
+    <!-- 4. SINAV/ÖDEV (col-4) -->
+    <div class="module col-4">
+      <div class="module-head">
         <div class="module-title">
-          <div class="module-icon">🎓</div>
-          <div>Sınavlar / Ödevler</div>
+          <div class="module-glyph">🎓</div>
+          <div>Sınav/Ödev Takvimi</div>
         </div>
       </div>
       <div class="module-body" id="events-list"></div>
-      <div class="module-footer">
-        <form class="add-form" onsubmit="event.preventDefault(); addEvent();">
-          <input class="add-input" id="event-date" type="date" style="max-width:150px;" required>
-          <input class="add-input" id="event-title" type="text" placeholder="1 Haziran Matematik" required>
-          <button class="add-btn" type="submit">Ekle</button>
-        </form>
-      </div>
+      <form class="add-row" onsubmit="event.preventDefault(); addEvent();">
+        <input class="add-input" id="event-date" type="date" required style="max-width:160px;">
+        <input class="add-input" id="event-title" type="text" placeholder="Deneme..." required>
+        <button class="add-btn" type="submit">+</button>
+      </form>
     </div>
 
-    <!-- 5. ÇALIŞMA İSTATİSTİKLERİ -->
-    <div class="module-card">
-      <div class="module-header">
+    <!-- 5. STATS (col-8) -->
+    <div class="module col-4">
+      <div class="module-head">
         <div class="module-title">
-          <div class="module-icon green">📊</div>
+          <div class="module-glyph success">📊</div>
           <div>Çalışma İstatistikleri</div>
         </div>
+        <div class="module-meta">Son 7 gün</div>
       </div>
-      <div class="module-body">
-        <div class="chart-wrap"><canvas id="chart-stats"></canvas></div>
-        <div class="quick-log">
-          <div class="input-group">
+      <div class="chart-wrapper"><canvas id="chart-stats"></canvas></div>
+      <div class="add-row" style="border-top:none;padding-top:0;">
+        <div class="log-form" style="width:100%;">
+          <div class="field">
             <label>Süre (dk)</label>
             <input id="log-minutes" type="number" min="0" max="600" value="30">
           </div>
-          <div class="input-group">
-            <label>Çözülen Soru</label>
+          <div class="field">
+            <label>Soru</label>
             <input id="log-questions" type="number" min="0" max="500" value="10">
           </div>
+          <div class="field">
+            <label>Ders</label>
+            <input id="log-ders" type="text" placeholder="Matematik">
+          </div>
+          <button class="add-btn" onclick="logSession()">Kaydet</button>
         </div>
-      </div>
-      <div class="module-footer">
-        <input class="add-input" id="log-ders" type="text" placeholder="Matematik (opsiyonel)" style="max-width:160px;">
-        <button class="add-btn" onclick="logSession()">Kaydet</button>
       </div>
     </div>
 
-    <!-- 6. FİZİKSEL AKTİVİTE -->
-    <div class="module-card">
-      <div class="module-header">
+    <!-- 6. PHYSICAL ACTIVITY (col-4) -->
+    <div class="module col-4">
+      <div class="module-head">
         <div class="module-title">
-          <div class="module-icon">🏃</div>
+          <div class="module-glyph dark">🏃</div>
           <div>Fiziksel Aktivite</div>
         </div>
       </div>
       <div class="module-body" id="activity-list"></div>
-      <div class="module-footer">
-        <form class="add-form" onsubmit="event.preventDefault(); addActivity();">
-          <input class="add-input" id="activity-type" type="text" placeholder="Yürüyüş" style="max-width:120px;" required>
-          <input class="add-input" id="activity-min" type="number" min="0" placeholder="dk" style="max-width:70px;" required>
-          <button class="add-btn" type="submit">Ekle</button>
-        </form>
-      </div>
+      <form class="add-row" onsubmit="event.preventDefault(); addActivity();">
+        <input class="add-input" id="activity-type" type="text" placeholder="Yürüyüş" required style="max-width:120px;">
+        <input class="add-input" id="activity-min" type="number" min="0" placeholder="dk" required style="max-width:80px;text-align:center;font-family:'Fira Code',monospace;">
+        <button class="add-btn" type="submit">+</button>
+      </form>
     </div>
 
-    <!-- 7. BUGÜNKÜ NOTUM -->
-    <div class="module-card">
-      <div class="module-header">
+    <!-- 7. DAILY NOTE (col-4) -->
+    <div class="module col-4">
+      <div class="module-head">
         <div class="module-title">
-          <div class="module-icon purple">💭</div>
+          <div class="module-glyph violet">💭</div>
           <div>Bugünkü Notum</div>
         </div>
       </div>
       <div class="module-body">
-        <textarea class="note-input" id="note-text" placeholder="Bugün nasıl gitti? Verimli, dağınık, motiveli..."></textarea>
-        <div class="mood-selector" id="mood-chips">
-          <div class="mood-chip" data-mood="verimli">⚡ Verimli</div>
-          <div class="mood-chip" data-mood="motiveli">🚀 Motiveli</div>
-          <div class="mood-chip" data-mood="normal">🌟 Normal</div>
-          <div class="mood-chip" data-mood="yorgun">😴 Yorgun</div>
-          <div class="mood-chip" data-mood="stresli">😰 Stresli</div>
+        <textarea class="note-area" id="note-text" placeholder="Bugün nasıl gitti? Verimli, dağınık, motiveli..."></textarea>
+        <div class="mood-row" id="mood-row">
+          <div class="mood-pill" data-mood="verimli">⚡ Verimli</div>
+          <div class="mood-pill" data-mood="motiveli">🚀 Motiveli</div>
+          <div class="mood-pill" data-mood="normal">🌟 Normal</div>
+          <div class="mood-pill" data-mood="yorgun">😴 Yorgun</div>
+          <div class="mood-pill" data-mood="stresli">😰 Stresli</div>
         </div>
-      </div>
-      <div class="module-footer">
-        <button class="add-btn" onclick="saveNote()" style="width:100%;">Notu Kaydet</button>
+        <button class="add-btn" onclick="saveNote()" style="width:100%;padding:12px;">Notu Kaydet</button>
       </div>
     </div>
 
   </section>
-</div>
+</main>
 
 <div class="toast" id="toast"></div>
 
@@ -719,34 +1064,48 @@ const URL_TOKEN = new URLSearchParams(location.search).get('token') || '';
 let selectedMood = 'normal';
 let chartStats = null;
 
+// ═════ Mouse spotlight tracking ═════
+window.addEventListener('mousemove', (e) => {
+  document.documentElement.style.setProperty('--mx', e.clientX + 'px');
+  document.documentElement.style.setProperty('--my', e.clientY + 'px');
+});
+
+// Loading bar animation
+const lb = document.getElementById('loadingBar');
+function loadingStart() { lb.classList.remove('done'); lb.classList.add('active'); }
+function loadingEnd()   { lb.classList.add('done'); setTimeout(()=>{ lb.classList.remove('active','done'); }, 600); }
+
 async function api(path, opts={}) {
+  loadingStart();
   let url = path;
-  if (URL_TOKEN) {
-    url += (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(URL_TOKEN);
-  }
-  const r = await fetch(url, {credentials:'include', ...opts});
-  if (!r.ok) {
-    if (r.status === 401) {
-      window.location.href = '/chat?next=/student/daily/dashboard';
-      return null;
+  if (URL_TOKEN) url += (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(URL_TOKEN);
+  try {
+    const r = await fetch(url, {credentials:'include', ...opts});
+    if (!r.ok) {
+      if (r.status === 401) { location.href = '/chat?next=/student/daily/dashboard'; return null; }
+      throw new Error(r.status);
     }
-    throw new Error(r.status);
+    return await r.json();
+  } finally {
+    loadingEnd();
   }
-  return r.json();
 }
 
 function toast(msg, isError=false) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast ' + (isError ? 'error show' : 'show');
+  t.innerHTML = (isError?'⚠️ ':'✓ ') + msg;
+  t.className = 'toast' + (isError?' error':'') + ' show';
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 function escapeHTML(s) {
   if (!s) return '';
-  return String(s).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.toLocaleDateString('tr-TR', {weekday:'long', day:'numeric', month:'long'});
 }
 
 async function loadAll() {
@@ -754,11 +1113,23 @@ async function loadAll() {
     const data = await api('/student/daily/summary');
     if (!data) return;
 
-    // Quick stats
-    document.getElementById('stat-minutes').textContent = data.today_stats?.total_minutes || 0;
-    document.getElementById('stat-questions').textContent = data.today_stats?.questions_solved || 0;
-    document.getElementById('stat-todos').textContent = (data.open_todos || []).length;
-    document.getElementById('stat-events').textContent = (data.upcoming_events || []).length;
+    // Hero stats
+    const totMin = data.today_stats?.total_minutes || 0;
+    const totQ = data.today_stats?.questions_solved || 0;
+    document.getElementById('stat-minutes').textContent = totMin;
+    document.getElementById('stat-questions').textContent = totQ;
+    document.getElementById('stat-todos').textContent = (data.open_todos||[]).length;
+    document.getElementById('stat-events').textContent = (data.upcoming_events||[]).length;
+
+    // Trend pill (7d avg)
+    const weekAvg = data.weekly_stats?.avg_minutes_per_day || 0;
+    const diff = totMin - weekAvg;
+    const trendEl = document.getElementById('stat-minutes-trend');
+    trendEl.textContent = (diff >= 0 ? '+' : '') + Math.round(diff) + ' dk';
+    trendEl.style.background = diff >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+    trendEl.style.color = diff >= 0 ? 'var(--success)' : '#fca5a5';
+
+    document.getElementById('program-date').textContent = todayStr();
 
     renderProgram(data.today_program || []);
     renderTodos(data.open_todos || []);
@@ -766,137 +1137,167 @@ async function loadAll() {
     renderEvents(data.upcoming_events || []);
     renderActivities(data.recent_activities || []);
     renderStats(data.weekly_stats || {});
-    renderNote(data.today_note || null);
-  } catch (e) {
+    renderNote(data.today_note);
+  } catch(e) {
     console.error(e);
-    toast('Veri yüklenemedi', true);
+    toast('Yüklenirken hata oluştu', true);
   }
 }
 
 function renderProgram(items) {
   const c = document.getElementById('program-list');
   if (!items.length) {
-    c.innerHTML = '<div class="empty-state"><div class="emoji">📅</div>Bugün için program yok. Yeni blok ekle.</div>';
+    c.innerHTML = '<div class="empty"><span class="glyph">📅</span><p>Bugün için program yok</p><small>İlk bloğunu eklemeye başla!</small></div>';
     return;
   }
   c.innerHTML = items.map(p => `
-    <div class="item-row ${p.completed?'completed':''}">
-      <div class="checkbox ${p.completed?'checked':''}" onclick="completeProgram(${p.id})"></div>
-      <div class="time">${p.start_time||''}${p.end_time?' - '+p.end_time:''}</div>
-      <div class="title">${escapeHTML(p.title)}</div>
+    <div class="row${p.completed?' completed':''}">
+      <div class="checkbox${p.completed?' checked':''}" onclick="completeProgram(${p.id})"></div>
+      <div class="time-badge">${(p.start_time||'').slice(0,5)}${p.end_time?' - '+p.end_time.slice(0,5):''}</div>
+      <div style="flex:1;">
+        <div class="row-title">${escapeHTML(p.title)}</div>
+        ${p.ders?`<div class="row-meta">${escapeHTML(p.ders)}${p.konu?' · '+escapeHTML(p.konu):''}</div>`:''}
+      </div>
       <button class="delete-btn" onclick="event.stopPropagation();deleteProgram(${p.id})">×</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function renderTodos(items) {
   const c = document.getElementById('todo-list');
   if (!items.length) {
-    c.innerHTML = '<div class="empty-state"><div class="emoji">✨</div>Tüm görevlerini tamamladın!</div>';
+    c.innerHTML = '<div class="empty"><span class="glyph">✨</span><p>Tüm görevler tamam!</p></div>';
     return;
   }
   c.innerHTML = items.map(t => `
-    <div class="item-row">
+    <div class="row">
       <div class="checkbox" onclick="completeTodo(${t.id})"></div>
-      <div class="title">${escapeHTML(t.title)}</div>
-      ${t.priority && t.priority !== 'normal' ? `<span class="priority-badge ${t.priority}">${t.priority}</span>` : ''}
+      <div class="row-title" style="flex:1;">${escapeHTML(t.title)}</div>
+      ${t.priority && t.priority !== 'normal' ? `<span class="priority-pill ${t.priority}">${t.priority}</span>` : ''}
       <button class="delete-btn" onclick="event.stopPropagation();deleteTodo(${t.id})">×</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function renderHabits(items) {
   const c = document.getElementById('habits-list');
   if (!items.length) {
-    c.innerHTML = '<div class="empty-state"><div class="emoji">🎯</div>Henüz alışkanlık yok. Bir tane ekle!</div>';
+    c.innerHTML = '<div class="empty"><span class="glyph">🎯</span><p>Henüz alışkanlık yok</p><small>Düzenli rutinler ekle</small></div>';
     return;
   }
   const today = new Date().toISOString().slice(0,10);
   c.innerHTML = items.map(h => {
     const days7 = h.recent_7d || [];
-    const dayHTML = [];
-    for (let i = 6; i >= 0; i--) {
+    let dayHTML = '';
+    for (let i=6; i>=0; i--) {
       const d = new Date(); d.setDate(d.getDate()-i);
       const ds = d.toISOString().slice(0,10);
       const log = days7.find(x => x.date === ds);
       const done = log && log.done;
-      const dayLabel = ['Pz','Pt','Sa','Ça','Pe','Cu','Ct'][d.getDay()];
-      dayHTML.push(`<div class="habit-day ${done?'done':''}" onclick="logHabit(${h.id}, '${ds}', ${!done})">${dayLabel}</div>`);
+      const isToday = ds === today;
+      const lbl = ['Pz','Pt','Sa','Ça','Pe','Cu','Ct'][d.getDay()];
+      dayHTML += `<div class="habit-day ${done?'done':''} ${isToday?'today':''}" onclick="logHabit(${h.id},'${ds}',${!done})">${lbl}</div>`;
     }
+    const streakClass = (h.streak||0) >= 7 ? 'hot' : '';
     return `
-      <div style="margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.9rem;">
-          <strong>${escapeHTML(h.habit_name)}</strong>
-          <span style="font-size:0.75rem;color:var(--green);">🔥 ${h.streak||0} streak</span>
+      <div class="habit-block">
+        <div class="habit-head">
+          <div class="habit-name">${escapeHTML(h.habit_name)}</div>
+          <div class="habit-streak ${streakClass}">🔥 ${h.streak||0} gün</div>
         </div>
-        <div class="habit-week">${dayHTML.join('')}</div>
-      </div>
-    `;
+        <div class="habit-week">${dayHTML}</div>
+      </div>`;
   }).join('');
 }
 
 function renderEvents(items) {
   const c = document.getElementById('events-list');
   if (!items.length) {
-    c.innerHTML = '<div class="empty-state"><div class="emoji">🎓</div>Yaklaşan sınav yok.</div>';
+    c.innerHTML = '<div class="empty"><span class="glyph">🎓</span><p>Yaklaşan sınav yok</p></div>';
     return;
   }
   c.innerHTML = items.slice(0,8).map(e => {
     const d = new Date(e.event_date);
     const days = Math.ceil((d - new Date()) / 86400000);
-    const dayBadge = days <= 0 ? 'Bugün' : days === 1 ? 'Yarın' : `${days} gün`;
-    const colorClass = days <= 3 ? 'urgent' : days <= 7 ? 'high' : 'normal';
+    let dayLabel, cls;
+    if (days <= 0) { dayLabel = 'Bugün'; cls = 'urgent'; }
+    else if (days === 1) { dayLabel = 'Yarın'; cls = 'urgent'; }
+    else if (days <= 7) { dayLabel = days+'g'; cls = 'warn'; }
+    else { dayLabel = days+'g'; cls = ''; }
     return `
-      <div class="item-row">
-        <span class="priority-badge ${colorClass}" style="min-width:50px;text-align:center;">${dayBadge}</span>
+      <div class="row">
+        <div class="day-badge ${cls}">${dayLabel}</div>
         <div style="flex:1;">
-          <div class="title">${escapeHTML(e.title)}</div>
-          <div style="font-size:0.75rem;color:var(--text-tertiary);">${e.event_date}</div>
+          <div class="row-title">${escapeHTML(e.title)}</div>
+          <div class="row-meta">${e.event_date}${e.ders?' · '+escapeHTML(e.ders):''}</div>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
 function renderActivities(items) {
   const c = document.getElementById('activity-list');
   if (!items.length) {
-    c.innerHTML = '<div class="empty-state"><div class="emoji">🏃</div>Henüz aktivite yok. Hareket et!</div>';
+    c.innerHTML = '<div class="empty"><span class="glyph">🏃</span><p>Hareket vakti!</p></div>';
     return;
   }
-  c.innerHTML = items.slice(0,5).map(a => `
-    <div class="activity-item">
-      <span class="date">${a.log_date.slice(5)}</span>
-      <span style="flex:1;">${escapeHTML(a.activity_type)}</span>
-      <span class="duration">${a.duration_minutes} dk</span>
-    </div>
-  `).join('');
+  c.innerHTML = items.slice(0,6).map(a => `
+    <div class="activity-row">
+      <span class="date">${(a.log_date||'').slice(5)}</span>
+      <span class="name">${escapeHTML(a.activity_type)}</span>
+      <span class="duration">${a.duration_minutes}dk</span>
+    </div>`).join('');
 }
 
 function renderStats(weekly) {
   const ctx = document.getElementById('chart-stats');
   if (!ctx) return;
   const daily = weekly.daily || [];
-
   if (chartStats) chartStats.destroy();
+
+  // Gradient fill
+  const c = ctx.getContext('2d');
+  const grad = c.createLinearGradient(0, 0, 0, 200);
+  grad.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
+  grad.addColorStop(1, 'rgba(245, 158, 11, 0.02)');
+
   chartStats = new Chart(ctx, {
-    type: 'bar',
+    type: 'line',
     data: {
       labels: daily.map(d => d.date.slice(5)),
       datasets: [{
         label: 'Dakika',
         data: daily.map(d => d.minutes),
-        backgroundColor: 'rgba(199,111,62,0.8)',
-        borderRadius: 6,
+        borderColor: '#f59e0b',
+        backgroundColor: grad,
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#f59e0b',
+        pointBorderColor: '#020203',
+        pointBorderWidth: 2,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.4,
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: {display:false},
+        tooltip: {
+          backgroundColor: 'rgba(10,10,12,0.95)',
+          titleColor: '#fff', bodyColor: '#a8aab2',
+          borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+          padding: 12, cornerRadius: 10,
+          titleFont: {family:"'Fira Sans',sans-serif"},
+          bodyFont: {family:"'Fira Code',monospace"},
+        }
+      },
       scales: {
-        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } },
-        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+        y: { beginAtZero: true,
+             grid: { color:'rgba(255,255,255,0.04)' },
+             ticks: { color:'#6b6e78', font:{family:"'Fira Code',monospace",size:10} } },
+        x: { grid: {display:false},
+             ticks: { color:'#6b6e78', font:{family:"'Fira Code',monospace",size:10} } }
       }
     }
   });
@@ -907,98 +1308,69 @@ function renderNote(note) {
     document.getElementById('note-text').value = note.note || '';
     if (note.mood) {
       selectedMood = note.mood;
-      document.querySelectorAll('.mood-chip').forEach(c => {
-        c.classList.toggle('selected', c.dataset.mood === note.mood);
-      });
+      document.querySelectorAll('.mood-pill').forEach(c => c.classList.toggle('selected', c.dataset.mood === note.mood));
     }
   }
 }
 
-// Event handlers
+// ═════ ACTIONS ═════
 async function addProgram() {
   const time = document.getElementById('program-time').value || '09:00';
   const title = document.getElementById('program-title').value.trim();
   if (!title) return;
   try {
-    await api('/student/daily/program', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({title, start_time: time}),
-    });
+    await api('/student/daily/program', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({title, start_time: time})});
     document.getElementById('program-title').value = '';
     document.getElementById('program-time').value = '';
-    toast('Program eklendi ✓');
-    loadAll();
-  } catch (e) { toast('Hata oluştu', true); }
+    toast('Program eklendi'); loadAll();
+  } catch(e) { toast('Hata oluştu', true); }
 }
 
 async function completeProgram(id) {
-  try {
-    await api(`/student/daily/program/${id}/complete`, {method: 'POST'});
-    loadAll();
-  } catch (e) { toast('Hata', true); }
+  try { await api(`/student/daily/program/${id}/complete`,{method:'POST'}); loadAll(); }
+  catch(e) { toast('Hata',true); }
 }
-
 async function deleteProgram(id) {
-  try {
-    await api(`/student/daily/program/${id}`, {method: 'DELETE'});
-    loadAll();
-  } catch (e) { toast('Hata', true); }
+  try { await api(`/student/daily/program/${id}`,{method:'DELETE'}); loadAll(); }
+  catch(e) { toast('Hata',true); }
 }
 
 async function addTodo() {
   const title = document.getElementById('todo-title').value.trim();
   if (!title) return;
   try {
-    await api('/student/daily/todo', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({title}),
-    });
+    await api('/student/daily/todo',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title})});
     document.getElementById('todo-title').value = '';
-    toast('Görev eklendi ✓');
-    loadAll();
-  } catch (e) { toast('Hata', true); }
+    toast('Görev eklendi'); loadAll();
+  } catch(e) { toast('Hata',true); }
 }
-
 async function completeTodo(id) {
-  try {
-    await api(`/student/daily/todo/${id}/complete`, {method: 'POST'});
-    loadAll();
-  } catch (e) { toast('Hata', true); }
+  try { await api(`/student/daily/todo/${id}/complete`,{method:'POST'}); loadAll(); }
+  catch(e) { toast('Hata',true); }
 }
-
 async function deleteTodo(id) {
-  try {
-    await api(`/student/daily/todo/${id}`, {method: 'DELETE'});
-    loadAll();
-  } catch (e) { toast('Hata', true); }
+  try { await api(`/student/daily/todo/${id}`,{method:'DELETE'}); loadAll(); }
+  catch(e) { toast('Hata',true); }
 }
 
 async function addHabit() {
   const name = document.getElementById('habit-name').value.trim();
   if (!name) return;
   try {
-    await api('/student/daily/habits', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({habit_name: name}),
-    });
+    await api('/student/daily/habits',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({habit_name:name})});
     document.getElementById('habit-name').value = '';
-    toast('Alışkanlık eklendi ✓');
-    loadAll();
-  } catch (e) { toast('Hata', true); }
+    toast('Alışkanlık eklendi'); loadAll();
+  } catch(e) { toast('Hata',true); }
 }
-
 async function logHabit(habitId, logDate, completed) {
   try {
-    await api(`/student/daily/habits/${habitId}/log`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({log_date: logDate, completed}),
-    });
+    await api(`/student/daily/habits/${habitId}/log`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({log_date:logDate, completed})});
     loadAll();
-  } catch (e) { toast('Hata', true); }
+  } catch(e) { toast('Hata',true); }
 }
 
 async function addEvent() {
@@ -1006,32 +1378,24 @@ async function addEvent() {
   const title = document.getElementById('event-title').value.trim();
   if (!date || !title) return;
   try {
-    await api('/student/daily/events', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({event_date: date, title, event_type: 'sinav'}),
-    });
+    await api('/student/daily/events',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({event_date:date, title, event_type:'sinav'})});
     document.getElementById('event-title').value = '';
     document.getElementById('event-date').value = '';
-    toast('Sınav eklendi ✓');
-    loadAll();
-  } catch (e) { toast('Hata', true); }
+    toast('Sınav eklendi'); loadAll();
+  } catch(e) { toast('Hata',true); }
 }
 
 async function logSession() {
   const minutes = parseInt(document.getElementById('log-minutes').value || 0);
   const questions = parseInt(document.getElementById('log-questions').value || 0);
   const ders = document.getElementById('log-ders').value.trim();
-  if (minutes === 0 && questions === 0) { toast('Süre veya soru gir', true); return; }
+  if (minutes===0 && questions===0) { toast('Süre veya soru gir',true); return; }
   try {
-    await api('/student/daily/stats/log', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({minutes, questions, ders: ders||null}),
-    });
-    toast(`+${minutes}dk +${questions} soru kaydedildi ✓`);
-    loadAll();
-  } catch (e) { toast('Hata', true); }
+    await api('/student/daily/stats/log',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({minutes,questions,ders:ders||null})});
+    toast(`+${minutes}dk +${questions} soru kaydedildi`); loadAll();
+  } catch(e) { toast('Hata',true); }
 }
 
 async function addActivity() {
@@ -1039,47 +1403,35 @@ async function addActivity() {
   const min = parseInt(document.getElementById('activity-min').value || 0);
   if (!type) return;
   try {
-    await api('/student/daily/activity', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({activity_type: type, duration_minutes: min}),
-    });
+    await api('/student/daily/activity',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({activity_type:type, duration_minutes:min})});
     document.getElementById('activity-type').value = '';
     document.getElementById('activity-min').value = '';
-    toast('Aktivite eklendi ✓');
-    loadAll();
-  } catch (e) { toast('Hata', true); }
+    toast('Aktivite eklendi'); loadAll();
+  } catch(e) { toast('Hata',true); }
 }
 
 async function saveNote() {
   const note = document.getElementById('note-text').value.trim();
   if (!note) return;
   try {
-    await api('/student/daily/notes', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({note, mood: selectedMood}),
-    });
-    toast('Not kaydedildi ✓');
-    loadAll();
-  } catch (e) { toast('Hata', true); }
+    await api('/student/daily/notes',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({note, mood:selectedMood})});
+    toast('Not kaydedildi');
+  } catch(e) { toast('Hata',true); }
 }
 
-// Mood chip selection
-document.querySelectorAll('.mood-chip').forEach(c => {
+document.querySelectorAll('.mood-pill').forEach(c => {
   c.addEventListener('click', () => {
     selectedMood = c.dataset.mood;
-    document.querySelectorAll('.mood-chip').forEach(x => x.classList.remove('selected'));
+    document.querySelectorAll('.mood-pill').forEach(x => x.classList.remove('selected'));
     c.classList.add('selected');
   });
 });
 
-function refreshAll() { loadAll(); toast('Yenilendi ✓'); }
+function refreshAll() { loadAll(); toast('Yenilendi'); }
 
-// Auto refresh every 60s
 setInterval(loadAll, 60000);
-
-// Initial
 loadAll();
 </script>
 </body>
