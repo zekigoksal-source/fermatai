@@ -1,9 +1,66 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 26 Nisan 2026, akşam — **OTURUM 25.14i — P1.5+P3+P4+Mobile Fix Tamamı**
-> **Son commit:** `c387dfd` (P4 + mobile)  · Onceki: `e2165a1` (predictive AYT fix), `a10bea2` (cohort fix)
-> **Backup tag:** `oturum-25-14h-stable`
-> **Sistem:** ✅ bridge active, 4/4 endpoint 200, tool 55 kayitli (add_to_student_program dahil)
+> **Son güncelleme:** 26 Nisan 2026, gece — **OTURUM 25.14j — P3+P4 CANLI DOĞRULANDI**
+> **Son commit:** `efd80ca` (plan yap → Claude routing fix) · Onceki: `c387dfd` (P4+mobile), `e2165a1` (predictive)
+> **Backup tag:** `oturum-25-14j-stable` · `oturum-25-14h-stable` (öğleden sonra)
+> **Sistem:** ✅ bridge active, 4/4 endpoint 200, P3+P4 entegrasyonu canli kanıtlandı
+
+## 🆕 OTURUM 25.14j (26 Nisan gece) — P3+P4 CANLI TEST + ROUTING FIX
+
+Neo (mobil onay sonrası): "dedigin diğer testleride sen yap dogrula varsa problem gider"
+
+### P3 + P4 Canlı Test (soz_no 211, Nazlı Irmak — sahte data sonra silindi)
+
+**1. test attempt — başarısız:** Mesaj "plan yap" → Groq'a yönlendirildi (cloud_keyword yok), generic plan template. Daily_brief referansı YOK.
+
+**Routing fix** (`efd80ca`): "plan yap" + 12 yeni pattern eklendi `_CLOUD_KEYWORDS`'e:
+```python
+"plan yap", "plan istiyorum", "plan ver", "calisma plan", "program yap",
+"haftalik plan", "gunluk plan", "ne calisayim", "ne yapayim",
+"programa ekle", "calismama ekle", "panele ekle", "ekleyebilir misin"
+```
+
+**2. test (P4):** "programa P4 TEST Matematik 16:00-17:00 ekle lutfen" →
+- Bot Claude'a yönlendi
+- `add_to_student_program(soz_no=211, title='P4 TEST — Matematik', start_time='16:00', end_time='17:00', ders='Matematik')` ÇAĞRILDI
+- DB'ye yazıldı: id=3, 16:00-17:00
+- Bot yanıtı: "✅ Eklendi! Bugün 16:00–17:00 bloğunda P4 TEST — Matematik programında görünüyor."
+- **P4 TAM ÇALIŞIYOR ✅**
+
+**3. test (P3 + P4 entegrasyonu):** "bana yarın için çalışma planı yap" + 30dk Mat data inject:
+Bot 3741 char yanıt verdi. Daily_brief'ten **PROAKTİF KULLANIM** kanıtı:
+- "Son denemede 84.8 net" — exam_trend referansı
+- "Türkçe'de 32.5'ten 28.8'e düşüş" — trend analizi
+- "Matematik 5.2'den 18.2'ye çıkmış — bu hafta gerçekten uçmuşsun 🔥"
+- Detaylı saatlik plan (12:00 Matematik, 15:45 Denklemler vs.)
+- 🎯 **EN ÖNEMLİ SATIR**: _"Bugün panele 30dk Matematik girişin var — akşam Geometri bloğunu da eklememi mi istersin programa?"_
+
+Bu mükemmel: bot daily_brief gördü → kullanıcıya hatırlattı → P4 tool için onay istedi.
+**P3 (daily_brief proaktif kullanım) + P4 (tool çağrısı) ENTEGRASYONU BAŞARILI ✅**
+
+### Bilinen sınırlar (gece tespit edildi)
+1. **Groq TPM rate limit:** System prompt 28k token, Groq Llama 3.3 70B free tier 12k TPM → her tool-calling
+   request 413 (rate_limit_exceeded), Claude'a fallback. Maliyet artıyor. **Çözüm önerisi:** sistem prompt
+   sıkıştırma (oturum 25 baseline_o24 referansından 18k → 12k).
+2. **Bot bazen kısa kesiliyor:** "Veriler geldi Nazlı, harika bir tablo var önümde. Şimdi bir şey sorayım:"
+   Tool sonrası kesinti — Claude max_tokens veya watchdog timeout olabilir. **Çözüm:** stream timeout
+   parametrelerini incele.
+3. **Spesifik veri sorgusu cloud'a gitmiyor:** "bugun ne calistim?" → Groq alıyor, daily_brief okuyamıyor.
+   **Çözüm:** "ne calistim", "kaç soru çözdüm" gibi pattern'leri _CLOUD_KEYWORDS'e ekle.
+
+### Commit Geçmişi (gece)
+- `efd80ca` — plan yap routing fix (Claude'a yönlendirme)
+- (KALDIGIM commit edilecek)
+
+### Bir Sonraki Oturum İlk İş
+1. Sistem prompt sıkıştırma (28k → 18k hedef) — Groq tool-calling'i geri kazan
+2. "ne calistim, ne calismam gerek" daily_brief sorgu pattern'leri cloud'a
+3. Bot kısa kesme bug'ı (Claude tool sonrası incelnmek)
+4. Neo P1 manuel UX test — gerçek öğrenci hesabıyla (gerek varsa)
+
+---
+
+
 
 ## 🆕 OTURUM 25.14i (26 Nisan akşam, Neo başında değil) — P1.5+P3+P4+MOBILE BIR ARADA
 
