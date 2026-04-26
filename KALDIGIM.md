@@ -1,9 +1,115 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 27 Nisan 2026, geç gece — **OTURUM 25.19 — A/B TEST + KARAR (CANARY)**
-> **Son commit:** `ff686fc` (AB test + cleanup) · Onceki: `d10ae7f` (maturity)
-> **Backup tags:** `oturum-25-19-ab-result-canary`, `oturum-25-18-maturity-complete`, `oturum-25-18-pre-maturity`, ...
-> **Sistem:** ✅ bridge active, 4/4 endpoint 200, **MODULAR_PROMPT_MODE=canary** (NORMAL geri alındı, sadece LIGHT)
+> **Son güncelleme:** 28 Nisan 2026, gece — **OTURUM 25.20 — TAM ROLLBACK (modüler tier devre dışı)**
+> **Son commit:** `f160ea1` (CANARY karari) · Sonra: KALDIGIM güncel
+> **Backup tags:** `oturum-25-20-modular-disabled`, `oturum-25-19-ab-result-canary`, `oturum-25-18-maturity-complete`, ...
+> **Sistem:** ✅ bridge active, 4/4 endpoint 200, **MODULAR_PROMPT_MODE=disabled** (eski tam davranış)
+
+## 🆕 OTURUM 25.20 (28 Nisan ~01:30) — TAM ROLLBACK + YARIN İÇİN PLAN
+
+Neo: "Yol B'yi uygula, ama kalite kaybı varsa geri al, kullanıcılar yarın problem yaşamasın"
+
+### Yapılan: MODE=canary → disabled
+
+**Sebep 1: LIGHT da kalite kaybı veriyor**
+- Önceki test: kavramsal "türev nedir" mode=canary (LIGHT) → 332 char
+- Aynı sorgu mode=disabled (FULL) → 855 char
+- LIGHT %62 daha kısa → bilgi kaybı kanıtlı
+
+**Sebep 2: Groq daily token limit dolmuş** (production'da 96.9K/100K)
+- Yeni groq_lanes pattern'leri eklemek = daha çok mesaj Groq'a → daha çok 429 → Claude fallback
+- Net etki: latency artar, maliyet azalmaz
+
+**Sebep 3: Risk minimum** — sadece LIGHT da değer üretmiyorsa, mimari kullanılmıyor
+
+### Sanity Test (mode=disabled)
+
+| Sorgu | Yanıt | Sonuç |
+|---|---|---|
+| "limit nedir kısa anlat" | 924 char dolu açıklama | ✅ Eski kalite geri |
+| "Damla notu" | "Başka bir öğrencinin bilgilerine erişemem" | ✅ KVKK korundu |
+| "borcum kaç TL" | "Ödeme/borç bilgileri bu kanaldan görüntülenemiyor" | ✅ Finans korundu |
+
+**Sistem eski tam kalitede çalışıyor. 0 sızıntı, 0 kalite kaybı.**
+
+### Modüler İşin Final Durumu
+
+✅ **KALICI VARLIK (kullanılıyor veya gelecekte değer):**
+- 138 test paketi — her commit sonrası güvenlik ağı
+- 70+ KVKK keyword (`prompt_tiers._SUSPICIOUS_KEYWORDS`) — sadece tier seçimi için, ama prompt_tiers import edildiği yerde KVKK kontrolü hala değer
+- intent_classifier.py 30+ etiket — gelecekte routing iyileştirme için ready
+- prompt_modules/ skeleton — gelecek lazy loading için
+- tier_quality_ab.py — test framework, ileride tekrar koşulabilir
+
+⚠️ **PASİF (kod var, env=disabled ile devre dışı):**
+- prompt_tiers.LIGHT_PROMPT, NORMAL_PROMPT — yetersiz kalite
+- get_tools_for_tier (intent subset) — NORMAL devre dışı, intent gözlemlenmiyor
+- prompt_modules.composer — placeholder
+
+🔴 **GÖZLEMLENMIŞ SORUNLAR:**
+- LIGHT prompt kavramsal cevapta kısa kalıyor (-%62 vs FULL)
+- NORMAL prompt plan üretmiyor (1412→136 char)
+- NORMAL_PROMPT 5k char çok az, scenario+protokol detayı yetersiz
+
+### Neo'nun Çıkarımı (haklı)
+
+Bu 4 oturum (25.15-25.18) bir **araştırma + altyapı yatırımı** oldu:
+- Mimariyi anladık (test ettik, ölçtük)
+- Kalite kaybı kanıtladık → tam aktivasyon erken
+- Ama **boşa kürek değil** — gelecek için temel var, geri alma kolay
+
+**Net token tasarrufu: ~%0** (mode=disabled). Sadece test paketleri kalıcı kazanım.
+
+### YARIN İÇİN PLAN (Oturum 25.21 — Net Yol Haritası)
+
+**Önce sorulması gereken (Neo karar versin):**
+
+| Karar | Seçenek A | Seçenek B |
+|---|---|---|
+| K1: Modüler işe yatırım sürecek mi? | EVET → NORMAL_PROMPT'u zenginleştir, A/B test tekrar | HAYIR → Modüler kodu reference olarak kalsın, sadece test paketi koru |
+| K2: Groq daily limit | Upgrade Pro tier (~$50/ay, 1M token/gün) | LLM provider çeşitlendir (Together/DeepInfra) |
+| K3: Token tasarrufu hedefi var mı? | EVET → Prompt Compression (RAG) ciddi iş | HAYIR → Mevcut sistem zaten yeterli |
+
+**Eğer A: Modüler ısrar (ileri yol):**
+- NORMAL_PROMPT'u 5k → 12k zenginleştir (plan protokol + scenario örnekleri + format)
+- A/B test 30 sorgu, kalite ratio ölç
+- ratio ≥ 0.95 ise CANARY+NORMAL aktive
+
+**Eğer B: Modüler vazgeç (geri çekiliş):**
+- env'de MODULAR_PROMPT_MODE=disabled bırak (zaten öyle)
+- prompt_tiers/intent_classifier dokunma (gelecek için duruyorlar)
+- Test paketi (138/138) komiklenme — her release'de koş
+- groq_lanes patterns'i koru (LIGHT path için fayda var ama tetiklenmiyor)
+
+**Önerim:** **B + Groq Pro tier upgrade**.
+- B daha pragmatik: sistem çalışıyor, mimariyi yatırım olarak kalbur
+- Pro tier: kullanıcı arttıkça Groq tasarrufu gerçek hale gelir
+- Modüler işi 6 ay sonra, kullanıcı sayısı ve maliyet artınca tekrar gündeme alın
+
+### Toplam akşam (25.14h → 25.20) — 24 commit, 14 backup tag
+
+**Asıl kazanımlar (kalıcı):**
+- ✅ Cohort + predictive halüsilasyon fix
+- ✅ Mobile header fix (Neo onaylı)
+- ✅ P3 daily_brief proaktif kanıt
+- ✅ P4 add_to_student_program tool (canlı çalışıyor)
+- ✅ **Groq invisibility 3-katmanlı fix** (routing observability — KALICI değer)
+- ✅ 70+ KVKK keyword + 138 test paketi (güvenlik ağı)
+
+**Modüler iş (pasif):**
+- LIGHT/NORMAL prompt + intent classifier — kod var, kullanılmıyor
+- Geri alma tek satır: `MODULAR_PROMPT_MODE=disabled` (zaten öyle)
+
+### Geri Alma — son durum
+```bash
+# Şu an aktif olan: MODE=disabled (en güvenli)
+# Eğer ileride yeniden denemek istersen:
+ssh vps "sudo sed -i 's/MODE=disabled/MODE=canary/' /opt/fermatai/.env && sudo systemctl restart fermatai-bridge"
+```
+
+---
+
+
 
 ## 🆕 OTURUM 25.19 (28 Nisan ~01:00) — A/B SONUCU + KALICI KARAR
 
