@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 26 Nisan 2026, ~12:00 — **OTURUM 25.11 — Sistem Audit + 2 KRITIK BUG FIX**
+> **Son güncelleme:** 26 Nisan 2026, ~13:30 — **OTURUM 25.11 (devamı) — MIMARI.md + REFACTOR_PLAN.md + Test 53/53**
 > **Son konusma analizi timestamp:** `2026-04-25 17:49`
 
 ## 🚨 OTURUM 25.11 (26 Nisan ~12:00) — SISTEM AUDIT + KRITIK BUG FIX
@@ -162,7 +162,45 @@ güncellenir. Aynı tasarrufu sağlar, harici tool yok.
 
 ### Commit
 - `60f39b5` — Oturum 25.10d-e (uvloop + gece WP fix)
-- (next) Audit raporu KALDIGIM
+- `5bb1099` — Audit raporu KALDIGIM
+- `af12342` — MIMARI.md + REFACTOR_PLAN.md + 30 yeni test
+
+### 🆕 25.11 follow-up (commit `af12342`)
+
+**A) response_source 'ollama' → 'groq' cosmetic fix:**
+- `fermat_core_agent.py:3515` query_cache `source=_local_provider` (hardcoded değildi)
+- `format_whatsapp.py` 'groq'/'local' source kabul
+
+**B) MIMARI.md (YENİ — Graphify alternatifi):**
+- 177 dosya 10 kategoriye ayrılmış
+- 64 tool gerçek 30g kullanım frequency
+- Endpoint + cron + DB tablo haritası
+- "Yeni özellik nereye / Bug nereye bak" cheat sheet
+- Token tasarruf hedefi: yeni Claude oturumunda ~10-20K tasarruf
+
+**C) REFACTOR_PLAN.md (YENİ):**
+- P1: Tool compact + system prompt cleanup (~3500 token tasarruf)
+- P2: fast_responses (3289), fermat_core_agent (4150), bridge (4215) modülerleştirme
+- P3: Cosmetic + test coverage 100+
+- ~11 oturum tahmini, sırayla yapım planı + risk yönetimi
+- ROLLBACK prosedürü
+
+**D) Test coverage 23 → 53 (+30):**
+- `test_admin_notify.py` (10) — quiet hours 5:38 olayı dahil
+- `test_groq_lanes_production.py` (8) — 23 production vakası
+- `test_routing_engine.py` (12) — decide_route + frustration
+- `test_conversation_memory_lock.py` (3) — KVKK identity_lock
+- **53/53 PASS**
+
+### CANLI E2E VERIFY (production)
+```
+selam               → groq    1069ms (lane: sohbet)
+turev nedir         → groq    1459ms (lane: kavramsal_kisa)
+benim gelisimim     → claude  12427ms (personal data + tool calling)
+```
+
+Groq production'da **2 saniyenin altında** cevap veriyor. Claude tool-calling
+gerektiren kompleks sorularda hala devrede. Hedef routing dağılımı tutuyor.
 
 ## 🎯 OTURUM 25.10 (25 Nisan 2026, ~21:00) — GROQ PAY GENİŞLETME
 
