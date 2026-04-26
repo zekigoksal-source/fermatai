@@ -646,16 +646,118 @@ _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
 
         return result.get("text", "")
 
+    async def chat_local_async(
+        self,
+        messages: list[dict],
+        system: str = "",
+        model: str = "",
+    ) -> str:
+        """ASYNC chat_local — uvloop uyumlu (Oturum 25.10e Neo bugu).
+
+        chat_local sync versiyonu nest_asyncio.apply() kullaniyor, uvloop ile
+        cakisiyor: 'Can't patch loop of type <class uvloop.Loop>' hatasi.
+        Bu metod direkt async path — uvicorn/FastAPI altinda calisir.
+
+        Caller bu metodu await ile cagirmali. Sync versiyon (chat_local)
+        backwards compat icin korundu, laptop dev'de kullanilabilir.
+        """
+        # 1) Groq oncelik (VPS production)
+        if self._groq_available and self._groq_client:
+            try:
+                # System prompt + messages hazirligi (chat_groq ile ayni)
+                local_system = self._LOCAL_SYSTEM
+                if "ARAYAN ADI:" in system:
+                    import re as _re
+                    name_match = _re.search(r"ARAYAN ADI:\s*(.+)", system)
+                    role_match = _re.search(r"ARAYAN ROLÜ:\s*(\w+)", system)
+                    caller_name = name_match.group(1).strip() if name_match else ""
+                    caller_role = role_match.group(1).strip() if role_match else ""
+                    if caller_name:
+                        local_system = (
+                            f"ONEMLI — ARAYAN KISI: *{caller_name}*\n"
+                            f"Bu kisiye HER ZAMAN \"{caller_name.split()[0]}\" diye hitap et.\n"
+                            f"Rol: {caller_role}\n\n"
+                        ) + local_system
+
+                # System addon (lane-spesifik) sonra eklenir
+                if "[LANE TALIMATI]" in system:
+                    # System sonunda lane addon var — koru
+                    parts = system.split("[LANE TALIMATI]", 1)
+                    if len(parts) == 2:
+                        local_system = local_system + "\n\n[LANE TALIMATI]" + parts[1]
+
+                # Messages OpenAI-format
+                groq_messages = []
+                for m in messages:
+                    c = m.get("content", "")
+                    if isinstance(c, list):
+                        text_parts = [p.get("text", "") for p in c if isinstance(p, dict) and p.get("type") == "text"]
+                        c = " ".join(text_parts)
+                    if isinstance(c, str) and c.strip():
+                        groq_messages.append({"role": m.get("role", "user"), "content": c})
+
+                # Native async — nest_asyncio YOK, uvloop OK
+                result = await self._groq_client.complete(
+                    messages=groq_messages,
+                    system=local_system,
+                    max_tokens=1500,
+                )
+                self._last_local_provider = "groq"
+                return result.get("text", "")
+            except Exception as e:
+                logger.warning(f"chat_local_async: Groq basarisiz ({e}), Ollama'ya dusuyor")
+
+        # 2) Ollama fallback (laptop dev)
+        if not self._ollama_available:
+            self._last_local_provider = None
+            raise RuntimeError("chat_local_async: Groq ve Ollama ikisi de kullanilamaz")
+
+        # Ollama async (asyncio.to_thread ile sync ollama paketini wrap)
+        import asyncio as _asyncio
+        import ollama as _ollama
+        model = model or OLLAMA_MODEL
+
+        local_system = self._LOCAL_SYSTEM
+        if "ARAYAN ADI:" in system:
+            import re as _re
+            name_match = _re.search(r"ARAYAN ADI:\s*(.+)", system)
+            if name_match:
+                local_system = f"ARAYAN: *{name_match.group(1).strip()}*\n\n" + local_system
+
+        ollama_msgs = [{"role": "system", "content": local_system}]
+        for m in messages:
+            c = m.get("content", "")
+            if isinstance(c, list):
+                text_parts = [p.get("text", "") for p in c if isinstance(p, dict) and p.get("type") == "text"]
+                c = " ".join(text_parts)
+            if isinstance(c, str) and c.strip():
+                ollama_msgs.append({"role": m.get("role", "user"), "content": c})
+
+        try:
+            response = await _asyncio.to_thread(
+                _ollama.chat,
+                model=model,
+                messages=ollama_msgs,
+                options={"num_predict": 600, "temperature": 0.7},
+            )
+            text = response.get("message", {}).get("content", "")
+            self._last_local_provider = "ollama"
+            return text
+        except Exception as e:
+            self._last_local_provider = None
+            logger.error(f"chat_local_async Ollama hata: {e}")
+            raise
+
     def chat_local(
         self,
         messages: list[dict],
         system: str = "",
         model: str = "",
     ) -> str:
-        """Hizli/ucuz LLM yaniti al.
+        """SYNC chat_local — laptop dev'de kullanilir, VPS'te uvloop ile cakisir.
 
+        VPS production icin chat_local_async() kullanin.
         Oturum 24: Groq 70B tercih edilen, Ollama fallback.
-        VPS'te Ollama yok — Groq aktif. Laptop'ta Ollama var — Groq downsa fallback.
         Caller (fermat_core_agent) gercek provider'i `self._last_local_provider`
         uzerinden okur, routing_stats'a dogru kaydeder.
         """

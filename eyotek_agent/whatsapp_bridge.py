@@ -320,16 +320,18 @@ async def _run_scheduled_tasks():
                     # Günlük 1 kez bildirim — spam önleme (09:00 slot'unda)
                     if not result.get("success") and now.hour == 9:
                         reason = result.get("reason", "bilinmeyen hata")[:200]
-                        _alert_msg = (
-                            f"⚠️ *Yoklama sync başarısız*\n\n"
-                            f"Saat: {now.strftime('%H:%M')}\n"
-                            f"Sebep: `{reason}`\n\n"
-                            f"Eyotek sayfa yapısı değişmiş veya session kırılmış olabilir. "
-                            f"Chrome CDP'de yoklama sayfasını manuel kontrol et."
-                        )
+                        # Oturum 25.10d (Neo): admin_notify - gunduz WP, gece sadece panel
                         try:
-                            await send_wa_message("905051256802", _alert_msg,
-                                                  _outreach=True, _reason="sync_fail_alert")
+                            from admin_notify import notify_admin
+                            await notify_admin(
+                                severity="warning",
+                                category="eyotek",
+                                title="⚠️ Yoklama sync başarısız",
+                                body=(f"Saat: {now.strftime('%H:%M')}\nSebep: {reason}\n\n"
+                                      "Eyotek sayfa yapısı değişmiş veya session kırılmış olabilir. "
+                                      "Chrome CDP'de yoklama sayfasını manuel kontrol et."),
+                                metadata={"job": "yoklama_sync", "hour": now.hour},
+                            )
                         except Exception:
                             pass
                 except Exception as e:
@@ -389,12 +391,16 @@ async def _run_scheduled_tasks():
                         logger.info(f"📦 Eyotek etüt sync (gece 02:30): {r['inserted']} yeni kayıt")
                     else:
                         logger.warning(f"Eyotek etüt sync hata: {r.get('error')}")
-                        # Sessiz fail önleme — Neo'ya bildir
+                        # Oturum 25.10d (Neo): admin_notify — GECE WP YASAK, sadece panel
+                        # Onceden 02:30'da WP atip Neo'yu uyandiriyordu (5:38 sabah 26 Nis)
                         try:
-                            await send_wa_message(
-                                "905051256802",
-                                f"⚠️ *Gece etüt sync başarısız* (02:30)\n\nSebep: `{r.get('error', 'bilinmiyor')[:200]}`",
-                                _outreach=True, _reason="etut_sync_fail"
+                            from admin_notify import notify_admin
+                            await notify_admin(
+                                severity="warning",
+                                category="eyotek",
+                                title="⚠️ Gece etüt sync başarısız (02:30)",
+                                body=f"Sebep: {r.get('error', 'bilinmiyor')[:200]}",
+                                metadata={"job": "etut_sync", "time": "02:30"},
                             )
                         except Exception:
                             pass

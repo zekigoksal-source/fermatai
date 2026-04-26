@@ -3360,10 +3360,20 @@ class FermatCoreAgent:
 
             logger.info(f"  [YEREL] {_hangi} ile yanitlaniyor (dusuk maliyet)")
             try:
-                answer = self.router.chat_local(
-                    messages=self.history,
-                    system=_lane_system,
-                )
+                # Oturum 25.10e (uvloop fix): async chat_local kullan
+                # Eskiden sync chat_local + nest_asyncio.apply() vardi, FastAPI/uvicorn
+                # uvloop'una "Can't patch loop" hatasi veriyordu → Groq tum cagrilar fail.
+                if hasattr(self.router, "chat_local_async"):
+                    answer = await self.router.chat_local_async(
+                        messages=self.history,
+                        system=_lane_system,
+                    )
+                else:
+                    # Backwards compat (eski router'da chat_local_async yok)
+                    answer = self.router.chat_local(
+                        messages=self.history,
+                        system=_lane_system,
+                    )
                 # ── Kalite kontrolu — Ollama yaniti yetersizse Claude'a eskale et ──
                 _needs_escalation = False
                 if len(answer.strip()) < 30:
