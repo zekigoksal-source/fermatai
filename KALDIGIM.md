@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 26 Nisan 2026, ~14:30 — **OTURUM 25.11 FINAL — REFACTOR_PLAN P1.1+P3.1+P3.3 uygulandı (88/88 test)**
+> **Son güncelleme:** 26 Nisan 2026, ~16:00 — **OTURUM 25.12 — Öğrenci Günlük Takip Sistemi (GRAFEN-tarzı 7 modül)**
 > **Son konusma analizi timestamp:** `2026-04-25 17:49`
 
 ## 🚨 OTURUM 25.11 (26 Nisan ~12:00) — SISTEM AUDIT + KRITIK BUG FIX
@@ -259,6 +259,105 @@ REFACTOR_PLAN.md detaylı yol haritası içeriyor.
 - `6b662b8` — P1.1+P3.1+P3.3 paketi (88 test)
 - `8b85484` — HOTFIX yetim body
 - `f029df6` — HOTFIX import time
+- `f71d48a` — Oturum 25.12 Öğrenci Günlük Takip (GRAFEN-tarzı)
+- `d00b38b` — HOTFIX TIME field asyncpg datetime.time
+
+## 🆕 OTURUM 25.12 (26 Nisan ~16:00) — ÖĞRENCİ GÜNLÜK TAKİP
+
+### Neo'nun talebi (GRAFEN ekran görüntüsü ile)
+> "Öğrencilerin mevcut ders çalışmasını anında takip edip işleyebileceği,
+>  kaç soru çözdü, ne kadar süre ayırdı vb. veri toplama. 4-5 ay sonunda
+>  bot ile veriler birleştirilip analiz edilebilir."
+
+### YENİ ÖZELLİK — 7 modül (GRAFEN'a benzer)
+| # | Modül | DB tablo |
+|---|-------|----------|
+| 1 | 📅 Günlük Program | `student_daily_program` |
+| 2 | ✅ To Do List | `student_todo` |
+| 3 | 🎯 Alışkanlık Takibi | `student_habits` + `student_habit_log` |
+| 4 | 🎓 Sınav/Ödev Takvimi | `student_exam_calendar` |
+| 5 | 📊 Çalışma İstatistik | `student_study_stats` |
+| 6 | 🏃 Fiziksel Aktivite | `student_physical_activity` |
+| 7 | 💭 Bugünkü Notum | `student_daily_notes` |
+
+### Yeni dosyalar
+- `schema_oturum_25_12.sql` — 8 tablo (idempotent)
+- `student_daily.py` (550 satır) — CRUD + 2 high-level helper:
+  - `get_summary(soz_no)` — 7 modül tek çağrı
+  - `analyze_study_pattern(soz_no, days)` — N gün örüntü analizi
+- `student_daily_api.py` (380 satır) — 17 REST endpoint + dashboard HTML
+- `student_daily_ui.html` (650 satır) — **MODERN GLASSMORPHISM UI**
+  - Animasyonlu background orbs (CSS @keyframes)
+  - 7 module card with 3D hover (translateY + glow)
+  - Chart.js dark theme (haftalık çalışma grafigi)
+  - Mobile responsive
+  - Toast notifications (smooth slide-in)
+  - Custom scrollbar
+  - Glass morphism (backdrop-filter: blur 20px)
+  - Gradient: orange→amber primary, indigo→violet secondary
+
+### LLM Tool Entegrasyonu (2 yeni tool)
+- `get_student_daily_summary` — bot "bugün ne yaptın" soruyor
+- `analyze_student_study_pattern` — 30g performans analizi
+
+Bot artık öğrenciye:
+- "Bugün toplam 45dk Matematik çalıştın, +15 soru. Yarın ne yapacaksın?"
+- "Son 30g consistency skorun 0.7, çoğu Pzt-Çar yoğun. Cmt-Paz pasif."
+
+### URL'ler (Neo dev erişim, ?token= ile)
+| Sayfa | URL |
+|-------|-----|
+| Öğrenci dashboard | `https://api.fermategitimkurumlari.com/student/daily/dashboard?token=fermat_agent_secret_2026` |
+| Admin panel | `https://api.fermategitimkurumlari.com/admin/dashboard?token=...` |
+| Konuşma viewer | `https://api.fermategitimkurumlari.com/chat/admin/conversations?token=...` |
+
+### Hotfix (audit ile yakalandı)
+- TIME field asyncpg `datetime.time` istiyor, string fail (`'14:00'` → DataError)
+- `_parse_time` helper eklendi: `'14:00'` → `dtime(14, 0)`
+
+### Canli E2E (test öğrenci 999998)
+```
+Program ekle  ✓ {id:1, "AYT Mat 35. Video"}
+Todo ekle     ✓ {id:1, "Test Görev", priority:high}
+Stats log     ✓ {total_minutes:45, questions:15, ders:Matematik}
+Note ekle     ✓ {note:"verimli geçti", mood:verimli}
+Sınav ekle    ✓ {id:1, "1 Haziran Mat", date:2026-06-01}
+Summary 7-modül ✓ tek çağrı
+```
+
+### Test öğrenci verileri TEMİZLENDİ (production temiz)
+
+### Final sağlık
+```
+Servis: active (commit d00b38b)
+5 endpoint test 200:
+  /chat                              200 (8ms)
+  /admin/dashboard?token=            200
+  /student/daily/dashboard?token=    200
+  /student/daily/summary             200
+  /chat/admin/conversations?token=   200
+Eyotek: ONLINE
+3 cron timer aktif
+Son 1dk hata: 0
+```
+
+### REFACTOR_PLAN durumu
+- ✅ P1.1 Tool compact (88 test)
+- ✅ P3.1 'ollama' naming
+- ✅ P3.3 Test 88
+- ⏸️ P1.2 System prompt cleanup (ATLANDI — manuel review gerekiyor)
+- ⏸️ P2.x Modular refactor (ATLANDI — Neo emri "kabiliyet kaybetme")
+
+P2.x için ön koşullar artmadı: test coverage 88, hedef 200+. Yeni özellik
+testleri eklendi ama core refactor için integration test yetersiz.
+
+### NOT — Modern UI standartı
+ui-ux-pro-max MCP sunucuyu Neo gördü. Ben elimle aynı kalitede yazdım:
+- Glassmorphism + gradient + 3D card hover
+- Animations (CSS @keyframes ve transitions)
+- Chart.js dark theme
+- Modern color palette (CSS custom properties)
+Gelecekte ui-ux-pro-max kurulu olursa daha hızlı yenileme yapılabilir.
 
 ## 🎯 OTURUM 25.10 (25 Nisan 2026, ~21:00) — GROQ PAY GENİŞLETME
 
