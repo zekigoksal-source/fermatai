@@ -126,6 +126,55 @@ bridge/
 
 ---
 
+### 🟠 P2.5 — Modüler Prompt Mimarisi (Neo 25.14k önerisi, YÜKSEK ETKI)
+
+**Sorun:** Şu an her çağrıda 28k FERMATAI prompt + 6k tool tanımı + dynamic_context (~37k) gönderiliyor. "Limit nedir" diyene de "plan yap"a da AYNI 28k. Cache var ama ölçek değişmiyor.
+
+**Endüstri standardı isimler:** Prompt Routing, Tool Subset Routing, Lazy Module Loading
+
+**Önerilen mimari:**
+```
+3-tier system_prompt + tool subset routing
+├─ TIER_LIGHT  (~6k):  KURALLAR + ACL + 5 tool (sohbet, kavramsal, basit data)
+├─ TIER_NORMAL (~18k): + plan/analiz tools + scenario hazırlıkları
+└─ TIER_FULL   (~28k): + finans tools + admin Atlas + Easter egg (mevcut)
+```
+
+**Tier seçim mantığı (routing_engine'e ek):**
+```python
+def choose_tier(intent, role, lane):
+    if role in ("admin", "mudur") or intent == "finans": return "full"
+    if lane in ("kavramsal", "sohbet", "selamlama"):     return "light"
+    if intent in ("plan", "analiz", "tool_yazma"):       return "normal"
+    return "normal"  # default safe
+```
+
+**Kazanım tahmini (1000 mesaj/gün):**
+| Sorgu tipi | Şu an | Modüler | Tasarruf |
+|---|---|---|---|
+| Kavramsal | 28k | 6k | -78% |
+| Plan | 28k | 18k | -36% |
+| Admin | 28k | 28k | 0 |
+
+Aylık Claude maliyeti **~$8 → ~$3** (cache dahil). Asıl kazanım: **Groq tool-calling 12k TPM aşılmaz**, bot kuralları seyrelmez (small prompt = better attention).
+
+**Riskler:**
+1. Tier yanlış seçilirse → bot kural unutur (KVKK ihlal, finans sızıntısı)
+2. Lane classifier hassas değil (border case'ler)
+3. A/B test gerek (tam prompt vs modüler kalite kıyaslaması)
+
+**Yapım sırası:**
+1. `system_prompts.py` → `system_prompt_modules.py` modülerleştir (CORE, TOOLS, SCENARIO, FINANS, EASTER, ATLAS bloklarına ayır)
+2. `tier_selector.py` yaz — intent + lane + role → tier dön
+3. Tool definitions → tier bazlı subset (`get_tools_for_tier()`)
+4. fermat_core_agent.py: messages.create öncesi tier seç + uygun blokları birleştir
+5. A/B test 100 mesaj — kalite skoru >0.95 ise canlıya
+6. Conversation_quality_analyzer ile haftalık denetim
+
+**Test coverage zorunlu:** Her tier için en az 20 senaryo (KVKK, finans, kişisel veri sızma, kural ihlal testleri)
+
+---
+
 ### 🟢 P3 — Cosmetic / Geleceğe Yatırım
 
 #### 3.1 'ollama' Legacy Naming
