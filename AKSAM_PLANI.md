@@ -1,11 +1,32 @@
 # 🌙 Akşam İçin Yapılacaklar Planı
 
-> **Hazırlanma:** 26 Nisan 2026, ~21:00
-> **Son commit:** `6d47a53` (same-tab fix)
-> **Sistem durumu:** Stabil, 88 test PASS, Groq production canlı
+> **Hazırlanma:** 26 Nisan 2026, öğleden sonra
+> **Son commit:** `a10bea2` (cohort NET ortalama fix — Neo halüsilasyon yakaladı)
+> **Backup tag:** `oturum-25-14h-stable`
+> **Sistem durumu:** ✅ Stabil — bridge active, 4/4 endpoint 200, 3 timer kurulu
 >
 > Akşam bilgisayar başına gelince bu listeyi sırayla geç. Her madde için
 > tahmini süre + risk + ön koşul belirtildi.
+
+---
+
+## ✅ ÖĞLEDEN SONRA YAPILANLAR (26 Nisan, oturum 25.14g+h)
+
+| İş | Sonuç |
+|---|---|
+| Çalışmam butonu same-tab fix | `window.location.href` (oturum 25.14b) |
+| Admin "📊 Yönetim Paneli" butonu chat header | Same-tab, admin only |
+| Cohort tab boş görünüm fix (71 → 123 öğrenci) | mezun + sınıfsız + small classes dahil |
+| **Cohort AYT 67 net halüsilasyon fix** | NET ortalama (puan değil), TYT `/120`, AYT `/80` ayrıştırıldı |
+| Conversation viewer Cinema palette revize | Glassmorphism + Fira fonts |
+| Backup tag | `oturum-25-14h-stable` |
+
+**Halüsilasyonun kökü:** `student_exams.toplam[exam_type='AYT']` aslında TG (Tam Gün, TYT+AYT birleşik) içeriyor. Düzeltme: `student_exam_analysis.ders_netleri_ayt` JSONB'den pure AYT ayrıştırıldı.
+
+**Yeni cohort verisi (canlı doğrulandı):**
+- Mezun SAY: 27 öğr, TYT 70 net, **AYT 15.5 net** (eskiden 67 = imkansız)
+- 12 SAY: 19 öğr, TYT 61.5, AYT 18
+- Mezun EA: 7 öğr, TYT 40.4, AYT 26.4
 
 ---
 
@@ -128,6 +149,21 @@ Neo emri (26 Nisan): "Conversation viewer = web chat ise dokunma, çok olgun."
 - ❌ `fast_responses.py` modülerleştirme (3289 satır, regression riski)
 
 **P2.x büyük refactor'ler REFACTOR_PLAN.md'de bekliyor** — sen onay verince yapılır, test coverage 200+ olduktan sonra.
+
+---
+
+## 🔎 ÖĞLEDEN SONRA NET KONTROL EDİLMESİ GEREKEN (akşam P1.5)
+
+Cohort'ta puan → net düzeltmesini yaptım. **Diğer admin tab'larında da benzer halüsilasyon riski var mı?** Akşam ilk iş bunu kontrol et:
+
+- [ ] **Routing tab** — sayılar tutarlı mı? (claude/groq/fast oranı)
+- [ ] **Bildirimler tab** — son 7 gün doğru gösteriyor mu?
+- [ ] **Öğretmenler tab** — etüt sayıları, ortalama süreler doğru mu?
+- [ ] **Maliyet tab** — günlük token/dolar tahmini gerçeğe yakın mı?
+- [ ] **Atlas-2 tab** — sabah cron çalıştıysa öneri var mı?
+- [ ] **Öğrenci detay tab** — bir öğrenciye tıkla, AYT/TYT verisi doğru mu?
+
+**Yöntem:** Her tab için DB'den ham veri çek, ekrandaki rakamla karşılaştır. Tutmuyorsa SQL'i araştır.
 
 ---
 
