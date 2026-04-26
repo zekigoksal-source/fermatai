@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 26 Nisan 2026, ~16:00 — **OTURUM 25.12 — Öğrenci Günlük Takip Sistemi (GRAFEN-tarzı 7 modül)**
+> **Son güncelleme:** 26 Nisan 2026, ~17:30 — **OTURUM 25.13 — ui-ux-pro-max skill kuruldu + UI upgrade**
 > **Son konusma analizi timestamp:** `2026-04-25 17:49`
 
 ## 🚨 OTURUM 25.11 (26 Nisan ~12:00) — SISTEM AUDIT + KRITIK BUG FIX
@@ -357,7 +357,66 @@ ui-ux-pro-max MCP sunucuyu Neo gördü. Ben elimle aynı kalitede yazdım:
 - Animations (CSS @keyframes ve transitions)
 - Chart.js dark theme
 - Modern color palette (CSS custom properties)
-Gelecekte ui-ux-pro-max kurulu olursa daha hızlı yenileme yapılabilir.
+
+## 🎨 OTURUM 25.13 (26 Nisan ~17:30) — ui-ux-pro-max KURULDU
+
+### Neo'nun talebi
+> "ui-ux-pro-max"
+
+### Yapılan
+1. **Skill clone** — `nextlevelbuilder/ui-ux-pro-max-skill` GitHub repo
+2. **Kurulum** — `.claude/skills/ui-ux-pro-max/` (data + scripts + SKILL.md)
+3. **Test** — search.py 4 sorgu PASS (product/style/color/typography)
+4. **UI upgrade** — student_daily_ui.html'e skill önerileri uygulandı:
+   - Fira Code (data) + Fira Sans (body) — "Dashboard Data" pairing
+   - Trust palette base: `#0F172A` (önceden `#0a0e1a`)
+   - Stat values: `font-family: Fira Code` + `font-variant-numeric: tabular-nums`
+
+### Skill İçeriği
+- **16 CSV** (6461 satır):
+  - styles.csv (50 stil) — glassmorphism, dark mode, brutalism, vs
+  - colors.csv (21 palet)
+  - typography.csv (50 font pairing — Google Fonts URL'li)
+  - ux-guidelines.csv (99 best practice)
+  - charts.csv (20 grafik türü)
+  - products.csv — ürün → stil mapping
+  - landing.csv — landing page yapıları
+- **3 Python script** (`scripts/search.py`, `core.py`, `design_system.py`)
+
+### Komut
+```bash
+python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<keyword>" --domain <domain>
+# Domains: product, style, color, typography, ux, chart, landing
+```
+
+### Bizim Sistem için Standart Eslemeler
+**Education/Dashboard:**
+- Style: Glassmorphism + Dark Mode (OLED) + Modern Dark (Cinema)
+- Palette: Fintech/Crypto trust (#F59E0B gold + #0F172A bg + #8B5CF6 purple)
+- Typography: Fira Code (data) + Fira Sans (body)
+- Border radius: 16px, Easing: cubic-bezier(0.16,1,0.3,1)
+- Backdrop blur: 20px
+
+### Memory Note
+`reference_ui_ux_pro_max.md` — yeni Claude oturumlarında otomatik aktif.
+Workflow: product → style → color → typography → ux (5 sorgu sırası).
+
+### Önemli
+- `.claude/skills/` git ignore'da (~9000 satır data, repo şişirmez)
+- Yeni VPS/laptop clone'da kurulum:
+  ```bash
+  git clone https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git /tmp/uiux
+  cp -r /tmp/uiux/src/ui-ux-pro-max/data .claude/skills/ui-ux-pro-max/
+  cp -r /tmp/uiux/src/ui-ux-pro-max/scripts .claude/skills/ui-ux-pro-max/
+  ```
+
+### Commit
+- `cd77972` — Oturum 25.13 ui-ux-pro-max + UI upgrade
+
+### Sıradaki UI revizyon hedefleri (gelecek oturum)
+1. `dashboard_ui.html` (admin) — aynı palette uygulanacak
+2. `web_chat_ui.html` — Fira Sans body
+3. Yeni UI'lar (veli paneli vs) — workflow sıraşı kullan
 
 ## 🎯 OTURUM 25.10 (25 Nisan 2026, ~21:00) — GROQ PAY GENİŞLETME
 
