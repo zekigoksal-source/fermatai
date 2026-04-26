@@ -3465,20 +3465,24 @@ class FermatCoreAgent:
                         system=_lane_system,
                     )
                 # ── Kalite kontrolu — Ollama yaniti yetersizse Claude'a eskale et ──
-                # Oturum 25.14k (Neo GROQ_INVISIBILITY fix): lane-bazli esik
-                # Eski: tum lane'lerde < 30 → selamlama bile escalation tetikliyordu
-                # Yeni: sohbet/selamlama lane'inde 8, kavramsal/diger 30 (eski)
+                # Oturum 25.14k+rev (Neo elestirisi): lane-bazli esik daha mantikli
+                # Sayisal esik kalite olcemez ama spam/yetersiz cevaplari yakalar.
+                # - sohbet/selamlama: 8 char (sadece spam guard, "Selam!" yeterli)
+                # - motivasyon/empati: 30 char (kisa destek mesaji ok ama bos olmasin)
+                # - kavramsal/aciklama: 100 char (gercek bilgi icin minimum)
+                # - analiz/data: zaten "claude" route'a gider, buraya gelmez
                 _needs_escalation = False
-                _min_len = 30
-                try:
-                    _lane_for_thresh = locals().get("_lane")
-                    if _lane_for_thresh in ("sohbet", "selamlama", "veda", "tesekkur", "onay"):
-                        _min_len = 8  # selamlama icin "Merhaba Ali!" yeterli
-                except Exception:
-                    pass
+                _lane_for_thresh = locals().get("_lane") or ""
+                if _lane_for_thresh in ("sohbet", "selamlama", "veda", "tesekkur", "onay"):
+                    _min_len = 8
+                elif _lane_for_thresh in ("motivasyon", "empati", "duygu_destek"):
+                    _min_len = 30
+                else:
+                    # kavramsal_kisa, kavramsal, aciklama, default
+                    _min_len = 100  # "limit bir matematik kavramdır" gibi 30 char yetmez
                 if len(answer.strip()) < _min_len:
                     _needs_escalation = True
-                    logger.info(f"  [ESKALASYON] Yerel yanit {len(answer.strip())} char (esik {_min_len}, lane={locals().get('_lane')}), Claude'a geciliyor")
+                    logger.info(f"  [ESKALASYON] Yerel yanit {len(answer.strip())} char (esik {_min_len}, lane={_lane_for_thresh}), Claude'a geciliyor")
                 # İngilizce yanıt tespiti
                 elif any(eng in answer.lower() for eng in [
                     "let's", "here are", "dive deeper", "performance",
