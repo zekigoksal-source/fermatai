@@ -3698,6 +3698,47 @@ class FermatCoreAgent:
         except Exception as _gt_err:
             logger.warning(f"  [GROQ-TOOLS] pre-check hatasi, Claude'a dusuyor: {_gt_err}")
 
+        # ── 25.15 MODULAR PROMPT TIER SELECTION ──────────────────────────
+        # Env flag MODULAR_PROMPT_MODE ile kontrol — disabled (default) ise
+        # mevcut davranis (full prompt + full tools).
+        # canary/normal/full mode'larda intent + lane + role'e gore tier secilir.
+        # GUVENLIK: hata varsa FULL (geri uyumlu, sizinti riski yok).
+        _claude_prompt = _role_aware_prompt
+        _claude_tools = get_tools(role=role)
+        _selected_tier = "full"
+        try:
+            from prompt_tiers import (
+                select_tier, get_prompt_for_tier, get_tools_for_tier,
+                is_modular_active, log_tier_decision,
+            )
+            if is_modular_active():
+                _lane_for_tier = locals().get("_lane") or ""
+                _intent_for_tier = locals().get("_intent") or ""
+                # Heuristik: kişisel veri sorgusu mu?
+                _has_pers = bool(locals().get("soz_no")) and any(
+                    kw in (user_input or "").lower()
+                    for kw in ["benim", "netim", "denemem", "puanim", "puanım",
+                               "hocam", "sınıfım", "sinifim", "devamsizligim", "devamsızlığım"]
+                )
+                _selected_tier = select_tier(
+                    user_input=user_input or "",
+                    role=role or "ogrenci",
+                    lane=_lane_for_tier,
+                    intent=_intent_for_tier,
+                    has_personal_data_query=_has_pers,
+                )
+                _claude_prompt = get_prompt_for_tier(_selected_tier, _role_aware_prompt)
+                _claude_tools = get_tools_for_tier(_selected_tier, get_tools(role=role))
+                log_tier_decision(_selected_tier, user_input or "", role or "ogrenci",
+                                  _lane_for_tier, _intent_for_tier,
+                                  reason=f"pers={_has_pers}")
+        except Exception as _tier_err:
+            # Hata → FULL (güvenli)
+            logger.warning(f"  [TIER] Hata, FULL kullaniliyor: {_tier_err}")
+            _claude_prompt = _role_aware_prompt
+            _claude_tools = get_tools(role=role)
+            _selected_tier = "full"
+
         MAX_TURNS = 10
         for turn in range(MAX_TURNS):
             # KRITIK: Anthropic SDK sync — event loop'u bloke etmemesi icin
@@ -3709,19 +3750,23 @@ class FermatCoreAgent:
             # native streaming: Claude her token ürettiğinde hemen queue'ya yaz.
             # Tool kullanımında text stream + tool_use fragman gelir, final_message'dan topla.
             if self._stream_queue is not None and self.async_client:
+                # 25.15: tier'a gore prompt + tool subset (default FULL davranis)
                 _stream_params = dict(
                     model     = MODEL,
                     max_tokens= 16384,  # Oturum 23 (Neo timeout): "tüm karakter sınırı" için 16k output
                     system    = [
-                        {"type": "text", "text": _role_aware_prompt,
+                        {"type": "text", "text": _claude_prompt,
                          "cache_control": {"type": "ephemeral"}},
                         {"type": "text", "text": dynamic_context,
                          "cache_control": {"type": "ephemeral"}},  # C15
                     ],
-                    # Oturum 25.11: Role-aware tools — DEAD_TOOLS hariç (~5400 tok tasarruf)
-                    tools     = get_tools(role=role),
+                    # 25.15 modular: LIGHT'ta tool YOK, NORMAL/FULL'de tam liste
+                    tools     = _claude_tools,
                     messages  = self.history,
                 )
+                # LIGHT tier'da tools=[] olunca Anthropic SDK boş listeyi reddeder
+                if not _claude_tools:
+                    _stream_params.pop("tools", None)
                 try:
                     async with self.async_client.messages.stream(**_stream_params) as stream:
                         async for text_chunk in stream.text_stream:
@@ -3741,14 +3786,14 @@ class FermatCoreAgent:
                 # Şimdi: 2 block cache'e al → dynamic_context de ephemeral TTL (5dk)
                 # Aynı rol+user 5dk içinde sorgu atarsa CACHE HIT → maliyet %50 düşer,
                 # latency 200-500ms tasarruf.
-                response = await asyncio.to_thread(
-                    self.client.messages.create,
+                # 25.15: tier'a gore prompt + tool subset
+                _create_params = dict(
                     model     = MODEL,
                     max_tokens= 16384,  # Oturum 23 (Neo): detaylı rapor için 16k output
                     system    = [
                         {
                             "type": "text",
-                            "text": _role_aware_prompt,  # C15 Oturum22.1 — rol-aware
+                            "text": _claude_prompt,  # 25.15 tier-aware
                             "cache_control": {"type": "ephemeral"},
                         },
                         {
@@ -3757,9 +3802,15 @@ class FermatCoreAgent:
                             "cache_control": {"type": "ephemeral"},  # C15 eklendi
                         },
                     ],
-                    # Oturum 25.11: Role-aware tools — DEAD_TOOLS hariç (~5400 tok tasarruf)
-                    tools     = get_tools(role=role),
+                    # 25.15 modular: tier subset
+                    tools     = _claude_tools,
                     messages  = self.history,
+                )
+                # LIGHT tier'da tools=[] → SDK reddeder, parametreyi cikar
+                if not _claude_tools:
+                    _create_params.pop("tools", None)
+                response = await asyncio.to_thread(
+                    self.client.messages.create, **_create_params
                 )
 
             # Araç çağrıları varsa çalıştır
