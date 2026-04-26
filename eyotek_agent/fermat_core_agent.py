@@ -3393,6 +3393,40 @@ class FermatCoreAgent:
             except Exception:
                 pass
 
+        # ── 25.17 FAZ 3: Lane + intent erken hesaplama ─────────────────
+        # Eskiden _lane sadece local path'te hesaplanırdı, Claude path'te
+        # tier seçimine boş gidiyordu. Şimdi her durumda hesaplanır.
+        _lane = None
+        _intent = None
+        try:
+            from groq_lanes import classify_lane
+            _lane = classify_lane(user_input, role=role, phone=caller_phone)
+        except Exception:
+            _lane = None
+        # Hafif intent tespiti (kısaca, regex bazlı — ağır intent_parser'a
+        # gerek yok, tier seçimi için yeterli)
+        try:
+            _ui_low = (user_input or "").lower()
+            if any(k in _ui_low for k in ["plan yap", "plan istiyorum", "plan ver",
+                                           "calisma plan", "çalışma plan",
+                                           "program yap", "haftalik plan", "haftalık plan"]):
+                _intent = "plan_yap"
+            elif any(k in _ui_low for k in ["analiz", "kiyasla", "kıyasla",
+                                             "karşılaştır", "karsilastir"]):
+                _intent = "analiz"
+            elif any(k in _ui_low for k in ["son denemem", "netim", "netlerim",
+                                             "puanim", "puanım", "deneme analiz",
+                                             "deneme sonuc"]):
+                _intent = "deneme_analiz"
+            elif any(k in _ui_low for k in ["limit nedir", "türev nedir", "turev nedir",
+                                             "fotosentez", "açıkla", "acikla", "anlat"]):
+                _intent = "kavram_aciklama"
+            elif any(k in _ui_low for k in ["merhaba", "selam", "hey", "iyi günler",
+                                             "iyi gunler", "naber"]):
+                _intent = "selamlama"
+        except Exception:
+            _intent = None
+
         # ── HİBRİT LLM ROUTING (Oturum 22.1e — tek kaynak: routing_engine) ──
         # Onceki: 3 yerde routing (fast_responses, llm_router, fermat_core) → karmaşik
         # Simdi: routing_engine.decide_route() → tek karar noktasi
@@ -3436,10 +3470,10 @@ class FermatCoreAgent:
             _hangi = "Groq" if self.router._groq_available else "Ollama"
 
             # Oturum 25.10 — Lane-specific system addon (Groq tutarliligi icin)
+            # 25.17 Faz 3: _lane zaten yukarıda hesaplandı, tekrar etme
             _lane_system = system
             try:
-                from groq_lanes import classify_lane, get_lane_system_addon
-                _lane = classify_lane(user_input, role=role, phone=caller_phone)
+                from groq_lanes import get_lane_system_addon
                 if _lane:
                     _addon = get_lane_system_addon(_lane)
                     if _addon:
