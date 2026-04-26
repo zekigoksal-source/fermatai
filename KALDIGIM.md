@@ -1,7 +1,87 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 26 Nisan 2026, ~20:30 — **OTURUM 25.14 — Infografik Analytics Dashboard (kişiselleşen kutular)**
+> **Son güncelleme:** 26 Nisan 2026, öğleden sonra — **OTURUM 25.14h — Cohort NET Halüsilasyon Fix**
+> **Son commit:** `f28c4fb` (akşam plani güncel) · Önemli fix commit: `a10bea2`
+> **Backup tag:** `oturum-25-14h-stable`
 > **Son konusma analizi timestamp:** `2026-04-25 17:49`
+> **Sistem:** ✅ bridge active, 4/4 endpoint 200, 3 timer kurulu, DB temiz (123 öğr / 1963 sınav / 5562 RAG)
+
+## 🆕 OTURUM 25.14g+h (26 Nisan öğleden sonra) — COHORT NET HALÜSİLASYON FIX
+
+### Neo'nun talebi
+> "mezun say ayt ortalama 67 yazıyor sence bu veri cidden doğru mu? halüsilasyon bu zaten,
+>  80 soru var bu tarz bir ortalama olsa öğrenciler hepsi süper başarılı olurdu — data
+>  uydurma doğru veri ver buralarda saçma veri uydurma"
+>
+> Sonra (4 art arda mesaj):
+> 1. "net olarak ortalama daha anlamlı"
+> 2. "puanda okul puanı zart zurt gibi değişkenler devreye girer"
+> 3. "ayt ve tyt net ortalaması verisi daha işlevsel"
+> 4. "doğru olsun yeterki"
+
+### Halüsilasyonun Kökü
+`student_exams.toplam` kolonu `exam_type='AYT'` ile etiketli ama TG (Tam Gün) kayıtları
+**TYT+AYT birleşik nets** içeriyor (max 109 — pure AYT max 80'i geçiyor!).
+
+```
+SELECT exam_type, MIN(toplam), AVG(toplam), MAX(toplam) FROM student_exams GROUP BY exam_type;
+-- AYT: min 0.75, avg 57.6, max 109 ❌ (TG combined)
+-- TYT: min 2.75, avg 62.1, max 107.5 ✅ (clean, /120)
+```
+
+### Çözüm
+**TYT net ort:** `student_exams` direkt (`exam_type='TYT'`, temiz, /120 max)
+**AYT net ort:** `student_exam_analysis.ders_netleri_ayt` JSONB Toplam.net ÷ (soru/80) — pure AYT
+
+```sql
+-- AYT pure ayrıştırma (lateral JSONB):
+SELECT sea.soz_no,
+  (REPLACE(elem->>'net', ',', '.'))::NUMERIC / NULLIF((elem->>'soru')::INT / 80.0, 0) AS ayt_net_per_exam
+FROM student_exam_analysis sea,
+     LATERAL jsonb_array_elements(sea.ders_netleri_ayt) AS elem
+WHERE elem->>'ders' = 'Toplam' AND (elem->>'soru')::INT > 0;
+```
+
+### Canlı Doğrulama (yeni veri)
+| Sınıf | Öğr | TYT Net /120 | AYT Net /80 |
+|---|---|---|---|
+| Mezun SAY | 27 | **70.0** | **15.5** ← (eski 67 yanlıştı) |
+| 12 SAY | 19 | 61.5 | 18.0 |
+| Mezun EA | 7 | 40.4 | 26.4 |
+| 11 SAY | 21 | 47.9 | - |
+
+### Diğer Düzeltmeler (aynı oturum öğleden sonra)
+- **Cohort öğrenci sayısı 71 → 123** — mezun (40) + sınıfsız (8) + small classes eksikti
+- **Çalışmam butonu same-tab fix** — `window.open` → `window.location.href`
+- **Admin "📊 Yönetim Paneli" butonu** chat header'a eklendi (admin only, same-tab)
+- **Conversation viewer Cinema palette revize** — glassmorphism + Fira fonts
+- **Backup tag** `oturum-25-14h-stable` atıldı
+
+### Akşam İçin Kalan (AKSAM_PLANI.md P1.5 — yeni eklendi)
+Cohort'ta yakalanan halüsilasyon yöntemiyle **diğer admin tab'larında veri kalitesi sweep'i**:
+- Routing tab oranları DB ile tutuyor mu?
+- Bildirimler tab son 7 gün doğru mu?
+- Öğretmenler tab etüt sayıları gerçek mi?
+- Maliyet tab token tahmini gerçeğe yakın mı?
+- Atlas-2 tab sabah cron çalıştıysa öneri var mı?
+- Öğrenci detay tab AYT/TYT verisi cohort ile tutarlı mı?
+
+### Commit Geçmişi (öğleden sonra)
+- `d0bac43` — Sınıf kohort tutarsızlığı (71 → 123)
+- **`a10bea2`** — Cohort NET ortalama (puan değil) — halüsilasyon fix ⭐
+- `f28c4fb` — AKSAM_PLANI güncellendi
+
+### Neo'nun Önemli Eleştirisi
+> "salak salak hatırlatıp duruyorum sana basit şeyleri kontrol ettiğinde anlaman lazım bunları"
+
+**Ders:** Veri gösterirken ham verinin makul aralıkta olduğunu mutlaka kontrol et. AYT 67 net (80 üzerinden ~%84) bütün sınıf için imkansız — SQL yazdıktan sonra "bu mantıklı mı?" diye düşünmediğim için Neo yakaladı. Bu sanity-check'i P1.5 sweep'ine de uyguluyorum.
+
+### Bir Sonraki Oturum İlk İş
+1. AKSAM_PLANI.md P1 (UX test 20dk) — gerçek öğrenci hesabı ile Çalışmam akış denemesi
+2. AKSAM_PLANI.md P1.5 (yeni — admin tab veri kalite sweep, ~30dk)
+3. Neo karar verirse P3 (LLM proaktif test) veya P4 (bot programa yazma)
+
+---
 
 ## 🚨 OTURUM 25.11 (26 Nisan ~12:00) — SISTEM AUDIT + KRITIK BUG FIX
 
