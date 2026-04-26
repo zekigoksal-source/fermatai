@@ -256,144 +256,312 @@ def generate_html(conversations: dict, users: dict, period_label: str) -> str:
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FermatAI Konuşmalar — {period_label}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#0b141a; color:#e9edef; }}
+/* Oturum 25.14c — Conversation viewer premium revize (ui-ux-pro-max Cinema palette) */
+:root {{
+    --bg-deep:#020203; --bg-base:#050506; --bg-elevated:#0a0a0c;
+    --surface-1:rgba(255,255,255,0.025);
+    --surface-2:rgba(255,255,255,0.05);
+    --surface-3:rgba(255,255,255,0.08);
+    --brand-gold:#f59e0b; --brand-amber:#fbbf24;
+    --brand-glow:rgba(245,158,11,0.3);
+    --accent-indigo:#5E6AD2; --accent-purple:#8B5CF6;
+    --success:#10b981;
+    --fg:#ededef; --fg-muted:#a8aab2; --fg-tertiary:#6b6e78;
+    --border:rgba(255,255,255,0.08);
+    --border-strong:rgba(255,255,255,0.14);
+    --easing:cubic-bezier(0.16,1,0.3,1);
+    --gradient-gold:linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%);
+    --gradient-cinema:linear-gradient(180deg,#0a0a0f 0%,#020203 100%);
+}}
+* {{ margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }}
+html {{ background:var(--bg-deep); }}
+body {{
+    font-family:'Fira Sans',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    background:var(--gradient-cinema);
+    color:var(--fg); height:100vh; overflow:hidden;
+    letter-spacing:-0.011em;
+}}
+.mono {{ font-family:'Fira Code',monospace; font-variant-numeric:tabular-nums; }}
+
+/* Ambient blobs */
+body::before, body::after {{
+    content:''; position:fixed; border-radius:50%; filter:blur(80px);
+    opacity:0.12; z-index:0; pointer-events:none;
+}}
+body::before {{
+    width:500px; height:500px; top:-150px; left:-100px;
+    background:radial-gradient(circle,var(--brand-gold),transparent 60%);
+}}
+body::after {{
+    width:600px; height:600px; bottom:-200px; right:-150px;
+    background:radial-gradient(circle,var(--accent-indigo),transparent 60%);
+}}
 
 /* Layout */
-.container {{ display:flex; height:100vh; }}
-.sidebar {{ width:340px; background:#111b21; border-right:1px solid #222d34; display:flex; flex-direction:column; overflow:hidden; }}
-.main {{ flex:1; display:flex; flex-direction:column; background:#0b141a; }}
+.container {{ display:flex; height:100vh; position:relative; z-index:10; }}
+.sidebar {{
+    width:360px;
+    background:var(--surface-1);
+    backdrop-filter:blur(24px) saturate(180%);
+    -webkit-backdrop-filter:blur(24px) saturate(180%);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column; overflow:hidden;
+}}
+.main {{
+    flex:1; display:flex; flex-direction:column;
+    background:var(--bg-deep); overflow:hidden;
+}}
 
 /* Sidebar header */
 .sidebar-header {{
-    padding:16px; background:#1f2c33; border-bottom:1px solid #222d34;
+    padding:18px 20px;
+    background:var(--surface-2);
+    border-bottom:1px solid var(--border);
+    position:relative;
 }}
-.sidebar-header h2 {{ font-size:18px; color:#e9edef; margin-bottom:4px; }}
-.sidebar-header .stats {{ font-size:12px; color:#8696a0; }}
+.sidebar-header::before {{
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent);
+}}
+.sidebar-header h2 {{
+    font-size:16px; font-weight:700; letter-spacing:-0.02em;
+    background:var(--gradient-gold);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    margin-bottom:6px;
+}}
+.sidebar-header .stats {{
+    font-size:11px; color:var(--fg-muted);
+    font-family:'Fira Code',monospace;
+    letter-spacing:0.02em;
+}}
 
 /* Search */
-.search-box {{
-    padding:8px 12px; background:#111b21;
-}}
+.search-box {{ padding:12px 14px; }}
 .search-box input {{
-    width:100%; padding:8px 12px; background:#202c33; border:none; border-radius:8px;
-    color:#e9edef; font-size:14px; outline:none;
+    width:100%; padding:10px 14px;
+    background:var(--bg-base);
+    border:1px solid var(--border);
+    border-radius:10px;
+    color:var(--fg); font-size:14px; outline:none;
+    font-family:inherit;
+    transition:all 0.2s var(--easing);
 }}
-.search-box input::placeholder {{ color:#8696a0; }}
+.search-box input:focus {{
+    border-color:var(--brand-gold);
+    box-shadow:0 0 0 3px var(--brand-glow);
+}}
+.search-box input::placeholder {{ color:var(--fg-tertiary); }}
 
 /* User list */
-.user-list {{ flex:1; overflow-y:auto; }}
+.user-list {{ flex:1; overflow-y:auto; padding:6px 8px; }}
 .user-card {{
-    display:flex; align-items:center; padding:12px 16px; cursor:pointer;
-    border-bottom:1px solid #222d34; transition:background 0.15s;
+    display:flex; align-items:center; padding:11px 13px; cursor:pointer;
+    border:1px solid transparent; border-radius:12px; margin-bottom:4px;
+    transition:all 0.25s var(--easing);
 }}
-.user-card:hover {{ background:#202c33; }}
-.user-card.active {{ background:#2a3942; }}
+.user-card:hover {{
+    background:var(--surface-2);
+    border-color:var(--border);
+    transform:translateX(2px);
+}}
+.user-card.active {{
+    background:var(--surface-3);
+    border-color:var(--brand-gold);
+    box-shadow:0 4px 16px rgba(245,158,11,0.12);
+}}
 .user-avatar {{
-    width:44px; height:44px; border-radius:50%; background:#00a884;
+    width:42px; height:42px; border-radius:12px;
+    background:var(--gradient-gold);
     display:flex; align-items:center; justify-content:center;
-    font-size:18px; font-weight:600; color:#fff; flex-shrink:0; margin-right:12px;
+    font-size:17px; font-weight:700; color:#1a0d00;
+    flex-shrink:0; margin-right:12px;
+    box-shadow:0 4px 12px var(--brand-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+    letter-spacing:-0.05em;
 }}
 .user-info {{ flex:1; min-width:0; }}
-.user-name {{ font-size:15px; font-weight:500; color:#e9edef; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.user-meta {{ font-size:12px; color:#8696a0; margin-top:2px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
-.user-stats {{ font-size:11px; color:#667781; margin-top:2px; }}
+.user-name {{
+    font-size:14.5px; font-weight:600; color:var(--fg);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    letter-spacing:-0.01em;
+}}
+.user-meta {{
+    font-size:11.5px; color:var(--fg-muted); margin-top:3px;
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+}}
+.user-stats {{
+    font-size:10.5px; color:var(--fg-tertiary); margin-top:2px;
+    font-family:'Fira Code',monospace;
+}}
 
 /* Badges */
 .badge {{
-    display:inline-block; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; text-transform:uppercase;
+    display:inline-block; padding:2px 8px; border-radius:999px;
+    font-size:9.5px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.06em;
 }}
-.badge.admin {{ background:#e74c3c; color:#fff; }}
-.badge.mudur {{ background:#3498db; color:#fff; }}
-.badge.yonetim {{ background:#9b59b6; color:#fff; }}
-.badge.ogretmen {{ background:#e67e22; color:#fff; }}
-.badge.ogrenci {{ background:#2ecc71; color:#fff; }}
-.badge.rehber {{ background:#1abc9c; color:#fff; }}
+.badge.admin {{ background:rgba(239,68,68,0.18); color:#fca5a5; }}
+.badge.mudur {{ background:rgba(94,106,210,0.18); color:#a5b4fc; }}
+.badge.yonetim {{ background:rgba(139,92,246,0.18); color:#c4b5fd; }}
+.badge.ogretmen {{ background:rgba(245,158,11,0.18); color:var(--brand-amber); }}
+.badge.ogrenci {{ background:rgba(16,185,129,0.18); color:#6ee7b7; }}
+.badge.rehber {{ background:rgba(20,184,166,0.18); color:#5eead4; }}
 
 /* Chat header */
 .chat-header {{
-    padding:14px 20px; background:#1f2c33; border-bottom:1px solid #222d34;
+    padding:18px 24px;
+    background:var(--surface-1);
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    position:relative;
 }}
-.chat-header-name {{ font-size:17px; font-weight:600; color:#e9edef; }}
-.chat-header-info {{ font-size:12px; color:#8696a0; margin-top:3px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }}
+.chat-header::before {{
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent);
+}}
+.chat-header-name {{
+    font-size:18px; font-weight:700; color:var(--fg);
+    letter-spacing:-0.02em;
+}}
+.chat-header-info {{
+    font-size:12px; color:var(--fg-muted); margin-top:4px;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-family:'Fira Code',monospace;
+    font-variant-numeric:tabular-nums;
+}}
 
 /* Chat messages */
 .chat-messages {{
-    flex:1; overflow-y:auto; padding:20px 60px;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" opacity="0.03"><rect width="300" height="300" fill="%23fff"/></svg>');
+    flex:1; overflow-y:auto; padding:24px 64px;
+    background:transparent;
 }}
 
 /* Date separator */
 .date-separator {{
-    text-align:center; margin:16px 0; font-size:12px; color:#8696a0;
-    background:#1a262d; display:inline-block; padding:4px 14px; border-radius:8px;
-    margin-left:auto; margin-right:auto; width:fit-content;
-    display:block;
+    text-align:center; margin:24px auto 16px; font-size:11px;
+    color:var(--fg-muted);
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    display:block; width:fit-content;
+    padding:6px 14px; border-radius:999px;
+    font-family:'Fira Code',monospace;
+    letter-spacing:0.05em;
+    text-transform:uppercase; font-weight:600;
 }}
-.date-separator {{ display:flex; justify-content:center; }}
 
 /* Bubbles */
 .bubble {{
-    max-width:72%; margin-bottom:4px; padding:8px 12px; border-radius:8px;
-    position:relative; word-wrap:break-word; line-height:1.45; font-size:14px;
-    clear:both;
+    max-width:72%; margin-bottom:6px; padding:11px 16px;
+    position:relative; word-wrap:break-word; line-height:1.5; font-size:14px;
+    clear:both; border-radius:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.3);
+    transition:all 0.2s var(--easing);
 }}
+.bubble:hover {{ transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,0.4); }}
 .user-bubble {{
-    background:#005c4b; float:right; border-top-right-radius:0;
+    background:linear-gradient(135deg,#92400e 0%,#b45309 100%);
+    color:#fef3c7;
+    float:right; border-top-right-radius:4px;
     margin-left:28%;
+    border:1px solid rgba(245,158,11,0.3);
 }}
 .bot-bubble {{
-    background:#1f2c33; float:left; border-top-left-radius:0;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    float:left; border-top-left-radius:4px;
     margin-right:28%;
 }}
 .bubble::after {{ content:''; display:table; clear:both; }}
-.bubble-content {{ color:#e9edef; }}
-.bubble-content strong {{ color:#53bdeb; }}
-.bubble-content em {{ color:#d4d4d4; font-style:italic; }}
-.bubble-content code {{ background:#0d1418; padding:2px 4px; border-radius:3px; font-size:13px; }}
-.bubble-content hr.msg-hr {{ border:none; border-top:1px solid #3a4a54; margin:6px 0; }}
-.bubble-time {{ font-size:11px; color:#8696a0; text-align:right; margin-top:3px; }}
+.bubble-content {{ color:var(--fg); }}
+.user-bubble .bubble-content {{ color:#fef3c7; }}
+.bubble-content strong {{ color:var(--brand-amber); font-weight:600; }}
+.user-bubble .bubble-content strong {{ color:#fff; }}
+.bubble-content em {{ color:var(--fg-muted); font-style:italic; }}
+.bubble-content code {{
+    background:var(--bg-deep); padding:2px 6px; border-radius:4px;
+    font-size:12.5px; font-family:'Fira Code',monospace;
+    color:var(--brand-amber);
+}}
+.bubble-content hr.msg-hr {{ border:none; border-top:1px solid var(--border); margin:8px 0; }}
+.bubble-time {{
+    font-size:10.5px; color:rgba(255,255,255,0.5); text-align:right;
+    margin-top:4px; font-family:'Fira Code',monospace;
+    font-variant-numeric:tabular-nums;
+}}
+.user-bubble .bubble-time {{ color:rgba(254,243,199,0.6); }}
 
 /* Tool calls */
 .tool-call {{
-    text-align:center; margin:4px 0; font-size:12px; color:#667781; clear:both;
+    text-align:center; margin:8px 0; font-size:11.5px;
+    color:var(--fg-tertiary); clear:both;
+    padding:6px 12px;
+    background:var(--surface-1);
+    border:1px dashed var(--border);
+    border-radius:10px;
+    width:fit-content; margin-left:auto; margin-right:auto;
 }}
-.tool-call code {{ background:#1a262d; padding:2px 6px; border-radius:4px; }}
+.tool-call code {{
+    background:var(--surface-2); padding:2px 8px; border-radius:6px;
+    font-family:'Fira Code',monospace;
+    color:var(--accent-purple);
+    font-weight:500;
+}}
 
 /* Pagination */
 .pagination {{
-    display:flex; align-items:center; justify-content:center; gap:12px;
-    padding:10px; background:#1f2c33; border-bottom:1px solid #222d34;
+    display:flex; align-items:center; justify-content:center; gap:14px;
+    padding:12px 20px;
+    background:var(--surface-1);
+    border-bottom:1px solid var(--border);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
 }}
 .pag-btn {{
-    background:#00a884; color:#fff; border:none; padding:6px 16px;
-    border-radius:6px; cursor:pointer; font-size:13px; font-weight:500;
+    background:var(--gradient-gold);
+    color:#1a0d00; border:none;
+    padding:7px 16px; border-radius:8px; cursor:pointer;
+    font-size:12.5px; font-weight:600;
+    font-family:inherit;
+    transition:all 0.2s var(--easing);
+    box-shadow:0 2px 8px var(--brand-glow);
 }}
-.pag-btn:hover {{ background:#00c49a; }}
-.pag-info {{ font-size:13px; color:#8696a0; }}
+.pag-btn:hover {{
+    transform:translateY(-1px);
+    box-shadow:0 4px 14px var(--brand-glow);
+}}
+.pag-info {{
+    font-size:12px; color:var(--fg-muted);
+    font-family:'Fira Code',monospace;
+    letter-spacing:0.02em;
+}}
 
 /* Empty state */
 .empty-state {{
     display:flex; align-items:center; justify-content:center; flex:1;
-    color:#667781; font-size:16px;
+    color:var(--fg-tertiary); font-size:15px;
 }}
 
-/* Responsive */
-@media (max-width: 768px) {{
-    .sidebar {{ width:100%; position:fixed; z-index:10; }}
-    .main {{ margin-left:0; }}
-    .chat-messages {{ padding:12px 16px; }}
-    .bubble {{ max-width:88%; }}
+/* Scrollbar */
+::-webkit-scrollbar {{ width:6px; height:6px; }}
+::-webkit-scrollbar-track {{ background:transparent; }}
+::-webkit-scrollbar-thumb {{
+    background:var(--border-strong); border-radius:999px;
 }}
+::-webkit-scrollbar-thumb:hover {{ background:rgba(255,255,255,0.2); }}
 
 /* Clear float fix */
 .chat-page::after {{ content:''; display:table; clear:both; }}
 
-/* Scrollbar */
-::-webkit-scrollbar {{ width:6px; }}
-::-webkit-scrollbar-track {{ background:#0b141a; }}
-::-webkit-scrollbar-thumb {{ background:#374045; border-radius:3px; }}
+/* Responsive */
+@media (max-width: 768px) {{
+    .sidebar {{ width:100%; position:fixed; z-index:50; }}
+    .main {{ margin-left:0; }}
+    .chat-messages {{ padding:14px 18px; }}
+    .bubble {{ max-width:88%; padding:10px 14px; }}
+    .chat-header-name {{ font-size:16px; }}
+}}
 </style>
 </head>
 <body>
