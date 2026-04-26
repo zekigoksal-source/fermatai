@@ -53,10 +53,35 @@ Bu mükemmel: bot daily_brief gördü → kullanıcıya hatırlattı → P4 tool
 - (KALDIGIM commit edilecek)
 
 ### Bir Sonraki Oturum İlk İş
-1. Sistem prompt sıkıştırma (28k → 18k hedef) — Groq tool-calling'i geri kazan
-2. "ne calistim, ne calismam gerek" daily_brief sorgu pattern'leri cloud'a
-3. Bot kısa kesme bug'ı (Claude tool sonrası incelnmek)
-4. Neo P1 manuel UX test — gerçek öğrenci hesabıyla (gerek varsa)
+1. **🚨 GROQ INVISIBILITY BUG** (yeni keşif, 20:37) — DETAY ASAGIDA
+2. Sistem prompt sıkıştırma (28k → 18k hedef) — Groq tool-calling'i geri kazan
+3. "ne calistim, ne calismam gerek" daily_brief sorgu pattern'leri cloud'a
+4. Bot kısa kesme bug'ı (Claude tool sonrası incelnmek)
+5. Neo P1 manuel UX test — gerçek öğrenci hesabıyla (gerek varsa)
+
+### 🚨 GROQ INVISIBILITY BUG (Neo dikkat çekti — bot konuşmasında "7 gündür Groq=0" gözlemi)
+
+**Bot Neo ile araştırdı** (20:33-20:34): routing_stats'ta 7 gün groq kaydı YOK.
+
+**Ben canlı izledim** (20:37:25):
+- Log: "[YEREL] Lane: sohbet (Groq aciliyor)" + "[YEREL] Groq ile yanitlaniyor"
+- Groq cevap döndü ama "Merhaba Nazlı! 📊" (25 char)
+- ESCALATION tetiklendi (eşik: < 30 char @ `fermat_core_agent.py:3469`)
+- Claude'a geçti, routing_stats'a **"claude"** yazıldı
+- **Groq attempt KAYBOLDU** (DB'ye yansımadı)
+
+**Üç katmanlı sorun:**
+1. Groq Llama 3.3 70B çok kısa cevap döndürüyor (system prompt ~28k, sınırı tetikliyor olabilir)
+2. Kısa cevap eşiği `< 30` çok katı — basit selamlama bile aşamaz
+3. routing_stats Groq attempt'ini kayda almıyor — sadece final provider yazılıyor
+
+**Etki:** Groq fiilen çağrılıyor ama her mesajda eskale ediliyor → Claude maliyeti %100, Groq tasarrufu sıfır.
+
+**Yarın çözüm önerisi:**
+- A) Eşiği lane bazlı yap: `sohbet=8`, `kavramsal=80`, `analiz=cloud`
+- B) routing_stats'a `groq_attempted_then_escalated` ayrı kaynak ekle (görünürlük)
+- C) Groq prompt'una "kısa cevap verme, en az 1-2 cümle yaz" kuralı
+- D) ENABLE_GROQ_TOOLS=true env'e ekle (tool-calling 12k TPM rate limit'ini test etmek lazım önce)
 
 ---
 
