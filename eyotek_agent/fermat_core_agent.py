@@ -23,6 +23,7 @@ import asyncio
 import json
 import os
 import sys
+import time  # Oturum 25.11: Groq-tools pre-check ve duration timing
 import uuid
 from datetime import date as _date, timedelta as _td
 from pathlib import Path
