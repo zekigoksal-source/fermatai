@@ -903,8 +903,10 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
       <button class="new-chat-btn" id="newChatBtn" onclick="startNewChat()" title="Yeni sohbet başlat (geçmiş arşivde kalır, bot profilini bilmeye devam eder)" style="background:transparent;border:1px solid var(--border);color:var(--fg-muted);cursor:pointer;font-size:13px;padding:5px 12px;margin-right:8px;border-radius:8px;transition:all 0.15s;">✨ Yeni Sohbet</button>
       <!-- Oturum 25.13: Öğrenci günlük takip linki (sadece öğrenci rolünde görünür) -->
       <button class="study-btn" id="studyBtn" onclick="openStudyDashboard()" title="Çalışmam — günlük program, soru, alışkanlık takibi" style="display:none;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;color:#1a0d00;cursor:pointer;font-size:13px;padding:6px 14px;margin-right:8px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(245,158,11,0.25);">📚 Çalışmam</button>
-      <!-- 22.1n-vizyon3: Admin/Mudur Panel (diğer roller görmez) -->
-      <button class="admin-btn" id="adminBtn" onclick="openAdminPanel()" title="Admin Panel" style="display:none;background:transparent;border:none;color:var(--fg-muted);cursor:pointer;font-size:18px;padding:4px 8px;margin-right:4px;">⚙️</button>
+      <!-- Oturum 25.14d: Admin/Mudur Dashboard (Cinema palette dashboard'a yönlendir) -->
+      <button class="admin-dash-btn" id="adminDashBtn" onclick="openAdminDashboard()" title="Yönetim Paneli — bildirim, routing, sınıf/öğretmen analiz, Atlas-2" style="display:none;background:linear-gradient(135deg,#5E6AD2,#8B5CF6);border:none;color:#fff;cursor:pointer;font-size:13px;padding:6px 14px;margin-right:8px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(94,106,210,0.3);">📊 Yönetim Paneli</button>
+      <!-- 22.1n-vizyon3: Admin/Mudur eski Insight Panel (modal — geriye uyum) -->
+      <button class="admin-btn" id="adminBtn" onclick="openAdminPanel()" title="Insight + Outreach (modal)" style="display:none;background:transparent;border:none;color:var(--fg-muted);cursor:pointer;font-size:18px;padding:4px 8px;margin-right:4px;">⚙️</button>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Tema değiştir">🌙</button>
       <span id="userName">—</span>
       <button class="logout" onclick="doLogout()">Çıkış</button>
@@ -2083,6 +2085,11 @@ function showChat(name) {
   const adminBtn = document.getElementById("adminBtn");
   if (adminBtn && (role === "admin" || role === "mudur")) {
     adminBtn.style.display = "inline-block";
+  }
+  // Oturum 25.14d: Admin/Mudur — Yönetim Paneli butonu (Cinema dashboard)
+  const adminDashBtn = document.getElementById("adminDashBtn");
+  if (adminDashBtn && (role === "admin" || role === "mudur")) {
+    adminDashBtn.style.display = "inline-block";
   }
   // 23 Nisan (Neo bug fix): Önceki sohbeti restore et (YouTube link vb. tıklayıp dönünce)
   try {
@@ -3896,6 +3903,14 @@ function openStudyDashboard() {
   let url = "/student/daily/dashboard";
   if (token) url += "?token=" + encodeURIComponent(token);
   // Aynı sekmede yönlendir (Neo UX kurali: tek arayüz, tek sekme)
+  window.location.href = url;
+}
+
+// Oturum 25.14d: Admin Yönetim Paneli (Cinema dashboard) — aynı sekmede
+function openAdminDashboard() {
+  const token = localStorage.getItem(TOKEN_KEY) || "";
+  let url = "/admin/dashboard";
+  if (token) url += "?token=" + encodeURIComponent(token);
   window.location.href = url;
 }
 
