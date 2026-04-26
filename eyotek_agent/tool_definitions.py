@@ -629,6 +629,31 @@ TOOLS: list[dict] = [
             "required": ["soz_no", "gun", "yeni_icerik"]
         }
     },
+    # 25.14h — Calismam panel (gunluk program) yazma tool
+    {
+        "name": "add_to_student_program",
+        "description": (
+            "Öğrencinin Çalışmam panelindeki günlük programa yeni bir blok ekle. "
+            "Öğrenci 'evet ekle', 'matematik koy 16:00', 'yarın 09:00 fizik ekle' gibi ONAY/talep verince KULLAN. "
+            "ÖNCE öneri sun ('16:00-17:00 Matematik ekleyeyim mi?'), öğrenci ONAYLAYINCA bu tool'u çağır. "
+            "ACL: sadece kendi soz_no'su (admin override). Yanıtta 'eklendi' onayı + Çalışmam linki ver. "
+            "plan_date YYYY-MM-DD formatı (default bugün). start_time/end_time HH:MM."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Öğrenci soz_no (kendi)"},
+                "title": {"type": "string", "description": "Blok başlığı, örn 'Matematik — Limit'"},
+                "start_time": {"type": "string", "description": "Başlangıç saati HH:MM, örn '16:00'"},
+                "end_time": {"type": "string", "description": "Bitiş saati HH:MM, opsiyonel"},
+                "plan_date": {"type": "string", "description": "YYYY-MM-DD, default bugün"},
+                "ders": {"type": "string", "description": "Ders adı (Matematik, Fizik...), opsiyonel"},
+                "konu": {"type": "string", "description": "Spesifik konu (Limit, Kuvvet...), opsiyonel"},
+                "notes": {"type": "string", "description": "Not, opsiyonel"}
+            },
+            "required": ["soz_no", "title", "start_time"]
+        }
+    },
     # 22.1n-bug8 — Puan Tahmin + Hedef Analiz
     {
         "name": "puan_tahmin",

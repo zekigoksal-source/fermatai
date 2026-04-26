@@ -1560,6 +1560,60 @@ async def _tool_transfer_failure(**kwargs):
     }
 
 
+async def _tool_add_to_student_program(**kwargs):
+    """25.14h: Öğrenci Çalışmam panel günlük programa blok ekle.
+
+    ACL: ogrenci sadece kendi soz_no'su; admin/mudur/rehber override izinli.
+    Bot ÖNCE öneri sunar ('16:00 Mat ekleyeyim mi?'), öğrenci ONAYLAYINCA çağrılır.
+    """
+    from datetime import date as _date
+    from student_daily import add_daily_program
+    caller_soz_no = kwargs.pop("_caller_soz_no", None)
+    caller_role = kwargs.pop("_caller_role", "ogrenci")
+    soz_no = kwargs.get("soz_no")
+    title = kwargs.get("title", "")
+    start_time = kwargs.get("start_time", "")
+    if not soz_no or not title or not start_time:
+        return {"error": "soz_no, title, start_time zorunlu"}
+    soz_no = int(soz_no)
+
+    # ACL gate
+    if caller_role not in ("admin", "mudur", "rehber"):
+        if not caller_soz_no or int(caller_soz_no) != soz_no:
+            return {"error": "yetki_yok", "mesaj": "Sadece kendi programina ekleyebilirsin."}
+
+    # plan_date parse
+    pd = kwargs.get("plan_date")
+    plan_date = None
+    if pd:
+        try:
+            plan_date = _date.fromisoformat(pd)
+        except Exception:
+            plan_date = None
+
+    try:
+        result = await add_daily_program(
+            soz_no=soz_no,
+            title=title[:200],
+            start_time=start_time,
+            end_time=kwargs.get("end_time"),
+            plan_date=plan_date,
+            ders=kwargs.get("ders"),
+            konu=kwargs.get("konu"),
+            notes=kwargs.get("notes"),
+        )
+        return {
+            "basarili": True,
+            "id": result.get("id"),
+            "title": result.get("title"),
+            "plan_date": result.get("plan_date"),
+            "mesaj": f"Programa eklendi: {start_time} {title}",
+            "panel_url": f"/student/daily/dashboard?soz_no={soz_no}",
+        }
+    except Exception as e:
+        return {"basarili": False, "error": str(e)[:200]}
+
+
 async def _tool_plan_kaydet(**kwargs):
     """22.1n-toplanti #2: Çalışma planı kalıcı kaydet.
     Claude plan üretince bu tool ile save_plan — sonraki düzenleme diff olur."""
@@ -1890,6 +1944,8 @@ TOOL_DISPATCH = {
     "hedef_bolum_ara":          lambda p: _tool_hedef_bolum_ara(**p),
     "puan_tahmin":              lambda p: _tool_puan_tahmin(**p),
     "hedef_puan_analiz":        lambda p: _tool_hedef_puan_analiz(**p),
+    # 25.14h — Calismam programa yazma (ACL ile)
+    "add_to_student_program":   lambda p: _tool_add_to_student_program(**p),
     # 22.1n-toplanti: plan state (diff update, yaz kampi icin kritik)
     "plan_kaydet":              lambda p: _tool_plan_kaydet(**p),
     "plan_getir":               lambda p: _tool_plan_getir(**p),
@@ -2106,6 +2162,12 @@ async def run_tool(name: str, input_data: dict,
             enriched["_caller_soz_no"] = getattr(run_tool, '_current_soz_no', None)
             # SGM (Orsel Koc) phone-ozel SQL guard icin
             enriched["_caller_phone"] = getattr(run_tool, '_current_phone', '')
+            result = await fn(enriched)
+        elif name == "add_to_student_program":
+            # 25.14h: ACL — ogrenci sadece kendi soz_no, admin/mudur/rehber override
+            enriched = dict(input_data)
+            enriched["_caller_role"] = caller_role
+            enriched["_caller_soz_no"] = getattr(run_tool, '_current_soz_no', None)
             result = await fn(enriched)
         elif name == "search_curriculum":
             result = await fn(input_data)

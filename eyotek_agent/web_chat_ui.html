@@ -544,6 +544,23 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
   .chat-header .user .new-chat-btn::before {
     content: "✨"; font-size: 14px;
   }
+  /* 25.14h: Çalışmam ve Yönetim Paneli butonları mobilde ikon-only */
+  .chat-header .user .study-btn {
+    font-size: 0 !important;
+    padding: 6px 9px !important;
+    margin-right: 4px !important;
+  }
+  .chat-header .user .study-btn::before {
+    content: "📚"; font-size: 15px;
+  }
+  .chat-header .user .admin-dash-btn {
+    font-size: 0 !important;
+    padding: 6px 9px !important;
+    margin-right: 4px !important;
+  }
+  .chat-header .user .admin-dash-btn::before {
+    content: "📊"; font-size: 15px;
+  }
   /* Kullanıcı ismi mobilde gizli (Çıkış kalır, butona basınca çıkış) */
   .chat-header .user #userName { display: none; }
   /* Çıkış butonu kompakt */
@@ -589,8 +606,17 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
   .msg { max-width: 95%; font-size: 13px; padding: 10px 12px; }
   .chart-container { height: 200px; }
   #dashboardCards > div { grid-template-columns: 1fr !important; }
-  /* Daha dar: tema + admin ikon gizle yer açmak için (history drawer'da zaten var) */
+  /* Daha dar: tema + eski insight modal ikonlari gizle (history drawer'da zaten var) */
   .chat-header .user .theme-toggle { display: none; }
+  .chat-header .user .admin-btn { display: none !important; }
+  /* 25.14h: ikonlar daha sıkı, marginleri minimuma çek */
+  .chat-header .user .new-chat-btn,
+  .chat-header .user .study-btn,
+  .chat-header .user .admin-dash-btn {
+    margin-right: 2px !important;
+    padding: 5px 7px !important;
+  }
+  .chat-header { padding: 8px 8px; gap: 2px; }
 }
 
 /* History drawer */

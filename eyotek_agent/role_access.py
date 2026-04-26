@@ -38,6 +38,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "get_recent_system_updates",    # KALDIGIM canli okuyucu
         "hazirla_etut_talebi",          # Ogretmen eskalasyon (22.1l)
         "ogrenci_peer_kiyas",           # Peer benchmark (22.1m)
+        "add_to_student_program",       # 25.14h: ogrenci calismam panel yazma (admin override)
         "ogm_yonlendir",                # MEB OGM yonlendirme (22.1n-ogm)
         "branch_zayif_konu",            # 22.1n-neo: brans analiz (admin herseyi)
         # 22.1n-neo FINANS TOOLS — ACL'de admin'de ama her tool ICINDE
@@ -95,6 +96,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
         # 23 Nisan — Konu kaynak paketi (YouTube + Wikipedia + OGM)
         "konu_kaynak_paketi",
+        # 25.14h: mudur tum ogrencilerin programina ekleyebilir
+        "add_to_student_program",
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)
@@ -147,6 +150,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
         "bolum_karsilastir", "tercih_donemi_durum",
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
+        # 25.14h: rehber tum ogrencilerin programina ekleyebilir (override)
+        "add_to_student_program",
     },
     # Veli: sadece kendi çocuğunun akademik verisi + universite tahmin (Neo onay)
     "veli": {"get_student_analytics", "get_ayt_analysis",
@@ -169,7 +174,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 # 23 Nisan — Tercih Robotu (sadece kendi profili)
                 "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
                 "bolum_karsilastir", "tercih_donemi_durum",
-                "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu"},
+                "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
+                # 25.14h: ogrenci kendi calismam paneline ekleyebilir
+                "add_to_student_program"},
     # Misafir / bilinmeyen: hiçbir araç
     "guest": set(),
     "unknown": set(),
