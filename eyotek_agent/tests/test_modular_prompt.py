@@ -182,12 +182,20 @@ class TestToolEscalation:
         assert t == "full"
 
     def test_light_returns_no_tools(self):
-        """LIGHT tier'a tool listesi boş döner"""
+        """LIGHT tier'a tool listesi boş döner; NORMAL whitelist'le filtreliyor (Faz 2)"""
         from prompt_tiers import get_tools_for_tier
+        # x/y/z whitelist'te değil (var olmayan tool isimleri) — NORMAL boş döner
         full_tools = [{"name": "x"}, {"name": "y"}, {"name": "z"}]
         assert get_tools_for_tier("light", full_tools) == []
-        assert get_tools_for_tier("normal", full_tools) == full_tools
+        # NORMAL Faz 2: whitelist intersect — dummy isimler whitelist'te yok
+        assert get_tools_for_tier("normal", full_tools) == []
         assert get_tools_for_tier("full", full_tools) == full_tools
+
+        # Whitelist'teki tool ile test
+        real_tools = [{"name": "search_curriculum"}, {"name": "finans_ozet"}]
+        normal = get_tools_for_tier("normal", real_tools)
+        assert {t["name"] for t in normal} == {"search_curriculum"}, \
+            "NORMAL: search_curriculum OK, finans_ozet HARİÇ"
 
 
 # ═══════════════════════════════════════════════════════════════════
