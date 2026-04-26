@@ -1948,6 +1948,9 @@ TOOL_DISPATCH = {
     "get_adaptive_summary":       lambda p: _tool_get_adaptive_summary(**p),
     "get_knowledge_graph":        lambda p: _tool_get_knowledge_graph(**p),
     "observe_student_answer":     lambda p: _tool_observe_student_answer(**p),
+    # ── Oturum 25.12 — OGRENCI GUNLUK TAKIP (GRAFEN) ──
+    "get_student_daily_summary":  lambda p: _tool_get_student_daily_summary(**p),
+    "analyze_student_study_pattern": lambda p: _tool_analyze_student_study_pattern(**p),
 }
 
 
@@ -2003,6 +2006,30 @@ async def _tool_observe_student_answer(
         )
     except Exception as e:
         logger.error(f"[observe_student_answer] {e}")
+        return {"error": str(e)}
+
+
+# ── Oturum 25.12 — Öğrenci Günlük Takip Tool Wrappers ──────────────────────
+
+async def _tool_get_student_daily_summary(soz_no: int, **_) -> dict:
+    """7 modül günlük özet — student_daily.get_summary."""
+    try:
+        from student_daily import get_summary
+        return await get_summary(int(soz_no))
+    except Exception as e:
+        logger.error(f"[get_student_daily_summary] {e}")
+        return {"error": str(e)}
+
+
+async def _tool_analyze_student_study_pattern(soz_no: int, days: int = 30, **_) -> dict:
+    """Çalışma örüntü analizi — student_daily.analyze_study_pattern."""
+    try:
+        from student_daily import analyze_study_pattern
+        # Days range guard
+        days = max(7, min(90, int(days)))
+        return await analyze_study_pattern(int(soz_no), days=days)
+    except Exception as e:
+        logger.error(f"[analyze_student_study_pattern] {e}")
         return {"error": str(e)}
 
 

@@ -1433,6 +1433,43 @@ TOOLS: list[dict] = [
             "required": ["soz_no", "ders", "konu", "dogru"],
         },
     },
+    # ── Oturum 25.12 — ÖĞRENCİ GÜNLÜK TAKİP (GRAFEN-tarzı) ──
+    {
+        "name": "get_student_daily_summary",
+        "description": (
+            "Ogrencinin günlük takip ozeti — student_daily.get_summary. "
+            "7 modul tek cagri: bugunkü program, acik to-do, aliskanlik, yaklasan sinav/odev, "
+            "bugunkü stat (sure+soru), son 7g aktivite, bugunkü not + mood. "
+            "Ogrenci 'bugun ne yapacagim', 'odevim ne', 'kac saat calistim' derse KULLAN. "
+            "Admin/mudur baska ogrenciye soz_no ile erisir."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Ogrenci soz_no"},
+            },
+            "required": ["soz_no"],
+        },
+    },
+    {
+        "name": "analyze_student_study_pattern",
+        "description": (
+            "Ogrencinin son N gun calisma oruntu analizi — student_daily.analyze_study_pattern. "
+            "Toplam saat, en cok calisilan ders/konu, consistency skoru, zayif gun, "
+            "fiziksel aktivite sayisi, mood dagilimi. "
+            "Ogrenci 'bu ay nasil calistim', 'dengeli mi calisiyorum' / "
+            "Admin 'X ogrencinin son ayki performans' derse KULLAN. "
+            "30 gun default, 7-90 arasi degisebilir."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Ogrenci soz_no"},
+                "days": {"type": "integer", "default": 30, "minimum": 7, "maximum": 90},
+            },
+            "required": ["soz_no"],
+        },
+    },
 ]
 
 

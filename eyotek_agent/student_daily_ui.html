@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Çalışmam · FermatAI</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-base: #0a0e1a;
+  --bg-elevated: rgba(255,255,255,0.04);
+  --bg-card: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.10);
+  --border-hover: rgba(255,255,255,0.20);
+  --text: #f0f4ff;
+  --text-secondary: rgba(240,244,255,0.65);
+  --text-tertiary: rgba(240,244,255,0.35);
+  --accent: #C76F3E;
+  --accent-glow: rgba(199,111,62,0.4);
+  --green: #34d399;
+  --green-glow: rgba(52,211,153,0.3);
+  --yellow: #fbbf24;
+  --red: #f87171;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+  --gradient-primary: linear-gradient(135deg, #C76F3E 0%, #f59e0b 100%);
+  --gradient-secondary: linear-gradient(135deg, #6366f1 0%, #a78bfa 100%);
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  --gradient-bg: radial-gradient(at 27% 37%, hsla(215, 50%, 25%, 0.4) 0px, transparent 50%),
+                 radial-gradient(at 97% 21%, hsla(15, 40%, 25%, 0.3) 0px, transparent 50%),
+                 radial-gradient(at 52% 99%, hsla(265, 50%, 30%, 0.3) 0px, transparent 50%);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  background: var(--bg-base);
+  background-image: var(--gradient-bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+  overflow-x: hidden;
+  letter-spacing: -0.011em;
+}
+
+/* Animated background orbs */
+body::before, body::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  z-index: 0;
+  pointer-events: none;
+  animation: float 20s ease-in-out infinite;
+}
+body::before {
+  top: -10%; left: -10%;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(199,111,62,0.3), transparent);
+}
+body::after {
+  bottom: -15%; right: -15%;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(99,102,241,0.25), transparent);
+  animation-delay: -10s;
+}
+@keyframes float {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(60px,-40px) scale(1.05); }
+  66% { transform: translate(-40px,60px) scale(0.95); }
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  animation: fadeIn 0.6s ease-out;
+}
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.header h1 .icon {
+  display: inline-block;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-right: 8px;
+  font-size: 1.6rem;
+}
+.header-actions { display: flex; gap: 12px; }
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.85rem;
+  text-decoration: none;
+  font-weight: 500;
+}
+.btn-icon:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Quick stats — top row 4 cards */
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+  animation: fadeIn 0.7s ease-out 0.1s both;
+}
+.stat-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  background: var(--gradient-primary);
+  opacity: 0.7;
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-hover);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+.stat-card .label {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+.stat-card .value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  line-height: 1.1;
+}
+.stat-card .sub { color: var(--text-tertiary); font-size: 0.8rem; margin-top: 4px; }
+
+/* 7 Module Cards Grid */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 20px;
+  animation: fadeIn 0.8s ease-out 0.2s both;
+}
+
+.module-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.module-card::before {
+  content: '';
+  position: absolute;
+  top: -50%; right: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle at center, var(--accent-glow), transparent 50%);
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+.module-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+}
+.module-card:hover::before { opacity: 0.15; }
+
+.module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  position: relative;
+}
+.module-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.module-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  background: var(--gradient-primary);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+.module-icon.green { background: var(--gradient-success); box-shadow: 0 4px 16px var(--green-glow); }
+.module-icon.purple { background: var(--gradient-secondary); box-shadow: 0 4px 16px rgba(167,139,250,0.4); }
+
+.module-body { min-height: 140px; max-height: 320px; overflow-y: auto; }
+
+/* Custom scrollbar */
+.module-body::-webkit-scrollbar { width: 4px; }
+.module-body::-webkit-scrollbar-track { background: transparent; }
+.module-body::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 2px; }
+
+.module-footer {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Item rows */
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.item-row:hover { background: var(--bg-elevated); }
+.item-row.completed {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+.item-row .checkbox {
+  width: 20px; height: 20px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border-hover);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.item-row .checkbox.checked {
+  background: var(--gradient-success);
+  border-color: transparent;
+  color: white;
+}
+.item-row .checkbox.checked::after { content: '✓'; font-size: 12px; font-weight: 700; }
+.item-row .time {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 70px;
+}
+.item-row .title { flex: 1; font-size: 0.92rem; }
+.item-row .priority-badge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.item-row .priority-badge.urgent { background: rgba(248,113,113,0.18); color: var(--red); }
+.item-row .priority-badge.high { background: rgba(251,191,36,0.18); color: var(--yellow); }
+.item-row .priority-badge.normal { background: rgba(96,165,250,0.18); color: var(--blue); }
+.item-row .delete-btn {
+  opacity: 0;
+  background: none;
+  border: none;
+  color: var(--red);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.item-row:hover .delete-btn { opacity: 1; }
+.item-row .delete-btn:hover { background: rgba(248,113,113,0.15); }
+
+/* Add item input */
+.add-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.add-input {
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+.add-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.add-input::placeholder { color: var(--text-tertiary); }
+.add-btn {
+  padding: 10px 16px;
+  background: var(--gradient-primary);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+.add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+}
+.empty-state .emoji { font-size: 2rem; margin-bottom: 10px; opacity: 0.5; }
+
+/* Habit grid (7 days) */
+.habit-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-top: 8px;
+}
+.habit-day {
+  height: 28px;
+  border-radius: 6px;
+  background: var(--bg-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.habit-day.done {
+  background: var(--gradient-success);
+  color: white;
+  font-weight: 600;
+}
+
+/* Quick log button (study session) */
+.quick-log {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.quick-log .input-group label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  display: block;
+}
+.quick-log input {
+  padding: 8px 12px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+/* Mood selector */
+.mood-selector {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.mood-chip {
+  padding: 6px 12px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+.mood-chip:hover { border-color: var(--accent); }
+.mood-chip.selected {
+  background: var(--gradient-primary);
+  border-color: transparent;
+  color: white;
+}
+
+/* Note textarea */
+.note-input {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+.note-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Activity item */
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 0.88rem;
+}
+.activity-item .date { color: var(--text-tertiary); font-size: 0.75rem; min-width: 60px; }
+.activity-item .duration { color: var(--green); font-weight: 600; min-width: 60px; }
+
+/* Chart container */
+.chart-wrap {
+  position: relative;
+  height: 180px;
+  margin-top: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 20px 16px; }
+  .header h1 { font-size: 1.4rem; }
+  .modules-grid { grid-template-columns: 1fr; }
+  .quick-stats { grid-template-columns: repeat(2, 1fr); }
+  .stat-card .value { font-size: 1.75rem; }
+}
+
+/* Loading spinner */
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  padding: 14px 20px;
+  background: var(--gradient-success);
+  color: white;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  z-index: 1000;
+  transform: translateX(120%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+}
+.toast.show { transform: translateX(0); }
+.toast.error { background: linear-gradient(135deg, #f87171, #ef4444); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="header">
+    <h1><span class="icon">📚</span>Çalışmam</h1>
+    <div class="header-actions">
+      <a href="/chat" class="btn-icon">
+        <span>💬</span> Sohbet
+      </a>
+      <button class="btn-icon" onclick="refreshAll()">
+        <span>↻</span> Yenile
+      </button>
+    </div>
+  </header>
+
+  <!-- Quick stats: bugün özeti -->
+  <section class="quick-stats">
+    <div class="stat-card">
+      <div class="label">Bugün Çalışma</div>
+      <div class="value" id="stat-minutes">0</div>
+      <div class="sub">dakika</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Çözülen Soru</div>
+      <div class="value" id="stat-questions">0</div>
+      <div class="sub">bugün</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Açık Görev</div>
+      <div class="value" id="stat-todos">0</div>
+      <div class="sub">to-do</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Yaklaşan Sınav</div>
+      <div class="value" id="stat-events">0</div>
+      <div class="sub">30 gün</div>
+    </div>
+  </section>
+
+  <!-- 7 modül grid -->
+  <section class="modules-grid">
+
+    <!-- 1. GÜNLÜK PROGRAM -->
+    <div class="module-card">
+      <div class="module-header">
+        <div class="module-title">
+          <div class="module-icon">📅</div>
+          <div>Günlük Program</div>
+        </div>
+      </div>
+      <div class="module-body" id="program-list"></div>
+      <div class="module-footer">
+        <form class="add-form" onsubmit="event.preventDefault(); addProgram();">
+          <input class="add-input" id="program-time" type="text" placeholder="09:00" style="max-width:80px;" maxlength="5">
+          <input class="add-input" id="program-title" type="text" placeholder="AYT Matematik 35. Video" required>
+          <button class="add-btn" type="submit">Ekle</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 2. TO DO LIST -->
+    <div class="module-card">
+      <div class="module-header">
+        <div class="module-title">
+          <div class="module-icon green">✅</div>
+          <div>Yapılacaklar</div>
+        </div>
+      </div>
+      <div class="module-body" id="todo-list"></div>
+      <div class="module-footer">
+        <form class="add-form" onsubmit="event.preventDefault(); addTodo();">
+          <input class="add-input" id="todo-title" type="text" placeholder="Yeni görev ekle..." required>
+          <button class="add-btn" type="submit">Ekle</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 3. ALIŞKANLIKLAR -->
+    <div class="module-card">
+      <div class="module-header">
+        <div class="module-title">
+          <div class="module-icon purple">🎯</div>
+          <div>Alışkanlıklar</div>
+        </div>
+      </div>
+      <div class="module-body" id="habits-list"></div>
+      <div class="module-footer">
+        <form class="add-form" onsubmit="event.preventDefault(); addHabit();">
+          <input class="add-input" id="habit-name" type="text" placeholder="30 dk paragraf çözümü" required>
+          <button class="add-btn" type="submit">Ekle</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 4. SINAV/ÖDEV TAKVİMİ -->
+    <div class="module-card">
+      <div class="module-header">
+        <div class="module-title">
+          <div class="module-icon">🎓</div>
+          <div>Sınavlar / Ödevler</div>
+        </div>
+      </div>
+      <div class="module-body" id="events-list"></div>
+      <div class="module-footer">
+        <form class="add-form" onsubmit="event.preventDefault(); addEvent();">
+          <input class="add-input" id="event-date" type="date" style="max-width:150px;" required>
+          <input class="add-input" id="event-title" type="text" placeholder="1 Haziran Matematik" required>
+          <button class="add-btn" type="submit">Ekle</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 5. ÇALIŞMA İSTATİSTİKLERİ -->
+    <div class="module-card">
+      <div class="module-header">
+        <div class="module-title">
+          <div class="module-icon green">📊</div>
+          <div>Çalışma İstatistikleri</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <div class="chart-wrap"><canvas id="chart-stats"></canvas></div>
+        <div class="quick-log">
+          <div class="input-group">
+            <label>Süre (dk)</label>
+            <input id="log-minutes" type="number" min="0" max="600" value="30">
+          </div>
+          <div class="input-group">
+            <label>Çözülen Soru</label>
+            <input id="log-questions" type="number" min="0" max="500" value="10">
+          </div>
+        </div>
+      </div>
+      <div class="module-footer">
+        <input class="add-input" id="log-ders" type="text" placeholder="Matematik (opsiyonel)" style="max-width:160px;">
+        <button class="add-btn" onclick="logSession()">Kaydet</button>
+      </div>
+    </div>
+
+    <!-- 6. FİZİKSEL AKTİVİTE -->
+    <div class="module-card">
+      <div class="module-header">
+        <div class="module-title">
+          <div class="module-icon">🏃</div>
+          <div>Fiziksel Aktivite</div>
+        </div>
+      </div>
+      <div class="module-body" id="activity-list"></div>
+      <div class="module-footer">
+        <form class="add-form" onsubmit="event.preventDefault(); addActivity();">
+          <input class="add-input" id="activity-type" type="text" placeholder="Yürüyüş" style="max-width:120px;" required>
+          <input class="add-input" id="activity-min" type="number" min="0" placeholder="dk" style="max-width:70px;" required>
+          <button class="add-btn" type="submit">Ekle</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 7. BUGÜNKÜ NOTUM -->
+    <div class="module-card">
+      <div class="module-header">
+        <div class="module-title">
+          <div class="module-icon purple">💭</div>
+          <div>Bugünkü Notum</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <textarea class="note-input" id="note-text" placeholder="Bugün nasıl gitti? Verimli, dağınık, motiveli..."></textarea>
+        <div class="mood-selector" id="mood-chips">
+          <div class="mood-chip" data-mood="verimli">⚡ Verimli</div>
+          <div class="mood-chip" data-mood="motiveli">🚀 Motiveli</div>
+          <div class="mood-chip" data-mood="normal">🌟 Normal</div>
+          <div class="mood-chip" data-mood="yorgun">😴 Yorgun</div>
+          <div class="mood-chip" data-mood="stresli">😰 Stresli</div>
+        </div>
+      </div>
+      <div class="module-footer">
+        <button class="add-btn" onclick="saveNote()" style="width:100%;">Notu Kaydet</button>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const URL_TOKEN = new URLSearchParams(location.search).get('token') || '';
+let selectedMood = 'normal';
+let chartStats = null;
+
+async function api(path, opts={}) {
+  let url = path;
+  if (URL_TOKEN) {
+    url += (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(URL_TOKEN);
+  }
+  const r = await fetch(url, {credentials:'include', ...opts});
+  if (!r.ok) {
+    if (r.status === 401) {
+      window.location.href = '/chat?next=/student/daily/dashboard';
+      return null;
+    }
+    throw new Error(r.status);
+  }
+  return r.json();
+}
+
+function toast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (isError ? 'error show' : 'show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function escapeHTML(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+async function loadAll() {
+  try {
+    const data = await api('/student/daily/summary');
+    if (!data) return;
+
+    // Quick stats
+    document.getElementById('stat-minutes').textContent = data.today_stats?.total_minutes || 0;
+    document.getElementById('stat-questions').textContent = data.today_stats?.questions_solved || 0;
+    document.getElementById('stat-todos').textContent = (data.open_todos || []).length;
+    document.getElementById('stat-events').textContent = (data.upcoming_events || []).length;
+
+    renderProgram(data.today_program || []);
+    renderTodos(data.open_todos || []);
+    renderHabits(data.habits || []);
+    renderEvents(data.upcoming_events || []);
+    renderActivities(data.recent_activities || []);
+    renderStats(data.weekly_stats || {});
+    renderNote(data.today_note || null);
+  } catch (e) {
+    console.error(e);
+    toast('Veri yüklenemedi', true);
+  }
+}
+
+function renderProgram(items) {
+  const c = document.getElementById('program-list');
+  if (!items.length) {
+    c.innerHTML = '<div class="empty-state"><div class="emoji">📅</div>Bugün için program yok. Yeni blok ekle.</div>';
+    return;
+  }
+  c.innerHTML = items.map(p => `
+    <div class="item-row ${p.completed?'completed':''}">
+      <div class="checkbox ${p.completed?'checked':''}" onclick="completeProgram(${p.id})"></div>
+      <div class="time">${p.start_time||''}${p.end_time?' - '+p.end_time:''}</div>
+      <div class="title">${escapeHTML(p.title)}</div>
+      <button class="delete-btn" onclick="event.stopPropagation();deleteProgram(${p.id})">×</button>
+    </div>
+  `).join('');
+}
+
+function renderTodos(items) {
+  const c = document.getElementById('todo-list');
+  if (!items.length) {
+    c.innerHTML = '<div class="empty-state"><div class="emoji">✨</div>Tüm görevlerini tamamladın!</div>';
+    return;
+  }
+  c.innerHTML = items.map(t => `
+    <div class="item-row">
+      <div class="checkbox" onclick="completeTodo(${t.id})"></div>
+      <div class="title">${escapeHTML(t.title)}</div>
+      ${t.priority && t.priority !== 'normal' ? `<span class="priority-badge ${t.priority}">${t.priority}</span>` : ''}
+      <button class="delete-btn" onclick="event.stopPropagation();deleteTodo(${t.id})">×</button>
+    </div>
+  `).join('');
+}
+
+function renderHabits(items) {
+  const c = document.getElementById('habits-list');
+  if (!items.length) {
+    c.innerHTML = '<div class="empty-state"><div class="emoji">🎯</div>Henüz alışkanlık yok. Bir tane ekle!</div>';
+    return;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  c.innerHTML = items.map(h => {
+    const days7 = h.recent_7d || [];
+    const dayHTML = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate()-i);
+      const ds = d.toISOString().slice(0,10);
+      const log = days7.find(x => x.date === ds);
+      const done = log && log.done;
+      const dayLabel = ['Pz','Pt','Sa','Ça','Pe','Cu','Ct'][d.getDay()];
+      dayHTML.push(`<div class="habit-day ${done?'done':''}" onclick="logHabit(${h.id}, '${ds}', ${!done})">${dayLabel}</div>`);
+    }
+    return `
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.9rem;">
+          <strong>${escapeHTML(h.habit_name)}</strong>
+          <span style="font-size:0.75rem;color:var(--green);">🔥 ${h.streak||0} streak</span>
+        </div>
+        <div class="habit-week">${dayHTML.join('')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderEvents(items) {
+  const c = document.getElementById('events-list');
+  if (!items.length) {
+    c.innerHTML = '<div class="empty-state"><div class="emoji">🎓</div>Yaklaşan sınav yok.</div>';
+    return;
+  }
+  c.innerHTML = items.slice(0,8).map(e => {
+    const d = new Date(e.event_date);
+    const days = Math.ceil((d - new Date()) / 86400000);
+    const dayBadge = days <= 0 ? 'Bugün' : days === 1 ? 'Yarın' : `${days} gün`;
+    const colorClass = days <= 3 ? 'urgent' : days <= 7 ? 'high' : 'normal';
+    return `
+      <div class="item-row">
+        <span class="priority-badge ${colorClass}" style="min-width:50px;text-align:center;">${dayBadge}</span>
+        <div style="flex:1;">
+          <div class="title">${escapeHTML(e.title)}</div>
+          <div style="font-size:0.75rem;color:var(--text-tertiary);">${e.event_date}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderActivities(items) {
+  const c = document.getElementById('activity-list');
+  if (!items.length) {
+    c.innerHTML = '<div class="empty-state"><div class="emoji">🏃</div>Henüz aktivite yok. Hareket et!</div>';
+    return;
+  }
+  c.innerHTML = items.slice(0,5).map(a => `
+    <div class="activity-item">
+      <span class="date">${a.log_date.slice(5)}</span>
+      <span style="flex:1;">${escapeHTML(a.activity_type)}</span>
+      <span class="duration">${a.duration_minutes} dk</span>
+    </div>
+  `).join('');
+}
+
+function renderStats(weekly) {
+  const ctx = document.getElementById('chart-stats');
+  if (!ctx) return;
+  const daily = weekly.daily || [];
+
+  if (chartStats) chartStats.destroy();
+  chartStats = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: daily.map(d => d.date.slice(5)),
+      datasets: [{
+        label: 'Dakika',
+        data: daily.map(d => d.minutes),
+        backgroundColor: 'rgba(199,111,62,0.8)',
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.5)' } },
+        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+      }
+    }
+  });
+}
+
+function renderNote(note) {
+  if (note) {
+    document.getElementById('note-text').value = note.note || '';
+    if (note.mood) {
+      selectedMood = note.mood;
+      document.querySelectorAll('.mood-chip').forEach(c => {
+        c.classList.toggle('selected', c.dataset.mood === note.mood);
+      });
+    }
+  }
+}
+
+// Event handlers
+async function addProgram() {
+  const time = document.getElementById('program-time').value || '09:00';
+  const title = document.getElementById('program-title').value.trim();
+  if (!title) return;
+  try {
+    await api('/student/daily/program', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({title, start_time: time}),
+    });
+    document.getElementById('program-title').value = '';
+    document.getElementById('program-time').value = '';
+    toast('Program eklendi ✓');
+    loadAll();
+  } catch (e) { toast('Hata oluştu', true); }
+}
+
+async function completeProgram(id) {
+  try {
+    await api(`/student/daily/program/${id}/complete`, {method: 'POST'});
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+async function deleteProgram(id) {
+  try {
+    await api(`/student/daily/program/${id}`, {method: 'DELETE'});
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+async function addTodo() {
+  const title = document.getElementById('todo-title').value.trim();
+  if (!title) return;
+  try {
+    await api('/student/daily/todo', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({title}),
+    });
+    document.getElementById('todo-title').value = '';
+    toast('Görev eklendi ✓');
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+async function completeTodo(id) {
+  try {
+    await api(`/student/daily/todo/${id}/complete`, {method: 'POST'});
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+async function deleteTodo(id) {
+  try {
+    await api(`/student/daily/todo/${id}`, {method: 'DELETE'});
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+async function addHabit() {
+  const name = document.getElementById('habit-name').value.trim();
+  if (!name) return;
+  try {
+    await api('/student/daily/habits', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({habit_name: name}),
+    });
+    document.getElementById('habit-name').value = '';
+    toast('Alışkanlık eklendi ✓');
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+async function logHabit(habitId, logDate, completed) {
+  try {
+    await api(`/student/daily/habits/${habitId}/log`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({log_date: logDate, completed}),
+    });
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+async function addEvent() {
+  const date = document.getElementById('event-date').value;
+  const title = document.getElementById('event-title').value.trim();
+  if (!date || !title) return;
+  try {
+    await api('/student/daily/events', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({event_date: date, title, event_type: 'sinav'}),
+    });
+    document.getElementById('event-title').value = '';
+    document.getElementById('event-date').value = '';
+    toast('Sınav eklendi ✓');
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+async function logSession() {
+  const minutes = parseInt(document.getElementById('log-minutes').value || 0);
+  const questions = parseInt(document.getElementById('log-questions').value || 0);
+  const ders = document.getElementById('log-ders').value.trim();
+  if (minutes === 0 && questions === 0) { toast('Süre veya soru gir', true); return; }
+  try {
+    await api('/student/daily/stats/log', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({minutes, questions, ders: ders||null}),
+    });
+    toast(`+${minutes}dk +${questions} soru kaydedildi ✓`);
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+async function addActivity() {
+  const type = document.getElementById('activity-type').value.trim();
+  const min = parseInt(document.getElementById('activity-min').value || 0);
+  if (!type) return;
+  try {
+    await api('/student/daily/activity', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({activity_type: type, duration_minutes: min}),
+    });
+    document.getElementById('activity-type').value = '';
+    document.getElementById('activity-min').value = '';
+    toast('Aktivite eklendi ✓');
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+async function saveNote() {
+  const note = document.getElementById('note-text').value.trim();
+  if (!note) return;
+  try {
+    await api('/student/daily/notes', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({note, mood: selectedMood}),
+    });
+    toast('Not kaydedildi ✓');
+    loadAll();
+  } catch (e) { toast('Hata', true); }
+}
+
+// Mood chip selection
+document.querySelectorAll('.mood-chip').forEach(c => {
+  c.addEventListener('click', () => {
+    selectedMood = c.dataset.mood;
+    document.querySelectorAll('.mood-chip').forEach(x => x.classList.remove('selected'));
+    c.classList.add('selected');
+  });
+});
+
+function refreshAll() { loadAll(); toast('Yenilendi ✓'); }
+
+// Auto refresh every 60s
+setInterval(loadAll, 60000);
+
+// Initial
+loadAll();
+</script>
+</body>
+</html>

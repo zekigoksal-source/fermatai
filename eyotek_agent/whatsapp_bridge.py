@@ -806,6 +806,14 @@ except Exception as _dberr:
     import logging as _lg
     _lg.warning(f"dashboard_api router yuklenemedi: {_dberr}")
 
+# ── Öğrenci Günlük Takip Router (Oturum 25.12) ──
+try:
+    from student_daily_api import router as _student_daily_router
+    app.include_router(_student_daily_router)
+except Exception as _sderr:
+    import logging as _lg
+    _lg.warning(f"student_daily_api router yuklenemedi: {_sderr}")
+
 # 22.1n-neo Paket A: HybridDict wrapper — memory mode davranisi aynen, Redis aktif
 # olunca (REDIS_URL set) otomatik multi-worker shared state.
 # _AGENT_SESSIONS FermatCoreAgent INSTANCE tuttugu icin serialize edilemez → memory only.
