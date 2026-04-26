@@ -59,7 +59,24 @@ Bu mükemmel: bot daily_brief gördü → kullanıcıya hatırlattı → P4 tool
 4. Bot kısa kesme bug'ı (Claude tool sonrası incelnmek)
 5. Neo P1 manuel UX test — gerçek öğrenci hesabıyla (gerek varsa)
 
-### 🚨 GROQ INVISIBILITY BUG (Neo dikkat çekti — bot konuşmasında "7 gündür Groq=0" gözlemi)
+### ✅ GROQ INVISIBILITY BUG ÇÖZÜLDÜ (25.14k — gece bitirildi)
+
+3 commit ile düzeltildi (`bb96faa` + `1eb1122` + `bb0533c`):
+1. **Lane-bazlı eşik** (sohbet=8 char, kavramsal/diğer=30): selamlama artık escalation tetiklemez
+2. **Bridge source detection fix** (`whatsapp_bridge.py:3315`): hardcoded `"ollama" or "claude"` → `"groq_local"` tanı eklendi
+3. **fermat_core direct routing_stats yazımı**: subprocess/tek-shot code path için
+4. Bonus: Groq prompt'una min 2-3 cümle kuralı
+
+**Canlı kanıt** (son 5dk routing_stats):
+- groq: 3 ← 7 gündür sıfırdı
+- claude: 2
+- fast_response: 2
+
+usage_log'ta da groq görünmeye başladı. Artık dashboard'da gerçek dağılım gösterecek.
+
+Backup tag: `oturum-25-14k-groq-fix`
+
+### 🚨 GROQ INVISIBILITY BUG (Neo dikkat çekti — eski tanım, yukarıda çözüldü)
 
 **Bot Neo ile araştırdı** (20:33-20:34): routing_stats'ta 7 gün groq kaydı YOK.
 
