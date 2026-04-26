@@ -189,15 +189,15 @@ async def cohort_analysis(
 ):
     await _require_admin_session(request, fermat_session)
     # Sınıf bazında ortalama performans
-    # Oturum 25.14e fix: students.soz_no INT, student_exams.soz_no TEXT —
-    # cast ile join (operator does not exist: integer = text)
+    # Oturum 25.14e fix: students.soz_no TEXT, student_exams.soz_no INTEGER —
+    # ters cast: students tarafını cast et (text → int)
     rows = await db_fetch(
         """SELECT s.class_name,
                   COUNT(DISTINCT s.soz_no) as ogr_sayisi,
                   AVG(se.toplam) FILTER (WHERE se.exam_type='TYT' AND se.status='valid') as tyt_ort,
                   AVG(se.toplam) FILTER (WHERE se.exam_type='AYT' AND se.status='valid') as ayt_ort
            FROM students s
-           LEFT JOIN student_exams se ON se.soz_no = s.soz_no::text
+           LEFT JOIN student_exams se ON se.soz_no::text = s.soz_no
            WHERE s.status='active'
              AND s.class_name NOT ILIKE '%mezun%'
              AND s.class_name NOT ILIKE '%mez %'
