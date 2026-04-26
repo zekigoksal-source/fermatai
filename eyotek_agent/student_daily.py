@@ -41,6 +41,23 @@ from db_pool import (
 
 # ── 1. GÜNLÜK PROGRAM ───────────────────────────────────────────────────
 
+def _parse_time(s) -> Optional[dtime]:
+    """'14:00' veya '14:00:00' → datetime.time. None ise None."""
+    if not s:
+        return None
+    if isinstance(s, dtime):
+        return s
+    s = str(s).strip()
+    parts = s.split(':')
+    try:
+        h = int(parts[0])
+        m = int(parts[1]) if len(parts) > 1 else 0
+        sec = int(parts[2]) if len(parts) > 2 else 0
+        return dtime(hour=h, minute=m, second=sec)
+    except Exception:
+        return None
+
+
 async def add_daily_program(
     soz_no: int,
     title: str,
@@ -53,11 +70,14 @@ async def add_daily_program(
 ) -> dict:
     """Günlük programa yeni blok ekle."""
     plan_date = plan_date or date.today()
+    # Oturum 25.12 fix: asyncpg TIME tipi string kabul etmez, datetime.time gerekli
+    start_t = _parse_time(start_time) or dtime(9, 0)
+    end_t = _parse_time(end_time)
     nid = await _fetchval(
         """INSERT INTO student_daily_program
            (soz_no, plan_date, start_time, end_time, title, ders, konu, notes)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id""",
-        soz_no, plan_date, start_time, end_time,
+        soz_no, plan_date, start_t, end_t,
         title[:200], ders, konu, notes,
     )
     return {"id": nid, "title": title, "plan_date": str(plan_date)}
@@ -224,11 +244,13 @@ async def add_exam_event(
 ) -> dict:
     if event_type not in ("sinav", "odev", "etut", "rehberlik"):
         event_type = "sinav"
+    # Oturum 25.12 fix: time parse
+    et = _parse_time(event_time)
     nid = await _fetchval(
         """INSERT INTO student_exam_calendar
            (soz_no, title, event_type, event_date, event_time, ders)
            VALUES ($1,$2,$3,$4,$5,$6) RETURNING id""",
-        soz_no, title[:200], event_type, event_date, event_time, ders,
+        soz_no, title[:200], event_type, event_date, et, ders,
     )
     return {"id": nid, "title": title, "event_date": str(event_date)}
 
