@@ -3885,15 +3885,18 @@ setInterval(async () => {
 }, 60000);
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Oturum 25.13: ÖĞRENCİ ÇALIŞMAM PANEL (yeni sekme açıyor — token transfer)
+// Oturum 25.14b (Neo UX fix): ÖĞRENCİ ÇALIŞMAM PANEL — AYNI SEKMEDE YÖNLENDIR
+// Önceki versiyon yeni sekme açıyordu (window.open), 'Sohbete Dön' butonu da
+// aynı sekmede çalışıyordu → tutarsız UX, öğrenci birden fazla sekme biriktirdi.
+// Çözüm: location.href ile aynı sekmede yönlendir. Sohbet history zaten DB'de
+// + restoreChatSnapshot() ile geri dönüşte yüklenir → state kaybı yok.
 // ═══════════════════════════════════════════════════════════════════════════
 function openStudyDashboard() {
-  // Auth token (cookie + localStorage) URL parametresine ekleyerek yeni sekme aç
-  // Aynı sekmede yönlendirsek state kaybı olur (bot conversation history)
   const token = localStorage.getItem(TOKEN_KEY) || "";
   let url = "/student/daily/dashboard";
   if (token) url += "?token=" + encodeURIComponent(token);
-  window.open(url, "_blank", "noopener");
+  // Aynı sekmede yönlendir (Neo UX kurali: tek arayüz, tek sekme)
+  window.location.href = url;
 }
 
 
