@@ -1,9 +1,118 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 27 Nisan 2026, gece — **OTURUM 25.18 — OLGUNLUK 4 ADIMI + 18 SALDIRI PASS**
-> **Son commit:** `d10ae7f` (4 maturity adimi) · Onceki: `e037147` (Faz 3)
-> **Backup tags:** `oturum-25-18-maturity-complete`, `oturum-25-18-pre-maturity`, `oturum-25-17-faz3-aggressive-tested`, ..
-> **Sistem:** ✅ bridge active, 4/4 endpoint 200, **MODULAR_PROMPT_MODE=normal**, **90 unit + 18 canlı test PASS**
+> **Son güncelleme:** 27 Nisan 2026, geç gece — **OTURUM 25.19 — A/B TEST + KARAR (CANARY)**
+> **Son commit:** `ff686fc` (AB test + cleanup) · Onceki: `d10ae7f` (maturity)
+> **Backup tags:** `oturum-25-19-ab-result-canary`, `oturum-25-18-maturity-complete`, `oturum-25-18-pre-maturity`, ...
+> **Sistem:** ✅ bridge active, 4/4 endpoint 200, **MODULAR_PROMPT_MODE=canary** (NORMAL geri alındı, sadece LIGHT)
+
+## 🆕 OTURUM 25.19 (28 Nisan ~01:00) — A/B SONUCU + KALICI KARAR
+
+Neo: "boşuna kürek çekmeyelim, A/B sonucu bizi yönlendirsin"
+
+### A/B Live Test Sonuçları (20 sorgu × 2 mod)
+
+**🔴 NORMAL TIER KALİTE KAYBI YAŞIYOR** — özellikle plan üretmede:
+
+| Senaryo | FULL | NORMAL | Fark |
+|---|---|---|---|
+| **Plan yap** | 1412 char detaylı plan | **136 char (üretmemiş!)** | -%90 |
+| Newton 3. yasa | 787 char | 225 char | -%71 |
+| İntegral nedir | 855 char | 224 char | -%74 |
+| Pomodoro | 807 char | 131 char | -%84 |
+| Çalışma yöntemi | 776 char | 181 char | -%77 |
+| Cache hit'ler (deneme/zayıf) | TIE | TIE | 0 (cache aynı) |
+| Sohbet/yks_bilgi | TIE | TIE | 0 (fast_response) |
+
+Kalite skoru (Groq) -1 döndü (rate limit/parse fail) — ama uzunluk farkı zaten net.
+
+**Sebep:** NORMAL_PROMPT (~5k char) plan protokolü + scenario örnekleri yetersiz. Bot kısa kesiyor, plan üretmiyor.
+
+### KARAR: CANARY mode'a geri dön (sınırlı LIGHT-only)
+
+```bash
+# Production .env değişti:
+MODULAR_PROMPT_MODE=normal → MODULAR_PROMPT_MODE=canary
+
+# Etkisi:
+# - Kavramsal/sohbet/selamlama lane'leri → LIGHT (güvenli, kayıp yok)
+# - Plan/analiz/diğer her şey → FULL (mevcut davranış korundu)
+# - Tüm hassas/finans/injection → FULL (KVKK güvenli)
+```
+
+**Doğrulama:** "yarın için plan yap" → CANARY'de FULL'e düştü → 1500+ char detaylı plan + gerçek veri referansı (Nazlı 84.8 net, Matematik 5.2→18.2 sıçrama) ✅
+
+### MODÜLER İŞİN GERÇEK DURUMU
+
+✅ **Kalıcı olan:**
+- LIGHT tier (kavramsal/selamlama/sohbet) — sızıntı yok, fonksiyon yeterli
+- intent_classifier.py (30+ etiket) — tier seçimi için faydalı
+- Test paketi 138/138 — kalıcı güvenlik ağı
+- 70+ KVKK keyword — sıkı güvenlik
+- Backup tag'ler — rollback hazır
+- prompt_modules/ skeleton — gelecek altyapı
+
+⚠️ **Kullanılmıyor (hibernated):**
+- NORMAL tier prompt (5k char) — yetersiz, kalite kaybı
+- Intent-based tool subset NORMAL'da — bot çağırmıyor, sıkıştırma çok agresif
+- A/B framework — bir kez koştu, sonuç verdi
+
+🔴 **Geri alınan:**
+- MODULAR_PROMPT_MODE=normal → canary
+- Plan/analiz NORMAL'a düşmesin
+
+### Endüstri Olgunluk — DÜRÜST güncel skor
+
+| Standart | Beklenen | Gerçekleşen | Notu |
+|---|---|---|---|
+| Prompt Routing | 8/10 | **6/10** | Çalışıyor ama sadece LIGHT lane'i |
+| Tool Subset Routing | 8/10 | **5/10** | NORMAL aktif değil → tool subset rutini ölü |
+| Lazy Module Loading | 5/10 | 5/10 | Skeleton var, içerik yok |
+| Prompt Compression | 2/10 | 2/10 | Yok |
+| **Genel** | %58 | **%45** | Modüler aktivasyon dar, marjinal kazanım |
+
+### NEO İÇİN NET TABLO
+
+**Geceki çalışma değer kazanımı:**
+- ✅ 138 test paketi (kalıcı güvenlik)
+- ✅ 70+ KVKK keyword sıkılaştırma
+- ✅ Mimari altyapı (gelecek için)
+- ⚠️ Token tasarrufu **MARJİNAL** (sadece LIGHT lane'inde, ölçülmedi tam)
+- 🔴 NORMAL tier başarısız → yeniden tasarım gerek
+
+**Risk durumu:**
+- 0 sızıntı, 0 KVKK ihlali, 0 hata
+- Sistem stable, eski FULL davranışı çoğunluk için aktif
+- Geri alma: env tek satır
+
+### Bir Sonraki Oturum Önerisi
+
+İki yol var:
+
+**Yol A: NORMAL'i hayatta tut (zenginleştir)**
+1. NORMAL_PROMPT'a plan protokolü detayı + örnek format ekle (5k → 12k)
+2. Intent_classifier'da plan_yap intent ettiğinde tool listesi yeterli mi kontrol et
+3. A/B tekrar çalıştır → 0.95 ratio yakala
+
+**Yol B: NORMAL'i emekli et (LIGHT'a odaklan)**
+1. CANARY'de bırak (LIGHT tek aktif tier)
+2. Lane classifier'ı zenginleştir (groq_lanes.py'ye yeni patterns)
+3. Kavramsal sorgu kapsamı artsın → LIGHT daha çok aktive olsun
+4. NORMAL tier kodu sadece "büyük refactor" için referans
+
+**Önerim:** Yol B (basit, riskli olmayan, gerçek). NORMAL tier'ı zenginleştirmek = Faz 5 modüler split = ciddi iş. CANARY ile tatmin edici durumdayız.
+
+### Geri Alma Hala Hazır
+```bash
+# 1) Tamamen kapat (LIGHT bile devre dışı)
+ssh vps "sudo sed -i 's/MODE=canary/MODE=disabled/' /opt/fermatai/.env && sudo systemctl restart fermatai-bridge"
+
+# 2) Tam rollback (her şey öncesi)
+git reset --hard oturum-25-15-pre-modular
+```
+
+---
+
+
 
 ## 🆕 OTURUM 25.18 (27 Nisan gece, son) — OLGUNLUK ADIMI 1+2+3+4
 
