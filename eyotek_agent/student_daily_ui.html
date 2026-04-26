@@ -851,6 +851,291 @@ body {
 .loading-bar.active { width: 80%; }
 .loading-bar.done { width: 100%; opacity: 0; transition: width 0.2s, opacity 0.4s 0.2s; }
 
+/* ═════ ANALYTICS SECTION (Oturum 25.14) ═════ */
+.analytics-section {
+  margin-top: 48px;
+  animation: fade-up 0.9s var(--easing) 0.3s both;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding: 0 4px;
+}
+.section-head h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--fg), var(--fg-muted));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.period-selector {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+.period-btn {
+  padding: 7px 16px;
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  transition: all 0.25s var(--easing);
+}
+.period-btn:hover { color: var(--fg); }
+.period-btn.active {
+  background: var(--gradient-gold);
+  color: #1a0d00;
+  box-shadow: 0 4px 12px var(--brand-glow);
+}
+
+/* KPI cards (analytics top row) */
+.analytics-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  background: var(--surface-1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s var(--easing);
+}
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+.kpi-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  background: var(--gradient-gold);
+  box-shadow: 0 6px 20px var(--brand-glow), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+.kpi-info { flex: 1; min-width: 0; }
+.kpi-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-muted);
+  margin-bottom: 4px;
+}
+.kpi-value {
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.kpi-value small {
+  font-size: 0.85rem;
+  color: var(--fg-tertiary);
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+/* Doughnut + ders legend */
+.ders-legend {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.ders-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  font-size: 0.82rem;
+}
+.ders-legend-item .dot {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.ders-legend-item .name { flex: 1; }
+.ders-legend-item .pct {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Heatmap (GitHub-tarz) */
+.heatmap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16px, 1fr));
+  gap: 4px;
+  margin: 12px 0;
+  padding: 8px 0;
+}
+.heatmap-cell {
+  aspect-ratio: 1;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s var(--spring);
+  position: relative;
+}
+.heatmap-cell:hover {
+  transform: scale(1.3);
+  border-color: var(--brand-gold);
+  z-index: 5;
+}
+.heatmap-cell[data-level="1"] { background: rgba(245, 158, 11, 0.18); border-color: rgba(245, 158, 11, 0.25); }
+.heatmap-cell[data-level="2"] { background: rgba(245, 158, 11, 0.38); border-color: rgba(245, 158, 11, 0.45); }
+.heatmap-cell[data-level="3"] { background: rgba(245, 158, 11, 0.65); border-color: transparent; }
+.heatmap-cell[data-level="4"] { background: var(--gradient-gold); border-color: transparent; box-shadow: 0 0 8px var(--brand-glow); }
+.heatmap-cell.today { outline: 2px solid var(--brand-amber); outline-offset: 2px; }
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 12px;
+  font-size: 0.72rem;
+  color: var(--fg-muted);
+}
+.heatmap-legend .heatmap-cell {
+  width: 14px; height: 14px;
+  cursor: default;
+  flex-shrink: 0;
+}
+.heatmap-legend .heatmap-cell:hover { transform: none; border-color: inherit; }
+
+/* Mood timeline */
+.mood-line {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0;
+}
+.mood-day {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+.mood-day:hover { background: var(--surface-3); }
+.mood-day .date {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  min-width: 50px;
+}
+.mood-day .emoji {
+  font-size: 1.3rem;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+}
+.mood-day .label { flex: 1; font-size: 0.85rem; font-weight: 500; }
+.mood-day.empty { opacity: 0.4; }
+.mood-day.empty .emoji { background: var(--bg-base); color: var(--fg-tertiary); }
+
+/* Top list (konular + ELO) */
+.top-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.top-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s var(--easing);
+}
+.top-item:hover { background: var(--surface-3); transform: translateX(2px); }
+.top-item .rank {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--brand-amber);
+  min-width: 24px;
+  text-align: center;
+}
+.top-item .name { flex: 1; font-size: 0.88rem; font-weight: 500; }
+.top-item .stat {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.82rem;
+  color: var(--fg);
+  font-weight: 600;
+}
+.top-item .ders-tag {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(94, 106, 210, 0.18);
+  color: #a5b4fc;
+}
+.top-item .progress-bar {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 2px;
+  background: var(--gradient-gold);
+  border-radius: 0 0 0 10px;
+  transition: width 0.6s var(--easing);
+}
+
+.empty-analytics {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--fg-muted);
+  background: var(--surface-1);
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
+}
+.empty-analytics .glyph {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .page { padding: 20px 14px 60px; }
@@ -1054,6 +1339,136 @@ body {
       </div>
     </div>
 
+  </section>
+
+  <!-- ═════════════════ INFOGRAPHIC ANALYTICS ═════════════════ -->
+  <!-- Oturum 25.14: Öğrenci panele veri girdikçe DOLAR — kişiselleşmiş infografik -->
+  <section class="analytics-section">
+    <div class="section-head">
+      <h2>📊 Analizim</h2>
+      <div class="period-selector">
+        <button class="period-btn active" data-days="7" onclick="loadAnalytics(7)">7g</button>
+        <button class="period-btn" data-days="30" onclick="loadAnalytics(30)">30g</button>
+        <button class="period-btn" data-days="90" onclick="loadAnalytics(90)">90g</button>
+      </div>
+    </div>
+
+    <!-- Üst KPI satırı (4 kart, dolarak büyür) -->
+    <div class="analytics-kpis">
+      <div class="kpi-card">
+        <div class="kpi-icon">⏰</div>
+        <div class="kpi-info">
+          <div class="kpi-label">Toplam Saat</div>
+          <div class="kpi-value mono"><span id="ana-hours">0</span><small>sa</small></div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">📐</div>
+        <div class="kpi-info">
+          <div class="kpi-label">Çözülen Soru</div>
+          <div class="kpi-value mono"><span id="ana-questions">0</span></div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">🔥</div>
+        <div class="kpi-info">
+          <div class="kpi-label">Streak (gün)</div>
+          <div class="kpi-value mono"><span id="ana-streak">0</span><small>gün</small></div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">🏃</div>
+        <div class="kpi-info">
+          <div class="kpi-label">Aktivite</div>
+          <div class="kpi-value mono"><span id="ana-pa-min">0</span><small>dk</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ana grafik grid -->
+    <div class="dashboard-grid">
+
+      <!-- Trend line (8 col) -->
+      <div class="module col-8">
+        <div class="module-head">
+          <div class="module-title">
+            <div class="module-glyph">📈</div>
+            <div>Çalışma Trendi</div>
+          </div>
+          <div class="module-meta" id="ana-period-label">Son 7 gün</div>
+        </div>
+        <div class="chart-wrapper" style="height:240px;"><canvas id="chart-timeline"></canvas></div>
+      </div>
+
+      <!-- Doughnut: ders breakdown (4 col) -->
+      <div class="module col-4">
+        <div class="module-head">
+          <div class="module-title">
+            <div class="module-glyph violet">🎯</div>
+            <div>Ders Dağılımı</div>
+          </div>
+        </div>
+        <div class="chart-wrapper" style="height:200px;"><canvas id="chart-ders"></canvas></div>
+        <div id="ders-legend" class="ders-legend"></div>
+      </div>
+
+      <!-- Heatmap: 30g activity calendar (12 col) -->
+      <div class="module col-8">
+        <div class="module-head">
+          <div class="module-title">
+            <div class="module-glyph success">📅</div>
+            <div>Aktivite Takvimi</div>
+          </div>
+          <div class="module-meta">Yoğunluk haritası — son 30 gün</div>
+        </div>
+        <div id="heatmap-container" class="heatmap"></div>
+        <div class="heatmap-legend">
+          <span>Az</span>
+          <div class="heatmap-cell"></div>
+          <div class="heatmap-cell" data-level="1"></div>
+          <div class="heatmap-cell" data-level="2"></div>
+          <div class="heatmap-cell" data-level="3"></div>
+          <div class="heatmap-cell" data-level="4"></div>
+          <span>Çok</span>
+        </div>
+      </div>
+
+      <!-- Mood timeline (4 col) -->
+      <div class="module col-4">
+        <div class="module-head">
+          <div class="module-title">
+            <div class="module-glyph dark">💭</div>
+            <div>Mood Çizelgesi</div>
+          </div>
+          <div class="module-meta">14 gün</div>
+        </div>
+        <div id="mood-timeline" class="mood-line"></div>
+      </div>
+
+      <!-- Top konular bar (6 col) -->
+      <div class="module col-6">
+        <div class="module-head">
+          <div class="module-title">
+            <div class="module-glyph">📊</div>
+            <div>En Çok Çalıştığın Konular</div>
+          </div>
+        </div>
+        <div id="top-konular" class="top-list"></div>
+      </div>
+
+      <!-- ELO mastery top (6 col) -->
+      <div class="module col-6">
+        <div class="module-head">
+          <div class="module-title">
+            <div class="module-glyph violet">⭐</div>
+            <div>Konu Ustalık (ELO)</div>
+          </div>
+          <div class="module-meta">Adaptive Engine</div>
+        </div>
+        <div id="elo-top" class="top-list"></div>
+      </div>
+
+    </div>
   </section>
 </main>
 
@@ -1429,10 +1844,320 @@ document.querySelectorAll('.mood-pill').forEach(c => {
   });
 });
 
-function refreshAll() { loadAll(); toast('Yenilendi'); }
+function refreshAll() { loadAll(); loadAnalytics(currentAnalyticsDays); toast('Yenilendi'); }
+
+// ═════════════════════════════════════════════════════════════════════════
+// ANALYTICS SECTION (Oturum 25.14) — infografik dashboard
+// ═════════════════════════════════════════════════════════════════════════
+let chartTimeline = null, chartDers = null;
+let currentAnalyticsDays = 7;
+
+const MOOD_EMOJIS = {
+  verimli: '⚡', motiveli: '🚀', normal: '🌟',
+  yorgun: '😴', stresli: '😰',
+};
+const MOOD_LABELS = {
+  verimli: 'Verimli', motiveli: 'Motiveli', normal: 'Normal',
+  yorgun: 'Yorgun', stresli: 'Stresli',
+};
+
+const DERS_COLORS = {
+  Matematik: '#f59e0b', Geometri: '#fbbf24',
+  Fizik: '#5E6AD2', Kimya: '#8B5CF6', Biyoloji: '#10b981',
+  'Türkçe': '#ef4444', Türkçe: '#ef4444', Edebiyat: '#f87171',
+  Tarih: '#a78bfa', 'Coğrafya': '#60a5fa', Cografya: '#60a5fa',
+  Felsefe: '#34d399', İngilizce: '#fb7185', Ingilizce: '#fb7185',
+  Din: '#facc15',
+};
+
+function dersColor(name) {
+  return DERS_COLORS[name] || '#9ca3af';
+}
+
+async function loadAnalytics(days) {
+  currentAnalyticsDays = days;
+  // Period buttons
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.days) === days);
+  });
+  document.getElementById('ana-period-label').textContent = `Son ${days} gün`;
+
+  try {
+    const data = await api(`/student/daily/analytics?days=${days}`);
+    if (!data) return;
+
+    renderAnalyticsKPIs(data);
+    renderTimelineChart(data.daily_timeline || []);
+    renderDersDoughnut(data.ders_breakdown || []);
+    renderHeatmap(data.daily_timeline || []);
+    renderMoodTimeline(data.mood_timeline || []);
+    renderTopKonular(data.top_konular || []);
+    renderEloTop(data.elo_top || []);
+  } catch (e) {
+    console.error('Analytics yuklenemedi:', e);
+  }
+}
+
+function renderAnalyticsKPIs(data) {
+  const t = data.totals || {};
+  // Animate counter
+  animateCounter('ana-hours', t.total_hours || 0);
+  animateCounter('ana-questions', t.total_questions || 0);
+  animateCounter('ana-streak', t.current_streak || 0);
+  animateCounter('ana-pa-min', data.physical_activity?.total_minutes || 0);
+}
+
+function animateCounter(id, target) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const start = parseFloat(el.textContent) || 0;
+  const diff = target - start;
+  const duration = 800;
+  const startTime = performance.now();
+  const isFloat = !Number.isInteger(target);
+  function step(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const v = start + diff * eased;
+    el.textContent = isFloat ? v.toFixed(1) : Math.round(v);
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function renderTimelineChart(daily) {
+  const ctx = document.getElementById('chart-timeline');
+  if (!ctx) return;
+  if (chartTimeline) chartTimeline.destroy();
+
+  const c = ctx.getContext('2d');
+  const grad = c.createLinearGradient(0, 0, 0, 240);
+  grad.addColorStop(0, 'rgba(245, 158, 11, 0.5)');
+  grad.addColorStop(1, 'rgba(245, 158, 11, 0.02)');
+
+  chartTimeline = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: daily.map(d => d.date.slice(5)),
+      datasets: [
+        {
+          label: 'Dakika',
+          data: daily.map(d => d.minutes),
+          borderColor: '#f59e0b',
+          backgroundColor: grad,
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointBackgroundColor: '#f59e0b',
+          pointBorderColor: '#020203',
+          pointHoverRadius: 6,
+          fill: true,
+          tension: 0.4,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Soru',
+          data: daily.map(d => d.questions),
+          borderColor: '#8B5CF6',
+          backgroundColor: 'rgba(139, 92, 246, 0.05)',
+          borderWidth: 2,
+          pointRadius: 2,
+          pointBackgroundColor: '#8B5CF6',
+          fill: false,
+          tension: 0.4,
+          yAxisID: 'y1',
+          borderDash: [5, 4],
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            color: '#a8aab2',
+            font: { family: "'Fira Sans',sans-serif", size: 11 },
+            usePointStyle: true,
+            pointStyle: 'circle',
+            padding: 12,
+          },
+        },
+        tooltip: {
+          backgroundColor: 'rgba(10,10,12,0.95)',
+          titleColor: '#fff', bodyColor: '#a8aab2',
+          borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1,
+          padding: 12, cornerRadius: 10,
+          titleFont: {family:"'Fira Sans',sans-serif"},
+          bodyFont: {family:"'Fira Code',monospace"},
+        },
+      },
+      scales: {
+        y: {
+          type: 'linear', position: 'left', beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#f59e0b', font:{family:"'Fira Code',monospace",size:10} },
+          title: { display: true, text: 'dk', color: '#f59e0b', font: {size:10} },
+        },
+        y1: {
+          type: 'linear', position: 'right', beginAtZero: true,
+          grid: { display: false },
+          ticks: { color: '#8B5CF6', font:{family:"'Fira Code',monospace",size:10} },
+          title: { display: true, text: 'soru', color: '#8B5CF6', font: {size:10} },
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#6b6e78', font:{family:"'Fira Code',monospace",size:10} },
+        },
+      },
+    },
+  });
+}
+
+function renderDersDoughnut(breakdown) {
+  const ctx = document.getElementById('chart-ders');
+  const legend = document.getElementById('ders-legend');
+  if (!ctx) return;
+  if (chartDers) chartDers.destroy();
+
+  if (!breakdown.length) {
+    legend.innerHTML = '<div style="text-align:center;color:var(--fg-tertiary);padding:20px;font-size:0.82rem;">Henüz ders verisi yok</div>';
+    chartDers = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels:['Boş'], datasets:[{ data:[1], backgroundColor:['rgba(255,255,255,0.05)'], borderWidth:0 }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{enabled:false}}, cutout:'72%' },
+    });
+    return;
+  }
+
+  const colors = breakdown.map(b => dersColor(b.name));
+  chartDers = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: breakdown.map(b => b.name),
+      datasets: [{
+        data: breakdown.map(b => b.minutes),
+        backgroundColor: colors,
+        borderColor: 'rgba(2, 2, 3, 0.8)',
+        borderWidth: 2,
+        hoverOffset: 8,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(10,10,12,0.95)',
+          padding: 10, cornerRadius: 8,
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${ctx.parsed} dk (${breakdown[ctx.dataIndex].percent}%)`,
+          },
+        },
+      },
+    },
+  });
+
+  // Legend
+  legend.innerHTML = breakdown.map((b, i) => `
+    <div class="ders-legend-item">
+      <div class="dot" style="background:${colors[i]}"></div>
+      <div class="name">${escapeHTML(b.name)}</div>
+      <div class="pct">${b.minutes}dk · ${b.percent}%</div>
+    </div>
+  `).join('');
+}
+
+function renderHeatmap(daily) {
+  const c = document.getElementById('heatmap-container');
+  if (!c) return;
+  // Maks dakika bul, level hesapla
+  const maxMin = Math.max(...daily.map(d => d.minutes), 1);
+  const today = new Date().toISOString().slice(0,10);
+  c.innerHTML = daily.map(d => {
+    let level = 0;
+    if (d.minutes > 0) {
+      const pct = d.minutes / maxMin;
+      if (pct < 0.25) level = 1;
+      else if (pct < 0.5) level = 2;
+      else if (pct < 0.75) level = 3;
+      else level = 4;
+    }
+    const isToday = d.date === today;
+    const tooltip = `${d.date}: ${d.minutes}dk · ${d.questions} soru`;
+    return `<div class="heatmap-cell${isToday?' today':''}" ${level?`data-level="${level}"`:''} title="${tooltip}"></div>`;
+  }).join('');
+}
+
+function renderMoodTimeline(timeline) {
+  const c = document.getElementById('mood-timeline');
+  if (!c) return;
+  c.innerHTML = timeline.slice(-7).reverse().map(m => {
+    const d = new Date(m.date);
+    const dStr = d.toLocaleDateString('tr-TR', {day:'numeric', month:'short'});
+    const mood = m.mood;
+    if (!mood) {
+      return `<div class="mood-day empty">
+        <span class="date mono">${dStr}</span>
+        <span class="emoji">·</span>
+        <span class="label">—</span>
+      </div>`;
+    }
+    return `<div class="mood-day">
+      <span class="date mono">${dStr}</span>
+      <span class="emoji">${MOOD_EMOJIS[mood]||'🌟'}</span>
+      <span class="label">${MOOD_LABELS[mood]||mood}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderTopKonular(items) {
+  const c = document.getElementById('top-konular');
+  if (!c) return;
+  if (!items.length) {
+    c.innerHTML = '<div class="empty"><span class="glyph">📚</span><p>Henüz konu verisi yok</p><small>Çalışmaya başla!</small></div>';
+    return;
+  }
+  const max = items[0]?.minutes || 1;
+  c.innerHTML = items.slice(0, 5).map((k, i) => {
+    const pct = (k.minutes / max) * 100;
+    return `<div class="top-item">
+      <span class="rank">${i+1}.</span>
+      <span class="name">${escapeHTML(k.name)}</span>
+      <span class="stat mono">${k.minutes} dk</span>
+      <div class="progress-bar" style="width:${pct}%"></div>
+    </div>`;
+  }).join('');
+}
+
+function renderEloTop(items) {
+  const c = document.getElementById('elo-top');
+  if (!c) return;
+  if (!items.length) {
+    c.innerHTML = '<div class="empty"><span class="glyph">⭐</span><p>ELO verisi yok</p><small>Soru çözdükçe oluşur</small></div>';
+    return;
+  }
+  c.innerHTML = items.slice(0, 5).map((k, i) => {
+    const rating = k.rating;
+    let cls = 'normal';
+    if (rating >= 1500) cls = 'high';
+    else if (rating < 1000) cls = 'low';
+    return `<div class="top-item">
+      <span class="rank">${i+1}.</span>
+      <span class="name">${escapeHTML(k.konu)}</span>
+      <span class="ders-tag">${escapeHTML(k.ders)}</span>
+      <span class="stat mono">${rating}</span>
+    </div>`;
+  }).join('');
+}
 
 setInterval(loadAll, 60000);
 loadAll();
+loadAnalytics(7);
 </script>
 </body>
 </html>

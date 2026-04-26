@@ -516,6 +516,181 @@ async def get_summary(soz_no: int) -> dict:
     }
 
 
+async def get_analytics_data(soz_no: int, days: int = 30) -> dict:
+    """Infografik dashboard için full analytics — tek çağrı.
+
+    Oturum 25.14 — Frontend'in tüm chartlarını besleyen veri:
+      • daily_timeline: 30 gün → her gün dakika+soru (line/heatmap)
+      • ders_breakdown: ders bazlı toplam dakika + yüzde (doughnut)
+      • top_konular: en çok çalışılan ilk 10 konu (bar)
+      • mood_timeline: 14 gün → mood (emoji satırı)
+      • totals: toplam saat/soru/ortalama
+      • streak: ardışık çalışma günleri
+      • activity_summary: fiziksel aktivite (gün, dk)
+      • elo_top: top 10 mastery (knowledge_graph)
+    """
+    # Asyncio gather — paralel
+    rows_stats, mood_rows, activities = await asyncio.gather(
+        _fetch(
+            f"""SELECT log_date, total_minutes, questions_solved,
+                       ders_breakdown, konu_breakdown
+                FROM student_study_stats
+                WHERE soz_no=$1
+                  AND log_date >= CURRENT_DATE - INTERVAL '{int(days)} days'
+                ORDER BY log_date""",
+            soz_no,
+        ),
+        _fetch(
+            f"""SELECT log_date, mood, note FROM student_daily_notes
+                WHERE soz_no=$1 AND mood IS NOT NULL
+                  AND log_date >= CURRENT_DATE - INTERVAL '14 days'
+                ORDER BY log_date""",
+            soz_no,
+        ),
+        _fetch(
+            f"""SELECT log_date, activity_type, duration_minutes
+                FROM student_physical_activity
+                WHERE soz_no=$1
+                  AND log_date >= CURRENT_DATE - INTERVAL '{int(days)} days'
+                ORDER BY log_date""",
+            soz_no,
+        ),
+        return_exceptions=True,
+    )
+
+    if isinstance(rows_stats, Exception): rows_stats = []
+    if isinstance(mood_rows, Exception): mood_rows = []
+    if isinstance(activities, Exception): activities = []
+
+    from datetime import date as _d, timedelta as _td
+
+    # ── 1. Daily timeline (her gün için dolu/boş) ──
+    today = _d.today()
+    by_date = {}
+    for r in (rows_stats or []):
+        by_date[str(r["log_date"])] = {
+            "minutes": r["total_minutes"] or 0,
+            "questions": r["questions_solved"] or 0,
+        }
+
+    daily_timeline = []
+    for i in range(days, -1, -1):
+        d = today - _td(days=i)
+        ds = str(d)
+        rec = by_date.get(ds, {"minutes": 0, "questions": 0})
+        daily_timeline.append({
+            "date": ds,
+            "weekday": d.weekday(),  # 0=Pzt, 6=Paz
+            "minutes": rec["minutes"],
+            "questions": rec["questions"],
+        })
+
+    # ── 2. Ders breakdown ──
+    ders_total = {}
+    konu_total = {}
+    for r in (rows_stats or []):
+        bd = r["ders_breakdown"] or {}
+        kbd = r["konu_breakdown"] or {}
+        if isinstance(bd, str):
+            try: bd = json.loads(bd)
+            except: bd = {}
+        if isinstance(kbd, str):
+            try: kbd = json.loads(kbd)
+            except: kbd = {}
+        for d, m in bd.items():
+            ders_total[d] = ders_total.get(d, 0) + (m or 0)
+        for k, m in kbd.items():
+            konu_total[k] = konu_total.get(k, 0) + (m or 0)
+
+    total_min_all = sum(ders_total.values())
+    ders_breakdown = sorted(
+        [{"name": k, "minutes": v, "percent": round(100 * v / max(1, total_min_all), 1)}
+         for k, v in ders_total.items()],
+        key=lambda x: -x["minutes"],
+    )
+
+    top_konular = sorted(
+        [{"name": k, "minutes": v} for k, v in konu_total.items()],
+        key=lambda x: -x["minutes"],
+    )[:10]
+
+    # ── 3. Mood timeline ──
+    mood_timeline = []
+    mood_dict = {}
+    for r in (mood_rows or []):
+        mood_dict[str(r["log_date"])] = r["mood"]
+    for i in range(13, -1, -1):
+        d = today - _td(days=i)
+        mood_timeline.append({
+            "date": str(d),
+            "mood": mood_dict.get(str(d)),
+        })
+
+    # ── 4. Totals ──
+    total_min = sum(r["total_minutes"] or 0 for r in (rows_stats or []))
+    total_q = sum(r["questions_solved"] or 0 for r in (rows_stats or []))
+    active_days = len([r for r in (rows_stats or []) if (r["total_minutes"] or 0) > 0])
+
+    # ── 5. Streak (consecutive days) ──
+    streak_current = 0
+    for i in range(0, days):
+        d = today - _td(days=i)
+        rec = by_date.get(str(d), {"minutes": 0})
+        if rec["minutes"] > 0:
+            streak_current += 1
+        else:
+            if i == 0:
+                continue  # bugün boş ise dünden sayma başlat
+            break
+    longest_streak = 0
+    cur = 0
+    for entry in daily_timeline:
+        if entry["minutes"] > 0:
+            cur += 1
+            longest_streak = max(longest_streak, cur)
+        else:
+            cur = 0
+
+    # ── 6. Activity summary ──
+    pa_total_min = sum(a["duration_minutes"] or 0 for a in (activities or []))
+    pa_days = len(set(str(a["log_date"]) for a in (activities or [])))
+
+    # ── 7. ELO top (knowledge_graph entegrasyon) ──
+    elo_top = []
+    try:
+        elo_rows = await _fetch(
+            """SELECT ders, konu, rating, games_played
+               FROM student_topic_elo WHERE soz_no=$1
+               ORDER BY rating DESC LIMIT 10""",
+            soz_no,
+        )
+        elo_top = [dict(r) for r in (elo_rows or [])]
+    except Exception:
+        pass
+
+    return {
+        "period_days": days,
+        "totals": {
+            "total_minutes": total_min,
+            "total_hours": round(total_min / 60, 1),
+            "total_questions": total_q,
+            "active_days": active_days,
+            "avg_minutes_per_active_day": round(total_min / max(1, active_days), 1),
+            "current_streak": streak_current,
+            "longest_streak": longest_streak,
+        },
+        "daily_timeline": daily_timeline,
+        "ders_breakdown": ders_breakdown,
+        "top_konular": top_konular,
+        "mood_timeline": mood_timeline,
+        "physical_activity": {
+            "total_minutes": pa_total_min,
+            "days_active": pa_days,
+        },
+        "elo_top": elo_top,
+    }
+
+
 async def analyze_study_pattern(soz_no: int, days: int = 30) -> dict:
     """30 günlük çalışma örüntü analizi — LLM için.
 

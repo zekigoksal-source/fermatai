@@ -391,6 +391,18 @@ async def analyze(
     return await sd.analyze_study_pattern(sn, days=days)
 
 
+@router.get("/analytics")
+async def analytics(
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+    days: int = Query(default=30, ge=7, le=90),
+    soz_no: Optional[int] = None,
+):
+    """Infografik dashboard için full analytics — tek çağrı (Oturum 25.14)."""
+    sn = await _get_student_soz_no(request, fermat_session, soz_no)
+    return await sd.get_analytics_data(sn, days=days)
+
+
 # ── DASHBOARD UI ───────────────────────────────────────────────────────────
 
 @router.get("/dashboard", response_class=HTMLResponse)
