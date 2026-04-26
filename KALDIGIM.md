@@ -1,7 +1,168 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 25 Nisan 2026, ~21:00 — **OTURUM 25.10 — Groq Pay Genişletme** (mimari revizyon)
-> **Son konusma analizi timestamp:** `2026-04-25 17:49` (bir sonraki "konusmalari kontrol et" bu noktadan baslamali)
+> **Son güncelleme:** 26 Nisan 2026, ~12:00 — **OTURUM 25.11 — Sistem Audit + 2 KRITIK BUG FIX**
+> **Son konusma analizi timestamp:** `2026-04-25 17:49`
+
+## 🚨 OTURUM 25.11 (26 Nisan ~12:00) — SISTEM AUDIT + KRITIK BUG FIX
+
+### Neo'nun talebi
+> "Genel sistem incelemesi yap. Çakışma, eksik, yanlış yönlendirme var mı? Halusinasyon
+>  görüyor gibi yaptım dedikten sonra problem oluyor. Birşeyi yaptıysan kesin %100
+>  çalışıyor olması gerekiyor diğer türlü buraya şerh düşüp takip etmelisin."
+
+### 🔴 BULGU 1 — GROQ %0 ÜRETIMDE (HALUSINASYON KANITI)
+**İddia (Oturum 25.10):** Groq lane fix deploy edildi, %30 trafik Groq'a kayacak.
+**Gerçek (audit):** Production routing son 24h: Claude 100, Fast 17, **Groq 0**.
+
+**Kök sebep (logdan):**
+```
+[YEREL] Groq ile yanitlaniyor
+chat_local: Groq basarisiz (Can't patch loop of type <class 'uvloop.Loop'>),
+Ollama'ya dusuyor
+Ollama hatasi (timeout=30s): 1 validation error
+[GROQ-TOOLS] pre-check hatasi, Claude'a dusuyor: name 'time' is not defined
+```
+
+`chat_local()` sync versiyonu `nest_asyncio.apply()` kullanıyor. uvicorn uvloop
+kullandığı için NEST patch yapılamıyor. Tüm Groq çağrıları silent fail → Claude.
+
+**Test'te niye görmemiştim?**
+Standalone python script ile test ettiğimde "Provider: groq, 1.3s" çıktı. Ama
+o test asyncio default loop kullandı, uvloop yoktu. Production farklı.
+
+**FIX (commit `60f39b5`):**
+- Yeni `LLMRouter.chat_local_async()` — native async, nest_asyncio YOK
+- `fermat_core_agent.run` artık `await self.router.chat_local_async(...)` çağırıyor
+- Ollama fallback `asyncio.to_thread` ile sync wrap
+
+**CANLI DOĞRULAMA:**
+```
+TEST: turev nedir kisaca → 905374372445
+[YEREL] Lane: sohbet (Groq aciliyor)
+Sure: 1012ms
+Provider: groq
+Cevap: "Merhaba *Deniz*! 📊 ... *Turev Nedir?* Turev, bir fonksiyonun *degisim
+        hizini* olcer..."
+```
+
+### 🔴 BULGU 2 — GECE 05:38 WP MESAJI (YAPILDI DENMEMIS YAPILMAMIS)
+**İddia (geçmişte):** Gece WP mesajları konuşulmuştu, panel'e taşıyacaktık.
+**Gerçek:** 26 Nisan 05:38'de "Gece etüt sync başarısız" WP geldi (Neo gözlemledi).
+
+**Kök sebep:** `whatsapp_bridge.py:396` — 02:30 UTC etut sync fail durumunda
+direkt `send_wa_message(NEO_PHONE)` çağırıyor. Saat kuralı YOK.
+
+**FIX (commit `60f39b5`):**
+- Yeni `admin_notify.py` modülü
+- `notify_admin(severity, category, title, body)` helper:
+  - Her zaman `notifications` tablosuna yaz (panel'de görülür)
+  - WP gönderim kuralları:
+    - 20:00-08:00 quiet hours: WP YASAK (sadece panel)
+    - critical severity: her zaman WP (kriz, sistem çökmesi)
+    - warning + gündüz: WP gönder
+    - info: ASLA WP, sadece panel
+- `whatsapp_bridge.py` 2 yer (etut_sync_fail + sync_fail_alert) `notify_admin` üzerinden
+
+**TEST quiet hours logic 10/10 PASS:**
+```
+00:00, 05:00, 07:00 → quiet=True (WP YASAK)
+08:00, 12:00, 19:00 → quiet=False (WP OK)
+20:00, 22:00, 23:00 → quiet=True (WP YASAK)
+```
+
+### 📊 SİSTEM AUDIT BULGULARI
+
+#### Mimari ölçeği (kanıtlı sayım)
+- **177 Python dosya** eyotek_agent/ altında
+- **64 Claude tool** tanımı (TOOLS list)
+- **64 TOOL_DISPATCH** wrapper (1:1 eşleşme — duplicate yok ✓)
+- **En büyük 5 dosya:**
+  - whatsapp_bridge.py (4215 satır)
+  - fermat_core_agent.py (4142 satır) ← refactor adayı
+  - eyotek_wrapper.py (3465 satır)
+  - fast_responses.py (3289 satır) ← refactor adayı
+  - web_chat.py (2297 satır)
+
+#### Tool kullanım verimi (son 30g, gerçek üretim)
+🟢 **Aktif top 5:** query_analytics 1480, fast_response 685, ollama_local 256,
+   get_student_analytics 130, search_students 123
+
+🔴 **DEAD/AZ KULLANIM (≤5 çağrı):**
+- youtube_oner (1), get_career_info (1), plan_kaydet (1), plan_getir (1)
+- transfer_failure_analiz (1), proaktif_sgm_kademe_bildirimi (1)
+- ogrenci_borc_detay (1), aylik_borc_detay (2), geciken_odemeler (2)
+- web_upload (2), eyotek_read (2), pedagojik_koc (2), puan_tahmin (2)
+- konu_kaynak_paketi (2), ogrenci_nereye_girebilir (2)
+- ogm_yonlendir (3), hedef_bolum_ara (3), turkce (3), plan_gun_guncelle (3)
+- counsellor_brief (4), ders_konu_dagilimi_raporu (4), sezon_kiyasla (4)
+- aylik_tahsilat_trend (4), biyoloji (4)
+- finans_ozet (7), get_atlas_trend (7)
+
+**TOPLAM 25+ tool ölü/yarı-ölü — system prompt'a ~3000 token ekleyip
+hiç kullanılmıyor. Token tasarrufu için temizleme adayı.**
+
+#### Güvenlik audit ✓
+- ✅ .env commitlenmemiş
+- ✅ Hardcoded API key YOK
+- ✅ shell=True YOK
+- ✅ SQL injection: 7 f-string SELECT var ama hepsi whitelist'ten kolon/tablo (parametreler `$1` bind)
+- ✅ eval() var ama `__builtins__: {}` ile sandboxed (visual_generator.py)
+
+### 🛠️ ÖNERİLEN REVİZYON PLANI (öncelik sıralı)
+
+**🔴 P1 (acil):**
+1. ✅ uvloop+Groq fix (yapıldı, canlı)
+2. ✅ Gece WP susturma (yapıldı, admin_notify)
+3. fast_responses.py refactor — 3289 satır tek dosya, 5+ alt-modüle bölünmeli
+4. fermat_core_agent.py refactor — 4142 satır, dispatcher + builder ayrılmalı
+
+**🟡 P2 (yakında):**
+5. Ölü tool temizliği — 25+ tool sistem prompt'tan çıkar veya silmeden gizle
+6. response_source 'ollama' legacy → 'groq' düzeltme (cosmetic)
+7. Test coverage genişletme (şu an 23 test, hedef 100+)
+8. fermatai-bridge shutdown deprecation warning (Node.js url.parse) — cosmetic
+
+**🟢 P3 (uzun vade):**
+9. Knowledge graph görsel UI (d3.js dashboard'a)
+10. Atlas-2 ilk öneri set'i değerlendirme (yarın 02:00 sonra)
+
+### 📦 GRAPHIFY DEĞERLENDİRMESİ
+**Araç:** github.com/joinify/graphify (TypeScript/JS) ve Python alternatifi `pydeps`/`snakefood`
+
+**Token tasarrufu iddiası:** Codebase haritası verilince LLM hangi dosyaya bakacağını
+biliyor → daha az `Read` çağrısı → daha az token.
+
+**Bizim için katma değer:**
+- 🟢 Büyük codebase (177 dosya) için potansiyel %20-30 tasarruf
+- 🟡 Claude Code zaten benzer (file structure context) yapıyor
+- 🔴 Setup karmaşık, IDE bağımlılığı (Cursor/Continue tabanlı)
+
+**ALTERNATIF (basit + etkili):** Repo root'ta `MIMARI.md` veya
+`MAP.md` — modül bağımlılık tablosu manuel oluştur, KALDIGIM gibi her oturumda
+güncellenir. Aynı tasarrufu sağlar, harici tool yok.
+
+### 🔬 ŞERH DÜŞÜLEN HALUSINASYON RİSKLERİ (gelecek dikkatli olmam için)
+
+**Standart kalıba almam gereken kontrol:**
+> "Bu özelliği yaptım, X durumda çalışıyor" demeden önce
+> 1. Production environment'ta (uvicorn/uvloop dahil) test et
+> 2. Standalone python `python script.py` testi YETMEZ
+> 3. Gerçek user mesaj akışı simülasyon (FermatCoreAgent.run ile)
+> 4. Çıkan sonucun routing_stats DB'ye doğru loglandığını doğrula
+> 5. Kullanılmıyorsa "şerh: production live test bekliyor" KALDIGIM'a yaz
+
+**Geçmişteki halusinasyon kanıtları (bu audit'ten):**
+- ❌ "Groq lane fix canlı, Provider: groq" — ASLINDA uvloop fail (24h Groq=0)
+- ❌ "Gece WP yasak konuşmuştuk" — sistemleştirilmemişti, hala WP atıyordu
+- ✓ Lane classifier 23/23 PASS — bu doğruydu (logic)
+- ✓ Knowledge graph 77 node 72 edge — doğru, DB kanıt
+- ✓ Adaptive Engine ELO + SM-2 — doğru, DB kanıt
+- ✓ URL token endpoint 200 — doğru, curl kanıt
+- ✓ Predictive model TYT 25.6 — doğru, fonksiyon test
+
+### Commit
+- `60f39b5` — Oturum 25.10d-e (uvloop + gece WP fix)
+- (next) Audit raporu KALDIGIM
 
 ## 🎯 OTURUM 25.10 (25 Nisan 2026, ~21:00) — GROQ PAY GENİŞLETME
 
