@@ -55,10 +55,10 @@ _CLOSING_VARIANTS = [
 def format_for_whatsapp(text: str, source: str = "claude") -> str:
     """
     Tüm cevapları WhatsApp formatına çevir.
-    source: "claude" | "ollama" | "fast"
+    source: "claude" | "ollama" | "groq" | "fast" | "local"
 
     Her kaynaktan gelen cevap aynı A+ standarda uydurulur.
-    Ollama kaynağında ekstra sıkı enforcer çalışır.
+    Yerel kaynaklarda (ollama/groq/local) ekstra sıkı enforcer çalışır.
     """
     if not text or len(text.strip()) < 5:
         return text
@@ -125,8 +125,8 @@ def format_for_whatsapp(text: str, source: str = "claude") -> str:
         return ""
 
     # ── 5. Görsel Kalite Enforcer ──
-    # Ollama'da çok daha agresif — Claude'a yakın
-    if source == "ollama":
+    # Yerel kaynaklarda (Groq/Ollama) Claude'a yakın enforcer (Oturum 25.11 fix)
+    if source in ("ollama", "groq", "local"):
         text = _enforce_claude_visual(text)
     else:
         text = _enforce_claude_visual_soft(text)

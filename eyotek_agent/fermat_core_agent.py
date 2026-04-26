@@ -3505,17 +3505,18 @@ class FermatCoreAgent:
                                           user_input, answer, _local_provider)
                     except Exception:
                         pass
-                    # ── QUERY CACHE YAZ — Ollama conceptual cevap, cache'e ekle ──
+                    # ── QUERY CACHE YAZ — Yerel (Groq/Ollama) cevap, cache'e ekle ──
+                    # Oturum 25.11: hardcoded "ollama" yerine gercek provider
                     if caller_phone and len(answer) >= 20:
                         try:
                             from query_cache import add_to_cache
                             await add_to_cache(
                                 phone=caller_phone, role=role,
                                 query=user_input, response=answer,
-                                source="ollama",
+                                source=_local_provider,
                             )
                         except Exception as _qcw_e:
-                            logger.debug(f"Query cache yaz (ollama) hatasi: {_qcw_e}")
+                            logger.debug(f"Query cache yaz ({_local_provider}) hatasi: {_qcw_e}")
                     return answer
             except Exception as e:
                 logger.warning(f"  Ollama basarisiz, Claude'a geciliyor: {e}")
