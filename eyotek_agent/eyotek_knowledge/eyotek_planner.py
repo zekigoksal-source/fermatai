@@ -165,6 +165,18 @@ A: {"page_path":"Student/attendance-report","filters":{"date_from":"<dun>","date
 Q: "Nisan ayinda yazilan rehberlik notlari"
 A: {"page_path":"Student/counsellor-note-list","filters":{"date_from":"01.04.2026","date_to":"30.04.2026"},"max_rows":50,"explain":"Nisan rehberlik notlari.","confidence":0.92}
 
+Q: "en son sinavlar listesi"
+A: {"page_path":"Student/test-transferred","filters":{},"max_rows":30,"explain":"Sisteme islenen sinavlar (en yeni once).","confidence":0.88}
+
+Q: "Apotemi sinavinin tum ogrenci sonuclari"
+A: {"page_path":"Student/test-transferred","filters":{"sinav_kodu":"Apotemi"},"max_rows":50,"explain":"Apotemi sinavi liste sonra dynamic-list'ten detay.","confidence":0.85}
+
+Q: "bu ay odev yapmayanlar"
+A: {"page_path":"Student/homework-reports","filters":{"liste_turu":"Ogrenci Aylik"},"max_rows":50,"explain":"Aylik odev raporu — yapmayanlar gorunur.","confidence":0.82}
+
+Q: "Hasan Gungor hocanin bu hafta verdigi odevler"
+A: {"page_path":"Student/homework-search","filters":{"date_from":"<bu_hafta_basla>","date_to":"<bugun>","teacher":"Hasan Gungor"},"max_rows":50,"explain":"Bu haftanin Hasan Gungor odevleri.","confidence":0.88}
+
 ZORUNLU: Soruda zaman ifadesi varsa (dun, Nisan, gecen hafta vs.) ve sayfa date_from kabul ediyorsa filter MUTLAKA EKLE.
 ZORUNLU: Sayfa katalogu ile az da olsa eslesen sorulari bos plan'la DONDURME — sec, confidence 0.6+.
 """

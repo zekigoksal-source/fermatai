@@ -70,19 +70,30 @@ _CDP_URL = f"http://localhost:{_CDP_PORT}"
 # ─── FILTER ALIAS HARITASI ────────────────────────────────────────────────────
 # Bot/planner ne kullanirsa kullansin, yakalanir.
 _FILTER_ALIAS = {
-    "date_from":     ["basla", "baslangic", "ilk_tarih", "tarih_bas", "from", "start"],
-    "date_to":       ["bitis", "son_tarih", "tarih_bit", "to", "end"],
+    "date_from":     ["basla", "baslangic", "ilk_tarih", "tarih_bas", "from", "start", "veris_bas"],
+    "date_to":       ["bitis", "son_tarih", "tarih_bit", "to", "end", "veris_bit"],
     "class":         ["sinif", "klass", "class_name"],
     "teacher":       ["ogretmen", "hoca", "staff", "teacher_name", "ogrt"],
     "ders":          ["lesson", "brans", "subject", "dersad"],
     "student":       ["ogrenci", "name", "ad_soyad", "student_name", "ogrenci_ad"],
-    "exam_name":     ["sinav_adi", "sinav", "test_name", "test"],
+    "exam_name":     ["sinav_adi", "sinav_ad", "test_name", "test"],
     "school":        ["okul"],
     "branch":        ["sube", "subek"],
-    "etut_type":     ["etut_tur", "tur"],
+    "etut_type":     ["etut_tur"],
     "classroom":     ["derslik"],
     "yoklama":       ["attendance", "yoklama_durum"],
-    "etut_kod":      ["etut_kodu", "kod"],
+    "etut_kod":      ["etut_kodu"],
+    "sinav_kodu":    ["snv_kod", "kod_sinav"],
+    "sinav_turu":    ["snv_tur", "exam_type"],
+    "sinav_kategori":["snv_kategori"],
+    "devre":         ["donem", "term"],
+    "odev_tur":      ["homework_tur", "tur", "odev_type"],
+    "durum":         ["status", "kontrol_durumu"],
+    "student_first": ["ad", "first_name"],
+    "student_last":  ["soyad", "last_name"],
+    "liste_turu":    ["liste_turu", "list_type"],
+    "kontrol_from":  ["kontrol_bas", "control_from"],
+    "kontrol_to":    ["kontrol_bit", "control_to"],
 }
 
 # Filtreyi standart isme cevirir.
@@ -109,15 +120,21 @@ def _canon_filter(key: str) -> str:
 # select_option underlying <select>'e (cmb*) calisiyor.
 _SELECTOR_CANDIDATES = {
     # Tarih (text input, datepicker) — Eyotek farkli sayfalarda farkli id
-    # txtKayitBas/Bit (Etut Ara, Counsellor) | txtBaslangic/Bitis (Attendance) | txtBegin/End (Reports)
-    "date_from": ["#txtKayitBas", "#txtBaslangic", "#txtBeginDate", "#txtBas",
-                  "#txtTarihBas", "#txtBegin", "#txtBaslamaTarihi",
-                  "input[id*='Baslangic']", "input[id*='Bas']:not([id*='Bit']):not([id*='Save'])",
+    # txtKayitBas/Bit (Etut, Counsellor, test-transferred) | txtBaslangic/Bitis (Attendance) |
+    # txtVerisBas/Bit (homework-reports) | txtKayitBasVer/BitVer (homework-search)
+    "date_from": ["#txtKayitBas", "#txtBaslangic", "#txtVerisBas", "#txtKayitBasVer",
+                  "#txtBeginDate", "#txtBas", "#txtTarihBas", "#txtBegin", "#txtBaslamaTarihi",
+                  "input[id*='Baslangic']", "input[id*='VerisBas']", "input[id*='KayitBas']:not([id*='Kont']):not([id*='Bit'])",
+                  "input[id*='Bas']:not([id*='Bit']):not([id*='Save']):not([id*='Kont'])",
                   "input[name*='Baslangic']", "input[name*='Bas']:not([name*='Bit'])"],
-    "date_to":   ["#txtKayitBit", "#txtBitis", "#txtEndDate", "#txtBit",
-                  "#txtTarihBit", "#txtEnd", "#txtBitisTarihi",
-                  "input[id*='Bitis']", "input[id*='Bit']:not([id*='Save'])",
-                  "input[name*='Bitis']", "input[name*='Bit']"],
+    "date_to":   ["#txtKayitBit", "#txtBitis", "#txtVerisBit", "#txtKayitBitVer",
+                  "#txtEndDate", "#txtBit", "#txtTarihBit", "#txtEnd", "#txtBitisTarihi",
+                  "input[id*='Bitis']", "input[id*='VerisBit']", "input[id*='KayitBit']:not([id*='Kont'])",
+                  "input[id*='Bit']:not([id*='Save']):not([id*='Kont'])",
+                  "input[name*='Bitis']", "input[name*='Bit']:not([name*='Kont'])"],
+    # Kontrol Tarihi — odev sayfalarinda ayri filter
+    "kontrol_from": ["#txtKayitBasKont", "#txtKontrolBas", "input[id*='KontrolBas']", "input[id*='KayitBasKont']"],
+    "kontrol_to":   ["#txtKayitBitKont", "#txtKontrolBit", "input[id*='KontrolBit']", "input[id*='KayitBitKont']"],
 
     # Subesi (cmbSubeler — Kurs vb.)
     "branch":    ["#cmbSubeler", "#cmbSube", "#cmbSchool",
@@ -129,13 +146,15 @@ _SELECTOR_CANDIDATES = {
     "class":     ["#cmbSinif", "#cmbSiniflar", "#cmbClasses", "#cmbClass",
                   "select[id*='Sinif' i]", "select[id*='Class' i]"],
 
-    # Ogretmen (cmbOgrtAd — pratikte boyle)
-    "teacher":   ["#cmbOgrtAd", "#cmbOgretmen", "#cmbStaff", "#cmbTeacher", "#cmbTeachers",
+    # Ogretmen — Eyotek 3 farkli isim kullaniyor: cmbOgrtAd / cmbOgretmenler / cmbHoca
+    "teacher":   ["#cmbOgrtAd", "#cmbOgretmenler", "#cmbHoca", "#cmbOgretmen",
+                  "#cmbStaff", "#cmbTeacher", "#cmbTeachers",
                   "select[id*='Ogrt' i]", "select[id*='Ogretmen' i]",
-                  "select[id*='Teacher' i]", "select[id*='Staff' i]"],
+                  "select[id*='Hoca' i]", "select[id*='Teacher' i]", "select[id*='Staff' i]"],
 
-    # Ders (cmbDers — pratikte boyle)
-    "ders":      ["#cmbDers", "#cmbLesson", "#cmbLessons",
+    # Ders — cmbDers (etut/odev-search) | cmbBrans (odev-reports)
+    "ders":      ["#cmbDers", "#cmbBrans", "#cmbLesson", "#cmbLessons",
+                  "select[id*='Brans' i]",
                   "select[id*='Ders' i]:not([id*='Derslik'])",
                   "select[id*='Lesson' i]"],
 
@@ -161,6 +180,31 @@ _SELECTOR_CANDIDATES = {
     # Sinav adi
     "exam_name": ["#txtSinavAdi", "#TxtSinavAdi", "#txtTestName",
                   "input[id*='Sinav' i]", "input[id*='TestName' i]", "input[id*='ExamName' i]"],
+
+    # Sinav kodu (test-transferred sayfasinda)
+    "sinav_kodu": ["#txtKod", "input[id*='SnvKod' i]", "input[id*='SinavKod' i]"],
+
+    # Sinav turu (LGS / TYT / YKS) — test-transferred
+    "sinav_turu": ["#cmbSinavTuru", "#cmbSnvTur", "select[id*='SinavTur' i]"],
+
+    # Sinav kategori — test-transferred
+    "sinav_kategori": ["#cmbSinavKategori", "select[id*='SinavKategori' i]"],
+
+    # Devre (1.Snf, 2.Snf, Mezun) — test-transferred + raporlar
+    "devre":     ["#cmbDevre", "select[id*='Devre' i]"],
+
+    # Odev turu (Odev / Online Odev) — homework-search/reports
+    "odev_tur":  ["#cmbTur", "select[id*='Tur' i]:not([id*='Turu' i])"],
+
+    # Durum (Kontrol edildi / edilmedi) — homework-search
+    "durum":     ["#cmbDurum", "select[id*='Durum' i]"],
+
+    # Ogrenci adi (homework sayfalarinda ayri ad/soyad)
+    "student_first": ["#txtAd", "input[id*='txtAd' i]:not([id*='Soyad'])"],
+    "student_last":  ["#txtSoyad", "input[id*='Soyad' i]"],
+
+    # Liste turu (homework-reports — Ogrenci Aylik / Ogretmen Aylik vs)
+    "liste_turu": ["#lstKnt", "select[id*='Liste' i]"],
 }
 
 # Search button candidates (in order of priority)
@@ -661,9 +705,11 @@ async def navigate(
                     result["filters_failed"].append(raw_key)
                     continue
 
-            # Tarih ve metin alanlari -> text input; cmb* -> dropdown
+            # Tarih ve metin alanlari -> text input; cmb* (select) -> dropdown
             is_dropdown = canon in ("class", "teacher", "ders", "school", "branch",
-                                     "etut_type", "classroom", "yoklama")
+                                     "etut_type", "classroom", "yoklama",
+                                     "sinav_turu", "sinav_kategori", "devre",
+                                     "odev_tur", "durum", "liste_turu")
             if is_dropdown:
                 used = await _fill_dropdown(page, candidates, str(raw_value))
             else:

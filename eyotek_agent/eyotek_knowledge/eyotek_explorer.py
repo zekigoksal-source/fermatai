@@ -46,12 +46,14 @@ PRIORITY_PAGES = [
     ("Student/individual-lesson-reports",    "Etut Raporlari"),
 
     # --- SINAV (Apotemi gibi yeni sinav sorgulari) ---
-    ("Student/Test/test",                    "Sinav Degerlendirme"),
-    ("Student/exam-result",                  "Sinav Sonuclari"),
-    ("Student/exam-statistic",               "Sinav Istatistik"),
-    ("Student/exam-combine",                 "TYT Birlestir"),
-    ("Student/exam-combine-ayt",             "AYT Birlestir"),
-    ("Student/test-participation",           "Sinav Katilim"),
+    ("Student/Test/test",                          "Sinav Degerlendirme"),
+    ("Student/test-transferred",                   "Degerlendirilmis Sinavlar (Yeni Sinav Listesi)"),
+    ("Student/test-transferred-dynamic-list",      "Sinav Detay - Tum Ogrenci Sonuclari (URL params: SnvTur+SnvKod+Sube)"),
+    ("Student/exam-result",                        "Sinav Sonuclari"),
+    ("Student/exam-statistic",                     "Sinav Istatistik"),
+    ("Student/exam-combine",                       "TYT Birlestir"),
+    ("Student/exam-combine-ayt",                   "AYT Birlestir"),
+    ("Student/test-participation",                 "Sinav Katilim"),
 
     # --- YOKLAMA ---
     ("Student/attendance-check-multi",       "Ogrenci Yoklama Giris"),
@@ -77,9 +79,11 @@ PRIORITY_PAGES = [
     ("Student/schedule-teacher",             "Ogretmen Programi"),
     ("Student/timetable-class-list",         "Sinif Ders Programi"),
 
-    # --- ODEV ---
-    ("Student/homework",                     "Odev Ara"),
-    ("Student/homework-input",               "Odev Giris"),
+    # --- ODEV (dijital iz, seneye duzenli takip) ---
+    ("Student/homework",                     "Odev (eski path)"),
+    ("Student/homework-search",              "Odev Ara"),
+    ("Student/homework-input",               "Odev Giris/Ver"),
+    ("Student/homework-reports",             "Odev Raporlari (Aylik/Toplam ozet)"),
 
     # --- DAVRANIS ---
     ("Student/behaviour-search",             "Davranis Ara"),

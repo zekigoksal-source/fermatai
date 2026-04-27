@@ -295,6 +295,45 @@ SCENARIOS = [
             "min_confidence": 0.6,
         },
     },
+
+    # ─── YENİ KEŞİF: SINAV LISTESI + DYNAMIC LIST + ODEV RAPORLARI ─────────
+    {
+        "id": "sinav_listesi_yeni",
+        "category": "sinav_yeni",
+        "query": "en son hangi sinavlar yapildi sisteme islendi",
+        "expected": {
+            "must_page_path_contains": ("test-transferred", "test"),
+            "min_confidence": 0.5,
+        },
+    },
+    {
+        "id": "sinav_listesi_nisan",
+        "category": "sinav_yeni",
+        "query": "Nisan ayinda yapilan sinavlar listesi",
+        "expected": {
+            "must_page_path_contains": ("test-transferred", "test"),
+            "must_have_filter": ["date_from"],
+            "min_confidence": 0.5,
+        },
+    },
+    {
+        "id": "odev_aylik_rapor",
+        "category": "odev_yeni",
+        "query": "bu ay odev yapmayanlar listesi",
+        "expected": {
+            "must_page_path_contains": ("homework-reports", "homework"),
+            "min_confidence": 0.4,
+        },
+    },
+    {
+        "id": "odev_ogretmen_filtre",
+        "category": "odev_yeni",
+        "query": "Hasan Gungor hocanin verdigi odevler",
+        "expected": {
+            "must_page_path_contains": "homework",
+            "min_confidence": 0.4,
+        },
+    },
 ]
 
 
