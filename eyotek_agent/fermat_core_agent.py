@@ -3470,9 +3470,11 @@ class FermatCoreAgent:
                 # Eskiden sync chat_local + nest_asyncio.apply() vardi, FastAPI/uvicorn
                 # uvloop'una "Can't patch loop" hatasi veriyordu → Groq tum cagrilar fail.
                 if hasattr(self.router, "chat_local_async"):
+                    # 25.22: intent geç (Cerebras model seçimi için)
                     answer = await self.router.chat_local_async(
                         messages=self.history,
                         system=_lane_system,
+                        intent=_intent or "",
                     )
                 else:
                     # Backwards compat (eski router'da chat_local_async yok)
@@ -3608,11 +3610,22 @@ class FermatCoreAgent:
                             answer = '\n'.join(lines[:-1])
 
                     # Oturum 24 + 25: Gercek provider'i router'dan oku.
-                    # Fallback: router'a bakip hangisi yuklu ise o (VPS'te groq primary,
-                    # laptop'ta ollama). "ollama" hardcoded fallback'u kaldirildi.
+                    # Fallback: router'a bakip hangisi yuklu ise o.
+                    # 25.22: Cerebras öncelik (paid tier primary)
                     _last = getattr(self.router, "_last_local_provider", None)
                     if _last:
                         _local_provider = _last
+                        # Cerebras kullanıldıysa hangi model — granüler observability
+                        if _local_provider == "cerebras":
+                            _cb_model = getattr(self.router, "_last_cerebras_model", "")
+                            if "8b" in _cb_model:
+                                _local_provider = "cerebras_8b"
+                            elif "120b" in _cb_model or "gpt-oss" in _cb_model:
+                                _local_provider = "cerebras_120b"
+                            elif "235b" in _cb_model or "qwen" in _cb_model:
+                                _local_provider = "cerebras_235b"
+                    elif getattr(self.router, "_cerebras_available", False):
+                        _local_provider = "cerebras"
                     elif getattr(self.router, "_groq_available", False):
                         _local_provider = "groq"
                     elif getattr(self.router, "_ollama_available", False):

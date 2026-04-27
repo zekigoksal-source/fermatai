@@ -363,15 +363,30 @@ class LLMRouter:
         self._anthropic_available = bool(ANTHROPIC_KEY)
         self._groq_available = bool(os.getenv("GROQ_API_KEY"))
         self._groq_client = None
+        # 25.22 Cerebras Pay-as-You-Go entegrasyonu (Groq'un yerine geçer)
+        self._cerebras_available = bool(os.getenv("CEREBRAS_API_KEY"))
+        self._cerebras_client = None
         # Oturum 24: chat_local cagrilarinda gercek provider takibi icin
-        # (observability: routing_stats'a response_source=groq veya ollama yazmak icin)
+        # (observability: routing_stats'a response_source=cerebras/groq/ollama yazmak icin)
         self._last_local_provider = None
+        # 25.22: Hangi Cerebras modeli kullanildi (gpt-oss-120b/qwen/8b)
+        self._last_cerebras_model = None
         self._check_ollama()
+        # Cerebras öncelikli — daha iyi kalite, paid tier, queue yok
+        if self._cerebras_available:
+            try:
+                from cerebras_handler import CerebrasClient
+                self._cerebras_client = CerebrasClient()
+                logger.info("Cerebras hazir: 3 model (8b/120b/235b)")
+            except Exception as e:
+                logger.warning(f"Cerebras baslatilamadi: {e}")
+                self._cerebras_available = False
+        # Groq fallback olarak korunur (deprecated but kept for rollback)
         if self._groq_available:
             try:
                 from groq_handler import GroqClient
                 self._groq_client = GroqClient()
-                logger.info("Groq hazir: llama-3.3-70b-versatile")
+                logger.info("Groq hazir (fallback): llama-3.3-70b-versatile")
             except Exception as e:
                 logger.warning(f"Groq baslatilamadi: {e}")
                 self._groq_available = False
@@ -669,17 +684,69 @@ _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
         messages: list[dict],
         system: str = "",
         model: str = "",
+        intent: str = "",
     ) -> str:
-        """ASYNC chat_local — uvloop uyumlu (Oturum 25.10e Neo bugu).
+        """ASYNC chat_local — uvloop uyumlu.
 
-        chat_local sync versiyonu nest_asyncio.apply() kullaniyor, uvloop ile
-        cakisiyor: 'Can't patch loop of type <class uvloop.Loop>' hatasi.
-        Bu metod direkt async path — uvicorn/FastAPI altinda calisir.
+        25.22: Cerebras-first (paid tier, primary).
+        Fallback chain: Cerebras → Groq → Ollama.
 
-        Caller bu metodu await ile cagirmali. Sync versiyon (chat_local)
-        backwards compat icin korundu, laptop dev'de kullanilabilir.
+        intent parametresi: prompt_tiers/intent_classifier'dan gelirse,
+        Cerebras'ta intent → model eşleşmesi yapılır (gpt-oss-120b vs qwen vs 8b).
         """
-        # 1) Groq oncelik (VPS production)
+        # ─── 25.22 Cerebras öncelik (paid tier, queue yok, 3 model) ────────
+        if self._cerebras_available and self._cerebras_client:
+            try:
+                from cerebras_handler import select_cerebras_model, is_safe_for_cerebras
+                # KVKK: hassas intent ise Cerebras'a SOKMA (Claude'a düşür)
+                if intent and not is_safe_for_cerebras(intent):
+                    logger.info(f"  [CEREBRAS] hassas intent ({intent}) — Claude'a yonlendir")
+                    raise RuntimeError("hassas_intent_skip")
+
+                # Local prompt + ARAYAN bilgisi
+                local_system = self._LOCAL_SYSTEM
+                if "ARAYAN ADI:" in system:
+                    import re as _re
+                    name_match = _re.search(r"ARAYAN ADI:\s*(.+)", system)
+                    role_match = _re.search(r"ARAYAN ROLÜ:\s*(\w+)", system)
+                    caller_name = name_match.group(1).strip() if name_match else ""
+                    caller_role = role_match.group(1).strip() if role_match else ""
+                    if caller_name:
+                        local_system = (
+                            f"ONEMLI — ARAYAN KISI: *{caller_name}*\n"
+                            f"Bu kisiye HER ZAMAN \"{caller_name.split()[0]}\" diye hitap et.\n"
+                            f"Rol: {caller_role}\n\n"
+                        ) + local_system
+                if "[LANE TALIMATI]" in system:
+                    parts = system.split("[LANE TALIMATI]", 1)
+                    if len(parts) == 2:
+                        local_system = local_system + "\n\n[LANE TALIMATI]" + parts[1]
+
+                # Intent → model eşleştir
+                cerebras_model = select_cerebras_model(intent)
+                self._last_cerebras_model = cerebras_model
+
+                result = await self._cerebras_client.complete_async(
+                    messages=messages,
+                    system=local_system,
+                    model=cerebras_model,
+                    max_tokens=1500,
+                )
+                if result.get("ok") and result.get("text"):
+                    self._last_local_provider = "cerebras"
+                    logger.info(f"  [CEREBRAS] {cerebras_model} | {result['ms']}ms | "
+                                f"in={result['tokens_in']} out={result['tokens_out']}")
+                    return result["text"]
+                else:
+                    logger.warning(f"  [CEREBRAS] basarisiz: {result.get('error', 'unknown')}, Groq'a dusuyor")
+            except RuntimeError as _skip:
+                # hassas_intent_skip — Claude'a düş
+                self._last_local_provider = None
+                raise
+            except Exception as e:
+                logger.warning(f"chat_local_async: Cerebras basarisiz ({e}), Groq'a dusuyor")
+
+        # 2) Groq fallback (Cerebras down ise)
         if self._groq_available and self._groq_client:
             try:
                 # System prompt + messages hazirligi (chat_groq ile ayni)
@@ -1058,9 +1125,8 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
     @property
     def is_local_available(self) -> bool:
         # Oturum 24: Groq de "local" olarak sayilir (ucuz + hizli + cloud ama API)
-        # VPS'te Ollama yok, Groq var — bu kontrol sonradan chat_local'in
-        # calismasini saglar, aksi halde chat_local direkt Claude'a dusuyordu.
-        return self._ollama_available or self._groq_available
+        # 25.22: Cerebras eklendi — primary, paid tier, queue yok
+        return self._cerebras_available or self._ollama_available or self._groq_available
 
     # ── Oturum 25: Groq Tool-Calling (opt-in, safe subset) ────────────────────
     async def chat_groq_with_tools(

@@ -3312,13 +3312,21 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 _last = await _conn3.fetchval(
                     "SELECT tools_used::text FROM agent_conversations WHERE phone=$1 AND message_role='assistant' ORDER BY created_at DESC LIMIT 1",
                     phone)
-                # 25.14k (Neo GROQ_INVISIBILITY): groq destekli source detection
-                # Eski: sadece ollama/claude ayrımı → groq'lu mesajlar 'claude' olarak kayit
-                # Yeni: tools_used'da groq_local/ollama_local var mi? Yoksa default claude.
+                # 25.22 Cerebras destekli source detection
+                # Granüler: cerebras_8b / cerebras_120b / cerebras_235b
                 _last_str = str(_last or "")
-                if "groq_local" in _last_str or "groq" in _last_str.lower():
+                _ll = _last_str.lower()
+                if "cerebras_235b" in _ll:
+                    _src = "cerebras_235b"
+                elif "cerebras_120b" in _ll:
+                    _src = "cerebras_120b"
+                elif "cerebras_8b" in _ll:
+                    _src = "cerebras_8b"
+                elif "cerebras" in _ll:
+                    _src = "cerebras"
+                elif "groq_local" in _ll or "groq" in _ll:
                     _src = "groq"
-                elif "ollama" in _last_str.lower():
+                elif "ollama" in _ll:
                     _src = "ollama"
                 else:
                     _src = "claude"
