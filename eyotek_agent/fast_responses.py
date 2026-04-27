@@ -1667,6 +1667,10 @@ OGRENCI_PATTERNS = [
     # 22.1n-audit: Adres/konum sorulari — ACL yasak, Claude'a ulasmasin
     (r"(nerede\s*otur|ev(i|leri)?\s*nerede|ev\s*adres|ikamet|oturdu[gğ]u|mahalle)", "privacy_reject", "Adres/ikamet yasak"),
     (r"\w+(['']?[iİı]n)?\s*(adres|evi\s*nerede|telefon(u)?|cep\s*(telefon|numa))", "privacy_reject", "X'in adresi/telefonu"),
+    # 25.21 (Bot konuşmasından): Başka öğrenci akademik veri — Claude'a 3-4sn yerine 5ms reddet
+    # NOT: Sadece TANINAN öğrenci isimleri + akademik kelime — false positive minimumda
+    # tr_normalize ile "Damla'nın notu" / "damla nın notu" / "Damla notu" hepsi yakalanır
+    (r"\b(taha|ecrin|damla|ada|yi[gğ]it|nazl[iı]|doruk|ay[sş]e|arda|mehmet\s*alp|enes|deren|deniz)\b[^\n]{0,40}\b(not|net|s[iı]nav|deneme|puan|durum|gidi[sş]|nas[iı]l\s*gi)", "privacy_reject", "Baska ogr akademik"),
 
     # Sıkılma / terk sinyali — web arayüzü önerisi (Talimat #75)
     # Net sinyaller: rakip platform adları, sıkıcı/boş ifadeler
