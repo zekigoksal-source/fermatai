@@ -1,8 +1,8 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 28 Nisan 2026, sabah — **OTURUM 25.27 — 9/9 teknik borç kapatıldı (%99)**
-> **28 Nisan commit'leri:** `f767824` (3 bot bug + sınav drill), `5ddbc32` (9 madde teknik borç bitirme)
-> **Önceki gün (27 Nisan, 25.26):** 13 Eyotek sayfası + 8 round test loop %100 + Tab handling + drill-down framework
+> **Son güncelleme:** 28 Nisan 2026, gece — **OTURUM 25.28 — Flint K-12 inceleme + 5 yeni özellik altyapısı (WP gated)**
+> **28 Nisan gece commit'leri:** `fefdb79` (5 özellik altyapısı), `e90cdf2`+`730aa71`+`1dd65c5` (live test fix'leri)
+> **Önceki commit'ler (25.27):** `f767824` (3 bot bug + sınav drill), `5ddbc32` (9 madde teknik borç), `b3a566f` (Groq primary kalıntıları audit)
 > **Son commit'ler (25.26 genişleme):** `5a394ce`→`978ac3f` (~30 commit) — navigator/explorer/planner iterations, 13 yeni sayfa, finansal ACL, tab system, ogrenci_drilldown
 > **Test loop:** Round 1→8: 66.7% → 87.5% → 91.7% → 100% (33/33)
 > **Önceki commit'ler (25.25):** `2c23689` (session_keeper CDP_PORT env), `598b76f` (viewer scroll/pagination), `9c2152d` (eyotek_reader+scrapers CDP_PORT), `ff8d9ca` (cookie injection)
@@ -231,6 +231,101 @@ sinav_sonuclari(sinav_adi, max_rows, date_from_days)
   (dynamic-list multi-table struct fine-tuning)
 - [ ] **WP canlı test** — sinav_sonuclari, financial-operation tab, overdue URL
   params, ogrenci_drilldown gerçek param ile sahada doğrulama
+
+---
+
+## 🚀 OTURUM 25.28 (28 Nisan gece) — Flint K-12 inceleme + 5 yeni özellik (WP gated)
+
+Neo: "Flint K-12 incele, bizim sisteme yenilikçi fikir kat. Altyapı hazırla
+ama WP gönderim YASAK — yeni sezon (1 Eyl) ben aktif diyene kadar."
+
+### 5 Yeni Özellik (HEPSİ LIVE, WP gönderim flag-gated)
+
+| # | Özellik | Modül | Durum |
+|---|---|---|---|
+| F1 | **Live Teacher Briefing** | `teacher_briefing.py` | ✅ Scheduler 15dk aktif |
+| F2 | **Auto Follow-Up Engine** | `followup_engine.py` | ✅ Live test: priority='urgent' Mahmut için |
+| F3 | **TTS Sesli Yanıt** | `tts_handler.py` | ✅ 4sn MP3 üretildi (66KB) |
+| F4 | **Conditional Assignments** | `todo_assignment.py` | ✅ Scheduler 30dk + 2 todo atandı |
+| F5 | **Predicted Grade Widget** | `predicted_grade.py` | ✅ Mahmut Taha: 334 puan, gap 30 |
+
+### DB Schema (6 yeni tablo + 5 sistem_ayar flag)
+
+- `teacher_briefing_queue` — F1 brief queue (status: queued/sent/skipped)
+- `student_followups` — F2 öğrenci follow-up (priority, weak_topics JSONB)
+- `tts_audio_cache` — F3 hash bazlı MP3 cache
+- `student_todo` extension — deadline, reminder_at, escalated_at, escalation_target, topic_ref
+- `todo_escalation_queue` — F4 reminder + escalation queue
+- `predicted_grade_cache` — F5 24h TTL prediction cache
+- `sistem_ayar` 5 flag (HEPSİ false): TEACHER_BRIEFING_WP_ACTIVE, FOLLOWUP_WP_ACTIVE, TTS_WP_ACTIVE, TODO_ESCALATION_WP_ACTIVE, NEW_FEATURES_DRY_RUN
+
+### Bridge Integration
+
+```python
+# whatsapp_bridge.py lifespan'a eklendi:
+- briefing_scheduler_loop()  # 15dk
+- todo_scheduler_loop()      # 30dk
+
+# precompute_nightly.py run_nightly()'a eklendi:
+- predicted_grade.refresh_all_predictions()  # gece 03:00, 200 öğrenci
+- followup_engine.queue_followups_for_all_active("nightly_exam_check")
+```
+
+### Admin Endpoint'ler (web_chat.py)
+
+- `GET /admin/teacher-briefings?status=queued` — F1 queue
+- `GET /admin/student-followups?status=queued` — F2 queue
+- `POST /admin/tts-test` — F3 manuel test (text → MP3)
+- `GET /admin/todo-escalations?status=queued` — F4 escalation queue
+- `GET /student/daily/predicted-grade?soz_no=X` — F5 widget JSON
+
+### Kısıt — WP Gönderim YASAK
+
+Tüm 5 modülün delivery fonksiyonları:
+```python
+async def deliver_pending_*():
+    if not feature_active:
+        return {"delivered": 0, "reason": "feature_inactive (yeni sezon)"}
+    # ... gerçek delivery kodu yeni sezonda eklenecek
+```
+
+Yeni sezon (1 Eylül 2026) Neo `sistem_ayar` flag'lerini `true` yaptığında:
+- WP push aktif
+- secure_messenger üzerinden onay+log ile gönderim
+- outreach_pending tablo entegrasyonu
+
+### Live Test Sonuçları (28 Nisan gece)
+
+- **F1:** Scheduler aktif, queue=0 (gece, ders olmadığı için doğal)
+- **F2:** Mahmut Taha id=1, priority='urgent' (TYT Matematik %95 hata)
+  - Mesaj: "MAHMUT, son sınavda TYT Matematik konusunda zorlanmışsın..."
+- **F3:** OpenAI TTS-1 (nova) çalışıyor — `/static/tts/333a26.mp3` (66KB, 4042ms)
+- **F4:** id=6+7 atandı, deadline 30.04, reminder 28.04 (deadline-2gün)
+- **F5:** Mahmut Taha widget: predicted=334, target=364, gap=30, trend=📉
+
+### Sonraki sezon aktivasyon listesi
+
+```sql
+-- 1 Eylül 2026'da çalıştırılacak:
+UPDATE sistem_ayar SET value='true' WHERE key IN (
+  'TEACHER_BRIEFING_WP_ACTIVE',
+  'FOLLOWUP_WP_ACTIVE',
+  'TTS_WP_ACTIVE',
+  'TODO_ESCALATION_WP_ACTIVE'
+);
+UPDATE sistem_ayar SET value='false' WHERE key='NEW_FEATURES_DRY_RUN';
+```
+
+### Yeni Dosyalar
+
+| Dosya | Satır | Rol |
+|---|---|---|
+| `teacher_briefing.py` | ~370 | F1 — proactive teacher briefing |
+| `followup_engine.py` | ~210 | F2 — student auto follow-up |
+| `tts_handler.py` | ~180 | F3 — OpenAI TTS + cache |
+| `todo_assignment.py` | ~270 | F4 — deadline + reminder + escalation |
+| `predicted_grade.py` | ~200 | F5 — YKS puan tahmin widget |
+| `new_features_schema.sql` | ~145 | 6 tablo + 5 flag DDL |
 
 ## 🔧 OTURUM 25.25 (27 Nisan akşam) — Eyotek "bağlıyım diyor ama veri çekmiyor" paradoksu çözüldü
 
