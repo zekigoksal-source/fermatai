@@ -114,16 +114,32 @@ async def _detect_problems(hours: int = 24) -> list[dict]:
 
 
 async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
-    """Groq 70B'ye problem ornekleri ile prompt iyilestirme onerisi sor."""
+    """LLM'den problem ornekleri ile prompt iyilestirme onerisi sor.
+
+    25.22 (Bot Atlas-2 bulgu): Groq daily limit dolup duruyor → 0 oneri uretiyor.
+    Cerebras'a geciyoruz (gpt-oss-120b — 436ms, kaliteli, paid tier sinirsiz).
+    Groq fallback olarak korunur.
+    """
     if not problems:
         return []
 
-    try:
-        from groq_handler import GroqClient
-        client = GroqClient()
-    except Exception as e:
-        logger.warning(f"Groq client init fail: {e}")
-        return []
+    # Cerebras-first (paid tier, sınırsız)
+    use_cerebras = bool(os.getenv("CEREBRAS_API_KEY"))
+    if use_cerebras:
+        try:
+            from cerebras_handler import CerebrasClient
+            cerebras = CerebrasClient()
+        except Exception as e:
+            logger.warning(f"Cerebras client init fail: {e}, Groq'a dusuyor")
+            use_cerebras = False
+
+    if not use_cerebras:
+        try:
+            from groq_handler import GroqClient
+            client = GroqClient()
+        except Exception as e:
+            logger.warning(f"Groq client init fail: {e}")
+            return []
 
     # Problem ozeti hazirla
     problem_summary = []
@@ -162,14 +178,31 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
     )
 
     try:
-        # Groq sync interface
-        response = client.chat(
-            messages=[{"role": "user", "content": user_prompt}],
-            system="Sen bir LLM prompt engineer'isin. Konusma loglarindan hata "
-                   "deseni cikarip somut, uygulanabilir prompt iyilestirmesi onerirsin.",
-            max_tokens=2000,
+        sys_prompt = (
+            "Sen bir LLM prompt engineer'isin. Konusma loglarindan hata "
+            "deseni cikarip somut, uygulanabilir prompt iyilestirmesi onerirsin."
         )
-        text = response if isinstance(response, str) else (response.get('text', '') if isinstance(response, dict) else '')
+        if use_cerebras:
+            # Cerebras gpt-oss-120b — 436ms, sinirsiz paid tier
+            r = cerebras.complete(
+                messages=[{"role": "user", "content": user_prompt}],
+                system=sys_prompt,
+                model="gpt-oss-120b",
+                max_tokens=2000,
+                temperature=0.3,
+            )
+            if not r.get("ok"):
+                raise RuntimeError(r.get("error", "cerebras fail"))
+            text = r["text"]
+            logger.info(f"[ATLAS-2] Cerebras gpt-oss-120b yaniti: {r['ms']}ms, in={r['tokens_in']} out={r['tokens_out']}")
+        else:
+            # Groq fallback
+            response = client.chat(
+                messages=[{"role": "user", "content": user_prompt}],
+                system=sys_prompt,
+                max_tokens=2000,
+            )
+            text = response if isinstance(response, str) else (response.get('text', '') if isinstance(response, dict) else '')
 
         # JSON parse
         # Markdown code block kaldır
@@ -180,7 +213,7 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
             return suggestions[:5]
         return []
     except Exception as e:
-        logger.warning(f"Groq suggestion fail: {e}")
+        logger.warning(f"Suggestion LLM fail: {e}")
         return []
 
 
