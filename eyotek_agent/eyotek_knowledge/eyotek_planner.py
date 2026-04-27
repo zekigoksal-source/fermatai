@@ -198,10 +198,9 @@ async def plan_query(question: str, catalog: Optional[list[dict]] = None) -> dic
     # Cerebras direkt — LLMRouter persona injection'ini bypass et
     try:
         from cerebras_handler import CerebrasClient
-        api_key = os.getenv("CEREBRAS_API_KEY", "")
-        if not api_key:
+        if not os.getenv("CEREBRAS_API_KEY"):
             raise RuntimeError("CEREBRAS_API_KEY env yok")
-        client = CerebrasClient(api_key=api_key)
+        client = CerebrasClient()  # api_key env'den otomatik
         result = await client.complete_async(
             messages=[{"role": "user", "content": user_prompt}],
             system=_PLANNER_SYSTEM,
