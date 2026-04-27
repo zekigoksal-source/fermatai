@@ -177,6 +177,12 @@ A: {"page_path":"Student/homework-reports","filters":{"liste_turu":"Ogrenci Ayli
 Q: "Hasan Gungor hocanin bu hafta verdigi odevler"
 A: {"page_path":"Student/homework-search","filters":{"date_from":"<bu_hafta_basla>","date_to":"<bugun>","teacher":"Hasan Gungor"},"max_rows":50,"explain":"Bu haftanin Hasan Gungor odevleri.","confidence":0.88}
 
+Q: "bu sezon aylik kayit sayilari"
+A: {"page_path":"Reports/monthly-enrollment-by-number-general","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"2025.26 sezonu aylik kayit sayilari.","confidence":0.90}
+
+Q: "kayit cirolari sezon karsilastirma"
+A: {"page_path":"Reports/monthly-enrollment-by-contract-fee-general","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"Aylik kayit ciro raporu — sezon ve gecen sezon karsilastirma birlikte gelir.","confidence":0.88}
+
 ZORUNLU: Soruda zaman ifadesi varsa (dun, Nisan, gecen hafta vs.) ve sayfa date_from kabul ediyorsa filter MUTLAKA EKLE.
 ZORUNLU: Sayfa katalogu ile az da olsa eslesen sorulari bos plan'la DONDURME — sec, confidence 0.6+.
 """

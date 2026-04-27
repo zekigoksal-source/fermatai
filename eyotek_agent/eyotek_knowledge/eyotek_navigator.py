@@ -87,13 +87,17 @@ _FILTER_ALIAS = {
     "sinav_turu":    ["snv_tur", "exam_type"],
     "sinav_kategori":["snv_kategori"],
     "devre":         ["donem", "term"],
-    "odev_tur":      ["homework_tur", "tur", "odev_type"],
+    "odev_tur":      ["homework_tur", "odev_type"],
     "durum":         ["status", "kontrol_durumu"],
     "student_first": ["ad", "first_name"],
     "student_last":  ["soyad", "last_name"],
-    "liste_turu":    ["liste_turu", "list_type"],
+    "liste_turu":    ["list_type"],
     "kontrol_from":  ["kontrol_bas", "control_from"],
     "kontrol_to":    ["kontrol_bit", "control_to"],
+    "sezon":         ["season", "donem_yili"],
+    "currency":      ["para_birimi"],
+    "ic_dis":        ["in_out"],
+    "silinenleri_cikar": ["silinmis_haric", "exclude_deleted"],
 }
 
 # Filtreyi standart isme cevirir.
@@ -205,6 +209,18 @@ _SELECTOR_CANDIDATES = {
 
     # Liste turu (homework-reports — Ogrenci Aylik / Ogretmen Aylik vs)
     "liste_turu": ["#lstKnt", "select[id*='Liste' i]"],
+
+    # Sezon (kayit raporlari — 2025.26, 2024.25 vs)
+    "sezon":     ["#cmbSezonlar", "select[id*='Sezon' i]"],
+
+    # Para birimi (Turk Lirasi default)
+    "currency":  ["#DdlCurrency", "select[id*='Currency' i]"],
+
+    # Ic/Dis filtre (kayit raporlarinda)
+    "ic_dis":    ["#CbInOut", "input[id*='InOut' i][type=checkbox]"],
+
+    # Silinenleri cikar (kayit raporlarinda)
+    "silinenleri_cikar": ["#chkSilinen", "input[id*='Silinen' i][type=checkbox]"],
 }
 
 # Search button candidates (in order of priority)
@@ -709,7 +725,8 @@ async def navigate(
             is_dropdown = canon in ("class", "teacher", "ders", "school", "branch",
                                      "etut_type", "classroom", "yoklama",
                                      "sinav_turu", "sinav_kategori", "devre",
-                                     "odev_tur", "durum", "liste_turu")
+                                     "odev_tur", "durum", "liste_turu",
+                                     "sezon", "currency")
             if is_dropdown:
                 used = await _fill_dropdown(page, candidates, str(raw_value))
             else:

@@ -88,6 +88,10 @@ PRIORITY_PAGES = [
     # --- DAVRANIS ---
     ("Student/behaviour-search",             "Davranis Ara"),
     ("Student/behaviour",                    "Davranislar"),
+
+    # --- RAPORLAR (FINANS — admin/mudur only) ───────────────────────────────
+    ("Reports/monthly-enrollment-by-number-general",       "Aylik Kayit Sayilari (sezon karsilastirma, sinif bazli yeni kayit)"),
+    ("Reports/monthly-enrollment-by-contract-fee-general", "Aylik Kayit Cirolari (sezon karsilastirma, sinif bazli ciro TL)"),
 ]
 
 

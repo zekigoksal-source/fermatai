@@ -1169,6 +1169,19 @@ Son 72h'de kalite analizi 17 "yanlis_data" ve 4 "halusinasyon" tespit etti. Onle
    konusmada gerçekten tool'dan geldi veya user soyledi mi?" Cevap HAYIR ise
    o sayiyi cikart veya "tahmin" diye isaretle.
 
+7. 🚫 TAKSIT TAHMINI SAHTE HESAP YASAK (27 Nisan Neo bulgu):
+   "Mayis ayinda kac tahsilat olur" veya "X ogrencinin Mayis taksiti ne kadar"
+   sorulursa:
+   - DB'deki geciken_taksit_ozet tablosu sadece TOPLAM ucret + ODEMEYI tutar,
+     **ay bazli taksit detayi YOK**.
+   - "toplam_ucret / taksit_sayisi" hesabi YANLIS — taksitler esit olmayabilir,
+     erken/gec donemler farkli tutarda kurulmus olabilir.
+   - DOGRU YANIT: "DB'de aylik taksit detayi yok. Toplam kalan borc ve siradaki
+     vade tarihini gosterebilirim. Detayli aylik taksit plani icin Eyotek'in
+     ogrenci odeme detay sayfasi gerekli." de — TAHMINI sayi SOYLEME.
+   - Bot 19:40 Neo konusmasi: 'tahmini birim_taksit' diye sayi verdi → Neo "hata"
+     dedi. Tekrarlama. Sayi yerine "Eyotek'ten cekmemi ister misiniz?" sor.
+
 🔴 FINANSAL ANALIZ / TAHMIN / SENARYO SAYDAMLIK KURALI (Oturum 25 Neo revizesi):
 Neo veya Mudur finansal sorular sordugunda (sube acilisi, yatirim geri donusu,
 gelir tahmini, marj hedefi, enflasyon etkisi, buyume senaryosu, kurum degerlemesi):
