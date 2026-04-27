@@ -698,7 +698,24 @@ async def navigate(
             )
             return result
 
-        # MODAL ac (gerekiyorsa)
+        # URL params ile gelmissek (?sezon=&tarihBas= gibi) sayfa zaten filtreyi
+        # otomatik calistirdi — modal acma + search click YAPMA. Tabloyu direkt oku.
+        has_url_params = "?" in page_path or (filters and any(k.startswith("_url_") for k in filters))
+        if has_url_params and not filters:
+            # Sadece tablo oku, hicbir aksiyon yapma
+            await page.wait_for_timeout(2500)  # Server filter render bekle
+            cols, rows_data = await _read_table(page, max_rows)
+            result["columns"] = cols
+            result["rows"] = rows_data
+            result["row_count"] = len(rows_data)
+            result["success"] = True
+            result["debug"]["mode"] = "url_params_only"
+            if not rows_data:
+                result["error_code"] = "NO_DATA"
+                result["error"] = "URL filtresi uygulandi, tablo bos."
+            return result
+
+        # MODAL ac (gerekiyorsa) — URL params yoksa
         modal_opened = await _open_search_modal(page)
         result["modal_opened"] = modal_opened
         if modal_opened:

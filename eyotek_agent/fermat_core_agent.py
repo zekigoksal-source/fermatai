@@ -1220,17 +1220,37 @@ async def _tool_eyotek_read(page_key: str = "etut_ara", max_rows: float = 20) ->
     return await read_eyotek_page(page_key, max_rows=int(max_rows))
 
 
-async def _tool_eyotek_query(question: str, max_rows: float = 0) -> dict:
+async def _tool_eyotek_query(question: str, max_rows: float = 0,
+                              _caller_role: str = "admin") -> dict:
     """Eyotek'ten AGENTIC sorgulama — Cerebras planner + parametrik navigator.
 
     Kullanıcı doğal dilde sorduğunda (tarih, öğretmen, ders, sınav adı vb.)
     Cerebras 70B uygun sayfayı + filtreleri seçer, navigator data çeker.
 
     25.26 mimari: planner (eyotek_planner) → navigator (eyotek_navigator).
+
+    🔒 ACL: Finansal sayfalar (Reports/* + Financial/*) sadece admin/mudur.
+    Diger rollerde plan üretildikten sonra check edilir, page_path
+    finans ile eslesirse cevap reddedilir.
     """
     from eyotek_knowledge.eyotek_planner import execute_query
     mr = int(max_rows) if max_rows else None
-    return await execute_query(question, max_rows=mr)
+    result = await execute_query(question, max_rows=mr)
+
+    # Finansal sayfa kontrolu — admin/mudur disindaki rollerde reddet
+    page = (result.get("page") or result.get("plan", {}).get("page_path") or "").lower()
+    is_financial = (
+        page.startswith("reports/") or page.startswith("financial/")
+        or "balance" in page or "overdue" in page or "fee" in page or "salary" in page
+    )
+    if is_financial and _caller_role not in ("admin", "mudur"):
+        return {
+            "success": False,
+            "error": "Finansal sayfalar sadece admin/mudur erisimine acik.",
+            "plan": result.get("plan"),
+            "page": page,
+        }
+    return result
 
 
 async def _tool_calculate_yks_score(

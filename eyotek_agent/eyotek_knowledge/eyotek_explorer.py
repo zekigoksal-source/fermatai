@@ -89,9 +89,11 @@ PRIORITY_PAGES = [
     ("Student/behaviour-search",             "Davranis Ara"),
     ("Student/behaviour",                    "Davranislar"),
 
-    # --- RAPORLAR (FINANS — admin/mudur only) ───────────────────────────────
+    # --- RAPORLAR / FINANS (admin-only — hassas) ────────────────────────────
     ("Reports/monthly-enrollment-by-number-general",       "Aylik Kayit Sayilari (sezon karsilastirma, sinif bazli yeni kayit)"),
     ("Reports/monthly-enrollment-by-contract-fee-general", "Aylik Kayit Cirolari (sezon karsilastirma, sinif bazli ciro TL)"),
+    ("Reports/balance-for-student-future-income",          "Bilanco (Sezon/Sube/Tarih bazli Ciro/Tahsilat/Kalan, drill-down ile aylik borclular)"),
+    ("Financial/overdue-student-payment",                  "Geciken Odeme (URL params: sube=&sezon=&tarihBas=&tarihBit= ile aylik borclu listesi)"),
 ]
 
 

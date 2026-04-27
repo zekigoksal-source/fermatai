@@ -183,6 +183,24 @@ A: {"page_path":"Reports/monthly-enrollment-by-number-general","filters":{"sezon
 Q: "kayit cirolari sezon karsilastirma"
 A: {"page_path":"Reports/monthly-enrollment-by-contract-fee-general","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"Aylik kayit ciro raporu — sezon ve gecen sezon karsilastirma birlikte gelir.","confidence":0.88}
 
+Q: "Aralik 2025 borclu ogrenciler"
+A: {"page_path":"Financial/overdue-student-payment?sube=1086&sezon=22526&tarihBas=01.12.2025&tarihBit=31.12.2025","filters":{},"max_rows":50,"explain":"Aralik 2025 ay bazli gercek borclu listesi — URL params direkt filtre.","confidence":0.92}
+
+Q: "Mayis 2026 ayinda kim borclu"
+A: {"page_path":"Financial/overdue-student-payment?sube=1086&sezon=22526&tarihBas=01.05.2026&tarihBit=31.05.2026","filters":{},"max_rows":50,"explain":"Mayis 2026 borclu ogrenciler — URL filtresi ile gercek liste.","confidence":0.92}
+
+Q: "bilanco aylik tablo"
+A: {"page_path":"Reports/balance-for-student-future-income","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"Sezon bilancosu: aylik ciro/tahsilat/kalan dagilimi.","confidence":0.90}
+
+ONEMLI URL PARAMS NOTU:
+overdue-student-payment sayfasi URL params destekler:
+  ?sube=1086&sezon=22526&tarihBas=DD.MM.YYYY&tarihBit=DD.MM.YYYY
+  - sube=1086 = Kurs (sabit)
+  - sezon=22526 = 2025.26
+  - sezon=22425 = 2024.25
+  - sezon=22627 = 2026.27
+Aylik borc/taksit/odeme sorulari icin BU sayfayi sec, URL params ile filtreyi gomerek.
+
 ZORUNLU: Soruda zaman ifadesi varsa (dun, Nisan, gecen hafta vs.) ve sayfa date_from kabul ediyorsa filter MUTLAKA EKLE.
 ZORUNLU: Sayfa katalogu ile az da olsa eslesen sorulari bos plan'la DONDURME — sec, confidence 0.6+.
 """
