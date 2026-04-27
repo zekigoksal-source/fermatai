@@ -44,12 +44,13 @@ async def get_student_weak_topics(soz_no: int, limit: int = 3) -> list[dict]:
     from db_pool import db_fetch
     try:
         rows = await db_fetch(
-            """SELECT ders, konu, hata_orani, calisma_durumu
+            """SELECT ders, konu, sinav_hata_yuzdesi AS hata_orani,
+                      status AS calisma_durumu
                FROM student_topic_tracker
                WHERE soz_no = $1
-                 AND hata_orani >= 40
-                 AND (calisma_durumu IS NULL OR calisma_durumu != 'tamamlandi')
-               ORDER BY hata_orani DESC, son_yapildigi_tarih DESC NULLS LAST
+                 AND sinav_hata_yuzdesi >= 40
+                 AND tamamlandi = false
+               ORDER BY sinav_hata_yuzdesi DESC, calisti_tarih DESC NULLS LAST
                LIMIT $2""",
             soz_no, limit
         )
@@ -91,7 +92,7 @@ async def generate_suggestion_text(student_name: str, weak_topics: list[dict],
         client = CerebrasClient()
         first_name = student_name.split()[0] if student_name else "Arkadaşım"
         topics_str = "\n".join(
-            f"- {t['ders']}: {t['konu']} (%{int(t['hata_orani'])} hata)"
+            f"- {t['ders']}: {t['konu']} (%{int(t['sinav_hata_yuzdesi'])} hata)"
             for t in weak_topics[:3]
         )
 
@@ -126,7 +127,7 @@ Mesaj kuralları:
     fname = student_name.split()[0] if student_name else "Arkadaşım"
     t = weak_topics[0]
     return (f"{fname}, son sınavda {t['ders']}/{t['konu']} konusunda "
-            f"zorlanmışsın (%{int(t['hata_orani'])} hata). "
+            f"zorlanmışsın (%{int(t['sinav_hata_yuzdesi'])} hata). "
             f"Bu hafta 30dk bu konuya odaklan, sonra 5 örnek soru çöz. "
             f"Bir adım atmak yeter, devamını birlikte planlarız 💪")
 
@@ -170,7 +171,7 @@ async def queue_followup_for_student(soz_no: int, trigger: str = "exam_sync",
     feature_active = await is_feature_active()
 
     # Priority: en yüksek hata oranına göre
-    avg_hata = sum(t["hata_orani"] for t in weak) / len(weak)
+    avg_hata = sum(t["sinav_hata_yuzdesi"] for t in weak) / len(weak)
     priority = "urgent" if avg_hata >= 70 else "high" if avg_hata >= 55 else "normal"
 
     new_id = await db_fetchval(

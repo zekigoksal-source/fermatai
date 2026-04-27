@@ -101,30 +101,23 @@ async def synthesize_speech(text: str,
         logger.warning("[TTS] OPENAI_API_KEY yok")
         return None
 
+    file_path = _TTS_DIR / f"{text_hash}.mp3"
+    audio_bytes = b""
     try:
         from openai import AsyncOpenAI
         client = AsyncOpenAI(api_key=api_key)
 
-        response = await client.audio.speech.create(
+        # Streaming response API ile MP3 al
+        async with client.audio.speech.with_streaming_response.create(
             model=model,
             voice=voice,
             input=text,
             response_format="mp3",
-        )
+        ) as response:
+            await response.stream_to_file(file_path)
+        audio_bytes = file_path.read_bytes()
     except Exception as e:
-        logger.error(f"[TTS] OpenAI API fail: {e}")
-        return None
-
-    # MP3'i kaydet
-    file_path = _TTS_DIR / f"{text_hash}.mp3"
-    audio_bytes = b""
-    try:
-        # Stream + write
-        async for chunk in response.iter_bytes(chunk_size=1024):
-            audio_bytes += chunk
-        file_path.write_bytes(audio_bytes)
-    except Exception as e:
-        logger.error(f"[TTS] dosya yazma fail: {e}")
+        logger.error(f"[TTS] OpenAI API/dosya fail: {e}")
         return None
 
     audio_url = f"/static/tts/{text_hash}.mp3"
