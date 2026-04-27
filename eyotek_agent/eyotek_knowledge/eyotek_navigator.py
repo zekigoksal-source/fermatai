@@ -1013,14 +1013,25 @@ async def student_drilldown(
         used_quick = await _fill_text_input(page, ["#txtAdQuick", "input[id*='AdQuick' i]"], s)
 
         if used_quick:
-            # txtAdQuick yaninda magnifier icon var (sayfa ustunde) — Enter yetebilir
+            # txtAdQuick yaninda magnifier icon var, ya da Enter — ikisini de dene
             try:
                 el = await page.query_selector("#txtAdQuick")
                 if el:
                     await el.press("Enter")
             except Exception:
                 pass
-            await page.wait_for_timeout(2500)
+            # Magnifier icon (#btnQuickSearch veya benzeri)
+            for sel in ["#btnQuickSearch", "button[onclick*='QuickSearch']",
+                        "i.fa-search ~ button", "a[onclick*='QuickSearch']",
+                        "button.btn-icon-only", "a.btn-icon-only"]:
+                try:
+                    el = await page.query_selector(sel)
+                    if el and await el.is_visible():
+                        await el.click()
+                        break
+                except Exception:
+                    continue
+            await page.wait_for_timeout(3000)
         else:
             # Fallback: modal ac, ad/soyad doldur
             await _open_search_modal(page)
