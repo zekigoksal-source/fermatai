@@ -362,6 +362,35 @@ async def _run_scheduled_tasks():
                 except Exception as _e:
                     logger.debug(f"Health check hatası: {_e}")
 
+            # 25.24 — Pazar 04:30: DB retention policy (eski kayitlari arsivle/sil)
+            if now.weekday() == 6 and now.hour == 4 and now.minute >= 25 and now.minute < 35:
+                if not getattr(_run_scheduled_tasks, '_retention_done_today', False):
+                    setattr(_run_scheduled_tasks, '_retention_done_today', True)
+                    try:
+                        from db_retention import run_full_retention
+                        result = await run_full_retention()
+                        logger.info(f"🗂️  DB retention: {result}")
+                        # Neo'ya bildir
+                        try:
+                            ac = result.get("agent_conversations", {})
+                            archived = ac.get("archived", 0)
+                            if archived > 0:
+                                await send_wa_message(
+                                    "905051256802",
+                                    f"🗂️ *Haftalık DB temizliği*\n\n"
+                                    f"Arşivlenen: {archived} eski konuşma\n"
+                                    f"routing_stats / usage_log / query_cache temizlendi.",
+                                    _outreach=True, _reason="db_retention"
+                                )
+                        except Exception:
+                            pass
+                    except Exception as e:
+                        logger.warning(f"DB retention hata: {e}")
+            # Pazartesi flag reset
+            if now.weekday() == 0 and now.hour == 0:
+                if hasattr(_run_scheduled_tasks, '_retention_done_today'):
+                    delattr(_run_scheduled_tasks, '_retention_done_today')
+
             # 25.23-final — Günde bir 09:00: Disk + DB doluluk monitoring
             # 120 ogrenci × 30K mesaj/ay → DB hizla buyur, log dosyalari taşar
             if now.hour == 9 and now.minute < 10 and not getattr(_run_scheduled_tasks, '_disk_today', False):
