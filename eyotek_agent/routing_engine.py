@@ -128,17 +128,18 @@ def decide_route(
 
     Döner: "fast" | "local" | "claude"
 
-    NAMING NOTU (Oturum 25.10): "local" döndüğünde gerçekte chat_local()
-    çağrılır. chat_local Groq-first: VPS'te Groq 70B Llama 3.3 cevaplar,
-    Groq fail olursa Ollama (laptop dev) fallback. "ollama" eski isim,
-    backwards compat icin halen kabul edilir ama yeni kod "local" kullanir.
+    NAMING NOTU (Oturum 25.22+ guncel): "local" döndüğünde gerçekte
+    chat_local_async() çağrılır. Bu fonksiyon Cerebras-first calisir:
+      Cerebras (3 model: 8b/120b/235b) → Groq (fallback) → Ollama (laptop)
+    "ollama" eski isim, backwards compat icin kabul edilir; yeni kod "local".
 
     Öncelik sırası:
     1. Admin → selamlama/not_et fast, geri kalan Claude
     2. SGM → kısa+basit local, geri kalan Claude
     3. Tüm roller → fast_responses pattern match dene
-    3b. Ogrenci → groq_lanes.classify_lane → 7 Groq-safe lane (Oturum 25.10)
-    4. Kavramsal sorular → local (Groq 70B halüsinasyon dusük)
+    3b. Ogrenci → groq_lanes.classify_lane → 7 lane (Oturum 25.10 — adi groq_lanes
+        ama gerceginde Cerebras'a gider, eski naming, refactor bekliyor)
+    4. Kavramsal sorular → local (Cerebras gpt-oss-120b — halusilasyon dusuk)
     5. Cloud keywords → Claude
     6. Kısa+basit → local
     7. Belirsiz (auto/ogrenci) → local; admin/mudur → claude

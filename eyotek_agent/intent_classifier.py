@@ -3,8 +3,9 @@ Intent Classifier (Oturum 25.18 — Lane/Intent Olgunluk)
 =========================================================
 
 Mesajdan iki şey çıkarır:
-- LANE: Groq path'i için (groq_lanes.classify_lane'le birlikte çalışır)
-- INTENT: Tier seçimi + tool subset için (prompt_tiers.select_tier)
+- LANE: local LLM path için (groq_lanes.classify_lane — modül adı eski,
+  25.22+'da gerçekte Cerebras'a yönlendiriyor)
+- INTENT: Tier seçimi + tool subset için + Cerebras intent→model map
 
 ROI: lane=None düşmeyen mesaj sayısı arttıkça, modüler tier
 aktivasyonu artar = token tasarrufu artar.

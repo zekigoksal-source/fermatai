@@ -3487,7 +3487,8 @@ class FermatCoreAgent:
                 pass
 
         # ── 25.18 FAZ 4: Lane + intent erken hesaplama (zenginleştirilmiş) ─
-        # Lane: Groq path için (groq_lanes.classify_lane)
+        # Lane: local LLM path için (groq_lanes.classify_lane — modül adı eski,
+        # gerçekte 25.22+ Cerebras-first çalışıyor; classify hala doğru)
         # Intent: tier seçimi + tool subset için (intent_classifier — 30+ etiket)
         _lane = None
         _intent = None
@@ -3509,13 +3510,14 @@ class FermatCoreAgent:
         from routing_engine import decide_route
         _route = decide_route(user_input, role, caller_phone, soz_no)
         # decide_route dondurur: "fast" | "claude" | "local" | "auto"
-        # "local" → chat_local (Groq-first, Ollama fallback). Eski "ollama"
-        # string'i halen kabul (backwards compat). "auto" → fallback cloud.
+        # "local" → chat_local_async (Cerebras-first, Groq fallback, Ollama son).
+        # Eski "ollama" string'i halen kabul (backwards compat). "auto" → cloud.
         if _route == "claude":
             complexity = "cloud"
         elif _route in ("local", "ollama"):
-            # "local" yeni isim (Oturum 25.10), "ollama" backwards compat.
-            # Ikisinde de chat_local() cagrilir → Groq-first, Ollama fallback.
+            # "local" yeni isim (25.10+), "ollama" eski compat.
+            # Ikisinde de chat_local_async() cagrilir →
+            # Cerebras (3 model) -> Groq fallback -> Ollama son fallback.
             complexity = "local"
         else:
             # "auto" veya "fast" → guvenli tarafa duy (Claude) — fast_responses zaten daha erken
@@ -3541,8 +3543,12 @@ class FermatCoreAgent:
                 pass
 
         if complexity == "local" and self.router.is_local_available:
-            # Oturum 24: Router Groq tercih ediyor, Ollama fallback
-            _hangi = "Groq" if self.router._groq_available else "Ollama"
+            # Oturum 25.22+: Router Cerebras-first, Groq fallback, Ollama son fallback
+            _hangi = (
+                "Cerebras" if getattr(self.router, "_cerebras_available", False)
+                else "Groq" if self.router._groq_available
+                else "Ollama"
+            )
 
             # Oturum 25.10 — Lane-specific system addon (Groq tutarliligi icin)
             # 25.17 Faz 3: _lane zaten yukarıda hesaplandı, tekrar etme

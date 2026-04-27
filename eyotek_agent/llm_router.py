@@ -17,17 +17,21 @@ Bu modülde İKİ ayrı sorumluluk bir arada:
 
 2) LLM SOYUTLAMA — `LLMRouter` class [ACTIVE PUBLIC]
    ------------------------------------------------------------
-   Ollama ↔ Claude API yönlendirme katmanı. `FermatCoreAgent.__init__` bunu
-   aktif olarak kullanır. Yeni kodlarda da rahat kullanılabilir.
+   Cerebras-first hibrit yönlendirme katmanı (Oturum 25.22+ güncel).
+   Cerebras → Groq → Ollama fallback chain + Claude (tool/hassas).
+   `FermatCoreAgent.__init__` bunu aktif olarak kullanır.
 
        from llm_router import LLMRouter
        router = LLMRouter()
-       response = await router.route(messages, role, ...)
+       response = await router.chat_local_async(messages, system, intent=...)
 
-Hibrit Strateji (hedef dağılım):
-  - fast_responses (%50): Rutin/template cevaplar
-  - Ollama qwen2.5:7b (%20): Kavramsal sohbet, selamlama
-  - Claude Sonnet (%30): Tool-calling, pedagojik analiz
+Hibrit Strateji (28 Nisan 2026 — 5 katman güncel hedef):
+  - fast_responses (%45): Selamlama, şablon, KVKK red
+  - Cerebras llama3.1-8b (%10): Classify, basit selamlama
+  - Cerebras gpt-oss-120b (%25): Kavramsal, motivasyon, Eyotek planner
+  - Cerebras qwen-3-235b (%5): Kompleks akademik, plan_yap, deneme_analiz
+  - Claude Sonnet 4.6 (%15): Tool-calling, finans, hassas, Vision
+  FALLBACK: Groq (Cerebras down) → Ollama (laptop dev fallback)
 """
 
 import json
@@ -800,10 +804,13 @@ _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
             except Exception as e:
                 logger.warning(f"chat_local_async: Groq basarisiz ({e}), Ollama'ya dusuyor")
 
-        # 2) Ollama fallback (laptop dev)
+        # 3) Ollama fallback (laptop dev — VPS production'da yok)
         if not self._ollama_available:
             self._last_local_provider = None
-            raise RuntimeError("chat_local_async: Groq ve Ollama ikisi de kullanilamaz")
+            raise RuntimeError(
+                "chat_local_async: Cerebras + Groq + Ollama 3 katman da kullanilamaz "
+                "(Cerebras: paid tier check, Groq: rate-limit/down, Ollama: laptop only)"
+            )
 
         # Ollama async (asyncio.to_thread ile sync ollama paketini wrap)
         import asyncio as _asyncio
@@ -849,12 +856,13 @@ _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
     ) -> str:
         """SYNC chat_local — laptop dev'de kullanilir, VPS'te uvloop ile cakisir.
 
-        VPS production icin chat_local_async() kullanin.
-        Oturum 24: Groq 70B tercih edilen, Ollama fallback.
+        VPS production icin chat_local_async() kullanin (Cerebras-first).
+        Oturum 25.22+: Cerebras (3 model) tercih edilen, Groq fallback, Ollama son.
         Caller (fermat_core_agent) gercek provider'i `self._last_local_provider`
-        uzerinden okur, routing_stats'a dogru kaydeder.
+        uzerinden okur, routing_stats'a dogru kaydeder
+        (cerebras_8b/120b/235b/groq/ollama).
         """
-        # 1) Groq oncelik (VPS production, 70B, ~1s, $0.0001/msg)
+        # NOT: Bu sync path eski; chat_local_async kullanin (uvloop uyumlu)
         if self._groq_available and self._groq_client:
             try:
                 text = self.chat_groq(messages, system, model=model)
