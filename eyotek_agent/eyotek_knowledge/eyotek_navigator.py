@@ -961,6 +961,155 @@ _OGRENCI_ALT_SAYFA_MAP = {
 }
 
 
+async def sinav_drilldown(
+    sinav_adi: str,
+    max_rows: int = 100,
+    date_from_days: int = 30,
+) -> dict:
+    """Sınav adına göre Eyotek'ten sınav sonuç tablosunu çek (drill-down).
+
+    Akış:
+      1. Student/test-transferred sayfasına git
+      2. Modal aç + tarih filtresi (son N gün)
+      3. ARA → sınav listesi
+      4. Listede sinav_adi LIKE eşleşen ilk satırın ⋯ butonuna tıkla
+      5. Açılan dropdown'da "Dinamik Liste" linki tıkla
+      6. test-transferred-dynamic-list açıldı → tabloyu oku (öğrenci sonuçları)
+
+    Args:
+        sinav_adi: "Apotemi" veya "Apotemi TG TYT-3" (LIKE eşleşme)
+        max_rows: max öğrenci satırı
+        date_from_days: filtre — son kaç gün
+
+    Returns: {success, sinav_found, page_url, columns, rows, error}
+    """
+    result = {
+        "success": False, "sinav_found": None, "page_url": None,
+        "columns": [], "rows": [], "row_count": 0,
+        "error_code": None, "error": None,
+    }
+
+    try:
+        from playwright.async_api import async_playwright
+        pw = await async_playwright().start()
+        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
+        ctx = browser.contexts[0]
+        await _inject_cookies(ctx)
+        page = await ctx.new_page()
+
+        # 1. Sınav listesi sayfasına git
+        await page.goto(f"{_BASE_URL}Student/test-transferred",
+                        timeout=20000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(3000)
+
+        if await _is_login(page):
+            result["error_code"] = "AUTH_EXPIRED"
+            result["error"] = "Eyotek session expired."
+            return result
+
+        # 2. Modal aç + tarih filtresi
+        await _open_search_modal(page)
+        await page.wait_for_timeout(1200)
+
+        from_d = (date.today() - timedelta(days=date_from_days)).strftime("%d.%m.%Y")
+        to_d = date.today().strftime("%d.%m.%Y")
+        await _fill_text_input(page, ["#txtKayitBas"], from_d)
+        await _fill_text_input(page, ["#txtKayitBit"], to_d)
+
+        # 3. ARA
+        await _click_search(page)
+        await page.wait_for_timeout(3500)
+
+        # 4. Listede sinav_adi LIKE matching
+        # GridView1 satırlarında "Sınav Adı" sütunu var, kolon index ~5 (Şube/Tarih/Kod/Tür/Kategori/Adı)
+        match_info = await page.evaluate(
+            """(adi) => {
+                const rows = document.querySelectorAll('table tbody tr');
+                if (!rows.length) return {error: 'no_rows'};
+                const al = adi.toLowerCase();
+                for (let i = 0; i < rows.length; i++) {
+                    const cells = Array.from(rows[i].cells).map(c => (c.innerText||'').trim());
+                    const fullText = cells.join(' | ').toLowerCase();
+                    if (fullText.includes(al)) {
+                        // ⋯ butonunu bul (cls 'cust' veya 'dropdown-toggle')
+                        const btns = rows[i].querySelectorAll('a, button');
+                        for (const b of btns) {
+                            const cls = (b.className||'').toLowerCase();
+                            if (cls.includes('cust') || cls.includes('dropdown-toggle')) {
+                                b.click();
+                                return {clicked: true, row_index: i, sinav: cells.slice(0, 7)};
+                            }
+                        }
+                        return {error: 'no_dropdown_btn', row_index: i, sinav: cells.slice(0, 7)};
+                    }
+                }
+                return {error: 'sinav_not_found', total_rows: rows.length};
+            }""",
+            sinav_adi
+        )
+
+        if match_info.get("error"):
+            result["error_code"] = "SINAV_NOT_FOUND"
+            result["error"] = f"Sinav '{sinav_adi}' listede bulunamadi: {match_info.get('error')}"
+            return result
+
+        result["sinav_found"] = match_info.get("sinav", [])
+        await page.wait_for_timeout(1500)
+
+        # 5. Dropdown'daki "Dinamik Liste" linkini tıkla
+        clicked = await page.evaluate(
+            """() => {
+                const links = Array.from(document.querySelectorAll('a, button, .dropdown-menu li, .dropdown-menu a'));
+                const visible = links.filter(el => {
+                    const r = el.getBoundingClientRect();
+                    return r.width > 0 && r.height > 0;
+                });
+                for (const el of visible) {
+                    const t = (el.innerText||'').trim().toLowerCase();
+                    if (t === 'dinamik liste' || t.includes('dinamik liste')) {
+                        el.click();
+                        return {clicked: true, text: el.innerText.trim()};
+                    }
+                }
+                return {error: 'no_dinamik_liste_link'};
+            }"""
+        )
+
+        if clicked.get("error"):
+            result["error_code"] = "DRILL_LINK_NOT_FOUND"
+            result["error"] = "'Dinamik Liste' linki bulunamadi"
+            return result
+
+        # 6. dynamic-list sayfasını bekle + tabloyu oku
+        await page.wait_for_timeout(4500)
+        result["page_url"] = page.url
+
+        cols, rows_data = await _read_table(page, max_rows)
+        result["columns"] = cols
+        result["rows"] = rows_data
+        result["row_count"] = len(rows_data)
+        result["success"] = True
+        if not rows_data:
+            result["error_code"] = "NO_DATA"
+            result["error"] = "Dinamik Liste acildi ama tablo bos (sinav henuz aktarilmamis olabilir)."
+        return result
+
+    except Exception as e:
+        result["error_code"] = "EXCEPTION"
+        result["error"] = f"{type(e).__name__}: {str(e)[:300]}"
+        logger.exception("[NAV] sinav_drilldown exception")
+        return result
+    finally:
+        try:
+            await page.close()
+        except Exception:
+            pass
+        try:
+            await pw.stop()
+        except Exception:
+            pass
+
+
 async def student_drilldown(
     student_identifier: str,
     sub_page: str,

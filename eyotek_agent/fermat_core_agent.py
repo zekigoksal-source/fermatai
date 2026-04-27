@@ -1220,6 +1220,26 @@ async def _tool_eyotek_read(page_key: str = "etut_ara", max_rows: float = 20) ->
     return await read_eyotek_page(page_key, max_rows=int(max_rows))
 
 
+async def _tool_sinav_sonuclari(sinav_adi: str, max_rows: float = 100,
+                                  date_from_days: float = 30,
+                                  _caller_role: str = "admin") -> dict:
+    """Bir sınavın TÜM öğrenci sonuçlarını Eyotek'ten anlık çek (drill-down).
+
+    Akış: test-transferred → tarih filtre → liste → ⋯ → Dinamik Liste → tablo.
+
+    Kullanım: 'Apotemi sınav sonuçları', 'son denemenin TYT sonuçları',
+    'Bilgi Sarmal TG TYT-3 nasıldı'.
+
+    DB'de sync edilmemiş yeni sınavlar için ÇOK yararlı.
+    """
+    from eyotek_knowledge.eyotek_navigator import sinav_drilldown
+    return await sinav_drilldown(
+        sinav_adi=sinav_adi,
+        max_rows=int(max_rows) if max_rows else 100,
+        date_from_days=int(date_from_days) if date_from_days else 30,
+    )
+
+
 async def _tool_ogrenci_drilldown(student: str, alt_sayfa: str,
                                     max_rows: float = 50,
                                     _caller_role: str = "admin") -> dict:
@@ -2007,6 +2027,7 @@ TOOL_DISPATCH = {
     "eyotek_read":              lambda p: _tool_eyotek_read(**p),
     "eyotek_query":             lambda p: _tool_eyotek_query(**p),
     "ogrenci_drilldown":        lambda p: _tool_ogrenci_drilldown(**p),
+    "sinav_sonuclari":          lambda p: _tool_sinav_sonuclari(**p),
     # C3 (Oturum 22) — Yokatlas tabanli puan tahmin
     "ogrenci_nereye_girebilir": lambda p: _tool_nereye_girebilir(**p),
     "hedef_bolum_ara":          lambda p: _tool_hedef_bolum_ara(**p),

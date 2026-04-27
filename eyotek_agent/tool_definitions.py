@@ -428,6 +428,35 @@ TOOLS: list[dict] = [
         },
     },
     {
+        "name": "sinav_sonuclari",
+        "description": (
+            "Bir sınavın TÜM öğrenci sonuçlarını Eyotek'ten ANLIK çek. "
+            "Kullan ne zaman 'Apotemi sınav sonuçları', 'son denemenin sonuçları', "
+            "'Bilgi Sarmal TG TYT-3 nasıldı', '3D TG TYT-3 sonuçları' gibi sorular gelirse. "
+            "Bot: test-transferred sayfasında sınav adıyla arar → ⋯ Dinamik Liste tıklar → "
+            "öğrenci bazlı net tablosu döner (Türkçe_NET, Mat_NET, Fizik_NET, vb.). "
+            "DB'de sync edilmemiş YENİ sınavlar için kritik. ASLA exam-result KULLANMA."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "sinav_adi": {
+                    "type": "string",
+                    "description": "Sınav adı (LIKE eşleşme): 'Apotemi' / 'Bilgi Sarmal TG TYT-3' / '3D TG'",
+                },
+                "max_rows": {
+                    "type": "number",
+                    "description": "Max öğrenci satırı (varsayılan 100)",
+                },
+                "date_from_days": {
+                    "type": "number",
+                    "description": "Son N gün sınavlarında ara (varsayılan 30)",
+                },
+            },
+            "required": ["sinav_adi"],
+        },
+    },
+    {
         "name": "ogrenci_drilldown",
         "description": (
             "Tek bir öğrencinin Eyotek profil alt sayfasından veri çek. "
