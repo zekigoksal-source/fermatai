@@ -371,6 +371,10 @@ class LLMRouter:
         self._last_local_provider = None
         # 25.22: Hangi Cerebras modeli kullanildi (gpt-oss-120b/qwen/8b)
         self._last_cerebras_model = None
+        # 25.23: Token tracking — Cerebras tokens usage_log'a yansisin
+        self._last_tokens_in = 0
+        self._last_tokens_out = 0
+        self._last_response_ms = 0
         self._check_ollama()
         # Cerebras öncelikli — daha iyi kalite, paid tier, queue yok
         if self._cerebras_available:
@@ -734,6 +738,10 @@ _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
                 )
                 if result.get("ok") and result.get("text"):
                     self._last_local_provider = "cerebras"
+                    # 25.23: token tracking — usage_log için
+                    self._last_tokens_in = result.get('tokens_in', 0)
+                    self._last_tokens_out = result.get('tokens_out', 0)
+                    self._last_response_ms = result.get('ms', 0)
                     logger.info(f"  [CEREBRAS] {cerebras_model} | {result['ms']}ms | "
                                 f"in={result['tokens_in']} out={result['tokens_out']}")
                     return result["text"]

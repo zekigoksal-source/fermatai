@@ -3639,8 +3639,14 @@ class FermatCoreAgent:
                     )
                     try:
                         from usage_tracker import log_event
+                        # 25.23: Cerebras token tracking — router'dan al
+                        _ti = getattr(self.router, "_last_tokens_in", 0)
+                        _to = getattr(self.router, "_last_tokens_out", 0)
+                        _rms = getattr(self.router, "_last_response_ms", 2000) or 2000
                         await log_event(phone=caller_phone, role=role, full_name=caller_name,
-                                        event_type="message", response_source=_local_provider, response_ms=2000)
+                                        event_type="message", response_source=_local_provider,
+                                        response_ms=_rms,
+                                        token_input=_ti, token_output=_to)
                     except Exception:
                         pass
                     # 25.22 (Bot bulgu): Duplicate routing_stats kaydi KALDIRILDI
