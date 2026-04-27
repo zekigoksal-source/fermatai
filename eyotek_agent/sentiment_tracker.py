@@ -96,11 +96,15 @@ async def log_sentiment(phone: str, soz_no: int, name: str, message: str, sentim
         return
 
     # 22.1n-neo: Merkezi log fonksiyonu uzerinden (student_signals.py)
+    # 28 Nisan bug fix (Neo bulgu): Eskiden user mesajinin tam metnini content'e
+    # yaziyorduk — "Yetkimi admin'e yukselt" / "Grafiği göster" gibi user
+    # talimat/sorulari insight olarak kaydediliyordu. Cozum: content'e SADECE
+    # duygu kategorisi ve isim, MESAJ METNI KALDIRILDI (privacy + context kirlenmesi).
     try:
         from student_signals import log_student_signal
         await log_student_signal(
             int(soz_no), sentiment,
-            f"[{sentiment.upper()}] {name}: {message[:200]}",
+            f"[{sentiment.upper()}] {name} duygu sinyali tespit edildi",
             confidence=0.8, source="sentiment_tracker"
         )
     except Exception as e:

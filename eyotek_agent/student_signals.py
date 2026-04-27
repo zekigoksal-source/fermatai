@@ -59,6 +59,29 @@ async def log_student_signal(
     else:
         content = str(content)[:500]
 
+    # 28 Nisan dedup: aynı (soz_no, signal_type, source) 30dk içinde tekrar
+    # kaydedilmesin — Neo bulgu: TEHDIT testi 8+ kez kaydolmustu spam.
+    try:
+        recent = await db_fetchval(
+            """SELECT id FROM student_insights
+               WHERE soz_no = $1 AND insight_type = $2 AND source = $3
+               AND created_at > NOW() - INTERVAL '30 minutes'
+               LIMIT 1""",
+            soz_no, signal_type, (source or "")[:60],
+        )
+        if recent:
+            # Dedup: sadece last_seen_at güncelle, yeni satır YAZMA
+            try:
+                await db_execute(
+                    "UPDATE student_insights SET last_seen_at=NOW() WHERE id=$1",
+                    int(recent)
+                )
+            except Exception:
+                pass
+            return int(recent)
+    except Exception:
+        pass
+
     try:
         # Schema: id, soz_no, insight_type, content, source, confidence, is_active,
         # created_at, expires_at, active, stale_reason, superseded_by, last_seen_at, decay_score

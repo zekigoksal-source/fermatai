@@ -2204,11 +2204,14 @@ async def try_fast_response(
 
     if re.search(r'(\boldur|\böldür|vur[ua]c|\bbicak|\bbıçak|\bsapla\b|silah|ate[sş]\s*ed|herkesi\s*vur|yok\s*edece)', msg_lower):
         # Ciddi tehdit — log + kurumsal yanıt (22.1n-neo: merkezi student_signals)
+        # 28 Nisan bug fix: user mesajinin tam metnini insight'a YAZMA
+        # (privacy + context kirlenmesi). Sadece tehdit flag'i + isim/phone.
+        # Mesajin tam metni audit log'tan alinir, insight'da degil.
         try:
             from student_signals import log_student_signal
             await log_student_signal(
                 soz_no or 0, "crisis",
-                f"TEHDIT [{caller_phone}] {name}: {message[:200]}",
+                f"TEHDIT TESPITI — kullanici: {name} (phone tail: ...{(caller_phone or '')[-4:]})",
                 confidence=1.0, source="fast_response_tehdit"
             )
         except Exception:
