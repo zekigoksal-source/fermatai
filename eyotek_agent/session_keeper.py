@@ -217,8 +217,84 @@ async def _try_cookie_refresh(ctx, page):
     return False
 
 
-async def notify_admin(message: str):
-    """WP ile admin'e bildirim gonder — direkt Graph API."""
+async def _add_web_notification(category: str, title: str, body: str = "",
+                                severity: str = "warning") -> bool:
+    """notifications tablosuna kaydet — web dashboard okuyacak."""
+    try:
+        from db_pool import db_execute
+        await db_execute(
+            """INSERT INTO notifications (severity, category, title, body, created_at)
+               VALUES ($1, $2, $3, $4, NOW())""",
+            severity, category, title[:200], body[:2000],
+        )
+        return True
+    except Exception as e:
+        logger.debug(f"web_notification yazma hata: {e}")
+        return False
+
+
+async def _wp_was_sent_recently(category: str, hours: int = 12) -> bool:
+    """Bu kategoriden son N saatte WP gonderilmis mi? Spam onleme."""
+    try:
+        from db_pool import db_fetchrow
+        row = await db_fetchrow(
+            """SELECT created_at FROM notifications
+               WHERE category = $1 AND metadata->>'wp_sent' = 'true'
+               AND created_at > NOW() - ($2 || ' hours')::interval
+               ORDER BY created_at DESC LIMIT 1""",
+            category, str(hours),
+        )
+        return bool(row)
+    except Exception:
+        return False
+
+
+async def _mark_wp_sent(category: str, title: str) -> None:
+    """En son notifications kaydina wp_sent=true ekle."""
+    try:
+        from db_pool import db_execute
+        await db_execute(
+            """UPDATE notifications
+               SET metadata = COALESCE(metadata, '{}'::jsonb) || '{"wp_sent": true}'::jsonb
+               WHERE id = (
+                   SELECT id FROM notifications
+                   WHERE category = $1 AND title = $2
+                   ORDER BY created_at DESC LIMIT 1
+               )""",
+            category, title[:200],
+        )
+    except Exception:
+        pass
+
+
+async def notify_admin(message: str, category: str = "eyotek_session",
+                       severity: str = "warning",
+                       wp_rate_limit_hours: int = 12):
+    """Bildirim gonder — once web_notifications, sonra (rate-limited) WP.
+
+    25.26 spam-fix: session-drop tarzi bildirimler her 3dk'da WP'ye gitmiyor;
+    web dashboard'a yazilir, WP sadece 12 saatte 1 atilir (severity=critical
+    veya rate_limit_hours=0 ise her seferinde).
+    """
+    # Adim 1: notifications tablosuna her zaman yaz
+    title = message.split("\n")[0][:200]
+    body = message[:2000]
+    await _add_web_notification(category=category, title=title, body=body,
+                                severity=severity)
+
+    # Adim 2: WP gonderim kontrolu
+    # Tamamen sustur flag'i:
+    if os.getenv("EYOTEK_WP_NOTIFY", "true").lower() in ("false", "0", "no"):
+        logger.debug(f"[NOTIFY] WP susturuldu (EYOTEK_WP_NOTIFY=false): {title[:60]}")
+        return
+
+    # Critical her zaman WP'ye gider, baska severity'ler rate-limit
+    if severity != "critical" and wp_rate_limit_hours > 0:
+        if await _wp_was_sent_recently(category, hours=wp_rate_limit_hours):
+            logger.info(f"[NOTIFY] WP rate-limit ({category}, {wp_rate_limit_hours}h): "
+                        f"sadece web'e yazildi: {title[:60]}")
+            return
+
     wa_token = os.getenv("WA_ACCESS_TOKEN", "")
     wa_phone_id = os.getenv("WA_PHONE_NUMBER_ID", "")
     admin_phone = os.getenv("ADMIN_PHONE", "905051256802")
@@ -244,6 +320,7 @@ async def notify_admin(message: str):
             )
             if r.status_code == 200:
                 logger.info(f"WP bildirim gonderildi: {message[:50]}...")
+                await _mark_wp_sent(category, title)
             else:
                 logger.warning(f"WP bildirim hata {r.status_code}: {r.text[:100]}")
     except Exception as e:
@@ -308,9 +385,13 @@ async def session_keeper_loop():
                 update_status("online", "Session aktif")
                 if not was_online:
                     logger.success("Eyotek session ONLINE")
+                    # Online geri donus → web'e info, WP suskun (gurultuyu azalt)
                     if offline_notified and notify_enabled:
                         await notify_admin(
-                            "✅ [FERMAT] Eyotek oturumu aktif, sistem online."
+                            "✅ [FERMAT] Eyotek oturumu aktif, sistem online.",
+                            category="eyotek_session_online",
+                            severity="info",
+                            wp_rate_limit_hours=24,  # gunde 1 kez WP
                         )
                     offline_notified = False
                 was_online = True
@@ -321,8 +402,11 @@ async def session_keeper_loop():
             else:
                 update_status("offline", "Session gecersiz veya suresi dolmus")
                 was_online = False
+                # Web'e HER 3dk yazariz (gercek durum), WP'ye 12 saatte 1
                 if not offline_notified:
                     logger.warning("Eyotek session OFFLINE!")
+                    # offline_notified flag bridge restart'larda resetlenir, biliyoruz —
+                    # bu yuzden notify_admin icindeki rate-limit (DB-based) gercek koruma
                     if notify_enabled:
                         if _vps_mode:
                             await notify_admin(
@@ -330,13 +414,19 @@ async def session_keeper_loop():
                                 "Mobil remote-login sistemi henüz kurulmadı "
                                 "(Faz 3: cloudflared tunnel + headed Chromium).\n"
                                 "Bu oturum kurulana kadar Eyotek yazma pasif, "
-                                "sistem DB cache'ten okuma yapar."
+                                "sistem DB cache'ten okuma yapar.",
+                                category="eyotek_session_offline",
+                                severity="warning",
+                                wp_rate_limit_hours=12,  # 12 saatte 1 WP
                             )
                         else:
                             await notify_admin(
                                 "⚠️ [FERMAT] Eyotek session dustu!\n\n"
                                 "Chrome'da fermat.eyotek.com adresine giris yapin.\n"
-                                "Giris yaptiktan sonra 'eyotek tamam' yazin."
+                                "Giris yaptiktan sonra 'eyotek tamam' yazin.",
+                                category="eyotek_session_offline",
+                                severity="warning",
+                                wp_rate_limit_hours=12,
                             )
                     offline_notified = True
 
