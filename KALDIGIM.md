@@ -1,10 +1,82 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 28 Nisan 2026, öğlen — **OTURUM 25.22 — CEREBRAS PAID TIER CANLI (Groq emekli)**
-> **Son commit:** `2d190d1` (Cerebras entegrasyon) · Onceki: `5b119d2` (TR normalize), `164119f` (KVKK fast)
+> **Son güncelleme:** 28 Nisan 2026, öğlen — **OTURUM 25.23 — BOT DEV BULGULARI UYGULANDI**
+> **Son commit:** `b754d0e` (Atlas-2 Cerebras), `6f7a994` (duplicate fix), `1b5dbd2` (dashboard pricing) · Cerebras entegrasyon: `2d190d1`
 > **Backup tags:** `oturum-25-22-cerebras-live`, `oturum-25-22-pre-cerebras`, `oturum-25-20-modular-disabled`, ...
-> **Sistem:** ✅ bridge active, 4/4 endpoint 200, **3 LLM provider aktif** (Cerebras primary + Groq fallback + Claude tool)
+> **Sistem:** ✅ bridge active, 4/4 endpoint 200, **4 LLM provider aktif** (Cerebras primary + Groq fallback + Ollama embed + Claude tool)
 > **Aylık maliyet projeksiyonu (120 öğrenci):** ~$172 (eski sadece Claude $300 → -%43)
+> **BLUEPRINT.md** mevcut (851 satır, ortak okuyabilir)
+
+## 🆕 OTURUM 25.23 (28 Nisan öğlen) — BOT DEV BULGULARI UYGULANDI
+
+Neo: "botla yeni sistem arasında bazı dev konuşmaları yaptım, işimize yarayacak kısımları incele ve uygula"
+
+### Bot'un tespit ettiği 4 bulgu — hepsi uygulandı
+
+**🔴 Bulgu 1: Duplicate routing_stats kaydı (KANITLANDI)**
+- "turev formulu nedir" mesajı 33ms arayla 2 kez yazıldı
+- Kök sebep: 2 yerden INSERT — fermat_core_agent.py:3650 (25.14k Groq fix subprocess için) + whatsapp_bridge.py:3346 (production ana akış)
+- **Düzeltme** (`6f7a994`): fermat_core_agent'taki direct INSERT kaldırıldı, single source of truth = bridge
+- Webhook idempotency zaten var (Redis SET NX EX=3600, line 3599)
+
+**🟡 Bulgu 2: Atlas-2 cron'da "Groq 0 oneri uretti" (KRİTİK)**
+- Atlas-2 her gece 02:00 çalışıyor, 10-17 problem buluyor
+- Ama prompt_optimizer Groq 70B kullanıyordu, daily limit dolup duruyordu
+- Sonuç: 0 öneri DB'ye kaydoluyordu → admin Atlas dashboard boş
+- **Düzeltme** (`b754d0e`): Cerebras-first (gpt-oss-120b 436ms), Groq fallback
+- **Manuel test:** 17 problem → **5 öneri** üretildi DB'ye kaydedildi ✅
+- Yarın 02:00 cron'da Atlas-2 önerileri canlanacak
+
+**🟡 Bulgu 3: 8b kullanılmıyor (kabul edilebilir, mevcut tasarım)**
+- fast_response selamlama/statik yakalıyor → 8b'ye gerek kalmıyor
+- 8b boşta ama maliyet sıfır, kod zarar görmüyor
+- Eylül'de gerçek trafik gözlemlendikten sonra karar — kalsın
+
+**🟡 Bulgu 4: 235b kullanılmıyor (tasarım gereği)**
+- plan_yap intent → routing_engine "cloud" karar (tool gerek) → Claude'a
+- Cerebras 235b denemesin diye değil, sadece şu an plan_yap mesajları tool gerektiriyor
+- Kalsın — gelecekte tool gerektirmeyen detaylı analiz için
+
+**🟢 Bulgu 5: Dashboard token-budget pricing (Bot bulgusu DEĞİL ama ben buldum):**
+- Cerebras kategorileri PRICES tablosunda yoktu → maliyet $0 gözüküyordu
+- **Düzeltme** (`1b5dbd2`): cerebras_8b/120b/235b pricing eklendi, bucket counter eklendi
+
+### Doğrulama (canlı sonuçlar)
+
+| Test | Önce | Sonra |
+|---|---|---|
+| Duplicate routing_stats | 1 duplicate (turev formulu) | **0 duplicate (15 dakikada)** ✅ |
+| Atlas-2 cron öneriler | 0 öneri günlerce | **5 öneri** (test koşumu) ✅ |
+| Token budget Cerebras | $0 yanlış | Doğru pricing (Nazlı cerebras=1) ✅ |
+
+### Bu oturumda toplam 4 commit
+
+- `1b5dbd2` — dashboard Cerebras pricing fix
+- `73ab87e` — BLUEPRINT.md (851 satır)
+- `6f7a994` — duplicate routing_stats fix
+- `b754d0e` — Atlas-2 Groq → Cerebras geçişi
+
+### Bot'un mimari önerisi (kabul edilmedi — overengineering)
+
+Bot 3 Cerebras modelini tek 120b'ye birleştirmeyi önerdi. **Kabul edilmedi:**
+- Kod var, kullanılmıyor → maliyet $0
+- Production'da yer kaplıyor değil
+- Eylül'de gerçek trafik gözlemi sonrası karar
+
+### Bot ile dev konuşma değerlendirmesi
+
+Bot Neo'ya **gerçekten faydalı 3 bulgu** yaptı (duplicate, Atlas, mimari). 1'i overengineering. **Self-observation çalışıyor** — sistem kendi sorunlarını tespit edebiliyor (Atlas-2'nin amaçladığı budur).
+
+### Bir Sonraki Oturum
+
+1. Atlas-2 yarın 02:00 cron sonrası — admin dashboard'da öneriler görünecek mi?
+2. Cerebras spend monitoring (günlük token + cost log)
+3. Token budget alert (eşik aşıldığında WP)
+4. Conversation quality cron otomasyonu (haftalık)
+
+---
+
+
 
 ## 🆕 OTURUM 25.22 (28 Nisan öğlen) — CEREBRAS ENTEGRASYON, GROQ EMEKLI
 
