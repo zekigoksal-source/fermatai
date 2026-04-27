@@ -209,11 +209,28 @@ sinav_sonuclari(sinav_adi, max_rows, date_from_days)
 - **Test framework:** 33 senaryo + sinav_sonuclari live OK
 - **9/9 madde** çözüldü (1 ince ayar — yarın canlı param ile)
 
+### 28 Nisan ek fix'ler (gece kapanış)
+
+- [x] **Select2 jQuery API hook** (`09f1d97`) — _fill_dropdown 4 katmanlı strateji:
+  query_selector + select_option + JS event dispatch + `$(el).select2('val',v)`
+- [x] **txtAdQuick first** (`9735b04`) — drill-down naïve split bug fix (3-isim parse)
+- [x] **Insight pollution bug** (`c91121d`) — Neo bulgu: bot user mesajlarını
+  insight olarak kaydediyordu ("Yetkimi admin'e yukselt" gibi). Çözüm:
+  - sentiment_tracker.py: content'ten user mesajı KALDIRILDI
+  - fast_responses.py (tehdit): mesaj metni KALDIRILDI, sadece flag+phone tail
+  - student_signals.py: 30dk dedup (aynı sinyal tekrar yazılmaz)
+  - DB cleanup: 14 kirli kayıt silindi (sentiment_tracker + fast_response_tehdit)
+
 ### Açık (yarın canlı testlerle)
 
-- [ ] B-1: ogrenci_drilldown Select2 cmbSubeler — Neo canlı denerken çözülür (~30dk)
-- [ ] sinav_drilldown kolon parse fine-tuning (5 row geliyor ama dict kolon adları boş — dynamic-list multi-table struct)
-- [ ] WP'den canlı dialog test (sinav_sonuclari, financial-operation tab, overdue URL params)
+- [ ] **Eyotek student match runtime davranışı** — drill-down `Mahmut Taha`/
+  `Akkaya` Eyotek'te no_match döndürüyor. Mimari hazır (Select2 hook + 4-katmanlı
+  fill + txtAdQuick first); runtime davranışı (sezon/şube state) Neo canlı ekran
+  ile en hızlı çözer (~5dk).
+- [ ] **sinav_drilldown kolon parse** — 5 row geliyor ama dict kolon adları boş
+  (dynamic-list multi-table struct fine-tuning)
+- [ ] **WP canlı test** — sinav_sonuclari, financial-operation tab, overdue URL
+  params, ogrenci_drilldown gerçek param ile sahada doğrulama
 
 ## 🔧 OTURUM 25.25 (27 Nisan akşam) — Eyotek "bağlıyım diyor ama veri çekmiyor" paradoksu çözüldü
 
