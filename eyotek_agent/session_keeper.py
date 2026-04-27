@@ -27,6 +27,9 @@ BASE_URL = "https://fermat.eyotek.com/v1"
 CHECK_INTERVAL = 180  # 3 dakika — ASP.NET session ~20-30dk timeout, 3dk yeterli
 ADMIN_PHONE = os.getenv("ADMIN_PHONE", "905xxxxxxxxx")
 WP_API_URL = os.getenv("WP_API_URL", "http://localhost:8001")
+# CDP port — VPS'te 9333, laptop'ta 9222. eyotek_wrapper.py ile ayni env var.
+CDP_PORT = int(os.getenv("CDP_PORT", "9222"))
+CDP_URL = f"http://localhost:{CDP_PORT}"
 
 
 def load_session() -> list[dict] | None:
@@ -75,7 +78,7 @@ async def check_session() -> bool:
         from playwright.async_api import async_playwright
         pw = await async_playwright().start()
         try:
-            browser = await pw.chromium.connect_over_cdp("http://localhost:9222")
+            browser = await pw.chromium.connect_over_cdp(CDP_URL)
             ctx = browser.contexts[0]
             for page in ctx.pages:
                 if "eyotek" in page.url.lower():
@@ -139,7 +142,7 @@ async def _cdp_keep_alive() -> bool:
 
     pw = await async_playwright().start()
     try:
-        browser = await pw.chromium.connect_over_cdp("http://localhost:9222")
+        browser = await pw.chromium.connect_over_cdp(CDP_URL)
         ctx = browser.contexts[0]
 
         # Eyotek tab'ini bul
@@ -269,7 +272,7 @@ async def session_keeper_loop():
         logger.info("Session Keeper DEVRE DIŞI (EYOTEK_SESSION_ENABLED=false)")
         return
 
-    # VPS modu tespit: HEADLESS=true VEYA CDP port 9222 dinlemiyor
+    # VPS modu tespit: HEADLESS=true (CDP_PORT env var ayri yonetilir)
     _vps_mode = os.getenv("HEADLESS", "false").lower() in ("true", "1", "yes")
 
     notify_enabled = os.getenv("SESSION_KEEPER_NOTIFY", "true").lower() not in ("false", "0", "no")
