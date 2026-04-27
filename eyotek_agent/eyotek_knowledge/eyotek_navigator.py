@@ -72,14 +72,17 @@ _CDP_URL = f"http://localhost:{_CDP_PORT}"
 _FILTER_ALIAS = {
     "date_from":     ["basla", "baslangic", "ilk_tarih", "tarih_bas", "from", "start"],
     "date_to":       ["bitis", "son_tarih", "tarih_bit", "to", "end"],
-    "class":         ["sinif", "klass", "class_name", "subek"],
-    "teacher":       ["ogretmen", "hoca", "staff", "teacher_name"],
+    "class":         ["sinif", "klass", "class_name"],
+    "teacher":       ["ogretmen", "hoca", "staff", "teacher_name", "ogrt"],
     "ders":          ["lesson", "brans", "subject", "dersad"],
     "student":       ["ogrenci", "name", "ad_soyad", "student_name", "ogrenci_ad"],
     "exam_name":     ["sinav_adi", "sinav", "test_name", "test"],
     "school":        ["okul"],
-    "branch":        ["sube"],
+    "branch":        ["sube", "subek"],
     "etut_type":     ["etut_tur", "tur"],
+    "classroom":     ["derslik"],
+    "yoklama":       ["attendance", "yoklama_durum"],
+    "etut_kod":      ["etut_kodu", "kod"],
 }
 
 # Filtreyi standart isme cevirir.
@@ -97,26 +100,63 @@ def _canon_filter(key: str) -> str:
 #   - Dropdown:   Ddl* (DdlClasses, DdlTeachers, DdlLessons, DdlSubek, DdlOkul)
 #   - Text:       txtAdSoyad, txtSinavAdi, txtSearch, txtFilter
 # Multiple fallback selectors — ilki tutmazsa siradakine gec.
+# Eyotek gercek pattern'leri (inspect ile kanitlanmis):
+#   - txt* (date, kod, ad gibi metin alanlari)
+#   - cmb* (combobox/select — DdlClasses degil cmbSubeler kullaniyor!)
+#   - chk* (checkbox)
+#   - btn* (buton)
+# ASP.NET Select2 wrapper'lari: visible olan #s2id_autogenN inputlari, ama
+# select_option underlying <select>'e (cmb*) calisiyor.
 _SELECTOR_CANDIDATES = {
-    "date_from": ["#txtKayitBas", "#txtBas", "#txtBeginDate", "#txtTarihBas",
-                  "input[name*='Bas']", "input[name*='Begin']",
-                  "input[id*='Bas']:not([id*='Bit'])"],
-    "date_to":   ["#txtKayitBit", "#txtBit", "#txtEndDate", "#txtTarihBit",
-                  "input[name*='Bit']", "input[name*='End']",
-                  "input[id*='Bit']"],
-    "class":     ["#DdlClasses", "#DdlClass", "#DdlSinif", "#ddlClasses",
-                  "select[id*='Class']", "select[id*='Sinif']", "select[name*='Class']"],
-    "teacher":   ["#DdlTeachers", "#DdlTeacher", "#DdlStaff", "#DdlOgretmen",
-                  "select[id*='Teacher']", "select[id*='Staff']", "select[id*='Ogretmen']"],
-    "ders":      ["#DdlLessons", "#DdlLesson", "#DdlDers",
-                  "select[id*='Lesson']", "select[id*='Ders']", "select[name*='Lesson']"],
-    "student":   ["#TxtStudent", "#TxtAdSoyad", "#txtAdSoyad", "#txtName",
-                  "input[id*='AdSoyad']", "input[id*='StudentName']", "input[id*='Search']"],
-    "exam_name": ["#TxtSinavAdi", "#txtTestName", "#TxtTestName",
-                  "input[id*='Sinav']", "input[id*='TestName']", "input[id*='ExamName']"],
-    "school":    ["#DdlSchools", "#DdlOkul", "select[id*='School']", "select[id*='Okul']"],
-    "branch":    ["#DdlBranches", "#DdlSubek", "select[id*='Branch']", "select[id*='Sube']"],
-    "etut_type": ["#DdlEtutTypes", "select[id*='EtutType']", "select[id*='IndividualLessonType']"],
+    # Tarih (text input, datepicker)
+    "date_from": ["#txtKayitBas", "#txtBeginDate", "#txtBas", "#txtTarihBas",
+                  "input[id*='Bas']:not([id*='Bit']):not([id*='Save'])",
+                  "input[name*='Bas']:not([name*='Bit'])"],
+    "date_to":   ["#txtKayitBit", "#txtEndDate", "#txtBit", "#txtTarihBit",
+                  "input[id*='Bit']", "input[name*='Bit']"],
+
+    # Subesi (cmbSubeler — Kurs vb.)
+    "branch":    ["#cmbSubeler", "#cmbSube", "#cmbSchool",
+                  "select[id*='Subek' i]", "select[id*='Sube' i]"],
+    "school":    ["#cmbOkul", "#cmbOkullar", "#cmbSchools",
+                  "select[id*='School' i]", "select[id*='Okul' i]"],
+
+    # Sinif
+    "class":     ["#cmbSinif", "#cmbSiniflar", "#cmbClasses", "#cmbClass",
+                  "select[id*='Sinif' i]", "select[id*='Class' i]"],
+
+    # Ogretmen (cmbOgrtAd — pratikte boyle)
+    "teacher":   ["#cmbOgrtAd", "#cmbOgretmen", "#cmbStaff", "#cmbTeacher", "#cmbTeachers",
+                  "select[id*='Ogrt' i]", "select[id*='Ogretmen' i]",
+                  "select[id*='Teacher' i]", "select[id*='Staff' i]"],
+
+    # Ders (cmbDers — pratikte boyle)
+    "ders":      ["#cmbDers", "#cmbLesson", "#cmbLessons",
+                  "select[id*='Ders' i]:not([id*='Derslik'])",
+                  "select[id*='Lesson' i]"],
+
+    # Derslik
+    "classroom": ["#cmbDerslik", "#cmbClassroom",
+                  "select[id*='Derslik' i]", "select[id*='Classroom' i]"],
+
+    # Etut tur
+    "etut_type": ["#cmbEtudTuru", "#cmbEtutTuru", "#cmbEtudType",
+                  "select[id*='EtudTur' i]", "select[id*='EtutTur' i]",
+                  "select[id*='IndividualLessonType' i]"],
+
+    # Yoklama durumu (Alinmis/Alinmamis)
+    "yoklama":   ["#cmbYoklama", "select[id*='Yoklama' i]"],
+
+    # Etut kodu
+    "etut_kod":  ["#txtEtutKodu", "input[id*='EtutKod' i]"],
+
+    # Ogrenci adi (text input — Select2 olabilir)
+    "student":   ["#txtAdSoyad", "#TxtAdSoyad", "#txtStudentName", "#txtName",
+                  "input[id*='AdSoyad' i]", "input[id*='StudentName' i]"],
+
+    # Sinav adi
+    "exam_name": ["#txtSinavAdi", "#TxtSinavAdi", "#txtTestName",
+                  "input[id*='Sinav' i]", "input[id*='TestName' i]", "input[id*='ExamName' i]"],
 }
 
 # Search button candidates (in order of priority)
@@ -551,8 +591,9 @@ async def navigate(
                     result["filters_failed"].append(raw_key)
                     continue
 
-            # Tarih ve metin alanlari -> text input; class/teacher/ders -> dropdown
-            is_dropdown = canon in ("class", "teacher", "ders", "school", "branch", "etut_type")
+            # Tarih ve metin alanlari -> text input; cmb* -> dropdown
+            is_dropdown = canon in ("class", "teacher", "ders", "school", "branch",
+                                     "etut_type", "classroom", "yoklama")
             if is_dropdown:
                 used = await _fill_dropdown(page, candidates, str(raw_value))
             else:
