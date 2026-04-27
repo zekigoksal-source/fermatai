@@ -27,6 +27,7 @@ from db_pool import get_pool as _get_pool
 
 BASE_URL = "https://fermat.eyotek.com/v1/Pages/"
 IMPORTS_DIR = Path(__file__).parent.parent.parent / "imports"
+_CDP_URL = f"http://localhost:{os.getenv('CDP_PORT', '9222')}"
 
 
 async def _download_etut_excel(days_back: int = 30) -> str | None:
@@ -43,7 +44,7 @@ async def _download_etut_excel(days_back: int = 30) -> str | None:
     from datetime import date, timedelta
 
     pw = await async_playwright().start()
-    browser = await pw.chromium.connect_over_cdp('http://localhost:9222')
+    browser = await pw.chromium.connect_over_cdp(_CDP_URL)
     ctx = browser.contexts[0]
     page = await ctx.new_page()
 

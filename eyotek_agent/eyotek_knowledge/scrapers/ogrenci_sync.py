@@ -19,6 +19,7 @@ load_dotenv()
 
 BASE_URL = "https://fermat.eyotek.com/v1/Pages/"
 IMPORTS_DIR = Path(__file__).parent.parent.parent / "imports"
+_CDP_URL = f"http://localhost:{os.getenv('CDP_PORT', '9222')}"
 
 
 async def _download_ogrenci_excel() -> str | None:
@@ -26,7 +27,7 @@ async def _download_ogrenci_excel() -> str | None:
     from playwright.async_api import async_playwright
 
     pw = await async_playwright().start()
-    browser = await pw.chromium.connect_over_cdp('http://localhost:9222')
+    browser = await pw.chromium.connect_over_cdp(_CDP_URL)
     ctx = browser.contexts[0]
     page = await ctx.new_page()
 

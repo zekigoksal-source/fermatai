@@ -15,6 +15,9 @@ from typing import Optional
 
 _SITE_MAP_PATH = Path(__file__).parent / "site_map.json"
 BASE_URL = "https://fermat.eyotek.com/v1/Pages/"
+# CDP port: VPS'te 9333, laptop'ta 9222 (env var ile, default 9222)
+_CDP_PORT = int(os.getenv("CDP_PORT", "9222"))
+_CDP_URL = f"http://localhost:{_CDP_PORT}"
 
 
 def _load_site_map() -> dict:
@@ -42,7 +45,7 @@ async def read_eyotek_page(page_key: str, max_rows: int = 20) -> dict:
     try:
         from playwright.async_api import async_playwright
         pw = await async_playwright().start()
-        browser = await pw.chromium.connect_over_cdp('http://localhost:9222')
+        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
         ctx = browser.contexts[0]
         page = await ctx.new_page()
 
