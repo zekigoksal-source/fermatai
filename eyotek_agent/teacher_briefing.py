@@ -65,29 +65,38 @@ async def get_upcoming_lessons(window_start_min: int = 15,
     gun_map = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
     today_gun = gun_map[now.weekday()]
 
-    # teacher_timetable kolonlarini kontrol et
+    # teacher_timetable gerçek kolonları (oturum 25.5 keşfi):
+    # id, ogretmen_id, ogretmen_ad, brans, haftalik_saat, gun, saat, sinif, ders, derslik, last_sync
+    # 'saat' kolon TEXT (örn '14:45' veya '14:45-15:30')
     try:
         rows = await db_fetch(
-            """SELECT teacher_name, lesson, class_name,
-                      day, start_time, end_time
+            """SELECT ogretmen_ad AS teacher_name,
+                      ders AS lesson,
+                      sinif AS class_name,
+                      gun AS day,
+                      saat AS start_time
                FROM teacher_timetable
-               WHERE day = $1
-                 AND start_time::time BETWEEN $2::time AND $3::time""",
-            today_gun, window_start.time(), window_end.time()
+               WHERE gun = $1
+                 AND saat IS NOT NULL""",
+            today_gun
         )
-        return [dict(r) for r in rows]
+        # Python tarafında saat filtre (saat bir TEXT olabilir, parse edip kontrol et)
+        filtered = []
+        for r in rows:
+            try:
+                saat_str = (r["start_time"] or "").strip()
+                # '14:45' veya '14:45-15:30' formati
+                first_part = saat_str.split("-")[0].strip().split(":")
+                if len(first_part) >= 2:
+                    h, m = int(first_part[0]), int(first_part[1])
+                    lesson_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
+                    if window_start <= lesson_dt <= window_end:
+                        filtered.append(dict(r))
+            except Exception:
+                continue
+        return filtered
     except Exception as e:
-        logger.debug(f"[BRIEFING] teacher_timetable sema farkli: {e}, alternatif sorgu")
-        # Sema farkliysa: basit bir liste don
-        try:
-            rows = await db_fetch(
-                "SELECT * FROM teacher_timetable LIMIT 1"
-            )
-            if rows:
-                cols = list(rows[0].keys())
-                logger.info(f"[BRIEFING] teacher_timetable kolonlari: {cols}")
-        except Exception:
-            pass
+        logger.debug(f"[BRIEFING] teacher_timetable sorgu fail: {e}")
         return []
 
 
