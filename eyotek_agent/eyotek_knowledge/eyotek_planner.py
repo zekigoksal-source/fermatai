@@ -159,27 +159,14 @@ A: {"page_path":"Student/individual-lesson","filters":{"date_from":"<gecen_hafta
 Q: "kasa raporu"
 A: {"page_path":"","filters":{},"max_rows":0,"explain":"Mali sayfalar bot kapsami disinda.","confidence":0}
 
-ONEMLI:
-- Sayfa katalogundaki bir page_path ile az da olsa eslesen sorulari ASLA bos plan'la dondurme — DOGRU sayfayi sec, confidence 0.6-0.9 ver.
-- "Plan parse hatasi" benzeri bir cikti URETME — sadece JSON ver.
-
-KRITIK TARIH KURALI (filter zorunlulugu):
-Kullanici sorusunda **HERHANGI BIR ZAMAN IFADESI** varsa
-("dun", "bugun", "yarin", "bu hafta", "gecen hafta", "Nisan", "Mart", "01.04", "3 gun once" vs.)
-VE secilen sayfanin filtreleri arasinda "date_from" varsa
-→ filters icine date_from VE date_to MUTLAKA EKLE. Bos birakma.
-
-Aylar:
-- "Nisan" / "April" → 01.04.2026 - 30.04.2026
-- "Mart" → 01.03.2026 - 31.03.2026
-- "bu ay" → <BU_AY_BASLA> - <BUGUN>
-
-ORNEK (filter bos birakilmaz):
 Q: "dun yoklama nasildi"
-A: {"page_path":"Student/attendance-report","filters":{"date_from":"<dun>","date_to":"<dun>"},"max_rows":30,"explain":"Dunun yoklama raporu.","confidence":0.92}
+A: {"page_path":"Student/attendance-report","filters":{"date_from":"<dun>","date_to":"<dun>"},"max_rows":30,"explain":"Dun yoklama raporu.","confidence":0.92}
 
 Q: "Nisan ayinda yazilan rehberlik notlari"
-A: {"page_path":"Student/counsellor-note-list","filters":{"date_from":"01.04.2026","date_to":"30.04.2026"},"max_rows":50,"explain":"Nisan ayinin rehberlik notlari.","confidence":0.92}
+A: {"page_path":"Student/counsellor-note-list","filters":{"date_from":"01.04.2026","date_to":"30.04.2026"},"max_rows":50,"explain":"Nisan rehberlik notlari.","confidence":0.92}
+
+ZORUNLU: Soruda zaman ifadesi varsa (dun, Nisan, gecen hafta vs.) ve sayfa date_from kabul ediyorsa filter MUTLAKA EKLE.
+ZORUNLU: Sayfa katalogu ile az da olsa eslesen sorulari bos plan'la DONDURME — sec, confidence 0.6+.
 """
 
 
@@ -251,7 +238,7 @@ async def plan_query(question: str, catalog: Optional[list[dict]] = None) -> dic
                     messages=[{"role": "user", "content": user_prompt}],
                     system=_PLANNER_SYSTEM,
                     model="gpt-oss-120b",
-                    max_tokens=500,
+                    max_tokens=700,
                     temperature=0.1,
                 )
                 if result.get("ok"):
@@ -286,7 +273,7 @@ async def plan_query(question: str, catalog: Optional[list[dict]] = None) -> dic
                 groq_result = await router._groq_client.complete(
                     messages=[{"role": "user", "content": user_prompt}],
                     system=_PLANNER_SYSTEM,
-                    max_tokens=500,
+                    max_tokens=700,
                 )
                 if isinstance(groq_result, dict):
                     raw = groq_result.get("text", "")
