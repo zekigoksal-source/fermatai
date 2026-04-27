@@ -156,6 +156,10 @@ def _safe_background_task(coro, label: str = "bg"):
 
 # ── Startup / Shutdown ────────────────────────────────────────────────────────
 
+# 25.23 — Cerebras paid tier flag (Quality cron + diğer cron'lar için)
+_CEREBRAS_AVAIL_FLAG = bool(os.getenv("CEREBRAS_API_KEY"))
+
+
 async def _run_scheduled_tasks():
     """Zamanlanmış görevler — daily report + sentiment + yoklama sync + analytics cache + eyotek sync."""
     from datetime import datetime
@@ -268,6 +272,124 @@ async def _run_scheduled_tasks():
                     logger.info(f"🤖 Atlas-2 oneri analizi: {result}")
                 except Exception as e:
                     logger.warning(f"Atlas-2 hatası: {e}")
+
+            # 25.23 — Saatte bir: Spend monitoring (Cerebras + Claude bütçe takibi)
+            # Bu Eylül 120 öğrenci icin kritik. Maliyet patlamasini engeller.
+            if now.minute < 5 and not getattr(_run_scheduled_tasks, f'_spend_h_{now.hour}', False):
+                setattr(_run_scheduled_tasks, f'_spend_h_{now.hour}', True)
+                # Diger saatleri sıfırla
+                for _h in range(24):
+                    if _h != now.hour:
+                        if hasattr(_run_scheduled_tasks, f'_spend_h_{_h}'):
+                            delattr(_run_scheduled_tasks, f'_spend_h_{_h}')
+                try:
+                    PRICES = {
+                        "claude":         {"in": 3.0,  "out": 15.0},
+                        "cerebras_8b":    {"in": 0.10, "out": 0.10},
+                        "cerebras_120b":  {"in": 0.30, "out": 0.50},
+                        "cerebras_235b":  {"in": 0.60, "out": 0.80},
+                        "cerebras":       {"in": 0.30, "out": 0.50},
+                        "groq":           {"in": 0.59, "out": 0.79},
+                    }
+                    rows = await db_fetch(
+                        """SELECT response_source, COUNT(*) as cnt,
+                                  COALESCE(SUM(token_input),0) as ti,
+                                  COALESCE(SUM(token_output),0) as to_
+                           FROM usage_log
+                           WHERE created_at >= CURRENT_DATE
+                           GROUP BY response_source"""
+                    )
+                    total_cost = 0.0
+                    breakdown = []
+                    for r in (rows or []):
+                        src = r.get("response_source") or "unknown"
+                        p = PRICES.get(src, {"in": 0, "out": 0})
+                        cost = (r["ti"] * p["in"] + r["to_"] * p["out"]) / 1_000_000.0
+                        total_cost += cost
+                        breakdown.append(f"{src}={r['cnt']}msg/${cost:.3f}")
+                    logger.info(f"💰 Bugünkü maliyet: ${total_cost:.3f} | " + " ".join(breakdown))
+                    # Eşik kontrolleri
+                    if total_cost > 10.0:
+                        # Yüksek günlük maliyet — Neo'ya bildir
+                        try:
+                            await send_wa_message(
+                                "905051256802",
+                                f"⚠️ *YÜKSEK GÜNLÜK MALİYET*\n\nBugünkü API harcaması: *${total_cost:.2f}*\n\n"
+                                + "\n".join(f"• {b}" for b in breakdown[:5])
+                                + f"\n\nNormal günlük seviye ~$2-5. İncele.",
+                                _outreach=True, _reason="spend_alert_high"
+                            )
+                            logger.warning(f"💸 Spend alert ($10+) Neo'ya gönderildi: ${total_cost:.2f}")
+                        except Exception as _e:
+                            logger.warning(f"Spend alert WP gönderilemedi: {_e}")
+                    elif total_cost > 5.0:
+                        logger.warning(f"💸 Günlük maliyet $5+: ${total_cost:.2f} (eşik takibinde)")
+                except Exception as e:
+                    logger.debug(f"Spend monitor hatası: {e}")
+
+            # 25.23 — Her 5 dakikada: Health check (DB pool + Cerebras availability)
+            # Sessiz kontrol — sadece sorun varsa log ve bildirim
+            _hc_key = f"_hc_{now.hour}_{now.minute // 5}"
+            if not getattr(_run_scheduled_tasks, _hc_key, False):
+                setattr(_run_scheduled_tasks, _hc_key, True)
+                # Eski health check key'lerini temizle
+                for _attr in list(vars(_run_scheduled_tasks).keys() if hasattr(_run_scheduled_tasks, '__dict__') else []):
+                    if _attr.startswith('_hc_') and _attr != _hc_key:
+                        try: delattr(_run_scheduled_tasks, _attr)
+                        except: pass
+                try:
+                    # DB ping
+                    db_ok = False
+                    try:
+                        v = await db_fetchval("SELECT 1")
+                        db_ok = (v == 1)
+                    except Exception:
+                        pass
+                    # Cerebras ping (env'de var mı + import OK mi)
+                    cerebras_ok = bool(os.getenv("CEREBRAS_API_KEY"))
+                    if not db_ok:
+                        logger.error("🚨 HEALTH: DB pool yanit vermiyor!")
+                        try:
+                            await send_wa_message(
+                                "905051256802",
+                                "🚨 *KRİTİK*: DB pool yanit vermiyor (health check 5dk).",
+                                _outreach=True, _reason="health_db_down"
+                            )
+                        except Exception:
+                            pass
+                except Exception as _e:
+                    logger.debug(f"Health check hatası: {_e}")
+
+            # 25.23 — Pazartesi 20:30: Haftalik konusma kalite analizi (Cerebras 120b)
+            if now.weekday() == 0 and now.hour == 20 and now.minute >= 30 and now.minute < 40:
+                try:
+                    from conversation_quality_analyzer import build_bursts, analyze_burst, aggregate
+                    if _CEREBRAS_AVAIL_FLAG:
+                        from cerebras_handler import CerebrasClient as _QC
+                        _qc = _QC()
+                    else:
+                        from groq_handler import GroqClient as _QC
+                        _qc = _QC()
+                    _bursts = await build_bursts(hours=168, max_bursts=30)
+                    _qres = []
+                    for _b in _bursts[:20]:
+                        _r = await analyze_burst(_qc, _b)
+                        if _r: _qres.append(_r)
+                    if _qres:
+                        _agg = aggregate(_qres)
+                        _msg = (
+                            f"📊 *Haftalık Kalite Raporu*\n\n"
+                            f"• Analiz edilen: {len(_qres)} konuşma\n"
+                            f"• Ortalama puan: *{_agg.get('avg_pedagojik', '?')}/10*\n"
+                            f"• Frustration: {_agg.get('frustration_count', 0)}\n"
+                            f"• Bot hatası: {_agg.get('bot_error_count', 0)}\n"
+                            f"• Eksik pattern: {_agg.get('missing_pattern_count', 0)}"
+                        )
+                        await send_wa_message("905051256802", _msg,
+                                              _outreach=True, _reason="quality_weekly")
+                        logger.info(f"📊 Haftalık kalite raporu Neo'ya: {len(_qres)} konuşma")
+                except Exception as e:
+                    logger.warning(f"Haftalık kalite hatası: {e}")
 
             # Pazar 04:00 — haftalik predictive model batch (tum aktif ogrenciler)
             if now.weekday() == 6 and now.hour == 4 and now.minute < 10:

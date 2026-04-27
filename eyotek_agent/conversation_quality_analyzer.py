@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -32,6 +33,12 @@ load_dotenv(override=True)
 
 from db_pool import db_fetch
 from groq_handler import GroqClient
+# 25.23: Cerebras-first (Groq daily limit dolup duruyordu)
+try:
+    from cerebras_handler import CerebrasClient
+    _CEREBRAS_AVAIL = bool(os.getenv("CEREBRAS_API_KEY"))
+except ImportError:
+    _CEREBRAS_AVAIL = False
 from loguru import logger
 
 
@@ -125,8 +132,10 @@ def format_transcript(messages: list[dict]) -> str:
     return "\n".join(lines)
 
 
-async def analyze_burst(client: GroqClient, burst: dict) -> dict | None:
-    """Bir konusma parcasini Groq'a gonder, JSON sonuc al."""
+async def analyze_burst(client, burst: dict) -> dict | None:
+    """Bir konusma parcasini LLM'e gonder, JSON sonuc al.
+    25.23: client tipi: GroqClient veya CerebrasClient (her ikisi de complete() destekler).
+    """
     transcript = format_transcript(burst["messages"])
     if len(transcript) > 12000:
         transcript = transcript[:12000] + "\n[...truncated]"
@@ -138,12 +147,22 @@ async def analyze_burst(client: GroqClient, burst: dict) -> dict | None:
     )
 
     try:
-        result = await client.complete(
-            messages=[{"role": "user", "content": prompt}],
-            system="Sen FermatAI kalite denetcisisin. Objektif, net, Turkce JSON uretirsin.",
-            max_tokens=1200,
-            temperature=0.3,
-        )
+        # Hem Groq hem Cerebras complete() metodu var — async destek
+        if hasattr(client, 'complete_async'):
+            result = await client.complete_async(
+                messages=[{"role": "user", "content": prompt}],
+                system="Sen FermatAI kalite denetcisisin. Objektif, net, Turkce JSON uretirsin.",
+                model="gpt-oss-120b" if _CEREBRAS_AVAIL else None,
+                max_tokens=1200,
+                temperature=0.3,
+            )
+        else:
+            result = await client.complete(
+                messages=[{"role": "user", "content": prompt}],
+                system="Sen FermatAI kalite denetcisisin. Objektif, net, Turkce JSON uretirsin.",
+                max_tokens=1200,
+                temperature=0.3,
+            )
         text = result.get("text", "").strip()
         # JSON kod blogunu sil
         if text.startswith("```"):
@@ -232,8 +251,13 @@ async def main():
         print(f"[!] Sinir: ilk {args.max_bursts} konusma analiz ediliyor.")
         bursts = bursts[:args.max_bursts]
 
-    client = GroqClient()
-    print(f"[*] Groq 70B ile analiz basliyor ({len(bursts)} konusma)...")
+    # 25.23: Cerebras-first (Groq daily limit dolup duruyor)
+    if _CEREBRAS_AVAIL:
+        client = CerebrasClient()
+        print(f"[*] Cerebras gpt-oss-120b ile analiz basliyor ({len(bursts)} konusma)...")
+    else:
+        client = GroqClient()
+        print(f"[*] Groq 70B ile analiz basliyor ({len(bursts)} konusma)...")
 
     results = []
     for i, burst in enumerate(bursts, 1):
