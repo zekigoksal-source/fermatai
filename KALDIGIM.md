@@ -1,10 +1,89 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 27 Nisan 2026, akşam — **OTURUM 25.25 — Eyotek CDP gerçek bağlantı + viewer scroll + 3 fix komitlendi**
-> **Son commit'ler (oturum 25.25):** `2c23689` (session_keeper CDP_PORT env), `598b76f` (viewer scroll/pagination), `9c2152d` (eyotek_reader+scrapers CDP_PORT), `ff8d9ca` (cookie injection — bot artık gerçekten Eyotek okuyor)
+> **Son güncelleme:** 27 Nisan 2026, akşam — **OTURUM 25.26 — Eyotek AGENTIC Navigator + Planner CANLI**
+> **Son commit'ler (oturum 25.26):** `5a394ce`/`ce11310`/`5ec6825`/`fbd7805`/`2ba3d6a`/`f335c04`/`7b829b0`/`684dbe1` (navigator iterations), `e636921` (explorer), `b9c648a`/`3ac3700` (planner), `6091d13` (bot tool wire)
+> **Bir önceki oturum (25.25):** `2c23689` (session_keeper CDP_PORT env), `598b76f` (viewer scroll/pagination), `9c2152d` (eyotek_reader+scrapers CDP_PORT), `ff8d9ca` (cookie injection)
 > **Önceki commit'ler:** `b754d0e` (Atlas-2 Cerebras), `4965694` (viewer pagination ters), `2d190d1` (Cerebras entegrasyon)
 > **Backup tags:** `oturum-25-22-cerebras-live`, `oturum-25-22-pre-cerebras`, `oturum-25-20-modular-disabled`
-> **Sistem:** ✅ bridge active, **Eyotek read GERÇEKTEN ÇALIŞIYOR** (etut_ara 2 row, ogrenci_listesi 1 row, devamsizlik 2 row test ettik), 4 LLM provider aktif
+> **Sistem:** ✅ bridge active, **Eyotek AGENTIC Navigator+Planner CANLI** (Cerebras gpt-oss-120b plan üretiyor, Playwright CDP navigate ediyor)
+
+## 🚀 OTURUM 25.26 (27 Nisan akşam) — Eyotek %100 entegre: AGENTIC Navigator + Planner
+
+Neo: "eyotek artık sistemimize %100 entegre olsun, AI girip bağlamdan yola çıkarak keşfedip cevabı çekebilmeli"
+
+### Üç katmanlı agentic mimari
+
+```
+[Bot soru]
+   ↓
+[Planner — Cerebras gpt-oss-120b]   eyotek_planner.py
+    user_query + 31 sayfanın schema'sı + tarih bağlamı
+    → JSON plan {page_path, filters{}, max_rows, explain, confidence}
+   ↓
+[Navigator — generic parametric]    eyotek_navigator.py
+    navigate(page_path, filters{}) → CDP + cookie + modal + filter + search + table
+    → {success, columns, rows, filters_applied, error_code}
+   ↓
+[Bot tool: eyotek_query(question)]  fermat_core_agent.py + tool_definitions.py
+```
+
+### Yeni dosyalar
+
+| Dosya | Satır | Rol |
+|---|---|---|
+| `eyotek_knowledge/eyotek_navigator.py` | 750+ | Generic parametric Eyotek gezgini (filter alias, cmb*/txt* selector candidates, Bootstrap-datepicker hook, drill-down, AUTH/NO_DATA/FILTER_BAD ayrı error_code) |
+| `eyotek_knowledge/eyotek_explorer.py` | 327 | Schema discovery: 30 öncelikli sayfa için form input/select/columns DB'ye yaz (eyotek_page_schema tablosu) |
+| `eyotek_knowledge/eyotek_planner.py` | 336 | Cerebras 70B planner: doğal dil → JSON plan, Türkçe tarih aritmetiği ("dun" → today-1) |
+
+### DB
+
+- Yeni tablo: `eyotek_page_schema` (page_path PK, inputs/selects/buttons/modals JSONB, columns, sample_rows)
+- 31/31 öncelikli sayfa keşfedildi (etüt 5 / sınav 6 / yoklama 5 / öğrenci 3 / rehberlik 4 / program 4 / ödev 2 / davranış 2)
+
+### Live testler (tümü ÇALIŞIYOR)
+
+| Sorgu | Plan | Sonuç |
+|---|---|---|
+| "dun hangi etutler vardi" | 26.04.2026 | 4 etüt (MERVE OKŞAŞ Biyoloji 10:30 vs.) — bot eski sürümde "Pazar etüt yok" halüsilasyonu yapmıştı, artık gerçek veri |
+| "22 nisan etutleri" | 22.04.2026 | KARDELEN SAVCI Tarih, VEDAT ÖZTEKİN Matematik (gerçek tablo) |
+| "3 gun once etutleri" | 24.04.2026 | "Kayıt bulunamadı" (gerçekten yok) — halüsilasyon değil |
+| "Apotemi sinavinin sonuclari" | exam-result + exam_name=Apotemi | confidence 0.95 plan |
+| "Mehmet Donmez ogretmenin Nisan etutleri" | 01.04-30.04 + teacher | confidence 0.96 plan |
+
+### Kritik bulgular (debug yolculuğu)
+
+1. **CDP_PORT mismatch** (önceden çözüldü) — laptop 9222 / VPS 9333
+2. **Boş cookie jar** (önceden çözüldü) — eyotek_reader cookie inject
+3. **Selector pattern yanlış** — Eyotek `cmb*` (combobox) kullanıyor, eski kod `Ddl*` arıyordu → keşif sonrası düzeltildi
+4. **Bootstrap-datepicker silently rejects fill()** — `fill()` text yazıyor ama datepicker validation tetiklenmiyor → JS value-set + `dispatchEvent(input/change/blur)` + jQuery `.trigger('change')` + `.datepicker('update', value)` 4-katmanlı strateji ile çözüldü
+5. **`is_visible(timeout=)` Playwright API'sinde yok** — kwarg silently exception → tüm selectors fail → `wait_for_selector(state='visible', timeout=N)` ile değiştirildi
+6. **Modal animasyon süresi** — 500ms yetersiz, 1200ms gerek
+
+### Bot tool entegrasyonu
+
+```python
+# tool_definitions.py
+"eyotek_query": {
+    "description": "AGENTIC Eyotek sorgu — doğal dil → Cerebras planner → navigator",
+    "input_schema": {"question": str, "max_rows": int}
+}
+
+# fermat_core_agent.py
+"eyotek_query": lambda p: _tool_eyotek_query(**p)
+
+# role_access.py — admin + mudur ACL
+```
+
+`eyotek_read` (basit, sabit kaynak) DEAD_TOOLS'tan çıkarıldı, hâlâ aktif (legacy + simple cases için).
+
+### Sonraki oturum konuları
+
+- [ ] 31 sayfa keşfinde 0/0 dönen 8 sayfa (Sinav Sonuclari, Rehberlik, Ders Programlari, Odev, vb.) — modal yapısı farklı, ayrıca debug
+- [ ] Schema'lı 23 sayfada **drill-down** (öğrenci listesi → öğrenci profili) test
+- [ ] Planner prompt iterasyonu: edge case sorular (rate limit, etüt yazma vs.)
+- [ ] `query_analytics` tool'u ile koordinasyon (DB önce, Eyotek sonra)
+- [ ] Sınav Sonuçları sayfası özel — modal yerine direkt search pattern, custom selector ekle
+- [ ] WP'den Neo canlı test (gerçek dialog)
 
 ## 🔧 OTURUM 25.25 (27 Nisan akşam) — Eyotek "bağlıyım diyor ama veri çekmiyor" paradoksu çözüldü
 
