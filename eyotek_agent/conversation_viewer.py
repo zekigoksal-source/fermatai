@@ -223,10 +223,11 @@ def generate_html(conversations: dict, users: dict, period_label: str) -> str:
         # Pagination controls
         if total_pages > 1:
             # 25.24-fix: pag-info default = son sayfa
+            # 25.25-fix: id yerine data-phone kullan — top+bot iki kez render ediliyor, duplicate id sorun yaratiyor
             pagination = f'''
-            <div class="pagination" id="pag_{phone}">
+            <div class="pagination" data-phone="{phone}">
                 <button onclick="changePage('{phone}', -1)" class="pag-btn">◀ Önceki</button>
-                <span class="pag-info" id="paginfo_{phone}">Sayfa {total_pages} / {total_pages}</span>
+                <span class="pag-info" data-phone="{phone}">Sayfa {total_pages} / {total_pages}</span>
                 <button onclick="changePage('{phone}', 1)" class="pag-btn">Sonraki ▶</button>
             </div>
             '''
@@ -437,10 +438,17 @@ body::after {{
     font-variant-numeric:tabular-nums;
 }}
 
+/* Chat panel — flex column, full height (CRITICAL for chat-messages scroll) */
+.chat-panel {{
+    display:flex; flex-direction:column;
+    height:100%; min-height:0;
+}}
+
 /* Chat messages */
 .chat-messages {{
-    flex:1; overflow-y:auto; padding:24px 64px;
+    flex:1 1 auto; overflow-y:auto; padding:24px 64px;
     background:transparent;
+    min-height:0;  /* CRITICAL: nested flex+overflow needs this to scroll */
 }}
 
 /* Date separator */
@@ -608,9 +616,10 @@ function showChat(phone, el) {{
             const lastIdx = totalPages - 1;
             pages.forEach((p, i) => p.style.display = i === lastIdx ? 'block' : 'none');
             pageState[phone] = lastIdx;
-            // Pagination info guncelle
-            const info = document.getElementById('paginfo_' + phone);
-            if (info) info.textContent = `Sayfa ${{lastIdx + 1}} / ${{totalPages}}`;
+            // 25.25-fix: top+bot iki paginfo, ikisini de guncelle
+            panel.querySelectorAll('.pag-info[data-phone="' + phone + '"]').forEach(el => {{
+                el.textContent = `Sayfa ${{lastIdx + 1}} / ${{totalPages}}`;
+            }});
         }}
         // Mesaj alaninin EN ALTINA scroll (en son mesaj gorunsun)
         const msgs = panel.querySelector('.chat-messages');
@@ -636,15 +645,24 @@ function changePage(phone, delta) {{
     if (newPage < 0 || newPage >= totalPages) return;
     pageState[phone] = newPage;
     pages.forEach((p, i) => p.style.display = i === newPage ? 'block' : 'none');
-    // Info güncelle
-    document.querySelectorAll('#paginfo_' + phone).forEach(el => {{
+    // 25.25-fix: Info güncelle — class+data-phone kullaniyoruz, top+bot ikisini de
+    document.querySelectorAll('.pag-info[data-phone="' + phone + '"]').forEach(el => {{
         el.textContent = 'Sayfa ' + (newPage + 1) + ' / ' + totalPages;
     }});
-    // Scroll: ileri gidiyorsa (sonraki) bottom, geri gidiyorsa (önceki) top
+    // 25.25-fix: Scroll devamliligi — sayfa 1 = en eski, sayfa N = en yeni
+    //   ◀ Onceki (delta=-1, daha eski sayfa): BOTTOM — okuduğun mesajla devam icin
+    //   Sonraki ▶ (delta=+1, daha yeni sayfa): TOP — okuduğun mesajla devam icin
     const msgs = document.querySelector('#chat_' + phone + ' .chat-messages');
     if (msgs) {{
-        if (delta > 0) msgs.scrollTop = msgs.scrollHeight;
-        else msgs.scrollTop = 0;
+        requestAnimationFrame(() => {{
+            if (delta < 0) msgs.scrollTop = msgs.scrollHeight;  // Onceki → bottom
+            else msgs.scrollTop = 0;                             // Sonraki → top
+            // Garanti icin 200ms sonra tekrar (DOM render gecikme korumasi)
+            setTimeout(() => {{
+                if (delta < 0) msgs.scrollTop = msgs.scrollHeight;
+                else msgs.scrollTop = 0;
+            }}, 200);
+        }});
     }}
 }}
 
