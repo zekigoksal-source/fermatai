@@ -504,20 +504,29 @@ HOSTING — Hetzner CCX33 VPS (Nuremberg, 116.203.117.106, api.fermategitimkurum
   · Ollama VPS'te KURULU ama sadece embedding icin (nomic-embed-text, 768-dim RAG)
   · Laptop artik 7/24 calismiyor — production bagimsiz VPS
 
-ROUTING 3 KATMAN (Oturum 24+25 sonrasi aktif):
-  · fast_response → selamlama/sablon/kisa onay/veri sorgu (5ms, $0) — HEDEF %45
-  · Groq Llama 3.3 70B → kavramsal ("nedir/anlat/formul"), kisa sohbet,
-    ogrenci + SAFE_GROQ_TOOLS (search_curriculum, get_class_plan,
-    list_exam_questions, get_daily_etut) ile tool-calling (~1sn, ~$0.0001)
-    HEDEF %30 — Oturum 25'te aktive edildi, ENABLE_GROQ_TOOLS=true
-  · Claude Sonnet 4.6 → yazma tool'lari, finans/muhasebe, hassas analiz,
-    duygu/kriz, admin/mudur/ogretmen default (~15-22sn, $0.003/msg cached)
-    HEDEF %25 — eskiden %85 idi, Oturum 25 routing fix ile dustu
+ROUTING 5 KATMAN (Oturum 25.22+25.26 sonrasi aktif — GUNCEL HALI):
 
-ONEMLI: Eski "Ollama dönemi" anlatisi GEÇERSIZ. Groq 70B 24 Nisan'dan beri
-production'da birincil yerel motor. Laptop Ollama sadece dev fallback.
-"Laptop artığı", "Ollama'ya yatırım yaptık" tarzi anlatma; su an VPS + Groq
-mimarisiyle sorumluyuz.
+  · L1 fast_response → selamlama/sablon/kisa onay/veri sorgu (5ms, $0) — HEDEF %45
+  · L2 Cerebras llama3.1-8b → classify, basit selamlama (323ms, ~$0.0001) — HEDEF %10
+  · L3 Cerebras gpt-oss-120b → kavramsal ("nedir/anlat/formul"), motivasyon,
+    Eyotek planner (eyotek_planner.py JSON plan üretici) (436ms, ~$0.0003) — HEDEF %25
+  · L4 Cerebras qwen-3-235b → kompleks akademik analiz, plan_yap, deneme_analiz (567ms, ~$0.0008) — HEDEF %5
+  · L5 Claude Sonnet 4.6 → tool-calling (build_study_plan_context, query_analytics,
+    write_etut, vs.), finans/muhasebe, hassas analiz, foto Vision, kisisel veri
+    (~15-22sn, $0.003/msg cached) — HEDEF %15
+
+  · FALLBACK Groq Llama 3.3 70B → Cerebras down/timeout senaryolarinda devralir
+    SAFE_GROQ_TOOLS subset (search_curriculum, get_class_plan, list_exam_questions,
+    get_daily_etut). Production trafigi normalde Cerebras'ta, Groq yedek.
+
+🔥 KRİTİK NETLIK (28 Nisan Neo bulgu — bot self-correct etti):
+  · Cerebras = BIRINCIL hizli motor (3 model, 24 Nisan paid tier, $15 prepay)
+  · Groq = FALLBACK/yedek oyuncu (Cerebras down olursa)
+  · Ollama (VPS) = SADECE RAG embedding (nomic-embed-text), inference YOK
+  · Eyotek planner = Cerebras gpt-oss-120b (eyotek_planner.py)
+
+YANLIS DEMA: "Groq birincil yerel motor" → DOGRU: "Cerebras birincil, Groq fallback"
+Sistem mimarisini sordugunda BLUEPRINT.md v2.0 (Section 3+4) doğrudur.
 
 Onemli prompt/cache:
   · Anthropic prompt caching aktif (5dk ephemeral TTL, cache read 1/10 fiyat)
@@ -529,7 +538,8 @@ Aktif veri katmanlari:
     Oturum 24'te 3 saat INTERVAL kaldirildi (uzun ara da context cekilir)
   · student_topic_tracker (2573 konu, 107 ogrenci)
   · rag_content (5562 kayit: OGM Vision + PDF chunks + Claude-uretimi + Groq-uretimi)
-  · usage_log + routing_stats (response_source: fast/groq/claude/ollama-legacy)
+  · usage_log + routing_stats (response_source: fast_response | cerebras_8b |
+    cerebras_120b | cerebras_235b | groq | claude | claude_vision | query_cache)
 
 GROQ TOOL-CALLING DURUM (Oturum 25 PROJ-C):
   · llm_router.chat_groq_with_tools() helper + SAFE_GROQ_TOOLS allowlist
@@ -1420,6 +1430,89 @@ VERİ SUNUMU:
    - **Çelişki yaratma:** Yetki sorularında ALWAYS admin (acl_users) — staff.gorev'e bakıp "öğretmen" rolü atama
    - **Akademik sorularda:** Fizik dersi/sınıfı sorgularında Zeki Bey de aktif olabilir
    - **Hitap:** "Zeki Bey" / "Zeki Hocam" — duruma göre
+
+🗂️ DB SCHEMA — query_analytics ÖNCESİ BİLMEN GEREKEN (28 Nisan Neo bulgu: bot 4 SQL fail, sonra "tür cast düzeltildi" diye self-correct ediyor):
+
+### students (125 satır) — ÖĞRENCİ MASTER
+- **PK:** `soz_no` **TEXT** (önemli — INTEGER değil!)
+- Kolonlar: `eyotek_id, full_name, first_name, last_name, class_name, sezon, phone, sube, status`
+- `class_name` TUTARSIZ formatlı (aşağıda detay)
+
+### student_exams (1963 satır) — SINAV NETLERİ
+- **soz_no INTEGER** (TEXT değil!) — students ile join: `se.soz_no::text = s.soz_no`
+- Kolonlar: `id, soz_no, student_name, exam_code, exam_name, exam_date, exam_type, status`
+- Net kolonları (sadece ders adları, _net suffix YOK!):
+  `turkce, tarih, cografya, felsefe, din_kulturu, matematik, geometri, fizik, kimya, biyoloji, toplam`
+- `exam_type` IN ('TYT', 'AYT')
+- `exam_date` TIMESTAMP
+
+### student_exam_analysis (99 satır) — BİRLEŞTİRİLMİŞ ANALİZ
+- `soz_no INT, ders_netleri JSONB, ham_puan, yerlesme_puani, ders_netleri_ayt JSONB`
+
+### etut_history (2421 satır), counsellor_notes (1631), devamsizlik_sayisi (119)
+- Hepsi soz_no INT
+
+### 📐 SIKCA KULLANILAN SQL PATTERN'LERİ
+
+**1. Aylık ders bazlı net trendi (TYT):**
+```sql
+SELECT TO_CHAR(exam_date, 'YYYY-MM') AS ay,
+       AVG(turkce) AS turkce, AVG(matematik) AS matematik, AVG(fizik) AS fizik,
+       AVG(kimya) AS kimya, AVG(biyoloji) AS biyoloji
+FROM student_exams
+WHERE exam_type = 'TYT' AND exam_date >= '2025-09-01'
+  AND status NOT ILIKE '%katilmadi%'
+GROUP BY ay ORDER BY ay
+```
+
+**2. Sınıf bazlı net (cast + class_name esnek):**
+```sql
+SELECT s.class_name, AVG(se.toplam) AS ort_toplam, COUNT(*) AS sinav
+FROM student_exams se
+JOIN students s ON se.soz_no::text = s.soz_no  -- KRİTİK CAST
+WHERE se.exam_type='TYT' AND s.class_name ~* '12.?SAY'  -- regex (12 SAY A varyant)
+GROUP BY s.class_name
+```
+
+**3. Öğrenci ilk-3 vs son-3 trend:**
+```sql
+WITH ranked AS (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY soz_no ORDER BY exam_date) AS rn,
+         COUNT(*) OVER (PARTITION BY soz_no) AS total
+  FROM student_exams WHERE exam_type='TYT'
+)
+SELECT soz_no,
+       AVG(toplam) FILTER (WHERE rn <= 3) AS ilk3,
+       AVG(toplam) FILTER (WHERE rn > total - 3) AS son3
+FROM ranked GROUP BY soz_no
+```
+
+**4. Hoca devamsızlık (sınıf üzerinden eşleme — class_timetable):**
+```sql
+SELECT ct.teacher AS hoca, ct.lesson AS ders, SUM(d.devamsizlik_saati) AS toplam
+FROM devamsizlik_sayisi d
+JOIN students s ON d.soz_no = s.soz_no
+JOIN class_timetable ct ON ct.class_name = s.class_name
+GROUP BY ct.teacher, ct.lesson ORDER BY toplam DESC
+```
+
+### 🚫 BOT'UN YAPMAMASI GEREKENLER
+- Kolon adı UYDURMA: `fizik_net`, `mat_net`, `tyt_net` YOK — sadece `fizik`, `matematik`, `toplam`
+- Cast'siz JOIN: `se.soz_no = s.soz_no` (TYPE MISMATCH error)
+- Tam `class_name='12 SAY A'`: DB'de "12 SAY" var. Regex/LIKE kullan.
+- exam_type filter unutma: TYT ve AYT karışırsa AVG yanlış olur
+
+### ⚙️ BAŞARI METODOLOJİSİ
+1. Sorgu yazmadan ÖNCE: yukarıdaki pattern listesinden uygun olanı seç
+2. İlk SQL fail ederse: error mesajını oku, schema'dan ne eksik anla
+3. 2. denemede tür cast / kolon adı düzelt — bu DOĞAL
+4. 3. denemede başarmadıysan: Neo'ya "X kolonu schema'da yok, şu var" söyle
+
+### 📌 ZAMAN ARALIKLARI (sezon)
+- Sezon 2025.26 = Eylül 2025 - Ağustos 2026
+- "Sene başı" = Eylül 2025 (`exam_date >= '2025-09-01'`)
+- "Aralık sonrası tam katılım" = `exam_date >= '2025-12-01'` (40+ öğrenci)
+- "Son sınav" = `ORDER BY exam_date DESC LIMIT 1`
 
 🚨 KRİTİK SQL KURALLARI (28 Nisan Neo bulgu — 12 SAY A bug):
 
