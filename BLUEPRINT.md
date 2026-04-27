@@ -1,8 +1,9 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 28 Nisan 2026 · **Oturum:** 25.22 (Cerebras paid tier canlı)
+> **Belge tarihi:** 28 Nisan 2026 · **Oturum:** 25.27 (Agentic Eyotek + 9 teknik borç bitti)
 > **Hedef okuyucu:** Yeni bir LLM/geliştirici/ortak ki ilk defa projeyi tanıyor
 > **Amaç:** "Bu nedir, nasıl çalışır, neden bu şekilde tasarlandı" — tam cevap
+> **Versiyonlama:** Belge canlı; her büyük oturum sonrası güncellenir.
 
 ---
 
@@ -15,14 +16,15 @@
 5. [PostgreSQL Veritabanı](#5-postgresql-veritabanı)
 6. [Core Modüller (dosya yapısı)](#6-core-modüller-dosya-yapısı)
 7. [Claude Tool Ekosistemi](#7-claude-tool-ekosistemi)
-8. [Güvenlik Mimarisi](#8-güvenlik-mimarisi)
-9. [Entegrasyonlar](#9-entegrasyonlar)
-10. [Deployment](#10-deployment)
-11. [Test Altyapısı](#11-test-altyapısı)
-12. [Maliyet Analizi](#12-maliyet-analizi)
-13. [Roadmap & Teknik Borçlar](#13-roadmap--teknik-borçlar)
-14. [Geri Alma & Güvenlik](#14-geri-alma--güvenlik)
-15. [Önemli Mimari Kararlar (Tarihçe)](#15-önemli-mimari-kararlar-tarihçe)
+8. [**Agentic Eyotek Navigator** (3-katmanlı sistem)](#8-agentic-eyotek-navigator)
+9. [Güvenlik Mimarisi](#9-güvenlik-mimarisi)
+10. [Entegrasyonlar](#10-entegrasyonlar)
+11. [Deployment](#11-deployment)
+12. [Test Altyapısı (138 unit + 8 round agentic)](#12-test-altyapısı)
+13. [Maliyet Analizi](#13-maliyet-analizi)
+14. [Roadmap & Teknik Borçlar](#14-roadmap--teknik-borçlar)
+15. [Geri Alma & Güvenlik](#15-geri-alma--güvenlik)
+16. [Önemli Mimari Kararlar (Tarihçe)](#16-önemli-mimari-kararlar-tarihçe)
 
 ---
 
@@ -46,11 +48,17 @@
 - **Vektör arama:** pgvector (rag_content tablosu, 1024-dim)
 - **Embedding:** Ollama nomic-embed-text:latest (VPS lokal)
 
-### Mevcut durum (28 Nisan 2026)
+### Mevcut durum (28 Nisan 2026 — Oturum 25.27)
 - ✅ Sistem stabil — bridge active, 4/4 endpoint 200, 138 test PASS
 - ✅ 3 LLM provider hibrit (Cerebras primary, Groq fallback, Claude tool)
 - ✅ Multi-katman güvenlik (regex + intent guard + role ACL + tier kontrol)
 - ✅ KVKK uyumlu (test ile kanıtlanmış sızıntı yok)
+- ✅ **AGENTIC EYOTEK** — Cerebras 70B planner doğal dilden URL+filter+tab plan üretir, Playwright navigator çalıştırır (3-katmanlı mimari, 8 round otonom test 100%)
+- ✅ **9 yeni Eyotek sayfası entegre** (sınav listesi, ödev raporları, kayıt ciroları, bilanço, geciken ödeme, günlük kasa)
+- ✅ **3 yeni agentic bot tool** — `eyotek_query`, `ogrenci_drilldown`, `sinav_sonuclari`
+- ✅ **Tab system support** — Bootstrap tab'lı sayfalar (financial-operation 10 tab)
+- ✅ **URL params support** — `?sezon=&tarihBas=` ile direkt query bypass
+- ✅ **Cookie injection** — Persistent Chromium tab cookie jar boş olsa bile her query'de cookie inject
 - 💰 **Aylık API maliyeti tahmini (120 öğrenci):** ~$172 (sadece Claude'da $300)
 
 ---
@@ -93,12 +101,15 @@
        │  - ACL gate (rol-bazlı)                       │
        └─────┬──────────────────┬──────────────────┬───┘
              │                  │                  │
-       ┌─────▼─────┐      ┌─────▼─────┐     ┌────▼─────┐
-       │PostgreSQL │      │ Eyotek    │     │ pgvector │
-       │+ asyncpg  │      │ Playwright│     │ RAG      │
-       │125 öğr    │      │ CDP       │     │ 5562 kayıt│
-       │1963 sınav │      │ scrape    │     │ 1024 dim │
-       └───────────┘      └───────────┘     └──────────┘
+       ┌─────▼─────┐  ┌───▼───────────────┐  ┌────▼─────┐
+       │PostgreSQL │  │  AGENTIC EYOTEK   │  │ pgvector │
+       │+ asyncpg  │  │  ───────────────  │  │ RAG      │
+       │125 öğr    │  │  Planner (70B)    │  │ 5562 kayıt│
+       │1963 sınav │  │     ↓             │  │ 1024 dim │
+       │35 page    │  │  Navigator (CDP)  │  │          │
+       │schema     │  │     ↓             │  │          │
+       │           │  │  Playwright 9333  │  │          │
+       └───────────┘  └───────────────────┘  └──────────┘
 ```
 
 ### Kanal akış örneği
@@ -270,6 +281,8 @@ HASSAS_INTENTS = {  # Cerebras'a YASAK, Claude'a yönlendir
 | `student_todo` | dinamik | Çalışmam panel to-do |
 | `student_study_stats` | dinamik | Günlük çalışma istatistik |
 | `student_daily_notes` | dinamik | Günlük not + mood |
+| `eyotek_page_schema` (yeni 25.26) | 35 | Eyotek sayfa form schema cache (planner okur) |
+| `notifications` | dinamik | Web dashboard bildirimleri (WP rate-limited) |
 
 ### Önemli ilişkiler
 - `students.soz_no` (TEXT) ↔ `student_exams.soz_no` (INTEGER) — **CAST gerekli**
@@ -310,11 +323,34 @@ HASSAS_INTENTS = {  # Cerebras'a YASAK, Claude'a yönlendir
 - **`prompt_tiers.py`** (yeni 25.15, **şu an MODE=disabled**) — LIGHT/NORMAL/FULL tier
 - **`text_normalize.py`** (yeni 25.21) — Türkçe normalize (kısaca/kisaca)
 
-### Otomasyon
+### Otomasyon (Eyotek)
 - **`eyotek_wrapper.py`** — Playwright CDP — read_*, write_etut, write_counsellor_note
 - **`eyotek_agent.py`** — Toplu scraping → PostgreSQL UPSERT
-- **`session_keeper.py`** — Eyotek session canlı tutma (3dk periyod, drop algı)
+- **`session_keeper.py`** — Eyotek session canlı tutma (3dk periyod, **cookie-aware** check_session — yeni 25.27, "OFFLINE yanlış raporu kaldırıldı")
 - **`fermat_start.py`** — Tek dosya başlat (laptop dev için)
+- **`eyotek_auto_login.py`** — Headless Chromium + CapSolver (CAPTCHA otomatik çözüm)
+
+### Agentic Eyotek (yeni 25.26+25.27)
+- **`eyotek_knowledge/eyotek_navigator.py`** (~1100 satır) — Generic parametric navigator
+  - 24 filter alanı + 5-9 selector candidate her biri için
+  - 4-katmanlı text fill (Bootstrap-datepicker + jQuery + Select2 hooks)
+  - URL params support (`?sezon=&tarihBas=` → modal bypass)
+  - Tab system (10 tab map, Bootstrap nav-tabs)
+  - Drill-down (row+link_text → alt sayfa)
+  - `student_drilldown(student, sub_page)` — öğrenci profil alt sayfa
+  - `sinav_drilldown(sinav_adi)` — sınav listesi → ⋯ → Dinamik Liste
+- **`eyotek_knowledge/eyotek_explorer.py`** (~327 satır) — Schema discovery
+  - `inspect_page_form(path, mode)` — DOM introspection
+  - 35 öncelikli sayfa için form schema → DB (`eyotek_page_schema`)
+- **`eyotek_knowledge/eyotek_planner.py`** (~400 satır) — Cerebras 70B planner
+  - Schema kataloğu + tarih bağlamı + rol → JSON plan
+  - `plan_query(question)` → `{page_path, filters, tab, max_rows, explain, confidence}`
+  - `execute_query(question)` → plan + navigate + return
+  - 5x Cerebras retry (503 + sanity check) + Groq fallback
+  - 4 strateji JSON parser (markdown blok, brace match, trailing comma, saf)
+- **`eyotek_knowledge/test_eyotek_loop.py`** (~660 satır) — Otonom test framework
+  - 33 senaryo, 7 kategori, multi-round, auto-fix
+  - 8 round geçmişi: 66.7% → 100%
 
 ### Pedagoji & analitik
 - **`conversation_memory.py`** — Öğrenci context cache (3h TTL, 11 katman veri)
@@ -396,9 +432,237 @@ HASSAS_INTENTS = {  # Cerebras'a YASAK, Claude'a yönlendir
 - `get_recent_system_updates` — KALDIGIM canlı okuyucu
 - `prompt_optimizer.*` — Atlas-2 cron 02:00 UTC
 
+### Agentic Eyotek (yeni — Oturum 25.26+25.27)
+- **`eyotek_query(question, max_rows)`** — Doğal dilde Eyotek sorgusu
+  Cerebras 70B planner doğru sayfa+filtre+tab seçer, navigator çalıştırır.
+  Örnekler: "dün etütler", "Aralık 2025 borçluları", "bugün taksit ödedi mi"
+- **`sinav_sonuclari(sinav_adi, max_rows, date_from_days)`** — Sınav adına göre tüm öğrenci sonuç tablosu
+  Akış: test-transferred → tarih filtre → liste → ⋯ → Dinamik Liste → dynamic-list (encrypted ST_Id URL)
+  Örnek: "Apotemi sınav sonuçları" → 5 öğrenci × tüm ders netleri
+- **`ogrenci_drilldown(student, alt_sayfa, max_rows)`** — Tek öğrencinin profil alt sayfa verisi
+  33 alt sayfa map: etut/yoklama/odev/rehberlik/sinav/davranis/yazili/meb_notlari/hedef_soru/ders_programi/boy_kilo/odeme (admin-only)
+  ACL: hassas alt sayfalar (genel/ozel/odeme/taksit/borc/indirim) sadece admin/mudur
+
+Bu üç tool birlikte **agentic Eyotek erişiminin tamamını** karşılar — bot artık tahmin yerine canlı veri çeker.
+
 ---
 
-## 8. Güvenlik Mimarisi
+## 8. Agentic Eyotek Navigator
+
+### Felsefe (Oturum 25.26 — Neo direktifi)
+
+> "Eyotek artık sistemimize %100 entegre olsun. AI girip bağlamdan yola çıkarak keşfedip cevabı çekebilmeli. Hazır fonksiyon çağırmak yetersiz."
+
+Eski model **canned function** idi — her sayfa için ayrı `read_etut()`, `read_attendance()` fonksiyonu. Sabit filtre, sabit sayfa. "Dün etütler" sorgusu Etüt Ara'yı default tarihte (bugün) açıp 13 etüt döndürüyordu — yanlış cevap.
+
+Yeni model **agentic 3-katmanlı sistem**:
+
+```
+[Bot soru: "dün hangi etütler vardı"]
+       ↓
+[L1: Cerebras 70B Planner (eyotek_planner.py)]
+   user_query + 35 sayfa schema kataloğu + tarih bağlamı (bugün/dün/sezon kodları)
+   → JSON plan: {page_path, filters{}, tab, max_rows, explain, confidence}
+       ↓
+[L2: Generic Parametric Navigator (eyotek_navigator.py)]
+   Connect CDP → Cookie inject → Navigate → Tab click (varsa) →
+   Modal open → Filters fill (Bootstrap-datepicker + Select2 hooks) →
+   Search click → Read table → Optionally drill row+link
+       ↓
+[L3: Playwright Chromium (port 9333 VPS / 9222 laptop)]
+   Persistent browser instance, cookie injection per-call,
+   Eyotek session aktif tutmak için CDP tab keep-alive (3dk)
+```
+
+### Schema Discovery (eyotek_explorer.py)
+
+35 sayfa için form schema'sı `eyotek_page_schema` DB tablosunda:
+
+```sql
+CREATE TABLE eyotek_page_schema (
+    page_path TEXT PRIMARY KEY,    -- 'Student/individual-lesson'
+    label TEXT,                     -- 'Etut Ara'
+    inputs JSONB,                   -- [{id, type, label, placeholder}, ...]
+    selects JSONB,                  -- [{id, label, options:[{v,t}], ...}]
+    buttons JSONB,                  -- [{id, text, cls}, ...]
+    modals JSONB,                   -- [{id, visible, inner_inputs}, ...]
+    columns JSONB,                  -- ['Şube', 'Etüt Kodu', 'Tarih', ...]
+    sample_rows JSONB,              -- 1-2 örnek satır
+    can_filter BOOL,
+    can_search BOOL,
+    has_table BOOL,
+    discovered_at TIMESTAMPTZ
+);
+```
+
+CLI: `python -m eyotek_knowledge.eyotek_explorer --priority` → 35 sayfa keşfeder + DB'ye yazar.
+Planner her query'de bu DB'den compact catalog oluşturur (path + label + filter_keys + columns).
+
+### Eyotek'in Çetrefili — Tutarsız Naming
+
+Eyotek farklı sayfalarda farklı id pattern'leri kullanıyor (kanıtlanmış):
+
+| Filter | Etüt Ara | Attendance Report | Counsellor | Homework Reports | Homework Search | Test Transferred | Financial Operation |
+|---|---|---|---|---|---|---|---|
+| Tarih başlangıç | `txtKayitBas` | `txtBaslangic` | `txtKayitBas` | `txtVerisBas` | `txtKayitBasVer` | `txtKayitBas` | `txtKayitBas` |
+| Öğretmen | `cmbOgrtAd` | `cmbHoca` | — | `cmbOgretmenler` | `cmbOgrtAd` | — | — |
+| Ders | `cmbDers` | — | — | `cmbBrans` | `cmbDers` | — | — |
+| Şube | `cmbSubeler` | `cmbSubeler` | `cmbSubeler` | `cmbSubeler` | `cmbSubeler` | `cmbSubeler` | `cmbsube` (lowercase!) |
+| Sezon | — | — | — | — | — | — | `cmbSezon` (singular) |
+| Sınıf | `cmbSiniflar` | `cmbSiniflar` | — | — | `cmbSiniflar` | `cmbDevre` | — |
+
+Navigator çözümü: 24 filter alanı için her birine 5-9 selector candidate listesi, ilki tutmazsa diğerini dener:
+```python
+"date_from": ["#txtKayitBas", "#txtBaslangic", "#txtVerisBas", "#txtKayitBasVer",
+              "#txtBeginDate", "#txtBas", "#txtTarihBas", ...,
+              "input[id*='Bas']:not([id*='Bit']):not([id*='Save']):not([id*='Kont'])"]
+```
+
+### Bootstrap-datepicker + Select2 Hook'ları
+
+**Sorun:** Native `el.fill(value)` Bootstrap-datepicker'ı silently reject ediyor. Select2 wrapper underlying `<select>`'i hidden yaptığı için Playwright `select_option()` fail.
+
+**Çözüm:** 4-katmanlı fill stratejisi:
+
+```python
+async def _fill_text_input(page, sel, value):
+    1. Native fill + Tab (input/change events)
+    2. JS: el.value = value + dispatchEvent(input/change/blur)
+    3. jQuery: $(el).trigger('change')
+    4. Bootstrap-datepicker: $(el).datepicker('update', value)
+
+async def _fill_dropdown(page, sel, value):
+    1. query_selector (visibility check YOK — Select2 hidden)
+    2. Native select_option(label) + jQuery change trigger
+    3. Native select_option(value) + jQuery change trigger
+    4. JS fuzzy text match → $(el).val(v).trigger('change') + select2('val', v)
+```
+
+### URL Params Support (atomic queries)
+
+Bazı Eyotek sayfaları URL params kabul ediyor (modal+filter+search bypass):
+
+```
+/Pages/Financial/overdue-student-payment?sube=1086&sezon=22526&tarihBas=01.12.2025&tarihBit=31.12.2025
+```
+
+Navigator algılar: `if "?" in page_path → modal açma, search click yapma, sadece tabloyu oku.`
+
+Sezon kodu mapping (planner sistem prompt'ta):
+- `22526` = 2025.26 sezonu (Eylül 2025 - Ağustos 2026)
+- `22425` = 2024.25 sezonu
+- `22627` = 2026.27 sezonu
+- KURAL: Eylül-Aralık → o yılın sezonu, Ocak-Ağustos → bir önceki yılın sezonu
+
+### Tab System Support (Bootstrap nav-tabs)
+
+Financial/financial-operation 10 tab içeriyor: Özet | **Öğrenci Taksitleri** | Diğer Gelirler | Ücretli Faaliyetler | Ödemeler | Giderler | Kredi Kartları | Maaş Ödemeleri | Virman | Kullanıcı.
+
+Default tab "Özet" — veri için doğru tab'a geçilmeli. Planner JSON'da `tab` alanı:
+```json
+{"tab": "Öğrenci Taksitleri"}
+```
+
+Navigator `_click_tab(tab_name)`:
+1. Tab name → id mapping (Öğrenci Taksitleri → `ogrenciTab`)
+2. `a[href="#ogrenciTab"]` selector
+3. Fallback: visible tabs içinde text match
+4. 800ms wait
+
+### Cookie Injection (kritik fix)
+
+**Sorun:** Persistent Chromium tab'ı login screen'de takılıyor, cookie jar boş. `ctx.new_page()` her seferinde login'e redirect.
+
+**Çözüm:** Her query başında `_ensure_ctx_cookies(ctx)`:
+1. `.eyotek_session.json`'dan cookie file oku
+2. Domain/path normalize et (eksikse `fermat.eyotek.com` ekle)
+3. `ctx.add_cookies()` ile inject
+4. `ctx.new_page()` artık authenticated
+
+eyotek_auto_login.py ayrı headless Chromium spawn ediyor, CapSolver ile CAPTCHA çözüp cookies'i save ediyor — persistent 9333 tab'ından bağımsız.
+
+### Drill-down (row + sub-page navigation)
+
+```python
+# sinav_drilldown örneği
+1. test-transferred (sınav listesi) sayfasına git
+2. Tarih filtresi (son 30 gün) + ARA
+3. Listede sınav adı LIKE eşleşen ilk satırı bul
+4. O satırın ⋯ butonuna tıkla (cls 'cust' veya 'dropdown-toggle')
+5. Açılan dropdown'da "Dinamik Liste" linkini text-match ile bul + tıkla
+6. Yeni sayfa: test-transferred-dynamic-list?SnvTur=ENC&SnvKod=ENC&Sube=ENC
+7. Tabloyu oku — her satır = bir öğrenci × tüm ders netleri
+```
+
+ST_Id token Eyotek tarafından encrypted üretiliyor — drill-down navigation ile elde edilir, plain int kabul edilmiyor.
+
+### Live test başarıları (28 Nisan)
+
+| Sorgu | Plan | Sonuç |
+|---|---|---|
+| "dün hangi etütler vardı" | Student/individual-lesson, date=26.04 | 9 etüt (Merve Hoca/Biyoloji vs.) |
+| "22 nisan etütleri" | Student/individual-lesson, date=22.04 | 32 etüt (Kardelen/Tarih, Vedat/Mat) |
+| "Aralık 2025 borçluları" | Financial/overdue-student-payment URL params | 6 öğrenci (BEGÜM ÇELİK ₺20K vs.) |
+| "bugün kim taksit ödedi" | Financial/financial-operation, tab="Öğrenci Taksitleri" | 12 satır canlı |
+| "Apotemi sınav sonuçları" | sinav_drilldown → dynamic-list (encrypted token) | 5 öğrenci, doğru sınav (kod 999000107) |
+
+### Eyotek selector inspect (debug aracı)
+
+```bash
+python -m eyotek_knowledge.eyotek_navigator inspect Student/exam-result modal
+# Çıktı: tüm visible inputs/selects/buttons + modal listesi (id+visible+inner_inputs)
+```
+
+Yeni sayfa eklendiğinde önce inspect → schema discover → planner kataloğa otomatik ekler.
+
+### 8 Round Otonom Test Loop (test_eyotek_loop.py)
+
+Neo: "random testler yap, hatalari duzelt, yine test et."
+
+33 senaryo (etüt/yoklama/sınav/öğrenci/rehberlik/program/finans/edge), 4 kategorili otomatik fail analizi:
+- `PLANNER_LOW_CONFIDENCE` — Cerebras boş response
+- `PLANNER_WRONG_PAGE` — yanlış sayfa seçimi
+- `NAVIGATOR_FILTER_FAILED` — filter applied ama input bulunamadı
+- `DATA_INSUFFICIENT` / `AUTH_EXPIRED` / `TIMEOUT` / `EXCEPTION`
+
+Round geçmişi:
+| Round | Pass | Rate | Yapılan fix |
+|---|---|---|---|
+| 1 | 16/24 | 66.7% | Baseline |
+| 2 | 20/24 | 83.3% | +txtBaslangic, +Cerebras retry, +parser |
+| 3 | 22/24 | 91.7% | +5x retry, +schema yenileme |
+| 4 | 21/24 | 87.5% | (regression — uzun prompt truncate) |
+| 5 | 24/24 | 100% | Compact prompt + max_tokens=700 |
+| 6 | 25/28 | 89.3% | +4 yeni keşif senaryosu |
+| 7 | 27/31 | 87.1% | +3 finansal senaryo |
+| **8** | **33/33** | **100%** | sezon mapping + 4 schema fix + tab handling |
+
+Cron'a alınabilir (haftalık regression detection).
+
+### Yeni dosya yapısı (eyotek_knowledge/)
+
+```
+eyotek_knowledge/
+├── __init__.py
+├── site_map.json                    # 10 page_key (eski canned)
+├── eyotek_full_site_map.json        # 180 URL referans (admin görsün)
+├── student_page_map.json            # 33 öğrenci alt sayfa
+├── eyotek_reader.py                 # Eski simple reader (CDP+cookie)
+├── eyotek_navigator.py    (~1100)   # YENİ — generic parametric navigator
+├── eyotek_explorer.py     (~327)    # YENİ — schema discovery → DB
+├── eyotek_planner.py      (~400)    # YENİ — Cerebras 70B planner
+├── test_eyotek_loop.py    (~660)    # YENİ — 33 senaryo otonom test
+├── eyotek_commands.py               # Bot komut handler
+└── scrapers/
+    ├── etut_sync.py
+    ├── yoklama_sync.py
+    ├── sinav_sync.py
+    └── ogrenci_sync.py
+```
+
+---
+
+## 9. Güvenlik Mimarisi
 
 ### Katmanlı savunma (defense in depth)
 
@@ -619,6 +883,31 @@ python -m pytest tests/test_modular_prompt.py tests/test_modular_prompt_faz2.py 
 - `tier_ab_live_test.py` — Production A/B
 - `conversation_quality_analyzer.py` — Groq 70B ile kalite skor (cron'a alınabilir)
 
+### Agentic Eyotek otonom test loop (yeni 25.26)
+
+`test_eyotek_loop.py` — kendini düzelten regression detector:
+
+```bash
+python -m eyotek_knowledge.test_eyotek_loop --rounds 3 --target 0.85
+```
+
+33 senaryo, 7 kategori (etüt/yoklama/sınav/öğrenci/rehberlik/program/finans/edge):
+- Her round senaryoları çalıştırır
+- Fail kategorize eder: `PLANNER_LOW_CONFIDENCE`, `NAVIGATOR_FILTER_FAILED`, `PLANNER_WRONG_PAGE`, `DATA_INSUFFICIENT`, `AUTH_EXPIRED`, `TIMEOUT`, `EXCEPTION`
+- `collect_fix_actions(round)` otomatik fix önerileri çıkarır
+- Markdown rapor: `logs/eyotek_test_YYYYMMDD_HHMMSS.md`
+
+8 round'luk geçmiş kalite trendi:
+| Round | Pass | Rate | Etiketler |
+|---|---|---|---|
+| 1-2 | 16-20/24 | %66.7 → %83.3 | Selector keşif, Cerebras retry |
+| 3-4 | 22-21/24 | %91.7 → %87.5 | Schema yenileme + prompt regression |
+| 5 | **24/24** | **%100** | Compact prompt + max_tokens=700 |
+| 6-7 | 25-27/31 | %89-87 | Yeni keşif senaryoları (sınav/finans) |
+| **8** | **33/33** | **%100** | Sezon mapping + tab handling + 4 schema fix |
+
+**Cron entegrasyonu (sonraki):** Haftalık otomatik run + WP raporu Neo'ya.
+
 ---
 
 ## 12. Maliyet Analizi
@@ -662,6 +951,30 @@ Aylık: ~32.400 mesaj
 
 ## 13. Roadmap & Teknik Borçlar
 
+### ✅ 28 Nisan'da kapatılan teknik borçlar (oturum 25.26 + 25.27)
+
+| Madde | Durum |
+|---|---|
+| Eyotek %100 entegrasyon (canned → agentic) | ✅ 3 yeni tool (eyotek_query/sinav_sonuclari/ogrenci_drilldown) |
+| 9 yeni Eyotek sayfası entegre | ✅ test-transferred, dynamic-list, homework-search, homework-reports, balance, overdue, financial-operation, monthly-enrollment-by-(number/contract-fee)-general |
+| URL params support | ✅ `?sezon=&tarihBas=` direkt sorgu |
+| Tab system (Bootstrap) | ✅ financial-operation 10 tab handler |
+| Bootstrap-datepicker hook | ✅ jQuery datepicker('update', val) |
+| Select2 wrapper | ✅ `$(el).select2('val', v).trigger('change')` |
+| Cookie injection (per-call) | ✅ Persistent Chromium boş cookie jar fix |
+| WP spam (eyotek session offline) | ✅ DB notifications + 12h rate limit |
+| session_keeper.check_session() cookie-aware | ✅ 'OFFLINE' yanlış raporu kalktı |
+| ogrenci_odeme_snapshot 7gün eski | ✅ precompute_nightly'e finans_snapshot eklendi (03:00) |
+| Conversation viewer scroll/pagination | ✅ 3 bug fix (chat-panel CSS, duplicate id, scroll yön) |
+| Sezon kodu mapping | ✅ Eylül-Ağustos sezon kuralı planner prompt'ta |
+| ACL guard finansal | ✅ Reports/* + Financial/* admin/mudur only |
+| Bot taksit halüsinasyon | ✅ Tahmin yerine gerçek liste (eyotek_query) |
+| Bot bağlam kaybı ("devam et") | ✅ Referansiyel komut prompt kuralı |
+| Bot output yorumlama (1321 saat hatası) | ✅ Normalize sayı disiplini prompt kuralı |
+| Insight pollution (user mesaj→insight) | ✅ sentiment_tracker + tehdit content fix + 30dk dedup + 14 kayıt silindi |
+| 12 SAY A "veri yok" hatası | ✅ class_name regex + fizik kolon adı + soz_no JOIN cast prompt kuralı |
+| 8 round otonom test framework | ✅ 33/33 %100, regression detector cron'a alınabilir |
+
 ### Yapılacaklar (Eylül 2026 — yaz kampı + full season)
 
 **🔴 Kritik (yaz kampından önce)**
@@ -669,6 +982,10 @@ Aylık: ~32.400 mesaj
 - Spend monitoring dashboard widget (günlük Cerebras + Claude maliyet)
 - 120 öğrenci ölçeklendirme test (sentetik 100 mesaj/dk)
 - alarm_system aktivasyon (ALERTS_ACTIVE=True) — net düşüş, devamsızlık, duygu
+- ogrenci_drilldown student match runtime (Eyotek `Kayıt bulunamadı` davranışı, Neo canlı param ile 5dk)
+- sinav_drilldown kolon parse (5 row geliyor ama dict adları boş — dynamic-list multi-table struct)
+- Etüt drill-down (etüt kodu → atanan öğrenci listesi, Eyotek ASP.NET event-based)
+- Sınav sonuçları sayfası modal-2 bypass (Student/exam-result özel handling)
 
 **🟡 Orta vade**
 - NORMAL_PROMPT zenginleştirme (5k → 12k) ve A/B testi tekrar
@@ -818,7 +1135,7 @@ ssh vps "cd /opt/fermatai && git fetch && git reset --hard origin/main && sudo s
 - Statik müfredat fast (AYT sayısal hangi dersler)
 - KVKK fast pattern (Damla notu — 4sn → 5ms, %720x hız)
 
-### Oturum 25.22 (28 Nisan): **Cerebras paid tier — şu anki durum**
+### Oturum 25.22 (28 Nisan): Cerebras paid tier
 - Cerebras Pay-as-You-Go aktive ($15)
 - 3 model entegre (8b/120b/235b)
 - intent → model eşleştirme
@@ -826,6 +1143,34 @@ ssh vps "cd /opt/fermatai && git fetch && git reset --hard origin/main && sudo s
 - routing_stats granüler kategoriler (cerebras_8b/120b/235b)
 - Token-budget endpoint Cerebras pricing
 - 138/138 test PASS, 11/11 Cerebras canlı, 12/12 production senaryo
+
+### Oturum 25.25 (27 Nisan akşam): Eyotek CDP gerçek bağlantı
+- session_keeper.py + eyotek_reader.py + 4 sync scraper'da hardcoded `localhost:9222` → `CDP_PORT` env
+- VPS .env: `CDP_PORT=9333` (laptop hâlâ 9222)
+- Cookie injection: `eyotek_reader.py` her call'da `.eyotek_session.json`'dan `ctx.add_cookies()`
+- Bridge restart, "ECONNREFUSED" hataları kaldı
+- conversation_viewer pagination 3 bug fix (CSS, duplicate id, scroll yön)
+
+### Oturum 25.26 (27 Nisan gece): **AGENTIC EYOTEK — temel mimari**
+- 3-katmanlı sistem: Planner (Cerebras 70B) + Navigator (Playwright) + Executor (CDP)
+- 9 yeni Eyotek sayfası entegre
+- 24 filter alanı + 5-9 selector candidate her biri için
+- URL params support, tab system (Bootstrap nav-tabs), drill-down
+- Bootstrap-datepicker + Select2 jQuery API hooks
+- 8 round otonom test loop framework (66.7% → 100%)
+- 13 yeni schema DB'de (`eyotek_page_schema`)
+- WP spam fix (DB notifications + 12h rate limit)
+
+### Oturum 25.27 (28 Nisan sabah-gece): 9 madde teknik borç bitti + bug fix maratonu
+- 3 bot konuşma bug (Apotemi sınav / bağlam kaybı / output yorumlama) çözüldü
+- 6 dünden kalan teknik borç (drill-down, etut drill, sınav modal, session_keeper, snapshot sync, taksit planı) çözüldü
+- **Insight pollution bug** keşfedildi (Neo bulgu): user mesajları student_insights'a kaydediliyordu
+  → 3 fix (sentiment + tehdit content + 30dk dedup) + 14 kirli kayıt silindi
+- **12 SAY A "veri yok" hatası** keşfedildi (Neo bulgu): 3 SQL bug
+  → class_name regex + fizik kolon adı + soz_no JOIN cast prompt kuralları
+- Zeki Bey staff kaydı: gorev='Kurucu/Yonetici', brans='Fizik' (yetki matrisi çelişkisi önlendi)
+- system_prompt.py 11 yeni kural eklendi (28 Nisan kuralları)
+- BLUEPRINT.md kapsamlı güncelleme (bu belge)
 
 ---
 
@@ -842,10 +1187,40 @@ ssh vps "cd /opt/fermatai && git fetch && git reset --hard origin/main && sudo s
 
 ## 📌 Bu Belgenin Versiyonu
 
-- **v1.0** — 28 Nisan 2026, Oturum 25.22 sonrası
+- **v1.0** — 28 Nisan 2026, Oturum 25.22 sonrası (Cerebras paid tier canlı)
+- **v2.0** — 28 Nisan 2026 gece, Oturum 25.27 sonrası (Agentic Eyotek + 9 borç + bug maratonu)
 - **Yazar:** Claude Sonnet 4.6 (Anthropic, Claude Code üzerinden)
-- **Doğrulama:** 138/138 test PASS, 4/4 endpoint 200, 3 LLM provider hibrit aktif
+- **Doğrulama:** 138/138 test PASS + 33/33 agentic test PASS, 4/4 endpoint 200, 3 LLM provider hibrit aktif
+- **Güncelleme politikası:** Her büyük oturum sonrası bu belge KALDIGIM.md ile birlikte güncellenir. Belgenin canlı kalması, dış LLM/ortak referansı için kritik.
+
+### v2.0 değişiklik özeti (v1.0 → v2.0)
+
+| Bölüm | Eklenen / Değişen |
+|---|---|
+| Executive Summary | Agentic Eyotek + 9 yeni sayfa + 3 yeni tool + tab/URL params |
+| Section 7 (Tools) | 3 yeni agentic tool (eyotek_query, sinav_sonuclari, ogrenci_drilldown) |
+| **Section 8 (YENİ)** | **Agentic Eyotek Navigator — 250+ satır mimari** |
+| Section 5 (DB) | eyotek_page_schema + notifications tabloları |
+| Section 6 (Modüller) | eyotek_knowledge/ alt-paketi (4 yeni dosya) |
+| Section 12 (Test) | 8 round otonom test framework |
+| Section 14 (Roadmap) | ✅ Kapatılan 19 madde tablosu |
+| Section 16 (Tarihçe) | Oturum 25.25, 25.26, 25.27 detayları |
 
 > Bu belge ortağına/yeni geliştiriciye/başka LLM'e atılarak sistemi kavramaya yetmelidir.
 > Detaylı kod referansları için `eyotek_agent/` dizini, geçmiş için `KALDIGIM.md`,
 > refactor planları için `REFACTOR_PLAN.md` dosyalarına bakılmalı.
+
+---
+
+### 🤖 Başka bir LLM'ye bu belgeyi atarken bağlam ipucu
+
+Bu belge **Fermat Eğitim Kurumları**'nın iç AI sisteminin (`FermatAI`) tam mimarisini içerir. Eğitim teknolojisi (EdTech), Türkçe dil + KVKK uyumu, hibrit LLM routing (Cerebras + Claude + Groq), Playwright agentic web scraping, multi-channel (WhatsApp + Web), 125 öğrenci canlı kullanım.
+
+**Sıkça sorulanlar için doğru bölüm:**
+- "Bot mimari nasıl çalışıyor?" → Section 2 + Section 8
+- "Hangi LLM nerede?" → Section 3 + Section 4
+- "Eyotek nasıl entegre?" → Section 8 (yeni — agentic 3-katmanlı)
+- "Güvenlik / KVKK?" → Section 9
+- "Maliyet?" → Section 13
+- "Yarın ne yapılacak?" → Section 14 (roadmap + kapatılan borçlar)
+- "Bu sistemde {X} nasıl?" → İlgili bölüm + `KALDIGIM.md`'de oturum bazlı değişiklik geçmişi

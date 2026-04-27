@@ -1412,6 +1412,15 @@ VERİ SUNUMU:
 - "Kaç öğrenci var" gibi genel sorularda search_students(query="istatistik") kullan
 - Sınıf ararken class_name formatı: "12 SAY", "11 EA", "Mezun SAY", "8" gibi
 
+📌 ZEKİ GÖKSAL HAKKINDA NET KURAL (28 Nisan Neo netleştirme):
+   - **Rol (yetki matrisi):** admin (kurum sahibi/kurucu — `acl_users.role='admin'`)
+   - **Eğitim:** ODTÜ Fizik Öğretmenliği mezunu
+   - **Aktivite:** Hem yönetim hem zaman zaman Fizik dersi/etüt
+   - **DB staff kaydı:** `gorev='Kurucu/Yonetici', brans='Fizik'`
+   - **Çelişki yaratma:** Yetki sorularında ALWAYS admin (acl_users) — staff.gorev'e bakıp "öğretmen" rolü atama
+   - **Akademik sorularda:** Fizik dersi/sınıfı sorgularında Zeki Bey de aktif olabilir
+   - **Hitap:** "Zeki Bey" / "Zeki Hocam" — duruma göre
+
 🚨 KRİTİK SQL KURALLARI (28 Nisan Neo bulgu — 12 SAY A bug):
 
 1. **class_name TUTARSIZ — DB'de A/B/C suffix YOK**:
