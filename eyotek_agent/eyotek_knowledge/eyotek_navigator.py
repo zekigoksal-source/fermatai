@@ -1006,28 +1006,39 @@ async def student_drilldown(
             result["error"] = "Eyotek session expired."
             return result
 
-        # 2. Modal ac, ad/soyad/soz_no ile filtre
-        await _open_search_modal(page)
-        await page.wait_for_timeout(1200)
-
-        # Identifier'i parcala
+        # 2. STRATEGY: Hizli arama — txtAdQuick (sayfa ustundeki, modal degil)
+        # Bu input modal acmadan, sayfa ustunde her zaman gorunur
+        # Ad+Soyad+TC hepsini kabul eder, free-text LIKE arama yapar
         s = student_identifier.strip()
-        if s.isdigit():
-            # SozNo
-            await _fill_text_input(page, ["#txtSozNo", "input[id*='SozNo' i]"], s)
-        else:
-            parts = s.split()
-            if len(parts) == 1:
-                # Tek kelime — soyad olarak dene (ad'a koymak Turkce karakterli olmasi gerekiyor)
-                await _fill_text_input(page, ["#txtSoyad"], s)
-            else:
-                # Ad + soyad
-                await _fill_text_input(page, ["#txtAd"], parts[0])
-                await _fill_text_input(page, ["#txtSoyad"], " ".join(parts[1:]))
+        used_quick = await _fill_text_input(page, ["#txtAdQuick", "input[id*='AdQuick' i]"], s)
 
-        # ARA
-        await _click_search(page)
-        await page.wait_for_timeout(3500)
+        if used_quick:
+            # txtAdQuick yaninda magnifier icon var (sayfa ustunde) — Enter yetebilir
+            try:
+                el = await page.query_selector("#txtAdQuick")
+                if el:
+                    await el.press("Enter")
+            except Exception:
+                pass
+            await page.wait_for_timeout(2500)
+        else:
+            # Fallback: modal ac, ad/soyad doldur
+            await _open_search_modal(page)
+            await page.wait_for_timeout(1200)
+            # Sube=Kurs otomatik (default genelde Kurs ama secili olmayabilir)
+            await _fill_dropdown(page, ["#cmbSubeler"], "Kurs")
+            if s.isdigit():
+                # SozNo direct yok ama txtAdQuick'e numara da yazabilir
+                await _fill_text_input(page, ["#txtAdQuick", "input[id*='AdQuick' i]"], s)
+            else:
+                parts = s.split()
+                if len(parts) == 1:
+                    await _fill_text_input(page, ["#txtSoyad"], s)
+                else:
+                    await _fill_text_input(page, ["#txtAd"], parts[0])
+                    await _fill_text_input(page, ["#txtSoyad"], " ".join(parts[1:]))
+            await _click_search(page)
+            await page.wait_for_timeout(3500)
 
         # 3. Ilk satirin context menu butonuna tikla
         # Bu screenshotta ⋯ butonu (cls 'cust') — id'si yok genelde
