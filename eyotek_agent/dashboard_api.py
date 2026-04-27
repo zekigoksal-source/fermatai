@@ -283,18 +283,27 @@ async def token_budget(
 ):
     await _require_admin_session(request, fermat_session)
     # T2 (Oturum 25.9): GERCEK token sayilarindan maliyet
+    # 25.22: Cerebras eklendi (Pay-as-You-Go)
     # Fiyat tablosu (USD per 1M token):
     #   Claude Sonnet 4.6: input $3, output $15 (cached: $0.30 in)
-    #   Claude Vision:     input $3, output $15 (image tokens dahil)
+    #   Cerebras Llama 3.1 8B:  input $0.10, output $0.10 (tahmin, classify icin)
+    #   Cerebras GPT-OSS 120B:  input $0.30, output $0.50 (tahmin, kavramsal)
+    #   Cerebras Qwen 3 235B:   input $0.60, output $0.80 (tahmin, kompleks)
     #   Groq Llama 3.3 70B: input $0.59, output $0.79
     #   fast_response, query_cache, ollama: $0
     PRICES = {
-        "claude":         {"in": 3.0,  "out": 15.0},
-        "claude_vision":  {"in": 3.0,  "out": 15.0},
-        "groq":           {"in": 0.59, "out": 0.79},
-        "ollama":         {"in": 0,    "out": 0},
-        "fast_response":  {"in": 0,    "out": 0},
-        "query_cache":    {"in": 0,    "out": 0},
+        "claude":           {"in": 3.0,  "out": 15.0},
+        "claude_vision":    {"in": 3.0,  "out": 15.0},
+        "cerebras":         {"in": 0.30, "out": 0.50},  # default kategori (gpt-oss-120b)
+        "cerebras_8b":      {"in": 0.10, "out": 0.10},
+        "cerebras_120b":    {"in": 0.30, "out": 0.50},
+        "cerebras_235b":    {"in": 0.60, "out": 0.80},
+        "groq":             {"in": 0.59, "out": 0.79},
+        "groq_escalated_to_claude": {"in": 0,    "out": 0},  # observability only
+        "ollama":           {"in": 0,    "out": 0},
+        "fast_response":    {"in": 0,    "out": 0},
+        "query_cache":      {"in": 0,    "out": 0},
+        "burst_limit":      {"in": 0,    "out": 0},
     }
 
     rows = await db_fetch(
@@ -318,7 +327,8 @@ async def token_budget(
                 "full_name": r['full_name'],
                 "role": r['role'],
                 "claude": 0, "groq": 0, "fast": 0, "ollama": 0,
-                "vision": 0, "total": 0,
+                "vision": 0, "cerebras": 0,  # 25.22: cerebras toplam
+                "total": 0,
                 "tok_in": 0, "tok_out": 0,
                 "cost_usd": 0.0,
             }
@@ -332,7 +342,7 @@ async def token_budget(
         u["tok_in"] += ti
         u["tok_out"] += to
 
-        # Source bucket count
+        # Source bucket count (25.22: cerebras eklendi)
         if src == "claude":
             u["claude"] += cnt
         elif src == "groq":
@@ -343,6 +353,8 @@ async def token_budget(
             u["ollama"] += cnt
         elif src == "claude_vision":
             u["vision"] += cnt
+        elif src and src.startswith("cerebras"):
+            u["cerebras"] += cnt
 
         # Cost
         p = PRICES.get(src, {"in": 0, "out": 0})
