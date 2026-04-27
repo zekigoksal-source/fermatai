@@ -138,8 +138,30 @@ A: {"page_path":"Student/attendance-report","filters":{"date_from":"<bu_hafta_ba
 Q: "Mehmet Donmez'in Nisan etutleri"
 A: {"page_path":"Student/individual-lesson","filters":{"date_from":"01.04.2026","date_to":"30.04.2026","teacher":"Mehmet Donmez"},"max_rows":50,"explain":"Mehmet Donmez ogretmenin Nisan etutleri.","confidence":0.92}
 
+Q: "bu hafta matematik etutleri"
+A: {"page_path":"Student/individual-lesson","filters":{"date_from":"<bu_hafta_basla>","date_to":"<bugun>","ders":"Matematik"},"max_rows":50,"explain":"Bu hafta matematik etutleri.","confidence":0.90}
+
+Q: "yoklama alinmamis etutler bugun"
+A: {"page_path":"Student/individual-lesson","filters":{"date_from":"<bugun>","date_to":"<bugun>","yoklama":"Alınmamış"},"max_rows":30,"explain":"Bugun yoklama alinmamis etutler.","confidence":0.88}
+
+Q: "en son hangi sinav yapildi"
+A: {"page_path":"Student/Test/test","filters":{},"max_rows":10,"explain":"Sinav degerlendirme sayfasinda en son sinavlar listelenir.","confidence":0.78}
+
+Q: "TYT sinavlarini birlestir"
+A: {"page_path":"Student/exam-combine","filters":{},"max_rows":20,"explain":"TYT sinavlari birlestir sayfasi.","confidence":0.82}
+
+Q: "12 SAY A sinif ders programi"
+A: {"page_path":"Student/timetable-class-list","filters":{"class":"12 SAY A"},"max_rows":30,"explain":"12 SAY A sinifin ders programi.","confidence":0.85}
+
+Q: "Kardelen Savci ogretmenin gecen hafta etutlerinden yoklama alinmamis olanlari"
+A: {"page_path":"Student/individual-lesson","filters":{"date_from":"<gecen_hafta_basla>","date_to":"<gecen_hafta_son>","teacher":"Kardelen Savci","yoklama":"Alınmamış"},"max_rows":50,"explain":"Kardelen Hocanin gecen hafta yoklamasiz etutleri.","confidence":0.88}
+
 Q: "kasa raporu"
 A: {"page_path":"","filters":{},"max_rows":0,"explain":"Mali sayfalar bot kapsami disinda.","confidence":0}
+
+ONEMLI:
+- Sayfa katalogundaki bir page_path ile az da olsa eslesen sorulari ASLA bos plan'la dondurme — DOGRU sayfayi sec, confidence 0.6-0.9 ver.
+- "Plan parse hatasi" benzeri bir cikti URETME — sadece JSON ver.
 """
 
 
@@ -195,27 +217,62 @@ async def plan_query(question: str, catalog: Optional[list[dict]] = None) -> dic
         f"JSON plani uret:"
     )
 
-    # Cerebras direkt — LLMRouter persona injection'ini bypass et
+    # Cerebras direkt — 503 retry + Groq fallback
+    raw = ""
+    last_err = ""
     try:
         from cerebras_handler import CerebrasClient
         if not os.getenv("CEREBRAS_API_KEY"):
             raise RuntimeError("CEREBRAS_API_KEY env yok")
         client = CerebrasClient()  # api_key env'den otomatik
-        result = await client.complete_async(
-            messages=[{"role": "user", "content": user_prompt}],
-            system=_PLANNER_SYSTEM,
-            model="gpt-oss-120b",
-            max_tokens=500,
-            temperature=0.1,  # deterministic JSON
-        )
-        if not result.get("ok"):
-            raise RuntimeError(f"cerebras error: {result.get('error', 'unknown')}")
-        raw = result.get("text", "")
+
+        # Cerebras 503 retry (3 deneme, exp backoff)
+        for attempt in range(3):
+            try:
+                result = await client.complete_async(
+                    messages=[{"role": "user", "content": user_prompt}],
+                    system=_PLANNER_SYSTEM,
+                    model="gpt-oss-120b",
+                    max_tokens=500,
+                    temperature=0.1,
+                )
+                if result.get("ok"):
+                    raw = result.get("text", "")
+                    break
+                err_str = str(result.get("error", ""))
+                last_err = err_str
+                if "503" in err_str or "high traffic" in err_str.lower():
+                    await asyncio.sleep(0.8 * (2 ** attempt))  # 0.8 / 1.6 / 3.2
+                    continue
+                break  # diger hatalar: retry yok
+            except Exception as e:
+                last_err = str(e)
+                break
     except Exception as e:
-        logger.warning(f"[PLANNER] LLM call fail: {e}")
+        last_err = f"init fail: {e}"
+
+    # Groq fallback (Cerebras yetmediyse)
+    if not raw:
+        try:
+            from llm_router import LLMRouter
+            router = LLMRouter()
+            if router._groq_available and router._groq_client:
+                groq_result = await router._groq_client.complete(
+                    messages=[{"role": "user", "content": user_prompt}],
+                    system=_PLANNER_SYSTEM,
+                    max_tokens=500,
+                )
+                if isinstance(groq_result, dict):
+                    raw = groq_result.get("text", "")
+                logger.info("[PLANNER] Groq fallback kullanildi")
+        except Exception as e:
+            logger.debug(f"[PLANNER] Groq fallback fail: {e}")
+
+    if not raw:
+        logger.warning(f"[PLANNER] Tum LLM denemeleri basarisiz: {last_err[:120]}")
         return {
             "page_path": "", "filters": {}, "max_rows": 0,
-            "explain": f"Planner LLM hatasi: {str(e)[:100]}",
+            "explain": f"Planner LLM hatasi: {last_err[:100]}",
             "confidence": 0, "raw_response": None,
         }
 
@@ -226,33 +283,51 @@ async def plan_query(question: str, catalog: Optional[list[dict]] = None) -> dic
 
 
 def _parse_plan_json(text: str) -> dict:
-    """Metin icinden JSON plan ayikla. Hata durumunda default plan don."""
-    default = {"page_path": "", "filters": {}, "max_rows": 0, "explain": "Plan parse hatasi", "confidence": 0}
-    if not text:
+    """Metin icinden JSON plan ayikla — 4 strateji.
+
+    1. ```json ... ``` blok
+    2. Ilk { ... son }
+    3. ``` ... ``` (json etiketi olmadan)
+    4. Saf JSON (text'in tamami)
+    """
+    default = {"page_path": "", "filters": {}, "max_rows": 0,
+               "explain": "Plan parse hatasi", "confidence": 0}
+    if not text or not text.strip():
         return default
-    # ```json ... ``` blok
-    m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+
+    candidates = []
+    # 1. ```json ... ```
+    m = re.search(r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", text)
     if m:
-        candidate = m.group(1)
-    else:
-        # Ilk { ... last }
-        first = text.find("{")
-        last = text.rfind("}")
-        if first < 0 or last <= first:
-            return default
-        candidate = text[first:last+1]
-    try:
-        plan = json.loads(candidate)
-        return {
-            "page_path":  str(plan.get("page_path", "")),
-            "filters":    plan.get("filters") or {},
-            "max_rows":   int(plan.get("max_rows") or 30),
-            "explain":    str(plan.get("explain", "")),
-            "confidence": float(plan.get("confidence", 0)),
-        }
-    except Exception as e:
-        logger.debug(f"[PLANNER] JSON parse fail: {e} | text={candidate[:200]}")
-        return default
+        candidates.append(m.group(1))
+    # 2. Ilk { ... son }
+    first = text.find("{")
+    last = text.rfind("}")
+    if first >= 0 and last > first:
+        candidates.append(text[first:last+1])
+    # 3. Saf — tum text JSON olabilir
+    candidates.append(text.strip())
+
+    for cand in candidates:
+        # Yaygin LLM hatalari: trailing commas, single quotes
+        cleaned = cand
+        cleaned = re.sub(r",(\s*[}\]])", r"\1", cleaned)  # trailing commas
+        try:
+            plan = json.loads(cleaned)
+            if not isinstance(plan, dict):
+                continue
+            return {
+                "page_path":  str(plan.get("page_path", "")),
+                "filters":    plan.get("filters") or {},
+                "max_rows":   int(plan.get("max_rows") or 30),
+                "explain":    str(plan.get("explain", "")),
+                "confidence": float(plan.get("confidence", 0)),
+            }
+        except Exception:
+            continue
+
+    logger.debug(f"[PLANNER] Tum parse stratejileri basarisiz: text={text[:200]}")
+    return default
 
 
 # ─── EXECUTE: PLAN -> NAVIGATE -> RESULT ──────────────────────────────────────

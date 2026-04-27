@@ -108,12 +108,16 @@ def _canon_filter(key: str) -> str:
 # ASP.NET Select2 wrapper'lari: visible olan #s2id_autogenN inputlari, ama
 # select_option underlying <select>'e (cmb*) calisiyor.
 _SELECTOR_CANDIDATES = {
-    # Tarih (text input, datepicker)
-    "date_from": ["#txtKayitBas", "#txtBeginDate", "#txtBas", "#txtTarihBas",
-                  "input[id*='Bas']:not([id*='Bit']):not([id*='Save'])",
-                  "input[name*='Bas']:not([name*='Bit'])"],
-    "date_to":   ["#txtKayitBit", "#txtEndDate", "#txtBit", "#txtTarihBit",
-                  "input[id*='Bit']", "input[name*='Bit']"],
+    # Tarih (text input, datepicker) — Eyotek farkli sayfalarda farkli id
+    # txtKayitBas/Bit (Etut Ara, Counsellor) | txtBaslangic/Bitis (Attendance) | txtBegin/End (Reports)
+    "date_from": ["#txtKayitBas", "#txtBaslangic", "#txtBeginDate", "#txtBas",
+                  "#txtTarihBas", "#txtBegin", "#txtBaslamaTarihi",
+                  "input[id*='Baslangic']", "input[id*='Bas']:not([id*='Bit']):not([id*='Save'])",
+                  "input[name*='Baslangic']", "input[name*='Bas']:not([name*='Bit'])"],
+    "date_to":   ["#txtKayitBit", "#txtBitis", "#txtEndDate", "#txtBit",
+                  "#txtTarihBit", "#txtEnd", "#txtBitisTarihi",
+                  "input[id*='Bitis']", "input[id*='Bit']:not([id*='Save'])",
+                  "input[name*='Bitis']", "input[name*='Bit']"],
 
     # Subesi (cmbSubeler — Kurs vb.)
     "branch":    ["#cmbSubeler", "#cmbSube", "#cmbSchool",
