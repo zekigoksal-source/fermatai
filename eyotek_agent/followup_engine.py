@@ -92,7 +92,7 @@ async def generate_suggestion_text(student_name: str, weak_topics: list[dict],
         client = CerebrasClient()
         first_name = student_name.split()[0] if student_name else "Arkadaşım"
         topics_str = "\n".join(
-            f"- {t['ders']}: {t['konu']} (%{int(t['sinav_hata_yuzdesi'])} hata)"
+            f"- {t['ders']}: {t['konu']} (%{int(t.get('hata_orani') or t.get('sinav_hata_yuzdesi') or 0)} hata)"
             for t in weak_topics[:3]
         )
 
@@ -126,8 +126,9 @@ Mesaj kuralları:
     # Fallback şablon
     fname = student_name.split()[0] if student_name else "Arkadaşım"
     t = weak_topics[0]
+    hata = t.get("hata_orani") or t.get("sinav_hata_yuzdesi") or 0
     return (f"{fname}, son sınavda {t['ders']}/{t['konu']} konusunda "
-            f"zorlanmışsın (%{int(t['sinav_hata_yuzdesi'])} hata). "
+            f"zorlanmışsın (%{int(hata)} hata). "
             f"Bu hafta 30dk bu konuya odaklan, sonra 5 örnek soru çöz. "
             f"Bir adım atmak yeter, devamını birlikte planlarız 💪")
 
@@ -171,7 +172,7 @@ async def queue_followup_for_student(soz_no: int, trigger: str = "exam_sync",
     feature_active = await is_feature_active()
 
     # Priority: en yüksek hata oranına göre
-    avg_hata = sum(t["sinav_hata_yuzdesi"] for t in weak) / len(weak)
+    avg_hata = sum((t.get("hata_orani") or t.get("sinav_hata_yuzdesi") or 0) for t in weak) / len(weak)
     priority = "urgent" if avg_hata >= 70 else "high" if avg_hata >= 55 else "normal"
 
     new_id = await db_fetchval(
