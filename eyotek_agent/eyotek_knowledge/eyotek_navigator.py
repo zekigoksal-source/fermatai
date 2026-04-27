@@ -221,12 +221,17 @@ async def _is_login(page) -> bool:
         return False
 
 
-async def _try_selector(page, candidates: list[str], timeout: int = 1500):
-    """Adaylar arasindan ilk gorunur olani don. None doner bulamazsa."""
+async def _try_selector(page, candidates: list[str], timeout_per_candidate: int = 600):
+    """Adaylar arasindan ilk gorunur olani don. None doner bulamazsa.
+
+    Her candidate icin wait_for_selector(state='visible', timeout=N) — modal
+    animasyonu surdugunde de yakalar. is_visible() sync ve timeout almaz, o yuzden
+    wait_for_selector kullaniyoruz.
+    """
     for sel in candidates:
         try:
-            el = await page.query_selector(sel)
-            if el and await el.is_visible(timeout=timeout):
+            el = await page.wait_for_selector(sel, state="visible", timeout=timeout_per_candidate)
+            if el:
                 return el, sel
         except Exception:
             continue
