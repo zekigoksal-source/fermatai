@@ -111,6 +111,7 @@ JSON CIKTI FORMATI (sadece JSON, baska metin YOK):
 {
   "page_path": "Student/individual-lesson",
   "filters": {"date_from": "26.04.2026", "date_to": "26.04.2026"},
+  "tab": "",  // Tabs varsa hangi tab'a geilsin (orn: 'Ogrenci Taksitleri', 'Maas Odemeleri')
   "max_rows": 30,
   "explain": "Kullanici dunun (26.04) etutlerini sordu. Etut Ara sayfasinin tarih filtresiyle.",
   "confidence": 0.95
@@ -193,13 +194,25 @@ Q: "bilanco aylik tablo"
 A: {"page_path":"Reports/balance-for-student-future-income","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"Sezon bilancosu: aylik ciro/tahsilat/kalan dagilimi.","confidence":0.90}
 
 Q: "bugun kim taksit odedi"
-A: {"page_path":"Financial/financial-operation","filters":{"date_from":"<bugun>","date_to":"<bugun>"},"max_rows":50,"explain":"Bugunun kasa girisleri (ogrenci taksitleri tabi). Soz No, Adi, Alinan, Odeme Sekli, Aciklama gosterir.","confidence":0.92}
+A: {"page_path":"Financial/financial-operation","tab":"Ogrenci Taksitleri","filters":{"date_from":"<bugun>","date_to":"<bugun>"},"max_rows":50,"explain":"Bugunun kasa girisleri (ogrenci taksitleri tabi).","confidence":0.92}
 
 Q: "dun gelen tahsilatlar"
-A: {"page_path":"Financial/financial-operation","filters":{"date_from":"<dun>","date_to":"<dun>"},"max_rows":50,"explain":"Dun yapilan ogrenci taksit tahsilatlari listesi.","confidence":0.92}
+A: {"page_path":"Financial/financial-operation","tab":"Ogrenci Taksitleri","filters":{"date_from":"<dun>","date_to":"<dun>"},"max_rows":50,"explain":"Dun yapilan ogrenci taksit tahsilatlari listesi.","confidence":0.92}
+
+Q: "bugun maas odemeleri"
+A: {"page_path":"Financial/financial-operation","tab":"Maas Odemeleri","filters":{"date_from":"<bugun>","date_to":"<bugun>"},"max_rows":30,"explain":"Bugun yapilan maas odemeleri.","confidence":0.90}
 
 Q: "Mahsum bey'in girdigi tahsilatlar bu hafta"
-A: {"page_path":"Financial/financial-operation","filters":{"date_from":"<bu_hafta_basla>","date_to":"<bugun>","kullanici":"MAHSUM YALCIN"},"max_rows":50,"explain":"Bu haftanin Mahsum tarafindan girilen tahsilatlari.","confidence":0.88}
+A: {"page_path":"Financial/financial-operation","tab":"Ogrenci Taksitleri","filters":{"date_from":"<bu_hafta_basla>","date_to":"<bugun>","kullanici":"MAHSUM YALCIN"},"max_rows":50,"explain":"Bu haftanin Mahsum tarafindan girilen tahsilatlari.","confidence":0.88}
+
+ONEMLI TAB NOTU:
+Financial/financial-operation sayfasi 10 tab icerir: Ogrenci Taksitleri, Diger Gelirler,
+Ucretli Faaliyetler, Odemeler, Giderler, Kredi Kartlari, Maas Odemeleri, Virman, Kullanici.
+Default tab "Ozet" — veri icin DOGRU TAB'a gecmen LAZIM:
+- Ogrenci taksit/tahsilat → "Ogrenci Taksitleri"
+- Personel maas → "Maas Odemeleri"
+- Genel gider → "Giderler"
+- Kart cekimleri → "Kredi Kartlari"
 
 ONEMLI URL PARAMS NOTU:
 overdue-student-payment sayfasi URL params destekler:
@@ -388,6 +401,7 @@ def _parse_plan_json(text: str) -> dict:
             return {
                 "page_path":  str(plan.get("page_path", "")),
                 "filters":    plan.get("filters") or {},
+                "tab":        str(plan.get("tab") or ""),
                 "max_rows":   int(plan.get("max_rows") or 30),
                 "explain":    str(plan.get("explain", "")),
                 "confidence": float(plan.get("confidence", 0)),
@@ -424,6 +438,7 @@ async def execute_query(question: str, max_rows: Optional[int] = None) -> dict:
         page_path=plan["page_path"],
         filters=plan["filters"],
         max_rows=eff_max,
+        tab=plan.get("tab") or None,
     )
 
     return {

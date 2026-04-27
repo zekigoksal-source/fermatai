@@ -625,6 +625,62 @@ async def inspect_page_form(page_path: str, mode: str = "auto") -> dict:
 
 # ─── PUBLIC API ───────────────────────────────────────────────────────────────
 
+_TAB_NAME_TO_ID = {
+    # financial-operation tab map (Neo screenshot)
+    "ogrenci taksitleri": "ogrenciTab",
+    "ogrenci": "ogrenciTab",
+    "taksit": "ogrenciTab",
+    "ozet": "ozetTab",
+    "diger gelirler": "digerGelirlerTab",
+    "ucretli faaliyetler": "ekstraOgrenciGelirTab",
+    "odemeler": "odemeTab",
+    "odeme": "odemeTab",
+    "giderler": "giderTab",
+    "gider": "giderTab",
+    "kredi kartlari": "kartTab",
+    "maas odemeleri": "maasTab",
+    "maas": "maasTab",
+    "virman": "virmanTab",
+    "kullanici": "kullaniciTab",
+}
+
+
+async def _click_tab(page, tab_name_or_id: str) -> Optional[str]:
+    """Tab adina veya id'ye gore Bootstrap tab tikla. None doner bulamazsa."""
+    target = tab_name_or_id.strip().lower()
+    # Map'le canonical id'ye cevir
+    tab_id = _TAB_NAME_TO_ID.get(target, tab_name_or_id.replace(" ", ""))
+    # selector adaylari (id ile veya text match)
+    candidates = [
+        f'a[href="#{tab_id}"]',
+        f'a[href$="#{tab_id}"]',
+        f'#{tab_id}-link',
+    ]
+    el, sel = await _try_selector(page, candidates, timeout_per_candidate=800)
+    if not el:
+        # Text match fallback
+        try:
+            await page.evaluate(f"""
+                () => {{
+                    const tabs = Array.from(document.querySelectorAll('a[data-toggle="tab"], .nav-tabs a'));
+                    const target = '{target}';
+                    const found = tabs.find(t => (t.innerText || '').toLowerCase().includes(target));
+                    if (found) found.click();
+                    return !!found;
+                }}
+            """)
+            await page.wait_for_timeout(800)
+            return f"text-match:{target}"
+        except Exception:
+            return None
+    try:
+        await el.click()
+        await page.wait_for_timeout(800)
+        return sel
+    except Exception:
+        return None
+
+
 async def navigate(
     page_path: str,
     filters: Optional[dict] = None,
@@ -632,6 +688,7 @@ async def navigate(
     drill: Optional[dict] = None,
     custom_selectors: Optional[dict] = None,
     wait_after_search_ms: int = 4500,
+    tab: Optional[str] = None,
 ) -> dict:
     """Generic Eyotek page navigator.
 
@@ -668,6 +725,7 @@ async def navigate(
         "columns": [], "rows": [], "row_count": 0,
         "filters_applied": {}, "filters_failed": [],
         "modal_opened": False, "search_clicked": False, "drill": None,
+        "tab_clicked": None,
         "error_code": None, "error": None, "debug": {},
     }
 
@@ -724,6 +782,13 @@ async def navigate(
                 result["error_code"] = "NO_DATA"
                 result["error"] = "URL filtresi uygulandi, tablo bos."
             return result
+
+        # TAB tikla (gerekiyorsa) — sayfa-uzeri tab degisir, MODAL'dan once gerek
+        if tab:
+            tab_used = await _click_tab(page, tab)
+            result["tab_clicked"] = tab_used
+            if tab_used:
+                await page.wait_for_timeout(800)
 
         # MODAL ac (gerekiyorsa) — URL params yoksa
         modal_opened = await _open_search_modal(page)
