@@ -283,6 +283,7 @@ async def _run_scheduled_tasks():
                         if hasattr(_run_scheduled_tasks, f'_spend_h_{_h}'):
                             delattr(_run_scheduled_tasks, f'_spend_h_{_h}')
                 try:
+                    from db_pool import db_fetch as _spend_fetch
                     PRICES = {
                         "claude":         {"in": 3.0,  "out": 15.0},
                         "cerebras_8b":    {"in": 0.10, "out": 0.10},
@@ -291,7 +292,7 @@ async def _run_scheduled_tasks():
                         "cerebras":       {"in": 0.30, "out": 0.50},
                         "groq":           {"in": 0.59, "out": 0.79},
                     }
-                    rows = await db_fetch(
+                    rows = await _spend_fetch(
                         """SELECT response_source, COUNT(*) as cnt,
                                   COALESCE(SUM(token_input),0) as ti,
                                   COALESCE(SUM(token_output),0) as to_
@@ -338,10 +339,11 @@ async def _run_scheduled_tasks():
                         try: delattr(_run_scheduled_tasks, _attr)
                         except: pass
                 try:
+                    from db_pool import db_fetchval as _hc_fetchval
                     # DB ping
                     db_ok = False
                     try:
-                        v = await db_fetchval("SELECT 1")
+                        v = await _hc_fetchval("SELECT 1")
                         db_ok = (v == 1)
                     except Exception:
                         pass
