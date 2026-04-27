@@ -428,6 +428,36 @@ TOOLS: list[dict] = [
         },
     },
     {
+        "name": "ogrenci_drilldown",
+        "description": (
+            "Tek bir öğrencinin Eyotek profil alt sayfasından veri çek. "
+            "Kullan ne zaman kullanıcı SPESIFIK bir öğrenci hakkında detay isterse: "
+            "'Mahmut Taha'nın etütleri', 'Damla Keskin yazılı notları', 'Ezgi'nin davranış kayıtları', "
+            "'Ali Kuçükuysal'ın MEB notları', 'Ayse Ecrin son sınav', 'Selin Coşkun rehberlik'. "
+            "Bot ana liste sayfasından öğrenciyi bulur, ⋯ menüsünden alt sayfaya tıklar, tabloyu okur. "
+            "Alt sayfa seçenekleri: etut | yoklama | odev | rehberlik | sinav | davranis | yazili | "
+            "meb_notlari | hedef_soru | ders_programi | boy_kilo | etkinlik."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "student": {
+                    "type": "string",
+                    "description": "Öğrenci tanımlayıcısı: 'Mahmut Taha' (ad+soyad) | 'AKKAYA' (sadece soyad) | '182' (söz_no)",
+                },
+                "alt_sayfa": {
+                    "type": "string",
+                    "description": "Alt sayfa: etut | yoklama | odev | rehberlik | sinav | davranis | yazili | meb_notlari | hedef_soru | ders_programi | boy_kilo",
+                },
+                "max_rows": {
+                    "type": "number",
+                    "description": "Max satır (varsayılan 50)",
+                },
+            },
+            "required": ["student", "alt_sayfa"],
+        },
+    },
+    {
         "name": "eyotek_query",
         "description": (
             "Eyotek'ten AGENTIC veri sorgulama — dogal dilde soru, otomatik sayfa+filtre secimi. "

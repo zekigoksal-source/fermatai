@@ -1220,6 +1220,39 @@ async def _tool_eyotek_read(page_key: str = "etut_ara", max_rows: float = 20) ->
     return await read_eyotek_page(page_key, max_rows=int(max_rows))
 
 
+async def _tool_ogrenci_drilldown(student: str, alt_sayfa: str,
+                                    max_rows: float = 50,
+                                    _caller_role: str = "admin") -> dict:
+    """Bir öğrencinin Eyotek profil alt sayfasından veri çek (drill-down).
+
+    Kullanım: tek öğrenci hakkında detaylı bilgi sorulduğunda. Bot ana liste
+    sayfasından öğrenciyi bulur, ⋯ menüsünden ilgili alt sayfaya tıklar,
+    tabloyu okur.
+
+    Args:
+        student: "Mahmut Taha" / "AKKAYA" / "182" (söz_no)
+        alt_sayfa: "etut" | "yoklama" | "rehberlik" | "sinav" | "davranis" |
+                   "yazili" | "meb_notlari" | "hedef_soru" | "ders_programi" | ...
+
+    🔒 ACL: hassas bilgiler (genel/ozel) admin/mudur, akademik bilgiler
+    rehber/ogretmen icin de acik.
+    """
+    sensitive_pages = ("genel", "ozel", "veli", "odeme", "indirim")
+    if any(p in alt_sayfa.lower() for p in sensitive_pages):
+        if _caller_role not in ("admin", "mudur"):
+            return {
+                "success": False,
+                "error": f"'{alt_sayfa}' alt sayfasi sadece admin/mudur erisimine acik.",
+            }
+
+    from eyotek_knowledge.eyotek_navigator import student_drilldown
+    return await student_drilldown(
+        student_identifier=student,
+        sub_page=alt_sayfa,
+        max_rows=int(max_rows) if max_rows else 50,
+    )
+
+
 async def _tool_eyotek_query(question: str, max_rows: float = 0,
                               _caller_role: str = "admin") -> dict:
     """Eyotek'ten AGENTIC sorgulama — Cerebras planner + parametrik navigator.
@@ -1973,6 +2006,7 @@ TOOL_DISPATCH = {
     "calculate_yks_score":      lambda p: _tool_calculate_yks_score(**p),
     "eyotek_read":              lambda p: _tool_eyotek_read(**p),
     "eyotek_query":             lambda p: _tool_eyotek_query(**p),
+    "ogrenci_drilldown":        lambda p: _tool_ogrenci_drilldown(**p),
     # C3 (Oturum 22) — Yokatlas tabanli puan tahmin
     "ogrenci_nereye_girebilir": lambda p: _tool_nereye_girebilir(**p),
     "hedef_bolum_ara":          lambda p: _tool_hedef_bolum_ara(**p),

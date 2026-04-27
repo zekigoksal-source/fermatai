@@ -921,6 +921,211 @@ async def navigate(
             pass
 
 
+# ─── OGRENCI DRILL-DOWN ────────────────────────────────────────────────────
+# Eyotek ogrenci profil alt sayfalari (ST_Id encrypted token ile):
+# Genel Bilgiler, Etut, Yoklama, Odev, Rehberlik Notu, Sinav, MEB Notu,
+# Davranis, Yazili Notlari, Hedef Soru, Boy/Kilo/Beden, vb.
+#
+# Mimari:
+#   1. Student/student ana listesine git
+#   2. Ad/Soyad/SozNo ile filtre + ARA
+#   3. Ilk satirda ⋯ context-menu btn'una tikla
+#   4. Acilan dropdown'da hedef alt sayfa linkine tikla
+#   5. Yeni sayfada (ST_Id encrypted URL) tabloyu oku
+
+_OGRENCI_ALT_SAYFA_MAP = {
+    # User-facing label → menu link text (Eyotek dropdown'unda gozuken text)
+    "etut":            ["Etüt", "Etut"],
+    "etutleri":        ["Etüt", "Etut"],
+    "yoklama":         ["Yoklama"],
+    "devamsizlik":     ["Yoklama"],
+    "odev":            ["Ödev", "Odev"],
+    "odevleri":        ["Ödev", "Odev"],
+    "rehberlik":       ["Rehberlik Notu", "Rehberlik"],
+    "rehberlik_notu":  ["Rehberlik Notu"],
+    "sinav":           ["Sınav", "Sinav"],
+    "sinav_sonuclari": ["Sınav", "Sinav"],
+    "davranis":        ["Davranış", "Davranis"],
+    "yazili":          ["Yazılı Notları", "Yazili Notlari"],
+    "yazili_notlari":  ["Yazılı Notları", "Yazili Notlari"],
+    "yazili_konulari": ["Yazılı Konuları", "Yazili Konulari"],
+    "meb_notlari":     ["MEB Yazılı Notları", "MEB Yazili Notlari"],
+    "hedef_soru":      ["Hedef Soru"],
+    "boy_kilo":        ["Boy & Kilo & Beden", "Boy"],
+    "ders_programi":   ["Ders Programı", "Ders Programi"],
+    "genel":           ["Genel Bilgiler"],
+    "ozel":            ["Özel Bilgiler", "Ozel Bilgiler"],
+    "ekstra_sinif":    ["Ekstra Sınıf", "Ekstra Sinif"],
+    "kitaplar":        ["Kitaplar"],
+    "etkinlik":        ["Etkinlik"],
+}
+
+
+async def student_drilldown(
+    student_identifier: str,
+    sub_page: str,
+    max_rows: int = 50,
+    search_field: str = "auto",  # "auto" | "ad" | "soyad" | "soz_no"
+) -> dict:
+    """Bir ogrencinin profil alt sayfasina drill-down (Eyotek context menu uzeri).
+
+    Args:
+        student_identifier: "Mahmut Taha" (ad/soyad), "182" (soz_no), "AKKAYA" (soyad)
+        sub_page: "etut" | "yoklama" | "rehberlik" | "sinav" | "davranis" | "yazili" | ...
+        max_rows: max satir
+        search_field: hangi alanda ara (auto: numerikse soz_no, harfliyse ad+soyad)
+
+    Returns: {success, student_found, profile_url, columns, rows, error}
+    """
+    result = {
+        "success": False, "student_found": None, "profile_url": None,
+        "columns": [], "rows": [], "row_count": 0,
+        "sub_page": sub_page, "error_code": None, "error": None,
+    }
+
+    canon = sub_page.lower().strip().replace(" ", "_").replace("ş", "s").replace("ı", "i")
+    candidates_text = _OGRENCI_ALT_SAYFA_MAP.get(canon)
+    if not candidates_text:
+        # Fallback: kullanicinin verdigi metin direkt menude eslesir mi?
+        candidates_text = [sub_page]
+
+    try:
+        from playwright.async_api import async_playwright
+        pw = await async_playwright().start()
+        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
+        ctx = browser.contexts[0]
+        await _inject_cookies(ctx)
+        page = await ctx.new_page()
+
+        # 1. Student listesine git
+        await page.goto(f"{_BASE_URL}Student/student", timeout=20000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(2500)
+
+        if await _is_login(page):
+            result["error_code"] = "AUTH_EXPIRED"
+            result["error"] = "Eyotek session expired."
+            return result
+
+        # 2. Modal ac, ad/soyad/soz_no ile filtre
+        await _open_search_modal(page)
+        await page.wait_for_timeout(1200)
+
+        # Identifier'i parcala
+        s = student_identifier.strip()
+        if s.isdigit():
+            # SozNo
+            await _fill_text_input(page, ["#txtSozNo", "input[id*='SozNo' i]"], s)
+        else:
+            parts = s.split()
+            if len(parts) == 1:
+                # Tek kelime — soyad olarak dene (ad'a koymak Turkce karakterli olmasi gerekiyor)
+                await _fill_text_input(page, ["#txtSoyad"], s)
+            else:
+                # Ad + soyad
+                await _fill_text_input(page, ["#txtAd"], parts[0])
+                await _fill_text_input(page, ["#txtSoyad"], " ".join(parts[1:]))
+
+        # ARA
+        await _click_search(page)
+        await page.wait_for_timeout(3500)
+
+        # 3. Ilk satirin context menu butonuna tikla
+        # Bu screenshotta ⋯ butonu (cls 'cust') — id'si yok genelde
+        clicked_menu = await page.evaluate("""
+            () => {
+                const row = document.querySelector('table tbody tr');
+                if (!row) return {error: 'no_student'};
+                // Satirdaki ad-soyad
+                const cells = Array.from(row.cells).map(c => (c.innerText||'').trim());
+                if (cells.includes('Kayıt bulunamadı!')) return {error: 'no_match'};
+                // ⋯ butonunu bul (genelde ilk td'de, cls 'cust' ya da dropdown-toggle)
+                const btns = row.querySelectorAll('a, button');
+                for (const b of btns) {
+                    const cls = b.className || '';
+                    const text = (b.innerText||'').trim();
+                    if (cls.includes('cust') || cls.includes('dropdown-toggle') || text === '⋯' || text === '...') {
+                        b.click();
+                        return {clicked: true, cell0: cells[0]||'', cell1: cells[1]||'', cells_preview: cells.slice(0,8)};
+                    }
+                }
+                // Fallback — ilk td'deki ilk a/button
+                if (btns.length) {
+                    btns[0].click();
+                    return {clicked: 'first', cells_preview: cells.slice(0,8)};
+                }
+                return {error: 'no_button'};
+            }
+        """)
+
+        if clicked_menu.get("error"):
+            result["error_code"] = "STUDENT_NOT_FOUND"
+            result["error"] = f"Ogrenci bulunamadi: {clicked_menu['error']}"
+            return result
+
+        result["student_found"] = clicked_menu.get("cells_preview", [])
+        await page.wait_for_timeout(1200)
+
+        # 4. Acilan dropdown'da hedef link'i bul ve tikla
+        link_candidates_js = json.dumps(candidates_text)
+        clicked_link = await page.evaluate(f"""
+            (candidates) => {{
+                // Tum visible link/button'lara bak (dropdown menu olarak acilanlar)
+                const all = Array.from(document.querySelectorAll('a, button, .dropdown-menu a, .dropdown-menu li'));
+                const visible = all.filter(el => {{
+                    const r = el.getBoundingClientRect();
+                    return r.width > 0 && r.height > 0;
+                }});
+                for (const cand of candidates) {{
+                    const lower = cand.toLowerCase();
+                    for (const el of visible) {{
+                        const t = (el.innerText || '').trim().toLowerCase();
+                        if (t === lower || t.includes(lower)) {{
+                            // Bu element'i tikla
+                            const href = el.getAttribute('href') || '';
+                            el.click();
+                            return {{clicked: true, text: el.innerText.trim().slice(0,50), href}};
+                        }}
+                    }}
+                }}
+                return {{error: 'no_link', candidates_tried: candidates}};
+            }}
+        """, candidates_text)
+
+        if clicked_link.get("error"):
+            result["error_code"] = "SUBPAGE_LINK_NOT_FOUND"
+            result["error"] = f"Alt sayfa link bulunamadi: {candidates_text}"
+            return result
+
+        # 5. Yeni sayfayi bekle + tabloyu oku
+        await page.wait_for_timeout(3500)
+        result["profile_url"] = page.url
+
+        cols, rows_data = await _read_table(page, max_rows)
+        result["columns"] = cols
+        result["rows"] = rows_data
+        result["row_count"] = len(rows_data)
+        result["success"] = True
+        if not rows_data:
+            result["error_code"] = "NO_DATA"
+            result["error"] = "Alt sayfa acildi ama tablo bos."
+        return result
+
+    except Exception as e:
+        result["error_code"] = "EXCEPTION"
+        result["error"] = f"{type(e).__name__}: {str(e)[:300]}"
+        logger.exception("[NAV] student_drilldown exception")
+        return result
+    finally:
+        try:
+            await page.close()
+        except Exception:
+            pass
+        try:
+            await pw.stop()
+        except Exception:
+            pass
+
+
 # ─── HIZLI YARDIMCILAR ────────────────────────────────────────────────────────
 
 def _tr_date(d) -> str:
