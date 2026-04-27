@@ -210,7 +210,10 @@ def generate_html(conversations: dict, users: dict, period_label: str) -> str:
                 </div>
                 ''')
 
-            page_display = 'block' if page_num == 0 else 'none'
+            # 25.24-fix: SON sayfa default goster (en yeni mesajlar). Eskiden 0. sayfa
+            # default acilirdi, kullanici 1-2 ay onceki mesajlari gorur, "asagiya inmiyor"
+            # hissi yaratirdi. Artik default = en son mesajlar, isteyen ◀ Onceki ile geriye gider.
+            page_display = 'block' if page_num == (total_pages - 1) else 'none'
             pages_html.append(f'''
             <div class="chat-page" id="page_{phone}_{page_num}" style="display:{page_display}">
                 {''.join(bubbles)}
@@ -219,10 +222,11 @@ def generate_html(conversations: dict, users: dict, period_label: str) -> str:
 
         # Pagination controls
         if total_pages > 1:
+            # 25.24-fix: pag-info default = son sayfa
             pagination = f'''
             <div class="pagination" id="pag_{phone}">
                 <button onclick="changePage('{phone}', -1)" class="pag-btn">◀ Önceki</button>
-                <span class="pag-info" id="paginfo_{phone}">Sayfa 1 / {total_pages}</span>
+                <span class="pag-info" id="paginfo_{phone}">Sayfa {total_pages} / {total_pages}</span>
                 <button onclick="changePage('{phone}', 1)" class="pag-btn">Sonraki ▶</button>
             </div>
             '''
@@ -597,14 +601,35 @@ function showChat(phone, el) {{
     if (panel) {{
         panel.style.display = 'flex';
         panel.style.flexDirection = 'column';
-        // Son sayfaya scroll
+        // 25.24-fix: SON sayfayi default goster (en yeni mesajlar)
+        const pages = panel.querySelectorAll('.chat-page');
+        const totalPages = pages.length;
+        if (totalPages > 0) {{
+            const lastIdx = totalPages - 1;
+            pages.forEach((p, i) => p.style.display = i === lastIdx ? 'block' : 'none');
+            pageState[phone] = lastIdx;
+            // Pagination info guncelle
+            const info = document.getElementById('paginfo_' + phone);
+            if (info) info.textContent = `Sayfa ${{lastIdx + 1}} / ${{totalPages}}`;
+        }}
+        // Mesaj alaninin EN ALTINA scroll (en son mesaj gorunsun)
         const msgs = panel.querySelector('.chat-messages');
-        if (msgs) setTimeout(() => msgs.scrollTop = msgs.scrollHeight, 50);
+        if (msgs) {{
+            requestAnimationFrame(() => {{
+                msgs.scrollTop = msgs.scrollHeight;
+                // Garanti icin 200ms sonra tekrar (DOM render gecikme korumasi)
+                setTimeout(() => msgs.scrollTop = msgs.scrollHeight, 200);
+            }});
+        }}
     }}
 }}
 
 function changePage(phone, delta) {{
-    if (!pageState[phone]) pageState[phone] = 0;
+    // 25.24-fix: pageState 0 falsy oluyordu, undefined check düzeltildi
+    if (pageState[phone] === undefined) {{
+        const pgs = document.querySelectorAll('#chat_' + phone + ' .chat-page');
+        pageState[phone] = pgs.length - 1;  // default = son sayfa
+    }}
     const pages = document.querySelectorAll('#chat_' + phone + ' .chat-page');
     const totalPages = pages.length;
     const newPage = pageState[phone] + delta;
@@ -615,9 +640,12 @@ function changePage(phone, delta) {{
     document.querySelectorAll('#paginfo_' + phone).forEach(el => {{
         el.textContent = 'Sayfa ' + (newPage + 1) + ' / ' + totalPages;
     }});
-    // Scroll top
+    // Scroll: ileri gidiyorsa (sonraki) bottom, geri gidiyorsa (önceki) top
     const msgs = document.querySelector('#chat_' + phone + ' .chat-messages');
-    if (msgs) msgs.scrollTop = 0;
+    if (msgs) {{
+        if (delta > 0) msgs.scrollTop = msgs.scrollHeight;
+        else msgs.scrollTop = 0;
+    }}
 }}
 
 function filterUsers(query) {{
