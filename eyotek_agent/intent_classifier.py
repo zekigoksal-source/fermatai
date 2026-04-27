@@ -251,6 +251,9 @@ def classify_intent(message: str) -> Optional[str]:
     Sıralı kontrol: önce güvenlik (injection/role/hassas/finans),
     sonra plan/analiz, sonra kavramsal/sohbet.
 
+    25.21: Hem orijinal hem normalize edilmiş metinde arama yapılır
+    (Türkçe karakter varyasyonları için: "kısaca" / "kisaca").
+
     Args:
         message: kullanıcı mesajı (raw)
 
@@ -262,9 +265,16 @@ def classify_intent(message: str) -> Optional[str]:
     text = message.strip()
     if not text:
         return None
+    # 25.21: normalize edilmiş varyantı da hazırla (Türkçe karakter eşleşmesi)
+    try:
+        from text_normalize import tr_normalize
+        text_norm = tr_normalize(text)
+    except Exception:
+        text_norm = text.lower()
+
     for intent_name, pattern in _INTENT_PATTERNS:
         try:
-            if pattern.search(text):
+            if pattern.search(text) or pattern.search(text_norm):
                 return intent_name
         except Exception:
             continue

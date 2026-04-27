@@ -284,7 +284,13 @@ def select_tier(
         return "full"
 
     try:
-        text_lower = (user_input or "").lower()
+        # 25.21: Türkçe normalize (bot konuşmasından çıkarılan ders:
+        # "kısaca" vs "kisaca" farklı route alıyordu — bu artık yok)
+        try:
+            from text_normalize import tr_normalize
+            text_lower = tr_normalize(user_input or "")
+        except Exception:
+            text_lower = (user_input or "").lower()
 
         # 1. Admin/mudur/yonetim → DAIMA FULL
         if role in _FULL_FORCING_ROLES:
@@ -305,8 +311,13 @@ def select_tier(
             tier_hint = None
 
         # 2. Şüpheli keyword → FULL (sızıntı önle)
+        # 25.21: keyword'ler de normalize edilip aranır
+        try:
+            from text_normalize import tr_normalize as _trn
+        except Exception:
+            _trn = lambda x: (x or "").lower()
         for kw in _SUSPICIOUS_KEYWORDS:
-            if kw in text_lower:
+            if _trn(kw) in text_lower:
                 return "full"
 
         # 3. Kişisel veri sorgusu → FULL

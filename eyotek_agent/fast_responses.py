@@ -1722,6 +1722,11 @@ OGRENCI_PATTERNS = [
     (r"(tyt|ayt|yks|lgs).*(ne\s*zaman|tarih|ka[cç]\s*g[uü]n|kald[iı])", "sinav_bilgi", "Sinav tarihi"),
     (r"(sinav|sınav)\w*\s*(ne\s*zaman|tarih)", "sinav_bilgi", "Sinav ne zaman"),
     (r"ka[cç]\s*g[uü]n\s*kald[iı]", "sinav_bilgi", "Kac gun kaldi"),
+    # 25.21 (Bot konuşmasından): "AYT sayısal hangi dersler" gibi statik müfredat soruları
+    # Eskiden Claude'a gidiyordu (~6sn), artik fast (~5ms) — token tasarrufu
+    (r"(tyt|ayt)\s*(sayisal|sözel|sozel|esit\s*agir|sozel|esit|alan|format)", "sinav_bilgi", "AYT/TYT alan/format"),
+    (r"(ayt|tyt).*(hangi\s*ders|hangi\s*alan|hangi\s*konu)", "sinav_bilgi", "AYT/TYT hangi ders"),
+    (r"(sayisal|sözel|esit\s*agir).*(hangi\s*ders|kac\s*soru|kaç\s*soru)", "sinav_bilgi", "Alan ders dağılımı"),
 
     # Foto soru hakkı / soru limiti
     (r"(ka[cç]\s*hakk[iı]m|foto\w*\s*hakk|soru\s*hakk|foto\s*limit|foto\w*\s*ka[cç])", "foto_hakki", "Foto soru hakki"),
@@ -2382,9 +2387,17 @@ async def try_fast_response(
         except Exception:
             pass
 
+    # 25.21: Türkçe normalize varyantı da hazırla (Bot Neo konuşmasından çıkan ders:
+    # "kısaca" / "kisaca" farklı route alıyordu — pattern matching ikisini de dener)
+    try:
+        from text_normalize import tr_normalize as _tr_norm
+        msg_norm = _tr_norm(message or "")
+    except Exception:
+        msg_norm = msg_lower
+
     if role == "ogrenci" and soz_no:
         for pattern, handler, desc in OGRENCI_PATTERNS:
-            if re.search(pattern, msg_lower):
+            if re.search(pattern, msg_lower) or (msg_norm != msg_lower and re.search(pattern, msg_norm)):
                 # 22.1n-neo: routing_stats.handler_name takibi
                 try: _fr_last_handler.set(handler)
                 except: pass
