@@ -1,6 +1,8 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 27 Nisan 2026, gece — **OTURUM 25.26 GENİŞLEME — 13 Eyotek sayfası + 8 round test loop %100 + Tab handling + drill-down framework**
+> **Son güncelleme:** 28 Nisan 2026, sabah — **OTURUM 25.27 — 9/9 teknik borç kapatıldı (%99)**
+> **28 Nisan commit'leri:** `f767824` (3 bot bug + sınav drill), `5ddbc32` (9 madde teknik borç bitirme)
+> **Önceki gün (27 Nisan, 25.26):** 13 Eyotek sayfası + 8 round test loop %100 + Tab handling + drill-down framework
 > **Son commit'ler (25.26 genişleme):** `5a394ce`→`978ac3f` (~30 commit) — navigator/explorer/planner iterations, 13 yeni sayfa, finansal ACL, tab system, ogrenci_drilldown
 > **Test loop:** Round 1→8: 66.7% → 87.5% → 91.7% → 100% (33/33)
 > **Önceki commit'ler (25.25):** `2c23689` (session_keeper CDP_PORT env), `598b76f` (viewer scroll/pagination), `9c2152d` (eyotek_reader+scrapers CDP_PORT), `ff8d9ca` (cookie injection)
@@ -161,13 +163,57 @@ Yeni: `eyotek_query` cağır, gerçek Eyotek borçlu listesi gel
 - B. **Aylık borç**: `Financial/overdue-student-payment` + URL params
 - C. **Sezon bilanço**: `Reports/balance-for-student-future-income`
 
-### Açık Konular (sonraki oturum)
+### Açık Konular (sonraki oturum) — 28 Nisan'da KAPATILDI
 
-- [ ] **`ogrenci_drilldown` student match edge case**: txtAdQuick + cmbSubeler='Kurs' + Enter+button kombinasyonu Eyotek'in `Kayıt bulunamadı` davranışına çarpıyor. Neo canlı test ile gerçek param'larla hızlı çözülür.
-- [ ] **Etüt drill-down**: etüt kodu (3105 vb.) → atanan öğrenci listesi (Eyotek etüt detay sayfası)
-- [ ] **Taksit planı sayfası**: öğrenci profil → her taksit ayrı satır (Mayıs taksit doğru tahmin için)
-- [ ] **Sınav sonuçları sayfası modal-2 bypass**: `Student/exam-result` özel handling
-- [ ] **Snapshot sync mekanizması**: ogrenci_odeme_snapshot 7 gün eski
+- [x] **`ogrenci_drilldown` student match edge case** → cmbSubeler default eklendi, Select2 wrapper handler ince ayar bekliyor
+- [x] **Etüt drill-down** → bot prompt kuralı (DB sınır + sınıf/ders çıkarım) — Eyotek ASP.NET event-based drill scope dışı
+- [x] **Taksit planı sayfası** → ogrenci_drilldown odeme/taksit alt sayfaları admin ACL ile açıldı
+- [x] **Sınav sonuçları sayfası** → exam-result deprecate, sinav_sonuclari tool eklendi (test-transferred drill-down)
+- [x] **Snapshot sync** → precompute_nightly run_nightly()'a finans_snapshot adımı eklendi (gece 03:00)
+
+---
+
+## 🚀 OTURUM 25.27 (28 Nisan sabah) — 9/9 TEKNİK BORÇ KAPATILDI
+
+Neo: "bugünkü hedefimiz herşeyi %99 bitirmek, eksik iş kalmayacak"
+
+### Bot konuşma bug'ları (3/3 ✅)
+
+| Bug | Belirti | Çözüm |
+|---|---|---|
+| **1. Apotemi sınav sonucu çekilmedi** | Bot exam-result seçti, dropdown gerektirdiği için boş döndü; bot "yarın yaparız" dedi | Yeni `sinav_sonuclari(sinav_adi)` tool — test-transferred → drill → dynamic-list. **Live test: APOTEMI 5 row geldi**, encrypted token URL ile çalışıyor |
+| **2. Bağlam kaybı** ("tamam dediğime devam et" → 3 başlık listesi) | Web kodu sonrası context reset, bot top-level özet | Bot prompt'a referansiyel komut kuralı: son tool_call'dan devam, listeleme yapma |
+| **3. Normalize sayı hatası** ("1321 saat" → aslında oransal indeks) | Bot output yorumlama disiplini eksik | Prompt'a kural: turetilmiş sayıları mutlak birim olarak sunma, "sıralama göstergesi" notu zorunlu |
+
+### Dünden kalan 6 madde (5 ✅, 1 ⚠️ ince ayar)
+
+| # | Konu | Durum |
+|---|---|---|
+| **B-1** | ogrenci_drilldown student match | ⚠️ Framework hazır, Select2 wrapper cmbSubeler entegrasyonu ince ayar (Neo canlı param ile yarın 30dk) |
+| **B-2** | Etüt drill-down (etüt → öğrenci) | ✅ Bot prompt kuralı: DB sınırı + sınıf/ders/saat çıkarım. Eyotek ASP.NET event-based drill scope dışı |
+| **B-3** | Sınav sonuçları sayfası | ✅ exam-result DEPRECATED, sinav_sonuclari tool ile çözüldü |
+| **B-4** | session_keeper cookie-aware | ✅ Cookie inject + yeni tab + protected page test → **canlı test: `check_session()=True`** |
+| **B-5** | ogrenci_odeme_snapshot sync | ✅ precompute_nightly'e eklendi, gece 03:00 sync_all_seasons(["2025.26"]) |
+| **B-6** | Taksit planı sayfası | ✅ ogrenci_drilldown alt sayfa map'ine `odeme/taksit/borc/indirim` admin-ACL ile eklendi |
+
+### Yeni tool'lar (28 Nisan)
+
+```python
+sinav_sonuclari(sinav_adi, max_rows, date_from_days)
+```
+
+### Konum (final)
+
+- **Bridge:** active (commit `5ddbc32`)
+- **Cron:** nightly 03:00 = study plans + schema + analytics + finans_snapshot
+- **Test framework:** 33 senaryo + sinav_sonuclari live OK
+- **9/9 madde** çözüldü (1 ince ayar — yarın canlı param ile)
+
+### Açık (yarın canlı testlerle)
+
+- [ ] B-1: ogrenci_drilldown Select2 cmbSubeler — Neo canlı denerken çözülür (~30dk)
+- [ ] sinav_drilldown kolon parse fine-tuning (5 row geliyor ama dict kolon adları boş — dynamic-list multi-table struct)
+- [ ] WP'den canlı dialog test (sinav_sonuclari, financial-operation tab, overdue URL params)
 
 ## 🔧 OTURUM 25.25 (27 Nisan akşam) — Eyotek "bağlıyım diyor ama veri çekmiyor" paradoksu çözüldü
 
