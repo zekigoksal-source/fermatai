@@ -3643,16 +3643,13 @@ class FermatCoreAgent:
                                         event_type="message", response_source=_local_provider, response_ms=2000)
                     except Exception:
                         pass
-                    # 25.14k: routing_stats'a da yazalim (bridge code path subprocess'te tetiklenmiyor)
-                    try:
-                        from db_pool import db_execute
-                        await db_execute(
-                            "INSERT INTO routing_stats (phone, role, message, response_source, response_ms, handler_name) VALUES ($1,$2,$3,$4,$5,$6)",
-                            caller_phone, role, (user_input or "")[:200],
-                            _local_provider, 2000, f"local_{_local_provider}"
-                        )
-                    except Exception as _rs_err:
-                        logger.debug(f"routing_stats yazim hata (local): {_rs_err}")
+                    # 25.22 (Bot bulgu): Duplicate routing_stats kaydi KALDIRILDI
+                    # Daha once 25.14k Groq invisibility fix'inde subprocess test
+                    # icin eklenmistik, ancak bridge ana akis (whatsapp_bridge.py:3346)
+                    # zaten production'da routing_stats yaziyor → duplicate.
+                    # tools_used'a [f"{_local_provider}_local"] zaten yazıldı (yukarıda),
+                    # bridge oradan source detect edip routing_stats'a yazıyor.
+                    # NOT: subprocess test'lerde bu olmazdı ama gerçek production'da var.
                     # Self-Observation: kalite degerlendirmesi
                     try:
                         from self_observer import log_quality
