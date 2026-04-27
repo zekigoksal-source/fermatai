@@ -1271,23 +1271,27 @@ async def student_drilldown(
         await _fill_dropdown(page, ["#cmbSubeler"], "Kurs")
         await page.wait_for_timeout(400)
 
-        # Identifier parse
+        # Identifier parse — KRITIK: Eyotek'in txtAd/txtSoyad cogu kez tam-eslesme
+        # bekliyor; "Mahmut Taha Akkaya" gibi 3 parcali isimde "Mahmut Taha" ad
+        # olabilir, naïve split bozuk. txtAdQuick (sayfa ustu hizli arama) free-text
+        # LIKE arama yapar — onu birinci sira kullan.
         if s.isdigit():
-            # Soz no — modal'da quick area var
+            # Soz no
             await _fill_text_input(page, ["#txtAdQuick", "input[id*='AdQuick' i]",
                                           "input[id*='SozNo' i]"], s)
         else:
-            parts = s.split()
-            if len(parts) == 1:
-                # Tek kelime: hem ad hem soyad alanlarini dene (LIKE)
-                # txtAd'a yazinca eslesmiyor — hızlı arama txtAdQuick uygun
-                await _fill_text_input(page, ["#txtAdQuick", "input[id*='AdQuick' i]"], s)
-                # Fallback: soyad alanına da
-                await _fill_text_input(page, ["#txtSoyad"], s)
-            else:
-                # Ad + soyad ayri
-                await _fill_text_input(page, ["#txtAd"], parts[0])
-                await _fill_text_input(page, ["#txtSoyad"], " ".join(parts[1:]))
+            # Tum string'i txtAdQuick'e ver (ad+soyad+tc kabul eder, LIKE arama)
+            quick_used = await _fill_text_input(
+                page, ["#txtAdQuick", "input[id*='AdQuick' i]"], s
+            )
+            if not quick_used:
+                # Quick alani yoksa — son kelimeyi soyad, oncesi ad olarak ayir
+                parts = s.split()
+                if len(parts) == 1:
+                    await _fill_text_input(page, ["#txtSoyad"], s)
+                else:
+                    await _fill_text_input(page, ["#txtAd"], " ".join(parts[:-1]))
+                    await _fill_text_input(page, ["#txtSoyad"], parts[-1])
 
         # ARA — modal'in icindeki #btnSearch
         await _click_search(page)
