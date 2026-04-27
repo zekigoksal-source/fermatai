@@ -117,6 +117,23 @@ async def run_nightly():
     report["steps"]["analytics_cache"] = "ok" if ok else "fail"
     logger.info(f"  📈 Analytics cache: {report['steps']['analytics_cache']}")
 
+    # 4. Finans snapshot sync (28 Nisan eklendi — Neo "snapshot 7gun eski" buldu)
+    try:
+        from finans_eyotek_reader import sync_all_seasons
+        # Sadece aktif sezon (2025.26) — diger sezonlar manuel
+        finans_report = await sync_all_seasons(
+            sezonlar=["2025.26"], dry_run=False, skip_past_students=True
+        )
+        ok_count = sum(
+            1 for s in finans_report.get("sezonlar", {}).values()
+            if not s.get("error")
+        )
+        report["steps"]["finans_snapshot"] = f"ok ({ok_count} sezon)"
+        logger.info(f"  💰 Finans snapshot sync: {ok_count} sezon")
+    except Exception as e:
+        report["steps"]["finans_snapshot_err"] = str(e)[:200]
+        logger.warning(f"  💰 Finans snapshot sync hata: {e}")
+
     elapsed = (datetime.now() - start).total_seconds()
     report["elapsed_sn"] = round(elapsed, 2)
     logger.info(f"🌙 [NIGHTLY] Tamamlandi ({elapsed:.1f}s)")

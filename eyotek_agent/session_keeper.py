@@ -72,28 +72,75 @@ def update_status(status: str, detail: str = ""):
 
 
 async def check_session() -> bool:
-    """Session gecerli mi? Once CDP ile, fallback HTTP."""
-    # Yontem 1: CDP — Chrome tab uzerinden kontrol (en guvenilir)
+    """Session gecerli mi? Cookie-aware — yeni tab acip cookie inject ile test eder.
+
+    25.27 fix: Eski versiyonda 9333'teki STUCK Turnstile tab'a bakiyordu, "OFFLINE"
+    diyordu — halbuki cookie injection ile gercek API calismaktadir. Artik:
+      1. CDP'ye bagli ol
+      2. Cookie file'dan inject et
+      3. Yeni tab ac, /Pages/Staff/home'a git
+      4. Login'e dusulmedi VE protected page render ettiyse: ONLINE
+    """
+    cookies = load_session()
+    if not cookies:
+        return False
+
+    # Yontem 1: CDP + cookie inject + yeni tab test
+    pw = None
+    page = None
     try:
         from playwright.async_api import async_playwright
         pw = await async_playwright().start()
         try:
             browser = await pw.chromium.connect_over_cdp(CDP_URL)
             ctx = browser.contexts[0]
-            for page in ctx.pages:
-                if "eyotek" in page.url.lower():
-                    has_login = await page.evaluate(
-                        "() => !!document.getElementById('btnLogin')")
-                    return not has_login
+            # Cookie'leri ctx'e merge et (eyotek_reader gibi)
+            valid_cookies = []
+            for c in cookies:
+                if not c.get("name") or c.get("value") is None:
+                    continue
+                valid_cookies.append({
+                    "name": c["name"],
+                    "value": c["value"],
+                    "domain": c.get("domain") or "fermat.eyotek.com",
+                    "path": c.get("path") or "/",
+                    **{k: c[k] for k in ("expires", "httpOnly", "secure", "sameSite")
+                       if k in c and c[k] is not None},
+                })
+            if valid_cookies:
+                try:
+                    await ctx.add_cookies(valid_cookies)
+                except Exception:
+                    pass
+            # Yeni tab + protected page navigate
+            page = await ctx.new_page()
+            await page.goto(f"{BASE_URL}/Pages/Staff/home",
+                            timeout=10000, wait_until="domcontentloaded")
+            await page.wait_for_timeout(1500)
+            url = page.url.lower()
+            # Login'e redirect olduysa: false
+            if "login" in url or url.rstrip("/").endswith("/v1"):
+                return False
+            # Protected sayfa yuklendi mi?
+            has_login = await page.evaluate(
+                "() => !!document.querySelector('input[type=password]') || !!document.getElementById('btnLogin')")
+            return not has_login
         finally:
-            await pw.stop()
+            try:
+                if page:
+                    await page.close()
+            except Exception:
+                pass
     except Exception:
         pass
+    finally:
+        try:
+            if pw:
+                await pw.stop()
+        except Exception:
+            pass
 
-    # Yontem 2: HTTP GET fallback
-    cookies = load_session()
-    if not cookies:
-        return False
+    # Yontem 2: HTTP GET fallback (CDP erisilemezse)
     try:
         async with httpx.AsyncClient(follow_redirects=False, timeout=10) as client:
             r = await client.get(

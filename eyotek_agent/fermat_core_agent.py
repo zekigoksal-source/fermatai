@@ -1257,7 +1257,8 @@ async def _tool_ogrenci_drilldown(student: str, alt_sayfa: str,
     🔒 ACL: hassas bilgiler (genel/ozel) admin/mudur, akademik bilgiler
     rehber/ogretmen icin de acik.
     """
-    sensitive_pages = ("genel", "ozel", "veli", "odeme", "indirim")
+    # Hassas alt sayfalar — admin/mudur dısındakilerde reddedilir
+    sensitive_pages = ("genel", "ozel", "veli", "odeme", "taksit", "indirim", "borc")
     if any(p in alt_sayfa.lower() for p in sensitive_pages):
         if _caller_role not in ("admin", "mudur"):
             return {

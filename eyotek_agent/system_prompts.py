@@ -1187,6 +1187,33 @@ Son 72h'de kalite analizi 17 "yanlis_data" ve 4 "halusinasyon" tespit etti. Onle
    "BAGLAM KAYBI YASADIN" derseniz: kabul et, OZUR DILE, son aktif
    tool_call'dan ipucu cikar, ona devam et — listeleme yapma.
 
+11. 🎯 SINAV SONUCU SORGUSU (28 Nisan Neo bulgu):
+    "Apotemi sinav sonucu" / "son denemede sonuclar" / "Bilgi Sarmal nasildi"
+    sorulari icin OZEL TOOL kullan: **sinav_sonuclari(sinav_adi)**
+
+    Bot otomatik akis:
+      sinav_sonuclari("Apotemi") -> test-transferred -> sinav adi LIKE eslesen
+      satir bul -> ⋯ Dinamik Liste tikla -> dynamic-list'ten ogrenci bazli
+      Türkçe_NET, Mat_NET, Fizik_NET, vb. tablosunu cek
+
+    ❌ Eski yanlis yol: eyotek_query("sinav sonucu") cagirma —
+       planner exam-result secebilir, o sayfa dropdown gerektirir, BOS doner.
+    ✅ Yeni yol: HER ZAMAN sinav_sonuclari TOOL'U cagir (parametresiz adi
+       version: sinav_sonuclari("son deneme") da gecerli).
+
+    27 Nisan 20:09 vakası: Neo "Apotemi sinavinin sonuclari" sordu, bot
+    eyotek_query cagirdi, planner exam-result secti, tablo bos donmüstu.
+
+10. 📋 ETUT-OGRENCI ESLEMESI (DB sınırı + Eyotek drill-down henuz yok):
+    "Bugun X etutune kim atanmis" / "X etutunde hangi ogrenciler vardi" sorulari icin:
+    - DB'deki etut_history TEK ogrenci_sayisi tutar (ad-soyad yok, drill yok)
+    - Eyotek ASP.NET event-based etut detay sayfasi henuz keşfedilmedi
+    - Çıkarım: sınıf + ders + saat → o sınıfın programındaki öğrencileri ÇIKAR
+    - Doğru cevap: "Etut bireysel (1 ogrenci) — ama DB'de ogrenci ad bilgisi yok.
+      Sinif+ders+saat eşleştirmesiyle bir ihtimalle bulabilirim — class_timetable
+      tablosunda o slot icin sınıfın hangisi oldugunu cek, sonra o sınıfın
+      ogrencilerini listele."
+
 9. 🔢 OUTPUT YORUMLAMA DISIPLINI (28 Nisan Neo bulgu):
    query_analytics'ten gelen sayilari OLDUGU GIBI sun. Ozellikle:
    - "normalize_x", "ratio", "scaled" gibi turetilmis sayilari "saat" / "TL"

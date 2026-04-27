@@ -937,6 +937,11 @@ _OGRENCI_ALT_SAYFA_MAP = {
     # User-facing label → menu link text (Eyotek dropdown'unda gozuken text)
     "etut":            ["Etüt", "Etut"],
     "etutleri":        ["Etüt", "Etut"],
+    # Finansal alt sayfalar (admin-only ACL — fermat_core_agent.py icinde)
+    "odeme":           ["Ödeme", "Odeme"],
+    "taksit":          ["Ödeme", "Odeme"],   # taksit detayi odeme sayfasi icinde
+    "borc":            ["Ödeme", "Odeme"],
+    "indirim":         ["İndirimler", "Indirimler"],
     "yoklama":         ["Yoklama"],
     "devamsizlik":     ["Yoklama"],
     "odev":            ["Ödev", "Odev"],
@@ -1155,50 +1160,38 @@ async def student_drilldown(
             result["error"] = "Eyotek session expired."
             return result
 
-        # 2. STRATEGY: Hizli arama — txtAdQuick (sayfa ustundeki, modal degil)
-        # Bu input modal acmadan, sayfa ustunde her zaman gorunur
-        # Ad+Soyad+TC hepsini kabul eder, free-text LIKE arama yapar
+        # 2. STRATEGY: Modal ac + Sube=Kurs default + ad/soyad/sozno fill + ARA
+        # (txtAdQuick approach Eyotek davranisi yuzunden tutarsiz — modal yolu
+        # daha guvenilir, cmbSubeler='Kurs' set edince sonuc geliyor)
         s = student_identifier.strip()
-        used_quick = await _fill_text_input(page, ["#txtAdQuick", "input[id*='AdQuick' i]"], s)
+        await _open_search_modal(page)
+        await page.wait_for_timeout(1500)
 
-        if used_quick:
-            # txtAdQuick yaninda magnifier icon var, ya da Enter — ikisini de dene
-            try:
-                el = await page.query_selector("#txtAdQuick")
-                if el:
-                    await el.press("Enter")
-            except Exception:
-                pass
-            # Magnifier icon (#btnQuickSearch veya benzeri)
-            for sel in ["#btnQuickSearch", "button[onclick*='QuickSearch']",
-                        "i.fa-search ~ button", "a[onclick*='QuickSearch']",
-                        "button.btn-icon-only", "a.btn-icon-only"]:
-                try:
-                    el = await page.query_selector(sel)
-                    if el and await el.is_visible():
-                        await el.click()
-                        break
-                except Exception:
-                    continue
-            await page.wait_for_timeout(3000)
+        # KRITIK: Sube='Kurs' set et (default boş olabilir, sonuç dönmüyor)
+        await _fill_dropdown(page, ["#cmbSubeler"], "Kurs")
+        await page.wait_for_timeout(400)
+
+        # Identifier parse
+        if s.isdigit():
+            # Soz no — modal'da quick area var
+            await _fill_text_input(page, ["#txtAdQuick", "input[id*='AdQuick' i]",
+                                          "input[id*='SozNo' i]"], s)
         else:
-            # Fallback: modal ac, ad/soyad doldur
-            await _open_search_modal(page)
-            await page.wait_for_timeout(1200)
-            # Sube=Kurs otomatik (default genelde Kurs ama secili olmayabilir)
-            await _fill_dropdown(page, ["#cmbSubeler"], "Kurs")
-            if s.isdigit():
-                # SozNo direct yok ama txtAdQuick'e numara da yazabilir
+            parts = s.split()
+            if len(parts) == 1:
+                # Tek kelime: hem ad hem soyad alanlarini dene (LIKE)
+                # txtAd'a yazinca eslesmiyor — hızlı arama txtAdQuick uygun
                 await _fill_text_input(page, ["#txtAdQuick", "input[id*='AdQuick' i]"], s)
+                # Fallback: soyad alanına da
+                await _fill_text_input(page, ["#txtSoyad"], s)
             else:
-                parts = s.split()
-                if len(parts) == 1:
-                    await _fill_text_input(page, ["#txtSoyad"], s)
-                else:
-                    await _fill_text_input(page, ["#txtAd"], parts[0])
-                    await _fill_text_input(page, ["#txtSoyad"], " ".join(parts[1:]))
-            await _click_search(page)
-            await page.wait_for_timeout(3500)
+                # Ad + soyad ayri
+                await _fill_text_input(page, ["#txtAd"], parts[0])
+                await _fill_text_input(page, ["#txtSoyad"], " ".join(parts[1:]))
+
+        # ARA — modal'in icindeki #btnSearch
+        await _click_search(page)
+        await page.wait_for_timeout(4000)
 
         # 3. Ilk satirin context menu butonuna tikla
         # Bu screenshotta ⋯ butonu (cls 'cust') — id'si yok genelde

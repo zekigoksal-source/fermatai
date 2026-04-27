@@ -236,6 +236,15 @@ Aylik borc/taksit/odeme sorulari icin BU sayfayi sec, URL params ile filtreyi go
 
 ZORUNLU: Soruda zaman ifadesi varsa (dun, Nisan, gecen hafta vs.) ve sayfa date_from kabul ediyorsa filter MUTLAKA EKLE.
 ZORUNLU: Sayfa katalogu ile az da olsa eslesen sorulari bos plan'la DONDURME — sec, confidence 0.6+.
+
+❌ DEPRECATED PAGE — ASLA SECME:
+- Student/exam-result : Bu sayfa dropdown'dan sinav secimi gerektirir, tablo bos doner.
+  Sınav SONUCU sorulari icin Student/test-transferred SEC (filter date_from=son30gun).
+  Ya da daha iyisi: Bot 'sinav_sonuclari' tool'unu kullansin — bu plannerdan
+  cıkmaz ama bot sistem prompt'unda bu yonlendirme var.
+
+Q: "Apotemi sinav sonuclari" → planner cevabi:
+A: {"page_path":"Student/test-transferred","filters":{"date_from":"<30g_once>","date_to":"<bugun>"},"max_rows":30,"explain":"Apotemi sinavi 30g icindeki sinav listesinde aranir, drill-down ile dynamic-list'e gecilir.","confidence":0.85}
 """
 
 
