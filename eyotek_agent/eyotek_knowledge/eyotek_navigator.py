@@ -318,10 +318,68 @@ async def _read_table(page, max_rows: int) -> tuple[list[str], list[dict]]:
     return headers, rows_data
 
 
-async def inspect_page_form(page_path: str) -> dict:
+_INSPECT_JS = """
+() => {
+    function descLabel(el) {
+        if (el.id) {
+            const lbl = document.querySelector(`label[for="${el.id}"]`);
+            if (lbl) return (lbl.innerText || '').trim();
+        }
+        const fg = el.closest('.form-group, .col, .row, td, div');
+        if (fg) {
+            const lbl = fg.querySelector('label');
+            if (lbl) return (lbl.innerText || '').trim();
+        }
+        return el.placeholder || '';
+    }
+    const visible = el => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+    };
+    const inputs = Array.from(document.querySelectorAll('input')).filter(visible).map(el => ({
+        id: el.id, name: el.name || '', type: el.type,
+        placeholder: el.placeholder || '',
+        value: el.value || '',
+        label: descLabel(el),
+        cls: el.className || '',
+    }));
+    const selects = Array.from(document.querySelectorAll('select')).filter(visible).map(el => ({
+        id: el.id, name: el.name || '',
+        label: descLabel(el),
+        options: Array.from(el.options).slice(0, 10).map(o => ({v: o.value, t: (o.innerText || '').trim()})),
+        optionCount: el.options.length,
+    }));
+    const buttons = Array.from(document.querySelectorAll('button, input[type=button], input[type=submit], a.btn'))
+        .filter(visible).slice(0, 30).map(el => ({
+            id: el.id, name: el.name || '',
+            text: (el.innerText || el.value || '').trim().slice(0, 60),
+            cls: el.className || '',
+        }));
+    // Modal'lari say (ister hidden ister visible)
+    const modals = Array.from(document.querySelectorAll('.modal, [role=dialog], .ui-dialog'));
+    const modalsList = modals.map(m => ({
+        id: m.id || '',
+        cls: m.className || '',
+        visible: visible(m),
+        innerInputs: m.querySelectorAll('input, select').length,
+    }));
+    const tables = document.querySelectorAll('table').length;
+    const tbodyRows = document.querySelectorAll('table tbody tr').length;
+    return { inputs, selects, buttons, modals: modalsList, tables, tbodyRows };
+}
+"""
+
+
+async def inspect_page_form(page_path: str, mode: str = "auto") -> dict:
     """Sayfadaki TUM form input/select/button'lari listele — schema discovery icin.
 
-    Returns: {url, inputs: [...], selects: [...], buttons: [...], tables: int}
+    mode:
+      - "auto"   : modal varsa ac, sonra inspect
+      - "raw"    : modal acmadan oldugu gibi
+      - "modal"  : modal'i zorla ac (ARA gibi butonu tikla)
+      - "after_search" : Search/ARA tikla, sonra inspect (tablo state'i)
+
+    Returns: {url, inputs, selects, buttons, modals, tables, tbodyRows}
     """
     try:
         from playwright.async_api import async_playwright
@@ -341,57 +399,34 @@ async def inspect_page_form(page_path: str) -> dict:
         if await _is_login(page):
             return {"error": "AUTH_EXPIRED", "url": page.url}
 
-        # Modal acmayi dene (filtreler genelde modal'da)
-        await _open_search_modal(page)
-        await page.wait_for_timeout(500)
+        # MODE'a gore aksiyon
+        if mode == "auto":
+            await _open_search_modal(page)
+            await page.wait_for_timeout(800)
+        elif mode == "modal":
+            # Tum candidates'i sirayla dene
+            for sel in _MODAL_OPEN_CANDIDATES:
+                try:
+                    el = await page.query_selector(sel)
+                    if el and await el.is_visible():
+                        await el.click()
+                        await page.wait_for_timeout(1200)
+                        break
+                except Exception:
+                    continue
+        elif mode == "after_search":
+            # Once modal ac
+            await _open_search_modal(page)
+            await page.wait_for_timeout(500)
+            # Sonra search
+            await _click_search(page)
+            await page.wait_for_timeout(4000)
+        # raw: hicbir sey yapma
 
-        info = await page.evaluate("""
-            () => {
-                function descLabel(el) {
-                    // Once kendi label
-                    if (el.id) {
-                        const lbl = document.querySelector(`label[for="${el.id}"]`);
-                        if (lbl) return (lbl.innerText || '').trim();
-                    }
-                    // Sonra parent (.col, .form-group) icindeki label
-                    const fg = el.closest('.form-group, .col, .row, td, div');
-                    if (fg) {
-                        const lbl = fg.querySelector('label');
-                        if (lbl) return (lbl.innerText || '').trim();
-                    }
-                    return el.placeholder || '';
-                }
-
-                const visible = el => {
-                    const r = el.getBoundingClientRect();
-                    return r.width > 0 && r.height > 0;
-                };
-
-                const inputs = Array.from(document.querySelectorAll('input')).filter(visible).map(el => ({
-                    id: el.id, name: el.name || '', type: el.type,
-                    placeholder: el.placeholder || '',
-                    value: el.value || '',
-                    label: descLabel(el),
-                    cls: el.className || '',
-                }));
-                const selects = Array.from(document.querySelectorAll('select')).filter(visible).map(el => ({
-                    id: el.id, name: el.name || '',
-                    label: descLabel(el),
-                    options: Array.from(el.options).slice(0, 10).map(o => ({v: o.value, t: (o.innerText || '').trim()})),
-                    optionCount: el.options.length,
-                }));
-                const buttons = Array.from(document.querySelectorAll('button, input[type=button], input[type=submit], a.btn'))
-                    .filter(visible).slice(0, 30).map(el => ({
-                        id: el.id, name: el.name || '',
-                        text: (el.innerText || el.value || '').trim().slice(0, 60),
-                        cls: el.className || '',
-                    }));
-                const tables = document.querySelectorAll('table').length;
-                return { inputs, selects, buttons, tables };
-            }
-        """)
+        info = await page.evaluate(_INSPECT_JS)
         info["url"] = page.url
         info["page_path"] = page_path
+        info["mode"] = mode
         return info
     except Exception as e:
         return {"error": f"{type(e).__name__}: {str(e)[:200]}"}
@@ -707,14 +742,19 @@ if __name__ == "__main__":
             print(f"  ROW: {row}")
 
     async def _inspect():
+        # CLI: python -m eyotek_navigator inspect <path> [mode]
         path = sys.argv[2] if len(sys.argv) > 2 else "Student/individual-lesson"
-        print(f"--- INSPECT {path} ---")
-        info = await inspect_page_form(path)
+        mode = sys.argv[3] if len(sys.argv) > 3 else "auto"
+        print(f"--- INSPECT {path} (mode={mode}) ---")
+        info = await inspect_page_form(path, mode=mode)
         if info.get("error"):
             print(f"ERROR: {info['error']}")
             return
         print(f"URL: {info.get('url')}")
-        print(f"Tables: {info.get('tables', 0)}")
+        print(f"Tables: {info.get('tables', 0)}  tbody_rows: {info.get('tbodyRows', 0)}")
+        print(f"\n=== MODALS ({len(info.get('modals', []))}) ===")
+        for m in info.get("modals", []):
+            print(f"  #{m.get('id') or '<noid>'} visible={m.get('visible')} inner_inputs={m.get('innerInputs')} cls='{m.get('cls','')[:50]}'")
         print(f"\n=== INPUTS ({len(info.get('inputs', []))}) ===")
         for i in info.get("inputs", []):
             extra = f" name='{i['name']}'" if i.get("name") else ""
