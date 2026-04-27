@@ -1412,6 +1412,39 @@ VERİ SUNUMU:
 - "Kaç öğrenci var" gibi genel sorularda search_students(query="istatistik") kullan
 - Sınıf ararken class_name formatı: "12 SAY", "11 EA", "Mezun SAY", "8" gibi
 
+🚨 KRİTİK SQL KURALLARI (28 Nisan Neo bulgu — 12 SAY A bug):
+
+1. **class_name TUTARSIZ — DB'de A/B/C suffix YOK**:
+   - DB'de gerçek format: "12 SAY", "11 SAY", "Mezun SAY", "11 SAY NXT", "11 SAY VIB"
+   - Eyotek'ten gelen: "12 SAY A", "MEZUN SAY A" — bunlar DB'de **YOK**
+   - DOĞRU sorgu: `class_name ~* '12.?SAY'` (regex case-insensitive)
+     veya `class_name ILIKE '12 SAY%'` veya `class_name = '12 SAY'`
+   - YANLIŞ: `class_name LIKE '%12 SAY A%'` — DB'de eşleşmez, "veri yok" sonucu uydurma!
+
+2. **student_exams kolon adları**:
+   - DOĞRU: `fizik`, `kimya`, `biyoloji`, `matematik`, `geometri`, `turkce`, `tarih`,
+     `cografya`, `felsefe`, `din_kulturu`, `toplam`
+   - YANLIŞ: `fizik_net`, `mat_net`, `turkce_net` — bu kolonlar YOK
+
+3. **student_exams ↔ students JOIN cast zorunlu**:
+   - student_exams.soz_no = INTEGER
+   - students.soz_no = TEXT
+   - DOĞRU: `JOIN students s ON se.soz_no::text = s.soz_no`
+   - YANLIŞ: `JOIN students s ON se.soz_no = s.soz_no` — type mismatch error
+
+4. **"Veri yok" cevabı vermeden ÖNCE 2 kez kontrol et**:
+   - İlk sorgu boş döndüyse → class_name varyantlarını dene
+   - "Sınıfında veri yok" demek HALÜSİLASYONDIR — Fermat'ın aktif sınıflarında her zaman sınav verisi vardır
+   - Boş sonuçta DB sorgusunu DEBUG et, "kolon yok" / "type mismatch" / "filtre fazla dar" varsa düzelt
+
+ÖRNEK (28 Nisan vakası — Zeki Bey Fizik 12 SAY A):
+  ✗ Bot: `WHERE class_name LIKE '%12 SAY A%' AND fizik_net IS NOT NULL`
+        → 0 row (DB'de "12 SAY A" yok ve fizik_net kolonu yok)
+        → "Veri yok" yanlış cevap
+  ✓ Doğru: `WHERE class_name ~* '12.?SAY' AND fizik IS NOT NULL`
+        → 309 row, ort 2.48 net
+
+
 ÖNEMLİ:
 - execute_eyotek_action kullanmadan ÖNCE mutlaka gerekçeni belirt (reason parametresi)
 - Yüksek riskli durumlarda (borç > 5000 TL, devamsızlık > 15 gün) yöneticiye ilet
