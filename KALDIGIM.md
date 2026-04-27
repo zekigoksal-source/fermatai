@@ -1,11 +1,29 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 28 Nisan 2026, öğlen — **OTURUM 25.23 — BOT DEV BULGULARI UYGULANDI**
-> **Son commit:** `b754d0e` (Atlas-2 Cerebras), `6f7a994` (duplicate fix), `1b5dbd2` (dashboard pricing) · Cerebras entegrasyon: `2d190d1`
-> **Backup tags:** `oturum-25-22-cerebras-live`, `oturum-25-22-pre-cerebras`, `oturum-25-20-modular-disabled`, ...
-> **Sistem:** ✅ bridge active, 4/4 endpoint 200, **4 LLM provider aktif** (Cerebras primary + Groq fallback + Ollama embed + Claude tool)
-> **Aylık maliyet projeksiyonu (120 öğrenci):** ~$172 (eski sadece Claude $300 → -%43)
-> **BLUEPRINT.md** mevcut (851 satır, ortak okuyabilir)
+> **Son güncelleme:** 27 Nisan 2026, akşam — **OTURUM 25.25 — Eyotek CDP gerçek bağlantı + viewer scroll + 3 fix komitlendi**
+> **Son commit'ler (oturum 25.25):** `2c23689` (session_keeper CDP_PORT env), `598b76f` (viewer scroll/pagination), `9c2152d` (eyotek_reader+scrapers CDP_PORT), `ff8d9ca` (cookie injection — bot artık gerçekten Eyotek okuyor)
+> **Önceki commit'ler:** `b754d0e` (Atlas-2 Cerebras), `4965694` (viewer pagination ters), `2d190d1` (Cerebras entegrasyon)
+> **Backup tags:** `oturum-25-22-cerebras-live`, `oturum-25-22-pre-cerebras`, `oturum-25-20-modular-disabled`
+> **Sistem:** ✅ bridge active, **Eyotek read GERÇEKTEN ÇALIŞIYOR** (etut_ara 2 row, ogrenci_listesi 1 row, devamsizlik 2 row test ettik), 4 LLM provider aktif
+
+## 🔧 OTURUM 25.25 (27 Nisan akşam) — Eyotek "bağlıyım diyor ama veri çekmiyor" paradoksu çözüldü
+
+Neo: "botla konuşmama bak eyoteğe aslında bağlı olması lazımdı API desteği de aldık sorun ne anlamadım"
+
+### Kök neden (3 katmanlı)
+1. **VPS Chromium 9333'te, kod 9222'ye bağlanıyordu** — `session_keeper.py`, `eyotek_knowledge/eyotek_reader.py` ve 4 sync scraper'da hardcoded `http://localhost:9222`. Bot `eyotek_read` çağırınca `ECONNREFUSED ::1:9222` alıyordu.
+2. **Persistent Chromium'un cookie jar'ı boş** — `eyotek_auto_login` ayrı bir headless Chromium spawn edip CapSolver ile CAPTCHA çözüyor + cookie'leri `.eyotek_session.json`'a kaydediyor. 9333'teki uzun ömürlü Chromium'a bu cookie'ler hiç geçmiyordu → `ctx.new_page().goto(...)` her seferinde login'e redirect.
+3. **Conversation viewer scroll çalışmıyordu** — `.chat-panel`'in CSS kuralı yoktu (`flex-direction:column`/`min-height:0` eksik); sayfa geçişlerinde scroll yön çevrik (Önceki→top yerine bottom olmalı).
+
+### Çözümler
+- `CDP_PORT` env var (default 9222, VPS'te `.env`'e `CDP_PORT=9333` eklendi) → `session_keeper.py` + `eyotek_reader.py` + 4 sync scraper hepsinde aynı env'den okuyor
+- `eyotek_reader._ensure_ctx_cookies()` — her okuma çağrısı öncesi `.eyotek_session.json`'dan `ctx.add_cookies()` ile inject; tab login'e dökülürse net hata
+- `conversation_viewer.py`: `.chat-panel { display:flex; flex-direction:column; height:100%; min-height:0 }` + `.chat-messages { min-height:0 }` (CRITICAL nested flex+overflow), duplicate id'ler `data-phone` attribute'a çevrildi, `changePage()` scroll yönü düzeltildi (Önceki→bottom = okuma süreklilik), `requestAnimationFrame`+200ms safety
+- Live test: `etut_ara`/`ogrenci_listesi`/`devamsizlik` hepsi success=True, gerçek kolonlar (`Şube`/`Gün`/`Sınıf`/saat slotları) dönüyor
+
+### Açık (sonraki oturum)
+- `session_keeper.check_session()` hala 9333'teki STUCK tab'a bakıp OFFLINE diyor → `is_eyotek_available()` False döndüğü için yazma actions (write_etut, counsellor_note) bloklu. Aslında okuma çalışıyor; kontrol mantığı cookie-injection sonrası gerçek auth state'i yansıtmalı.
+- Bot bazı durumlarda "eyotek bağlı" diye yanıt veriyordu — kaynağı henüz tespit edilmedi (`fast_responses` veya bir status komutu olabilir). Yanlış yönlendirme.
 
 ## 🎯 OTURUM 25.24 (28 Nisan akşamüstü) — %95 PRODUCTION READY+
 
