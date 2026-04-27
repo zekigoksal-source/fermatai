@@ -299,7 +299,7 @@ async def _open_search_modal(page) -> bool:
     except Exception:
         pass
 
-    el, sel = await _try_selector(page, _MODAL_OPEN_CANDIDATES, timeout=2000)
+    el, sel = await _try_selector(page, _MODAL_OPEN_CANDIDATES, timeout_per_candidate=1500)
     if not el:
         return False
     try:
@@ -312,7 +312,7 @@ async def _open_search_modal(page) -> bool:
 
 async def _click_search(page) -> Optional[str]:
     """Ara/Search butonuna tikla."""
-    el, sel = await _try_selector(page, _SEARCH_BTN_CANDIDATES, timeout=2000)
+    el, sel = await _try_selector(page, _SEARCH_BTN_CANDIDATES, timeout_per_candidate=1500)
     if not el:
         return None
     try:
