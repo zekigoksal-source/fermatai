@@ -30,6 +30,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "search_curriculum", "send_exam_image", "list_exam_questions",
         "calculate_yks_score",
         "eyotek_read",
+        "eyotek_query",
         # Oturum 22 (C3 + 22.1) — Yokatlas + Atlas + System awareness
         "ogrenci_nereye_girebilir", "hedef_bolum_ara", "puan_tahmin", "hedef_puan_analiz",
         "plan_kaydet", "plan_getir", "plan_gun_guncelle",
@@ -81,7 +82,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "search_students", "get_class_plan", "query_analytics",
         "build_study_plan_context",
         "search_curriculum", "send_exam_image", "list_exam_questions",
-        "calculate_yks_score", "eyotek_read",
+        "calculate_yks_score", "eyotek_read", "eyotek_query",
         "ogrenci_nereye_girebilir", "hedef_bolum_ara", "puan_tahmin", "hedef_puan_analiz",
         "plan_kaydet", "plan_getir", "plan_gun_guncelle",
         "counsellor_brief", "class_brief", "transfer_failure_analiz", "tercih_listesi_tasla",

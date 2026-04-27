@@ -1215,9 +1215,22 @@ from role_access import (
 
 # (22.1n-split: 219 satir ACL bloku role_access.py ye tasindi - import yukarida)
 async def _tool_eyotek_read(page_key: str = "etut_ara", max_rows: float = 20) -> dict:
-    """Eyotek'ten anlık veri oku — CDP ile."""
+    """Eyotek'ten anlık veri oku — CDP ile (basit, sabit kaynak)."""
     from eyotek_knowledge.eyotek_reader import read_eyotek_page
     return await read_eyotek_page(page_key, max_rows=int(max_rows))
+
+
+async def _tool_eyotek_query(question: str, max_rows: float = 0) -> dict:
+    """Eyotek'ten AGENTIC sorgulama — Cerebras planner + parametrik navigator.
+
+    Kullanıcı doğal dilde sorduğunda (tarih, öğretmen, ders, sınav adı vb.)
+    Cerebras 70B uygun sayfayı + filtreleri seçer, navigator data çeker.
+
+    25.26 mimari: planner (eyotek_planner) → navigator (eyotek_navigator).
+    """
+    from eyotek_knowledge.eyotek_planner import execute_query
+    mr = int(max_rows) if max_rows else None
+    return await execute_query(question, max_rows=mr)
 
 
 async def _tool_calculate_yks_score(
@@ -1939,6 +1952,7 @@ TOOL_DISPATCH = {
     "query_analytics":          lambda p: tool_query_analytics(**p),
     "calculate_yks_score":      lambda p: _tool_calculate_yks_score(**p),
     "eyotek_read":              lambda p: _tool_eyotek_read(**p),
+    "eyotek_query":             lambda p: _tool_eyotek_query(**p),
     # C3 (Oturum 22) — Yokatlas tabanli puan tahmin
     "ogrenci_nereye_girebilir": lambda p: _tool_nereye_girebilir(**p),
     "hedef_bolum_ara":          lambda p: _tool_hedef_bolum_ara(**p),

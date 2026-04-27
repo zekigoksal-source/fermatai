@@ -408,7 +408,9 @@ TOOLS: list[dict] = [
             "Admin 'etut yoklamaya bak', 'bugun yoklama durumu', 'eyotek verisine bak' dediginde kullan. "
             "Mevcut kaynaklar: etut_ara, yoklama_kontrol, ogrenci_listesi, devamsizlik, rehberlik, sinav_sonuclari, "
             "etut_yoklama, etut_ogrenci_kontrol, ders_programi, ogretmen_programi. "
-            "Sonuc: tablo satir/sutun olarak doner. SADECE OKUMA — yazma YAPMAZ."
+            "Sonuc: tablo satir/sutun olarak doner. SADECE OKUMA — yazma YAPMAZ. "
+            "NOT: Bu basit/sabit kaynak okuyucu. Tarih filtresi, ogretmen filtresi, sinav adi gibi "
+            "DETAYLI sorgular icin eyotek_query kullan."
         ),
         "input_schema": {
             "type": "object",
@@ -423,6 +425,32 @@ TOOLS: list[dict] = [
                 },
             },
             "required": ["page_key"],
+        },
+    },
+    {
+        "name": "eyotek_query",
+        "description": (
+            "Eyotek'ten AGENTIC veri sorgulama — dogal dilde soru, otomatik sayfa+filtre secimi. "
+            "Kullan ne zaman kullanici tarih, ogretmen, ders, sinif, sinav adi gibi parametreli sorgu yapar: "
+            "'dun hangi etutler vardi', '3 gun once yoklamalar', 'Apotemi sinav sonuclari', "
+            "'Mehmet Donmez Nisan etutleri', 'Ali Veli devamsizliklari'. "
+            "Cerebras 70B planner soruyu Eyotek sayfasina + filtreye cevirir, navigator data ceker. "
+            "Sonuc: {plan, columns, rows, filters_applied, error_code}. "
+            "SADECE OKUMA — yazma YAPMAZ. confidence < 0.4 ise plan basarisiz, error doner."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": "Kullanicinin Turkce dogal dilde sorusu (orn: 'dun hangi etutler vardi')",
+                },
+                "max_rows": {
+                    "type": "number",
+                    "description": "Max satir (varsayilan: planner karari)",
+                },
+            },
+            "required": ["question"],
         },
     },
     # C3 (Oturum 22) — Puan tahmin + Yokatlas üniversite önerisi
@@ -1519,7 +1547,8 @@ DEAD_TOOLS: set[str] = {
     "aylik_borc_detay",              # 2
     "geciken_odemeler",              # 2
     "web_upload",                    # 2
-    "eyotek_read",                   # 2
+    # eyotek_read — 25.26'da CDP+cookie fix sonrasi calisir, AKTIF
+    # eyotek_query — yeni agentic tool, AKTIF
     "pedagojik_koc",                 # 2
     "puan_tahmin",                   # 2 — yeni puan_tahmin yerine predict_yks_score var
     "konu_kaynak_paketi",            # 2
