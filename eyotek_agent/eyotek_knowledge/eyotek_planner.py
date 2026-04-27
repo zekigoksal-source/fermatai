@@ -226,8 +226,8 @@ async def plan_query(question: str, catalog: Optional[list[dict]] = None) -> dic
             raise RuntimeError("CEREBRAS_API_KEY env yok")
         client = CerebrasClient()  # api_key env'den otomatik
 
-        # Cerebras 503 retry (3 deneme, exp backoff)
-        for attempt in range(3):
+        # Cerebras 503/parse retry (5 deneme, exp backoff)
+        for attempt in range(5):
             try:
                 result = await client.complete_async(
                     messages=[{"role": "user", "content": user_prompt}],
@@ -237,17 +237,25 @@ async def plan_query(question: str, catalog: Optional[list[dict]] = None) -> dic
                     temperature=0.1,
                 )
                 if result.get("ok"):
-                    raw = result.get("text", "")
-                    break
+                    candidate_raw = result.get("text", "")
+                    # Hizli sanity check: JSON benzeri icerik var mi?
+                    if "{" in candidate_raw and "page_path" in candidate_raw:
+                        raw = candidate_raw
+                        break
+                    # Bos veya bozuk: retry
+                    last_err = "empty/non-JSON response"
+                    await asyncio.sleep(0.5 * (1.5 ** attempt))
+                    continue
                 err_str = str(result.get("error", ""))
                 last_err = err_str
-                if "503" in err_str or "high traffic" in err_str.lower():
-                    await asyncio.sleep(0.8 * (2 ** attempt))  # 0.8 / 1.6 / 3.2
+                if "503" in err_str or "high traffic" in err_str.lower() or "rate" in err_str.lower():
+                    await asyncio.sleep(1.0 * (2 ** attempt))  # 1.0 / 2.0 / 4.0 / 8.0 / 16.0
                     continue
                 break  # diger hatalar: retry yok
             except Exception as e:
                 last_err = str(e)
-                break
+                await asyncio.sleep(0.5)
+                continue
     except Exception as e:
         last_err = f"init fail: {e}"
 

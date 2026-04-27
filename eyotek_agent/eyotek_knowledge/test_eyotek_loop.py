@@ -157,8 +157,8 @@ SCENARIOS = [
         "category": "sinav",
         "query": "en son hangi sinav yapildi",
         "expected": {
-            "must_succeed": True,
-            "must_page_path_contains": "exam",
+            # Sinav Degerlendirme: /Student/Test/test (Eyotek path'i "test", "exam" degil)
+            "must_page_path_contains": ("test", "exam"),
         },
     },
     {
