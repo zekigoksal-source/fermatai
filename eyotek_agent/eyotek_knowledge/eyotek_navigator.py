@@ -279,44 +279,133 @@ async def _click_search(page) -> Optional[str]:
 
 
 async def _read_table(page, max_rows: int) -> tuple[list[str], list[dict]]:
-    """Sayfadaki ilk anlamli tabloyu oku (en cok satira sahip olan)."""
-    # En cok tr'ye sahip table'i bul
-    table_handle = await page.evaluate_handle("""
-        () => {
-            const tables = Array.from(document.querySelectorAll('table'));
-            if (!tables.length) return null;
-            tables.sort((a, b) => b.querySelectorAll('tbody tr').length - a.querySelectorAll('tbody tr').length);
-            return tables[0];
-        }
-    """)
-    if not table_handle:
+    """Sayfadaki ilk anlamli tabloyu oku (en cok satira sahip olan).
+
+    Crash-safe: tablo yoksa bos ([], []) doner.
+    """
+    try:
+        # Tek evaluate icinde header+rows topla — JSHandle null sorunu yok
+        result = await page.evaluate(f"""
+            () => {{
+                const tables = Array.from(document.querySelectorAll('table'));
+                if (!tables.length) return {{ headers: [], rows: [] }};
+                // En cok tbody tr'ye sahip table
+                tables.sort((a, b) => b.querySelectorAll('tbody tr').length - a.querySelectorAll('tbody tr').length);
+                const t = tables[0];
+                const ths = t.querySelectorAll('thead th, tr:first-child th');
+                const headers = Array.from(ths).map(th => (th.innerText || '').trim());
+                const trs = Array.from(t.querySelectorAll('tbody tr')).slice(0, {max_rows});
+                const rows = trs.map(tr =>
+                    Array.from(tr.querySelectorAll('td')).map(td => (td.innerText || '').trim())
+                );
+                return {{ headers, rows }};
+            }}
+        """)
+    except Exception as e:
+        logger.debug(f"[NAV] _read_table fail: {e}")
         return [], []
 
-    # thead
-    headers = await table_handle.evaluate("""
-        (t) => {
-            const ths = t.querySelectorAll('thead th, tr:first-child th');
-            return Array.from(ths).map(th => (th.innerText || '').trim());
-        }
-    """)
-    # rows
-    rows = await table_handle.evaluate(f"""
-        (t) => {{
-            const trs = t.querySelectorAll('tbody tr');
-            return Array.from(trs).slice(0, {max_rows}).map(tr => {{
-                return Array.from(tr.querySelectorAll('td')).map(td => (td.innerText || '').trim());
-            }});
-        }}
-    """)
+    headers = result.get("headers", [])
+    raw_rows = result.get("rows", [])
     rows_data = []
-    for r in rows:
+    for r in raw_rows:
         row = {}
         for i, cell in enumerate(r):
             col = headers[i] if i < len(headers) else f"col_{i}"
             row[col] = cell
-        if any(v.strip() for v in row.values()):
+        if any((v or "").strip() for v in row.values()):
             rows_data.append(row)
     return headers, rows_data
+
+
+async def inspect_page_form(page_path: str) -> dict:
+    """Sayfadaki TUM form input/select/button'lari listele — schema discovery icin.
+
+    Returns: {url, inputs: [...], selects: [...], buttons: [...], tables: int}
+    """
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError:
+        return {"error": "Playwright kurulu degil"}
+
+    pw = None
+    page = None
+    try:
+        pw = await async_playwright().start()
+        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
+        ctx = browser.contexts[0]
+        await _inject_cookies(ctx)
+        page = await ctx.new_page()
+        await page.goto(f"{_BASE_URL}{page_path}", timeout=20000, wait_until="domcontentloaded")
+        await page.wait_for_timeout(2500)
+        if await _is_login(page):
+            return {"error": "AUTH_EXPIRED", "url": page.url}
+
+        # Modal acmayi dene (filtreler genelde modal'da)
+        await _open_search_modal(page)
+        await page.wait_for_timeout(500)
+
+        info = await page.evaluate("""
+            () => {
+                function descLabel(el) {
+                    // Once kendi label
+                    if (el.id) {
+                        const lbl = document.querySelector(`label[for="${el.id}"]`);
+                        if (lbl) return (lbl.innerText || '').trim();
+                    }
+                    // Sonra parent (.col, .form-group) icindeki label
+                    const fg = el.closest('.form-group, .col, .row, td, div');
+                    if (fg) {
+                        const lbl = fg.querySelector('label');
+                        if (lbl) return (lbl.innerText || '').trim();
+                    }
+                    return el.placeholder || '';
+                }
+
+                const visible = el => {
+                    const r = el.getBoundingClientRect();
+                    return r.width > 0 && r.height > 0;
+                };
+
+                const inputs = Array.from(document.querySelectorAll('input')).filter(visible).map(el => ({
+                    id: el.id, name: el.name || '', type: el.type,
+                    placeholder: el.placeholder || '',
+                    value: el.value || '',
+                    label: descLabel(el),
+                    cls: el.className || '',
+                }));
+                const selects = Array.from(document.querySelectorAll('select')).filter(visible).map(el => ({
+                    id: el.id, name: el.name || '',
+                    label: descLabel(el),
+                    options: Array.from(el.options).slice(0, 10).map(o => ({v: o.value, t: (o.innerText || '').trim()})),
+                    optionCount: el.options.length,
+                }));
+                const buttons = Array.from(document.querySelectorAll('button, input[type=button], input[type=submit], a.btn'))
+                    .filter(visible).slice(0, 30).map(el => ({
+                        id: el.id, name: el.name || '',
+                        text: (el.innerText || el.value || '').trim().slice(0, 60),
+                        cls: el.className || '',
+                    }));
+                const tables = document.querySelectorAll('table').length;
+                return { inputs, selects, buttons, tables };
+            }
+        """)
+        info["url"] = page.url
+        info["page_path"] = page_path
+        return info
+    except Exception as e:
+        return {"error": f"{type(e).__name__}: {str(e)[:200]}"}
+    finally:
+        try:
+            if page:
+                await page.close()
+        except Exception:
+            pass
+        try:
+            if pw:
+                await pw.stop()
+        except Exception:
+            pass
 
 
 # ─── PUBLIC API ───────────────────────────────────────────────────────────────
@@ -603,16 +692,43 @@ def date_range_for(label: str) -> tuple[str, str]:
 # ─── CLI / SMOKE TEST ─────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import sys
+
     async def _smoke():
         path = sys.argv[1] if len(sys.argv) > 1 else "Student/individual-lesson"
         from_d = sys.argv[2] if len(sys.argv) > 2 else _tr_date(date.today() - timedelta(days=3))
         to_d = sys.argv[3] if len(sys.argv) > 3 else _tr_date(date.today())
         print(f"--- Navigate to {path} | filters: date_from={from_d}, date_to={to_d} ---")
         r = await navigate(path, filters={"date_from": from_d, "date_to": to_d}, max_rows=10)
-        print(f"success={r['success']} rows={r['row_count']} err={r.get('error_code')}/{(r.get('error') or '')[:80]}")
+        print(f"success={r['success']} rows={r['row_count']} err={r.get('error_code')}/{(r.get('error') or '')[:120]}")
         print(f"filters_applied={r['filters_applied']}")
         print(f"filters_failed={r['filters_failed']}")
         print(f"columns={r['columns'][:8]}")
         for row in r["rows"][:3]:
             print(f"  ROW: {row}")
-    asyncio.run(_smoke())
+
+    async def _inspect():
+        path = sys.argv[2] if len(sys.argv) > 2 else "Student/individual-lesson"
+        print(f"--- INSPECT {path} ---")
+        info = await inspect_page_form(path)
+        if info.get("error"):
+            print(f"ERROR: {info['error']}")
+            return
+        print(f"URL: {info.get('url')}")
+        print(f"Tables: {info.get('tables', 0)}")
+        print(f"\n=== INPUTS ({len(info.get('inputs', []))}) ===")
+        for i in info.get("inputs", []):
+            extra = f" name='{i['name']}'" if i.get("name") else ""
+            print(f"  [{i['type']}] #{i.get('id') or '<noid>'}{extra} label='{i.get('label','')[:40]}' placeholder='{i.get('placeholder','')[:30]}'")
+        print(f"\n=== SELECTS ({len(info.get('selects', []))}) ===")
+        for s in info.get("selects", []):
+            print(f"  #{s.get('id') or '<noid>'} name='{s.get('name','')}' label='{s.get('label','')[:40]}' options={s.get('optionCount', 0)}")
+            for o in s.get("options", [])[:3]:
+                print(f"      - {o.get('v','')}: {o.get('t','')[:50]}")
+        print(f"\n=== BUTTONS ({len(info.get('buttons', []))}) ===")
+        for b in info.get("buttons", [])[:15]:
+            print(f"  #{b.get('id') or '<noid>'} '{b.get('text','')}' cls='{b.get('cls','')[:40]}'")
+
+    if len(sys.argv) > 1 and sys.argv[1] == "inspect":
+        asyncio.run(_inspect())
+    else:
+        asyncio.run(_smoke())
