@@ -908,6 +908,24 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"  Telafi scheduler baslatilamadi: {e}")
 
+    # ── 25.28: F1 Teacher Briefing scheduler (15dk periyod) ────────────────
+    _briefing_task = None
+    try:
+        from teacher_briefing import briefing_scheduler_loop
+        _briefing_task = asyncio.create_task(briefing_scheduler_loop())
+        logger.info("  📋  Teacher Briefing scheduler aktif (15dk periyod, WP gönderim FLAG-GATED)")
+    except Exception as e:
+        logger.warning(f"  Briefing scheduler baslatilamadi: {e}")
+
+    # ── 25.28: F4 Todo Assignment scheduler (30dk periyod) ─────────────────
+    _todo_task = None
+    try:
+        from todo_assignment import todo_scheduler_loop
+        _todo_task = asyncio.create_task(todo_scheduler_loop())
+        logger.info("  📌  Todo Assignment scheduler aktif (30dk periyod, eskalasyon FLAG-GATED)")
+    except Exception as e:
+        logger.warning(f"  Todo scheduler baslatilamadi: {e}")
+
     yield  # Uygulama çalışıyor
 
     # ── Kapanış ────────────────────────────────────────────────────────────────
@@ -923,6 +941,17 @@ async def lifespan(app: FastAPI):
     try:
         if '_nightly_task' in locals() and _nightly_task:
             _nightly_task.cancel()
+    except Exception:
+        pass
+    # 25.28: F1 + F4 scheduler cancel
+    try:
+        if '_briefing_task' in locals() and _briefing_task:
+            _briefing_task.cancel()
+    except Exception:
+        pass
+    try:
+        if '_todo_task' in locals() and _todo_task:
+            _todo_task.cancel()
     except Exception:
         pass
 

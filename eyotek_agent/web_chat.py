@@ -1831,6 +1831,180 @@ async def admin_outreach_pending(
         return {"success": False, "error": str(e)[:100]}
 
 
+@router.get("/admin/teacher-briefings")
+async def admin_teacher_briefings(
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+    status: str = "queued",
+    limit: int = 50,
+):
+    """F1 (25.28): Öğretmen brief queue. Yeni sezonda WP gönderim aktive olur."""
+    token = _extract_token(request, fermat_session)
+    sess = await get_session(token) if token else None
+    if not sess:
+        raise HTTPException(status_code=401, detail="Oturum yok")
+    _require_admin(sess)
+    try:
+        from db_pool import db_fetch, db_fetchval
+        rows = await db_fetch(
+            """SELECT id, teacher_name, class_name, lesson_label, scheduled_for,
+                      LEFT(rendered_text, 400) AS preview, status, sent_at, created_at
+               FROM teacher_briefing_queue
+               WHERE status = $1
+               ORDER BY scheduled_for ASC LIMIT $2""",
+            status, limit
+        )
+        total = await db_fetchval(
+            "SELECT COUNT(*) FROM teacher_briefing_queue WHERE status=$1", status
+        )
+        wp_active = await db_fetchval(
+            "SELECT value FROM sistem_ayar WHERE key='TEACHER_BRIEFING_WP_ACTIVE'"
+        )
+        return {
+            "success": True,
+            "wp_active": (wp_active or "false").lower() == "true",
+            "total": int(total or 0),
+            "items": [dict(r) for r in rows],
+        }
+    except Exception as e:
+        logger.error(f"admin_teacher_briefings hata: {e}")
+        return {"success": False, "error": str(e)[:200]}
+
+
+@router.get("/admin/student-followups")
+async def admin_student_followups(
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+    status: str = "queued",
+    limit: int = 50,
+):
+    """F2 (25.28): Öğrenci follow-up queue."""
+    token = _extract_token(request, fermat_session)
+    sess = await get_session(token) if token else None
+    if not sess:
+        raise HTTPException(status_code=401, detail="Oturum yok")
+    _require_admin(sess)
+    try:
+        from db_pool import db_fetch, db_fetchval
+        rows = await db_fetch(
+            """SELECT id, soz_no, student_name, trigger_event, priority,
+                      LEFT(suggestion_text, 400) AS preview,
+                      weak_topics, status, created_at
+               FROM student_followups
+               WHERE status = $1
+               ORDER BY priority DESC, created_at DESC LIMIT $2""",
+            status, limit
+        )
+        total = await db_fetchval(
+            "SELECT COUNT(*) FROM student_followups WHERE status=$1", status
+        )
+        wp_active = await db_fetchval(
+            "SELECT value FROM sistem_ayar WHERE key='FOLLOWUP_WP_ACTIVE'"
+        )
+        return {
+            "success": True,
+            "wp_active": (wp_active or "false").lower() == "true",
+            "total": int(total or 0),
+            "items": [dict(r) for r in rows],
+        }
+    except Exception as e:
+        logger.error(f"admin_student_followups hata: {e}")
+        return {"success": False, "error": str(e)[:200]}
+
+
+@router.get("/admin/todo-escalations")
+async def admin_todo_escalations(
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+    status: str = "queued",
+    limit: int = 50,
+):
+    """F4 (25.28): To-do reminder + escalation queue."""
+    token = _extract_token(request, fermat_session)
+    sess = await get_session(token) if token else None
+    if not sess:
+        raise HTTPException(status_code=401, detail="Oturum yok")
+    _require_admin(sess)
+    try:
+        from db_pool import db_fetch, db_fetchval
+        rows = await db_fetch(
+            """SELECT id, todo_id, soz_no, student_name, target_role,
+                      target_name, escalation_type, payload, status, created_at
+               FROM todo_escalation_queue
+               WHERE status = $1
+               ORDER BY created_at DESC LIMIT $2""",
+            status, limit
+        )
+        total = await db_fetchval(
+            "SELECT COUNT(*) FROM todo_escalation_queue WHERE status=$1", status
+        )
+        wp_active = await db_fetchval(
+            "SELECT value FROM sistem_ayar WHERE key='TODO_ESCALATION_WP_ACTIVE'"
+        )
+        return {
+            "success": True,
+            "wp_active": (wp_active or "false").lower() == "true",
+            "total": int(total or 0),
+            "items": [dict(r) for r in rows],
+        }
+    except Exception as e:
+        logger.error(f"admin_todo_escalations hata: {e}")
+        return {"success": False, "error": str(e)[:200]}
+
+
+@router.post("/admin/tts-test")
+async def admin_tts_test(
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """F3 (25.28): TTS test endpoint — admin manuel ses üretip dinleyebilir."""
+    token = _extract_token(request, fermat_session)
+    sess = await get_session(token) if token else None
+    if not sess:
+        raise HTTPException(status_code=401, detail="Oturum yok")
+    _require_admin(sess)
+    try:
+        body = await request.json()
+        text = (body.get("text") or "").strip()
+        voice = body.get("voice") or "nova"
+        if not text:
+            raise HTTPException(status_code=400, detail="text param zorunlu")
+        from tts_handler import synthesize_speech
+        result = await synthesize_speech(text, voice=voice)
+        if not result:
+            return {"success": False, "error": "TTS synth fail"}
+        return {"success": True, **result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"admin_tts_test hata: {e}")
+        return {"success": False, "error": str(e)[:200]}
+
+
+@router.get("/student/daily/predicted-grade")
+async def student_predicted_grade(
+    request: Request,
+    soz_no: int,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """F5 (25.28): Öğrenci Çalışmam panel YKS puan tahmin widget'ı."""
+    token = _extract_token(request, fermat_session)
+    sess = await get_session(token) if token else None
+    if not sess:
+        raise HTTPException(status_code=401, detail="Oturum yok")
+    # Öğrenci sadece kendi soz_no'su için, admin/mudur herkes
+    if sess.get("role") == "ogrenci":
+        if int(sess.get("soz_no") or 0) != int(soz_no):
+            raise HTTPException(status_code=403, detail="Yetki yok")
+    try:
+        from predicted_grade import get_widget_data
+        data = await get_widget_data(soz_no)
+        return {"success": True, **data}
+    except Exception as e:
+        logger.error(f"student_predicted_grade hata: {e}")
+        return {"success": False, "error": str(e)[:200]}
+
+
 class OutreachActionReq(BaseModel):
     action: str  # "approve" | "reject"
     ids: list[int] = []  # boş ise tümü

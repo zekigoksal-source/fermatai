@@ -134,6 +134,29 @@ async def run_nightly():
         report["steps"]["finans_snapshot_err"] = str(e)[:200]
         logger.warning(f"  💰 Finans snapshot sync hata: {e}")
 
+    # 5. F5 (25.28): Predicted Grade cache yenile — Çalışmam panel için
+    try:
+        from predicted_grade import refresh_all_predictions
+        pg = await refresh_all_predictions(limit=200)
+        report["steps"]["predicted_grade"] = f"refreshed {pg['refreshed']}/{pg['total']}"
+        logger.info(f"  📊 Predicted Grade: {pg['refreshed']} ogrenci yenilendi")
+    except Exception as e:
+        report["steps"]["predicted_grade_err"] = str(e)[:200]
+        logger.warning(f"  📊 Predicted Grade hata: {e}")
+
+    # 6. F2 (25.28): Auto Follow-Up engine — sınav sync sonrası queue
+    try:
+        from followup_engine import queue_followups_for_all_active
+        fu = await queue_followups_for_all_active(trigger="nightly_exam_check")
+        report["steps"]["followup_queue"] = (
+            f"queued {fu['queued']}/{fu['checked']} "
+            f"(no_weak={fu.get('skipped_no_weak',0)})"
+        )
+        logger.info(f"  🔁 Follow-Up: {fu['queued']} ogrenci icin queue olustu")
+    except Exception as e:
+        report["steps"]["followup_queue_err"] = str(e)[:200]
+        logger.warning(f"  🔁 Follow-Up hata: {e}")
+
     elapsed = (datetime.now() - start).total_seconds()
     report["elapsed_sn"] = round(elapsed, 2)
     logger.info(f"🌙 [NIGHTLY] Tamamlandi ({elapsed:.1f}s)")
