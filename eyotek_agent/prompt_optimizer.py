@@ -157,9 +157,52 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
                 f"REPEAT: 2 ayri user sorusuna ayni cevap — '{p['repeated_bot'][:100]}'"
             )
 
+    # 25.24 (Neo): Geçmiş 30 gün reddedilen öneriler ve sebepleri — bot bunlardan öğrensin
+    # Sezgisellik için: aynı false positive pattern'leri tekrarlama
+    past_rejections_block = ""
+    try:
+        past_rejected = await _fetch(
+            """SELECT title, description, reviewer_note
+               FROM prompt_suggestions
+               WHERE status='rejected' AND reviewer_note IS NOT NULL AND reviewer_note != ''
+                 AND reviewed_at >= NOW() - INTERVAL '30 days'
+               ORDER BY reviewed_at DESC LIMIT 10"""
+        )
+        if past_rejected:
+            past_rejections_block = (
+                "\n\n📛 GEÇMİŞTE REDDEDİLEN ÖNERİLER (Neo'nun açıklamasıyla):\n"
+                "Bu önerileri TEKRAR ÜRETME, benzer pattern'leri ASLA öne sürme:\n\n"
+            )
+            for i, r in enumerate(past_rejected[:10], 1):
+                past_rejections_block += (
+                    f"{i}. ❌ '{r['title']}'\n"
+                    f"   Neden reddedildi: {(r['reviewer_note'] or '')[:300]}\n\n"
+                )
+    except Exception:
+        pass
+
+    # Geçmiş onaylanan öneriler — bunlara benzer pattern'ler değerli
+    past_approvals_block = ""
+    try:
+        past_approved = await _fetch(
+            """SELECT title FROM prompt_suggestions
+               WHERE status='approved' AND reviewed_at >= NOW() - INTERVAL '30 days'
+               ORDER BY reviewed_at DESC LIMIT 10"""
+        )
+        if past_approved:
+            past_approvals_block = (
+                "\n✅ GEÇMİŞTE ONAYLANAN ÖNERİLER (bu tip öneriler değerli):\n"
+                + "\n".join(f"  - {r['title']}" for r in past_approved[:10])
+                + "\n"
+            )
+    except Exception:
+        pass
+
     user_prompt = (
         "FermatAI bot konusmalarinda son 24 saatte tespit ettigim problem ornekleri:\n\n"
         + "\n".join(f"{i+1}. {s}" for i, s in enumerate(problem_summary))
+        + past_rejections_block
+        + past_approvals_block
         + "\n\nGOREVIN: Her problem icin SOMUT bir system_prompts.py iyilestirme "
         "onerisi uret. ÇIKTI TAMAMI TÜRKÇE OLMALI. JSON formatinda don:\n"
         "[\n"
