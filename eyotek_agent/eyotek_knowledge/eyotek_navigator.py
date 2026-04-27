@@ -372,33 +372,133 @@ async def _fill_text_input(page, candidates: list[str], value: str) -> Optional[
 
 
 async def _fill_dropdown(page, candidates: list[str], value: str) -> Optional[str]:
-    """Dropdown'da label veya value matchle. Hangi selector'la doldugunu donder."""
-    el, sel = await _try_selector(page, candidates)
+    """Dropdown'da label veya value matchle. Select2 wrapper destekli.
+
+    Eyotek'in select'leri genelde Select2 ile sarmalanmis — visible degil,
+    Select2 wrapper interceptlemiyor. Strateji:
+      1. query_selector (visibility check YOK — underlying <select> hidden olabilir)
+      2. select_option (label/value/fuzzy) — Playwright native
+      3. JS: el.value = optionValue + dispatch change events
+      4. jQuery Select2 API: $(el).select2('val', val).trigger('change') —
+         Select2 component'i bu sekilde update eder.
+    """
+    el = None
+    sel = None
+    # query_selector ile bul (wait_for visible KULLANMA — Select2 wrapper hidden)
+    for s in candidates:
+        try:
+            cand = await page.query_selector(s)
+            if cand:
+                el = cand
+                sel = s
+                break
+        except Exception:
+            continue
     if not el:
         return None
+
     try:
-        # Once label match dene
+        # Adim 1: Playwright native select_option (label match)
         try:
             await el.select_option(label=str(value))
+            # Select2'i bilgilendir
+            await page.evaluate(
+                """([s]) => {
+                    const e = document.querySelector(s);
+                    if (e && window.jQuery) {
+                        try { window.jQuery(e).trigger('change'); } catch(_){}
+                    }
+                }""",
+                [sel],
+            )
             return sel
         except Exception:
             pass
-        # Sonra value match
+        # Adim 2: value match
         try:
             await el.select_option(value=str(value))
+            await page.evaluate(
+                """([s]) => {
+                    const e = document.querySelector(s);
+                    if (e && window.jQuery) {
+                        try { window.jQuery(e).trigger('change'); } catch(_){}
+                    }
+                }""",
+                [sel],
+            )
             return sel
         except Exception:
             pass
-        # Fuzzy: text contains
-        opts = await el.query_selector_all("option")
-        for opt in opts:
-            text = ((await opt.text_content()) or "").strip()
-            if value.lower() in text.lower():
-                opt_value = await opt.get_attribute("value")
-                if opt_value:
-                    await el.select_option(value=opt_value)
-                    return sel
-        return None
+
+        # Adim 3: Fuzzy text contains — value attribute alip select
+        try:
+            opts = await el.query_selector_all("option")
+            for opt in opts:
+                text = ((await opt.text_content()) or "").strip()
+                if value.lower() in text.lower():
+                    opt_value = await opt.get_attribute("value")
+                    if opt_value:
+                        try:
+                            await el.select_option(value=opt_value)
+                        except Exception:
+                            pass
+                        # JS direkt set + jQuery trigger
+                        await page.evaluate(
+                            """([s, optVal]) => {
+                                const e = document.querySelector(s);
+                                if (!e) return false;
+                                e.value = optVal;
+                                e.dispatchEvent(new Event('change', {bubbles: true}));
+                                if (window.jQuery) {
+                                    try {
+                                        const $e = window.jQuery(e);
+                                        $e.val(optVal).trigger('change');
+                                        // Select2 ozel API
+                                        if (typeof $e.select2 === 'function') {
+                                            try { $e.select2('val', optVal); } catch(_){}
+                                        }
+                                    } catch(_){}
+                                }
+                                return true;
+                            }""",
+                            [sel, opt_value],
+                        )
+                        return sel
+        except Exception:
+            pass
+
+        # Adim 4: Pure JS — Select2 jQuery API (label/value bilinmiyorsa text match'le bul)
+        used = await page.evaluate(
+            """([s, val]) => {
+                const e = document.querySelector(s);
+                if (!e) return false;
+                const valLower = String(val).toLowerCase();
+                let optValue = null;
+                for (const opt of e.options) {
+                    const t = (opt.text || '').toLowerCase();
+                    const v = (opt.value || '').toLowerCase();
+                    if (t === valLower || v === valLower || t.includes(valLower)) {
+                        optValue = opt.value;
+                        break;
+                    }
+                }
+                if (!optValue) return false;
+                e.value = optValue;
+                e.dispatchEvent(new Event('change', {bubbles: true}));
+                if (window.jQuery) {
+                    try {
+                        const $e = window.jQuery(e);
+                        $e.val(optValue).trigger('change');
+                        if (typeof $e.select2 === 'function') {
+                            try { $e.select2('val', optValue); } catch(_){}
+                        }
+                    } catch(_){}
+                }
+                return optValue;
+            }""",
+            [sel, str(value)],
+        )
+        return sel if used else None
     except Exception as e:
         logger.debug(f"[NAV] fill_dropdown fail {sel}: {e}")
         return None
