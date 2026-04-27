@@ -334,6 +334,36 @@ SCENARIOS = [
             "min_confidence": 0.4,
         },
     },
+
+    # ─── YENİ KEŞİF: FINANSAL (Bilanco + Geciken Odeme) ─────────────────────
+    {
+        "id": "finans_aralik_borclu",
+        "category": "finans",
+        "query": "Aralik 2025 ayinda kim borclu kaldi",
+        "expected": {
+            "must_succeed": True,
+            "must_page_path_contains": ("overdue", "balance", "financial"),
+            "min_confidence": 0.6,
+        },
+    },
+    {
+        "id": "finans_mayis_taksit",
+        "category": "finans",
+        "query": "Mayis 2026 ayinda kimden ne kadar tahsilat bekliyoruz",
+        "expected": {
+            "must_page_path_contains": ("overdue", "balance", "financial"),
+            "min_confidence": 0.5,
+        },
+    },
+    {
+        "id": "finans_bilanco",
+        "category": "finans",
+        "query": "bu sezon bilancosu aylik dagilim",
+        "expected": {
+            "must_page_path_contains": ("balance", "bilanco"),
+            "min_confidence": 0.6,
+        },
+    },
 ]
 
 
