@@ -161,26 +161,32 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
         "FermatAI bot konusmalarinda son 24 saatte tespit ettigim problem ornekleri:\n\n"
         + "\n".join(f"{i+1}. {s}" for i, s in enumerate(problem_summary))
         + "\n\nGOREVIN: Her problem icin SOMUT bir system_prompts.py iyilestirme "
-        "onerisi uret. JSON formatinda don:\n"
+        "onerisi uret. ÇIKTI TAMAMI TÜRKÇE OLMALI. JSON formatinda don:\n"
         "[\n"
         "  {\n"
         '    "category": "bug|improvement|pattern",\n'
         '    "severity": "high|medium|low",\n'
-        '    "title": "kisa baslik",\n'
-        '    "description": "ne sorun, neden",\n'
-        '    "affected_pattern": "hangi mesaj kalibi",\n'
-        '    "suggested_change": "system_prompts.py icine eklenecek/degistirilecek kural metni",\n'
-        '    "expected_impact": "tahmini iyilesme"\n'
+        '    "title": "TÜRKÇE kısa başlık (örn: \'Bot bazen cevabi yarim kesiyor\')",\n'
+        '    "description": "TÜRKÇE — sorunun ne, neden olusuyor (1-2 cumle)",\n'
+        '    "affected_pattern": "TÜRKÇE — hangi tip mesaj kalibinda olusuyor",\n'
+        '    "suggested_change": "TÜRKÇE — system_prompts.py icine eklenecek kural metni",\n'
+        '    "expected_impact": "TÜRKÇE — beklenen iyilesme"\n'
         "  }\n"
         "]\n\n"
-        "Maks 5 oneri. KVKK / GUVENLIK kurallarini ASLA ZAYIFLATMA. "
-        "Sadece JSON don, baska metin yok."
+        "ÖNEMLİ KURALLAR:\n"
+        "- Tüm metin alanları TÜRKÇE yazılacak (severity/category enum hariç).\n"
+        "- Maks 5 öneri.\n"
+        "- KVKK / GÜVENLİK kurallarını ASLA ZAYIFLATMA.\n"
+        "- Sadece JSON dön, başka açıklama metni yok.\n"
+        "- Türkçe karakterler doğru kullan (ç, ş, ğ, ü, ö, ı)."
     )
 
     try:
         sys_prompt = (
-            "Sen bir LLM prompt engineer'isin. Konusma loglarindan hata "
-            "deseni cikarip somut, uygulanabilir prompt iyilestirmesi onerirsin."
+            "Sen FermatAI'nin LLM prompt mühendisisin. Türkçe konuşan bir botun "
+            "konuşma loglarını analiz ederek, sistem promptunda yapılacak somut "
+            "iyileştirme önerilerini TÜRKÇE olarak üretirsin. JSON formatında "
+            "yanıt verirsin, açıklama metni eklemezsin."
         )
         if use_cerebras:
             # Cerebras gpt-oss-120b — 436ms, sinirsiz paid tier
