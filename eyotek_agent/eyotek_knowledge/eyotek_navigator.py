@@ -98,6 +98,8 @@ _FILTER_ALIAS = {
     "currency":      ["para_birimi"],
     "ic_dis":        ["in_out"],
     "silinenleri_cikar": ["silinmis_haric", "exclude_deleted"],
+    "odeme_sekli":   ["payment_method", "odeme_tipi"],
+    "kullanici":     ["user", "operator", "kim_girdi"],
 }
 
 # Filtreyi standart isme cevirir.
@@ -140,8 +142,8 @@ _SELECTOR_CANDIDATES = {
     "kontrol_from": ["#txtKayitBasKont", "#txtKontrolBas", "input[id*='KontrolBas']", "input[id*='KayitBasKont']"],
     "kontrol_to":   ["#txtKayitBitKont", "#txtKontrolBit", "input[id*='KontrolBit']", "input[id*='KayitBitKont']"],
 
-    # Subesi (cmbSubeler — Kurs vb.)
-    "branch":    ["#cmbSubeler", "#cmbSube", "#cmbSchool",
+    # Subesi — Eyotek varyantlari: cmbSubeler (etut/raporlar) | cmbsube lowercase (financial-operation)
+    "branch":    ["#cmbSubeler", "#cmbSube", "#cmbsube", "#cmbSchool",
                   "select[id*='Subek' i]", "select[id*='Sube' i]"],
     "school":    ["#cmbOkul", "#cmbOkullar", "#cmbSchools",
                   "select[id*='School' i]", "select[id*='Okul' i]"],
@@ -210,8 +212,14 @@ _SELECTOR_CANDIDATES = {
     # Liste turu (homework-reports — Ogrenci Aylik / Ogretmen Aylik vs)
     "liste_turu": ["#lstKnt", "select[id*='Liste' i]"],
 
-    # Sezon (kayit raporlari — 2025.26, 2024.25 vs)
-    "sezon":     ["#cmbSezonlar", "select[id*='Sezon' i]"],
+    # Sezon — cmbSezonlar (raporlar) | cmbSezon (financial-operation)
+    "sezon":     ["#cmbSezonlar", "#cmbSezon", "select[id*='Sezon' i]"],
+
+    # Odeme sekli (Nakit/Banka/Cek/Senet/Kart) — financial-operation
+    "odeme_sekli": ["#cmbOdemeSekli", "select[id*='OdemeSekli' i]", "select[id*='Odeme' i]"],
+
+    # Kullanici (kim girdi — Mahsum Yalcin vs) — financial-operation
+    "kullanici":   ["#cmbUser", "#cmbKullanici", "select[id*='User' i]:not([id*='Search'])"],
 
     # Para birimi (Turk Lirasi default)
     "currency":  ["#DdlCurrency", "select[id*='Currency' i]"],
@@ -224,7 +232,9 @@ _SELECTOR_CANDIDATES = {
 }
 
 # Search button candidates (in order of priority)
+# NOT: financial-operation #btnSearchGunluk modal-internal, #btnSearch outer
 _SEARCH_BTN_CANDIDATES = [
+    "#btnSearchGunluk",  # financial-operation modal'i icindeki ARA
     "#btnSearch", "#BtnSearch", "#btnAra", "#BtnAra",
     "input[id*='btnSearch']", "input[id*='Search']:not([id*='Result'])",
     "button[id*='Search']", "a[id*='Search']",
@@ -743,7 +753,7 @@ async def navigate(
                                      "etut_type", "classroom", "yoklama",
                                      "sinav_turu", "sinav_kategori", "devre",
                                      "odev_tur", "durum", "liste_turu",
-                                     "sezon", "currency")
+                                     "sezon", "currency", "odeme_sekli", "kullanici")
             if is_dropdown:
                 used = await _fill_dropdown(page, candidates, str(raw_value))
             else:

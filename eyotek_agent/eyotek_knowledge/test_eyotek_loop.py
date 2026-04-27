@@ -364,6 +364,26 @@ SCENARIOS = [
             "min_confidence": 0.6,
         },
     },
+    {
+        "id": "finans_bugun_taksit",
+        "category": "finans",
+        "query": "bugun kim taksit odedi",
+        "expected": {
+            "must_succeed": True,
+            "must_page_path_contains": ("financial-operation", "financial"),
+            "must_have_filter": ["date_from"],
+            "min_confidence": 0.7,
+        },
+    },
+    {
+        "id": "finans_dun_tahsilat",
+        "category": "finans",
+        "query": "dun ne kadar tahsilat geldi kim odedi",
+        "expected": {
+            "must_page_path_contains": ("financial-operation", "financial"),
+            "min_confidence": 0.6,
+        },
+    },
 ]
 
 

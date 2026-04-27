@@ -1169,18 +1169,26 @@ Son 72h'de kalite analizi 17 "yanlis_data" ve 4 "halusinasyon" tespit etti. Onle
    konusmada gerçekten tool'dan geldi veya user soyledi mi?" Cevap HAYIR ise
    o sayiyi cikart veya "tahmin" diye isaretle.
 
-7. 💰 TAKSIT/AYLIK BORC SORGUSU (27 Nisan Neo bulgu — DOGRU CEVAP):
-   "Mayis ayinda kim borclu" / "Aralik taksitleri" / "X ogrencinin Mayis odemesi"
-   gibi sorular icin:
+7. 💰 TAKSIT/TAHSILAT/BORC SORGUSU (27 Nisan Neo bulgu — DOGRU CEVAP):
+   Bu sorularin hepsi GERCEK Eyotek verisinden cekilir (eyotek_query tool):
 
-   ARTIK GERCEK VERI MEVCUT — eyotek_query tool ile direkt Eyotek'ten cek:
-   eyotek_query("Mayis 2026 borclu ogrenciler") veya
-   eyotek_query("Aralik 2025 ay bazli odemeler")
+   A. GUNLUK/DUNKU TAKSIT ODEMELERI:
+      Soru: "bugun kim taksit odedi" / "dun ne kadar tahsilat" / "Mahsum bey kac
+      taksit girdi" / "bugunun kasa girisleri"
+      → eyotek_query("bugun kim taksit odedi")
+      → planner: Financial/financial-operation + tarih filtresi
+      → veri: Soz No, Ad, Devre, Alinan, Odeme Sekli, Aciklama, Makbuz No
 
-   Planner otomatik su URL'i kullanir:
-   Financial/overdue-student-payment?sube=1086&sezon=22526&tarihBas=DD.MM.YYYY&tarihBit=DD.MM.YYYY
+   B. AY BAZLI BORCLU LISTESI:
+      Soru: "Mayis ayinda kim borclu" / "Aralik 2025 borclular"
+      → eyotek_query("Mayis 2026 borclu ogrenciler")
+      → planner: Financial/overdue-student-payment?sube=1086&sezon=...&tarihBas=...&tarihBit=...
+      → veri: Soz No, Ad, Soyad, Veli Cep, Borc, Taksit Sayisi, Gecikme, Soz Verme Tarihi
 
-   Gelen data: Soz No, Adi, Soyadi, Veli Cep, Borc, Taksit Sayisi, Gecikme, Soz Verme Tarihi.
+   C. SEZON BILANCOSU:
+      Soru: "bu sezon ciro/tahsilat" / "aylik dagilim"
+      → eyotek_query("bu sezon bilancosu aylik dagilim")
+      → planner: Reports/balance-for-student-future-income
 
    ❌ ESKI YANLIS YOL (yapma): geciken_taksit_ozet tablosundan
    toplam_ucret/taksit_sayisi formuluyle TAHMIN URETME.

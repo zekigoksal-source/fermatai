@@ -192,6 +192,15 @@ A: {"page_path":"Financial/overdue-student-payment?sube=1086&sezon=22526&tarihBa
 Q: "bilanco aylik tablo"
 A: {"page_path":"Reports/balance-for-student-future-income","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"Sezon bilancosu: aylik ciro/tahsilat/kalan dagilimi.","confidence":0.90}
 
+Q: "bugun kim taksit odedi"
+A: {"page_path":"Financial/financial-operation","filters":{"date_from":"<bugun>","date_to":"<bugun>"},"max_rows":50,"explain":"Bugunun kasa girisleri (ogrenci taksitleri tabi). Soz No, Adi, Alinan, Odeme Sekli, Aciklama gosterir.","confidence":0.92}
+
+Q: "dun gelen tahsilatlar"
+A: {"page_path":"Financial/financial-operation","filters":{"date_from":"<dun>","date_to":"<dun>"},"max_rows":50,"explain":"Dun yapilan ogrenci taksit tahsilatlari listesi.","confidence":0.92}
+
+Q: "Mahsum bey'in girdigi tahsilatlar bu hafta"
+A: {"page_path":"Financial/financial-operation","filters":{"date_from":"<bu_hafta_basla>","date_to":"<bugun>","kullanici":"MAHSUM YALCIN"},"max_rows":50,"explain":"Bu haftanin Mahsum tarafindan girilen tahsilatlari.","confidence":0.88}
+
 ONEMLI URL PARAMS NOTU:
 overdue-student-payment sayfasi URL params destekler:
   ?sube=1086&sezon=22526&tarihBas=DD.MM.YYYY&tarihBit=DD.MM.YYYY

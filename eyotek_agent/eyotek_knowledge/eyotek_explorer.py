@@ -94,6 +94,7 @@ PRIORITY_PAGES = [
     ("Reports/monthly-enrollment-by-contract-fee-general", "Aylik Kayit Cirolari (sezon karsilastirma, sinif bazli ciro TL)"),
     ("Reports/balance-for-student-future-income",          "Bilanco (Sezon/Sube/Tarih bazli Ciro/Tahsilat/Kalan, drill-down ile aylik borclular)"),
     ("Financial/overdue-student-payment",                  "Geciken Odeme (URL params: sube=&sezon=&tarihBas=&tarihBit= ile aylik borclu listesi)"),
+    ("Financial/financial-operation",                      "Gunluk Kasa/Taksit Odemeleri (Tabs: Ozet/Ogrenci Taksitleri/Diger Gelirler/Odemeler/Giderler/Maas Odemeleri/Virman; default tarih=bugun, kim ne odedi)"),
 ]
 
 
