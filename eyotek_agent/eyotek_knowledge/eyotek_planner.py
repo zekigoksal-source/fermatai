@@ -204,10 +204,21 @@ A: {"page_path":"Financial/financial-operation","filters":{"date_from":"<bu_haft
 ONEMLI URL PARAMS NOTU:
 overdue-student-payment sayfasi URL params destekler:
   ?sube=1086&sezon=22526&tarihBas=DD.MM.YYYY&tarihBit=DD.MM.YYYY
+
+SEZON KODU MAPPING (kritik — tarih hangi sezona dusuyor?):
   - sube=1086 = Kurs (sabit)
-  - sezon=22526 = 2025.26
-  - sezon=22425 = 2024.25
-  - sezon=22627 = 2026.27
+  - sezon=22526 = 2025.26 sezonu (Eylul 2025 - Agustos 2026 araligi)
+  - sezon=22425 = 2024.25 sezonu (Eylul 2024 - Agustos 2025 araligi)
+  - sezon=22627 = 2026.27 sezonu (Eylul 2026 - Agustos 2027 araligi)
+
+KURAL: Tarih Eylul-Aralik araligindaysa o yilin sezonuna dahil; Ocak-Agustos
+araligindaysa bir onceki yilin sezonuna dahil.
+  - 09-12.2025 → sezon 22526
+  - 01-08.2026 → sezon 22526 (hala 2025-26 sezonu!)
+  - 09-12.2026 → sezon 22627
+  - 05.2026 → sezon 22526 (Mayis 2026, 2025-26 sezonu icinde!)
+  - 11.2025 → sezon 22526 (Kasim 2025, 2025-26 sezonu)
+
 Aylik borc/taksit/odeme sorulari icin BU sayfayi sec, URL params ile filtreyi gomerek.
 
 ZORUNLU: Soruda zaman ifadesi varsa (dun, Nisan, gecen hafta vs.) ve sayfa date_from kabul ediyorsa filter MUTLAKA EKLE.
