@@ -1009,7 +1009,7 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
         from anthropic import Anthropic
 
         model = model or CLAUDE_MODEL
-        client = Anthropic(api_key=ANTHROPIC_KEY)
+        client = Anthropic(api_key=ANTHROPIC_KEY, max_retries=4, timeout=60.0)
         start = time.time()
 
         kwargs = {

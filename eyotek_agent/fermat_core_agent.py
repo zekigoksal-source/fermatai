@@ -2220,9 +2220,12 @@ class FermatCoreAgent:
     def __init__(self):
         from llm_router import LLMRouter
         self.router         = LLMRouter()
-        self.client         = Anthropic(api_key=ANTHROPIC_KEY) if ANTHROPIC_KEY else None
+        # 25.23-final: 120 ogrenci pikta 429/timeout resilience
+        # max_retries=4 (default 2): geçici rate limit'i atlatabilir
+        # timeout=60: tool sonrası uzun yanıtlar için (default 600 fazla)
+        self.client         = Anthropic(api_key=ANTHROPIC_KEY, max_retries=4, timeout=60.0) if ANTHROPIC_KEY else None
         # Async client — native streaming için (web chat Faz 4)
-        self.async_client   = AsyncAnthropic(api_key=ANTHROPIC_KEY) if ANTHROPIC_KEY else None
+        self.async_client   = AsyncAnthropic(api_key=ANTHROPIC_KEY, max_retries=4, timeout=60.0) if ANTHROPIC_KEY else None
         self.history:       list[dict] = []
         self._caller_phone: str = ""
         self._channel:      str = "whatsapp"

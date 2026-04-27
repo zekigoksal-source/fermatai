@@ -362,6 +362,44 @@ async def _run_scheduled_tasks():
                 except Exception as _e:
                     logger.debug(f"Health check hatası: {_e}")
 
+            # 25.23-final — Günde bir 09:00: Disk + DB doluluk monitoring
+            # 120 ogrenci × 30K mesaj/ay → DB hizla buyur, log dosyalari taşar
+            if now.hour == 9 and now.minute < 10 and not getattr(_run_scheduled_tasks, '_disk_today', False):
+                setattr(_run_scheduled_tasks, '_disk_today', True)
+                # Tarihi unut yarın yeni gün başlasın
+                if now.hour == 0:
+                    if hasattr(_run_scheduled_tasks, '_disk_today'):
+                        delattr(_run_scheduled_tasks, '_disk_today')
+                try:
+                    import shutil
+                    total, used, free = shutil.disk_usage("/")
+                    pct = int(used / total * 100)
+                    free_gb = free // (1024**3)
+                    logger.info(f"💾 Disk: {pct}% used, {free_gb}GB free")
+                    if pct > 85:
+                        try:
+                            await send_wa_message(
+                                "905051256802",
+                                f"🚨 *DISK ALERT*: %{pct} dolu, sadece {free_gb}GB serbest. Temizlik gerek.",
+                                _outreach=True, _reason="disk_alert"
+                            )
+                        except Exception:
+                            pass
+                    # DB boyutu
+                    try:
+                        from db_pool import db_fetchval as _disk_fv
+                        db_size = await _disk_fv("SELECT pg_database_size('fermatai')")
+                        db_mb = (db_size or 0) // (1024 * 1024)
+                        logger.info(f"💾 DB boyutu: {db_mb} MB")
+                    except Exception:
+                        pass
+                except Exception as e:
+                    logger.debug(f"Disk monitor hatası: {e}")
+            # Gece yarısı _disk_today flag reset
+            if now.hour == 0 and now.minute < 10:
+                if hasattr(_run_scheduled_tasks, '_disk_today'):
+                    delattr(_run_scheduled_tasks, '_disk_today')
+
             # 25.23 — Pazartesi 20:30: Haftalik konusma kalite analizi (Cerebras 120b)
             if now.weekday() == 0 and now.hour == 20 and now.minute >= 30 and now.minute < 40:
                 try:
