@@ -288,23 +288,41 @@ async def _fill_dropdown(page, candidates: list[str], value: str) -> Optional[st
 
 
 async def _open_search_modal(page) -> bool:
-    """Eger sayfada filtre modal'i varsa ac. Aciksa True don."""
-    # Once: zaten acik mi? (modal-content gorunur mu)
+    """Eger sayfada filtre modal'i varsa ac. Aciksa True don.
+
+    'Acik' tanimi: bir .modal element'i .show veya .in class'ina sahip OLUP
+    icinde gorunur input'lar var (style 'display: block' tek basina yetersiz).
+    """
+    # Once: zaten acik mi?
     try:
-        modal_open = await page.evaluate(
-            "() => !!document.querySelector('.modal.show, .modal.in, .modal-content:not([style*=\"display: none\"])')"
-        )
-        if modal_open:
+        already_open = await page.evaluate("""
+            () => {
+                const ms = document.querySelectorAll('.modal.show, .modal.in');
+                for (const m of ms) {
+                    const r = m.getBoundingClientRect();
+                    if (r.width > 0 && r.height > 0) return true;
+                }
+                return false;
+            }
+        """)
+        if already_open:
             return True
     except Exception:
         pass
 
+    # Aday butonlardan birini tikla
     el, sel = await _try_selector(page, _MODAL_OPEN_CANDIDATES, timeout_per_candidate=1500)
     if not el:
         return False
     try:
         await el.click()
-        await page.wait_for_timeout(800)
+        # Modal fade animation: ~300-500ms. Inputs interactable olsun diye 1200ms bekle.
+        # Ek olarak, gercekten acildi mi onaylamak icin .modal.show'u bekle.
+        try:
+            await page.wait_for_selector(".modal.show, .modal.in", state="visible", timeout=2500)
+        except Exception:
+            pass
+        await page.wait_for_timeout(800)  # Inputs render bekle
         return True
     except Exception:
         return False
@@ -577,7 +595,7 @@ async def navigate(
         modal_opened = await _open_search_modal(page)
         result["modal_opened"] = modal_opened
         if modal_opened:
-            await page.wait_for_timeout(500)
+            await page.wait_for_timeout(1200)  # Inputs interactable olsun
 
         # FILTRELERI UYGULA
         for raw_key, raw_value in filters.items():
