@@ -239,15 +239,58 @@ async def _try_selector(page, candidates: list[str], timeout_per_candidate: int 
 
 
 async def _fill_text_input(page, candidates: list[str], value: str) -> Optional[str]:
-    """Text input'u doldur. Hangi selector'la doldugunu donder."""
+    """Text input'u doldur — Bootstrap datepicker + Select2 + plain text uyumlu.
+
+    Strateji:
+      1. element bul
+      2. Native fill + Tab
+      3. JS ile value set + change/input event dispatch + jQuery trigger
+      4. (datepicker tarihiyse) bootstrap-datepicker API hook dene
+    """
     el, sel = await _try_selector(page, candidates)
     if not el:
         return None
     try:
-        await el.fill("")
-        await el.fill(str(value))
-        # ASP.NET on-blur trigger'i icin Tab gonder (date picker icin onemli)
-        await el.press("Tab")
+        # Adim 1: Native fill (input/change events triggers)
+        try:
+            await el.fill("")
+            await el.fill(str(value))
+        except Exception:
+            pass
+
+        # Adim 2: JS ile direkt value set + olaylari mecbur dispatch
+        try:
+            await page.evaluate("""
+                ([selector, value]) => {
+                    const el = document.querySelector(selector);
+                    if (!el) return false;
+                    el.value = value;
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                    el.dispatchEvent(new Event('blur', { bubbles: true }));
+                    // Bootstrap-datepicker (Eyotek'te kullaniliyor)
+                    if (window.jQuery) {
+                        try {
+                            const $el = window.jQuery(el);
+                            $el.trigger('change');
+                            // bootstrap-datepicker hook
+                            if (typeof $el.datepicker === 'function') {
+                                try { $el.datepicker('update', value); } catch(e) {}
+                            }
+                        } catch(e) {}
+                    }
+                    return true;
+                }
+            """, [sel, str(value)])
+        except Exception as e:
+            logger.debug(f"[NAV] JS fill fail {sel}: {e}")
+
+        # Adim 3: Tab press (focus disina cik, validation tetikle)
+        try:
+            await el.press("Tab")
+        except Exception:
+            pass
+
         return sel
     except Exception as e:
         logger.debug(f"[NAV] fill_text fail {sel}: {e}")
