@@ -1992,6 +1992,69 @@ async def _tool_get_recent_system_updates(**kwargs):
         return {"error": f"Sistem guncelleme okuma hatasi: {e}"}
 
 
+async def _tool_get_blueprint_section(**kwargs):
+    """Oturum 25.29 — BLUEPRINT.md bolum erisimi.
+
+    Bot 'mimari nedir / X nasil calisir / kapasitemiz nedir' soru aldiginda
+    BLUEPRINT.md'den ilgili bolumu canli okur. Atlas advisor da yeni oneri
+    vermeden once bu tool'la mimari kararin var olup olmadigini kontrol eder.
+    """
+    section = kwargs.get("section", "")
+    caller_role = kwargs.get("_caller_role", "")
+    if not section:
+        # Default: section listesi
+        try:
+            from blueprint_awareness import list_blueprint_sections
+            sections = list_blueprint_sections()
+            return {
+                "info": "BLUEPRINT.md tum bolumler (detay icin section parametresi ver)",
+                "sections": [{"num": s["num"], "title": s["title"]} for s in sections],
+                "ornek": "section=3 veya section='LLM Routing'",
+            }
+        except Exception as e:
+            return {"error": str(e)[:200]}
+
+    try:
+        from blueprint_awareness import get_blueprint_section, search_blueprint
+        # Numerik mi yoksa keyword mu?
+        try:
+            sec_num = int(section)
+            result = get_blueprint_section(sec_num)
+        except (ValueError, TypeError):
+            result = get_blueprint_section(str(section))
+
+        if result:
+            # Diger roller icin trim — admin/mudur/yonetim tam icerik gorur
+            if caller_role not in ("admin", "mudur", "yonetim", "rehber"):
+                # Sadece basligi + ilk 800 karakter
+                content = result["content"][:800] + "\n[... detay yonetim erisiminde]"
+                return {
+                    "num": result["num"],
+                    "title": result["title"],
+                    "preview": content,
+                    "not": "Tam icerik yonetim erisimine acik.",
+                }
+            return {
+                "num": result["num"],
+                "title": result["title"],
+                "content": result["content"][:5000],
+                "char_count": result["char_count"],
+            }
+        # Bulamadi → search
+        hits = search_blueprint(section, max_results=3)
+        if hits:
+            return {
+                "info": f"'{section}' bolum olarak bulunamadi, keyword araamasi yapildi",
+                "hits": [
+                    {"num": h["num"], "title": h["title"], "snippet": h["snippet"][:300]}
+                    for h in hits
+                ],
+            }
+        return {"error": f"'{section}' icin bolum/keyword bulunamadi"}
+    except Exception as e:
+        return {"error": f"BLUEPRINT okuma hatasi: {e}"}
+
+
 async def _tool_get_atlas_trend(**kwargs):
     """Oturum 22.1 — Atlas trend raporu.
     SADECE admin (Neo) — sistem self-observation verisi, mudur/yonetim dahil kapali.
@@ -2050,6 +2113,8 @@ TOOL_DISPATCH = {
     "get_atlas_trend":          lambda p: _tool_get_atlas_trend(**p),
     # Oturum 22.1h — System self-awareness (KALDIGIM canli)
     "get_recent_system_updates": lambda p: _tool_get_recent_system_updates(**p),
+    # Oturum 25.29: BLUEPRINT.md bolum erisimi (mimari farkindalik)
+    "get_blueprint_section": lambda p: _tool_get_blueprint_section(**p),
     # Oturum 22.1l — Öğretmen eskalasyon chain
     "hazirla_etut_talebi":      lambda p: _tool_hazirla_etut_talebi(**p),
     # Oturum 22.1m — Peer benchmark (anonim)
@@ -2241,6 +2306,11 @@ async def run_tool(name: str, input_data: dict,
             result = await fn(enriched)
             return json.dumps(result, ensure_ascii=False, indent=2, default=str)
         elif name == "get_recent_system_updates":
+            enriched = dict(input_data)
+            enriched["_caller_role"] = caller_role
+            result = await fn(enriched)
+            return json.dumps(result, ensure_ascii=False, indent=2, default=str)
+        elif name == "get_blueprint_section":
             enriched = dict(input_data)
             enriched["_caller_role"] = caller_role
             result = await fn(enriched)

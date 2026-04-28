@@ -127,19 +127,41 @@ def refresh_cache():
 def get_awareness_block() -> str:
     """
     System prompt'a eklenmek üzere bloğu hazırla — prefix/suffix ile.
+
+    Oturum 25.29: KALDIGIM (oturum bazli zaman cizelgesi) + BLUEPRINT
+    (mimari kapasite ozeti) BIR ARADA inject edilir → bot KALDIGIM ve
+    BLUEPRINT'in ayni anda farkinda olur.
     """
     awareness = get_runtime_awareness()
-    if not awareness:
+    blueprint_block = ""
+    try:
+        from blueprint_awareness import get_blueprint_summary
+        blueprint_block = get_blueprint_summary(max_chars=1800)
+    except Exception:
+        blueprint_block = ""
+
+    if not awareness and not blueprint_block:
         return ""
 
-    return (
-        "\n🧠 GÜNCEL RUNTIME FARKINDALIĞI — Son oturumlarda ne değişti (dinamik, KALDIGIM.md'den):\n"
-        "────────────────────────────────────────────────────────────────\n"
-        f"{awareness}\n"
-        "────────────────────────────────────────────────────────────────\n"
-        "Bu bölüm HER bridge restart'ında KALDIGIM.md'den otomatik yenilenir.\n"
-        "Neo sana 'son durum ne / ne değişti / yeni fix ne' diye sorduğunda yukarıdaki notları kullan.\n"
+    parts = []
+    if awareness:
+        parts.append(
+            "\n🧠 GÜNCEL RUNTIME FARKINDALIĞI — Son oturumlarda ne değişti (KALDIGIM.md'den):\n"
+            "────────────────────────────────────────────────────────────────\n"
+            f"{awareness}\n"
+            "────────────────────────────────────────────────────────────────"
+        )
+    if blueprint_block:
+        parts.append(
+            f"\n{blueprint_block}\n"
+        )
+    parts.append(
+        "Bu iki blok HER bridge restart'inda otomatik yenilenir (KALDIGIM mtime + BLUEPRINT mtime cache).\n"
+        "Neo sana 'son durum ne / ne degisti / mimari nedir / kapasiteni anlat' diye sordugunda\n"
+        "bu iki bloku TUTARLI okumalisin — KALDIGIM='ne yapildi', BLUEPRINT='ne var/nasil calisiyor'.\n"
+        "Detay icin tool: get_blueprint_section(<num veya baslik>) cagrilabilir.\n"
     )
+    return "\n".join(parts)
 
 
 if __name__ == "__main__":

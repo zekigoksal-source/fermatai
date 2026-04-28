@@ -839,6 +839,32 @@ TOOLS: list[dict] = [
             },
         },
     },
+    # Oturum 25.29 — BLUEPRINT.md mimari farkindalik
+    {
+        "name": "get_blueprint_section",
+        "description": (
+            "BLUEPRINT.md dosyasini GERCEK ZAMANLI okur, mimari kapasiteyi gosterir. "
+            "Kullanim:\n"
+            "- 'Mimari nedir / kapasite ne / X bolumu nasil calisir' sorularinda BU TOOL'u kullan\n"
+            "- 'BLUEPRINT'te ne diyoruz / hangi mimari kararlar var' sorularinda KULLAN\n"
+            "- Atlas oneri vermeden once 'bu zaten mimari karari mi' kontrolu icin KULLAN\n"
+            "section parametresi: int (1-17) veya keyword (orn 'LLM Routing', 'Eyotek')\n"
+            "section bos verilirse → tum bolum listesi doner. KALDIGIM (oturum bazli) ile "
+            "BLUEPRINT (mimari) BIR ARADA bot'a inject edilmistir, bu tool DETAY almak icin."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "section": {
+                    "type": "string",
+                    "description": (
+                        "Bolum no (1-17) veya keyword (orn '3' veya 'LLM Routing'). "
+                        "Bos birakilirsa tum bolum listesi doner."
+                    ),
+                },
+            },
+        },
+    },
     # Oturum 22.1 — Atlas Self-Observing Trend
     {
         "name": "get_atlas_trend",

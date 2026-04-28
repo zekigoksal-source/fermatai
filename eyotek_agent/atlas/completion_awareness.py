@@ -133,6 +133,33 @@ def find_kaldigim_mentions(keywords: list[str]) -> list[str]:
 
 # ─── ANA API ─────────────────────────────────────────────────────────────────
 
+def find_blueprint_decision(keywords: list[str]) -> list[str]:
+    """BLUEPRINT.md'de mimari karar / mevcut kapasite tespiti.
+
+    Atlas öneri vermeden önce: "Bu zaten BLUEPRINT'te mimari karari mi?"
+    """
+    if not keywords:
+        return []
+    try:
+        # blueprint_awareness ana modülde — atlas/'dan göreceli import
+        import sys
+        from pathlib import Path
+        parent = Path(__file__).resolve().parent.parent
+        if str(parent) not in sys.path:
+            sys.path.insert(0, str(parent))
+        from blueprint_awareness import search_blueprint
+        hits = []
+        for kw in keywords:
+            results = search_blueprint(kw, max_results=2)
+            for r in results:
+                hits.append(
+                    f"BLUEPRINT #{r['num']} ({r['title'][:50]}): {r['snippet'][:120]}"
+                )
+        return hits[:3]
+    except Exception:
+        return []
+
+
 async def is_already_done(
     category: str,
     target_files: list[str] | None = None,
@@ -140,6 +167,12 @@ async def is_already_done(
     days: int = 90,
 ) -> Optional[dict]:
     """Geçmişte yapılan işi tespit et.
+
+    4 kaynak kontrolü (Oturum 25.29):
+      1. atlas_suggestions.status='yapildi' (90 gün)
+      2. deployments tablosu (30 gün, dosya bazlı)
+      3. KALDIGIM.md "✅ kapatildi" notları
+      4. BLUEPRINT.md mimari karar / kapasite (yeni)
 
     Args:
         category: atlas suggestion category
@@ -157,8 +190,9 @@ async def is_already_done(
     completed = await find_completed_suggestions(category, target_files, days)
     deployments = await find_recent_deployments_touching(target_files, days=30) if target_files else []
     kaldigim_hits = find_kaldigim_mentions(keywords) if keywords else []
+    blueprint_hits = find_blueprint_decision(keywords) if keywords else []
 
-    if not (completed or deployments or kaldigim_hits):
+    if not (completed or deployments or kaldigim_hits or blueprint_hits):
         return None
 
     evidence = []
@@ -177,6 +211,9 @@ async def is_already_done(
     if kaldigim_hits:
         for k in kaldigim_hits[:2]:
             evidence.append(f"KALDIGIM: {k}")
+    if blueprint_hits:
+        for b in blueprint_hits[:2]:
+            evidence.append(b)
 
     return {
         "evidence": evidence,
@@ -187,6 +224,7 @@ async def is_already_done(
         "completed_count": len(completed),
         "deployment_count": len(deployments),
         "kaldigim_count": len(kaldigim_hits),
+        "blueprint_count": len(blueprint_hits),
     }
 
 

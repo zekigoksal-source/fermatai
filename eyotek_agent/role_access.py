@@ -36,7 +36,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "plan_kaydet", "plan_getir", "plan_gun_guncelle",
         "counsellor_brief", "class_brief", "transfer_failure_analiz", "tercih_listesi_tasla",
         "get_atlas_trend",              # Neo-only ama ACL'den geçsin, icinde phone check var
-        "get_recent_system_updates",    # KALDIGIM canli okuyucu
+        "get_recent_system_updates",
+        "get_blueprint_section",        # 25.29 BLUEPRINT mimari farkindalik    # KALDIGIM canli okuyucu
         "hazirla_etut_talebi",          # Ogretmen eskalasyon (22.1l)
         "ogrenci_peer_kiyas",           # Peer benchmark (22.1m)
         "add_to_student_program",       # 25.14h: ogrenci calismam panel yazma (admin override)
@@ -69,6 +70,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "plan_kaydet", "plan_getir", "plan_gun_guncelle",
         "counsellor_brief", "class_brief", "transfer_failure_analiz", "tercih_listesi_tasla",
         "get_recent_system_updates",
+        "get_blueprint_section",        # 25.29 BLUEPRINT mimari farkindalik
         "ogm_yonlendir",
         "branch_zayif_konu",
         # 23 Nisan — Tercih Robotu (okuma)
@@ -87,6 +89,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "plan_kaydet", "plan_getir", "plan_gun_guncelle",
         "counsellor_brief", "class_brief", "transfer_failure_analiz", "tercih_listesi_tasla",
         "get_recent_system_updates",
+        "get_blueprint_section",        # 25.29 BLUEPRINT mimari farkindalik
         "hazirla_etut_talebi",
         "ogrenci_peer_kiyas",
         "ogm_yonlendir",
