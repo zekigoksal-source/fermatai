@@ -1043,6 +1043,29 @@ function authHeaders(extra = {}) {
   return h;
 }
 
+// Oturum 25.29: Tüm session-aware fetch'lerde 401 olunca auto-reload
+// Eski tab + expired cookie senaryosu: yeni tabda login sonrası bu tabda
+// hala eski token. fetch 401 alınca → cleanup + reload + sliding 8h aktif.
+async function authFetch(url, options = {}) {
+  options.credentials = options.credentials || "include";
+  options.headers = authHeaders(options.headers || {});
+  const r = await fetch(url, options);
+  if (r.status === 401) {
+    try { localStorage.removeItem("fermat_token"); } catch (_) {}
+    // Sessiz değil — kullanıcıya kısa bilgi ver, sonra reload
+    try {
+      const m = document.createElement("div");
+      m.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);" +
+        "background:var(--accent,#F59E0B);color:#000;padding:10px 18px;border-radius:8px;" +
+        "font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.3);";
+      m.textContent = "⏰ Oturum yenileniyor, sayfa yeniden yüklenecek...";
+      document.body.appendChild(m);
+    } catch (_) {}
+    setTimeout(() => location.reload(), 1500);
+  }
+  return r;
+}
+
 // ─── Elements ─────────────────────────────────────────────
 const loginWrap = document.getElementById("loginWrap");
 const chatWrap  = document.getElementById("chatWrap");
@@ -1612,6 +1635,13 @@ function openArchiveEditModal({ suggestedTitle, suggestedCategory, lastUserPromp
           tags: tags,  // backend opsiyonel alır
         })
       });
+      // Oturum 25.29: 401 → session expired, auto-reload (sliding refresh sonrasi nadir)
+      if (r.status === 401) {
+        saveBtn.innerHTML = "⏰ Oturum yenileniyor...";
+        try { localStorage.removeItem("fermat_token"); } catch (_) {}
+        setTimeout(() => location.reload(), 1500);
+        return;
+      }
       const d = await r.json();
       if (d.success) {
         btn.innerHTML = "✅ Arşive eklendi";
