@@ -1363,8 +1363,18 @@ function finalizeBotMsg(el) {
 
 // 👍/👎 Geribildirim butonları — D1 (Neo 19 Nisan 00:10)
 // Her bot mesajına eklenir, tek seçim, değiştirilebilir.
+// Oturum 25.29: stale feedback-row temizleme (history-load mesajlarda eski
+// onclick'siz HTML olarak yuklenmis olabilir — temizleyip yeni JS-eklenen
+// versiyonu ekle).
 function addFeedbackButtons(botEl) {
-  if (!botEl || botEl.querySelector(".feedback-row")) return;
+  if (!botEl) return;
+  const stale = botEl.querySelectorAll(".feedback-row");
+  stale.forEach(el => {
+    if (!el.__addedByJS) {
+      try { el.remove(); } catch (_) {}
+    }
+  });
+  if (botEl.querySelector(".feedback-row")) return;  // JS-eklenen var, tekrar ekleme
   const text = botEl.textContent || "";
   if (text.length < 60) return; // çok kısa cevaplara feedback yok
 
@@ -1395,6 +1405,7 @@ function addFeedbackButtons(botEl) {
   const btnDown = mkFbBtn("👎", "down", msgHash, text, userPrompt, row);
   row.appendChild(btnUp);
   row.appendChild(btnDown);
+  row.__addedByJS = true;  // 25.29: stale cleanup'tan korunsun
   botEl.appendChild(row);
 }
 
@@ -1454,13 +1465,47 @@ function detectCategory(botText, userPrompt) {
   return "genel";
 }
 
+// Oturum 25.29: kullanici tarafi gorunur toast bildirim sistemi (alert yerine)
+function showToast(msg, type) {
+  type = type || "info";
+  const colors = {
+    info:    {bg: "var(--accent,#F59E0B)", fg: "#000"},
+    success: {bg: "#10b981", fg: "#fff"},
+    error:   {bg: "#ef4444", fg: "#fff"},
+    warning: {bg: "#f59e0b", fg: "#000"},
+  };
+  const c = colors[type] || colors.info;
+  const el = document.createElement("div");
+  el.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);" +
+    "background:" + c.bg + ";color:" + c.fg + ";padding:12px 22px;border-radius:10px;" +
+    "font-weight:600;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,0.4);font-size:14px;" +
+    "max-width:90%;text-align:center;";
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { try { el.remove(); } catch (_) {} }, 4000);
+}
+
 // ⭐ Arşive ekle butonu — bot mesajının altına eklenir
 // Oturum 23 (Neo): Arşive eklenirken kullanıcı başlık/kategori/etiket düzenleyebilir.
-// Random heuristic başlıklar YOK — her arşiv kaydı kullanıcının tanımladığı isim ile.
+// Oturum 25.29 (Neo arşiv kaydı bug raporu): defensive logging + toast feedback
+//   KRITIK FIX: Eski sohbet history-load durumunda DB'den gelen bot mesajinin
+//   icinde stale .archive-btn HTML'i kaliyor (innerHTML olarak yuklendi, onclick YOK).
+//   Yeni button eklemeden once eski .archive-btn'u tum varyantlariyla TEMIZLE.
 function addArchiveButton(botEl) {
-  if (!botEl || botEl.querySelector(".archive-btn")) return;
+  if (!botEl) return;
+  // STALE ARCHIVE BUTONLARI TEMIZLE — onclick handler'i olmayan eski HTML
+  // Eski sohbet history-load'dan gelen mesajlarda DB'de stored stale .archive-btn
+  // var; innerHTML ile yuklendiği için onclick yok. Burada temizle, JS-eklenen
+  // yeni buton'u (with onclick) en sona ekle.
+  const stale = botEl.querySelectorAll(".archive-btn");
+  stale.forEach(el => {
+    if (!el.__addedByJS) {
+      try { el.remove(); } catch (_) {}
+    }
+  });
+  if (botEl.querySelector(".archive-btn")) return;  // JS-eklenen var, tekrar ekleme
   const text = botEl.textContent || "";
-  if (text.length < 150) return; // çok kısa cevaplar arşivlenmez
+  if (text.length < 100) return; // 25.29: 150 → 100 (kisa kavramsal cevaplar da arsivlenebilir)
 
   const btn = document.createElement("button");
   btn.className = "archive-btn";
@@ -1473,41 +1518,52 @@ function addArchiveButton(botEl) {
   btn.innerHTML = "⭐ Arşive ekle";
   btn.onmouseover = () => { btn.style.borderColor = "var(--accent)"; btn.style.color = "var(--accent)"; };
   btn.onmouseout  = () => { btn.style.borderColor = "var(--border)"; btn.style.color = "var(--fg-muted)"; };
-  btn.onclick = () => {
-    // Kullanıcının kendi sorusunu bul (kontekst için)
-    const allMsgs = messages.querySelectorAll(".msg");
-    let lastUserPrompt = "";
-    for (let i = allMsgs.length - 1; i >= 0; i--) {
-      if (allMsgs[i] === botEl) continue;
-      if (allMsgs[i].classList.contains("user")) {
-        lastUserPrompt = allMsgs[i].textContent.trim();
-        break;
+  btn.onclick = (ev) => {
+    try {
+      ev.preventDefault();
+      ev.stopPropagation();
+      console.log("[archive] button clicked, botEl:", botEl);
+      // Kullanıcının kendi sorusunu bul (kontekst için)
+      const allMsgs = (typeof messages !== "undefined" && messages)
+        ? messages.querySelectorAll(".msg") : document.querySelectorAll(".msg");
+      let lastUserPrompt = "";
+      for (let i = allMsgs.length - 1; i >= 0; i--) {
+        if (allMsgs[i] === botEl) continue;
+        if (allMsgs[i].classList.contains("user")) {
+          lastUserPrompt = allMsgs[i].textContent.trim();
+          break;
+        }
       }
+
+      // Otomatik başlık önerisi (h2/h3 → user prompt → text)
+      let suggestedTitle = "";
+      const h2 = botEl.querySelector("h2, h3");
+      if (h2) suggestedTitle = h2.textContent.trim().slice(0, 80);
+      else if (lastUserPrompt) suggestedTitle = lastUserPrompt.slice(0, 80);
+      else suggestedTitle = text.slice(0, 60);
+
+      // Kategori tahmini (dropdown default'u için)
+      let suggestedCategory = "genel";
+      const lower = text.toLowerCase();
+      if (/çalışma planı|haftalık plan/i.test(lower)) suggestedCategory = "calisma_plani";
+      else if (/deneme|net|trend/i.test(lower)) suggestedCategory = "deneme";
+      else if (/formül|nedir|kavram|anlat/i.test(lower)) suggestedCategory = "konu_anlatimi";
+      else if (/analiz|rapor/i.test(lower)) suggestedCategory = "analiz";
+
+      console.log("[archive] opening modal:", {suggestedTitle, suggestedCategory});
+      openArchiveEditModal({
+        suggestedTitle,
+        suggestedCategory,
+        lastUserPrompt,
+        botEl,
+        btn,
+      });
+    } catch (err) {
+      console.error("[archive] button click error:", err);
+      showToast("⚠ Arşiv açılamadı: " + (err && err.message ? err.message : "JS hatası"), "error");
     }
-
-    // Otomatik başlık önerisi (h2/h3 → user prompt → text)
-    let suggestedTitle = "";
-    const h2 = botEl.querySelector("h2, h3");
-    if (h2) suggestedTitle = h2.textContent.trim().slice(0, 80);
-    else if (lastUserPrompt) suggestedTitle = lastUserPrompt.slice(0, 80);
-    else suggestedTitle = text.slice(0, 60);
-
-    // Kategori tahmini (dropdown default'u için)
-    let suggestedCategory = "genel";
-    const lower = text.toLowerCase();
-    if (/çalışma planı|haftalık plan/i.test(lower)) suggestedCategory = "calisma_plani";
-    else if (/deneme|net|trend/i.test(lower)) suggestedCategory = "deneme";
-    else if (/formül|nedir|kavram|anlat/i.test(lower)) suggestedCategory = "konu_anlatimi";
-    else if (/analiz|rapor/i.test(lower)) suggestedCategory = "analiz";
-
-    openArchiveEditModal({
-      suggestedTitle,
-      suggestedCategory,
-      lastUserPrompt,
-      botEl,
-      btn,
-    });
   };
+  btn.__addedByJS = true;  // 25.29: stale button cleanup'tan korunsun
   botEl.appendChild(btn);
 }
 
@@ -1623,13 +1679,23 @@ function openArchiveEditModal({ suggestedTitle, suggestedCategory, lastUserPromp
     btn.disabled = true;
     btn.innerHTML = "⏳ Kaydediliyor...";
 
+    // Oturum 25.29: archive content'inden .archive-btn ve .feedback-row STRIP et
+    // Aksi halde DB'ye stale buton HTML'i kaydedilir, sonraki yuklemede onclick yok.
+    let cleanContent = botEl.innerHTML;
+    try {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = cleanContent;
+      tmp.querySelectorAll(".archive-btn, .feedback-row").forEach(el => el.remove());
+      cleanContent = tmp.innerHTML;
+    } catch (_) { /* fallback: orijinal innerHTML */ }
+
     try {
       const r = await fetch(API_BASE + "/chat/archive", {
         method: "POST", credentials: "include",
         headers: authHeaders({"Content-Type": "application/json"}),
         body: JSON.stringify({
           title: title,
-          content: botEl.innerHTML,
+          content: cleanContent,
           category: category,
           context_prompt: lastUserPrompt,
           tags: tags,  // backend opsiyonel alır
