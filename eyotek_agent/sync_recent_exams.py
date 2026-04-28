@@ -48,9 +48,13 @@ _SUBJECT_MAP = {
     # AYT kolonlari da ayni isim ile gelir
 }
 
-_TR_LOWER = str.maketrans(
-    "ÇĞİIıÖŞÜ", "cgiıiosu",
-)
+# Turkce karakter -> ASCII (hem buyuk hem kucuk)
+_TR_ASCII = str.maketrans({
+    "ç": "c", "Ç": "c", "ğ": "g", "Ğ": "g",
+    "ı": "i", "İ": "i", "I": "i",
+    "ö": "o", "Ö": "o", "ş": "s", "Ş": "s",
+    "ü": "u", "Ü": "u",
+})
 
 
 def _normalize_subject(col: str) -> Optional[str]:
@@ -58,7 +62,7 @@ def _normalize_subject(col: str) -> Optional[str]:
     if not col or "_NET" not in col:
         return None
     base = col.split("_NET")[0]
-    base = base.translate(_TR_LOWER).lower()
+    base = base.translate(_TR_ASCII).lower()
     base = re.sub(r"[^a-z]", "", base)
     return _SUBJECT_MAP.get(base)
 
