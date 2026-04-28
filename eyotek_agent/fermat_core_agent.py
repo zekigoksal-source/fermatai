@@ -3467,6 +3467,42 @@ class FermatCoreAgent:
 
         system = _role_aware_prompt + dynamic_context
 
+        # ─── Oturum 25.29: Dangling tool_use cleanup ─────────────────────────
+        # Onceki turda timeout/iptal yaptiysa history'de tool_use var ama
+        # tool_result YOK. Yeni user mesaji eklendiginde Anthropic API
+        # `tool_use ids were found without tool_result blocks` 400 dondurur.
+        # FIX: Son assistant mesajini kontrol et, dangling tool_use varsa
+        # ya placeholder tool_result enjekte et ya da bu assistant'i sok.
+        _pruned = 0
+        while self.history and self.history[-1].get("role") == "assistant":
+            _last = self.history[-1]
+            _content = _last.get("content")
+            if isinstance(_content, list):
+                _tool_use_ids = [
+                    b.get("id") for b in _content
+                    if isinstance(b, dict) and b.get("type") == "tool_use"
+                ]
+                if _tool_use_ids:
+                    # Dangling tool_use'lar icin placeholder tool_result inject
+                    _placeholder_blocks = [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": tid,
+                            "content": "[ABORTED — onceki turda zaman asimi/iptal]",
+                            "is_error": True,
+                        }
+                        for tid in _tool_use_ids
+                    ]
+                    self.history.append({"role": "user", "content": _placeholder_blocks})
+                    _pruned += len(_tool_use_ids)
+                    break
+            break  # Tek pass yeterli — assistant son ise zincirde derinlik yok
+        if _pruned:
+            logger.warning(
+                f"[HISTORY-CLEAN] {_pruned} dangling tool_use icin placeholder "
+                f"tool_result enjekte edildi (onceki turda timeout/iptal)"
+            )
+
         self.history.append({"role": "user", "content": user_input})
         logger.info(f"Kullanici [{role}]: {user_input[:80]}")
 
