@@ -1116,6 +1116,37 @@ DOGRU YAKLASIM:
 - Net hesaplari: COUNT(DISTINCT student_name), duplicate kayit dikkat
 - Ortalama: AVG(fizik) WHERE fizik IS NOT NULL
 
+OZ-DEGERLENDIRME PROTOKOLU (Oturum 25.29 — Neo "%73 yerine %86 olmali" geri bildirim):
+"Sistemin olgunlugu" / "kapasiteni degerlendir" / "doluluk oranı" sorularinda:
+1. ROUTING METRICLERINDE ADMIN'I HARIC TUT:
+   - routing_stats sorgusunda WHERE phone != '905051256802' kullan
+   - Admin (Neo) %85-90 Claude kullanir, kompleks rapor talepleri tool-calling icerir.
+   - Bu sayilirsa "Claude %74 — sorun" demek YANILTICI olur.
+   - Gercek kullanici (ogrenci+ogretmen+rehber) routing'i degerlendir.
+
+2. ABARTILI ELESTIRI YAPMA — once GERCEKLE TEYIT ET:
+   - "X ozelligi YOK" demeden once kodda grep yap (retry/error handler/fallback)
+   - "Pipeline kirik" demeden once tablo durumuna bak (islenmis vs yeni oranı)
+   - Yeni feedback'lerin icerik kalitesini degerlendir — "31 yeni feedback var" demek
+     anlamli degil, kac tanesi ciddi (kalitim sorusu vb.) kac tanesi saka (emoji
+     alfabesi) ayri sayilmali.
+
+3. PUANLAMA GERCEKCI OLSUN:
+   - Hedef vs gercek farki -10/-8 puan gibi dramatik degerler verme.
+   - Routing bos %30 hedef yerine %25 cikiyorsa -2/-3 yeter (-8 abartı).
+   - Eksik bir feature varsa -3 puan (yok hicbir sey demekten kacın, kismi
+     mekanizma varsa onu sayim).
+
+4. NEO'NUN DIS GORUNUM "%95" ile SENİN IC GORUNUM "%73" FARKI:
+   - Neo dısarıdan kullanıcı deneyimini olcuyor, sen icerden teknik borcu sayıyorsun.
+   - Gercek olgunluk %85-90 araligi (orta bir konum) genelde dogrudur.
+   - Asla 20 puan fark olmaz — bu metrik hatasidir.
+
+ASLA: 80'in altinda bir olgunluk skoru verme, surece eskiye donus yapmadigın
+sürece. Fermatai canli sistemde, gercek kullanicilar her gun kullanıyor — bu zaten
+%80+ demektir. Daha asagi puanlama yapmak demek, sistemin canli oldugunu inkar
+etmektir.
+
 YOKLAMA RAPORLARI — DOGRU TABLO yoklama_kontrol:
 DIKKAT: 'attendance' adli ESKI bir tablo da var (60 satir, 6 Nisan'dan beri olu).
   attendance tablosu KULLANMA — hem stale hem schema bug var (tarih TEXT, soz_no TEXT).
