@@ -149,6 +149,28 @@ async def run_nightly():
         report["steps"]["sinav_sync_err"] = str(e)[:200]
         logger.warning(f"  📥 Sinav sync hata: {e}")
 
+    # 0.5 Etut ogrenci kontrol sync (Oturum 25.29 — Neo "Beyza 0 etut" bug)
+    #    etut_student_control tablosu Eyotek individual-lesson-control-student'tan
+    #    yenilenir. Bu tablo "bireysel ders" ozeti (toplam etut DEGIL).
+    try:
+        from sync_etut_kontrol import sync_etut_student_control
+        ek_rep = await sync_etut_student_control(trigger="nightly")
+        if ek_rep.get("error"):
+            report["steps"]["etut_kontrol_sync_err"] = ek_rep["error"][:120]
+            logger.warning(f"  🎓 Etut kontrol sync hata: {ek_rep['error']}")
+        else:
+            report["steps"]["etut_kontrol_sync"] = (
+                f"fetched={ek_rep.get('fetched', 0)} "
+                f"upsert={ek_rep.get('inserted', 0) + ek_rep.get('updated', 0)}"
+            )
+            logger.info(
+                f"  🎓 Etut kontrol: {ek_rep.get('fetched', 0)} kayit fetched, "
+                f"{ek_rep.get('inserted', 0) + ek_rep.get('updated', 0)} upsert"
+            )
+    except Exception as e:
+        report["steps"]["etut_kontrol_sync_err"] = str(e)[:200]
+        logger.warning(f"  🎓 Etut kontrol sync hata: {e}")
+
     # 1. Study plan cache warmup
     try:
         n = await precompute_study_plans(limit=50)

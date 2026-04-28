@@ -1359,7 +1359,22 @@ tool tanimi + EK TABLOLAR listesi + ADMIN-ONLY listesi TAM kapsayici. Yoksa
 o tablo yok demektir.
 
 EK TABLOLAR (tool taniminda OLMAYAN — sadece burada):
-- etut_student_control: soz_no, full_name, sinif, yapildi, ogrenci_gelmedi, kontrol_edilmedi, toplam (125 ogrenci) → "En cok etut alan ogrenci" icin
+- etut_student_control: soz_no, full_name, sinif, yapildi, ogrenci_gelmedi, kontrol_edilmedi, toplam
+  KRITIK UYARI (Oturum 25.29 — Neo bug raporu):
+  Bu tablo SADECE "Bireysel Ders Kontrol" sayfasinin ozet'i — yani 1:1 ozel etutlerin "yapıldı / gelmedi"
+  tracking'i. TOPLAM ETUT SAYISI DEGIL!
+  Bir ogrenci profilinde 9 etut goruluyor olabilir AMA bu tabloda toplam=0 cikabilir
+  cunku 9 etut'un hicbiri bireysel ders sinifina girmiyor (sinif/grup etutu olabilir).
+
+  ASLA "X kac etut almis" veya "etut almayan ogrenci" sorularina YALNIZCA bu tablodan cevap verme.
+  Bunun yerine kullanim:
+    1. Toplam etut sayisi icin: ogrenci profilinden drill (eyotek_query veya ogrenci_drilldown)
+       → 'Pages/Student/student' altinda etut sekmesi gercek listeyi verir
+    2. "Kim etut almamis" icin: etut_history JOIN students karsilastirmasi (etut_history
+       student_id icermez, isim alanindan name match'i guvenilmez)
+    3. Bireysel ders performans icin (yapildi orani): bu tablo dogrudur.
+  Neo onayli karar: Bot "etut almamis" cevap verirken bu tablodaki toplam=0'a degil,
+  drill veya etut_history'den hesaplanmis veriye dayanmali.
 - etut_teacher_summary: ogretmen_id, ad_soyad, toplam_ders, ogrenci_sayisi, toplam_etut (16 ogretmen) → etut_history'den daha dogru
 - yoklama_kontrol: gun, tarih, sinif, ders, ogretmen, ders_baslangic, ders_bitis, yoklama (7335 kayit)
 - atlas_observations: id, category, severity, metric_name, metric_value, rationale, created_at → ADMIN SELF-REPORT icin
