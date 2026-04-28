@@ -567,11 +567,38 @@ async def _read_table(page, max_rows: int) -> tuple[list[str], list[dict]]:
         # Tek evaluate icinde header+rows topla — JSHandle null sorunu yok
         result = await page.evaluate(f"""
             () => {{
-                const tables = Array.from(document.querySelectorAll('table'));
-                if (!tables.length) return {{ headers: [], rows: [] }};
-                // En cok tbody tr'ye sahip table
-                tables.sort((a, b) => b.querySelectorAll('tbody tr').length - a.querySelectorAll('tbody tr').length);
-                const t = tables[0];
+                const all = Array.from(document.querySelectorAll('table'));
+                if (!all.length) return {{ headers: [], rows: [] }};
+                // UI tablolarini disla (checkbox-list, column-selector vb.)
+                const isUiTable = (t) => {{
+                    const cls = (t.className || '').toLowerCase();
+                    const id  = (t.id || '').toLowerCase();
+                    if (cls.includes('checkbox-list')) return true;
+                    if (cls.includes('column-list')) return true;
+                    // chk* id pattern (chkEkalan, chkColumns vs)
+                    if (/^chk/.test(id)) return true;
+                    // role-grid degil ama tbody'de input checkbox cogunlukta?
+                    const tdCount = t.querySelectorAll('tbody td').length || 1;
+                    const cbCount = t.querySelectorAll('tbody input[type=checkbox]').length;
+                    if (cbCount > 0 && cbCount / tdCount > 0.6) return true;
+                    return false;
+                }};
+                // 1) thead+th olan ve UI olmayan tablolar
+                let cands = all.filter(t => !isUiTable(t)
+                    && t.querySelectorAll('thead th').length > 0);
+                // 2) thead yoksa, ilk satirda th olan (header-row tablolar)
+                if (!cands.length) {{
+                    cands = all.filter(t => !isUiTable(t)
+                        && t.querySelectorAll('tr:first-child th').length > 0);
+                }}
+                // 3) Hala yok — UI olmayan tum tablolar
+                if (!cands.length) {{
+                    cands = all.filter(t => !isUiTable(t));
+                }}
+                // 4) Fallback — orijinal davranis
+                if (!cands.length) cands = all;
+                cands.sort((a, b) => b.querySelectorAll('tbody tr').length - a.querySelectorAll('tbody tr').length);
+                const t = cands[0];
                 const ths = t.querySelectorAll('thead th, tr:first-child th');
                 const headers = Array.from(ths).map(th => (th.innerText || '').trim());
                 const trs = Array.from(t.querySelectorAll('tbody tr')).slice(0, {max_rows});
