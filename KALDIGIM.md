@@ -1,8 +1,10 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 28 Nisan 2026, gece — **OTURUM 25.29 (final) — BLUEPRINT teknik yenileme + Atlas completion_awareness + Cerebras web zenginleştirme**
-> **28 Nisan gece commit'leri:**
->   - `b66ab00` BLUEPRINT teknik yenileme (Section 13/14/15 yeniden) + Atlas completion_awareness modülü + Cerebras web kanal qwen-3-235b + RAG enjekte + memory kalıcı kural (oturum sonu 4 zorunlu)
+> **Son güncelleme:** 28 Nisan 2026, gece final — **OTURUM 25.29 — BLUEPRINT bot+Atlas farkındalık zinciri**
+> **28 Nisan gece final commit:**
+>   - `5be843e` BLUEPRINT bot+Atlas farkındalık zinciri (3 koordineli kaynak: KALDIGIM ne YAPILDI / BLUEPRINT ne VAR / Atlas ne GÖZLEMLEDIM)
+>   - `7fa32d4` KALDIGIM final + RAG search_curriculum import fix
+>   - `b66ab00` BLUEPRINT teknik yenileme (Section 13/14/15) + Atlas completion_awareness + Cerebras web qwen-3-235b + memory kalıcı kural
 >   - `dcb907d` KALDIGIM aksam guncellemesi (bot self-awareness icin)
 > **28 Nisan akşam commit'leri (sıfır teknik borç push):**
 >   - `3af0fd3` Cerebras eskalasyon softening + lane expansion (rehber+ogretmen) + feedback_triage modulu
@@ -23,6 +25,66 @@
 > **Önceki commit'ler:** `b754d0e` (Atlas-2 Cerebras), `4965694` (viewer pagination ters), `2d190d1` (Cerebras entegrasyon)
 > **Backup tags:** `oturum-25-22-cerebras-live`, `oturum-25-22-pre-cerebras`, `oturum-25-20-modular-disabled`
 > **Sistem:** ✅ bridge active, **Eyotek AGENTIC Navigator+Planner CANLI** (Cerebras gpt-oss-120b plan üretiyor, Playwright CDP navigate ediyor)
+
+## 🆕 OTURUM 25.29 (28 Nisan GECE — FINAL) — Bot+Atlas BLUEPRINT awareness zinciri
+
+Neo: "Bot kendi BLUEPRINT'in de farkında olsun, aynı KALDIGIM gibi. Atlas da aynı şekilde — sistem mimarisi konusunda hepsi aynı bakış açısıyla güncel ve koordineli çalışmalı."
+
+### 3 KOORDINELI BILGI KAYNAGI
+
+| Kaynak | "Ne anlatır?" | Kim okur? | Tool |
+|---|---|---|---|
+| **KALDIGIM.md** | Ne YAPILDI (oturum bazlı zaman çizelgesi) | runtime_awareness | get_recent_system_updates |
+| **BLUEPRINT.md** | Ne VAR / nasıl ÇALIŞIYOR (mimari kapasite) | blueprint_awareness | **get_blueprint_section** (yeni) |
+| **Atlas tabloları** | Neyi GÖZLEMLEDIM, ne ÖNERIYORUM (canlı self-report) | atlas modülü | get_atlas_trend |
+
+### Yapılan değişiklikler (`5be843e`)
+
+**1. `blueprint_awareness.py` (yeni, 200 satır):**
+- `get_blueprint_summary(max_chars)` — kompakt mimari özet (her mesajda inject)
+- `get_blueprint_section(num veya keyword)` — tam section içeriği (Claude tool)
+- `list_blueprint_sections()` — 18 başlık listesi
+- `search_blueprint(query)` — keyword bazlı ilgili section bul
+- `get_architecture_decision(topic)` — Section 17 mimari karar check
+
+**2. `runtime_awareness.get_awareness_block()` zenginleştirildi:**
+- KALDIGIM (3500 char) + BLUEPRINT (1800 char) BIR ARADA inject
+- Bot her mesajda her iki kaynaktan da haberdar
+- Coordinated note: "KALDIGIM='ne yapildi', BLUEPRINT='ne var/nasil calisiyor'"
+
+**3. Claude tool: `get_blueprint_section`**
+- tool_definitions.py schema eklendi
+- fermat_core_agent.py registry + name handler
+- role_access.py: admin/yonetim/mudur ACL'lere eklendi (öğretmen/rehber/öğrenci kapalı — mimari yönetim verisi)
+- Diğer roller için preview (800 char) görünür
+
+**4. Atlas advisor BLUEPRINT awareness:**
+- `atlas/completion_awareness.py` 4. kaynak: `find_blueprint_decision(keywords)`
+- `is_already_done()` artık 4 katmandan kontrol: atlas_suggestions + deployments + KALDIGIM + **BLUEPRINT**
+- Atlas öneri verirken "bu zaten BLUEPRINT'te mimari karari" tespit ederse rationale'ye not + severity düşürür
+
+**5. system_prompts.py "MIMARI FARKINDALIK PROTOKOLU":**
+- Bot 3 kaynağı tutarlı okumalı
+- "BLUEPRINT'te yazılı kapasiteyi 'yok' deme" yasağı
+- Tutarsızlık durumunda Neo'ya sor, kendi karar verme
+
+### Live Test Sonuçları (gece 18:25)
+
+```
+get_blueprint_summary       → 1716 char, 18 section listesi ✓
+get_awareness_block          → 5502 char, KALDIGIM + BLUEPRINT BIR ARADA ✓
+get_blueprint_section(3)    → "Hibrit LLM Routing", 2197 char ✓
+search_blueprint('Cerebras') → 5+ hit, sıralı ✓
+list_blueprint_sections      → 18 section ✓
+```
+
+### Tutarlılık Garantisi
+
+- **Bot mimari sorusunda** önce BLUEPRINT summary'i (zaten inject), detay için tool çağırır
+- **Atlas yeni öneri vermeden önce** BLUEPRINT'te mimari karar varsa "bu yapıldı/karar alındı" tespit eder
+- **KALDIGIM güncellenmeden** BLUEPRINT yenilenmez (her oturum sonu birlikte güncellenecek — kalıcı kural memory'de)
+
+---
 
 ## 🆕 OTURUM 25.29 (28 Nisan GECE, final) — BLUEPRINT teknik + Atlas farkındalık + Cerebras web
 
