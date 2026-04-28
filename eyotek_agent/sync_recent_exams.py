@@ -324,6 +324,7 @@ async def sync_recent_exams(
     dry_run: bool = False,
     trigger: str = "manual",
     max_exams_per_run: int = 5,
+    force_codes: Optional[list[str]] = None,
 ) -> dict:
     """Son N gun icindeki sinavlardan eksik olanlari DB'ye al.
 
@@ -348,9 +349,23 @@ async def sync_recent_exams(
             return report
 
         existing = await existing_exam_codes()
-        new_exams = [e for e in recent if e["exam_code"] not in existing]
+        force_set = set(force_codes or [])
+        # Aynı exam_code'u birden fazla şube için listede görebiliriz — dedup
+        seen_codes: set[str] = set()
+        new_exams: list[dict] = []
+        for e in recent:
+            if e["exam_code"] in seen_codes:
+                continue
+            # force_codes icindeyse drill et (mevcut olsa bile — backfill icin)
+            if e["exam_code"] in existing and e["exam_code"] not in force_set:
+                continue
+            seen_codes.add(e["exam_code"])
+            new_exams.append(e)
         report["exams_new"] = len(new_exams)
-        logger.info(f"[SYNC] Toplam {len(recent)} sinav, yeni={len(new_exams)}")
+        logger.info(
+            f"[SYNC] Toplam {len(recent)} sinav, yeni={len(new_exams)}"
+            f"{f' (force: {len(force_set)})' if force_set else ''}"
+        )
 
         # Yenileri tarihe gore en yeni once
         new_exams.sort(key=lambda e: e["exam_date"], reverse=True)
@@ -436,13 +451,17 @@ async def _main():
     p.add_argument("--dry-run", action="store_true", help="DB'ye yazma, sadece raporla")
     p.add_argument("--trigger", default="manual", help="Log'a yazilacak tetik etiketi")
     p.add_argument("--max", type=int, default=5, help="Tek run'da kac yeni sinav drill yapilsin")
+    p.add_argument("--force-codes", default="",
+                   help="Virgul ile exam_code listesi — DB'de olsa bile yeniden drill (backfill)")
     args = p.parse_args()
 
+    fc = [c.strip() for c in args.force_codes.split(",") if c.strip()] if args.force_codes else None
     report = await sync_recent_exams(
         days=args.days,
         dry_run=args.dry_run,
         trigger=args.trigger,
         max_exams_per_run=args.max,
+        force_codes=fc,
     )
     _print_report(report)
 
