@@ -19,7 +19,10 @@ from db_pool import db_fetch, db_fetchrow, db_fetchval, db_execute
 
 OTP_LENGTH = 6
 OTP_VALIDITY_MIN = 15
-SESSION_VALIDITY_HOURS = 2
+# Oturum 25.29 (Neo geri bildirim): 2h cok kisa — kullanici okurken atildi
+# 8h + sliding refresh: aktif kullanici asla atilmaz, 8h tamamen inaktif kalirsa cikar
+SESSION_VALIDITY_HOURS = 8
+SESSION_SLIDING_REFRESH = True  # her get_session'da expires_at = NOW() + 8h ileri
 DAILY_OTP_LIMIT = 5
 
 
@@ -272,6 +275,18 @@ async def get_session(token: str) -> Optional[dict]:
 
     if row["session_expires_at"] and row["session_expires_at"] < datetime.now():
         return None
+
+    # Oturum 25.29: SLIDING REFRESH — her erisimde TTL ileri sar
+    # Aktif kullanici asla atilmaz, sadece tam inaktif kalanlar cikar
+    if SESSION_SLIDING_REFRESH:
+        try:
+            new_exp = datetime.now() + timedelta(hours=SESSION_VALIDITY_HOURS)
+            await db_execute(
+                "UPDATE web_sessions SET session_expires_at=$1 WHERE session_token=$2",
+                new_exp, token,
+            )
+        except Exception:
+            pass  # sliding fail kritik degil, session yine de gecerli
 
     return {
         "phone": row["phone"],
