@@ -3004,7 +3004,13 @@ async def try_fast_response(
         )
 
     # "Saka yap / espri" — eglence ama kurumsal
-    if re.search(r"^([sş][aş]ka|espri|fikra|eglen|komik|gul|gül)", msg_lower[:10]) and len(msg_lower) < 30:
+    # NOT (Oturum 25.29): "gul|gül" prefix kaldirildi — Gülnur/Gülay/Gülşen/Gülbahar
+    # gibi ogrenci adlariyla yanlis eslesiyordu (Kardelen rehber 6 kez "Gülnur erken
+    # raporla" dedi, bot her seferinde bilmece anlatti).
+    # \b sınırı: "saka" "sakarya"yı tetiklemesin; "eglen"e boundary konmadi cunku
+    # "eglence/eglenceli" varyasyonlarini da kapsamali.
+    if re.search(r"^(şaka\b|saka\b|espri\b|fikra\b|f[ıi]kra\b|eglen|eğlen|komik\s)",
+                 msg_lower) and len(msg_lower) < 30:
         hitap = name.split()[0] if name else ""
         return (
             f"{hitap}, ben şakalardan çok _zekanı geliştirecek bilmeceler_ severim! 🧠\n\n"

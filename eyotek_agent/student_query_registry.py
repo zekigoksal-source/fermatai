@@ -346,12 +346,15 @@ STUDENT_QUERY_REGISTRY = [
     },
 
     # ─── KATEGORI 14: VEDA ─────────────────────────────────────────────
+    # Oturum 25.29 KRITIK FIX: word-boundary YOKKEN "bay" -> "bayatlioglu" (Kardelen
+    # rehber 08:34, Goktürk Han Bayatlioglu sorgusunda bot Pomodoro/uyku motivasyonu
+    # gonderdi — "bay" prefix ofnaylaniyordu). \b sınırlı haline getirildi.
     {
         "id": "veda",
         "patterns": [
-            r"(g[oö]r[uü][sş][uü]r[uü]z|hosca\s*kal|hoşça|bye|bay)",
-            r"(yok\s*)?(sag\s*ol|sagol|sağol)(\s*can|\s*hocam)?",
-            r"(tesekkur|teşekkür|saol)",
+            r"\b(g[oö]r[uü][sş][uü]r[uü]z|ho[sş][cç]a\s*kal|ho[sş][cç]a|bye|bay\b|baybay)\b",
+            r"\b(yok\s*)?sa[ğg]\s*ol(\s*can[iı]m?|\s*hocam)?\b",
+            r"\b(te[sş]ekk[uü]r(ler|ederim)?|sa[oö]l|eyvallah)\b",
         ],
         "path": "fast",
         "handler": "veda_cevap",
