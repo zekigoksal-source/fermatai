@@ -229,6 +229,26 @@ async def run_nightly():
         report["steps"]["followup_queue_err"] = str(e)[:200]
         logger.warning(f"  🔁 Follow-Up hata: {e}")
 
+    # 6.5 Feedback triaj (Oturum 25.29 — Neo karari):
+    # user_feedback tablosundaki 'yeni' kayitlari kategorize et + admin alarm.
+    try:
+        from feedback_triage import triage_pending_feedback
+        ft = await triage_pending_feedback(dry_run=False)
+        report["steps"]["feedback_triage"] = (
+            f"total={ft.get('total', 0)} "
+            f"teknik={ft['kategoriler'].get('teknik', 0)} "
+            f"icerik={ft['kategoriler'].get('icerik', 0)} "
+            f"alerted={ft.get('alerted', 0)}"
+        )
+        logger.info(
+            f"  📋 Feedback triaj: {ft.get('total', 0)} kayit | "
+            f"teknik={ft['kategoriler'].get('teknik', 0)} "
+            f"icerik={ft['kategoriler'].get('icerik', 0)}"
+        )
+    except Exception as e:
+        report["steps"]["feedback_triage_err"] = str(e)[:200]
+        logger.warning(f"  📋 Feedback triaj hata: {e}")
+
     # 7. Data Freshness audit (Oturum 25.29) — stale modulleri raporla
     try:
         from data_freshness_helper import list_stale_modules

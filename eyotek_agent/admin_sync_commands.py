@@ -108,6 +108,58 @@ async def get_update_checklist() -> str:
     return "\n".join(lines)
 
 
+async def get_feedback_triage_report() -> str:
+    """Son triaj durumu + admin alert sayilari (WP komut: 'feedback rapor')."""
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        # Triaj durumu
+        rows = await conn.fetch(
+            """SELECT status, COUNT(*) AS n FROM user_feedback
+               GROUP BY status ORDER BY n DESC"""
+        )
+        # Son 7 gun ciddi (teknik+icerik) feedback'ler
+        ciddi = await conn.fetch(
+            """SELECT id, role, full_name, status, LEFT(feedback, 100) AS preview,
+                      created_at::date AS tarih
+               FROM user_feedback
+               WHERE status IN ('triaged_teknik', 'triaged_icerik')
+                 AND created_at > NOW() - INTERVAL '7 days'
+               ORDER BY created_at DESC LIMIT 10"""
+        )
+        # Bekleyen yeni
+        yeni_n = await conn.fetchval(
+            "SELECT COUNT(*) FROM user_feedback WHERE status='yeni'"
+        )
+
+    lines = ["📋 *Feedback Triaj Raporu*", "—" * 18]
+    lines.append(f"⏳ *Yeni (henuz triaj olmamış):* {yeni_n or 0}")
+    lines.append("")
+    lines.append("*Status dağılımı:*")
+    for r in rows:
+        st = r["status"]
+        n = r["n"]
+        icon = {
+            "triaged_teknik": "🔧",
+            "triaged_icerik": "📚",
+            "triaged_vague": "❓",
+            "triaged_saka": "🃏",
+            "islendi": "✅",
+            "onaylandi": "👍",
+            "yeni": "⏳",
+        }.get(st, "•")
+        lines.append(f"  {icon} {st}: {n}")
+    if ciddi:
+        lines.append("")
+        lines.append("*🔴 Bekleyen ciddi feedback'ler (son 7 gun):*")
+        for c in ciddi:
+            kat = "🔧" if c["status"] == "triaged_teknik" else "📚"
+            preview = (c["preview"] or "")[:70]
+            lines.append(f"  {kat} [{c['tarih']}] {c['full_name'] or c['role']}: _{preview}_")
+    else:
+        lines.append("\n_Bekleyen ciddi feedback yok._")
+    return "\n".join(lines)
+
+
 async def get_freshness_report() -> str:
     """Tum modullerin sync durumu — admin "veri durumu" komutu icin.
 

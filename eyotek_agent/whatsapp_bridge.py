@@ -2692,6 +2692,32 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
             except Exception as e:
                 return f"Hata: {e}"
 
+        # Feedback triaj raporu (Oturum 25.29) — admin "feedback rapor"
+        if neo_lower in ("feedback", "feedback rapor", "geri bildirim",
+                          "geri bildirim rapor", "feedback durum", "feedback triaj"):
+            try:
+                from admin_sync_commands import get_feedback_triage_report
+                return await get_feedback_triage_report()
+            except Exception as e:
+                return f"Hata: {e}"
+
+        # Manuel triaj tetikle — admin "feedback triaj baslat"
+        if neo_lower in ("feedback triaj baslat", "geri bildirim triaj"):
+            try:
+                from feedback_triage import triage_pending_feedback
+                rep = await triage_pending_feedback(dry_run=False)
+                return (
+                    f"📋 Triaj tamamlandi:\n"
+                    f"  Total: {rep.get('total', 0)}\n"
+                    f"  Teknik: {rep['kategoriler'].get('teknik', 0)}\n"
+                    f"  Icerik: {rep['kategoriler'].get('icerik', 0)}\n"
+                    f"  Vague: {rep['kategoriler'].get('vague', 0)}\n"
+                    f"  Saka: {rep['kategoriler'].get('saka', 0)}\n"
+                    f"  Admin alert: {rep.get('alerted', 0)}"
+                )
+            except Exception as e:
+                return f"Triaj hata: {e}"
+
         # Talimat kaydet: "talimat: ..." veya "not: ..." veya "ekle: ..."
         if neo_lower.startswith(("talimat:", "talimat ", "not:", "not ", "ekle:", "ekle ", "guncelle:", "guncelle ", "todo:", "todo ")):
             # "talimat: xyz" → "xyz" kısmını al

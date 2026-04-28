@@ -189,13 +189,16 @@ def decide_route(
     ):
         return "claude"
 
-    # ── 3b. GROQ-SAFE LANE KONTROLU (Oturum 25.10 — Neo karari) ──
-    # Production verisinden tespit: Claude'a giden trafiğin %50'si Groq-safe.
+    # ── 3b. CEREBRAS-SAFE LANE KONTROLU (Oturum 25.29 — Cerebras tuning) ──
+    # Production verisinden: Claude'a giden trafiğin %50'si yerel-safe.
     # 7 lane: kavramsal_kisa, sohbet, meta_direktif, kibarlik, egitim_icerik,
     #         red_generik, kisa_motivasyon
-    # Lane match → "local" (chat_local Groq-first) → quality fail olursa Claude eskale
-    # Sadece ogrenci rolu (admin/mudur Claude'da kalsin)
-    if role == "ogrenci":
+    # Lane match → "local" (chat_local_async Cerebras-first) → quality fail olursa Claude
+    # Oturum 25.29 fix: ogrenci + ogretmen + rehber roller — admin/mudur Claude
+    # Veri/rapor istekleri lane'e dusmez (kavramsal_kisa/sohbet/egitim_icerik gibi
+    # net kategoriler cikar). Rehber "X hakkinda bilgi" gibi sorgular ZATEN
+    # classify_complexity uzerinden cloud'a gidecek (data_query pattern yakalar).
+    if role in ("ogrenci", "ogretmen", "rehber"):
         try:
             from groq_lanes import classify_lane
             _lane = classify_lane(message, role=role, phone=phone)

@@ -3656,22 +3656,37 @@ class FermatCoreAgent:
                 elif any(ord(c) > 0x4E00 and ord(c) < 0x9FFF for c in answer[:200]):
                     _needs_escalation = True
                     logger.info("  [ESKALASYON] Ollama Cince/yabanci dil karisti, Claude'a geciliyor")
-                # Halüsinasyon tespiti — uydurma veri işaretleri
-                elif any(h in answer.lower() for h in [
-                    "bilgi sahibi değilim", "bilgi sahibi degilim",
-                    "mevcut verilere göre", "1. sınıf", "2. sınıf", "3. sınıf",
-                    "spesifik bilgiye sahip", "kesin bilgi veremem",
-                    "tam olarak bilmiyorum", "yanıtlayamıyorum",
-                    "net bir bilgi", "maalesef mevcut",
-                    "gerçek zamanlı", "canlı veri",
-                    "sahip olmadığım", "veritabanı", "veri tabanı",
-                    # Uydurma kesinlik ifadeleri — DB'den veri cekmeden boyle konusamaz
-                    "belirlendi", "tespit edildi", "görüldü ki", "analiz sonucu",
+                # Halusinasyon tespiti — uydurma veri isaretleri
+                # Oturum 25.29 fix: KAVRAMSAL yanitta dogal gecen kelimeler
+                # ("belirlendi", "tespit edildi", "gorulmustur", "1. sinif")
+                # listeden cikarildi — false positive ile Cerebras → Claude
+                # eskalasyonu yaratiyordu. Su an sadece KESIN data sızıntısı /
+                # kabul vermeme ifadeleri tetikleyici.
+                #
+                # Ek kontrol: kullanici sorusu data-spesifik degilse (kavramsal
+                # ise) eskalasyon DEVRE DISI — Cerebras kavramsal yaniti gecerli
+                # kabul edilir.
+                _is_data_query = bool(__import__('re').search(
+                    r'\b(sinav|sınav|deneme|net\b|etut|etüt|devamsiz|devamsız|'
+                    r'puan|borc|ödeme|odeme|sinif|sınıf|ogrenci|öğrenci|'
+                    r'rapor|liste|durum)',
+                    user_input.lower()
+                ))
+                _hallucination_terms = [
+                    # Sadece KESIN data sızıntısı yapan ifadeler
                     "verilere göre", "kayıtlara göre", "sistemde görünüyor",
                     "denemelerde zorland", "konularında zorland",
-                ]):
+                    # Sadece sosyal kabul vermeme — net negatif
+                    "bilgi sahibi değilim", "bilgi sahibi degilim",
+                    "yanıtlayamıyorum", "tam olarak bilmiyorum",
+                    "kesin bilgi veremem", "spesifik bilgiye sahip",
+                    "sahip olmadığım", "maalesef mevcut",
+                    "gerçek zamanlı", "canlı veri",
+                ]
+                if _is_data_query and any(h in answer.lower() for h in _hallucination_terms):
                     _needs_escalation = True
-                    logger.info("  [ESKALASYON] Ollama halusinasyon/belirsizlik, Claude'a geciliyor")
+                    logger.info("  [ESKALASYON] Cerebras data sorusunda belirsiz/sizinti, Claude'a geciliyor")
+                # Kavramsal sorularda Cerebras'a guven — eskalasyon yok
                 # Ollama'nın kişisel veri sorusuna uydurma sayı ile cevap verme riski
                 else:
                     import re as _re
