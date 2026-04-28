@@ -509,7 +509,17 @@ async def sync_ogrenci_odeme_to_db(rows: list[dict], dry_run: bool = True) -> in
 
 async def sync_season_snapshot_row(row: dict, sezon_label: str,
                                      dry_run: bool = True) -> bool:
-    """Tek satir ogrenci_odeme_snapshot'a yaz (sezon kolonlu)."""
+    """Tek satir ogrenci_odeme_snapshot'a yaz (sezon kolonlu).
+
+    Oturum 25.29 fix (Neo bug yakaladi 28 Nis 21:08):
+    Eski INSERT duplicate yaratiyordu (UNIQUE constraint yoktu, ON CONFLICT
+    yoktu) — her gece nightly sync'te ayni ogrenci icin yeni satir ekliyordu.
+    Sonuc: 125 ogrenci -> 250 satir 2025.26 sezonu icin, bot 250 ogrenci
+    halusilasyon yapti.
+
+    Fix: UNIQUE(soz_no, sezon) constraint eklendi (DB schema), bu UPSERT
+    pattern ON CONFLICT ile en son veri korunur — ESKI kayit GUNCEL olur.
+    """
     if dry_run:
         return False
     try:
@@ -519,8 +529,27 @@ async def sync_season_snapshot_row(row: dict, sezon_label: str,
                 kayit_tarihi, taksit_sayisi, son_taksit_tarihi,
                 kayit_fiyati, taksit_toplam, tahsilat, kalan,
                 egitim_destek, egt_dest_alinan, egt_dest_kalan,
-                destek_haric, net_kalan, iade)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)""",
+                destek_haric, net_kalan, iade, snapshot_date)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NOW())
+               ON CONFLICT (soz_no, sezon) DO UPDATE SET
+                 sube = EXCLUDED.sube,
+                 tc_kimlik = EXCLUDED.tc_kimlik,
+                 full_name = EXCLUDED.full_name,
+                 devre = EXCLUDED.devre,
+                 kayit_tarihi = EXCLUDED.kayit_tarihi,
+                 taksit_sayisi = EXCLUDED.taksit_sayisi,
+                 son_taksit_tarihi = EXCLUDED.son_taksit_tarihi,
+                 kayit_fiyati = EXCLUDED.kayit_fiyati,
+                 taksit_toplam = EXCLUDED.taksit_toplam,
+                 tahsilat = EXCLUDED.tahsilat,
+                 kalan = EXCLUDED.kalan,
+                 egitim_destek = EXCLUDED.egitim_destek,
+                 egt_dest_alinan = EXCLUDED.egt_dest_alinan,
+                 egt_dest_kalan = EXCLUDED.egt_dest_kalan,
+                 destek_haric = EXCLUDED.destek_haric,
+                 net_kalan = EXCLUDED.net_kalan,
+                 iade = EXCLUDED.iade,
+                 snapshot_date = NOW()""",
             row["soz_no"], sezon_label, row["sube"], row["tc_kimlik"],
             row["full_name"], row["devre"],
             row["kayit_tarihi"], row["taksit_sayisi"], row["son_taksit_tarihi"],
