@@ -1394,31 +1394,51 @@ async def student_drilldown(
                 pass
             await page.wait_for_timeout(4500)
 
-        # 3. Ilk satirin context menu butonuna tikla
-        # Bu screenshotta ⋯ butonu (cls 'cust') — id'si yok genelde
+        # 3. DATA satirini bul + context menu butonuna tikla
+        # Eyotek'in tbody'sinde HEADER row da (Sezon/Sube/...) bulunabiliyor.
+        # Skip kurali: cells sadece header kelimeleri iceriyorsa veya 'th'lerden
+        # olusuyorsa atla. Data row arıyoruz.
         clicked_menu = await page.evaluate("""
             () => {
-                const row = document.querySelector('table tbody tr');
-                if (!row) return {error: 'no_student'};
-                // Satirdaki ad-soyad
-                const cells = Array.from(row.cells).map(c => (c.innerText||'').trim());
-                if (cells.includes('Kayıt bulunamadı!')) return {error: 'no_match'};
-                // ⋯ butonunu bul (genelde ilk td'de, cls 'cust' ya da dropdown-toggle)
-                const btns = row.querySelectorAll('a, button');
+                const HEADER_KEYWORDS = ['sezon','şube','kayıt tarihi','söz no','okul no','adı','soyadı','program'];
+                const rows = Array.from(document.querySelectorAll('table tbody tr'));
+                if (!rows.length) return {error: 'no_student'};
+                // Helper: row data row mu?
+                const isHeaderRow = (tr) => {
+                    if (tr.querySelector('th')) return true;  // tr icinde th varsa header
+                    const cells = Array.from(tr.cells).map(c => (c.innerText||'').trim().toLowerCase());
+                    const txt = cells.join(' ');
+                    if (cells.includes('kayıt bulunamadı!')) return false;  // bu special, no_match
+                    // Kac kelime header keyword? 3+ varsa header'dir
+                    let hits = 0;
+                    for (const k of HEADER_KEYWORDS) if (txt.includes(k)) hits++;
+                    return hits >= 3;
+                };
+                let dataRow = null;
+                for (const tr of rows) {
+                    const cells = Array.from(tr.cells).map(c => (c.innerText||'').trim());
+                    if (cells.includes('Kayıt bulunamadı!')) return {error: 'no_match'};
+                    if (!isHeaderRow(tr)) {
+                        dataRow = tr;
+                        break;
+                    }
+                }
+                if (!dataRow) return {error: 'no_data_row', total_rows: rows.length};
+                const cells = Array.from(dataRow.cells).map(c => (c.innerText||'').trim());
+                const btns = dataRow.querySelectorAll('a, button');
                 for (const b of btns) {
                     const cls = b.className || '';
                     const text = (b.innerText||'').trim();
                     if (cls.includes('cust') || cls.includes('dropdown-toggle') || text === '⋯' || text === '...') {
                         b.click();
-                        return {clicked: true, cell0: cells[0]||'', cell1: cells[1]||'', cells_preview: cells.slice(0,8)};
+                        return {clicked: true, cells_preview: cells.slice(0, 10)};
                     }
                 }
-                // Fallback — ilk td'deki ilk a/button
                 if (btns.length) {
                     btns[0].click();
-                    return {clicked: 'first', cells_preview: cells.slice(0,8)};
+                    return {clicked: 'first', cells_preview: cells.slice(0, 10)};
                 }
-                return {error: 'no_button'};
+                return {error: 'no_button', cells_preview: cells.slice(0, 10)};
             }
         """)
 
