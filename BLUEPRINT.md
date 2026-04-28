@@ -1,6 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 28 Nisan 2026 · **Oturum:** 25.29 (akşam) — Cerebras tuning + feedback triaj + drill 4-katman fix + self-awareness
+> **Belge tarihi:** 28 Nisan 2026 · **Oturum:** 25.29 (gece final) — Unified Context Engine + Service Layer + Brain-Centralized İlke
+> **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)
 > **Hedef okuyucu:** Yeni bir LLM, geliştirici veya iş ortağı. Sistemin teknik yetkinlik tablosunu LLM'e attığında doyurucu bir mimari resim alır.
 > **Amaç:** Mimari + kapasite + sağlık + güvenlik + workflow tek dokümanda — proje teknik durumunu tam yansıtan referans.
 > **Versiyonlama:** Belge canlı; her oturum sonrası teknik kapasite + workflow + metrik tabloları güncellenir.
@@ -1116,6 +1117,29 @@ Bu bölüm, sistemin **tamamlanmış teknik kabiliyetlerini**, **aktif gelişim 
 
 ### 13.3 Stratejik Genişleme Planı (sezon bazlı aktivasyon)
 
+#### Mimari Üst-İlke (ChatGPT teşhisi, Oturum 25.29)
+
+> **"Brain centralized, execution modular"**
+
+| Katman | Strateji |
+|---|---|
+| AI Core (fermat_core_agent) | TEK BEYIN — prompt + reasoning + decision routing tek noktada (monolith korunur) |
+| Context Engine (`context_engine.py`) | Unified pencere — 7 paralel query, tek API: `build_unified_context(soz_no)` ✅ canlı |
+| Service Layer (`services/`) | DB sorgu gruplama — `exam_service`, `student_service` ✅ canlı, diğerleri kademeli ekleniyor |
+| Tool Orchestration | Mevcut Claude tool-calling loop + planlanan Task Graph (Q3) |
+| External Integration | Eyotek (Playwright CDP), WhatsApp (Meta API), Web (FastAPI), Cerebras/Claude/Groq |
+
+#### Kurum-İçi Odak (Neo karari — ASKIDA olanlar)
+
+Kurum-içi mükemmellik öncelik. Aşağıdakiler **şube zinciri olgunlaşıncaya
+kadar bekliyor**:
+
+| Modül | Durum | Aktivasyon koşulu |
+|---|---|---|
+| LMS Adapter Pattern (multi-LMS) | ASKIDA | Şube #2-3 fizibilitesi onaylandığında |
+| Multi-tenant database isolation | ASKIDA | Aynı |
+| Pre-seed pitch deck / yatırım stratejisi | ASKIDA | Neo başlatırsa |
+
 #### Yeni sezon (1 Eylül 2026) flag-aktivasyon listesi
 
 | Modül | Bayrak | Etki |
@@ -1131,15 +1155,24 @@ Bu bölüm, sistemin **tamamlanmış teknik kabiliyetlerini**, **aktif gelişim 
 | Multi-worker async | Redis state share | 120 öğrenci ölçeklendirme |
 | Web chat Faz 2 | UI yenileme | Mobile responsive + streaming |
 
-#### Mimari modülerleştirme rotası
+#### Mimari Olgunlaşma Rotası (Brain-Centralized İlkesi)
 
-| Modül | Mevcut | Hedef |
+| Aşama | Durum | Açıklama |
 |---|---|---|
-| `system_prompts.py` | 87KB monolitik | 8 dosya lazy-loading |
-| `fermat_core_agent.py` | 4.150 satır | 4 modül (run/tools/security/awareness) |
-| `fast_responses.py` | 3.290 satır | role-based 5 dosya |
-| `prompt_modules/` skeleton | atıl | tier-aware injection |
-| Prompt compression | KURALLAR 3.795 token | RAG'a taşı, %50 azalma hedefi |
+| **`context_engine.py`** | ✅ CANLI (Oturum 25.29) | Unified Context Engine — 7 paralel query, 5dk cache, ChatGPT önerisi implementasyonu |
+| **`services/exam_service.py`** | ✅ CANLI (Oturum 25.29) | Sınav verisi + zayıf konu API'si — 6 fonksiyon (summary, AYT summary, weak/strong topics, trend, exam_analysis) |
+| **`services/student_service.py`** | ✅ CANLI (Oturum 25.29) | Öğrenci profili + ACL + Türkçe karakter normalize arama |
+| **`services/etut_service.py`** | YAKINDA | Etüt history + kontrol özeti |
+| **`services/sentiment_service.py`** | YAKINDA | student_insights wrapper |
+| **`services/notification_service.py`** | YAKINDA | alert_log + secure_messenger merkezi |
+| **`task_graph.py`** | Q3 PLAN | Multi-step reasoning orchestration (Gemini önerisi E2 + ChatGPT) |
+| **Self-Healing LMS** | Q2-Q3 PLAN | Eyotek DOM değişiklik koruması, Claude Vision fallback (Gemini önerisi E2) |
+| **Predictive Burnout** | Q3 PLAN | Rule prefilter + LLM judge (Cerebras qwen-3-235b), gözlem-only (Gemini önerisi E4) |
+
+**KORUNAN MİMARİ İLKE — beyin parçalanmaz:**
+- `system_prompts.py` (87KB) → tek-bütün, denenmiş ve geri alındı (memory: project_monolith_korunsun)
+- `fermat_core_agent.py` (4150 satır) → AI core tek noktada, services/ ile dış katman
+- Prompt katmanlanır (BASE + DYNAMIC + CONTEXT + TOOLS dinamik bloklar) ama parçalanmaz
 
 ---
 

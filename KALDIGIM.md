@@ -1,7 +1,10 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 28 Nisan 2026, gece final — **OTURUM 25.29 — BLUEPRINT bot+Atlas farkındalık zinciri**
-> **28 Nisan gece final commit:**
+> **Son güncelleme:** 28 Nisan 2026, gece kapanış — **OTURUM 25.29 — Unified Context Engine + Service Layer (Brain Centralized + Execution Modular)**
+> **28 Nisan gece kapanış commit'leri:**
+>   - `664da8e` Unified Context Engine (`context_engine.py`) — ChatGPT önerisi, 7 paralel query, 5dk cache
+>   - (next) services/ katmanı (exam_service + student_service) + BLUEPRINT update
+> **28 Nisan gece commit'leri:**
 >   - `5be843e` BLUEPRINT bot+Atlas farkındalık zinciri (3 koordineli kaynak: KALDIGIM ne YAPILDI / BLUEPRINT ne VAR / Atlas ne GÖZLEMLEDIM)
 >   - `7fa32d4` KALDIGIM final + RAG search_curriculum import fix
 >   - `b66ab00` BLUEPRINT teknik yenileme (Section 13/14/15) + Atlas completion_awareness + Cerebras web qwen-3-235b + memory kalıcı kural
@@ -26,7 +29,64 @@
 > **Backup tags:** `oturum-25-22-cerebras-live`, `oturum-25-22-pre-cerebras`, `oturum-25-20-modular-disabled`
 > **Sistem:** ✅ bridge active, **Eyotek AGENTIC Navigator+Planner CANLI** (Cerebras gpt-oss-120b plan üretiyor, Playwright CDP navigate ediyor)
 
-## 🆕 OTURUM 25.29 (28 Nisan GECE — FINAL) — Bot+Atlas BLUEPRINT awareness zinciri
+## 🆕 OTURUM 25.29 (28 Nisan GECE KAPANIS) — Unified Context + Services + Stratejik Yön Kararı
+
+### Stratejik karar (Neo direktif)
+
+**SaaS satışı askıya alındı, kurum-içi mükemmellik ana hedef:**
+- 1 öğrenci ücreti ≈ 70-100 SaaS müşteri geliri → efor/getiri kötü
+- Tek-developer maintenance imkânsız (multi-tenant + support)
+- Vizyon: AI-entegre fiziksel şube zinciri ("Türkiye'nin AI özel eğitim markası")
+
+**3-vade plan (memory: `project_kurumsal_ic_odak.md`):**
+- KISA (3 ay): Sistem stabil + context_engine + services/
+- ORTA (Eyl 26+): Veli/Alarm/Burnout flag aktivasyon + 1 yıl veri toplama
+- UZUN (12-24): Şube #2 fizibilite → AI-entegre fiziksel marka zinciri
+
+### Mimari ilkesi (ChatGPT teşhisi → memory: `project_monolith_korunsun.md`)
+
+> **"Brain centralized, execution modular"** — `system_prompts.py` (beyin) parçalanmaz; `services/`, `task_graph`, `lms_adapter` (execution) parçalanır.
+
+Geçmiş "monolith refactor" hatasının doğru teşhisi: yanlış katman parçalandı (prompt+reasoning), doğrusu execution katmanı (DB+integration) olmalıydı.
+
+### Yapılan iki büyük adım
+
+**1. `context_engine.py` (commit `664da8e`):**
+- ChatGPT'nin "Unified Context Engine" önerisinin implementasyonu
+- 7 paralel query → tek `build_unified_context(soz_no, channel, role)`:
+  1. student_profile · 2. exam_summary · 3. weak_topics · 4. recent_activity
+  · 5. sentiment · 6. daily_plan · 7. attendance
+- 5dk in-memory cache, 100+ entry'de auto-cleanup
+- `format_for_prompt()` bot inject için temiz çıktı
+- Live test (Çağan/244): 7 query OK, 2. çağrı 0ms cache hit
+
+**2. `services/` katmanı (yeni dizin):**
+- `services/exam_service.py` — get_summary, get_ayt_summary, get_weak_topics, get_strong_topics, get_trend_analysis, get_exam_analysis
+- `services/student_service.py` — get_profile, get_profile_by_phone, search_by_name, get_acl, get_attendance_total, get_class_students, count_active
+- DRY: yeni SQL yazmaz, mevcut pattern'ları gruplar
+- Live test (Çağan/244): 5 fonksiyon, hepsi PASS
+  - 3 TYT (ort 29.2, düşüş trend), 3 AYT, 3 zayıf (Türkçe), 3 güçlü (Mat/Geo), 51 saat devamsızlık
+- Toplam aktif: 123 öğrenci
+
+### Gemini/ChatGPT önerilerinin süzgeci
+
+Memory'de detaylı (`project_kurumsal_ic_odak.md`):
+
+| Öneri | Karar |
+|---|---|
+| Unified Context Engine | ✅ HEMEN UYGULA (yapıldı) |
+| services/ katmanı | ✅ HEMEN UYGULA (yapıldı) |
+| Self-Healing LMS (Vision) | ✅ YAZ ÖNCESİ |
+| Predictive Burnout | ✅ YAZ İÇİ (rule), YENİ SEZON (LLM live) |
+| Hierarchical Prompt POC | ⚠️ A/B test ile, %5 kalite koruma kill switch |
+| Redis Multi-Worker | ⏸️ Şube #2 fizibilite onaylanınca |
+| LMS Adapter / multi-tenant | ❌ ASKIDA (SaaS için) |
+
+### TEKNIK BORÇ: SIFIR
+
+---
+
+## 🆕 OTURUM 25.29 (28 Nisan GECE — FINAL ÖNCEKI) — Bot+Atlas BLUEPRINT awareness zinciri
 
 Neo: "Bot kendi BLUEPRINT'in de farkında olsun, aynı KALDIGIM gibi. Atlas da aynı şekilde — sistem mimarisi konusunda hepsi aynı bakış açısıyla güncel ve koordineli çalışmalı."
 
