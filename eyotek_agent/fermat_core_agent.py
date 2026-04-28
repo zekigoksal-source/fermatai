@@ -3606,10 +3606,12 @@ class FermatCoreAgent:
                 # uvloop'una "Can't patch loop" hatasi veriyordu → Groq tum cagrilar fail.
                 if hasattr(self.router, "chat_local_async"):
                     # 25.22: intent geç (Cerebras model seçimi için)
+                    # 25.29: channel geç (web → uzun akademik + RAG + qwen-3-235b)
                     answer = await self.router.chat_local_async(
                         messages=self.history,
                         system=_lane_system,
                         intent=_intent or "",
+                        channel=getattr(self, "_channel", "whatsapp"),
                     )
                 else:
                     # Backwards compat (eski router'da chat_local_async yok)

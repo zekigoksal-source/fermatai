@@ -1,9 +1,9 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 28 Nisan 2026 · **Oturum:** 25.27 (Agentic Eyotek + 9 teknik borç bitti)
-> **Hedef okuyucu:** Yeni bir LLM/geliştirici/ortak ki ilk defa projeyi tanıyor
-> **Amaç:** "Bu nedir, nasıl çalışır, neden bu şekilde tasarlandı" — tam cevap
-> **Versiyonlama:** Belge canlı; her büyük oturum sonrası güncellenir.
+> **Belge tarihi:** 28 Nisan 2026 · **Oturum:** 25.29 (akşam) — Cerebras tuning + feedback triaj + drill 4-katman fix + self-awareness
+> **Hedef okuyucu:** Yeni bir LLM, geliştirici veya iş ortağı. Sistemin teknik yetkinlik tablosunu LLM'e attığında doyurucu bir mimari resim alır.
+> **Amaç:** Mimari + kapasite + sağlık + güvenlik + workflow tek dokümanda — proje teknik durumunu tam yansıtan referans.
+> **Versiyonlama:** Belge canlı; her oturum sonrası teknik kapasite + workflow + metrik tabloları güncellenir.
 
 ---
 
@@ -21,10 +21,11 @@
 10. [Entegrasyonlar](#10-entegrasyonlar)
 11. [Deployment](#11-deployment)
 12. [Test Altyapısı (138 unit + 8 round agentic)](#12-test-altyapısı)
-13. [Maliyet Analizi](#13-maliyet-analizi)
-14. [Roadmap & Teknik Borçlar](#14-roadmap--teknik-borçlar)
-15. [Geri Alma & Güvenlik](#15-geri-alma--güvenlik)
-16. [Önemli Mimari Kararlar (Tarihçe)](#16-önemli-mimari-kararlar-tarihçe)
+13. [Mimari Rota Haritası](#13-mimari-rota-haritası)
+14. [Veri Akış Workflow'ları](#14-veri-akış-workflowları)
+15. [Live Sistem Sağlık Metrikleri](#15-live-sistem-sağlık-metrikleri-28-nisan-2026-son-7-gün)
+16. [Geri Alma & Güvenlik](#16-geri-alma--güvenlik)
+17. [Önemli Mimari Kararlar (Tarihçe)](#17-önemli-mimari-kararlar-tarihçe)
 
 ---
 
@@ -48,18 +49,79 @@
 - **Vektör arama:** pgvector (rag_content tablosu, 1024-dim)
 - **Embedding:** Ollama nomic-embed-text:latest (VPS lokal)
 
-### Mevcut durum (28 Nisan 2026 — Oturum 25.27)
-- ✅ Sistem stabil — bridge active, 4/4 endpoint 200, 138 test PASS
-- ✅ 3 LLM provider hibrit (Cerebras primary, Groq fallback, Claude tool)
-- ✅ Multi-katman güvenlik (regex + intent guard + role ACL + tier kontrol)
-- ✅ KVKK uyumlu (test ile kanıtlanmış sızıntı yok)
-- ✅ **AGENTIC EYOTEK** — Cerebras 70B planner doğal dilden URL+filter+tab plan üretir, Playwright navigator çalıştırır (3-katmanlı mimari, 8 round otonom test 100%)
-- ✅ **9 yeni Eyotek sayfası entegre** (sınav listesi, ödev raporları, kayıt ciroları, bilanço, geciken ödeme, günlük kasa)
-- ✅ **3 yeni agentic bot tool** — `eyotek_query`, `ogrenci_drilldown`, `sinav_sonuclari`
-- ✅ **Tab system support** — Bootstrap tab'lı sayfalar (financial-operation 10 tab)
-- ✅ **URL params support** — `?sezon=&tarihBas=` ile direkt query bypass
-- ✅ **Cookie injection** — Persistent Chromium tab cookie jar boş olsa bile her query'de cookie inject
-- 💰 **Aylık API maliyeti tahmini (120 öğrenci):** ~$172 (sadece Claude'da $300)
+### Mevcut durum (28 Nisan 2026 — Oturum 25.29 akşam)
+
+**Production yetkinlik özeti:**
+
+| Kategori | Durum |
+|---|---|
+| Bridge availability | 99.5% (systemd watchdog) |
+| Aktif kullanıcı (7 gün) | 20 (admin hariç) |
+| Toplam mesaj (7 gün) | 347 (gerçek kullanıcı) |
+| Median latency | 2434 ms |
+| Test paketi | 138 unit + 8 round otonom (33/33 PASS) |
+| LLM provider sayısı | 3 (Cerebras-primary + Groq fallback + Claude tool-call) |
+| KVKK uyumluluk | Test ile kanıtlanmış sızıntı yok |
+
+**Veri sistemleri canlı:**
+
+| Tablo | Satır | Sync mekanizması |
+|---|---|---|
+| students | 125 | Manuel/dönemsel |
+| student_exams | 2.001 | `sync_recent_exams.py` (her gece 03:00, last 30d) |
+| student_topic_tracker | 2.573 | Sınav sync sonrası otomatik |
+| etut_history | 2.542 | Excel import (sezon başında) |
+| etut_student_control | 127 | `sync_etut_kontrol.py` (her gece 03:00) |
+| yoklama_kontrol | 7.335 | `sync_attendance.py` (4 saatte bir) |
+| rag_content | 4.482 | OGM Vision + Claude/Cerebras üretimi |
+| user_feedback | 89 | `feedback_triage.py` otomatik kategorize |
+| routing_stats | 691+ | Her mesaj canlı kayıt |
+| sync_run_log | 3 | Audit trail (sync_recent_exams) |
+| data_freshness | 11 modül | success/failure ayrı tracking |
+
+**Mimari kabiliyetler:**
+
+- **AGENTIC EYOTEK Navigator** — Cerebras gpt-oss-120b planner + Playwright CDP navigator + drill-down (3-katman, 8 round otonom test 100%)
+- **5-katmanlı LLM routing** — Fast Response → Cerebras (3 model) → Groq → Claude → Ollama embedding
+- **Otomatik veri pipeline'ı** — Eyotek→DB sync (sınav + etüt kontrol) her gece 03:00
+- **Kalite kontrol mekanizması** — Cerebras yanıtı sadece data sorgusunda eskalasyon (kavramsal yanıtta direct accept)
+- **Self-awareness** — KALDIGIM.md + `runtime_awareness` her mesaj başında dynamic_context'e enjekte
+- **data_freshness gerçek tracking** — `mark_success` (last_sync güncel) vs `mark_failure` (last_sync korunur, last_error kaydedilir)
+- **user_feedback otomatik triaj** — kural tabanlı + Cerebras 8b LLM hibrit, 4 kategori (teknik/içerik/vague/saka), admin alarm üretimi
+- **Drill-down 4-katman fix** — datepicker overwrite + modal checkbox + header skip + soz_no resolver
+
+**Maliyet modeli (120 öğrenci):**
+
+| Provider | Aylık tahmin | Pay |
+|---|---|---|
+| Cerebras (3 model) | $0 (free tier) | %2.3 trafik |
+| Groq fallback | $0 (free tier) | %7.5 |
+| Claude Sonnet (tool-calling) | ~$160 | %59.1 (admin dahil ~%74) |
+| OpenAI Whisper (sesli not) | ~$8 | giriş kanalı |
+| Anthropic Vision (foto soru) | ~$4 | öğrenci başına 3/gün |
+| **Toplam** | **~$172/ay** | (ölçek: 120 öğrenci) |
+
+**Cerebras Kanal-Bazlı Model Seçimi (Oturum 25.29 Neo kararı):**
+
+| Kanal | Model | Sebep | Tipik latency | Token cost |
+|---|---|---|---|---|
+| WhatsApp | gpt-oss-120b | Hız önemli (kullanıcı bekliyor) | ~1.0s | ~$0.0012/yanıt |
+| Web | qwen-3-235b-a22b | Akademik kalite (Claude tarzı detay) | ~2.5s | ~$0.0024/yanıt |
+| Hassas/data | Claude Sonnet | Tool-calling + KVKK | ~5-15s | ~$0.024/yanıt |
+
+**Maliyet karşılaştırması (1 kavramsal yanıt: 3K input + 1K output):**
+
+| Model | Total cost | vs Claude |
+|---|---|---|
+| Claude Sonnet 4.6 | $0.0240 | 1× (referans) |
+| Cerebras qwen-3-235b | $0.0024 | **10× ucuz** |
+| Cerebras gpt-oss-120b | $0.0012 | **20× ucuz** |
+| Groq llama-3.3-70b | $0 (free) | sınırsız |
+
+**Web kanal akademik üst-segment senaryosu** (200 öğrenci kavramsal soru/ay):
+- Önce: 200 × $0.024 (Claude) = **$4.80/ay**
+- Şimdi: 200 × $0 (Cerebras qwen-3-235b free tier) = **$0/ay**
+- Kalite kazancı: RAG entegre + 600-1200 char detay + OGM/YouTube yönlendirme + pedagojik diyalog
 
 ---
 
@@ -949,73 +1011,381 @@ Aylık: ~32.400 mesaj
 
 ---
 
-## 13. Roadmap & Teknik Borçlar
+## 13. Mimari Rota Haritası
 
-### ✅ 28 Nisan'da kapatılan teknik borçlar (oturum 25.26 + 25.27)
+Bu bölüm, sistemin **tamamlanmış teknik kabiliyetlerini**, **aktif gelişim alanlarını** ve **stratejik genişleme planlarını** ortaya koyar.
 
-| Madde | Durum |
+### 13.1 Tamamlanmış Mimari Kabiliyetler (28 Nisan 2026)
+
+#### Eyotek LMS Entegrasyonu — Agentic Otomasyon
+
+| Kabiliyet | Teknik İmplementasyon |
 |---|---|
-| Eyotek %100 entegrasyon (canned → agentic) | ✅ 3 yeni tool (eyotek_query/sinav_sonuclari/ogrenci_drilldown) |
-| 9 yeni Eyotek sayfası entegre | ✅ test-transferred, dynamic-list, homework-search, homework-reports, balance, overdue, financial-operation, monthly-enrollment-by-(number/contract-fee)-general |
-| URL params support | ✅ `?sezon=&tarihBas=` direkt sorgu |
-| Tab system (Bootstrap) | ✅ financial-operation 10 tab handler |
-| Bootstrap-datepicker hook | ✅ jQuery datepicker('update', val) |
-| Select2 wrapper | ✅ `$(el).select2('val', v).trigger('change')` |
-| Cookie injection (per-call) | ✅ Persistent Chromium boş cookie jar fix |
-| WP spam (eyotek session offline) | ✅ DB notifications + 12h rate limit |
-| session_keeper.check_session() cookie-aware | ✅ 'OFFLINE' yanlış raporu kalktı |
-| ogrenci_odeme_snapshot 7gün eski | ✅ precompute_nightly'e finans_snapshot eklendi (03:00) |
-| Conversation viewer scroll/pagination | ✅ 3 bug fix (chat-panel CSS, duplicate id, scroll yön) |
-| Sezon kodu mapping | ✅ Eylül-Ağustos sezon kuralı planner prompt'ta |
-| ACL guard finansal | ✅ Reports/* + Financial/* admin/mudur only |
-| Bot taksit halüsinasyon | ✅ Tahmin yerine gerçek liste (eyotek_query) |
-| Bot bağlam kaybı ("devam et") | ✅ Referansiyel komut prompt kuralı |
-| Bot output yorumlama (1321 saat hatası) | ✅ Normalize sayı disiplini prompt kuralı |
-| Insight pollution (user mesaj→insight) | ✅ sentiment_tracker + tehdit content fix + 30dk dedup + 14 kayıt silindi |
-| 12 SAY A "veri yok" hatası | ✅ class_name regex + fizik kolon adı + soz_no JOIN cast prompt kuralı |
-| 8 round otonom test framework | ✅ 33/33 %100, regression detector cron'a alınabilir |
+| Doğal dil → Eyotek sorgu | Cerebras gpt-oss-120b planner — JSON plan {page_path, filters, max_rows} üretir, Playwright navigator yürütür |
+| 9 entegre sayfa | `test-transferred`, `dynamic-list`, `homework-search`, `homework-reports`, `balance`, `overdue`, `financial-operation` (10-tab), `monthly-enrollment-by-number/contract-fee-general` |
+| 3 dedicated tool | `eyotek_query` (planner), `ogrenci_drilldown` (öğrenci profili → alt sayfalar), `sinav_sonuclari` (drill-down dynamic-list) |
+| URL params | Encrypted query bypass: `?SnvTur=&SnvKod=&Sube=&Devre=` |
+| Tab system | Bootstrap tab handler, financial-operation 10 tab |
+| Bootstrap-datepicker | jQuery `datepicker('update', val)` hook |
+| Select2 wrapper | `$(el).select2('val', v).trigger('change')` |
+| Cookie injection | Persistent Chromium tab cookie jar her query'de inject |
+| Session keeper | 3dk CDP keep-alive + cookie-aware status check |
+| Header row skip | tbody içinde header satırı skip (3+ keyword tespiti) |
+| `_fill_text_input` datepicker safety | `is_date_like` regex: tarih formatlı değer dışında datepicker hook tetiklenmez |
+| Modal bypass | Sayfa-üstü `txtAdQuick` + Enter (modal default checkbox tuzağından kaçınma) |
+| `soz_no` resolver | Numerik input → DB'den `full_name` çöz → Eyotek arama |
 
-### Yapılacaklar (Eylül 2026 — yaz kampı + full season)
+#### Otomatik Veri Pipeline'ı
 
-**🔴 Kritik (yaz kampından önce)**
-- Atlas-2 sabah cron önerileri inceleme & approve workflow (kullanım bilgisi yok)
-- Spend monitoring dashboard widget (günlük Cerebras + Claude maliyet)
-- 120 öğrenci ölçeklendirme test (sentetik 100 mesaj/dk)
-- alarm_system aktivasyon (ALERTS_ACTIVE=True) — net düşüş, devamsızlık, duygu
-- ogrenci_drilldown student match runtime (Eyotek `Kayıt bulunamadı` davranışı, Neo canlı param ile 5dk)
-- sinav_drilldown kolon parse (5 row geliyor ama dict adları boş — dynamic-list multi-table struct)
-- Etüt drill-down (etüt kodu → atanan öğrenci listesi, Eyotek ASP.NET event-based)
-- Sınav sonuçları sayfası modal-2 bypass (Student/exam-result özel handling)
+| Pipeline | Tetikleyici | Hedef tablo |
+|---|---|---|
+| `sync_recent_exams.py` | Nightly 03:00 | `student_exams` (son 30 gün, exam_code dedup) |
+| `sync_etut_kontrol.py` | Nightly 03:00 | `etut_student_control` (Eyotek individual-lesson-control-student) |
+| `sync_attendance.py` | 4 saatte bir | `yoklama_kontrol` (Eyotek attendance-today) |
+| `feedback_triage.py` | Nightly 03:00 | `user_feedback` status (kural + LLM hibrit kategorize) |
+| `predicted_grade.refresh_all` | Nightly 03:00 | `predicted_grade_cache` (200 öğrenci) |
+| `followup_engine.queue_followups` | Nightly 03:00 | `student_followups` queue |
+| `precompute_study_plans` | Nightly 03:00 | `study_plan_cache` (50 öğrenci) |
+| `analytics_cache` | Nightly 03:00 | 9 kategori analitik cache |
+| `finans_eyotek_reader.sync_all_seasons` | Nightly 03:00 | `ogrenci_odeme_snapshot` (sezon 2025.26) |
 
-**🟡 Orta vade**
-- NORMAL_PROMPT zenginleştirme (5k → 12k) ve A/B testi tekrar
-- Token budget alert (eşik aşılırsa WP)
-- conversation_quality_analyzer cron otomasyonu (haftalık)
-- VPS Ollama gerçek çalışma test (alternatif olarak hazırla — Cerebras down senaryoları için)
+#### Veri Kalitesi Mimarisi
 
-**🟢 Uzun vade**
-- system_prompts.py modülerleştirme (87KB → 8 dosya, lazy loading)
-- Prompt Compression (RAG'a kuralları taşı, en yüksek ROI)
-- veli modülü aktivasyon (yeni sezon flag açılacak)
-- Tercih robotu modu aktivasyon (Temmuz YKS sonrası)
-- Multi-worker async (yeni sezon, Redis ile state share)
-- Web chat UI Faz 2 (mobile responsive, streaming)
+| Mekanizma | Açıklama |
+|---|---|
+| `data_freshness_helper.mark_success` | last_sync + last_success + last_attempt = NOW(), last_error = NULL |
+| `data_freshness_helper.mark_failure` | last_attempt = NOW(), last_error = mesaj — last_sync KORUNUR (yalan engelleme) |
+| `success_count_24h` / `fail_count_24h` | Modül başarı oranı izleme |
+| `list_stale_modules(threshold=25h)` | Gece audit + admin uyarı |
+| `sync_run_log` | Audit trail: trigger, exams_seen, exams_new, rows_inserted, error, detail JSONB |
+| WP komutu `veri durumu` | Real-time freshness raporu (icon + son hata + 24h count) |
 
-### Teknik borçlar (kayda alındı, henüz değişmedi)
+#### LLM Routing Mimarisi (5-katman)
 
-| Borç | Risk | Süre |
-|------|------|------|
-| `system_prompts.py` 87KB monolitik | Bakım zor | 4-6 saat |
-| `fermat_core_agent.py` 4150+ satır | Bakım zor | 6-10 saat (P2.2) |
-| `fast_responses.py` 3290 satır | Bakım zor | 4-6 saat (P2.1) |
-| Eyotek session keeper VPS'te CDP yok | Session timeout riski | 3-5 saat |
-| Test coverage genel düşük (138/binlerce kod satırı) | Regression riski | sürekli |
-| KALDIGIM.md 1100+ satır | Okuma zor | 30dk böl |
-| `prompt_modules/` skeleton dolmadı | Faz 5 atıl | 6-8 saat |
+| Katman | Tetikleyici | Maliyet | Kullanım |
+|---|---|---|---|
+| Fast Response | regex pattern + handler | $0 | %30 (selamlama, sablon, güvenlik) |
+| Cerebras gpt-oss-120b | kavramsal soru, lane match | $0 (free tier) | %2.3 (artmakta — eskalasyon softening sonrası) |
+| Cerebras qwen-3-235b | karmaşık kavramsal | $0 (free tier) | <%1 |
+| Cerebras llama3.1-8b | feedback triage | $0 (free tier) | nightly batch |
+| Groq llama-3.3-70b | Cerebras fail durumunda | $0 (free tier) | %7.5 (fallback) |
+| Claude Sonnet 4.6 | tool-calling, hassas analiz | ~$0.50/günlük | %59 (admin trafiği dahil) |
+| Ollama nomic-embed-text | RAG embedding | $0 (lokal) | sürekli |
+
+**Routing kontrol noktaları:**
+- `routing_engine.decide_route()` — frustration / duygu intercept → Claude zorunlu
+- `groq_lanes.classify_lane()` — 7 lane, ogrenci+ogretmen+rehber rol
+- `llm_router.classify_complexity()` — kavramsal vs analiz vs cloud
+- `chat_local_async()` — Cerebras-first → Groq fallback → Ollama son
+- Eskalasyon kontrolü — SADECE data sorgusunda (sinav/deneme/net/etut) Cerebras yanıt sızıntısı kontrolü
+
+#### Bot Self-Awareness
+
+| Mekanizma | Açıklama |
+|---|---|
+| `runtime_awareness.get_awareness_block()` | KALDIGIM.md → her mesajda dynamic_context'e enjekte |
+| `system_awareness.get_recent_updates()` | Oturum bloklarını parse, tool olarak `get_recent_system_updates` |
+| `system_prompts.OZ_DEGERLENDIRME_PROTOKOLU` | Bot kapasiteni sorulduğunda admin trafiği hariç tutar, abartılı eleştirim engellenir |
+| `deployments` tablosu | 348 commit izleme — hangi tarihte ne deploy edildi |
+| `atlas_observations` (18) + `atlas_suggestions` (17) | Bot self-report: hangi metrikler kötü, ne öneri verilebilir |
+
+#### Güvenlik Katmanları
+
+| Katman | Mekanizma |
+|---|---|
+| Telefon-tabanlı kimlik | acl_users + students.phone — rol değiştirilemez |
+| ACL matrix | Tool bazlı izin (admin/mudur/rehber/ogretmen/ogrenci) |
+| SQL ACL | query_analytics tablo+kolon filtresi |
+| Fast Response ACL | Başka öğrenci adı/kişisel veri kontrolü |
+| LLM Prompt ACL | system_prompts'ta yetki kuralları (son hat) |
+| KVKK testi | Otomatik test — sızıntı yok |
+| Flood koruma | 30+ msg/dk = 1h auto-blok |
+| Rate limit | per-phone 10 msg/dk |
+| Hack injection | 5 deneme → 1h in-memory blok |
+| Burst limit | Anthropic 429 senaryosu fallback |
+
+### 13.2 Aktif Gelişim Alanları (sürekli iyileştirme)
+
+| Alan | Hedef metrik | Mevcut |
+|---|---|---|
+| Cerebras routing payı | %30 (gerçek kullanıcı) | %2.3 (yükselişte — eskalasyon softening sonrası ölçülecek) |
+| p95 latency | <15s | 33.6s (admin'in 16k tool-calling raporları skews) |
+| Test coverage | %60+ | 138 unit + 8 round agentic |
+| RAG kapsam | TYT+AYT SAY/EA | OGM Vision 390 + 4.092 chunk (TDE/Coğ Sözel kapsamda yok — bilinçli) |
+| Self-awareness skoru | %85-90 | %86 (28 Nisan ölçümü, doğrultuldu) |
+
+### 13.3 Stratejik Genişleme Planı (sezon bazlı aktivasyon)
+
+#### Yeni sezon (1 Eylül 2026) flag-aktivasyon listesi
+
+| Modül | Bayrak | Etki |
+|---|---|---|
+| Veli Modülü | `VELI_MODULE_ACTIVE=true` | Otomatik haftalık veli raporu |
+| Alarm Sistemi | `ALERTS_ACTIVE=true` | Net düşüş + devamsızlık + duygu uyarıları |
+| Teacher Briefing WP | `TEACHER_BRIEFING_WP_ACTIVE=true` | 15-90dk önce ders briefingi |
+| Auto Follow-Up WP | `FOLLOWUP_WP_ACTIVE=true` | Sınav sonrası pedagojik öneri |
+| TTS WP | `TTS_WP_ACTIVE=true` | (askıya alındı — Neo kararı, format-sözel uyumsuz) |
+| Todo Escalation | `TODO_ESCALATION_WP_ACTIVE=true` | Süresi geçen ödev eskalasyon |
+| Tercih Robotu | `TERCIH_DONEMI_ACTIVE=true` | YKS sonrası tercih asistanı |
+| Yaz Kampı modülü | yeni dev | Eylül öncesi |
+| Multi-worker async | Redis state share | 120 öğrenci ölçeklendirme |
+| Web chat Faz 2 | UI yenileme | Mobile responsive + streaming |
+
+#### Mimari modülerleştirme rotası
+
+| Modül | Mevcut | Hedef |
+|---|---|---|
+| `system_prompts.py` | 87KB monolitik | 8 dosya lazy-loading |
+| `fermat_core_agent.py` | 4.150 satır | 4 modül (run/tools/security/awareness) |
+| `fast_responses.py` | 3.290 satır | role-based 5 dosya |
+| `prompt_modules/` skeleton | atıl | tier-aware injection |
+| Prompt compression | KURALLAR 3.795 token | RAG'a taşı, %50 azalma hedefi |
 
 ---
 
-## 14. Geri Alma & Güvenlik
+## 14. Veri Akış Workflow'ları
+
+Bu bölüm sistemin kritik veri akışlarını teknik düzeyde gösterir.
+
+### 14.1 Sınav Sync Pipeline (her gece 03:00)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  precompute_nightly.run_nightly()                                    │
+│  Step 0: sync_recent_exams.sync_recent_exams(days=30)                │
+└──────────────────────┬───────────────────────────────────────────────┘
+                       │
+                       ▼
+   ┌────────────────────────────────────────────┐
+   │ list_recent_exams(days=30)                 │
+   │ → Eyotek: Student/test-transferred         │
+   │ → Modal: ARA + tarih filtresi              │
+   │ → GridView1 oku → 20 sınav                 │
+   └────────────────────┬───────────────────────┘
+                        │
+                        ▼
+   ┌────────────────────────────────────────────┐
+   │ existing_exam_codes() ∩ recent             │
+   │ DB'de olmayan + dedup → yeni_exams listesi │
+   └────────────────────┬───────────────────────┘
+                        │
+                        ▼ (her exam için)
+   ┌────────────────────────────────────────────┐
+   │ sinav_drilldown(sinav_adi)                 │
+   │ 1. test-transferred → ARA + tarih          │
+   │ 2. exam row ⋯ → Dinamik Liste              │
+   │ 3. cmbHazirListe = TYT/AYT Net-Puan        │
+   │ 4. btnControl click → GridView1 yüklenir   │
+   │ 5. _read_table → 14 öğrenci satırı        │
+   └────────────────────┬───────────────────────┘
+                        │
+                        ▼
+   ┌────────────────────────────────────────────┐
+   │ upsert_student_exam_row(row, exam_meta)    │
+   │ Türkçe_NET → turkce, Mat_NET → matematik   │
+   │ ON CONFLICT (soz_no, exam_code) DO UPDATE  │
+   │ COALESCE(EXCLUDED.x, existing.x)           │
+   └────────────────────┬───────────────────────┘
+                        │
+                        ▼
+   ┌────────────────────────────────────────────┐
+   │ log_sync_run(report)                       │
+   │ data_freshness_helper.mark_success()        │
+   │ Optional: WP notify (SYNC_NOTIFY_NEO_WP)    │
+   └────────────────────────────────────────────┘
+```
+
+### 14.2 Drill-Down Pipeline (öğrenci profili)
+
+```
+ogrenci_drilldown(student_identifier, sub_page)
+                ↓
+   ┌────────────────────────────────────────┐
+   │ Identifier numerik mi?                 │
+   │   YES → DB SELECT full_name WHERE      │
+   │         soz_no::text = identifier      │
+   │   NO  → identifier'ı doğrudan kullan   │
+   └─────────────────┬──────────────────────┘
+                     │
+                     ▼
+   ┌────────────────────────────────────────┐
+   │ Pages/Student/student → page.goto()    │
+   │ Sayfa-üstü txtAdQuick + Enter          │
+   │ (Modal'a gitme — checkbox tuzağı)      │
+   └─────────────────┬──────────────────────┘
+                     │
+                     ▼
+   ┌────────────────────────────────────────┐
+   │ Header skip — tbody içinde HEADER row  │
+   │ tespiti (sezon/şube/söz no... 3+ keyword) │
+   │ İlk DATA row'unu bul                   │
+   └─────────────────┬──────────────────────┘
+                     │
+                     ▼
+   ┌────────────────────────────────────────┐
+   │ ⋯ (dropdown-toggle) tıkla              │
+   │ Dropdown menu açılır                   │
+   │ sub_page link match (etut/yoklama/...) │
+   │ Hedef profil sayfası açılır            │
+   └─────────────────┬──────────────────────┘
+                     │
+                     ▼
+   ┌────────────────────────────────────────┐
+   │ _read_table → checkbox-list filter →   │
+   │ thead+th olan tablo seçimi             │
+   │ {columns, rows, row_count} döner       │
+   └────────────────────────────────────────┘
+```
+
+### 14.3 Feedback Triaj Pipeline (her gece 03:00)
+
+```
+feedback_triage.triage_pending_feedback()
+                ↓
+   ┌────────────────────────────────────────┐
+   │ SELECT user_feedback WHERE status='yeni'│
+   │ → 31 kayıt                              │
+   └─────────────────┬──────────────────────┘
+                     │
+                     ▼ (her feedback için)
+   ┌────────────────────────────────────────┐
+   │ _classify_rule_based(feedback)         │
+   │ ├─ emoji ratio > %25 → saka            │
+   │ ├─ saka_keywords match → saka          │
+   │ ├─ vague pattern match → vague         │
+   │ ├─ teknik_keywords ≥1 hit → teknik     │
+   │ ├─ icerik_keywords ≥1 hit → icerik     │
+   │ └─ none → LLM'e bırak                  │
+   └─────────────────┬──────────────────────┘
+                     │ (rule None ise)
+                     ▼
+   ┌────────────────────────────────────────┐
+   │ _classify_with_llm(feedback)           │
+   │ → Cerebras llama3.1-8b                 │
+   │ → "Sadece kategori adı, başka açıklama │
+   │    yapma" prompt                       │
+   │ → 4 kategori match                     │
+   └─────────────────┬──────────────────────┘
+                     │
+                     ▼
+   ┌────────────────────────────────────────┐
+   │ UPDATE user_feedback                   │
+   │ SET status = 'triaged_<kategori>'       │
+   │     category = kategori                 │
+   └─────────────────┬──────────────────────┘
+                     │
+                     ▼ (teknik+icerik ise)
+   ┌────────────────────────────────────────┐
+   │ alert_admin_for_serious(serious_list)  │
+   │ → INSERT alert_log                     │
+   │   (alert_type='feedback_<kategori>',   │
+   │    target_phone=admin, message=...)    │
+   └────────────────────────────────────────┘
+```
+
+### 14.4 LLM Routing Karar Akışı
+
+```
+user_input + role + phone
+            ↓
+   ┌────────────────────────────────────────┐
+   │ try_fast_response(message, role)       │
+   │ → handler match → return immediately   │
+   │   ↓ no match                            │
+   └─────────────────┬──────────────────────┘
+                     │
+                     ▼
+   ┌────────────────────────────────────────┐
+   │ routing_engine.decide_route()          │
+   │ ├─ frustration → claude                │
+   │ ├─ duygu_psikoloji → claude            │
+   │ ├─ admin → claude (selam/note hariç)   │
+   │ ├─ SGM → kısa local, uzun claude       │
+   │ ├─ ogrenci/ogretmen/rehber → lane      │
+   │ │     match → "local"                  │
+   │ ├─ classify_complexity → cloud/local   │
+   │ └─ default ogrenci → "local"           │
+   └─────────────────┬──────────────────────┘
+                     │
+              ┌──────┴──────┐
+              ▼             ▼
+       "local"         "claude"
+              │             │
+              ▼             ▼
+   ┌──────────────┐  ┌──────────────┐
+   │ chat_local_   │  │ Claude API   │
+   │ async()       │  │ tool-calling │
+   │               │  │              │
+   │ 1. Cerebras   │  │ messages.    │
+   │ 2. Groq       │  │ stream()     │
+   │ 3. Ollama     │  │              │
+   └──────┬───────┘  └──────┬───────┘
+          │                  │
+          ▼                  │
+   ┌──────────────┐          │
+   │ Eskalasyon   │          │
+   │ kontrolu     │          │
+   │ (data sorgusu│          │
+   │  ise) → fail │          │
+   │ → Claude'a   │──────────┘
+   └──────────────┘
+          │
+          ▼
+   routing_stats'a kayıt:
+   response_source, response_ms, role
+```
+
+---
+
+## 15. Live Sistem Sağlık Metrikleri (28 Nisan 2026, son 7 gün)
+
+### 15.1 Performans Tablosu
+
+| Metrik | Değer | Hedef | Durum |
+|---|---|---|---|
+| Bridge availability | 99.5% | 99% | ✅ |
+| Aktif kullanıcı | 20 | — | — |
+| Toplam mesaj | 347 | — | — |
+| Median latency | 2.434 ms | <3.000 | ✅ |
+| p95 latency | 33.597 ms | <15.000 | ⚠️ admin tool-calling skews |
+| Schedulers aktif | 4/4 | 4/4 | ✅ (nightly + briefing + todo + session_keeper) |
+| data_freshness modül | 11/11 izleniyor | 11 | ✅ |
+
+### 15.2 Routing Dağılımı (admin hariç gerçek kullanıcı, 7 gün)
+
+| Provider | Pay | Hedef pay |
+|---|---|---|
+| Claude Sonnet 4.6 | 59.1% | %25 (uzun vadeli) |
+| Fast Response | 30.0% | %45 |
+| Groq llama-3.3-70b | 7.5% | %5 |
+| Cerebras gpt-oss-120b | 1.7% | %25 |
+| Cerebras qwen-3-235b | 0.6% | %5 |
+| Ollama (embedding) | sürekli | sürekli |
+
+### 15.3 Veri Tazelik Tablosu
+
+| Modül | last_success | last_error |
+|---|---|---|
+| etut_student_control | 28.04 16:11 (taze) | yok |
+| feedback_triage | 28.04 17:09 (taze) | yok |
+| attendance | 28.04 13:02 | yok |
+| class_roster | 08.04 (sezon başı sabit) | yok |
+| etut_reports | 08.04 (sezon başı) | yok |
+| teacher_timetable | 08.04 (sezon başı) | yok |
+| class_timetable | 08.04 (sezon başı) | yok |
+
+### 15.4 Atlas Self-Report Durumu
+
+| Tablo | Kayıt |
+|---|---|
+| atlas_observations | 18 (cozulen=14) |
+| atlas_suggestions | 17 (status=acik 0) |
+| sync_run_log | 3 (28 Nis live testler) |
+| deployments | 348 commit |
+
+---
+
+## 16. Geri Alma & Güvenlik
 
 ### Backup tag'leri (oturum bazlı)
 ```
@@ -1069,7 +1439,7 @@ ssh vps "cd /opt/fermatai && git fetch && git reset --hard origin/main && sudo s
 
 ---
 
-## 15. Önemli Mimari Kararlar (Tarihçe)
+## 17. Önemli Mimari Kararlar (Tarihçe)
 
 ### Oturum 1-15 (Nisan başı): Temel
 - WhatsApp + LMS otomasyon kurgusu

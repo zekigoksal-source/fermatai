@@ -161,10 +161,29 @@ class CerebrasClient:
         )
 
 
-def select_cerebras_model(intent: Optional[str]) -> str:
-    """Intent'e göre uygun Cerebras modelini dön (default: gpt-oss-120b)."""
+def select_cerebras_model(intent: Optional[str], channel: str = "whatsapp") -> str:
+    """Intent + kanal'a göre uygun Cerebras modelini dön.
+
+    Oturum 25.29 (Neo karari): WEB kanalinda kavramsal+ornek+aciklama tipi
+    sorularda qwen-3-235b kullan — ogrenci'nin Claude tarzi detayli + akademik
+    cevap aldigi hisseti vermek icin. WP'de hizli olsun diye gpt-oss-120b kalsin.
+    """
     if not intent:
-        return CEREBRAS_MODELS["kavramsal"]  # default safe
+        # Kanal bazli default
+        if channel == "web":
+            return CEREBRAS_MODELS["kompleks"]  # qwen-3-235b
+        return CEREBRAS_MODELS["kavramsal"]  # gpt-oss-120b
+
+    # Web kanalinda kavramsal/ornek/aciklama → qwen 235b (akademik kalite)
+    if channel == "web":
+        WEB_UPGRADE_INTENTS = {
+            "kavram_aciklama", "ornek_iste", "cozum_iste",
+            "ozet_iste", "yontem_iste", "duygu_paylasim",
+            "motivasyon_destek", "uretim_paylas",
+        }
+        if intent in WEB_UPGRADE_INTENTS:
+            return CEREBRAS_MODELS["kompleks"]  # qwen-3-235b
+
     return INTENT_TO_MODEL.get(intent, CEREBRAS_MODELS["kavramsal"])
 
 

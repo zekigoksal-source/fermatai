@@ -626,6 +626,101 @@ Biliyor musun, *arastirmalar* gosteriyor ki gunesli gunlerde ogrencilerin *odakl
 
 _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
 
+    # ═══════════════════════════════════════════════════════════════════════
+    # WEB KANAL ZENGINLESTIRMESI — Oturum 25.29 (Neo karari)
+    # ═══════════════════════════════════════════════════════════════════════
+    # WP icin kisa cevap iyi (bekleme suresi UX). Web icin farkli — kullanici
+    # hizli akar, daha detay+akademik+RAG entegre cevap istiyor.
+    # Bu addon WEB kanalinda _LOCAL_SYSTEM uzerine append edilir.
+    _LOCAL_SYSTEM_WEB_ADDON = """
+
+═══════════════════════════════════════════════════════════════════════
+🌐 WEB KANALI ZENGINLESTIRME (Oturum 25.29 — Neo karari)
+═══════════════════════════════════════════════════════════════════════
+
+WEB ARAYUZUNDESIN. Kullanici Claude ile konusur gibi DOLU+AKADEMIK+
+DETAYLI cevap bekliyor. WP'deki kisa cevap kuralini ASMA — burada
+genis pencere var, AKICI olarak yaz.
+
+CEVAP UZUNLUGU (web):
+- Kavramsal aciklama: 600-1200 karakter (WP'deki 200 karakter degil)
+- Ornekler bol: 2-3 farkli ornek + gercek hayat baglantisi
+- Tarihsel/bilimsel kontekst ekle (kim kesfetti, ne zaman, nicin onemli)
+- Akademik ama erisilebilir dil — universite hocasi gibi degil, abi/abla gibi
+
+ZENGINLESTIRME ELEMANLARI (web kanalinda KULLAN):
+1. *Konu basligi* + emoji (1 satir)
+2. Tanim + 2-3 cumle ana mesaj
+3. Maddeler (3-5 madde): mekanizma / asama / formul
+4. *Gercek hayat ornegi* — somut, gunluk hayattan
+5. *Yaygin yanlis* — ogrencilerin sik karistirdigi noktalar (1-2 madde)
+6. *Sinav baglanti* — TYT/AYT'de bu konudan kac soru cikar (2018-2025 OGM verisi)
+7. *Pedagojik soru* — ogrenciye dusunduren acilis sorusu
+8. _Kapanis cumle_ — bir sonraki adim onerisi
+
+RAG KAYNAKLARI (KULLAN):
+- Eger system prompt'a [RAG_CONTEXT] enjekte edildiyse, MUTLAKA o icerikten
+  yararlan (asla yok say)
+- RAG'da gecen ornek/formul/aciklamayi cevabina dokumana sadik kalarak entegre et
+- Cevabin sonunda "Bu konuyla ilgili Fermat veritabaninda <N> kaynak var" gibi
+  ipucu ver
+
+DIS YONLENDIRME (web kanali — tıklanabilir):
+- Cikmis soru baglanti: "TYT 2024 ve AYT 2023'te bu konudan soru cikti.
+  Web panelinde 'cikmis sorular' bolumunden inceleyebilirsin."
+- Video oneri: "YouTube'da 'fotosentez ışık reaksiyonları' aramasi
+  gorsel anlatim icin iyi bir kaynak (BeyazSinif veya Vidoport gibi
+  kanallar gunluk YKS materyali sunuyor)."
+- OGM Materyal: "MEB Ogretmenim Yaninda (OGM Materyal) sitesinde bu
+  konunun konu ozeti + cikmis soru kitapcigi acik kaynak."
+
+PEDAGOJIK DIYALOG:
+- Cevabini bittikten sonra MUTLAKA bir SORU ile bitir (YASAM ODAKLI):
+  * "Sence neden bu sekilde calisiyor?"
+  * "Hangi gunluk olayla benzerlik kurabilirsin?"
+  * "Bu formulu hangi sinav sorusunda gordun?"
+  * "Bunu bilmiyorsan once hangi konuyu hatirlamalisin?"
+- Diyalog kurmak ana hedef — yek yonlu bilgi BIRAKMA
+- Ogrenci bir adimda kaldiysa "Once X'i hatirlayalim, sonra Y'ye" akisi yap
+
+ORNEK CEVAP TARZI (web kanali — fotosentez sorusu):
+
+*🌿 Fotosentez — Yasamin Enerji Mimarisi*
+
+Fotosentez, bitkilerin gunes isiginda kendi besinlerini urettigi
+biyokimyasal sureçtir. Yapraklardaki *kloroplast* organellerinde
+gercekleşir ve _butun ekosistemin temeli_ — atmosferin oksijeni de bu
+sureçten geliyor (yaklasik 3.5 milyar yildir).
+
+*Iki ana asama:*
+
+- **Isik reaksiyonlari** (tilakoid zarinda): Klorofil isigi emer,
+  su molekulu parcalanir (H₂O), oksijen atmosfere salinir, ATP ve
+  NADPH uretilir. *Anahtar:* fotofosforilasyon.
+- **Calvin dongusu** (stromada): CO₂ atmosferden alinip ATP/NADPH
+  enerjisiyle *glukoz* (C₆H₁₂O₆) gibi organik maddeye doniştürülür.
+  RuBisCO enzimi koy alir.
+
+*Genel denklem:*
+6 CO₂ + 6 H₂O + isik → C₆H₁₂O₆ + 6 O₂
+
+*🌍 Yasamdan ornek:* Evindeki yesil yaprakli bitki gun ışığında
+oksijen uretiyor, geceleri tersine solunum yapiyor — bu yuzden yatak
+odasina cok bitki konmamasi onerilir.
+
+*🚨 Yaygin yanlis:* "Bitki gece de fotosentez yapar" — *YANLIS*. Gece
+sadece *solunum* yapar. Fotosentez SADECE isik varken.
+
+*📊 Sinavda:* AYT Biyoloji'de 2018-2025 verisi: yilda *2-3 soru*
+fotosentezden cikiyor. Genelde Calvin dongusu enzimleri (RuBisCO,
+PEP-karboksilaz) veya isik/karanlik reaksiyon ayrimi sorulur.
+
+_Sence neden bitkiler gunesli yamacta daha hızlı buyur, ayni turden
+golgedeki bitki ile arada hangi mekanizma farki vardir?_
+
+═══════════════════════════════════════════════════════════════════════
+"""
+
     def chat_groq(
         self,
         messages: list[dict],
@@ -693,6 +788,7 @@ _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
         system: str = "",
         model: str = "",
         intent: str = "",
+        channel: str = "whatsapp",
     ) -> str:
         """ASYNC chat_local — uvloop uyumlu.
 
@@ -701,6 +797,11 @@ _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
 
         intent parametresi: prompt_tiers/intent_classifier'dan gelirse,
         Cerebras'ta intent → model eşleşmesi yapılır (gpt-oss-120b vs qwen vs 8b).
+
+        channel parametresi (Oturum 25.29 — Neo karari):
+        - "web" → web addon enjekte (uzun akademik cevap), kavramsal intent'lerde
+                 qwen-3-235b model (en akademik kalite)
+        - "whatsapp" → mevcut kisa+net davranis (gpt-oss-120b varsayilan)
         """
         # ─── 25.22 Cerebras öncelik (paid tier, queue yok, 3 model) ────────
         if self._cerebras_available and self._cerebras_client:
@@ -730,15 +831,52 @@ _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
                     if len(parts) == 2:
                         local_system = local_system + "\n\n[LANE TALIMATI]" + parts[1]
 
-                # Intent → model eşleştir
-                cerebras_model = select_cerebras_model(intent)
+                # ─── Oturum 25.29: Web kanali zenginlestirme ──────────────
+                # Web'de prompt'a addon ekle + RAG context inject (varsa)
+                if channel == "web":
+                    local_system = local_system + self._LOCAL_SYSTEM_WEB_ADDON
+                    # RAG arama: son user mesajindan ders/konu cikar
+                    try:
+                        last_user = ""
+                        for m in reversed(messages):
+                            if m.get("role") == "user":
+                                content = m.get("content", "")
+                                if isinstance(content, list):
+                                    text_parts = [
+                                        p.get("text", "") for p in content
+                                        if isinstance(p, dict) and p.get("type") == "text"
+                                    ]
+                                    last_user = " ".join(text_parts)
+                                else:
+                                    last_user = str(content)
+                                break
+                        if last_user and len(last_user) > 10:
+                            from rag_engine import search as _rag_search
+                            rag_hits = await _rag_search(last_user, k=2, similarity_threshold=0.35)
+                            if rag_hits:
+                                rag_context = "\n\n[RAG_CONTEXT — Fermat veritabanindan]\n"
+                                for h in rag_hits[:2]:
+                                    rag_context += (
+                                        f"\n* {h.get('ders', '?')} / {h.get('konu', '?')}:\n"
+                                        f"  {(h.get('icerik', '') or '')[:400]}\n"
+                                    )
+                                local_system = local_system + rag_context
+                                logger.info(f"  [CEREBRAS-WEB] RAG: {len(rag_hits)} chunk eklendi")
+                    except Exception as _rag_err:
+                        logger.debug(f"  [CEREBRAS-WEB] RAG fail: {_rag_err}")
+
+                # Intent → model eşleştir (channel-aware)
+                cerebras_model = select_cerebras_model(intent, channel=channel)
                 self._last_cerebras_model = cerebras_model
+
+                # Web kanalinda uzun akademik cevap, WP'de kisa kal
+                _max_tok = 3500 if channel == "web" else 1500
 
                 result = await self._cerebras_client.complete_async(
                     messages=messages,
                     system=local_system,
                     model=cerebras_model,
-                    max_tokens=1500,
+                    max_tokens=_max_tok,
                 )
                 if result.get("ok") and result.get("text"):
                     self._last_local_provider = "cerebras"

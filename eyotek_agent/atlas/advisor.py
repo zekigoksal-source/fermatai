@@ -206,6 +206,7 @@ async def run_advise(hours: int = 24) -> int:
             by_cat.setdefault(r['category'], []).append(r)
 
         inserted = 0
+        skipped_already_done = 0
         for cat, lst in by_cat.items():
             advisor = CATEGORY_ADVISORS.get(cat)
             if not advisor:
@@ -217,6 +218,34 @@ async def run_advise(hours: int = 24) -> int:
                 except Exception as e:
                     print(f"  ⚠ advisor hatası ({cat}): {e}")
                     continue
+
+                # ─── Oturum 25.29: Completion awareness ─────────────────────
+                # Aynı kategori + dosya kombinasyonu son 90 günde yapıldıysa
+                # ya rationale'ye ekle ya da severity'i düşür.
+                try:
+                    from atlas.completion_awareness import is_already_done
+                    done = await is_already_done(
+                        category=cat,
+                        target_files=sug.get('target_files', []),
+                        keywords=[cat],
+                        days=90,
+                    )
+                    if done:
+                        # Rationale'ye geçmişi ekle
+                        sug['rationale'] = (
+                            f"⚠ ONCEKI MÜDAHALELER (son 90 gun, {len(done['evidence'])} kayit):\n"
+                            + "\n".join(f"  • {e}" for e in done['evidence'])
+                            + f"\n\n{done['summary']}\n\n---\n\n"
+                            + sug['rationale']
+                            + "\n\n💡 ALTERNATIF YAKLASIM ONERILIR — ayni patern tekrar etmedin!"
+                        )
+                        # Severity'i bir kademe düşür (önceden adres edildi)
+                        if sug['severity'] == 'critical':
+                            sug['severity'] = 'warning'
+                        elif sug['severity'] == 'warning':
+                            sug['severity'] = 'info'
+                except Exception as _ca_err:
+                    print(f"  ⚠ completion_awareness hatası ({cat}): {_ca_err}")
 
                 new_id = await conn.fetchval(
                     """
