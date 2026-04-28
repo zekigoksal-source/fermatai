@@ -333,29 +333,38 @@ async def _fill_text_input(page, candidates: list[str], value: str) -> Optional[
             pass
 
         # Adim 2: JS ile direkt value set + olaylari mecbur dispatch
+        # Oturum 25.29 KRITIK FIX: bootstrap-datepicker('update', value) cagrisi
+        # SADECE deger tarih formatindaysa yapilir. Aksi halde "Cagan" gibi isimleri
+        # datepicker bugunun tarihiyle (today fallback) overwrite ediyordu.
+        # Tespit: drill_inspect testi → txtAdQuick'e 'Cagan' yazildi, sonra deger
+        # '04/28/2026' oldu — bu, datepicker'in 'Cagan'i parse edemeyince today
+        # default'una donmesi yuzunden.
+        import re as _re_mod
+        is_date_like = bool(_re_mod.match(
+            r"^\s*\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\s*$", str(value or "")
+        ))
         try:
             await page.evaluate("""
-                ([selector, value]) => {
+                ([selector, value, isDate]) => {
                     const el = document.querySelector(selector);
                     if (!el) return false;
                     el.value = value;
                     el.dispatchEvent(new Event('input', { bubbles: true }));
                     el.dispatchEvent(new Event('change', { bubbles: true }));
                     el.dispatchEvent(new Event('blur', { bubbles: true }));
-                    // Bootstrap-datepicker (Eyotek'te kullaniliyor)
                     if (window.jQuery) {
                         try {
                             const $el = window.jQuery(el);
                             $el.trigger('change');
-                            // bootstrap-datepicker hook
-                            if (typeof $el.datepicker === 'function') {
+                            // bootstrap-datepicker hook — SADECE tarih formatinda
+                            if (isDate && typeof $el.datepicker === 'function') {
                                 try { $el.datepicker('update', value); } catch(e) {}
                             }
                         } catch(e) {}
                     }
                     return true;
                 }
-            """, [sel, str(value)])
+            """, [sel, str(value), is_date_like])
         except Exception as e:
             logger.debug(f"[NAV] JS fill fail {sel}: {e}")
 
