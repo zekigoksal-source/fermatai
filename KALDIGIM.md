@@ -1,6 +1,7 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 28 Nisan 2026, gece — **OTURUM 25.28 — Flint K-12 inceleme + 5 yeni özellik altyapısı (WP gated)**
+> **Son güncelleme:** 28 Nisan 2026, öğleden sonra — **OTURUM 25.29 — Otomatik Eyotek → DB Sınav Sync (Neo'nun "APOTEMI bug" raporu)**
+> **28 Nisan öğle commit'leri:** `92667de` (_read_table chkEkalan filtre), `3b2e83e` (sync_recent_exams + nightly), `6f67d32` (Türkçe karakter normalize fix), `b2a4dd5` (dedup + --force-codes)
 > **28 Nisan gece commit'leri:** `fefdb79` (5 özellik altyapısı), `e90cdf2`+`730aa71`+`1dd65c5` (live test fix'leri)
 > **Önceki commit'ler (25.27):** `f767824` (3 bot bug + sınav drill), `5ddbc32` (9 madde teknik borç), `b3a566f` (Groq primary kalıntıları audit)
 > **Son commit'ler (25.26 genişleme):** `5a394ce`→`978ac3f` (~30 commit) — navigator/explorer/planner iterations, 13 yeni sayfa, finansal ACL, tab system, ogrenci_drilldown
@@ -10,6 +11,81 @@
 > **Önceki commit'ler:** `b754d0e` (Atlas-2 Cerebras), `4965694` (viewer pagination ters), `2d190d1` (Cerebras entegrasyon)
 > **Backup tags:** `oturum-25-22-cerebras-live`, `oturum-25-22-pre-cerebras`, `oturum-25-20-modular-disabled`
 > **Sistem:** ✅ bridge active, **Eyotek AGENTIC Navigator+Planner CANLI** (Cerebras gpt-oss-120b plan üretiyor, Playwright CDP navigate ediyor)
+
+## 🆕 OTURUM 25.29 (28 Nisan öğle) — Otomatik Eyotek → DB Sınav Sync
+
+**Neo'nun raporu (~14:26):** "Bota 'son denemenin sonucu nasıl' diye sordum, 7 Nisan Bilgi Sarmal verdi. Ama 22 Nisan APOTEMİ vardı. Bot Eyotek'ten bakabiliyor ama ek komut gerekiyor — istiyorum ki periyodik olarak yeni sınavlar otomatik DB'ye aksın, genel raporlar güncel veriyle hazırlansın."
+
+### Bug → Çözüm
+
+**Bug 1 — `_read_table` yanlış tabloyu seçiyordu:**
+- `test-transferred-dynamic-list` sayfası bir kolon-seçici (`chkEkalan` checkbox-list, 68 satır) içeriyor
+- Eski mantık "en çok tbody tr'ye sahip table" → her zaman chkEkalan
+- Sonuç: bot satır verisi olarak `["SınavAd"]`, `["SınavTarih"]` gibi kolon adlarını alıyordu
+- Fix (`92667de`): UI tablolarını dışla (className "checkbox-list", id "chk*", checkbox >%60), thead+th olan grid'leri öncelikle
+
+**Bug 2 — `sinav_drilldown` veri tablosunu hiç yüklemiyordu:**
+- Dynamic-list aslında bir konfig formu — kullanıcı kolonları seçmeli + "TYT Net-Puan Listesi" hazır liste seçmeli + "ARA" (btnControl) tıklamalı
+- Eski kod ARA tıklamayı atlıyor → GridView1 boş kalıyor
+- Fix (`3b2e83e`): hazır liste auto-pick (TYT/AYT/LGS) + btnControl click + GridView1 oku
+
+**Bug 3 — Türkçe karakter normalize:**
+- `Türkçe_NET` / `Coğrafya_NET` / `DinKültürü_NET` ASCII'ye çevrilmiyor → DB'ye `turkce`/`cografya`/`din_kulturu` map etmiyordu (NULL kalıyordu)
+- Fix (`6f67d32`): `_TR_ASCII` küçük + büyük Türkçe harfleri kapsıyor
+
+### Yeni dosya: `sync_recent_exams.py`
+
+```
+Eyotek/test-transferred (son 30 gün)
+   ↓
+Listele 20 sınav → DB'de olmayan + force_codes
+   ↓
+Her biri için sinav_drilldown(sinav_adi)
+   ↓
+Türkçe_NET/Mat_NET/.../Toplam → student_exams UPSERT (soz_no, exam_code)
+   ↓
+sync_run_log (audit)
+```
+
+CLI: `python sync_recent_exams.py [--days 30] [--max 5] [--dry-run] [--force-codes 999000107,...]`
+
+### Entegrasyonlar
+
+- `precompute_nightly.run_nightly()` ilk adım sync — 03:00 trigger (cache rebuild + followup engine taze veri)
+- WP komut: `son sinav sync` → audit raporu, `sinav sync baslat` → manuel tetik (admin only)
+- WP bildirim KAPALI varsayılan (Neo onaysız mesaj YASAK kuralı). Açma flag: `sistem_ayar.SYNC_NOTIFY_NEO_WP=true`
+
+### Live test sonucu
+
+```
+APOTEMİ TG TYT-3 (999000107)  → 14 öğrenci, ort 54.1 net (Türkçe 24.4, Mat 10.4)
+APOTEMİ TG YKS-3 (999000109)  → 8 öğrenci AYT, ort 24.9 net
+11. SINIF İşler-Çap 2 (1110)  → 9 öğrenci
+İşler-Beyin Takımı 2 (89)     → 4 öğrenci
+ACİL 2 TYT AYT BİRLEŞİK (30)  → 3 öğrenci
+```
+
+Toplam yeni: 9 sınav görüldü, **52 öğrenci-sınav satırı DB'ye yazıldı**, hepsi tüm dersler ile.
+
+### DB durumu (28 Nisan 14:55)
+
+```sql
+exam_code  | exam_name                 | exam_date  | rows | ort_net
+999000107  | APOTEMİ TG TYT-3          | 2026-04-22 |   14 |    54.1   ← ARTIK GÖRÜNÜR
+999000109  | APOTEMİ TG YKS-3          | 2026-04-22 |    8 |    24.9   ← ARTIK GÖRÜNÜR
+1110       | 11. SINIF İşler - Çap 2   | 2026-04-17 |    9 |    32.8
+89         | İşler - Beyin Takımı 2    | 2026-04-17 |    4 |    59.3
+```
+
+Bot artık "kurumda son deneme nasıl" sorusuna **APOTEMI** ile yanıt verir, ek komut gerekmez.
+
+### Sonraki adımlar (gelecek oturum)
+
+- 9 yeni sınavın 5'i daha drill bekliyor (max=3 ile sınırladık ilk run'da). 03:00 nightly otomatik tamamlayacak.
+- Topic-by-topic analiz Neo "TYT birleşik için bekleyebilir" dedi — sonraki sezon
+- PDF rapor kart Vision OCR alternatif yolu — backlog'da
+
+---
 
 ## 🚀 OTURUM 25.26 (27 Nisan akşam) — Eyotek %100 entegre: AGENTIC Navigator + Planner
 
