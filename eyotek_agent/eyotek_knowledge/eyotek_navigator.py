@@ -1330,42 +1330,69 @@ async def student_drilldown(
             result["error"] = "Eyotek session expired."
             return result
 
-        # 2. STRATEGY: Modal ac + Sube=Kurs default + ad/soyad/sozno fill + ARA
-        # (txtAdQuick approach Eyotek davranisi yuzunden tutarsiz — modal yolu
-        # daha guvenilir, cmbSubeler='Kurs' set edince sonuc geliyor)
+        # 2. STRATEGY (Oturum 25.29 fix): Modal ACMA — sayfa ustundeki txtAdQuick
+        # direkt kullan + Enter. Modal default state'inde checkbox'lar
+        # (chkSilinen, chkSilinmeyen, ...) HEPSI checked=false oluyor → Eyotek
+        # filtresiyle "hicbir ogrenciyi gosterme" anlamiyor → her aramada
+        # "Kayıt bulunamadı" donduruyor.
+        #
+        # Test sonucu (28 Nisan): Sayfa ustundeki txtAdQuick + Enter ile
+        # 'Çağan' arama sorunsuz ÇAĞAN YAKAY satirini donduruyordu (sezon
+        # 2025.26 / sube Kurs default'lariyla).
         s = student_identifier.strip()
-        await _open_search_modal(page)
-        await page.wait_for_timeout(1500)
+        # Hemen sayfa ustundeki txtAdQuick'i doldur — modal acmaya gerek yok
+        quick_filled = await page.evaluate(
+            """(value) => {
+                const el = document.querySelector('input[placeholder*="Adı Soyadı"]') ||
+                           document.querySelector('#txtAdQuick') ||
+                           document.querySelector('input[id*="AdQuick" i]');
+                if (!el) return {ok: false, err: 'no_quick_input'};
+                el.value = value;
+                el.dispatchEvent(new Event('input', {bubbles: true}));
+                el.dispatchEvent(new Event('change', {bubbles: true}));
+                return {ok: true, id: el.id};
+            }""",
+            s
+        )
 
-        # KRITIK: Sube='Kurs' set et (default boş olabilir, sonuç dönmüyor)
-        await _fill_dropdown(page, ["#cmbSubeler"], "Kurs")
-        await page.wait_for_timeout(400)
-
-        # Identifier parse — KRITIK: Eyotek'in txtAd/txtSoyad cogu kez tam-eslesme
-        # bekliyor; "Mahmut Taha Akkaya" gibi 3 parcali isimde "Mahmut Taha" ad
-        # olabilir, naïve split bozuk. txtAdQuick (sayfa ustu hizli arama) free-text
-        # LIKE arama yapar — onu birinci sira kullan.
-        if s.isdigit():
-            # Soz no
-            await _fill_text_input(page, ["#txtAdQuick", "input[id*='AdQuick' i]",
-                                          "input[id*='SozNo' i]"], s)
+        if not quick_filled.get("ok"):
+            # Fallback: modal yolu (checkbox'lari TRUE set ederek)
+            await _open_search_modal(page)
+            await page.wait_for_timeout(1500)
+            # Default checkbox'lar checked=false → bunlari aktive et
+            await page.evaluate("""() => {
+                ['chkSilinmeyen','cbEgitimDestek'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && !el.checked) {
+                        el.checked = true;
+                        el.dispatchEvent(new Event('change', {bubbles: true}));
+                    }
+                });
+            }""")
+            await _fill_dropdown(page, ["#cmbSubeler"], "Kurs")
+            await page.wait_for_timeout(400)
+            if s.isdigit():
+                await _fill_text_input(page, ["#txtSozNo", "input[id*='SozNo' i]"], s)
+            else:
+                quick_used = await _fill_text_input(
+                    page, ["#txtAdQuick", "input[id*='AdQuick' i]"], s
+                )
+                if not quick_used:
+                    parts = s.split()
+                    if len(parts) == 1:
+                        await _fill_text_input(page, ["#txtSoyad"], s)
+                    else:
+                        await _fill_text_input(page, ["#txtAd"], " ".join(parts[:-1]))
+                        await _fill_text_input(page, ["#txtSoyad"], parts[-1])
+            await _click_search(page)
+            await page.wait_for_timeout(4000)
         else:
-            # Tum string'i txtAdQuick'e ver (ad+soyad+tc kabul eder, LIKE arama)
-            quick_used = await _fill_text_input(
-                page, ["#txtAdQuick", "input[id*='AdQuick' i]"], s
-            )
-            if not quick_used:
-                # Quick alani yoksa — son kelimeyi soyad, oncesi ad olarak ayir
-                parts = s.split()
-                if len(parts) == 1:
-                    await _fill_text_input(page, ["#txtSoyad"], s)
-                else:
-                    await _fill_text_input(page, ["#txtAd"], " ".join(parts[:-1]))
-                    await _fill_text_input(page, ["#txtSoyad"], parts[-1])
-
-        # ARA — modal'in icindeki #btnSearch
-        await _click_search(page)
-        await page.wait_for_timeout(4000)
+            # Top-bar yolu: Enter tusu basarak arama tetikle
+            try:
+                await page.keyboard.press("Enter")
+            except Exception:
+                pass
+            await page.wait_for_timeout(4500)
 
         # 3. Ilk satirin context menu butonuna tikla
         # Bu screenshotta ⋯ butonu (cls 'cust') — id'si yok genelde
