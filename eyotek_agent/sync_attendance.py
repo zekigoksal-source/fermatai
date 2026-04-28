@@ -41,14 +41,47 @@ async def get_last_sync(module: str) -> dict | None:
 
 
 async def update_freshness(module: str, count: int, success: bool, notes: str = ""):
+    """data_freshness guncelleme — Oturum 25.29 fix.
+
+    ESKI BUG: success=False oldugunda bile last_sync=NOW() yaziliyordu →
+    bot "attendance taze" saniyordu, oysa veri 22 gun eski idi.
+
+    YENI MANTIK:
+      - last_attempt: HER ZAMAN NOW() (en son deneme)
+      - last_success: SADECE success=True'da NOW() (en son basarili sync)
+      - last_sync: GERIYE UYUMLULUK — success'taki NOW(), fail'da DOKUNMA
+      - last_error: success=False ise notes, True ise NULL
+    """
     desc = f"{count} kayit | {'OK' if success else 'FAIL'} | {notes}"[:200]
-    await db_execute(
-        """INSERT INTO data_freshness (module, refresh_type, interval_hrs, description, last_sync)
-           VALUES ($1, 'auto', 4, $2, NOW())
-           ON CONFLICT (module) DO UPDATE SET
-           last_sync=NOW(), description=$2""",
-        module, desc,
-    )
+    if success:
+        await db_execute(
+            """INSERT INTO data_freshness
+                 (module, refresh_type, interval_hrs, description,
+                  last_sync, last_success, last_attempt, last_error)
+               VALUES ($1, 'auto', 4, $2, NOW(), NOW(), NOW(), NULL)
+               ON CONFLICT (module) DO UPDATE SET
+                 last_sync = NOW(),
+                 last_success = NOW(),
+                 last_attempt = NOW(),
+                 last_error = NULL,
+                 description = $2,
+                 success_count_24h = data_freshness.success_count_24h + 1""",
+            module, desc,
+        )
+    else:
+        # FAIL durumu: last_sync ve last_success'i KORU, sadece attempt + error guncelle
+        await db_execute(
+            """INSERT INTO data_freshness
+                 (module, refresh_type, interval_hrs, description,
+                  last_attempt, last_error)
+               VALUES ($1, 'auto', 4, $2, NOW(), $3)
+               ON CONFLICT (module) DO UPDATE SET
+                 last_attempt = NOW(),
+                 last_error = EXCLUDED.last_error,
+                 description = EXCLUDED.description,
+                 fail_count_24h = data_freshness.fail_count_24h + 1""",
+            module, desc, notes[:300] if notes else "unknown_error",
+        )
 
 
 async def upsert_attendance(records: list[dict]) -> int:

@@ -297,17 +297,12 @@ async def tool_get_student_analytics(student_id: str, include_sections: list[str
             int(soz) if soz else 0,
         )
         result["absence_total_hours"] = devam[0]["toplam_saat"] if devam else 0
-        # Detay yoklama (varsa)
-        try:
-            absences = await _db_fetch(
-                """SELECT tarih, ders_no, durum, izin_turu
-                   FROM attendance WHERE soz_no = $1
-                   ORDER BY tarih DESC LIMIT 20""",
-                int(soz) if soz else 0,
-            )
-            result["absences"] = absences
-        except Exception:
-            result["absences"] = []
+        # NOT (Oturum 25.29): attendance tablosu deprecated — soz_no/tarih TEXT,
+        # 6 Nisan'dan beri sync olmuyor (sessiz fail). yoklama_kontrol kullan.
+        # Detay absences icin ozel ihtiyac varsa: SELECT y.tarih, y.ders, y.yoklama
+        # FROM yoklama_kontrol y JOIN students s ON s.class_name = y.sinif
+        # WHERE s.soz_no = $1. Su an bot devamsizlik_sayisi.toplam_saat yeterli.
+        result["absences"] = []
         result["absence_count"] = result.get("absence_total_hours", 0)
 
     # Ödemeler
@@ -458,16 +453,21 @@ async def tool_get_class_summary(class_name: str) -> dict:
         if exam_rows and exam_rows[0].get("avg_net"):
             avg_net = round(float(exam_rows[0]["avg_net"]), 2)
 
-    # Devamsızlık sayısı
+    # Devamsizlik sayisi — Oturum 25.29: attendance deprecated (sync yok),
+    # devamsizlik_sayisi tablosundan TOPLAM saat alinir.
     abs_count = 0
     if ids:
-        abs_rows = await _db_fetch(
-            f"""SELECT COUNT(*) as cnt FROM attendance
-                WHERE eyotek_id = ANY($1::text[])""",
-            ids,
-        )
-        if abs_rows:
-            abs_count = int(abs_rows[0].get("cnt", 0))
+        try:
+            abs_rows = await _db_fetch(
+                """SELECT COALESCE(SUM(toplam_saat), 0) as cnt
+                   FROM devamsizlik_sayisi
+                   WHERE soz_no::text = ANY($1::text[])""",
+                ids,
+            )
+            if abs_rows:
+                abs_count = int(abs_rows[0].get("cnt", 0) or 0)
+        except Exception:
+            abs_count = 0
 
     return {
         "class_name":    class_name,

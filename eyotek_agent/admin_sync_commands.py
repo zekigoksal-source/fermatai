@@ -108,6 +108,62 @@ async def get_update_checklist() -> str:
     return "\n".join(lines)
 
 
+async def get_freshness_report() -> str:
+    """Tum modullerin sync durumu — admin "veri durumu" komutu icin.
+
+    Her modul icin:
+      - last_success: son basarili sync
+      - last_attempt: son deneme (basarisiz olsa da)
+      - last_error: son hata
+      - yas: success'ten beri gecen saat
+    """
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """SELECT module, last_success, last_attempt, last_error,
+                      success_count_24h, fail_count_24h
+               FROM data_freshness ORDER BY
+                 CASE WHEN last_success IS NULL THEN 0 ELSE 1 END,
+                 last_success ASC NULLS FIRST"""
+        )
+    if not rows:
+        return "📊 *Veri Tazelik* — kayit yok"
+
+    from datetime import datetime
+    lines = ["📊 *Veri Tazelik Raporu*", "—" * 18]
+    now = datetime.now()
+    for r in rows:
+        m = r["module"]
+        ls = r["last_success"]
+        la = r["last_attempt"]
+        err = r["last_error"]
+        ok24 = r["success_count_24h"] or 0
+        fail24 = r["fail_count_24h"] or 0
+
+        if ls is None:
+            icon = "⚫"
+            status = "hic sync yok"
+        else:
+            yas = (now - ls).total_seconds() / 3600
+            if yas < 25:
+                icon = "🟢"
+                status = f"{yas:.1f}h once"
+            elif yas < 168:
+                icon = "🟡"
+                status = f"{yas/24:.1f}gun once"
+            else:
+                icon = "🔴"
+                status = f"{yas/24:.0f}gun once (eski!)"
+
+        line = f"{icon} *{m}*: {status}"
+        if err and (la and (now - la).total_seconds() < 7200):
+            line += f"  _(son hata: {err[:60]})_"
+        if ok24 + fail24 > 0:
+            line += f"  ✓{ok24}/✗{fail24}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
 async def get_last_eyotek_sync() -> str:
     """sync_run_log'dan son sinav sync ozetini getir (Oturum 25.29).
 

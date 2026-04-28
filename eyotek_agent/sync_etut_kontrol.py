@@ -219,13 +219,9 @@ async def upsert_etut_student_control(records: list[dict]) -> dict:
             except Exception as e:
                 logger.debug(f"[ETUT_KONTROL] upsert fail soz_no={soz_no}: {e}")
                 skipped += 1
-    # data_freshness module update
-    try:
-        await db_execute(
-            "UPDATE data_freshness SET last_sync=NOW() WHERE module='etut_student_control'"
-        )
-    except Exception:
-        pass
+    # NOT (Oturum 25.29): data_freshness update sync_etut_student_control()
+    # icine tasindi (helper kullanarak) — basari/basarisizliga gore farkli
+    # davranir, sessiz fail riskini onler.
     return {"inserted": inserted, "updated": updated, "skipped": skipped}
 
 
@@ -234,6 +230,15 @@ async def sync_etut_student_control(trigger: str = "manual") -> dict:
     started = datetime.now()
     rows = await fetch_etut_student_control()
     if not rows:
+        # Sessiz fail KARSITLIK: data_freshness'a FAIL yaz, last_sync DOKUNMA
+        try:
+            from data_freshness_helper import mark_failure
+            await mark_failure(
+                "etut_student_control",
+                error="Eyotek session expired or page failed to load",
+            )
+        except Exception:
+            pass
         return {
             "trigger": trigger,
             "started_at": started.isoformat(),
@@ -245,6 +250,13 @@ async def sync_etut_student_control(trigger: str = "manual") -> dict:
     rep["fetched"] = len(rows)
     rep["started_at"] = started.isoformat()
     rep["finished_at"] = datetime.now().isoformat()
+    # Basari durumu: data_freshness'a OK yaz
+    try:
+        from data_freshness_helper import mark_success
+        upserted = (rep.get("inserted", 0) + rep.get("updated", 0))
+        await mark_success("etut_student_control", count=upserted, notes=trigger)
+    except Exception:
+        pass
     return rep
 
 

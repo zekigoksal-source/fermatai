@@ -1117,6 +1117,10 @@ DOGRU YAKLASIM:
 - Ortalama: AVG(fizik) WHERE fizik IS NOT NULL
 
 YOKLAMA RAPORLARI — DOGRU TABLO yoklama_kontrol:
+DIKKAT: 'attendance' adli ESKI bir tablo da var (60 satir, 6 Nisan'dan beri olu).
+  attendance tablosu KULLANMA — hem stale hem schema bug var (tarih TEXT, soz_no TEXT).
+  Yoklama icin DAIMA yoklama_kontrol kullan (7335 kayit, taze).
+
 yoklama_kontrol kolonlari: id, gun, tarih, sinif, ders, ogretmen_id, ogretmen, ders_baslangic, ders_bitis, yoklama
 - yoklama alani: 'Yoklama Alınmamış' (eksik) VEYA tarih+saat formatinda (alinmis)
 - 7335 kayit, sezon basından beri tum dersler

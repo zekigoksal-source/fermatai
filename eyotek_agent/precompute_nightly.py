@@ -229,6 +229,24 @@ async def run_nightly():
         report["steps"]["followup_queue_err"] = str(e)[:200]
         logger.warning(f"  🔁 Follow-Up hata: {e}")
 
+    # 7. Data Freshness audit (Oturum 25.29) — stale modulleri raporla
+    try:
+        from data_freshness_helper import list_stale_modules
+        stale = await list_stale_modules(threshold_hours=25)
+        if stale:
+            stale_lines = [
+                f"  ⚠️ {m['module']}: {m['yas_saat']:.1f}h eski"
+                + (f" (last_error: {m['last_error'][:60]})" if m.get('last_error') else "")
+                for m in stale[:10]
+            ]
+            report["steps"]["stale_modules"] = [m["module"] for m in stale]
+            for line in stale_lines:
+                logger.warning(line)
+        else:
+            logger.info("  ✅ Tum modul sync'leri taze (<25h)")
+    except Exception as e:
+        logger.debug(f"  freshness audit skip: {e}")
+
     elapsed = (datetime.now() - start).total_seconds()
     report["elapsed_sn"] = round(elapsed, 2)
     logger.info(f"🌙 [NIGHTLY] Tamamlandi ({elapsed:.1f}s)")

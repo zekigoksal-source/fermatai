@@ -421,6 +421,24 @@ async def sync_recent_exams(
 
     report["finished_at"] = datetime.now().isoformat()
     await log_sync_run(report)
+
+    # data_freshness — Oturum 25.29: success/failure ayrimi
+    try:
+        from data_freshness_helper import mark_success, mark_failure
+        if report.get("error") or report.get("exams_seen", 0) == 0:
+            await mark_failure(
+                "exam_results",
+                error=report.get("error") or "no exams seen (session?)",
+                count=report.get("rows_inserted", 0),
+            )
+        else:
+            await mark_success(
+                "exam_results",
+                count=report.get("rows_inserted", 0),
+                notes=f"trigger={report.get('trigger')} new={report.get('exams_new', 0)}",
+            )
+    except Exception:
+        pass
     return report
 
 

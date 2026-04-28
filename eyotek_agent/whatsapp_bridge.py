@@ -2683,24 +2683,12 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 logger.error(f"Etut onerisi hatasi: {e}")
                 return f"Etut onerisi hatasi: {e}"
 
-        # Veri güncellik durumu
+        # Veri güncellik durumu — Oturum 25.29: yeni helper kullan (last_success
+        # ile last_attempt ayri, last_error gosterir)
         if neo_lower in ("freshness", "guncellik", "veri durumu", "son sync"):
             try:
-                rows = await db_fetch("""
-                    SELECT module, last_sync, description
-                    FROM data_freshness ORDER BY last_sync DESC NULLS LAST
-                """)
-                lines = ["🕐 *VERİ GÜNCELLİK DURUMU*\n"]
-                for r in rows:
-                    if r['last_sync']:
-                        from datetime import datetime
-                        delta = datetime.now() - r['last_sync'].replace(tzinfo=None)
-                        hours = delta.total_seconds() / 3600
-                        emoji = '🟢' if hours < 4 else '🟡' if hours < 12 else '🔴'
-                        lines.append(f"{emoji} *{r['module']}*: {hours:.1f} saat önce")
-                    else:
-                        lines.append(f"⚪ *{r['module']}*: hiç sync yok")
-                return "\n".join(lines)
+                from admin_sync_commands import get_freshness_report
+                return await get_freshness_report()
             except Exception as e:
                 return f"Hata: {e}"
 
