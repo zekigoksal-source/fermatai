@@ -108,6 +108,63 @@ async def get_update_checklist() -> str:
     return "\n".join(lines)
 
 
+async def get_last_eyotek_sync() -> str:
+    """sync_run_log'dan son sinav sync ozetini getir (Oturum 25.29).
+
+    "son sinav sync" / "eyotek sync" admin komutu icin.
+    """
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        # Son 5 sync calismasi
+        rows = await conn.fetch(
+            """SELECT run_at, trigger, exams_seen, exams_new, rows_inserted, error
+               FROM sync_run_log
+               ORDER BY run_at DESC LIMIT 5"""
+        )
+        # Son drilled detail
+        last = await conn.fetchrow(
+            """SELECT run_at, exams_new, rows_inserted, detail
+               FROM sync_run_log
+               WHERE exams_new > 0
+               ORDER BY run_at DESC LIMIT 1"""
+        )
+    if not rows:
+        return ("📥 *Eyotek -> DB Sinav Sync*\n\n"
+                "Henuz hic sync calismasi yok.\n"
+                "_Manuel: `python sync_recent_exams.py`_\n"
+                "_Otomatik: her gece 03:00 (precompute_nightly)_")
+
+    lines = ["📥 *Eyotek -> DB Sinav Sync*", "—" * 18]
+    for r in rows:
+        ts = r["run_at"].strftime("%d.%m %H:%M") if r["run_at"] else "?"
+        trig = r["trigger"] or "?"
+        if r["error"]:
+            lines.append(f"❌ {ts} ({trig}): {r['error'][:80]}")
+        else:
+            n_new = r["exams_new"] or 0
+            n_rows = r["rows_inserted"] or 0
+            lines.append(
+                f"{'🟢' if n_new > 0 else '⚪'} {ts} ({trig}): "
+                f"{r['exams_seen'] or 0} gorulen, {n_new} yeni, {n_rows} satir"
+            )
+    if last and last["detail"]:
+        try:
+            import json as _json
+            detail = last["detail"] if isinstance(last["detail"], (list, dict)) \
+                     else _json.loads(last["detail"])
+            if isinstance(detail, list) and detail:
+                lines.append("")
+                lines.append(f"_Son ingest ({last['run_at'].strftime('%d.%m')}):_")
+                for d in detail[:3]:
+                    lines.append(
+                        f"  • {d.get('exam_name', '?')[:40]} "
+                        f"({d.get('inserted', 0)}/{d.get('row_count', 0)})"
+                    )
+        except Exception:
+            pass
+    return "\n".join(lines)
+
+
 async def get_student_freshness(student_name: str) -> str:
     """Tek öğrencinin veri güncelliğini kontrol et."""
     pool = await _get_pool()

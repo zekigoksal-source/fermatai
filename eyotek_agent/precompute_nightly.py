@@ -20,6 +20,7 @@ Zamanlama (bridge lifespan'da):
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 import io
 from datetime import datetime, time as dt_time
@@ -98,6 +99,55 @@ async def run_nightly():
     logger.info(f"🌙 [NIGHTLY] {start:%H:%M:%S} — Gece precompute basladi")
 
     report = {"start": start.isoformat(), "steps": {}}
+
+    # 0. Eyotek -> DB sinav sync (Oturum 25.29) — yeni denemeler otomatik gelsin
+    #    Diger cache adimlarindan ONCE calisir ki analytics+predicted+followup taze veri gorsun.
+    try:
+        from sync_recent_exams import sync_recent_exams
+        sync_rep = await sync_recent_exams(
+            days=30, dry_run=False, trigger="nightly", max_exams_per_run=8
+        )
+        report["steps"]["sinav_sync"] = (
+            f"new={sync_rep.get('exams_new', 0)} "
+            f"rows={sync_rep.get('rows_inserted', 0)}"
+        )
+        report["steps"]["sinav_sync_detail"] = {
+            "drilled": sync_rep.get("drilled", []),
+            "skipped": sync_rep.get("skipped", []),
+        }
+        logger.info(
+            f"  📥 Sinav sync: {sync_rep.get('exams_new', 0)} yeni sinav, "
+            f"{sync_rep.get('rows_inserted', 0)} satir DB'ye yazildi"
+        )
+        # Yeni sinav ingest edildiyse: SADECE DB log (sync_run_log zaten yazildi).
+        # WP bildirim YASAK kurali — Neo manuel "son sync" sorgulayabilir.
+        # Optional: Neo flag aktive ederse WP gonderilir.
+        if sync_rep.get("rows_inserted", 0) > 0:
+            try:
+                from db_pool import db_fetchval
+                wp_flag = await db_fetchval(
+                    "SELECT value FROM sistem_ayar WHERE key='SYNC_NOTIFY_NEO_WP'"
+                )
+                if (wp_flag or "").lower() == "true":
+                    neo_phone = os.getenv("NEO_PHONE") or "905051256802"
+                    msg = (
+                        f"📥 Sinav sync ozet:\n"
+                        f"• {sync_rep['exams_new']} yeni sinav\n"
+                        f"• {sync_rep['rows_inserted']} ogrenci-sinav satiri\n"
+                        f"Drill: " + ", ".join(
+                            d.get("exam_name", "?") for d in sync_rep.get("drilled", [])[:3]
+                        )
+                    )
+                    try:
+                        from secure_messenger import send_wp_message
+                        await send_wp_message(neo_phone, msg)
+                    except Exception as werr:
+                        logger.debug(f"  WP notify skip: {werr}")
+            except Exception as e:
+                logger.debug(f"  notify check skip: {e}")
+    except Exception as e:
+        report["steps"]["sinav_sync_err"] = str(e)[:200]
+        logger.warning(f"  📥 Sinav sync hata: {e}")
 
     # 1. Study plan cache warmup
     try:

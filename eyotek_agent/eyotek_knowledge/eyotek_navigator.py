@@ -1212,10 +1212,44 @@ async def sinav_drilldown(
             result["error"] = "'Dinamik Liste' linki bulunamadi"
             return result
 
-        # 6. dynamic-list sayfasını bekle + tabloyu oku
+        # 6. dynamic-list sayfasını bekle
         await page.wait_for_timeout(4500)
         result["page_url"] = page.url
 
+        # 6a. Hazir liste (TYT/AYT/LGS Net-Puan) sec — sinav_adi'na gore
+        adi_lo = (sinav_adi or "").lower()
+        if "ayt" in adi_lo:
+            tip_kw = "ayt net"
+        elif "lgs" in adi_lo:
+            tip_kw = "lgs"
+        else:
+            tip_kw = "tyt net"  # default
+        await page.evaluate(
+            """(kw) => {
+                if (!window.$ || !$('#cmbHazirListe').length) return false;
+                const opt = $('#cmbHazirListe option').filter(function(){
+                    const t = $(this).text().toLowerCase();
+                    return t.includes(kw) || t.includes('net-puan');
+                }).first().val();
+                if (opt) { $('#cmbHazirListe').val(opt).trigger('change'); return true; }
+                return false;
+            }""",
+            tip_kw
+        )
+        await page.wait_for_timeout(1500)
+
+        # 6b. ARA (btnControl) — sonuclari yukle
+        try:
+            await page.click("#btnControl", timeout=4000)
+        except Exception:
+            # fallback: input[type=submit] olabilir
+            try:
+                await page.click("input[type=submit][value*='ARA']", timeout=2000)
+            except Exception:
+                pass
+        await page.wait_for_timeout(7000)
+
+        # 7. GridView1 / data tablosu (artik _read_table dogru sececek)
         cols, rows_data = await _read_table(page, max_rows)
         result["columns"] = cols
         result["rows"] = rows_data

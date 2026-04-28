@@ -3057,6 +3057,41 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 return f"Sync durum hatası: {e}"
         return "Bu komut sadece yoneticiler icin."
 
+    # Eyotek -> DB son sinav sync raporu (Oturum 25.29)
+    if lower in ("son sinav sync", "son sınav sync", "eyotek sync",
+                 "sinav sync", "sınav sync", "son ingest"):
+        from fermat_core_agent import _get_caller_profile
+        prof = await _get_caller_profile(phone)
+        if prof.get("role") in ("admin", "mudur"):
+            try:
+                from admin_sync_commands import get_last_eyotek_sync
+                return await get_last_eyotek_sync()
+            except Exception as e:
+                return f"Sync log okunamadı: {e}"
+        return "Bu komut sadece yoneticiler icin."
+
+    # Anlik sync tetikle — admin only (Oturum 25.29)
+    if lower in ("sinav sync baslat", "sınav sync başlat",
+                 "eyotek sync baslat", "yeni sinavlari cek", "yeni sınavları çek"):
+        from fermat_core_agent import _get_caller_profile
+        prof = await _get_caller_profile(phone)
+        if prof.get("role") not in ("admin",):
+            return "Bu komut sadece admin icin."
+        # Background tetikle, anlik cevap don
+        async def _bg_sync():
+            try:
+                from sync_recent_exams import sync_recent_exams
+                rep = await sync_recent_exams(
+                    days=30, dry_run=False, trigger="manual_wp", max_exams_per_run=5
+                )
+                logger.info(f"[WP] Manuel sync: {rep.get('exams_new', 0)} yeni, "
+                            f"{rep.get('rows_inserted', 0)} satir")
+            except Exception as e:
+                logger.exception(f"[WP] Manuel sync fail: {e}")
+        asyncio.create_task(_bg_sync())
+        return ("⏳ Sinav sync arka planda baslatildi.\n"
+                "_Sonuc icin: `son sinav sync`_")
+
     # "güncelle [isim]" — tek öğrenci veri güncelliği kontrolü
     if lower.startswith(("güncelle ", "guncelle ")) and len(lower) > 10:
         from fermat_core_agent import _get_caller_profile
