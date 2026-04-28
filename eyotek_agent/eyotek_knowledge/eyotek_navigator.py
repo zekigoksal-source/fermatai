@@ -1340,6 +1340,22 @@ async def student_drilldown(
         # 'Çağan' arama sorunsuz ÇAĞAN YAKAY satirini donduruyordu (sezon
         # 2025.26 / sube Kurs default'lariyla).
         s = student_identifier.strip()
+
+        # Numerik input ise (soz_no), DB'den ismi cek + onunla ara
+        # Eyotek txtAdQuick "Adı Soyadı / TC Kimlik" ile esler, soz_no ile DEGIL.
+        # Direkt "244" arandiginda baska ogrencinin TC'sine takilabilir.
+        if s.isdigit():
+            try:
+                from db_pool import db_fetchrow
+                row = await db_fetchrow(
+                    "SELECT full_name FROM students WHERE soz_no::text=$1 LIMIT 1", s
+                )
+                if row and row.get("full_name"):
+                    s = row["full_name"].strip()
+                    logger.info(f"[NAV] soz_no resolved to name: {s}")
+            except Exception:
+                pass
+
         # Hemen sayfa ustundeki txtAdQuick'i doldur — modal acmaya gerek yok
         quick_filled = await page.evaluate(
             """(value) => {
