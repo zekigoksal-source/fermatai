@@ -851,8 +851,8 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
                                     last_user = str(content)
                                 break
                         if last_user and len(last_user) > 10:
-                            from rag_engine import search as _rag_search
-                            rag_hits = await _rag_search(last_user, k=2, similarity_threshold=0.35)
+                            from rag_engine import search_curriculum as _rag_search
+                            rag_hits = await _rag_search(last_user, limit=2)
                             if rag_hits:
                                 rag_context = "\n\n[RAG_CONTEXT — Fermat veritabanindan]\n"
                                 for h in rag_hits[:2]:

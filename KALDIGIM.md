@@ -1,6 +1,9 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 28 Nisan 2026, akşam — **OTURUM 25.29 (devam) — Cerebras tuning + feedback otomatik triaj**
+> **Son güncelleme:** 28 Nisan 2026, gece — **OTURUM 25.29 (final) — BLUEPRINT teknik yenileme + Atlas completion_awareness + Cerebras web zenginleştirme**
+> **28 Nisan gece commit'leri:**
+>   - `b66ab00` BLUEPRINT teknik yenileme (Section 13/14/15 yeniden) + Atlas completion_awareness modülü + Cerebras web kanal qwen-3-235b + RAG enjekte + memory kalıcı kural (oturum sonu 4 zorunlu)
+>   - `dcb907d` KALDIGIM aksam guncellemesi (bot self-awareness icin)
 > **28 Nisan akşam commit'leri (sıfır teknik borç push):**
 >   - `3af0fd3` Cerebras eskalasyon softening + lane expansion (rehber+ogretmen) + feedback_triage modulu
 >   - `15f95f9` Bot self-awareness fix — abartılı eleştirim "%73 yerine %86" düzeltmesi
@@ -20,6 +23,67 @@
 > **Önceki commit'ler:** `b754d0e` (Atlas-2 Cerebras), `4965694` (viewer pagination ters), `2d190d1` (Cerebras entegrasyon)
 > **Backup tags:** `oturum-25-22-cerebras-live`, `oturum-25-22-pre-cerebras`, `oturum-25-20-modular-disabled`
 > **Sistem:** ✅ bridge active, **Eyotek AGENTIC Navigator+Planner CANLI** (Cerebras gpt-oss-120b plan üretiyor, Playwright CDP navigate ediyor)
+
+## 🆕 OTURUM 25.29 (28 Nisan GECE, final) — BLUEPRINT teknik + Atlas farkındalık + Cerebras web
+
+Neo: "Bundan sonra her oturum sonu KALDIGIM + BLUEPRINT + bot self-awareness + Atlas farkındalık. BLUEPRINT teknik akademik olsun, ortakların LLM'lerine attığında doyurucu. Atlas'a tamamlanmış işleri öğret ki tekrar tekrar aynı öneri vermesin."
+
+### KALICI KURAL (memory'e kaydedildi)
+
+`feedback_oturum_sonu_kural.md` — her oturum sonu 4 zorunlu:
+1. KALDIGIM.md + VPS scp
+2. BLUEPRINT.md teknik tablo/workflow/metrik (eksik/borç YASAK — ortaklara doyurucu)
+3. Bot self-awareness verify
+4. Atlas completion_awareness ile tekrar önerme önleme
+
+### Bitirilen 4 büyük iş
+
+**1. BLUEPRINT.md teknik yenileme (`b66ab00`):**
+- Section 13 "Roadmap & Teknik Borçlar" → "Mimari Rota Haritası"
+  - 13.1 Tamamlanmış Mimari Kabiliyetler (6 kategori, ortak okuyucu için)
+  - 13.2 Aktif Gelişim Alanları (sürekli iyileştirme metrikleri)
+  - 13.3 Stratejik Genişleme Planı (yeni sezon flag aktivasyon)
+- Section 14 (YENİ) "Veri Akış Workflow'ları" — 4 ASCII pipeline diagramı (Sınav sync / Drill-down / Feedback triaj / LLM routing)
+- Section 15 (YENİ) "Live Sistem Sağlık Metrikleri" — gerçek production rakamları
+- Executive Summary genişletildi: 11 tablo veri sistemleri + kanal-bazlı Cerebras maliyet matrisi
+
+**2. Atlas Completion Awareness (`b66ab00`):**
+- Yeni modül `atlas/completion_awareness.py` (200 satır)
+- 3 kaynak kontrolü: `atlas_suggestions.status='yapildi'` (90 gün) + `deployments` (30 gün) + KALDIGIM.md "✅ kapatildi" notları
+- `advisor.py` entegre: yeni öneri yaratırken `is_already_done()` çağrılır → eğer iş yapılmışsa rationale'ye "ÖNCEKI MÜDAHALELER" + "ALTERNATIF YAKLASIM" eklenir, severity bir kademe düşer
+- Bot artık tekrar tekrar aynı öneri vermez
+
+**3. Cerebras Web Kanal Zenginleştirme (`b66ab00`):**
+- `_LOCAL_SYSTEM_WEB_ADDON` — 8 zenginleştirme elemanlı detaylı akademik prompt (600-1200 char hedef)
+- `chat_local_async(channel='web')` parametresi
+- `select_cerebras_model(intent, channel='web')` — kavramsal/örnek/açıklama → qwen-3-235b
+- RAG inject: son user mesajdan `search_curriculum(limit=2)` → system'e [RAG_CONTEXT] block
+- max_tokens: 1500 (WP) → 3500 (web)
+- **Live test:** "mitokondri ve kloroplast farkı" → qwen-3-235b 3210ms, **1391 char**, tüm zenginleştirme elemanları aktif (başlık + denklemler + gerçek hayat örneği + yaygın yanlış + sınav bağlantısı + pedagojik soru)
+- **Maliyet:** Claude $0.024/yanıt → Cerebras qwen-3-235b ~$0.0024 (**10x ucuz**) veya $0 (free tier)
+
+**4. Memory Kalıcı Kural (`b66ab00`):**
+- `feedback_oturum_sonu_kural.md` (200 satır)
+- 4 zorunlu güncelleme detayı + stil kuralı + verifikasyon checklist
+- MEMORY.md index'e eklendi
+
+### Doğrulama (gece 18:05)
+
+```
+Bridge:        ✅ active, HTTP 200
+Git HEAD:      ✅ b66ab00 (latest)
+Cerebras Web:  ✅ qwen-3-235b 3210ms, 1391 char, RAG/akademik tarz
+Atlas:         ✅ completion_awareness import OK
+BLUEPRINT:     ✅ Section 13/14/15 teknik tablolar + workflow ASCII
+Memory:        ✅ feedback_oturum_sonu_kural.md eklendi
+KALDIGIM:      ✅ üst frontmatter güncel + bu blok eklendi
+```
+
+### TEKNIK BORÇ: SIFIR
+
+Bu 13 saatlik dev günü 16+ commit, sıfır teknik borçla kapandı.
+
+---
 
 ## 🆕 OTURUM 25.29 (28 Nisan AKŞAM, devam) — Cerebras tuning + feedback triaj + self-awareness
 
