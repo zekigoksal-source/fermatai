@@ -1608,6 +1608,162 @@ TOOLS: list[dict] = [
             "required": ["soz_no"],
         },
     },
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # SELF-DEV PIPELINE — Evre 1 (Oturum 25.29)
+    # SADECE ADMIN (Neo). Sandbox'lı. Read-only. Audit log + kill switch.
+    # ═══════════════════════════════════════════════════════════════════════
+    {
+        "name": "selfdev_read_file",
+        "description": (
+            "[SELF-DEV / ADMIN ONLY] Bot kendi kodunu/loglarini okur. "
+            "Sandbox: /opt/fermatai ve /var/log/fermatai. Secret'lar otomatik mask. "
+            "Brief yazarken dosya icerigine bakmak icin kullan. ASLA hayal kurma — "
+            "her dosya bu tool ile DOGRULANMALI."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Mutlak yol veya /opt/fermatai/... rölatif"},
+                "lines": {"type": "string", "description": "'50-150' formatinda satir araligi (opsiyonel)"},
+            },
+            "required": ["path"],
+        },
+    },
+    {
+        "name": "selfdev_list_dir",
+        "description": "[SELF-DEV / ADMIN] Dizin icerigi (sandbox). Hangi dosyalar var bul.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string"},
+                "glob_pattern": {"type": "string", "default": "*", "description": "Filtre: '*.py', '**/*.sql' vb."},
+            },
+            "required": ["path"],
+        },
+    },
+    {
+        "name": "selfdev_grep_repo",
+        "description": (
+            "[SELF-DEV / ADMIN] Repo'da regex arama (ripgrep). "
+            "Bir fonksiyon/pattern hangi dosyalarda var, satir numarasiyla. "
+            "Brief yazarken 'bu kod nerede tanimli' soylemek icin."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "pattern": {"type": "string", "description": "Regex"},
+                "file_type": {"type": "string", "default": "py", "description": "py|sql|sh|md|json"},
+                "limit": {"type": "integer", "default": 50, "maximum": 200},
+                "path": {"type": "string", "default": "/opt/fermatai/eyotek_agent"},
+            },
+            "required": ["pattern"],
+        },
+    },
+    {
+        "name": "selfdev_read_logs",
+        "description": (
+            "[SELF-DEV / ADMIN] systemd service log'u (journalctl -u fermatai-*). "
+            "Bot kendi crash/error mesajini gorebilir. Bug post-mortem icin."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "service": {"type": "string", "default": "fermatai-bridge", "description": "fermatai-bridge | fermatai-atlas-nightly | fermatai-backup"},
+                "lines": {"type": "integer", "default": 50, "maximum": 1000},
+                "grep": {"type": "string", "description": "Sadece eslesen satirlari getir"},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "selfdev_git_diff",
+        "description": "[SELF-DEV / ADMIN] git diff — son commit'ten beri ne degisti.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "commit_or_branch": {"type": "string", "default": "HEAD", "description": "HEAD~1, main, sha vb."},
+                "file": {"type": "string", "description": "Sadece bu dosya icin (opsiyonel)"},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "selfdev_git_log",
+        "description": "[SELF-DEV / ADMIN] git log son N commit. Tarih, yazar, mesaj.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "file": {"type": "string", "description": "Sadece bu dosyanin tarihcesi"},
+                "limit": {"type": "integer", "default": 20, "maximum": 100},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "selfdev_git_blame",
+        "description": "[SELF-DEV / ADMIN] git blame — bir satirin son commit author + sha.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "file": {"type": "string"},
+                "line_no": {"type": "integer"},
+            },
+            "required": ["file", "line_no"],
+        },
+    },
+    {
+        "name": "selfdev_search_atlas_history",
+        "description": (
+            "[SELF-DEV / ADMIN] Gecmis Atlas suggestion + observation kayitlarini ara. "
+            "Brief yazarken 'bu sorun daha once gozlendi mi' cevabi icin."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "description": "frustration | latency | pattern_miss | sentiment_cluster | data_kalite (bos = hepsi)"},
+                "limit": {"type": "integer", "default": 20, "maximum": 100},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "selfdev_write_brief",
+        "description": (
+            "[SELF-DEV / ADMIN] Konusmadan Claude Code-ready brief uret. "
+            "Son 30 admin mesajini analiz eder, files_touched + pseudo-diff cikarir, "
+            "DB'ye kaydeder. Neo 'brief yaz' dediginde cagir."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "last_n": {"type": "integer", "default": 30, "maximum": 100},
+                "extra_hint": {"type": "string", "description": "Ekstra ipucu, opsiyonel"},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "selfdev_list_briefs",
+        "description": "[SELF-DEV / ADMIN] Gecmis brief listesi (status filtre destekli).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "status": {"type": "string", "description": "draft | reviewed | applied | discarded (bos = hepsi)"},
+                "limit": {"type": "integer", "default": 10, "maximum": 50},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "selfdev_get_brief",
+        "description": "[SELF-DEV / ADMIN] Tek brief detayı (ID ile). Diff icerigi tam goster.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"brief_id": {"type": "integer"}},
+            "required": ["brief_id"],
+        },
+    },
 ]
 
 

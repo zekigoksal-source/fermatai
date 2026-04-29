@@ -60,6 +60,13 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
         "bolum_karsilastir", "tercih_donemi_durum",
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
+        # ── Oturum 25.29 — SELF-DEV PIPELINE (Evre 1: read + brief, ADMIN ONLY) ──
+        # Bu araclar SADECE admin (Neo) icin. Diger rollere ASLA acmayin.
+        # Audit log + secret mask + sandbox kontrolu icerden yapilir.
+        "selfdev_read_file", "selfdev_list_dir", "selfdev_grep_repo",
+        "selfdev_read_logs", "selfdev_git_diff", "selfdev_git_log",
+        "selfdev_git_blame", "selfdev_search_atlas_history",
+        "selfdev_write_brief", "selfdev_list_briefs", "selfdev_get_brief",
     },
     # Yönetim üyesi: müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     "yonetim": {

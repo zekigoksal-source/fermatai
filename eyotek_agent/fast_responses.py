@@ -1832,6 +1832,15 @@ OGRETMEN_PATTERNS = [
 
 # Admin/Mudur soru kaliplari
 ADMIN_PATTERNS = [
+    # ── Oturum 25.29 — SELF-DEV PIPELINE komutları (ADMIN ONLY) ──
+    # Bu pattern'ler EN UST'TE — Claude'a düşmeden önce yakalansın.
+    (r"^self\s*dev\s*(ac|aç|on|aktif)\s*$", "selfdev_killswitch_on", "Self-dev pipeline AC"),
+    (r"^self\s*dev\s*(kapat|kapa|off|pasif|durdur|stop)\s*$", "selfdev_killswitch_off", "Self-dev pipeline KAPAT"),
+    (r"^self\s*dev\s*(durum|status|nasil|active|aktif\s*mi)", "selfdev_status", "Self-dev pipeline DURUM"),
+    # Brief üretme — Claude akışına gönder (selfdev_write_brief tool çağıracak)
+    (r"^(brief\s*yaz|brief\s*olustur|brief\s*uret|self\s*dev\s*brief)", "claude_selfdev_brief", "Brief uret"),
+    (r"^brief\s*(liste|listele|gecmis)", "claude_selfdev_brief_list", "Brief gecmis"),
+    (r"^brief\s*#?(\d+)\s*(goster|detay|aç|ac)?", "claude_selfdev_brief_get", "Brief detay"),
     # 22.1h — "yenile" / "guncelle" / "ne deği(ş)ti" → Claude + get_recent_system_updates zorunlu
     (r"^(yenile|guncelle|g[uü]ncelle|refresh|reload|son\s+g[uü]ncelleme|ne\s+de[gğ]i[sş]ti)", "claude_yenile", "Yenile — Claude tool cagirsin"),
     # 22.1n — Atlas trend/uyari isteği → Claude get_atlas_trend tool cagirsin
@@ -3199,6 +3208,52 @@ async def try_fast_response(
                         return await admin_ogrenci_ara(message)
                     elif handler == "selamlasma":
                         return "Merhaba! FermatAI hazir. Ne sormak istersiniz?"
+                    # ── Self-dev kill switch komutlari (Oturum 25.29) ──
+                    elif handler == "selfdev_killswitch_on":
+                        from self_dev_tools import set_pipeline_active
+                        r = await set_pipeline_active(True, by_phone=caller_phone)
+                        return r.get("message", "✅ Self-dev pipeline acildi")
+                    elif handler == "selfdev_killswitch_off":
+                        from self_dev_tools import set_pipeline_active
+                        r = await set_pipeline_active(False, by_phone=caller_phone)
+                        return r.get("message", "⛔ Self-dev pipeline kapatildi")
+                    elif handler == "selfdev_status":
+                        from self_dev_tools import _is_pipeline_active
+                        from db_pool import db_fetchval, db_fetch
+                        active = await _is_pipeline_active()
+                        try:
+                            n_briefs = await db_fetchval("SELECT COUNT(*) FROM self_dev_briefs") or 0
+                            n_audit_24h = await db_fetchval(
+                                "SELECT COUNT(*) FROM self_dev_audit WHERE created_at > NOW() - INTERVAL '24 hours'"
+                            ) or 0
+                            recent = await db_fetch(
+                                "SELECT tool_name, COUNT(*) AS n FROM self_dev_audit "
+                                "WHERE created_at > NOW() - INTERVAL '24 hours' "
+                                "GROUP BY tool_name ORDER BY n DESC LIMIT 5"
+                            )
+                        except Exception:
+                            n_briefs, n_audit_24h, recent = 0, 0, []
+                        status = "🟢 ACIK" if active else "🔴 KAPALI"
+                        lines = [
+                            f"*🤖 Self-Dev Pipeline — {status}*",
+                            "",
+                            f"  • Toplam brief: *{n_briefs}*",
+                            f"  • Son 24h araç çağrısı: *{n_audit_24h}*",
+                        ]
+                        if recent:
+                            lines.append("")
+                            lines.append("*Son 24h en çok kullanılan:*")
+                            for r in recent:
+                                lines.append(f"  • `{r['tool_name']}`: {r['n']}")
+                        lines.append("")
+                        lines.append("_Komutlar:_")
+                        lines.append("_• 'self dev ac' / 'self dev kapat'_")
+                        lines.append("_• 'brief yaz' → konuşmadan brief üret_")
+                        lines.append("_• 'brief liste' → geçmiş_")
+                        return "\n".join(lines)
+                    # Brief komutları → None (Claude akışı tool çağıracak)
+                    elif handler in ("claude_selfdev_brief", "claude_selfdev_brief_list", "claude_selfdev_brief_get"):
+                        return None
                 except Exception:
                     return None  # Hata → Claude'a git
 

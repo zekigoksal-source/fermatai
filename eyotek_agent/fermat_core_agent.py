@@ -2162,7 +2162,88 @@ TOOL_DISPATCH = {
     # ── Oturum 25.12 — OGRENCI GUNLUK TAKIP (GRAFEN) ──
     "get_student_daily_summary":  lambda p: _tool_get_student_daily_summary(**p),
     "analyze_student_study_pattern": lambda p: _tool_analyze_student_study_pattern(**p),
+    # ── Oturum 25.29 — SELF-DEV PIPELINE (Evre 1: read + brief) ──
+    # Sadece admin (Neo). ACL fermat_core_agent.run() icinde kontrol edilir.
+    "selfdev_read_file":          lambda p: _selfdev_read_file_w(**p),
+    "selfdev_list_dir":           lambda p: _selfdev_list_dir_w(**p),
+    "selfdev_grep_repo":          lambda p: _selfdev_grep_repo_w(**p),
+    "selfdev_read_logs":          lambda p: _selfdev_read_logs_w(**p),
+    "selfdev_git_diff":           lambda p: _selfdev_git_diff_w(**p),
+    "selfdev_git_log":            lambda p: _selfdev_git_log_w(**p),
+    "selfdev_git_blame":          lambda p: _selfdev_git_blame_w(**p),
+    "selfdev_search_atlas_history": lambda p: _selfdev_atlas_history_w(**p),
+    "selfdev_write_brief":        lambda p: _selfdev_write_brief_w(**p),
+    "selfdev_list_briefs":        lambda p: _selfdev_list_briefs_w(**p),
+    "selfdev_get_brief":          lambda p: _selfdev_get_brief_w(**p),
 }
+
+
+# ── Oturum 25.29 Self-Dev Tool Wrappers ───────────────────────────────────
+
+async def _selfdev_read_file_w(path: str, lines: str = "", _caller_phone: str = "", **_):
+    from self_dev_tools import read_file
+    return await read_file(path, lines or None, _caller_phone=_caller_phone)
+
+
+async def _selfdev_list_dir_w(path: str, glob_pattern: str = "*", _caller_phone: str = "", **_):
+    from self_dev_tools import list_dir
+    return await list_dir(path, glob_pattern, _caller_phone=_caller_phone)
+
+
+async def _selfdev_grep_repo_w(pattern: str, file_type: str = "py", limit: int = 50,
+                                path: str = "/opt/fermatai/eyotek_agent",
+                                _caller_phone: str = "", **_):
+    from self_dev_tools import grep_repo
+    return await grep_repo(pattern, file_type, limit, path, _caller_phone=_caller_phone)
+
+
+async def _selfdev_read_logs_w(service: str = "fermatai-bridge", lines: int = 50,
+                                grep: str = "", _caller_phone: str = "", **_):
+    from self_dev_tools import read_logs
+    return await read_logs(service, lines, grep, _caller_phone=_caller_phone)
+
+
+async def _selfdev_git_diff_w(commit_or_branch: str = "HEAD", file: str = "",
+                               _caller_phone: str = "", **_):
+    from self_dev_tools import git_diff
+    return await git_diff(commit_or_branch, file, _caller_phone=_caller_phone)
+
+
+async def _selfdev_git_log_w(file: str = "", limit: int = 20,
+                              _caller_phone: str = "", **_):
+    from self_dev_tools import git_log
+    return await git_log(file, limit, _caller_phone=_caller_phone)
+
+
+async def _selfdev_git_blame_w(file: str, line_no: int,
+                                _caller_phone: str = "", **_):
+    from self_dev_tools import git_blame
+    return await git_blame(file, line_no, _caller_phone=_caller_phone)
+
+
+async def _selfdev_atlas_history_w(category: str = "", limit: int = 20,
+                                    _caller_phone: str = "", **_):
+    from self_dev_tools import search_atlas_history
+    return await search_atlas_history(category, limit, _caller_phone=_caller_phone)
+
+
+async def _selfdev_write_brief_w(last_n: int = 30, extra_hint: str = "",
+                                  _caller_phone: str = "", **_):
+    from self_dev_brief import write_brief
+    if not _caller_phone:
+        return {"error": "Brief writer caller_phone gerek (admin auth)"}
+    return await write_brief(_caller_phone, last_n=last_n, extra_hint=extra_hint or "")
+
+
+async def _selfdev_list_briefs_w(status: str = "", limit: int = 10,
+                                  _caller_phone: str = "", **_):
+    from self_dev_brief import list_briefs
+    return {"briefs": await list_briefs(_caller_phone, status, limit)}
+
+
+async def _selfdev_get_brief_w(brief_id: int, **_):
+    from self_dev_brief import get_brief
+    return (await get_brief(int(brief_id))) or {"error": f"Brief #{brief_id} bulunamadi"}
 
 
 # ── Oturum 25.9 Tool Wrappers ──────────────────────────────────────────────
