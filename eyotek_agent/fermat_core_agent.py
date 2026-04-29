@@ -2522,6 +2522,13 @@ async def run_tool(name: str, input_data: dict,
                             _asyncio.create_task(_safe_topic_log())
             except Exception as _tc_e:
                 logger.debug(f"  tool topic trace hatasi: {_tc_e}")
+        elif name.startswith("selfdev_"):
+            # Oturum 25.29 — Self-Dev tool'larina caller_phone otomatik inject
+            # Brief writer admin auth icin gerek; aksi halde "caller_phone yok" hatasi.
+            enriched = dict(input_data)
+            enriched["_caller_phone"] = caller_phone
+            enriched["_caller_role"] = caller_role
+            result = await fn(enriched)
         else:
             result = await fn(input_data)
 
