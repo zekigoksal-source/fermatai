@@ -1,6 +1,15 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 29 Nisan 2026, gece kapanış — **OTURUM 25.29 (devam) — 6-katmanli observability + auto-scan + DR drill + misconception altyapı**
+> **Son güncelleme:** 29 Nisan 2026, GECE 22:30 — **OTURUM 25.29 (Self-Dev Pipeline Evre 1 + 2.1 + 2.2 CANLI)**
+> **29 Nisan gece — Self-Dev Pipeline (Jarvis Vision yolu):**
+>   - `2032274` Evre 1 — read + brief writer (8 read tool, sandbox, secret mask)
+>   - `82cd222` Evre 1 fix — LLMRouter.chat_cloud sync→to_thread
+>   - `f4860cd` Evre 2.1 — apply_brief (brief → unified diff → _drafts/), 10 güvenlik katmanı
+>   - `b965628` Evre 2.2 — git branch + commit + push (push KAPALI, 7 yeni güvenlik katmanı)
+>   - `5f63a82` Path normalize fix — LLM diff'lerinde absolute path engelleme
+>   - **17 güvenlik katmanı toplam** (kill switch, sandbox, secrets, audit, whitelist/blacklist, branch pattern, force flag engel, push flag, daily quota, co-author footer, apply --check)
+>   - **PR draft (Evre 2.3)** — gh CLI yok, sonraki oturumda kurulum + token gerek
+> **OTURUM 25.29 (devam) — 6-katmanli observability + auto-scan + DR drill + misconception altyapı**
 > **29 Nisan gece kapanış commit'leri (Mehmet bug post-mortem + 6 önemli iş):**
 >   - `c69b416` #1 Context Engine wire — conversation_memory keyword expansion (7→11 ders, 20→80 keyword) + fermat_core_agent unified_context inject (Mehmet "ışık tanecik" → fizik tespit, 12/12 PASS)
 >   - `29808a1` #3 Decision trace observability — routing_stats.decision_trace JSONB + tools_called[] + prompt_blocks[] + decision_trace_query.py CLI + LIVE production capture
