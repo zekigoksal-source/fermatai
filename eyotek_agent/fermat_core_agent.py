@@ -2967,6 +2967,49 @@ class FermatCoreAgent:
         except Exception as _ctx_err:
             logger.debug(f"Context memory hatası (devam): {_ctx_err}")
 
+        # ── UNIFIED CONTEXT ENGINE (Oturum 25.29 — Mehmet bug remedy) ──
+        # ChatGPT'nin "Brain centralized, execution modular" önerisi:
+        # conversation_memory'nin sağladıklarına EK olarak sentiment durumu (alarm/izle),
+        # kayıtlı çalışma planı varlığı, devamsızlık alarm seviyesi inject edilir.
+        # Yalnızca öğrenci rolünde + soz_no varsa çalışır. DUPLİKE etmez —
+        # conversation_memory'de OLMAYAN sinyalleri ekler.
+        if role == "ogrenci" and soz_no:
+            try:
+                from context_engine import build_unified_context
+                _u = await build_unified_context(
+                    int(soz_no),
+                    channel=channel,
+                    role=role,
+                    phone=caller_phone,
+                )
+                _supp_lines = []
+                _sent = (_u or {}).get("sentiment", {}) or {}
+                if _sent.get("durum") in ("alarm", "izle"):
+                    _supp_lines.append(
+                        f"  ⚠ Duygu sinyali: {_sent['durum']} "
+                        f"(neg {_sent.get('negatif_sinyal', 0)}, "
+                        f"poz {_sent.get('pozitif_sinyal', 0)} — son 14 gün) "
+                        f"→ tonu destekleyici tut, baskı kurma"
+                    )
+                _plan = (_u or {}).get("daily_plan", {}) or {}
+                if _plan.get("var"):
+                    _supp_lines.append(
+                        f"  • Kayıtlı çalışma planı VAR (durum: {_plan.get('durum', '?')})"
+                        " — yeniden plan istenirse mevcudunu hatırlat, üstüne ekle"
+                    )
+                _att = (_u or {}).get("attendance", {}) or {}
+                if (_att.get("toplam_saat") or 0) >= 100:
+                    _supp_lines.append(
+                        f"  ⚠ Devamsızlık {int(_att['toplam_saat'])} saat (kritik eşik 100+)"
+                    )
+                if _supp_lines:
+                    dynamic_context += (
+                        "\n\n📊 EK BAĞLAM SİNYALLERİ (unified context):\n"
+                        + "\n".join(_supp_lines)
+                    )
+            except Exception as _u_err:
+                logger.debug(f"Unified context hatası (devam): {_u_err}")
+
         # ── SELF-AWARENESS — rol bazlı farkındalık ──────────────────────
         # Admin (Neo): TAM teknik şeffaflık — atlas, öneriler, talimatlar
         # SGM (Örsel): TEKNİK farkındalık — yazılım/mimari tartışma, AMA güvenlik korunur

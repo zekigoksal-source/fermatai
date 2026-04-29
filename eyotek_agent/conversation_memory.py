@@ -226,15 +226,69 @@ async def get_student_context(phone: str) -> Optional[dict]:
         for msg in recent_msgs:
             if msg['message_role'] == 'user':
                 content_lower = msg['content'].lower()
-                # Konu tespiti
+                # Konu tespiti — Oturum 25.29 genisletildi (Mehmet bug)
+                # ESKI: 7 ders, ~20 keyword. "ışık tanecik" yakalanmıyordu.
+                # YENI: ~80 keyword, alt-konuları da yakalar.
                 for konu, keywords in [
-                    ("fizik", ["fizik", "kuvvet", "newton", "hareket"]),
-                    ("matematik", ["matematik", "türev", "integral", "denklem", "fonksiyon"]),
-                    ("kimya", ["kimya", "mol", "element", "bileşik"]),
-                    ("biyoloji", ["biyoloji", "hücre", "genetik", "mitoz"]),
-                    ("türkçe", ["türkçe", "paragraf", "anlam", "dil bilgisi"]),
-                    ("geometri", ["geometri", "üçgen", "alan", "çevre"]),
-                    ("tarih", ["tarih", "osmanlı", "atatürk", "savaş"]),
+                    ("fizik", [
+                        "fizik", "kuvvet", "newton", "hareket", "moment", "enerji",
+                        "ışık", "isik", "foton", "dalga", "tanecik", "optik",
+                        "manyet", "elektrik", "akım", "akim", "voltaj", "direnc", "direnç",
+                        "kaldırma", "kaldirma", "basinç", "basınç", "akışkan", "akiskan",
+                        "isı", "isi", "sıcaklık", "sicaklik", "termodinamik",
+                        "atom", "kuantum", "rölativ", "relativ",
+                    ]),
+                    ("matematik", [
+                        "matematik", "türev", "turev", "integral", "limit",
+                        "denklem", "fonksiyon", "polinom", "logaritma", "üstel", "ustel",
+                        "trigonometri", "sinüs", "sinus", "kosinüs", "kosinus",
+                        "tanjant", "matris", "determinant", "olasılık", "olasilik",
+                        "permutasyon", "kombinasyon", "dizi", "seri",
+                        "asal", "bölünebilme", "bolunebilme",
+                    ]),
+                    ("kimya", [
+                        "kimya", "mol", "element", "bileşik", "bilesik",
+                        "asit", "baz", "tuz", "tepkime", "reaksiyon",
+                        "atom", "elektron", "proton", "nötron", "notron",
+                        "periyodik", "orbital", "izotop", "iyon",
+                        "organik", "alkan", "alken", "alkin", "ester",
+                    ]),
+                    ("biyoloji", [
+                        "biyoloji", "hücre", "hucre", "genetik", "mitoz", "mayoz",
+                        "fotosentez", "solunum", "enzim", "protein", "dna", "rna",
+                        "kromozom", "gen", "alel", "kalıtım", "kalitim",
+                        "ekosistem", "tür", "sinir", "hormon", "endokrin",
+                        "bitki", "hayvan", "evrim",
+                    ]),
+                    ("türkçe", [
+                        "türkçe", "turkce", "paragraf", "anlam", "dil bilgisi", "dilbilgisi",
+                        "noktalama", "yazım", "yazim", "ses", "sözcük", "sozcuk",
+                        "cümle", "cumle", "fiil", "isim", "sıfat", "sifat", "zarf",
+                    ]),
+                    ("geometri", [
+                        "geometri", "üçgen", "ucgen", "alan", "çevre", "cevre",
+                        "kare", "dikdörtgen", "dikdortgen", "daire", "çember", "cember",
+                        "açı", "aci", "kosüs", "kosus", "vektör", "vektor",
+                        "analitik", "konik", "parabol", "elips",
+                    ]),
+                    ("tarih", [
+                        "tarih", "osmanlı", "osmanli", "atatürk", "ataturk", "savaş", "savas",
+                        "cumhuriyet", "kurtuluş", "kurtulus", "ilkçağ", "ilkcag",
+                        "ortaçağ", "ortacag", "anadolu", "selçuk", "selcuk",
+                        "fatih", "kanuni", "yavuz", "abdülhamit", "abdulhamit",
+                    ]),
+                    ("coğrafya", [
+                        "coğrafya", "cografya", "iklim", "yağış", "yagis",
+                        "nüfus", "nufus", "tarım", "tarim", "sanayi",
+                        "akarsu", "göl", "gol", "deniz", "okyanus",
+                        "kıta", "kita", "harita", "ölçek", "olcek",
+                    ]),
+                    ("felsefe", [
+                        "felsefe", "ahlak", "siyaset", "bilgi", "varlık", "varlik",
+                        "sokrates", "platon", "aristo", "kant", "nietzsche",
+                    ]),
+                    ("din", ["din kültürü", "din kulturu", "ibadet", "kuran", "hz."]),
+                    ("ingilizce", ["ingilizce", "english", "tense", "grammar"]),
                 ]:
                     if any(kw in content_lower for kw in keywords):
                         last_topic = konu
