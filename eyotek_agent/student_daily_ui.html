@@ -552,22 +552,38 @@ body {
 .day-badge.warn { background: rgba(245, 158, 11, 0.15); color: var(--brand-amber); }
 
 .delete-btn {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%) scale(0);
-  background: rgba(239, 68, 68, 0.15);
+  position: relative;
+  background: rgba(239, 68, 68, 0.12);
   border: none;
   color: #fca5a5;
   width: 26px; height: 26px;
+  min-width: 26px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
   transition: all 0.2s var(--spring);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.7;
 }
-.row:hover .delete-btn { transform: translateY(-50%) scale(1); }
-.delete-btn:hover { background: rgba(239, 68, 68, 0.3); }
+/* Row icindeyse absolute positioned (eskiden boyleydi, geri uyumlu) */
+.row .delete-btn,
+.activity-row .delete-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.row:hover .delete-btn,
+.activity-row:hover .delete-btn,
+.habit-block:hover .delete-btn { opacity: 1; }
+.delete-btn:hover { background: rgba(239, 68, 68, 0.35); opacity: 1 !important; transform: scale(1.05); }
+.row:hover .delete-btn:hover,
+.activity-row:hover .delete-btn:hover { transform: translateY(-50%) scale(1.05); }
 
 /* ═════ ADD FORMS ═════ */
 .add-row {
@@ -1290,7 +1306,12 @@ body {
           <div class="module-glyph success">📊</div>
           <div>Çalışma İstatistikleri</div>
         </div>
-        <div class="module-meta">Son 7 gün</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="module-meta">Son 7 gün</div>
+          <button onclick="resetTodayStats()" title="Bugünkü kayıtları sıfırla"
+                  style="background:rgba(239,68,68,0.12);color:#fca5a5;border:none;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;opacity:0.7;transition:opacity 0.15s;"
+                  onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">↺ Sıfırla</button>
+        </div>
       </div>
       <div class="chart-wrapper"><canvas id="chart-stats"></canvas></div>
       <div class="add-row" style="border-top:none;padding-top:0;">
@@ -1345,7 +1366,10 @@ body {
           <div class="mood-pill" data-mood="yorgun">😴 Yorgun</div>
           <div class="mood-pill" data-mood="stresli">😰 Stresli</div>
         </div>
-        <button class="add-btn" onclick="saveNote()" style="width:100%;padding:12px;">Notu Kaydet</button>
+        <div style="display:flex;gap:8px;">
+          <button class="add-btn" onclick="saveNote()" style="flex:1;padding:12px;">Notu Kaydet</button>
+          <button class="add-btn" onclick="deleteTodayNote()" style="background:rgba(239,68,68,0.15);color:#fca5a5;padding:12px 14px;" title="Bugünkü notu sil">🗑</button>
+        </div>
       </div>
     </div>
 
@@ -1700,12 +1724,24 @@ function renderActivities(items) {
     c.innerHTML = '<div class="empty"><span class="glyph">🏃</span><p>Hareket vakti!</p></div>';
     return;
   }
-  c.innerHTML = items.slice(0,6).map(a => `
+  c.innerHTML = items.slice(0,6).map(a => {
+    const testBadge = a.is_test ? ' <span style="background:rgba(245,158,11,.2);color:#fbbf24;font-size:9px;padding:1px 4px;border-radius:4px;font-weight:600">🧪 TEST</span>' : '';
+    return `
     <div class="activity-row">
       <span class="date">${(a.log_date||'').slice(5)}</span>
-      <span class="name">${escapeHTML(a.activity_type)}</span>
+      <span class="name">${escapeHTML(a.activity_type)}${testBadge}</span>
       <span class="duration">${a.duration_minutes}dk</span>
-    </div>`).join('');
+      <button class="delete-btn" onclick="event.stopPropagation();deleteActivity(${a.id},'${escapeHTML(a.activity_type).replace(/'/g,"\\\\'")}')">×</button>
+    </div>`;
+  }).join('');
+}
+
+async function deleteActivity(activityId, name) {
+  if (!confirm(`"${name}" aktivitesini silmek istediğine emin misin?`)) return;
+  try {
+    await api(`/student/daily/activity/${activityId}`, {method:'DELETE'});
+    toast('Aktivite silindi'); loadAll();
+  } catch(e) { toast('Hata',true); }
 }
 
 function renderStats(weekly) {
@@ -1879,6 +1915,26 @@ async function saveNote() {
     await api('/student/daily/notes',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({note, mood:selectedMood})});
     toast('Not kaydedildi');
+  } catch(e) { toast('Hata',true); }
+}
+
+async function deleteTodayNote() {
+  if (!confirm('Bugünkü notunu silmek istediğine emin misin?')) return;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    await api(`/student/daily/notes/${today}`, {method:'DELETE'});
+    document.getElementById('note-text').value = '';
+    selectedMood = null;
+    document.querySelectorAll('.mood-pill').forEach(c => c.classList.remove('selected'));
+    toast('Not silindi'); loadAll();
+  } catch(e) { toast('Hata',true); }
+}
+
+async function resetTodayStats() {
+  if (!confirm('Bugünkü çalışma istatistiklerini sıfırlamak istediğine emin misin?\n(Süre, soru sayısı, ders dağılımı silinecek)')) return;
+  try {
+    await api('/student/daily/stats/reset', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    toast('İstatistikler sıfırlandı'); loadAll();
   } catch(e) { toast('Hata',true); }
 }
 

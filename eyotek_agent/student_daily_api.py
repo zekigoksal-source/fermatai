@@ -432,6 +432,41 @@ async def add_note(
     return await sd.add_daily_note(sn, note, mood=payload.get("mood"), is_test=is_test)
 
 
+@router.delete("/notes/{log_date}")
+async def delete_note_endpoint(
+    log_date: str,
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+    soz_no: Optional[int] = None,
+):
+    """Bir günün notunu sil (yyyy-mm-dd formatında log_date)."""
+    sn = await _get_student_soz_no(request, fermat_session, soz_no)
+    try:
+        d = date.fromisoformat(log_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="log_date YYYY-MM-DD formatında olmalı")
+    await sd.delete_note(d, sn)
+    return {"ok": True}
+
+
+@router.post("/stats/reset")
+async def reset_stats_endpoint(
+    request: Request,
+    payload: dict = Body(default={}),
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """Bugünkü (veya belirli bir günün) çalışma istatistiğini sıfırla."""
+    sn = await _get_student_soz_no(request, fermat_session, payload.get("soz_no"))
+    log_date = None
+    if payload.get("log_date"):
+        try:
+            log_date = date.fromisoformat(payload["log_date"])
+        except ValueError:
+            pass
+    await sd.reset_today_stats(sn, log_date)
+    return {"ok": True}
+
+
 # ── ANALİZ (LLM için) ─────────────────────────────────────────────────────
 
 @router.get("/analyze")

@@ -505,6 +505,25 @@ async def delete_activity(activity_id: int, soz_no: int) -> bool:
     return True
 
 
+async def delete_note(log_date: date, soz_no: int) -> bool:
+    """Bir günün notunu sil."""
+    await _exec(
+        "DELETE FROM student_daily_notes WHERE log_date=$1 AND soz_no=$2",
+        log_date, soz_no,
+    )
+    return True
+
+
+async def reset_today_stats(soz_no: int, log_date: Optional[date] = None) -> bool:
+    """Bugünkü çalışma istatistiğini sıfırla (öğrenci yanlış girdiyse)."""
+    log_date = log_date or date.today()
+    await _exec(
+        "DELETE FROM student_study_stats WHERE soz_no=$1 AND log_date=$2",
+        soz_no, log_date,
+    )
+    return True
+
+
 async def get_recent_notes(soz_no: int, days: int = 7,
                              include_test: bool = True) -> list[dict]:
     test_filter = "" if include_test else " AND COALESCE(is_test, FALSE) = FALSE"
