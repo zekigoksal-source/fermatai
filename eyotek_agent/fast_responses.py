@@ -3177,7 +3177,16 @@ async def try_fast_response(
             is_mini_cmd = re.match(r'^(neo|admin|yardim|yardım|menu|menü|help)$', msg_lower.strip())
             # Web chat OTP — admin de kendi test edebilsin, kısa komut
             is_web_kodu = re.match(r'^(web\s*(kodu?|giris|gir|bagla|bağla|link)|fermat\s*ai\s*(web|kodu?))', msg_lower.strip())
-            if not is_greeting and not is_capability and not is_mini_cmd and not is_web_kodu:
+            # Self-Dev Pipeline komutlari (Oturum 25.29 — Evre 1+2.1+2.2+2.3)
+            # ADMIN_PATTERNS'da yakalanip handler dispatch edilmeli, claude'a düşmesin
+            is_selfdev_cmd = re.match(
+                r'^(self\s*dev|brief\s*(yaz|liste|listele|gecmis|olustur|uret|#?\d+)|'
+                r'draft\s*(liste|listele|listesi|#?\d+)|'
+                r'branch\s*(liste|listele|listesi|durum|status|nasil|\S+\s*(push|sil))|'
+                r'pr\s*#?\d+)',
+                msg_lower.strip(),
+            )
+            if not is_greeting and not is_capability and not is_mini_cmd and not is_web_kodu and not is_selfdev_cmd:
                 return None  # Admin analiz = Claude premium
         # Mudur/Yonetim: uzun mesajlar Claude'a (web kodu kisa, fast'ta kalsin)
         if len(msg_lower) > 60 and role in ("yonetim", "mudur"):
