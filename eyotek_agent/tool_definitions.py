@@ -1764,6 +1764,54 @@ TOOLS: list[dict] = [
             "required": ["brief_id"],
         },
     },
+    # ── Evre 2.1 — Draft Sandbox Write (Oturum 25.29) ──
+    # Bot brief'i _drafts/ klasörüne unified diff olarak yazabilir.
+    # Production kodu HIC degismez. Kullanici (Neo) Claude Code ile manuel apply eder.
+    {
+        "name": "selfdev_apply_brief",
+        "description": (
+            "[SELF-DEV / ADMIN — Evre 2.1] Bir brief'i _drafts/ klasörüne unified git diff olarak yaz. "
+            "Production kodu DEGISTIRMEZ. Brief.proposed_diff'i gercek dosya iceriklerine bakarak "
+            "git apply ile uyumlu unified diff'e cevirir. Kara liste dosyalara yazma talebi REDDEDILIR."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "brief_id": {"type": "integer", "description": "self_dev_briefs.id"},
+            },
+            "required": ["brief_id"],
+        },
+    },
+    {
+        "name": "selfdev_list_drafts",
+        "description": "[SELF-DEV / ADMIN — Evre 2.1] _drafts/ klasöründeki tüm taslak diff'leri listele.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+    },
+    {
+        "name": "selfdev_read_draft",
+        "description": "[SELF-DEV / ADMIN — Evre 2.1] Bir brief'in en son draft .diff icerigini oku.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"brief_id": {"type": "integer"}},
+            "required": ["brief_id"],
+        },
+    },
+    {
+        "name": "selfdev_delete_draft",
+        "description": (
+            "[SELF-DEV / ADMIN — Evre 2.1] Bir brief'in draft dosyalarini sil (rollback). "
+            "Brief status 'discarded' olur."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"brief_id": {"type": "integer"}},
+            "required": ["brief_id"],
+        },
+    },
 ]
 
 

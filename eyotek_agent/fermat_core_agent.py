@@ -2175,6 +2175,11 @@ TOOL_DISPATCH = {
     "selfdev_write_brief":        lambda p: _selfdev_write_brief_w(**p),
     "selfdev_list_briefs":        lambda p: _selfdev_list_briefs_w(**p),
     "selfdev_get_brief":          lambda p: _selfdev_get_brief_w(**p),
+    # Evre 2.1 — Draft sandbox write
+    "selfdev_apply_brief":        lambda p: _selfdev_apply_brief_w(**p),
+    "selfdev_list_drafts":        lambda p: _selfdev_list_drafts_w(**p),
+    "selfdev_read_draft":         lambda p: _selfdev_read_draft_w(**p),
+    "selfdev_delete_draft":       lambda p: _selfdev_delete_draft_w(**p),
 }
 
 
@@ -2244,6 +2249,26 @@ async def _selfdev_list_briefs_w(status: str = "", limit: int = 10,
 async def _selfdev_get_brief_w(brief_id: int, **_):
     from self_dev_brief import get_brief
     return (await get_brief(int(brief_id))) or {"error": f"Brief #{brief_id} bulunamadi"}
+
+
+async def _selfdev_apply_brief_w(brief_id: int, _caller_phone: str = "", **_):
+    from self_dev_apply import apply_brief
+    return await apply_brief(int(brief_id), _caller_phone=_caller_phone)
+
+
+async def _selfdev_list_drafts_w(**_):
+    from self_dev_apply import list_drafts
+    return await list_drafts()
+
+
+async def _selfdev_read_draft_w(brief_id: int, **_):
+    from self_dev_apply import read_draft
+    return await read_draft(int(brief_id))
+
+
+async def _selfdev_delete_draft_w(brief_id: int, _caller_phone: str = "", **_):
+    from self_dev_apply import delete_draft
+    return await delete_draft(int(brief_id), _caller_phone=_caller_phone)
 
 
 # ── Oturum 25.9 Tool Wrappers ──────────────────────────────────────────────

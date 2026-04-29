@@ -1840,7 +1840,12 @@ ADMIN_PATTERNS = [
     # Brief üretme — Claude akışına gönder (selfdev_write_brief tool çağıracak)
     (r"^(brief\s*yaz|brief\s*olustur|brief\s*uret|self\s*dev\s*brief)", "claude_selfdev_brief", "Brief uret"),
     (r"^brief\s*(liste|listele|gecmis)", "claude_selfdev_brief_list", "Brief gecmis"),
-    (r"^brief\s*#?(\d+)\s*(goster|detay|aç|ac)?", "claude_selfdev_brief_get", "Brief detay"),
+    (r"^brief\s*#?(\d+)\s*(goster|detay|aç|ac)?$", "claude_selfdev_brief_get", "Brief detay"),
+    # Evre 2.1 — Draft komutlari
+    (r"^brief\s*#?(\d+)\s*(draft|taslak)\s*(yap|olustur|uret|hazirla)?", "claude_selfdev_apply_brief", "Brief draft yap"),
+    (r"^draft\s*#?(\d+)\s*(iptal|sil|kaldir|discard)", "claude_selfdev_delete_draft", "Draft iptal"),
+    (r"^draft\s*(liste|listele|listesi)", "claude_selfdev_list_drafts", "Draft liste"),
+    (r"^draft\s*#?(\d+)\s*(goster|oku|detay|ac)?$", "claude_selfdev_read_draft", "Draft detay"),
     # 22.1h — "yenile" / "guncelle" / "ne deği(ş)ti" → Claude + get_recent_system_updates zorunlu
     (r"^(yenile|guncelle|g[uü]ncelle|refresh|reload|son\s+g[uü]ncelleme|ne\s+de[gğ]i[sş]ti)", "claude_yenile", "Yenile — Claude tool cagirsin"),
     # 22.1n — Atlas trend/uyari isteği → Claude get_atlas_trend tool cagirsin
@@ -3251,8 +3256,13 @@ async def try_fast_response(
                         lines.append("_• 'brief yaz' → konuşmadan brief üret_")
                         lines.append("_• 'brief liste' → geçmiş_")
                         return "\n".join(lines)
-                    # Brief komutları → None (Claude akışı tool çağıracak)
-                    elif handler in ("claude_selfdev_brief", "claude_selfdev_brief_list", "claude_selfdev_brief_get"):
+                    # Brief + Draft komutları → None (Claude akışı tool çağıracak)
+                    elif handler in (
+                        "claude_selfdev_brief", "claude_selfdev_brief_list", "claude_selfdev_brief_get",
+                        # Evre 2.1
+                        "claude_selfdev_apply_brief", "claude_selfdev_list_drafts",
+                        "claude_selfdev_read_draft", "claude_selfdev_delete_draft",
+                    ):
                         return None
                 except Exception:
                     return None  # Hata → Claude'a git

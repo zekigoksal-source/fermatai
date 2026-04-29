@@ -67,6 +67,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "selfdev_read_logs", "selfdev_git_diff", "selfdev_git_log",
         "selfdev_git_blame", "selfdev_search_atlas_history",
         "selfdev_write_brief", "selfdev_list_briefs", "selfdev_get_brief",
+        # Evre 2.1 — Draft sandbox write (Oturum 25.29)
+        "selfdev_apply_brief", "selfdev_list_drafts",
+        "selfdev_read_draft", "selfdev_delete_draft",
     },
     # Yönetim üyesi: müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     "yonetim": {
