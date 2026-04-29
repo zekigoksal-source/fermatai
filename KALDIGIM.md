@@ -1,6 +1,18 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 29 Nisan 2026, GECE — **OTURUM 25.29 (Self-Dev Pipeline Evre 1 + 2.1 + 2.2 + 2.3 CANLI — 24 katman)**
+> **Son güncelleme:** 30 Nisan 2026, GECE — **OTURUM 25.29 (Self-Dev + Çalışmam Test Mode + Cerebras Görsel Zenginlik)**
+> **30 Nisan gece commit'leri (yarın devam):**
+>   - `7502c71` Vedat hoca öğretmen ACL filter (kendi sınıfı sınav verileri)
+>   - `f49cf48` Neo Komut Merkezi (kategorize hierarchical menü)
+>   - `0161a51` + `b9ab1cb` Çalışmam paneli admin Test Mode picker
+>   - `8d764c1` is_test sandbox + sil butonları + bot context filter
+>   - `5359c1c` Cerebras prompt zenginleştirme (Claude kalitesinde web cevap)
+> **YARIN YAPILACAKLAR:**
+>   - Frontend görsel renderer'lar (```sim p5.js iframe, ```3d Three.js, ```formula GSAP+KaTeX)
+>   - Cerebras canlı test (web'den fizik sorusu — chart/tablo/KaTeX çıktığını doğrula)
+>   - Self-Dev Evre 2.4 (sandboxed pytest)
+>   - SSH key kurulumu push aktivasyonu (Neo onayı)
+> **OTURUM 25.29 (Self-Dev Pipeline Evre 1 + 2.1 + 2.2 + 2.3 CANLI — 24 katman)**
 > **29 Nisan gece — Self-Dev Pipeline (Jarvis → Vision yolu):**
 >   - `2032274` Evre 1 — read + brief writer (8 read tool, sandbox, secret mask)
 >   - `82cd222` Evre 1 fix — LLMRouter.chat_cloud sync→to_thread
