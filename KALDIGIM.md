@@ -1,17 +1,28 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 30 Nisan 2026, GECE — **OTURUM 25.29 (Self-Dev + Çalışmam Test Mode + Cerebras Görsel Zenginlik)**
-> **30 Nisan gece commit'leri (yarın devam):**
+> **Son güncelleme:** 30 Nisan 2026, GECE KAPANIŞ — **OTURUM 25.29 — TEKNİK BORÇ TEMİZ**
+> **30 Nisan tamamı (Neo dev maraton):**
 >   - `7502c71` Vedat hoca öğretmen ACL filter (kendi sınıfı sınav verileri)
 >   - `f49cf48` Neo Komut Merkezi (kategorize hierarchical menü)
 >   - `0161a51` + `b9ab1cb` Çalışmam paneli admin Test Mode picker
 >   - `8d764c1` is_test sandbox + sil butonları + bot context filter
 >   - `5359c1c` Cerebras prompt zenginleştirme (Claude kalitesinde web cevap)
-> **YARIN YAPILACAKLAR:**
->   - Frontend görsel renderer'lar (```sim p5.js iframe, ```3d Three.js, ```formula GSAP+KaTeX)
->   - Cerebras canlı test (web'den fizik sorusu — chart/tablo/KaTeX çıktığını doğrula)
+>   - `9020691` 4 görsel renderer CANLI (```sim p5.js + ```3d Three.js + ```formula KaTeX+GSAP + ```calc slider)
+>   - `697c0a9` Silme/revize butonları her widget'a (habit/activity/note/stats reset) + görünürlük fix
+> **30 Nisan oturum sonu durumu:**
+>   - ✅ Self-Dev Pipeline Evre 1+2.1+2.2+2.3 (24 katman güvenlik)
+>   - ✅ Neo Komut Merkezi (kategorize menü)
+>   - ✅ Çalışmam paneli admin Test Mode + öğrenci için sağlam (8/8 endpoint 200, silme butonları her yerde)
+>   - ✅ Cerebras 230B prompt Claude kalitesinde web cevap (max_tokens 6000, görsel bloklar, Markdown tam açık)
+>   - ✅ 5 özel render bloğu canlı: chart, sim, 3d, formula, calc — bot kavramsal cevap üretirken kullanır, frontend canlı render
+>   - ✅ Vedat hoca öğretmen ACL filter
+>   - ✅ Bot context filter is_test → admin test verisi öğrenci context'ine sızmaz
+>   - ✅ TÜM TEKNİK BORÇ TEMİZ (Neo onayli, oturum kapanış)
+> **Yarın için fikirler (kenarda):**
+>   - 🔮 WebGL büyük simülasyon (Hawking radyasyonu, ray tracing) — 1-2 hafta efor, BLUEPRINT 13.2.b'de
 >   - Self-Dev Evre 2.4 (sandboxed pytest)
->   - SSH key kurulumu push aktivasyonu (Neo onayı)
+>   - SSH key kurulumu push aktivasyonu (Neo onayıyla)
+>   - 4 yeni renderer için Cerebras canlı test + öğrenci geri bildirim
 > **OTURUM 25.29 (Self-Dev Pipeline Evre 1 + 2.1 + 2.2 + 2.3 CANLI — 24 katman)**
 > **29 Nisan gece — Self-Dev Pipeline (Jarvis → Vision yolu):**
 >   - `2032274` Evre 1 — read + brief writer (8 read tool, sandbox, secret mask)
