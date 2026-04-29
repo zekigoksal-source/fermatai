@@ -2235,7 +2235,15 @@ async def try_fast_response(
         _is_note = bool(re.search(r'(not\s*et|kaydet|hata.*not|diyalog.*not)', msg_lower))
         # "Web kodu" — admin de kendi test + ogrenciye kod verebilsin (fast, DB INSERT + WP cevap)
         _is_web_kodu = bool(re.match(r'^(web\s*(kodu?|giris|gir|bagla|bağla|link)|fermat\s*ai\s*(web|kodu?))', msg_lower.strip()))
-        if not _is_greeting and not _is_note and not _is_web_kodu:
+        # Self-Dev Pipeline komutlari (Oturum 25.29) — fast'ta kalsin, ADMIN_PATTERNS dispatch handler edecek
+        _is_selfdev_cmd = bool(re.match(
+            r'^(self\s*dev|brief\s*(yaz|liste|listele|gecmis|olustur|uret|#?\d+)|'
+            r'draft\s*(liste|listele|listesi|#?\d+)|'
+            r'branch\s*(liste|listele|listesi|durum|status|nasil|\S+\s*(push|sil))|'
+            r'pr\s*#?\d+)',
+            msg_lower.strip(),
+        ))
+        if not _is_greeting and not _is_note and not _is_web_kodu and not _is_selfdev_cmd:
             return None  # → Claude premium (admin her zaman kaliteli cevap alır)
 
     # ── ŞİDDET/TEHDİT TESPİTİ — acil bildirim gerektirebilir ──
