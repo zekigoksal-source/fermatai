@@ -2395,10 +2395,14 @@ async def _tool_observe_student_answer(
 # ── Oturum 25.12 — Öğrenci Günlük Takip Tool Wrappers ──────────────────────
 
 async def _tool_get_student_daily_summary(soz_no: int, **_) -> dict:
-    """7 modül günlük özet — student_daily.get_summary."""
+    """7 modül günlük özet — student_daily.get_summary.
+
+    Oturum 25.29: include_test=False → admin'in TEST MODE'da yazdığı kayıtları
+    bot context'ine getirme. Öğrenci kendi paneline yazdıkları görünür.
+    """
     try:
         from student_daily import get_summary
-        return await get_summary(int(soz_no))
+        return await get_summary(int(soz_no), include_test=False)
     except Exception as e:
         logger.error(f"[get_student_daily_summary] {e}")
         return {"error": str(e)}

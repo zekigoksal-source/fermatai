@@ -43,6 +43,20 @@ async def _get_student_soz_no(
     """Session'dan öğrencinin soz_no'sunu çıkar.
     Admin/mudur override_soz_no kullanabilir (başka öğrenci görüntüleme).
     """
+    sn, _is_test = await _get_soz_no_with_test_flag(request, cookie_token, override_soz_no)
+    return sn
+
+
+async def _get_soz_no_with_test_flag(
+    request: Request,
+    cookie_token: Optional[str],
+    override_soz_no: Optional[int] = None,
+) -> tuple[int, bool]:
+    """soz_no + is_test bayrağı.
+
+    is_test=True ise: admin/mudur baskasi adina veri yaziyor (TEST MODE).
+    Bot bu verileri context'e çekmez (is_test=true filtre).
+    """
     from web_chat import _extract_token
     from web_chat_auth import get_session
     token = _extract_token(request, cookie_token)
@@ -53,11 +67,11 @@ async def _get_student_soz_no(
     role = sess.get("role")
     phone = sess.get("phone")
 
-    # Admin/mudur override
+    # Admin/mudur override → TEST MODE
     if override_soz_no and role in ("admin", "mudur"):
-        return int(override_soz_no)
+        return int(override_soz_no), True
 
-    # Öğrenci kendi soz_no'su (DB'den)
+    # Öğrenci kendi soz_no'su (DB'den) → GERÇEK VERİ
     if role == "ogrenci":
         from db_pool import db_fetchval
         soz = await db_fetchval(
@@ -65,12 +79,12 @@ async def _get_student_soz_no(
         )
         if not soz:
             raise HTTPException(status_code=403, detail="Öğrenci kaydı bulunamadı")
-        return int(soz)
+        return int(soz), False
 
     # Diğer roller — soz_no override şart
     if not override_soz_no:
         raise HTTPException(status_code=400, detail="soz_no parametresi gerekli")
-    return int(override_soz_no)
+    return int(override_soz_no), True
 
 
 # ── ANA SUMMARY (dashboard tek çağrı) ──────────────────────────────────────
@@ -106,7 +120,7 @@ async def add_program(
     payload: dict = Body(...),
     fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
 ):
-    sn = await _get_student_soz_no(request, fermat_session, payload.get("soz_no"))
+    sn, is_test = await _get_soz_no_with_test_flag(request, fermat_session, payload.get("soz_no"))
     title = (payload.get("title") or "").strip()
     if not title:
         raise HTTPException(status_code=400, detail="title gerekli")
@@ -119,6 +133,7 @@ async def add_program(
         ders=payload.get("ders"),
         konu=payload.get("konu"),
         notes=payload.get("notes"),
+        is_test=is_test,
     )
 
 
@@ -165,12 +180,12 @@ async def add_todo_endpoint(
     payload: dict = Body(...),
     fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
 ):
-    sn = await _get_student_soz_no(request, fermat_session, payload.get("soz_no"))
+    sn, is_test = await _get_soz_no_with_test_flag(request, fermat_session, payload.get("soz_no"))
     title = (payload.get("title") or "").strip()
     if not title:
         raise HTTPException(status_code=400, detail="title gerekli")
     due_date = date.fromisoformat(payload["due_date"]) if payload.get("due_date") else None
-    return await sd.add_todo(sn, title, due_date=due_date, priority=payload.get("priority", "normal"))
+    return await sd.add_todo(sn, title, due_date=due_date, priority=payload.get("priority", "normal"), is_test=is_test)
 
 
 @router.post("/todo/{todo_id}/complete")
@@ -215,11 +230,24 @@ async def add_habit_endpoint(
     payload: dict = Body(...),
     fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
 ):
-    sn = await _get_student_soz_no(request, fermat_session, payload.get("soz_no"))
+    sn, is_test = await _get_soz_no_with_test_flag(request, fermat_session, payload.get("soz_no"))
     name = (payload.get("habit_name") or "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="habit_name gerekli")
-    return await sd.add_habit(sn, name, target_days=payload.get("target_days"))
+    return await sd.add_habit(sn, name, target_days=payload.get("target_days"), is_test=is_test)
+
+
+@router.delete("/habits/{habit_id}")
+async def delete_habit_endpoint(
+    habit_id: int,
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+    soz_no: Optional[int] = None,
+):
+    """Bir alışkanlığı sil (öğrenci yanlış girmişse)."""
+    sn = await _get_student_soz_no(request, fermat_session, soz_no)
+    await sd.delete_habit(habit_id, sn)
+    return {"ok": True}
 
 
 @router.post("/habits/{habit_id}/log")
@@ -255,7 +283,7 @@ async def add_event(
     payload: dict = Body(...),
     fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
 ):
-    sn = await _get_student_soz_no(request, fermat_session, payload.get("soz_no"))
+    sn, is_test = await _get_soz_no_with_test_flag(request, fermat_session, payload.get("soz_no"))
     title = (payload.get("title") or "").strip()
     if not title or not payload.get("event_date"):
         raise HTTPException(status_code=400, detail="title ve event_date gerekli")
@@ -265,7 +293,20 @@ async def add_event(
         event_type=payload.get("event_type", "sinav"),
         event_time=payload.get("event_time"),
         ders=payload.get("ders"),
+        is_test=is_test,
     )
+
+
+@router.delete("/events/{event_id}")
+async def delete_event_endpoint(
+    event_id: int,
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+    soz_no: Optional[int] = None,
+):
+    sn = await _get_student_soz_no(request, fermat_session, soz_no)
+    await sd.delete_event(event_id, sn)
+    return {"ok": True}
 
 
 @router.post("/events/{event_id}/complete")
@@ -310,7 +351,7 @@ async def log_session(
     fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
 ):
     """Çalışma session'ı ekle (additive — bugünün toplamına ekler)."""
-    sn = await _get_student_soz_no(request, fermat_session, payload.get("soz_no"))
+    sn, is_test = await _get_soz_no_with_test_flag(request, fermat_session, payload.get("soz_no"))
     minutes = int(payload.get("minutes", 0) or 0)
     questions = int(payload.get("questions", 0) or 0)
     return await sd.log_study_session(
@@ -319,6 +360,7 @@ async def log_session(
         questions=questions,
         ders=payload.get("ders"),
         konu=payload.get("konu"),
+        is_test=is_test,
     )
 
 
@@ -341,14 +383,27 @@ async def add_activity(
     payload: dict = Body(...),
     fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
 ):
-    sn = await _get_student_soz_no(request, fermat_session, payload.get("soz_no"))
+    sn, is_test = await _get_soz_no_with_test_flag(request, fermat_session, payload.get("soz_no"))
     return await sd.log_physical_activity(
         sn,
         activity_type=payload.get("activity_type", "egzersiz"),
         duration_minutes=int(payload.get("duration_minutes", 0) or 0),
         intensity=payload.get("intensity", "orta"),
         notes=payload.get("notes"),
+        is_test=is_test,
     )
+
+
+@router.delete("/activity/{activity_id}")
+async def delete_activity_endpoint(
+    activity_id: int,
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+    soz_no: Optional[int] = None,
+):
+    sn = await _get_student_soz_no(request, fermat_session, soz_no)
+    await sd.delete_activity(activity_id, sn)
+    return {"ok": True}
 
 
 # ── 7. BUGÜNKÜ NOT ────────────────────────────────────────────────────────
@@ -370,11 +425,11 @@ async def add_note(
     payload: dict = Body(...),
     fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
 ):
-    sn = await _get_student_soz_no(request, fermat_session, payload.get("soz_no"))
+    sn, is_test = await _get_soz_no_with_test_flag(request, fermat_session, payload.get("soz_no"))
     note = (payload.get("note") or "").strip()
     if not note:
         raise HTTPException(status_code=400, detail="note gerekli")
-    return await sd.add_daily_note(sn, note, mood=payload.get("mood"))
+    return await sd.add_daily_note(sn, note, mood=payload.get("mood"), is_test=is_test)
 
 
 # ── ANALİZ (LLM için) ─────────────────────────────────────────────────────

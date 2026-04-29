@@ -331,10 +331,13 @@ async def get_student_context(phone: str) -> Optional[dict]:
         daily_brief = None
         try:
             from student_daily import get_today_stats, get_todos, get_recent_notes
+            # Oturum 25.29: include_test=False → admin test verileri ÇIKAR (bot
+            # gerçek öğrenci verisi sanmasın). Öğrenci kendisi yazdıysa zaten
+            # is_test=False (default), o veri görünmeye devam eder.
             stats_today, todos_open, notes_recent = await asyncio.gather(
-                get_today_stats(soz_no),
-                get_todos(soz_no, only_open=True),
-                get_recent_notes(soz_no, days=2),
+                get_today_stats(soz_no, include_test=False),
+                get_todos(soz_no, only_open=True, include_test=False),
+                get_recent_notes(soz_no, days=2, include_test=False),
                 return_exceptions=True,
             )
             if isinstance(stats_today, Exception): stats_today = {}

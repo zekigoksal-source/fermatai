@@ -67,29 +67,37 @@ async def add_daily_program(
     ders: Optional[str] = None,
     konu: Optional[str] = None,
     notes: Optional[str] = None,
+    is_test: bool = False,
 ) -> dict:
-    """Günlük programa yeni blok ekle."""
+    """Günlük programa yeni blok ekle. is_test=True → admin test mode (bot context'e girmez)."""
     plan_date = plan_date or date.today()
     # Oturum 25.12 fix: asyncpg TIME tipi string kabul etmez, datetime.time gerekli
     start_t = _parse_time(start_time) or dtime(9, 0)
     end_t = _parse_time(end_time)
     nid = await _fetchval(
         """INSERT INTO student_daily_program
-           (soz_no, plan_date, start_time, end_time, title, ders, konu, notes)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id""",
+           (soz_no, plan_date, start_time, end_time, title, ders, konu, notes, is_test)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id""",
         soz_no, plan_date, start_t, end_t,
-        title[:200], ders, konu, notes,
+        title[:200], ders, konu, notes, bool(is_test),
     )
-    return {"id": nid, "title": title, "plan_date": str(plan_date)}
+    return {"id": nid, "title": title, "plan_date": str(plan_date), "is_test": is_test}
 
 
-async def get_daily_program(soz_no: int, plan_date: Optional[date] = None) -> list[dict]:
-    """Bir günün programı (default bugün)."""
+async def get_daily_program(soz_no: int, plan_date: Optional[date] = None,
+                              include_test: bool = True) -> list[dict]:
+    """Bir günün programı (default bugün).
+
+    include_test=False: bot context icin — admin test kayitlari hariç tutulur.
+    include_test=True (default): frontend dashboard — kendi test verisi de görünür.
+    """
     plan_date = plan_date or date.today()
+    test_filter = "" if include_test else " AND COALESCE(is_test, FALSE) = FALSE"
     rows = await _fetch(
-        """SELECT id, start_time::text, end_time::text, title, ders, konu, completed, notes
+        f"""SELECT id, start_time::text, end_time::text, title, ders, konu, completed, notes,
+                   COALESCE(is_test, FALSE) AS is_test
            FROM student_daily_program
-           WHERE soz_no=$1 AND plan_date=$2
+           WHERE soz_no=$1 AND plan_date=$2{test_filter}
            ORDER BY start_time""",
         soz_no, plan_date,
     )
@@ -121,21 +129,25 @@ async def add_todo(
     title: str,
     due_date: Optional[date] = None,
     priority: str = "normal",
+    is_test: bool = False,
 ) -> dict:
     if priority not in ("low", "normal", "high", "urgent"):
         priority = "normal"
     nid = await _fetchval(
-        """INSERT INTO student_todo (soz_no, title, due_date, priority)
-           VALUES ($1,$2,$3,$4) RETURNING id""",
-        soz_no, title[:200], due_date, priority,
+        """INSERT INTO student_todo (soz_no, title, due_date, priority, is_test)
+           VALUES ($1,$2,$3,$4,$5) RETURNING id""",
+        soz_no, title[:200], due_date, priority, bool(is_test),
     )
-    return {"id": nid, "title": title, "priority": priority}
+    return {"id": nid, "title": title, "priority": priority, "is_test": is_test}
 
 
-async def get_todos(soz_no: int, only_open: bool = True) -> list[dict]:
+async def get_todos(soz_no: int, only_open: bool = True, include_test: bool = True) -> list[dict]:
     where = "soz_no=$1" + (" AND completed=FALSE" if only_open else "")
+    if not include_test:
+        where += " AND COALESCE(is_test, FALSE) = FALSE"
     rows = await _fetch(
-        f"""SELECT id, title, due_date, priority, completed, completed_at, created_at
+        f"""SELECT id, title, due_date, priority, completed, completed_at, created_at,
+                   COALESCE(is_test, FALSE) AS is_test
             FROM student_todo
             WHERE {where}
             ORDER BY (priority='urgent') DESC, (priority='high') DESC,
@@ -168,20 +180,33 @@ async def add_habit(
     soz_no: int,
     habit_name: str,
     target_days: Optional[list[str]] = None,  # ['Pzt','Sal',...]
+    is_test: bool = False,
 ) -> dict:
     target_days = target_days or ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']
     nid = await _fetchval(
-        """INSERT INTO student_habits (soz_no, habit_name, target_days)
-           VALUES ($1,$2,$3) RETURNING id""",
-        soz_no, habit_name[:120], target_days,
+        """INSERT INTO student_habits (soz_no, habit_name, target_days, is_test)
+           VALUES ($1,$2,$3,$4) RETURNING id""",
+        soz_no, habit_name[:120], target_days, bool(is_test),
     )
-    return {"id": nid, "habit_name": habit_name}
+    return {"id": nid, "habit_name": habit_name, "is_test": is_test}
 
 
-async def get_habits(soz_no: int, active_only: bool = True) -> list[dict]:
+async def delete_habit(habit_id: int, soz_no: int) -> bool:
+    """Bir alışkanlığı sil (logları da siler — CASCADE)."""
+    await _exec(
+        "DELETE FROM student_habits WHERE id=$1 AND soz_no=$2",
+        habit_id, soz_no,
+    )
+    return True
+
+
+async def get_habits(soz_no: int, active_only: bool = True, include_test: bool = True) -> list[dict]:
     where = "soz_no=$1" + (" AND is_active=TRUE" if active_only else "")
+    if not include_test:
+        where += " AND COALESCE(is_test, FALSE) = FALSE"
     rows = await _fetch(
-        f"""SELECT id, habit_name, target_days, streak, longest_streak, created_at
+        f"""SELECT id, habit_name, target_days, streak, longest_streak, created_at,
+                   COALESCE(is_test, FALSE) AS is_test
             FROM student_habits WHERE {where} ORDER BY created_at DESC""",
         soz_no,
     )
@@ -241,6 +266,7 @@ async def add_exam_event(
     event_type: str = "sinav",
     event_time: Optional[str] = None,
     ders: Optional[str] = None,
+    is_test: bool = False,
 ) -> dict:
     if event_type not in ("sinav", "odev", "etut", "rehberlik"):
         event_type = "sinav"
@@ -248,19 +274,31 @@ async def add_exam_event(
     et = _parse_time(event_time)
     nid = await _fetchval(
         """INSERT INTO student_exam_calendar
-           (soz_no, title, event_type, event_date, event_time, ders)
-           VALUES ($1,$2,$3,$4,$5,$6) RETURNING id""",
-        soz_no, title[:200], event_type, event_date, et, ders,
+           (soz_no, title, event_type, event_date, event_time, ders, is_test)
+           VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id""",
+        soz_no, title[:200], event_type, event_date, et, ders, bool(is_test),
     )
-    return {"id": nid, "title": title, "event_date": str(event_date)}
+    return {"id": nid, "title": title, "event_date": str(event_date), "is_test": is_test}
 
 
-async def get_upcoming_events(soz_no: int, days_ahead: int = 30) -> list[dict]:
+async def delete_event(event_id: int, soz_no: int) -> bool:
+    """Sınav/etkinlik sil."""
+    await _exec(
+        "DELETE FROM student_exam_calendar WHERE id=$1 AND soz_no=$2",
+        event_id, soz_no,
+    )
+    return True
+
+
+async def get_upcoming_events(soz_no: int, days_ahead: int = 30,
+                                include_test: bool = True) -> list[dict]:
+    test_filter = "" if include_test else " AND COALESCE(is_test, FALSE) = FALSE"
     rows = await _fetch(
-        f"""SELECT id, title, event_type, event_date, event_time::text, ders, completed, score
+        f"""SELECT id, title, event_type, event_date, event_time::text, ders, completed, score,
+                   COALESCE(is_test, FALSE) AS is_test
             FROM student_exam_calendar
             WHERE soz_no=$1
-              AND event_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '{int(days_ahead)} days'
+              AND event_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '{int(days_ahead)} days'{test_filter}
             ORDER BY event_date, event_time""",
         soz_no,
     )
@@ -285,6 +323,7 @@ async def log_study_session(
     ders: Optional[str] = None,
     konu: Optional[str] = None,
     log_date: Optional[date] = None,
+    is_test: bool = False,
 ) -> dict:
     """Bugünün çalışma istatistiğine ekle (additive — UPDATE).
 
@@ -329,19 +368,20 @@ async def log_study_session(
         konu_bd = {konu: minutes} if (konu and minutes > 0) else {}
         await _exec(
             """INSERT INTO student_study_stats
-               (soz_no, log_date, total_minutes, questions_solved, ders_breakdown, konu_breakdown)
-               VALUES ($1,$2,$3,$4,$5,$6)""",
+               (soz_no, log_date, total_minutes, questions_solved, ders_breakdown, konu_breakdown, is_test)
+               VALUES ($1,$2,$3,$4,$5,$6,$7)""",
             soz_no, log_date, max(0, minutes), max(0, questions),
-            json.dumps(ders_bd), json.dumps(konu_bd),
+            json.dumps(ders_bd), json.dumps(konu_bd), bool(is_test),
         )
         return {"total_minutes": minutes, "questions_solved": questions,
                 "ders_breakdown": ders_bd, "konu_breakdown": konu_bd}
 
 
-async def get_today_stats(soz_no: int) -> dict:
+async def get_today_stats(soz_no: int, include_test: bool = True) -> dict:
+    test_filter = "" if include_test else " AND COALESCE(is_test, FALSE) = FALSE"
     row = await _fetchrow(
-        """SELECT total_minutes, questions_solved, ders_breakdown, konu_breakdown
-           FROM student_study_stats WHERE soz_no=$1 AND log_date=CURRENT_DATE""",
+        f"""SELECT total_minutes, questions_solved, ders_breakdown, konu_breakdown
+           FROM student_study_stats WHERE soz_no=$1 AND log_date=CURRENT_DATE{test_filter}""",
         soz_no,
     )
     if not row:
@@ -356,13 +396,14 @@ async def get_today_stats(soz_no: int) -> dict:
     return d
 
 
-async def get_weekly_stats(soz_no: int, weeks: int = 1) -> dict:
+async def get_weekly_stats(soz_no: int, weeks: int = 1, include_test: bool = True) -> dict:
     """Son N hafta toplam — analiz için."""
+    test_filter = "" if include_test else " AND COALESCE(is_test, FALSE) = FALSE"
     rows = await _fetch(
         f"""SELECT log_date, total_minutes, questions_solved, ders_breakdown
             FROM student_study_stats
             WHERE soz_no=$1
-              AND log_date >= CURRENT_DATE - INTERVAL '{int(weeks * 7)} days'
+              AND log_date >= CURRENT_DATE - INTERVAL '{int(weeks * 7)} days'{test_filter}
             ORDER BY log_date""",
         soz_no,
     )
@@ -404,25 +445,29 @@ async def log_physical_activity(
     intensity: str = "orta",
     notes: Optional[str] = None,
     log_date: Optional[date] = None,
+    is_test: bool = False,
 ) -> dict:
     log_date = log_date or date.today()
     if intensity not in ("düşük", "orta", "yüksek"):
         intensity = "orta"
     nid = await _fetchval(
         """INSERT INTO student_physical_activity
-           (soz_no, log_date, activity_type, duration_minutes, intensity, notes)
-           VALUES ($1,$2,$3,$4,$5,$6) RETURNING id""",
-        soz_no, log_date, activity_type[:50], max(0, duration_minutes), intensity, notes,
+           (soz_no, log_date, activity_type, duration_minutes, intensity, notes, is_test)
+           VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id""",
+        soz_no, log_date, activity_type[:50], max(0, duration_minutes), intensity, notes, bool(is_test),
     )
-    return {"id": nid, "activity_type": activity_type, "duration_minutes": duration_minutes}
+    return {"id": nid, "activity_type": activity_type, "duration_minutes": duration_minutes, "is_test": is_test}
 
 
-async def get_recent_activities(soz_no: int, days: int = 7) -> list[dict]:
+async def get_recent_activities(soz_no: int, days: int = 7,
+                                  include_test: bool = True) -> list[dict]:
+    test_filter = "" if include_test else " AND COALESCE(is_test, FALSE) = FALSE"
     rows = await _fetch(
-        f"""SELECT id, log_date, activity_type, duration_minutes, intensity, notes
+        f"""SELECT id, log_date, activity_type, duration_minutes, intensity, notes,
+                   COALESCE(is_test, FALSE) AS is_test
             FROM student_physical_activity
             WHERE soz_no=$1
-              AND log_date >= CURRENT_DATE - INTERVAL '{int(days)} days'
+              AND log_date >= CURRENT_DATE - INTERVAL '{int(days)} days'{test_filter}
             ORDER BY log_date DESC, created_at DESC""",
         soz_no,
     )
@@ -436,26 +481,39 @@ async def add_daily_note(
     note: str,
     mood: Optional[str] = None,
     log_date: Optional[date] = None,
+    is_test: bool = False,
 ) -> dict:
     log_date = log_date or date.today()
     if mood and mood not in ("verimli", "normal", "yorgun", "stresli", "motiveli"):
         mood = "normal"
     await _exec(
-        """INSERT INTO student_daily_notes (soz_no, log_date, note, mood)
-           VALUES ($1,$2,$3,$4)
+        """INSERT INTO student_daily_notes (soz_no, log_date, note, mood, is_test)
+           VALUES ($1,$2,$3,$4,$5)
            ON CONFLICT (soz_no, log_date) DO UPDATE SET
-             note=EXCLUDED.note, mood=EXCLUDED.mood""",
-        soz_no, log_date, note[:1000], mood,
+             note=EXCLUDED.note, mood=EXCLUDED.mood, is_test=EXCLUDED.is_test""",
+        soz_no, log_date, note[:1000], mood, bool(is_test),
     )
-    return {"date": str(log_date), "note": note, "mood": mood}
+    return {"date": str(log_date), "note": note, "mood": mood, "is_test": is_test}
 
 
-async def get_recent_notes(soz_no: int, days: int = 7) -> list[dict]:
+async def delete_activity(activity_id: int, soz_no: int) -> bool:
+    """Fiziksel aktivite kaydını sil."""
+    await _exec(
+        "DELETE FROM student_physical_activity WHERE id=$1 AND soz_no=$2",
+        activity_id, soz_no,
+    )
+    return True
+
+
+async def get_recent_notes(soz_no: int, days: int = 7,
+                             include_test: bool = True) -> list[dict]:
+    test_filter = "" if include_test else " AND COALESCE(is_test, FALSE) = FALSE"
     rows = await _fetch(
-        f"""SELECT log_date, note, mood, created_at
+        f"""SELECT log_date, note, mood, created_at,
+                   COALESCE(is_test, FALSE) AS is_test
             FROM student_daily_notes
             WHERE soz_no=$1
-              AND log_date >= CURRENT_DATE - INTERVAL '{int(days)} days'
+              AND log_date >= CURRENT_DATE - INTERVAL '{int(days)} days'{test_filter}
             ORDER BY log_date DESC""",
         soz_no,
     )
@@ -464,8 +522,12 @@ async def get_recent_notes(soz_no: int, days: int = 7) -> list[dict]:
 
 # ── HIGH-LEVEL: get_summary (LLM için) ─────────────────────────────────────
 
-async def get_summary(soz_no: int) -> dict:
+async def get_summary(soz_no: int, include_test: bool = True) -> dict:
     """Öğrencinin günlük takip özeti — bot ve dashboard için tek çağrı.
+
+    include_test=True (default): admin test verisi DAHIL (frontend dashboard).
+    include_test=False: bot context — admin test verileri HARIC (öğrenci konuşurken
+        bot, admin'in test ettiği kayıtları "öğrencinin gerçek verisi" sanmaz).
 
     Returns: {
       "today_program": [...],      # Bugünkü program
@@ -480,14 +542,14 @@ async def get_summary(soz_no: int) -> dict:
     }
     """
     program, todos, habits, events, today_stats, weekly, activities, notes = await asyncio.gather(
-        get_daily_program(soz_no),
-        get_todos(soz_no, only_open=True),
-        get_habits(soz_no, active_only=True),
-        get_upcoming_events(soz_no, days_ahead=30),
-        get_today_stats(soz_no),
-        get_weekly_stats(soz_no, weeks=1),
-        get_recent_activities(soz_no, days=7),
-        get_recent_notes(soz_no, days=7),
+        get_daily_program(soz_no, include_test=include_test),
+        get_todos(soz_no, only_open=True, include_test=include_test),
+        get_habits(soz_no, active_only=True, include_test=include_test),
+        get_upcoming_events(soz_no, days_ahead=30, include_test=include_test),
+        get_today_stats(soz_no, include_test=include_test),
+        get_weekly_stats(soz_no, weeks=1, include_test=include_test),
+        get_recent_activities(soz_no, days=7, include_test=include_test),
+        get_recent_notes(soz_no, days=7, include_test=include_test),
         return_exceptions=True,
     )
 

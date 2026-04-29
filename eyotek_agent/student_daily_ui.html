@@ -1164,6 +1164,16 @@ body {
 
 <main class="page">
 
+  <!-- Oturum 25.29 — TEST MODE banner (admin/mudur soz_no ile girince) -->
+  <div id="testModeBanner" style="display:none;margin:0 24px 16px;padding:14px 18px;background:linear-gradient(90deg,rgba(245,158,11,.12),rgba(251,191,36,.06));border-left:4px solid #f59e0b;border-radius:10px;color:#fde68a;font-size:13px;line-height:1.6;">
+    <strong style="color:#fbbf24;">🧪 TEST MODE — DEV ARAYÜZ</strong><br>
+    Admin olarak <span id="testModeStudent">öğrenci #?</span> panelini test ediyorsun.
+    Eklediğin tüm veriler <code style="background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;">is_test=true</code>
+    işaretli — bot bu kayıtları gerçek öğrenci verisi sanmaz.
+    Öğrencinin kendi gördüğü panelinde test verin görünmez.
+    <a href="/student/daily/dashboard" style="color:#fbbf24;font-weight:600;margin-left:8px;">Başka öğrenci seç →</a>
+  </div>
+
   <!-- Top navigation -->
   <header class="topbar">
     <div class="brand">
@@ -1626,15 +1636,27 @@ function renderHabits(items) {
       dayHTML += `<div class="habit-day ${done?'done':''} ${isToday?'today':''}" onclick="logHabit(${h.id},'${ds}',${!done})">${lbl}</div>`;
     }
     const streakClass = (h.streak||0) >= 7 ? 'hot' : '';
+    const testBadge = h.is_test ? '<span style="background:rgba(245,158,11,.2);color:#fbbf24;font-size:10px;padding:2px 6px;border-radius:8px;margin-left:6px;font-weight:600">🧪 TEST</span>' : '';
     return `
       <div class="habit-block">
         <div class="habit-head">
-          <div class="habit-name">${escapeHTML(h.habit_name)}</div>
-          <div class="habit-streak ${streakClass}">🔥 ${h.streak||0} gün</div>
+          <div class="habit-name">${escapeHTML(h.habit_name)}${testBadge}</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div class="habit-streak ${streakClass}">🔥 ${h.streak||0} gün</div>
+            <button class="delete-btn" onclick="event.stopPropagation();deleteHabit(${h.id},'${escapeHTML(h.habit_name).replace(/'/g,"\\\\'")}')">×</button>
+          </div>
         </div>
         <div class="habit-week">${dayHTML}</div>
       </div>`;
   }).join('');
+}
+
+async function deleteHabit(habitId, habitName) {
+  if (!confirm(`"${habitName}" alışkanlığını silmek istediğine emin misin? Tüm logları gider.`)) return;
+  try {
+    await api(`/student/daily/habits/${habitId}`, {method:'DELETE'});
+    toast('Alışkanlık silindi'); loadAll();
+  } catch(e) { toast('Hata',true); }
 }
 
 function renderEvents(items) {
@@ -1651,15 +1673,25 @@ function renderEvents(items) {
     else if (days === 1) { dayLabel = 'Yarın'; cls = 'urgent'; }
     else if (days <= 7) { dayLabel = days+'g'; cls = 'warn'; }
     else { dayLabel = days+'g'; cls = ''; }
+    const testBadge = e.is_test ? ' <span style="background:rgba(245,158,11,.2);color:#fbbf24;font-size:10px;padding:1px 5px;border-radius:6px;font-weight:600">🧪 TEST</span>' : '';
     return `
       <div class="row">
         <div class="day-badge ${cls}">${dayLabel}</div>
         <div style="flex:1;">
-          <div class="row-title">${escapeHTML(e.title)}</div>
+          <div class="row-title">${escapeHTML(e.title)}${testBadge}</div>
           <div class="row-meta">${e.event_date}${e.ders?' · '+escapeHTML(e.ders):''}</div>
         </div>
+        <button class="delete-btn" onclick="event.stopPropagation();deleteEvent(${e.id},'${escapeHTML(e.title).replace(/'/g,"\\\\'")}')">×</button>
       </div>`;
   }).join('');
+}
+
+async function deleteEvent(eventId, eventTitle) {
+  if (!confirm(`"${eventTitle}" etkinliğini silmek istediğine emin misin?`)) return;
+  try {
+    await api(`/student/daily/events/${eventId}`, {method:'DELETE'});
+    toast('Etkinlik silindi'); loadAll();
+  } catch(e) { toast('Hata',true); }
 }
 
 function renderActivities(items) {
@@ -2167,6 +2199,14 @@ function renderEloTop(items) {
       <span class="stat mono">${rating}</span>
     </div>`;
   }).join('');
+}
+
+// Oturum 25.29 — TEST MODE banner (URL_SOZ_NO varsa admin test modunda)
+if (URL_SOZ_NO) {
+  const banner = document.getElementById('testModeBanner');
+  const student = document.getElementById('testModeStudent');
+  if (banner) banner.style.display = 'block';
+  if (student) student.textContent = 'öğrenci #' + URL_SOZ_NO;
 }
 
 setInterval(loadAll, 60000);
