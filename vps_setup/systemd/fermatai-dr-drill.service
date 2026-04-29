@@ -1,0 +1,14 @@
+[Unit]
+Description=FermatAI - Disaster Recovery Drill (monthly auto-test)
+Documentation=https://github.com/zekigoksal-source/fermatai
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/fermatai
+ExecStart=/bin/bash /opt/fermatai/vps_setup/scripts/dr_drill.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fermatai-dr-drill
+TimeoutStartSec=900

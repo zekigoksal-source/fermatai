@@ -1,0 +1,12 @@
+[Unit]
+Description=FermatAI - DR drill monthly timer (1st day of month, 04:30 UTC)
+Documentation=https://github.com/zekigoksal-source/fermatai
+Requires=fermatai-dr-drill.service
+
+[Timer]
+OnCalendar=*-*-01 04:30:00 UTC
+Persistent=true
+Unit=fermatai-dr-drill.service
+
+[Install]
+WantedBy=timers.target
