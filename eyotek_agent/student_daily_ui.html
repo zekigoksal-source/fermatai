@@ -1476,6 +1476,8 @@ body {
 
 <script>
 const URL_TOKEN = new URLSearchParams(location.search).get('token') || '';
+// Oturum 25.29 — Admin/mudur farkli ogrenci paneli acabilir (?soz_no=137)
+const URL_SOZ_NO = new URLSearchParams(location.search).get('soz_no') || '';
 let selectedMood = 'normal';
 let chartStats = null;
 
@@ -1494,6 +1496,18 @@ async function api(path, opts={}) {
   loadingStart();
   let url = path;
   if (URL_TOKEN) url += (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(URL_TOKEN);
+  // Oturum 25.29 — Admin/mudur soz_no override (Çalışmam paneli farklı öğrenci için)
+  if (URL_SOZ_NO) url += (url.includes('?') ? '&' : '?') + 'soz_no=' + encodeURIComponent(URL_SOZ_NO);
+  // POST/PUT body'sine de soz_no inject et (admin override için)
+  if (URL_SOZ_NO && opts.method && opts.method !== 'GET' && opts.body) {
+    try {
+      const b = JSON.parse(opts.body);
+      if (!b.soz_no) {
+        b.soz_no = parseInt(URL_SOZ_NO, 10);
+        opts.body = JSON.stringify(b);
+      }
+    } catch (e) { /* body parse fail, devam */ }
+  }
   try {
     const r = await fetch(url, {credentials:'include', ...opts});
     if (!r.ok) {

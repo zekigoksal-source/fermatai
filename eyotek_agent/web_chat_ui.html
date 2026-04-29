@@ -4022,9 +4022,24 @@ setInterval(async () => {
 // ═══════════════════════════════════════════════════════════════════════════
 function openStudyDashboard() {
   const token = localStorage.getItem(TOKEN_KEY) || "";
+  // Oturum 25.29 — Admin/mudur için öğrenci picker
+  // Öğrenci kendi panelini açar, admin ise hangi öğrencinin?
+  const role = (window.currentRole || localStorage.getItem("role") || "").toLowerCase();
+  if (role === "admin" || role === "mudur") {
+    const sozNo = prompt(
+      "Hangi öğrencinin Çalışmam panelini açmak istiyorsun?\n\n" +
+      "Öğrenci soz_no gir (örn: 137, 244, 314):\n\n" +
+      "İptal için boş bırak."
+    );
+    if (!sozNo || !sozNo.trim()) return;
+    let url = "/student/daily/dashboard?soz_no=" + encodeURIComponent(sozNo.trim());
+    if (token) url += "&token=" + encodeURIComponent(token);
+    window.location.href = url;
+    return;
+  }
+  // Öğrenci için: kendi paneli direkt
   let url = "/student/daily/dashboard";
   if (token) url += "?token=" + encodeURIComponent(token);
-  // Aynı sekmede yönlendir (Neo UX kurali: tek arayüz, tek sekme)
   window.location.href = url;
 }
 
