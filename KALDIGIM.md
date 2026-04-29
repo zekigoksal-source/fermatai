@@ -1,6 +1,14 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 28 Nisan 2026, gece kapanış — **OTURUM 25.29 — Unified Context Engine + Service Layer (Brain Centralized + Execution Modular)**
+> **Son güncelleme:** 29 Nisan 2026, gece kapanış — **OTURUM 25.29 (devam) — 6-katmanli observability + auto-scan + DR drill + misconception altyapı**
+> **29 Nisan gece kapanış commit'leri (Mehmet bug post-mortem + 6 önemli iş):**
+>   - `c69b416` #1 Context Engine wire — conversation_memory keyword expansion (7→11 ders, 20→80 keyword) + fermat_core_agent unified_context inject (Mehmet "ışık tanecik" → fizik tespit, 12/12 PASS)
+>   - `29808a1` #3 Decision trace observability — routing_stats.decision_trace JSONB + tools_called[] + prompt_blocks[] + decision_trace_query.py CLI + LIVE production capture
+>   - `b50e4d7` #2 Pattern test framework — tests/test_route_regression.py (29 senaryo, 19 pass, 10 xfail bug catalog), Mehmet bug regression suite
+>   - `2e1be23` #4 Atlas auto-scan — fermatai-atlas-nightly.timer @ 02:30 UTC + atlas_nightly_summary.py + WP critical bildirim, LIVE manual run BAŞARILI
+>   - `fd6b579` #5 DR drill — fermatai-dr-drill.timer (her ay 1'i 04:30 UTC) + dr_drill.sh, LIVE manual PASS (5s restore, 5/5 health checks: 125 ogr/18 staff/8797 conv/2001 exam/5562 RAG)
+>   - `e41d576` #7 Misconception tracker altyapı — misconception_detector.py (yeni sezon FLAG KAPALI, 1 Eylul 2026 sonrası otomatik aktif)
+> **OTURUM 25.29 (28 Nisan GECE KAPANIS) — Unified Context Engine + Service Layer (Brain Centralized + Execution Modular)**
 > **28 Nisan gece kapanış commit'leri:**
 >   - `664da8e` Unified Context Engine (`context_engine.py`) — ChatGPT önerisi, 7 paralel query, 5dk cache
 >   - (next) services/ katmanı (exam_service + student_service) + BLUEPRINT update
@@ -28,6 +36,95 @@
 > **Önceki commit'ler:** `b754d0e` (Atlas-2 Cerebras), `4965694` (viewer pagination ters), `2d190d1` (Cerebras entegrasyon)
 > **Backup tags:** `oturum-25-22-cerebras-live`, `oturum-25-22-pre-cerebras`, `oturum-25-20-modular-disabled`
 > **Sistem:** ✅ bridge active, **Eyotek AGENTIC Navigator+Planner CANLI** (Cerebras gpt-oss-120b plan üretiyor, Playwright CDP navigate ediyor)
+
+## 🆕 OTURUM 25.29 (29 Nisan GECE) — 6 Stratejik İş (Mehmet bug + Observability + Otomasyon)
+
+### Tetikleyici: Mehmet Ali bug (28 Nis sabahı)
+
+Mehmet "üniversite sınavında kaç soru çıktım fizikten" yazdı, fast_response 'hedef' template ile yanıtladı. KÖK NEDEN: bot context kuramamış (last_topic boş kalmış). conversation_memory.py keyword listesi çok dardı (7 ders/~20 kelime, fizik için "ışık/foton/tanecik" yoktu).
+
+### Yapılan İşler (Neo'nun #1, #3, #2, #4, #5, #7 sırasıyla)
+
+#### #1 Context Engine entegrasyon (KRİTİK — Mehmet bug çözümü)
+- **Phase A**: `conversation_memory.py` keyword listesi 11 derse + ~80 keyword'e genişletildi
+  - fizik: ışık, foton, optik, manyetizma, akım, kuantum, basınç, termodinamik
+  - matematik: trigonometri, matris, determinant, permutasyon, kombinasyon
+  - kimya: orbital, izotop, iyon, organik, alkan/alken/alkin
+  - biyoloji: DNA, RNA, kromozom, alel, ekosistem, evrim
+  - +geometri/türkçe/tarih/coğrafya/felsefe/din/ingilizce
+- **Phase B**: `fermat_core_agent.py` 2962 satırından sonra `build_unified_context()` çağrısı
+  - Yalnızca öğrenci rolü + soz_no varsa
+  - conversation_memory'nin SAĞLAMADIĞI sinyaller eklenir (sentiment alarm/izle, plan var, devamsızlık 100+)
+  - Duplicate yok — supplemental block sadece KRİTİK durumlarda inject
+- **Smoke test**: Mehmet senaryosu replay → 12/12 PASS
+- **Live VPS test**: ÇAĞAN YAKAY (244) clean profile → boş supplemental, DEVİN DOĞAN (196) 299h devamsızlık → kritik uyarı tetiklendi ✓
+
+#### #3 Decision Trace Observability
+- **Schema**: `routing_stats` tablosuna 3 yeni kolon
+  - `decision_trace JSONB` (route, role, source, context_signals[])
+  - `tools_called TEXT[]` (Claude tool-call adları)
+  - `prompt_blocks TEXT[]` (aktif prompt block'lar: conversation_memory, unified_context, ...)
+  - GIN index on decision_trace
+- **Capture**: `FermatCoreAgent.last_decision_trace/last_tools_called/last_prompt_blocks`
+  - run() başında reset
+  - conversation_memory → blocks + last_topic/mood/weak signal
+  - unified_context (alarm/izle) → blocks + sentiment/plan/devamsız signal
+  - Claude tool dispatch → tools_called append
+- **Bridge**: routing_stats INSERT artık 9 kolon (3 yeni dahil)
+- **CLI tool**: `decision_trace_query.py` — phone/route/tool/signal filtre
+  - `python decision_trace_query.py --phone 905xxx --limit 5` → bug 5 dakikada teşhis
+- **LIVE PRODUCTION**: 5 admin (Neo) mesajı capture edildi, route='claude_text_only' kayıt ediliyor
+
+#### #2 Pattern Test Framework
+- `tests/test_route_regression.py` — 29 senaryo (msg, role, soz_no, expected_route, why)
+- Sonuç: **19 pass / 10 xfail (bug catalog) / 2 skip**
+- xfail kataloğu (gerçek bug'lar):
+  - 4× MEHMET BUG family: "üniversite sınavında kaç soru" → BOLUM template (student_scenarios.py:207 çok geniş)
+  - 1× "intihar edeceğim" fast'te yakalanmıyor
+  - 1× admin "ne yapabilirsin" Claude alıyor
+  - 1× "görüşmek üzere" veda pattern eksik
+- Bonus: `test_mehmet_yks_istatistik_to_claude` — 4 paraphrase Mehmet bug regression
+- Yeni pattern eklenince CI run → kırılma anında yakalanır
+
+#### #4 Atlas Auto-Scan Otomasyon
+- `fermatai-atlas-nightly.timer` → her gece 02:30 UTC (yedeklemeden 30dk önce)
+- `vps_setup/scripts/atlas_nightly.sh` → observer + advisor zinciri
+- `eyotek_agent/atlas_nightly_summary.py` → 24h özet JSON + kritik varsa Neo WP bildirim
+- **Bildirim policy**: yalnız `severity='critical'` yeni suggestion → gürültü yok
+- LIVE manual run: 2 critical observation (latency p95 68s + frustration 5 sinyal Neo) yakalandı, advisor 4 yeni öneri üretti
+
+#### #5 DR Drill (Disaster Recovery)
+- `fermatai-dr-drill.timer` → her ayın 1'i 04:30 UTC
+- `vps_setup/scripts/dr_drill.sh` → backup'tan geçici DB'ye restore + sağlık kontrol
+- Test DB (`fermatai_dr_test`) production'a temas etmez
+- Sağlık check: students≥100, staff≥10, agent_conversations≥100, student_exams≥1000, rag_content≥30
+- **LIVE manual PASS**: 5 saniyede restore, 5/5 sağlık kontrolü geçti
+  - students: 125, staff: 18, agent_conversations: 8797, student_exams: 2001, rag_content: 5562
+
+#### #7 Misconception Tracker (Yeni Sezon Altyapı)
+- `misconception_detector.py` — 4 fonksiyon, FLAG KAPALI (1 Eylul 2026 sonrası otomatik aktif)
+- Mevcut altyapı kullanılıyor: `student_misconceptions` tablosu + `record_misconception()` (adaptive_engine.py)
+- Yeni: detect_from_conversation, record_from_claude_tool, teacher_misconception_brief, student_active_misconceptions_for_prompt
+- Aktivasyon: `MISCONCEPTION_TRACKER_ACTIVE=true` veya tarih threshold
+
+### Atlas Onerilerinin Geliştirme Süreci Etkisi (Neo isteği)
+
+Neo'nun talebi: "atlas verileriyle de geliştirmeyi yapabiliyor olalım, onayladığım önerileri ve reddettiklerimi göz önüne al"
+
+Atlas'tan inceledim:
+- 16 öneri uygulanmış (status='uygulandi'), 1 yeni
+- Tema: frustration (5 vaka) + latency + veri kalitesi
+- Atlas'ın gözlemlediği frustration kök sebep çoğunlukla "context blackout" — Mehmet bug bunun en son örneği
+- Bu yüzden #1 Context Engine entegrasyonu Atlas'ın 5+ frustration vakasının kök çözümünü güçlendiriyor
+
+### Sonraki Oturum İçin
+
+- **Mehmet bug family fix** (xfail'leri pass'a çevir): student_scenarios.py:207 patternine "sınavında kaç soru" negasyon ekle
+- **Misconception aktivasyonu**: Eylül flag listesine bağlı (yeni sezon)
+- **Decision trace dashboard**: Neo "rapor" komutuna trace özeti eklenebilir (kullanıcı bazlı top route, tool, signal)
+- **DR drill rapor**: PASS/FAIL durumu Neo'ya WP bildirim (henuz sadece log'a yazıyor)
+
+---
 
 ## 🆕 OTURUM 25.29 (28 Nisan GECE KAPANIS) — Unified Context + Services + Stratejik Yön Kararı
 
