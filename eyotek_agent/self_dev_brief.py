@@ -177,17 +177,17 @@ EKSTRA IPUCU: {extra_hint or '(yok)'}
 Yukaridaki konusmadan brief üret. SADECE JSON yaz, baska hicbir sey yazma."""
 
     try:
-        # Claude tercih (tool yok, sadece text)
-        if router.client:
-            resp = router.client.messages.create(
-                model="claude-sonnet-4-5",
-                max_tokens=2500,
-                system=sys_prompt,
-                messages=[{"role": "user", "content": user_prompt}],
-            )
-            raw = "\n".join(b.text for b in resp.content if hasattr(b, "text"))
-        else:
-            return {"error": "Claude API kullanılabilir değil"}
+        # Claude API direkt — chat_cloud (sync), async context'te to_thread ile
+        # Brief üretimi tool gerektirmez, basit text-out
+        import asyncio as _asyncio
+        resp = await _asyncio.to_thread(
+            router.chat_cloud,
+            [{"role": "user", "content": user_prompt}],
+            sys_prompt,
+            None,
+            "",
+        )
+        raw = "\n".join(b.text for b in resp.content if hasattr(b, "text"))
     except Exception as e:
         await _audit(triggered_by, "write_brief", {"last_n": last_n}, False, error=str(e))
         return {"error": f"LLM hatasi: {str(e)[:200]}"}
