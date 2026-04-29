@@ -1812,6 +1812,66 @@ TOOLS: list[dict] = [
             "required": ["brief_id"],
         },
     },
+    # ── Evre 2.2 — Git Branch + Commit + Push (Oturum 25.29) ──
+    # Bot bot/draft-YYYYMMDD-N branch'lerinde calisir. main/master'a ASLA dokunamaz.
+    # Push default KAPALI (SELF_DEV_PUSH_ENABLED=false), Neo komut verir.
+    {
+        "name": "selfdev_draft_to_local_branch",
+        "description": (
+            "[SELF-DEV / ADMIN — Evre 2.2] Bir brief'in draft .diff'ini "
+            "yeni bot/draft-YYYYMMDD-N branch'inde uygular ve commit eder. "
+            "PUSH YAPMAZ (sadece lokal). Neo 'push' komutuyla ayrica gonderir."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"brief_id": {"type": "integer"}},
+            "required": ["brief_id"],
+        },
+    },
+    {
+        "name": "selfdev_push_branch",
+        "description": (
+            "[SELF-DEV / ADMIN — Evre 2.2] bot/draft-* branch'i GitHub'a push eder. "
+            "SELF_DEV_PUSH_ENABLED flag false ise GRACEFUL SKIP (lokal kalır). "
+            "main/master HARDCODED YASAK."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"branch": {"type": "string", "description": "bot/draft-YYYYMMDD-N"}},
+            "required": ["branch"],
+        },
+    },
+    {
+        "name": "selfdev_list_bot_branches",
+        "description": "[SELF-DEV / ADMIN — Evre 2.2] Lokal bot/draft-* branch'leri listele.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "include_remote": {"type": "boolean", "default": False},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "selfdev_branch_status",
+        "description": "[SELF-DEV / ADMIN — Evre 2.2] Branch durumu (ahead/behind, son commitler, uncommitted).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "branch": {"type": "string", "description": "Branch adi (verilmezse mevcut)"},
+            },
+            "required": [],
+        },
+    },
+    {
+        "name": "selfdev_delete_branch",
+        "description": "[SELF-DEV / ADMIN — Evre 2.2] Lokal bot/draft-* branch'i sil (cleanup).",
+        "input_schema": {
+            "type": "object",
+            "properties": {"branch": {"type": "string"}},
+            "required": ["branch"],
+        },
+    },
 ]
 
 

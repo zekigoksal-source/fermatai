@@ -1846,6 +1846,15 @@ ADMIN_PATTERNS = [
     (r"^draft\s*#?(\d+)\s*(iptal|sil|kaldir|discard)", "claude_selfdev_delete_draft", "Draft iptal"),
     (r"^draft\s*(liste|listele|listesi)", "claude_selfdev_list_drafts", "Draft liste"),
     (r"^draft\s*#?(\d+)\s*(goster|oku|detay|ac)?$", "claude_selfdev_read_draft", "Draft detay"),
+    # Evre 2.2 — Git branch + push komutlari
+    (r"^self\s*dev\s*push\s*(ac|aç|on|aktif)\s*$", "selfdev_push_on", "Self-dev push AC"),
+    (r"^self\s*dev\s*push\s*(kapat|kapa|off|pasif)\s*$", "selfdev_push_off", "Self-dev push KAPAT"),
+    (r"^brief\s*#?(\d+)\s*branch", "claude_selfdev_branch_brief", "Brief'i branch'e tasi"),
+    (r"^draft\s*#?(\d+)\s*branch", "claude_selfdev_branch_brief", "Draft'i branch'e tasi"),
+    (r"^branch\s*(liste|listele|listesi)", "claude_selfdev_branch_list", "Branch liste"),
+    (r"^branch\s*(durum|status|nasil)", "claude_selfdev_branch_status", "Branch durum"),
+    (r"^(branch|draft)\s+(\S+)\s*push", "claude_selfdev_push", "Branch push"),
+    (r"^branch\s+(\S+)\s*sil", "claude_selfdev_branch_delete", "Branch sil"),
     # 22.1h — "yenile" / "guncelle" / "ne deği(ş)ti" → Claude + get_recent_system_updates zorunlu
     (r"^(yenile|guncelle|g[uü]ncelle|refresh|reload|son\s+g[uü]ncelleme|ne\s+de[gğ]i[sş]ti)", "claude_yenile", "Yenile — Claude tool cagirsin"),
     # 22.1n — Atlas trend/uyari isteği → Claude get_atlas_trend tool cagirsin
@@ -3224,10 +3233,15 @@ async def try_fast_response(
                         return r.get("message", "⛔ Self-dev pipeline kapatildi")
                     elif handler == "selfdev_status":
                         from self_dev_tools import _is_pipeline_active
+                        from self_dev_git import _push_enabled
                         from db_pool import db_fetchval, db_fetch
                         active = await _is_pipeline_active()
+                        push_on = await _push_enabled()
                         try:
                             n_briefs = await db_fetchval("SELECT COUNT(*) FROM self_dev_briefs") or 0
+                            n_drafts = await db_fetchval(
+                                "SELECT COUNT(*) FROM self_dev_briefs WHERE status='drafted'"
+                            ) or 0
                             n_audit_24h = await db_fetchval(
                                 "SELECT COUNT(*) FROM self_dev_audit WHERE created_at > NOW() - INTERVAL '24 hours'"
                             ) or 0
@@ -3237,12 +3251,14 @@ async def try_fast_response(
                                 "GROUP BY tool_name ORDER BY n DESC LIMIT 5"
                             )
                         except Exception:
-                            n_briefs, n_audit_24h, recent = 0, 0, []
+                            n_briefs, n_drafts, n_audit_24h, recent = 0, 0, 0, []
                         status = "🟢 ACIK" if active else "🔴 KAPALI"
+                        push_status = "🟢 ACIK" if push_on else "🔴 KAPALI"
                         lines = [
                             f"*🤖 Self-Dev Pipeline — {status}*",
+                            f"  Push (Evre 2.2): {push_status}",
                             "",
-                            f"  • Toplam brief: *{n_briefs}*",
+                            f"  • Toplam brief: *{n_briefs}* (drafted: {n_drafts})",
                             f"  • Son 24h araç çağrısı: *{n_audit_24h}*",
                         ]
                         if recent:
@@ -3251,10 +3267,14 @@ async def try_fast_response(
                             for r in recent:
                                 lines.append(f"  • `{r['tool_name']}`: {r['n']}")
                         lines.append("")
-                        lines.append("_Komutlar:_")
-                        lines.append("_• 'self dev ac' / 'self dev kapat'_")
-                        lines.append("_• 'brief yaz' → konuşmadan brief üret_")
-                        lines.append("_• 'brief liste' → geçmiş_")
+                        lines.append("*📋 Komutlar:*")
+                        lines.append("_• `self dev ac/kapat` — pipeline master switch_")
+                        lines.append("_• `self dev push ac/kapat` — push yetkisi_")
+                        lines.append("_• `brief yaz` — konuşmadan brief üret_")
+                        lines.append("_• `brief #N draft yap` — diff dosyasi üret (sandbox)_")
+                        lines.append("_• `brief #N branch` — bot/draft branch + commit (lokal)_")
+                        lines.append("_• `branch <name> push` — GitHub'a push (push acik ise)_")
+                        lines.append("_• `branch liste` — bot/draft-* branch'ler_")
                         return "\n".join(lines)
                     # Brief + Draft komutları → None (Claude akışı tool çağıracak)
                     elif handler in (
@@ -3262,8 +3282,30 @@ async def try_fast_response(
                         # Evre 2.1
                         "claude_selfdev_apply_brief", "claude_selfdev_list_drafts",
                         "claude_selfdev_read_draft", "claude_selfdev_delete_draft",
+                        # Evre 2.2
+                        "claude_selfdev_branch_brief", "claude_selfdev_branch_list",
+                        "claude_selfdev_branch_status", "claude_selfdev_push",
+                        "claude_selfdev_branch_delete",
                     ):
                         return None
+                    # Evre 2.2 — Push flag toggle (Neo komutu)
+                    elif handler == "selfdev_push_on":
+                        from self_dev_git import set_push_enabled
+                        r = await set_push_enabled(True, by_phone=caller_phone)
+                        msg = r.get("message", "Push acildi")
+                        # Ek talimat: SSH key kurulumu
+                        return (
+                            f"{msg}\n\n"
+                            "_⚠️ Push çalışması için VPS'te SSH key kurulumu gerek:_\n"
+                            "_1. `sudo ssh-keygen -t ed25519 -C 'fermatai-bot' -f /root/.ssh/id_ed25519_bot`_\n"
+                            "_2. `sudo cat /root/.ssh/id_ed25519_bot.pub` → GitHub Settings > Deploy keys_\n"
+                            "_3. Sadece bu repo (fermatai), 'Allow write access' kapali_\n"
+                            "_4. Test: bot 'draft #N push' deneyince çalışır_"
+                        )
+                    elif handler == "selfdev_push_off":
+                        from self_dev_git import set_push_enabled
+                        r = await set_push_enabled(False, by_phone=caller_phone)
+                        return r.get("message", "Push kapatildi")
                 except Exception:
                     return None  # Hata → Claude'a git
 

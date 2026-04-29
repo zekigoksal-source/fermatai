@@ -2180,6 +2180,12 @@ TOOL_DISPATCH = {
     "selfdev_list_drafts":        lambda p: _selfdev_list_drafts_w(**p),
     "selfdev_read_draft":         lambda p: _selfdev_read_draft_w(**p),
     "selfdev_delete_draft":       lambda p: _selfdev_delete_draft_w(**p),
+    # Evre 2.2 — Git branch + commit + push (push flag-gated)
+    "selfdev_draft_to_local_branch": lambda p: _selfdev_draft_to_branch_w(**p),
+    "selfdev_push_branch":         lambda p: _selfdev_push_branch_w(**p),
+    "selfdev_list_bot_branches":   lambda p: _selfdev_list_branches_w(**p),
+    "selfdev_branch_status":       lambda p: _selfdev_branch_status_w(**p),
+    "selfdev_delete_branch":       lambda p: _selfdev_delete_branch_w(**p),
 }
 
 
@@ -2269,6 +2275,31 @@ async def _selfdev_read_draft_w(brief_id: int, **_):
 async def _selfdev_delete_draft_w(brief_id: int, _caller_phone: str = "", **_):
     from self_dev_apply import delete_draft
     return await delete_draft(int(brief_id), _caller_phone=_caller_phone)
+
+
+async def _selfdev_draft_to_branch_w(brief_id: int, _caller_phone: str = "", **_):
+    from self_dev_git import draft_to_local_branch
+    return await draft_to_local_branch(int(brief_id), _caller_phone=_caller_phone)
+
+
+async def _selfdev_push_branch_w(branch: str, _caller_phone: str = "", **_):
+    from self_dev_git import push_branch
+    return await push_branch(branch, _caller_phone=_caller_phone)
+
+
+async def _selfdev_list_branches_w(include_remote: bool = False, **_):
+    from self_dev_git import list_bot_branches
+    return await list_bot_branches(local_only=not include_remote)
+
+
+async def _selfdev_branch_status_w(branch: str = "", **_):
+    from self_dev_git import get_branch_status
+    return await get_branch_status(branch or None)
+
+
+async def _selfdev_delete_branch_w(branch: str, _caller_phone: str = "", **_):
+    from self_dev_git import delete_local_branch
+    return await delete_local_branch(branch, _caller_phone=_caller_phone)
 
 
 # ── Oturum 25.9 Tool Wrappers ──────────────────────────────────────────────

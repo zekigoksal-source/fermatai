@@ -70,6 +70,10 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # Evre 2.1 — Draft sandbox write (Oturum 25.29)
         "selfdev_apply_brief", "selfdev_list_drafts",
         "selfdev_read_draft", "selfdev_delete_draft",
+        # Evre 2.2 — Git branch + commit + push (push KAPALI default)
+        "selfdev_draft_to_local_branch", "selfdev_push_branch",
+        "selfdev_list_bot_branches", "selfdev_branch_status",
+        "selfdev_delete_branch",
     },
     # Yönetim üyesi: müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     "yonetim": {
