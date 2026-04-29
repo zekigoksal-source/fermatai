@@ -2390,6 +2390,14 @@ class FermatCoreAgent:
         self._caller_phone: str = ""
         self._channel:      str = "whatsapp"
         self.session_id:    str = str(uuid.uuid4())[:12]
+        # ── Decision trace (Oturum 25.29 — observability) ─────────────
+        # Her run() cagrisinda sifirlanir; bridge bu alanlari okuyup
+        # routing_stats.decision_trace / tools_called / prompt_blocks
+        # kolonlarina yazar. Bug sonrasi "neden bu yola gitti?" cevap
+        # 5 dakika icinde verilebilir.
+        self.last_decision_trace: dict = {}
+        self.last_tools_called:   list[str] = []
+        self.last_prompt_blocks:  list[str] = []
 
     async def run(self, user_input: str, caller_phone: str = "", channel: str = "whatsapp",
                   _stream_queue=None) -> str:
@@ -2408,12 +2416,18 @@ class FermatCoreAgent:
         self._caller_phone = caller_phone
         self._channel = channel
         self._stream_queue = _stream_queue
+        # ── Decision trace reset (Oturum 25.29) ───────────────────────
+        # Her run() cagrisi temiz baslar. Bridge sonra okur, routing_stats'a yazar.
+        self.last_decision_trace = {"route": "unknown", "context_signals": []}
+        self.last_tools_called = []
+        self.last_prompt_blocks = []
         profile = await _get_caller_profile(caller_phone) if caller_phone else {
             "role": "admin", "full_name": "Admin", "phone": caller_phone
         }
         role = profile["role"]
         caller_name = profile.get("full_name") or profile.get("first_name") or ""
         soz_no = profile.get("soz_no") or profile.get("eyotek_id")
+        self.last_decision_trace["role"] = role
 
         # ── PEDAGOJIK KOC KOMUTLARI (Hafta 6) — pomodoro, feynman, gunluk plan ───
         try:
@@ -2964,6 +2978,18 @@ class FermatCoreAgent:
             ctx = await get_student_context(caller_phone)
             if ctx:
                 dynamic_context += build_context_prompt(ctx)
+                # Decision trace: hangi context sinyalleri aktif
+                try:
+                    self.last_prompt_blocks.append("conversation_memory")
+                    sig = self.last_decision_trace.setdefault("context_signals", [])
+                    if ctx.get("last_topic"):
+                        sig.append(f"last_topic={ctx['last_topic']}")
+                    if ctx.get("mood") and ctx["mood"] != "normal":
+                        sig.append(f"mood={ctx['mood']}")
+                    if ctx.get("weak_topics"):
+                        sig.append(f"weak={len(ctx['weak_topics'])}")
+                except Exception:
+                    pass
         except Exception as _ctx_err:
             logger.debug(f"Context memory hatası (devam): {_ctx_err}")
 
@@ -3007,6 +3033,18 @@ class FermatCoreAgent:
                         "\n\n📊 EK BAĞLAM SİNYALLERİ (unified context):\n"
                         + "\n".join(_supp_lines)
                     )
+                    # Decision trace: unified context sinyalleri kaydet
+                    try:
+                        self.last_prompt_blocks.append("unified_context")
+                        sig = self.last_decision_trace.setdefault("context_signals", [])
+                        if _sent.get("durum") in ("alarm", "izle"):
+                            sig.append(f"sentiment={_sent['durum']}")
+                        if _plan.get("var"):
+                            sig.append("plan_var")
+                        if (_att.get("toplam_saat") or 0) >= 100:
+                            sig.append(f"devamsiz_kritik={int(_att['toplam_saat'])}h")
+                    except Exception:
+                        pass
             except Exception as _u_err:
                 logger.debug(f"Unified context hatası (devam): {_u_err}")
 
@@ -4117,6 +4155,9 @@ class FermatCoreAgent:
 
             if not tool_calls:
                 # Final yanıt — temiz text olarak kaydet
+                # Decision trace: Claude path final answer (no more tools)
+                if self.last_decision_trace.get("route") == "unknown":
+                    self.last_decision_trace["route"] = "claude_text_only"
                 answer = "\n".join(b.text for b in text_blocks if hasattr(b, "text"))
                 # ToolUseBlock/TextBlock string sızmasını temizle
                 # Web kanalında WP format cleaner'ı SAKIN — markdown/tablo/latex'i bozar
@@ -4173,8 +4214,17 @@ class FermatCoreAgent:
             # Aynı turdaki tool_call'lar bağımsız → eş zamanlı çalıştır → 2-4x hızlanma
             self.history.append({"role": "assistant", "content": response.content})
 
+            # Decision trace: Claude tool-calling path
+            if self.last_decision_trace.get("route") == "unknown":
+                self.last_decision_trace["route"] = "claude_tool_loop"
+
             async def _run_one_tool(tc):
                 """Tek bir tool_call'u ACL + run_tool ile calistir."""
+                # Decision trace: kayit tool name (duplicates ok — Claude loop birden cok turn)
+                try:
+                    self.last_tools_called.append(tc.name)
+                except Exception:
+                    pass
                 logger.info(f"🔧 Araç: {tc.name}({list(tc.input.keys())})")
                 # ── ACL kapısı ────────────────────────────────────────────────
                 action_param = tc.input.get("action", "") if tc.name == "execute_eyotek_action" else ""

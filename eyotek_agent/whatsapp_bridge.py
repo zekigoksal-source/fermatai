@@ -3610,10 +3610,28 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                             _claude_tool = str(_tlist[0])[:50]
                 except Exception:
                     pass
+                # Decision trace okuma — Oturum 25.29 observability
+                # Agent'in bu turun trace'ini last_* alanlarinda biriktiriyor.
+                # Bug debug: "neden bu yola gitti?" → routing_stats.decision_trace JSONB
+                try:
+                    import json as _json_trace
+                    _trace = getattr(agent, "last_decision_trace", None) or {}
+                    _tools = list(getattr(agent, "last_tools_called", None) or [])
+                    _blocks = list(getattr(agent, "last_prompt_blocks", None) or [])
+                    # Source bilgisini de trace'e yaz (granuler analiz icin)
+                    if _trace and not _trace.get("source"):
+                        _trace["source"] = _src
+                    _trace_json = _json_trace.dumps(_trace, ensure_ascii=False) if _trace else None
+                except Exception:
+                    _trace_json = None
+                    _tools = None
+                    _blocks = None
                 if not _is_test_mode():
                     await _conn3.execute(
-                        "INSERT INTO routing_stats (phone, role, message, response_source, response_ms, handler_name) VALUES ($1,$2,$3,$4,$5,$6)",
-                        phone, profile.get("role",""), text[:200], _src, _agent_ms, _claude_tool)
+                        "INSERT INTO routing_stats (phone, role, message, response_source, response_ms, handler_name, decision_trace, tools_called, prompt_blocks) "
+                        "VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9)",
+                        phone, profile.get("role",""), text[:200], _src, _agent_ms, _claude_tool,
+                        _trace_json, _tools or None, _blocks or None)
         except Exception as _rstats_err:
             logger.warning(f"routing_stats yazim hatasi: {_rstats_err}")
 
