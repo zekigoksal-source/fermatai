@@ -452,6 +452,39 @@ HASSAS_INTENTS = {  # Cerebras'a YASAK, Claude'a yönlendir
 - **`db_pool.py`** — asyncpg pool helpers (db_fetch/fetchrow/fetchval/execute)
 - **`db_backup.py`** — pg_dump otomatik (03:00 cron)
 
+### Self-Dev Pipeline (Oturum 25.29 — 4 evre, 24 katman güvenlik)
+- **`self_dev_tools.py`** — Sandbox read araçları (read_file, list_dir, grep_repo, read_logs, git_*, search_atlas_history)
+- **`self_dev_brief.py`** — Konuşma → JSON brief (problem + files + risk + diff)
+- **`self_dev_apply.py`** — Brief → unified diff (`_drafts/` sandbox)
+- **`self_dev_git.py`** — bot/draft-* branch + commit + push (push flag-gated)
+- **`self_dev_github.py`** — GitHub PR draft otomasyonu (token + full_pipeline)
+- **DB**: `self_dev_briefs`, `self_dev_audit`, `sistem_ayar.SELF_DEV_PIPELINE_ACTIVE/SELF_DEV_PUSH_ENABLED`
+- **Komutlar**: `neo dev` menü, `brief yaz/liste/#N`, `brief #N PR`, `pr #N durum`
+
+### Görsel Render Sistemi (Oturum 25.29 — kavramsal cevap zenginliği)
+Web UI'da bot çıktısı 5 özel blok render eder (frontend `web_chat_ui.html`):
+- **```chart** — Chart.js (radar/bar/line/pie/scatter) — veri/karşılaştırma
+- **```sim** — p5.js iframe sandbox (interaktif simülasyon, slider sürükle)
+- **```3d** — Three.js preset sahneler (blackhole, lattice, magnetic_field, sine_wave, calabi_yau, sphere)
+- **```formula** — KaTeX + GSAP adım adım türetme (next/prev/replay)
+- **```calc** — Slider'lı anlık hesaplayıcı (JSON config + JS formula eval)
+
+CDN'ler: Chart.js 4.4, p5.js 1.9.4, Three.js 0.160, GSAP 3.12, KaTeX 0.16. Cerebras 230B + Claude bu blokları çıkarır.
+
+### Çalışmam Paneli (Test Mode)
+- **`student_daily.py` / `_api.py` / `_ui.html`** — 7 modül (program/todo/habits/events/stats/activity/notes)
+- **Admin Test Mode**: soz_no picker, `is_test=true` flag, sandbox sandbox
+- **Bot context filter**: `include_test=False` parametresi → admin test verisi öğrenci context'ine sızmaz
+
+### Öğretmen ACL Filter (Oturum 25.29)
+- **`teacher_acl_filter.py`** — Öğretmenin telefonundan teacher_timetable'daki sınıfları çek + tool çıktısını filtrele
+- Sinav_sonuclari, eyotek_query, ogrenci_drilldown, eyotek_read için post-filter aktif
+- Öğretmen sadece kendi sınıflarındaki öğrencilerin sınav verilerini görür
+
+### Neo Komut Merkezi
+- **`neo_menu.py`** — Hierarchical menü: `neo` (ana), `neo dev/eyotek/sistem/kurum/rapor/data/guncelle/yardim`
+- Eski komutlar geri uyumlu (brief yaz, eyotek tamam, rapor vs.)
+
 ---
 
 ## 7. Claude Tool Ekosistemi
@@ -1114,6 +1147,26 @@ Bu bölüm, sistemin **tamamlanmış teknik kabiliyetlerini**, **aktif gelişim 
 | Test coverage | %60+ | 138 unit + 8 round agentic |
 | RAG kapsam | TYT+AYT SAY/EA | OGM Vision 390 + 4.092 chunk (TDE/Coğ Sözel kapsamda yok — bilinçli) |
 | Self-awareness skoru | %85-90 | %86 (28 Nisan ölçümü, doğrultuldu) |
+
+### 13.2.b Görsel Render Genişleme (Oturum 25.29 — fikir kenarda)
+
+| Aşama | Fikir | Durum | Değer |
+|---|---|---|---|
+| ✅ | Chart.js (```chart) | CANLI | Veri/karşılaştırma — devam |
+| ✅ | p5.js iframe (```sim) | CANLI (30 Nis) | İnteraktif simülasyon — slider sürükle |
+| ✅ | Three.js preset (```3d) | CANLI (30 Nis) | 3D sahneler — 6 preset |
+| ✅ | KaTeX+GSAP (```formula) | CANLI (30 Nis) | Adım adım türetme |
+| ✅ | Slider hesaplayıcı (```calc) | CANLI (30 Nis) | Anlık parametrik hesap |
+| 🔮 | **WebGL Büyük Simülasyon** | FİKİR (kenarda) | LHC, ray tracing, Hawking radyasyonu — 1-2 hafta efor |
+
+**WebGL büyük simülasyon detay (yarın detaylı konuşulacak):**
+- Three.js'in üstünde shader programlama
+- Karadelik geodezik hesaplama (gerçek genel görelilik)
+- Işık bükümlenmesi ray tracing (VFX kalitesinde)
+- LHC parçacık hızlandırıcı geometri + çarpışma anim
+- Bu seviye Khan Academy üstü → Vidoport benzeri studio kalite
+- Risk: 1-2 hafta efor, performans optimizasyonu gerekli (60fps)
+- Karar: Diğer 4 renderer 1 ay olgunlaştıktan sonra (öğrenci geri bildirim sonrası)
 
 ### 13.3 Stratejik Genişleme Planı (sezon bazlı aktivasyon)
 

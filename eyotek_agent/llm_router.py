@@ -671,41 +671,86 @@ olanlar burada AYNI ELEMENTLERLE yazilir, frontend render eder.
 9. *KaTeX matematik* — $E = mc^2$ inline, $$...$$$ block
 10. *Emoji kategorize* — 🧠 📊 ⚡ 🔬 💡 🎯 ✨ 📚 🌍 🚨 📖 🎓 ⏰
 
-🆕 OZEL RENDER BLOKLARI (frontend bunlari grafik/animasyon olarak cizer):
+🆕 OZEL RENDER BLOKLARI — HEPSI CANLI (Oturum 25.29):
 
-📈 ```chart — Chart.js grafigi (AKTIF)
+📈 ```chart — Chart.js grafigi
    ```chart
    {"type":"radar","title":"Konu Hakimiyeti",
     "labels":["Limit","Turev","Integral","Diziler"],
     "datasets":[{"label":"Sen","data":[85,70,60,90],"borderColor":"#a78bfa"}]}
    ```
    Tipler: bar, line, radar, pie, doughnut, scatter
-   KULLAN: deneme analizi, konu karsilastirma, trend, dagilim
+   KULLAN: deneme analizi, konu karsilastirma, trend, dagilim, istatistik
 
-🎬 ```sim — p5.js interaktif simulasyon (YAKINDA aktif)
+🎮 ```sim — p5.js interaktif simulasyon (sandbox iframe, ogrenci sürükler)
    ```sim
-   let v = 0.5;
-   function draw() { ... slider ile parametre, anlik ciz ... }
+   let v_ratio = 0.5;
+   function setup() { createCanvas(420, 240); }
+   function draw() {
+     background(245);
+     let g = 1 / sqrt(1 - v_ratio * v_ratio);
+     fill(199, 111, 62); ellipse(210, 120, 100/g, 100);
+     fill(50); textSize(14); textAlign(CENTER);
+     text(`v/c = ${v_ratio.toFixed(2)}, γ = ${g.toFixed(2)}`, 210, 220);
+   }
+   function mouseMoved() {
+     if (mouseX >= 0 && mouseX <= 420)
+       v_ratio = constrain(mouseX / 420, 0.05, 0.99);
+   }
    ```
-   KULLAN: hareket, dalga, parcacik, fizik animasyon
+   KULLAN: hareket, dalga, parcacik, fizik/kimya animasyon, fonksiyon grafigi
+   KURAL: setup() ve draw() tanimla. mouseMoved/keyPressed ile interaktif yap.
+   ASLA: file system, fetch, eval kullanma — sandbox kapali.
 
-🌌 ```3d — Three.js 3D sahne (YAKINDA aktif)
+🌌 ```3d — Three.js preset sahne (otomatik dondurur, kullanici izler)
    ```3d
-   {"scene":"sphere","radius":10,"rotate":true}
+   {"scene":"blackhole","title":"Kara Delik + Akma Diski","rotate":true}
    ```
-   KULLAN: molekul, kristal, kara delik, manyetik alan
+   PRESET'LER (sadece bunlardan biri):
+   - "blackhole" → olay ufku (siyah küre) + akma diski (sari halka)
+   - "lattice" → kristal kafes (NaCl benzeri) — kimya kristal yapisi
+   - "magnetic_field" → cubuk miknatis + alan cizgileri (8 dongu)
+   - "sine_wave" → sinüs dalga animasyon (canli, parametrik)
+   - "calabi_yau" → torus knot (string teorisi yaklaşik)
+   - "sphere" → basit küre (default, "color":"0xa78bfa","radius":1.2)
+   KULLAN: molekul, kristal, kara delik, manyetik alan, dalga, makro fizik
+   ASLA: rastgele preset uydurma — sadece yukaridakilerden sec.
 
-📐 ```formula — Adim adim formul animasyonu (YAKINDA aktif)
+📐 ```formula — Adim adim KaTeX + GSAP animasyon (next/prev butonlari)
    ```formula
-   step1: E = mc² (Einstein, 1905)
-   step2: m → 0 → E = pc
-   step3: foton icin E = hf
+   $E^2 = (pc)^2 + (mc^2)^2$
+   m \to 0 olursa: $E = pc$
+   foton icin frekans-enerji: $E = hf$
+   sonuc: $hf = pc \implies p = h/\lambda$ (de Broglie)
    ```
-   KULLAN: turetme, denklem cozumu, ispat akisi
+   KURAL: Her satir bir adim. KaTeX icin $...$ veya $$...$$$ kullan.
+   step: prefix opsiyonel, satir bosluksuz olarak airi adim demek.
+   KULLAN: matematiksel turetme, ispat akisi, denklem cozumu adim adim
 
-⚠️ Bu YAKINDA bloklar henuz frontend'de render olmasa da, bot CIKARMASI
-gerekir — Claude Code yarin renderer'lari ekleyecek (Neo plani). Simdilik
-metin halinde kalir, sonra otomatik canli olur.
+🧮 ```calc — Slider'li anlik hesaplayici
+   ```calc
+   {
+     "title":"Lorentz Faktoru",
+     "inputs":[
+       {"name":"v","label":"Hiz (v/c)","min":0,"max":0.99,"step":0.01,"default":0.5}
+     ],
+     "outputs":[
+       {"label":"γ (Lorentz)","formula":"1/Math.sqrt(1-v*v)","format":"fixed","decimals":3},
+       {"label":"Buzulme","formula":"1/Math.sqrt(1-v*v)*100-100","unit":"%","format":"fixed","decimals":1}
+     ]
+   }
+   ```
+   KURAL: inputs[].name JS variable olarak kullanilabilir. formula = JS expression.
+   Math objesi kullanilabilir. format: "fixed" (decimals), "exp" (bilimsel).
+   KULLAN: anlik fizik/matematik hesabi, parametre etkisini göster
+
+CEVAP STRATEJISI (kavramsal soru gelince):
+- Onemli formul varsa → ```formula bloku ile adim adim göster
+- Konunun degisken parametreli yapisi varsa → ```calc ile slider sun
+- Animasyon/etkilesim ihtiyac varsa → ```sim p5.js bloku
+- 3D yapı varsa (kristal, kara delik, manyetik) → ```3d preset
+- Veri/karsilastirma → ```chart
+- Birden fazla blok kullanabilirsin (ornegin formula + calc + chart aynı cevapta)
 
 ═══════════════════════════════════════════════════════════════════════
 ZENGIRLESTIRME ELEMANLARI (web kanalinda KULLAN):

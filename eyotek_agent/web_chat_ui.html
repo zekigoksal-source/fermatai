@@ -29,6 +29,13 @@
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sql.min.js"></script>
+<!-- Oturum 25.29 — Görsel zenginlik renderer'ları -->
+<!-- p5.js: ```sim interaktif simülasyon (öğrenci slider sürükler, anlık görsel) -->
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+<!-- Three.js: ```3d preset sahneler (Calabi-Yau, kara delik, manyetik alan vb.) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<!-- GSAP: ```formula adım adım animasyon (3Blue1Brown tarzı) -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <style>
 /* Markdown output tables + code */
 .msg.bot table { border-collapse: collapse; margin: 10px 0; font-size: 13px; width: 100%; }
@@ -78,6 +85,98 @@
 }
 .msg.bot .chart-container canvas {
   max-height: 280px;
+}
+
+/* Oturum 25.29 — Görsel renderer container'ları (sim/3d/formula/calc) */
+.msg.bot .sim-container,
+.msg.bot .threed-container,
+.msg.bot .formula-container,
+.msg.bot .calc-container {
+  background: var(--bot-bubble);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin: 12px 0;
+  position: relative;
+}
+.msg.bot .sim-container .render-title,
+.msg.bot .threed-container .render-title,
+.msg.bot .formula-container .render-title,
+.msg.bot .calc-container .render-title {
+  font-size: 13px; font-weight: 600; color: var(--fg);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+}
+.msg.bot .sim-container .render-title::before { content: "🎮"; }
+.msg.bot .threed-container .render-title::before { content: "🌌"; }
+.msg.bot .formula-container .render-title::before { content: "📐"; }
+.msg.bot .calc-container .render-title::before { content: "🧮"; }
+
+/* p5.js sim iframe — sandbox isolated */
+.msg.bot .sim-container iframe {
+  width: 100%; min-height: 320px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: #fff;
+}
+
+/* Three.js canvas */
+.msg.bot .threed-container canvas {
+  width: 100% !important; height: 320px !important;
+  border-radius: 8px; display: block;
+}
+
+/* Formula adım animasyon */
+.msg.bot .formula-container .formula-step {
+  font-size: 1.4em; padding: 16px; text-align: center;
+  background: rgba(199,111,62,0.06); border-radius: 8px;
+  margin: 8px 0; opacity: 0; transform: translateY(8px);
+  transition: opacity 0.4s, transform 0.4s;
+  font-family: "KaTeX_Main", serif;
+}
+.msg.bot .formula-container .formula-step.visible {
+  opacity: 1; transform: translateY(0);
+}
+.msg.bot .formula-container .formula-controls {
+  display: flex; gap: 8px; margin-top: 10px; align-items: center;
+  font-size: 12px; color: var(--fg-muted);
+}
+.msg.bot .formula-container .formula-btn {
+  padding: 4px 10px; background: var(--accent);
+  color: white; border: none; border-radius: 6px;
+  cursor: pointer; font-size: 12px; font-weight: 500;
+}
+.msg.bot .formula-container .formula-btn:disabled {
+  opacity: 0.5; cursor: not-allowed;
+}
+
+/* Slider hesaplayıcı */
+.msg.bot .calc-container .calc-row {
+  display: flex; align-items: center; gap: 10px;
+  margin: 8px 0; flex-wrap: wrap;
+}
+.msg.bot .calc-container .calc-label {
+  flex: 0 0 140px; font-size: 13px; color: var(--fg);
+}
+.msg.bot .calc-container .calc-slider {
+  flex: 1; min-width: 150px; cursor: pointer;
+  accent-color: var(--accent);
+}
+.msg.bot .calc-container .calc-value {
+  flex: 0 0 100px; font-family: "SF Mono", Menlo, monospace;
+  font-size: 13px; color: var(--accent-hover); font-weight: 600;
+  text-align: right;
+}
+.msg.bot .calc-container .calc-output {
+  background: rgba(199,111,62,0.06); padding: 12px; border-radius: 8px;
+  margin-top: 12px; border-left: 3px solid var(--accent);
+}
+.msg.bot .calc-container .calc-output-row {
+  display: flex; justify-content: space-between;
+  padding: 4px 0; font-size: 13px; border-bottom: 1px dashed var(--border);
+}
+.msg.bot .calc-container .calc-output-row:last-child { border-bottom: none; }
+.msg.bot .calc-container .calc-output-row .out-label { color: var(--fg-muted); }
+.msg.bot .calc-container .calc-output-row .out-value {
+  font-family: "SF Mono", Menlo, monospace; color: var(--accent-hover); font-weight: 600;
 }
 
 /* Collapsible details/summary */
@@ -1097,6 +1196,39 @@ function formatMsg(text) {
     return `\n\n<div class="chart-pending" data-chart-idx="${idx}"></div>\n\n`;
   });
 
+  // ── Oturum 25.29 — Görsel renderer placeholder'ları ──
+  // ```sim — p5.js iframe sandbox (interaktif simülasyon)
+  const simPlaceholders = [];
+  md = md.replace(/```sim\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, code) => {
+    const idx = simPlaceholders.length;
+    simPlaceholders.push(code.trim());
+    return `\n\n<div class="sim-pending" data-sim-idx="${idx}"></div>\n\n`;
+  });
+
+  // ```3d — Three.js preset sahne (JSON params)
+  const threedPlaceholders = [];
+  md = md.replace(/```3d\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = threedPlaceholders.length;
+    threedPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="threed-pending" data-threed-idx="${idx}"></div>\n\n`;
+  });
+
+  // ```formula — Adım adım KaTeX + GSAP animasyon
+  const formulaPlaceholders = [];
+  md = md.replace(/```formula\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, body) => {
+    const idx = formulaPlaceholders.length;
+    formulaPlaceholders.push(body.trim());
+    return `\n\n<div class="formula-pending" data-formula-idx="${idx}"></div>\n\n`;
+  });
+
+  // ```calc — Slider'lı anlık hesaplayıcı (JSON config)
+  const calcPlaceholders = [];
+  md = md.replace(/```calc\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = calcPlaceholders.length;
+    calcPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="calc-pending" data-calc-idx="${idx}"></div>\n\n`;
+  });
+
   // ── 2. Collapsible blokları — :::detay ... ::: syntax ──
   // Format: :::detay Özet\n...\n:::
   md = md.replace(/:::detay\s+(.+?)\n([\s\S]*?)\n?:::/g, (m, summary, content) => {
@@ -1125,11 +1257,43 @@ function formatMsg(text) {
         );
       });
 
-      // DOMPurify — chart-pending div'ine izin ver
+      // Oturum 25.29 — Yeni renderer placeholder'larını veriyle bağla
+      simPlaceholders.forEach((code, i) => {
+        const escaped = code.replace(/"/g, "&quot;");
+        html = html.replace(
+          new RegExp(`<div class="sim-pending" data-sim-idx="${i}"></div>`, 'g'),
+          `<div class="sim-pending" data-sim="${escaped}"></div>`
+        );
+      });
+      threedPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(
+          new RegExp(`<div class="threed-pending" data-threed-idx="${i}"></div>`, 'g'),
+          `<div class="threed-pending" data-threed="${escaped}"></div>`
+        );
+      });
+      formulaPlaceholders.forEach((body, i) => {
+        const escaped = body.replace(/"/g, "&quot;");
+        html = html.replace(
+          new RegExp(`<div class="formula-pending" data-formula-idx="${i}"></div>`, 'g'),
+          `<div class="formula-pending" data-formula="${escaped}"></div>`
+        );
+      });
+      calcPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(
+          new RegExp(`<div class="calc-pending" data-calc-idx="${i}"></div>`, 'g'),
+          `<div class="calc-pending" data-calc="${escaped}"></div>`
+        );
+      });
+
+      // DOMPurify — tüm pending div'lerine izin ver
       if (typeof DOMPurify !== "undefined") {
         html = DOMPurify.sanitize(html, {
           ADD_TAGS: ["span", "details", "summary"],
-          ADD_ATTR: ["class", "data-chart", "data-chart-idx", "open"],
+          ADD_ATTR: ["class", "data-chart", "data-chart-idx", "data-sim", "data-sim-idx",
+                     "data-threed", "data-threed-idx", "data-formula", "data-formula-idx",
+                     "data-calc", "data-calc-idx", "open"],
           ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
         });
       }
@@ -1260,6 +1424,487 @@ function rerenderCharts(el) {
   });
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// Oturum 25.29 — Görsel Renderer'lar (sim/3d/formula/calc)
+// Cerebras 230B + Claude bu blokları üretir, frontend canlı render eder.
+// ════════════════════════════════════════════════════════════════════════
+
+let _simCounter = 0;
+let _threedCounter = 0;
+let _formulaCounter = 0;
+let _calcCounter = 0;
+
+// ── ```sim — p5.js iframe sandbox ──
+// Bot p5.js kodunu blok içinde verir, iframe içinde isolated çalışır.
+function rerenderSims(el) {
+  if (!el) return;
+  // Mevcut "render edilmiş" sim-container'ları arşivden gelmişse pending'e geri çevir
+  el.querySelectorAll(".sim-container[data-sim]").forEach((oldWrap) => {
+    try {
+      const raw = oldWrap.getAttribute("data-sim");
+      if (!raw) return;
+      const pending = document.createElement("div");
+      pending.className = "sim-pending";
+      pending.setAttribute("data-sim", raw);
+      oldWrap.replaceWith(pending);
+    } catch (e) {}
+  });
+
+  el.querySelectorAll(".sim-pending").forEach((ph) => {
+    try {
+      let code = ph.getAttribute("data-sim") || "";
+      // HTML entity decode (data-sim'de quote'lar &quot; oldu)
+      code = code.replace(/&quot;/g, '"').replace(/&amp;/g, "&")
+                  .replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+
+      const wrap = document.createElement("div");
+      wrap.className = "sim-container";
+      wrap.setAttribute("data-sim", ph.getAttribute("data-sim") || "");
+      wrap.innerHTML = `<div class="render-title">İnteraktif Simülasyon (p5.js)</div>`;
+
+      // Sandbox iframe — kullanıcı kodu izole çalışır, hostu etkilemez
+      const iframe = document.createElement("iframe");
+      iframe.id = "sim-" + (++_simCounter);
+      iframe.setAttribute("sandbox", "allow-scripts");
+      iframe.style.cssText = "width:100%;min-height:340px;border:0;border-radius:8px;";
+      // p5.js + öğrenci kodu birleşik srcdoc
+      const html = `<!DOCTYPE html><html><head>
+<meta charset="utf-8">
+<style>
+  body{margin:0;padding:8px;background:#fff;font-family:-apple-system,sans-serif;color:#333}
+  #defaultCanvas0{display:block;margin:0 auto;border:1px solid #e5e7eb;border-radius:6px}
+  .err{color:#c00;background:#fee;padding:8px;border-radius:6px;font-size:12px;margin-top:8px;font-family:monospace}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+</head><body>
+<script>
+try {
+  ${code}
+} catch (e) {
+  document.body.innerHTML = '<div class="err">Sim hatası: ' + e.message + '</div>';
+}
+window.addEventListener('error', function(e) {
+  var d = document.createElement('div'); d.className = 'err';
+  d.textContent = 'Sim hatası: ' + (e.message || 'bilinmeyen');
+  document.body.appendChild(d);
+});
+</script>
+</body></html>`;
+      iframe.srcdoc = html;
+      wrap.appendChild(iframe);
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Sim render hatası:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Simülasyon render edilemedi]</div>';
+      ph.classList.remove("sim-pending");
+    }
+  });
+}
+
+// ── ```3d — Three.js preset sahneler ──
+// JSON params → preset 3D sahne (sphere, blackhole, lattice, magnetic_field, calabi_yau, sine_wave)
+function rerender3D(el) {
+  if (!el || typeof THREE === "undefined") return;
+  el.querySelectorAll(".threed-container[data-threed]").forEach((oldWrap) => {
+    try {
+      const raw = oldWrap.getAttribute("data-threed");
+      if (!raw) return;
+      const pending = document.createElement("div");
+      pending.className = "threed-pending";
+      pending.setAttribute("data-threed", raw);
+      oldWrap.replaceWith(pending);
+    } catch (e) {}
+  });
+
+  el.querySelectorAll(".threed-pending").forEach((ph) => {
+    try {
+      let raw = ph.getAttribute("data-threed") || "{}";
+      raw = raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+      const config = JSON.parse(raw);
+      const scene_name = (config.scene || "sphere").toLowerCase();
+
+      const wrap = document.createElement("div");
+      wrap.className = "threed-container";
+      wrap.setAttribute("data-threed", ph.getAttribute("data-threed") || "");
+      wrap.innerHTML = `<div class="render-title">3D Sahne — ${escapeHtml(config.title || scene_name)}</div>`;
+      const canvas = document.createElement("canvas");
+      canvas.id = "threed-" + (++_threedCounter);
+      wrap.appendChild(canvas);
+      ph.replaceWith(wrap);
+
+      requestAnimationFrame(() => {
+        try {
+          const w = wrap.clientWidth - 28;
+          const h = 320;
+          const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+          renderer.setSize(w, h);
+          const scene = new THREE.Scene();
+          scene.background = new THREE.Color(0x0F172A);
+          const camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 1000);
+          camera.position.set(0, 1.5, 4);
+          // Ortak ışık
+          scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+          const dirLight = new THREE.DirectionalLight(0xfbbf24, 0.8);
+          dirLight.position.set(5, 5, 5); scene.add(dirLight);
+
+          let mainObj;
+          // Preset sahneler
+          if (scene_name === "blackhole") {
+            // Olay ufku + accretion diski
+            const sphere = new THREE.Mesh(
+              new THREE.SphereGeometry(0.8, 32, 32),
+              new THREE.MeshBasicMaterial({ color: 0x000000 })
+            );
+            scene.add(sphere);
+            const ring = new THREE.Mesh(
+              new THREE.TorusGeometry(1.5, 0.18, 16, 100),
+              new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.85 })
+            );
+            ring.rotation.x = Math.PI / 2.5;
+            scene.add(ring);
+            mainObj = ring;
+          } else if (scene_name === "lattice") {
+            // Kristal yapı (NaCl benzeri)
+            const grp = new THREE.Group();
+            for (let x = -2; x <= 2; x++)
+              for (let y = -2; y <= 2; y++)
+                for (let z = -2; z <= 2; z++) {
+                  const isA = (x + y + z) % 2 === 0;
+                  const m = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.18, 12, 12),
+                    new THREE.MeshStandardMaterial({ color: isA ? 0xa78bfa : 0xfbbf24 })
+                  );
+                  m.position.set(x * 0.5, y * 0.5, z * 0.5);
+                  grp.add(m);
+                }
+            scene.add(grp);
+            mainObj = grp;
+          } else if (scene_name === "magnetic_field" || scene_name === "magnet") {
+            // Çubuk mıknatıs + alan çizgileri
+            const bar = new THREE.Mesh(
+              new THREE.BoxGeometry(2, 0.3, 0.3),
+              new THREE.MeshStandardMaterial({ color: 0xc76f3e })
+            );
+            scene.add(bar);
+            const grp = new THREE.Group();
+            for (let i = 0; i < 8; i++) {
+              const angle = (i / 8) * Math.PI * 2;
+              const curve = new THREE.EllipseCurve(0, 0, 1.2, 0.7, 0, Math.PI * 2);
+              const points = curve.getPoints(50);
+              const geo = new THREE.BufferGeometry().setFromPoints(points);
+              const line = new THREE.Line(
+                geo,
+                new THREE.LineBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.6 })
+              );
+              line.rotation.x = Math.PI / 2;
+              line.rotation.y = angle;
+              grp.add(line);
+            }
+            scene.add(grp);
+            mainObj = grp;
+          } else if (scene_name === "sine_wave" || scene_name === "wave") {
+            // Sinüs dalga animasyonu
+            const wavePts = [];
+            for (let i = -100; i <= 100; i++) wavePts.push(new THREE.Vector3(i / 25, 0, 0));
+            const geo = new THREE.BufferGeometry().setFromPoints(wavePts);
+            const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xfbbf24, linewidth: 3 }));
+            scene.add(line);
+            mainObj = line;
+            mainObj.userData.update = (t) => {
+              const arr = geo.attributes.position.array;
+              for (let i = 0; i < arr.length; i += 3) {
+                arr[i + 1] = Math.sin(arr[i] * 2 + t * 0.003) * 0.6;
+              }
+              geo.attributes.position.needsUpdate = true;
+            };
+          } else if (scene_name === "calabi_yau") {
+            // Yaklaşık Calabi-Yau benzeri torus knot
+            const m = new THREE.Mesh(
+              new THREE.TorusKnotGeometry(1, 0.3, 100, 16, 4, 7),
+              new THREE.MeshStandardMaterial({ color: 0xa78bfa, metalness: 0.6, roughness: 0.3 })
+            );
+            scene.add(m);
+            mainObj = m;
+          } else {
+            // Default: küre
+            const m = new THREE.Mesh(
+              new THREE.SphereGeometry(config.radius || 1, 32, 32),
+              new THREE.MeshStandardMaterial({ color: parseInt((config.color || "0xa78bfa").toString().replace("0x", ""), 16) || 0xa78bfa })
+            );
+            scene.add(m);
+            mainObj = m;
+          }
+
+          const rotate = config.rotate !== false;
+          // Animation loop
+          let lastT = performance.now();
+          function tick(now) {
+            if (!document.body.contains(wrap)) return; // DOM'dan çıkmışsa stop
+            const dt = now - lastT; lastT = now;
+            if (rotate && mainObj) {
+              mainObj.rotation.y += dt * 0.0006;
+              if (mainObj.userData && mainObj.userData.update) mainObj.userData.update(now);
+            }
+            renderer.render(scene, camera);
+            requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        } catch (err) {
+          console.warn("3D render hatası:", err);
+          wrap.innerHTML = `<div style="color:var(--fg-muted);font-size:12px">[3D sahne render edilemedi: ${escapeHtml(err.message)}]</div>`;
+        }
+      });
+    } catch (e) {
+      console.warn("3D parse hatası:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[3D verisi hatalı]</div>';
+      ph.classList.remove("threed-pending");
+    }
+  });
+}
+
+// ── ```formula — KaTeX + GSAP adım adım animasyon ──
+// Format:
+//   step: $E = mc^2$ (Einstein, 1905)
+//   step: $E^2 = (pc)^2 + (mc^2)^2$ (genelleştirilmiş)
+//   step: m=0 → $E = pc$ (foton)
+function rerenderFormulas(el) {
+  if (!el) return;
+  el.querySelectorAll(".formula-container[data-formula]").forEach((oldWrap) => {
+    try {
+      const raw = oldWrap.getAttribute("data-formula");
+      if (!raw) return;
+      const pending = document.createElement("div");
+      pending.className = "formula-pending";
+      pending.setAttribute("data-formula", raw);
+      oldWrap.replaceWith(pending);
+    } catch (e) {}
+  });
+
+  el.querySelectorAll(".formula-pending").forEach((ph) => {
+    try {
+      let body = ph.getAttribute("data-formula") || "";
+      body = body.replace(/&quot;/g, '"').replace(/&amp;/g, "&")
+                  .replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+      const lines = body.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      // step: kelimesini ya yakalıyoruz ya da her satırı adım kabul
+      const steps = lines.map(l => l.replace(/^step\d*:\s*/i, "").replace(/^-\s*/, ""))
+                          .filter(Boolean);
+      if (!steps.length) {
+        ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Formula adım yok]</div>';
+        ph.classList.remove("formula-pending");
+        return;
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "formula-container";
+      wrap.setAttribute("data-formula", ph.getAttribute("data-formula") || "");
+      wrap.id = "formula-" + (++_formulaCounter);
+      wrap.innerHTML = `<div class="render-title">Adım Adım Türetme</div>`;
+
+      const stepsContainer = document.createElement("div");
+      stepsContainer.className = "formula-steps";
+      steps.forEach((s, i) => {
+        const div = document.createElement("div");
+        div.className = "formula-step";
+        div.setAttribute("data-step", i);
+        // KaTeX render — $...$ varsa parse, yoksa düz metin
+        div.innerHTML = s;
+        stepsContainer.appendChild(div);
+      });
+      wrap.appendChild(stepsContainer);
+
+      const ctrl = document.createElement("div");
+      ctrl.className = "formula-controls";
+      const total = steps.length;
+      ctrl.innerHTML = `
+        <button class="formula-btn formula-prev" disabled>← Önceki</button>
+        <span class="formula-progress">1 / ${total}</span>
+        <button class="formula-btn formula-next">Sonraki →</button>
+        <button class="formula-btn formula-replay" style="margin-left:auto;background:#6B8E7F">↻ Tekrar</button>
+      `;
+      wrap.appendChild(ctrl);
+      ph.replaceWith(wrap);
+
+      // İlk adım hemen görünür, diğerleri gizli
+      const stepEls = wrap.querySelectorAll(".formula-step");
+      let curStep = 0;
+      stepEls.forEach((s, i) => { if (i === 0) s.classList.add("visible"); });
+
+      // KaTeX render
+      try {
+        if (typeof renderMathInElement === "function") {
+          renderMathInElement(wrap, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false },
+            ],
+            throwOnError: false,
+          });
+        }
+      } catch (e) { /* ignore */ }
+
+      const prevBtn = wrap.querySelector(".formula-prev");
+      const nextBtn = wrap.querySelector(".formula-next");
+      const replayBtn = wrap.querySelector(".formula-replay");
+      const progress = wrap.querySelector(".formula-progress");
+
+      function update() {
+        stepEls.forEach((s, i) => {
+          if (i <= curStep) s.classList.add("visible");
+          else s.classList.remove("visible");
+        });
+        prevBtn.disabled = curStep === 0;
+        nextBtn.disabled = curStep === total - 1;
+        progress.textContent = `${curStep + 1} / ${total}`;
+        // GSAP animasyon (yeni gelen adım)
+        if (typeof gsap !== "undefined" && stepEls[curStep]) {
+          gsap.fromTo(stepEls[curStep],
+            { y: 16, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" });
+        }
+      }
+      nextBtn.addEventListener("click", () => { if (curStep < total - 1) { curStep++; update(); } });
+      prevBtn.addEventListener("click", () => { if (curStep > 0) { curStep--; update(); } });
+      replayBtn.addEventListener("click", () => { curStep = 0; update(); });
+    } catch (e) {
+      console.warn("Formula render hatası:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Formula render edilemedi]</div>';
+      ph.classList.remove("formula-pending");
+    }
+  });
+}
+
+// ── ```calc — Slider'lı anlık hesaplayıcı ──
+// JSON config: { title, inputs: [{name,label,min,max,step,default,unit}], outputs: [{label, formula, unit, format}] }
+// formula: JS expression string, inputs.name'lerini değişken olarak kullanır
+function rerenderCalcs(el) {
+  if (!el) return;
+  el.querySelectorAll(".calc-container[data-calc]").forEach((oldWrap) => {
+    try {
+      const raw = oldWrap.getAttribute("data-calc");
+      if (!raw) return;
+      const pending = document.createElement("div");
+      pending.className = "calc-pending";
+      pending.setAttribute("data-calc", raw);
+      oldWrap.replaceWith(pending);
+    } catch (e) {}
+  });
+
+  el.querySelectorAll(".calc-pending").forEach((ph) => {
+    try {
+      let raw = ph.getAttribute("data-calc") || "{}";
+      raw = raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&")
+                .replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+      const cfg = JSON.parse(raw);
+
+      const wrap = document.createElement("div");
+      wrap.className = "calc-container";
+      wrap.setAttribute("data-calc", ph.getAttribute("data-calc") || "");
+      wrap.id = "calc-" + (++_calcCounter);
+      wrap.innerHTML = `<div class="render-title">${escapeHtml(cfg.title || "İnteraktif Hesaplayıcı")}</div>`;
+
+      const inputs = cfg.inputs || [];
+      const outputs = cfg.outputs || [];
+      const inputState = {};
+
+      // Slider'ları oluştur
+      inputs.forEach((inp) => {
+        inputState[inp.name] = parseFloat(inp.default !== undefined ? inp.default : inp.min);
+        const row = document.createElement("div");
+        row.className = "calc-row";
+        row.innerHTML = `
+          <span class="calc-label">${escapeHtml(inp.label || inp.name)}</span>
+          <input class="calc-slider" type="range"
+                 data-name="${escapeHtml(inp.name)}"
+                 min="${inp.min}" max="${inp.max}"
+                 step="${inp.step || ((inp.max - inp.min) / 100)}"
+                 value="${inputState[inp.name]}">
+          <span class="calc-value" data-display="${escapeHtml(inp.name)}">${inputState[inp.name]}${inp.unit || ""}</span>
+        `;
+        wrap.appendChild(row);
+      });
+
+      // Output container
+      const out = document.createElement("div");
+      out.className = "calc-output";
+      outputs.forEach((o, i) => {
+        const r = document.createElement("div");
+        r.className = "calc-output-row";
+        r.innerHTML = `
+          <span class="out-label">${escapeHtml(o.label || ("Sonuç " + (i + 1)))}</span>
+          <span class="out-value" data-out-idx="${i}">—</span>
+        `;
+        out.appendChild(r);
+      });
+      wrap.appendChild(out);
+      ph.replaceWith(wrap);
+
+      // Hesaplama fonksiyonu — formula eval (sandboxed, sadece input variables)
+      function recompute() {
+        outputs.forEach((o, i) => {
+          try {
+            // Formula'yı eval — Math + input vars
+            const argNames = inputs.map(x => x.name);
+            const argVals = argNames.map(n => inputState[n]);
+            const fn = new Function(...argNames, "Math", `"use strict"; return (${o.formula});`);
+            const val = fn(...argVals, Math);
+            const display = wrap.querySelector(`[data-out-idx="${i}"]`);
+            if (display) {
+              let txt;
+              if (o.format === "exp") {
+                txt = (typeof val === "number") ? val.toExponential(3) : String(val);
+              } else if (o.format === "fixed") {
+                txt = (typeof val === "number") ? val.toFixed(o.decimals || 3) : String(val);
+              } else if (typeof val === "number") {
+                txt = (Math.abs(val) >= 1e6 || (Math.abs(val) < 1e-3 && val !== 0))
+                      ? val.toExponential(3) : val.toFixed(o.decimals || 3);
+              } else {
+                txt = String(val);
+              }
+              display.textContent = txt + (o.unit ? " " + o.unit : "");
+            }
+          } catch (err) {
+            const display = wrap.querySelector(`[data-out-idx="${i}"]`);
+            if (display) display.textContent = "—";
+          }
+        });
+      }
+
+      // Slider event'leri
+      wrap.querySelectorAll(".calc-slider").forEach((sl) => {
+        sl.addEventListener("input", () => {
+          const n = sl.getAttribute("data-name");
+          inputState[n] = parseFloat(sl.value);
+          const disp = wrap.querySelector(`[data-display="${n}"]`);
+          const inp = inputs.find(x => x.name === n);
+          if (disp) {
+            const v = inputState[n];
+            let txt;
+            if (Math.abs(v) >= 1e6 || (Math.abs(v) < 1e-3 && v !== 0)) txt = v.toExponential(2);
+            else txt = (Number.isInteger(v) ? v : v.toFixed(2));
+            disp.textContent = txt + ((inp && inp.unit) ? (" " + inp.unit) : "");
+          }
+          recompute();
+        });
+      });
+      recompute();
+    } catch (e) {
+      console.warn("Calc render hatası:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Hesaplayıcı verisi hatalı]</div>';
+      ph.classList.remove("calc-pending");
+    }
+  });
+}
+
+// Tek çağrı: tüm görsel renderer'ları toplu çalıştır
+function rerenderAllVisuals(el) {
+  try { rerenderCharts(el); } catch (e) {}
+  try { rerenderSims(el); } catch (e) {}
+  try { rerender3D(el); } catch (e) {}
+  try { rerenderFormulas(el); } catch (e) {}
+  try { rerenderCalcs(el); } catch (e) {}
+}
+
 // Prism syntax highlight
 function rerenderCode(el) {
   if (!el || typeof Prism === "undefined") return;
@@ -1349,7 +1994,8 @@ function fixExternalLinks(el) {
 // Bot mesajını final haline getir — chart + math + kod + link + chart önerisi + arşiv
 function finalizeBotMsg(el) {
   if (!el) return;
-  rerenderCharts(el);
+  // Oturum 25.29: tüm görsel renderer'ları (chart + sim + 3d + formula + calc)
+  rerenderAllVisuals(el);
   rerenderMath(el);
   rerenderCode(el);
   fixExternalLinks(el);
@@ -3915,12 +4561,17 @@ async function loadHistoryDay(gun) {
       messages.querySelectorAll(".msg.bot").forEach((el) => {
         // Zaten canvas varsa atla — cift render riski yok
         if (el.querySelector(".chart-container canvas")) return;
-        // Pending chart veya raw ```chart blok kaldi mi?
-        if (el.querySelector(".chart-pending") || (el.textContent || "").includes("```chart")) {
-          // Raw chart kaldiysa innerHTML'i yeniden formatMsg ile isle
+        // Pending chart/sim/3d/formula/calc veya raw ```X blok kaldi mi?
+        const txt = el.textContent || "";
+        const hasPending = el.querySelector(".chart-pending, .sim-pending, .threed-pending, .formula-pending, .calc-pending");
+        const hasRaw = txt.includes("```chart") || txt.includes("```sim") ||
+                        txt.includes("```3d") || txt.includes("```formula") || txt.includes("```calc");
+        if (hasPending || hasRaw) {
+          // Raw blok kaldiysa innerHTML'i yeniden formatMsg ile isle
           const raw = el.getAttribute("data-raw-content");
           if (raw) el.innerHTML = formatMsg(raw);
-          rerenderCharts(el);
+          // Oturum 25.29: tüm görsel renderer'ları çalıştır (chart + sim + 3d + formula + calc)
+          rerenderAllVisuals(el);
           rerenderMath(el);
           rerenderCode(el);
         }
