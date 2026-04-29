@@ -1794,10 +1794,23 @@ OGRENCI_PATTERNS = [
     (r"(diger|di[gğ]er|ba[sş]ka|baskalari|ba[sş]kalar[iı])\s*(ogrenci|öğrenci|çocuk|cocuk|insan|kisi|kişi)?", "claude_peer_kiyas", "Peer diger kisi"),
     (r"peer|anonim\s*k[iı]yas|kimler\s*(ayn[iı]|benzer)", "claude_peer_kiyas", "Peer anonim"),
     (r"(hangi|nereye)\s*(universite|üniversite|bolum|bölüm)(.*?)(girebilir|girerim|gidebilirim|yazabilirim)", "claude_kisisel_hedef", "Hangi universite girerim"),
+    # Oturum 25.29 — Mehmet bug: "universite sinavinda kac soru cikti/ciktim" gibi sorular
+    # YKS istatistik sorgusu, list_exam_questions tool gerek → Claude'a YONLENDIR (None doner)
+    # Bu pattern eslesirse fast_response None dondurur, Claude akisi devam eder.
+    (r"(universite|üniversite|yks)\s+(sinavinda|sınavında|sinavindan|sınavından|sinavda|sınavda).*(kac|kaç|ne\s*zaman|hangi|cikt|çıkt)",
+     "claude_yks_istatistik", "YKS sinav istatistik sorusu"),
     (r"(mevcut|su\s*anki|simdiki)\s*(durum|netler|puan)(.*?)(universite|üniversite|bolum|bölüm|tercih)", "claude_kisisel_hedef", "Mevcut durumumla"),
     # Generic hedef — kisisel veri iste bilgisi YOKSA → fast
     (r"(hedef|kac\s*net|kaç\s*net|hedefim)", "hedef", "Hedef"),
-    (r"(universite|üniversite|bolum|bölüm|tercih)", "hedef", "Universite hedef"),
+    # Oturum 25.29 fix (Neo Mehmet konusmasi): pattern cok genisti.
+    # "universite sinavinda kac soru ciktim" hedef template'ine dustu — yanlis.
+    # Cozum: sadece HEDEF/TERCIH/SECIM bağlamında tetiklensin.
+    # ASLA: "universite sinavinda"/"yks soru"/"sinav cikti" → bunlar list_exam_questions
+    # veya analiz, Claude'a kalsin (None dondurur).
+    (r"(universite|üniversite|bolum|bölüm|tercih)\s+(secimi|secim|hedef|gitmek|kazan|secmek|sec|secim|secmel|gitsem|gidebilir|kazan)",
+     "hedef", "Universite hedef secim"),
+    (r"^(universite|üniversite|bolum|bölüm)\s*(istiyorum|hayalim|hedefim|isterim)",
+     "hedef", "Universite istek"),
 
     # Rehberlik — genis paraphrase
     (r"(rehberlik|g[oö]r[uü]sme|görüşme|kardelen|rehber)", "rehberlik", "Rehberlik"),
@@ -2414,6 +2427,11 @@ async def try_fast_response(
 
                     if handler == "claude_kisisel_hedef":
                         return None  # "netlerimle hangi universite" gibi sorular Claude ile kisiselleştirilmeli
+
+                    if handler == "claude_yks_istatistik":
+                        # Oturum 25.29 — Mehmet bug: "universite sinavinda kac soru cikti"
+                        # YKS sinav istatistik sorusu, list_exam_questions tool gerek
+                        return None
 
                     if handler == "claude_yenile":
                         return None  # 22.1h — Claude get_recent_system_updates tool cagirsin
