@@ -2186,6 +2186,12 @@ TOOL_DISPATCH = {
     "selfdev_list_bot_branches":   lambda p: _selfdev_list_branches_w(**p),
     "selfdev_branch_status":       lambda p: _selfdev_branch_status_w(**p),
     "selfdev_delete_branch":       lambda p: _selfdev_delete_branch_w(**p),
+    # Evre 2.3 — GitHub PR Draft (token gerek, graceful skip)
+    "selfdev_create_pr_draft":     lambda p: _selfdev_create_pr_w(**p),
+    "selfdev_get_pr_status":       lambda p: _selfdev_get_pr_w(**p),
+    "selfdev_pr_comment":          lambda p: _selfdev_pr_comment_w(**p),
+    "selfdev_close_pr":            lambda p: _selfdev_close_pr_w(**p),
+    "selfdev_full_pipeline":       lambda p: _selfdev_full_pipeline_w(**p),
 }
 
 
@@ -2300,6 +2306,35 @@ async def _selfdev_branch_status_w(branch: str = "", **_):
 async def _selfdev_delete_branch_w(branch: str, _caller_phone: str = "", **_):
     from self_dev_git import delete_local_branch
     return await delete_local_branch(branch, _caller_phone=_caller_phone)
+
+
+# Evre 2.3 — GitHub PR Draft
+
+async def _selfdev_create_pr_w(brief_id: int, branch: str,
+                                 _caller_phone: str = "", **_):
+    from self_dev_github import create_pr_draft
+    return await create_pr_draft(int(brief_id), branch, _caller_phone=_caller_phone)
+
+
+async def _selfdev_get_pr_w(pr_number: int, _caller_phone: str = "", **_):
+    from self_dev_github import get_pr_status
+    return await get_pr_status(int(pr_number), _caller_phone=_caller_phone)
+
+
+async def _selfdev_pr_comment_w(pr_number: int, body: str,
+                                  _caller_phone: str = "", **_):
+    from self_dev_github import add_pr_comment
+    return await add_pr_comment(int(pr_number), body, _caller_phone=_caller_phone)
+
+
+async def _selfdev_close_pr_w(pr_number: int, _caller_phone: str = "", **_):
+    from self_dev_github import close_pr
+    return await close_pr(int(pr_number), _caller_phone=_caller_phone)
+
+
+async def _selfdev_full_pipeline_w(brief_id: int, _caller_phone: str = "", **_):
+    from self_dev_github import full_pipeline
+    return await full_pipeline(int(brief_id), _caller_phone=_caller_phone)
 
 
 # ── Oturum 25.9 Tool Wrappers ──────────────────────────────────────────────

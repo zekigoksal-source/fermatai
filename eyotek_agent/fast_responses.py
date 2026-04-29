@@ -1855,6 +1855,11 @@ ADMIN_PATTERNS = [
     (r"^branch\s*(durum|status|nasil)", "claude_selfdev_branch_status", "Branch durum"),
     (r"^(branch|draft)\s+(\S+)\s*push", "claude_selfdev_push", "Branch push"),
     (r"^branch\s+(\S+)\s*sil", "claude_selfdev_branch_delete", "Branch sil"),
+    # Evre 2.3 — PR komutlari
+    (r"^brief\s*#?(\d+)\s*(pr|pull\s*request)", "claude_selfdev_full_pipeline", "Brief'ten full pipeline"),
+    (r"^draft\s*#?(\d+)\s*(pr|pull\s*request)", "claude_selfdev_full_pipeline", "Draft'tan full pipeline"),
+    (r"^pr\s*#?(\d+)\s*(durum|status|nasil)", "claude_selfdev_pr_status", "PR durum"),
+    (r"^pr\s*#?(\d+)\s*(kapat|kapa|close|iptal)", "claude_selfdev_pr_close", "PR kapat"),
     # 22.1h — "yenile" / "guncelle" / "ne deği(ş)ti" → Claude + get_recent_system_updates zorunlu
     (r"^(yenile|guncelle|g[uü]ncelle|refresh|reload|son\s+g[uü]ncelleme|ne\s+de[gğ]i[sş]ti)", "claude_yenile", "Yenile — Claude tool cagirsin"),
     # 22.1n — Atlas trend/uyari isteği → Claude get_atlas_trend tool cagirsin
@@ -3234,9 +3239,11 @@ async def try_fast_response(
                     elif handler == "selfdev_status":
                         from self_dev_tools import _is_pipeline_active
                         from self_dev_git import _push_enabled
+                        from self_dev_github import _get_token, _mask_token
                         from db_pool import db_fetchval, db_fetch
                         active = await _is_pipeline_active()
                         push_on = await _push_enabled()
+                        gh_token = _get_token()
                         try:
                             n_briefs = await db_fetchval("SELECT COUNT(*) FROM self_dev_briefs") or 0
                             n_drafts = await db_fetchval(
@@ -3254,9 +3261,11 @@ async def try_fast_response(
                             n_briefs, n_drafts, n_audit_24h, recent = 0, 0, 0, []
                         status = "🟢 ACIK" if active else "🔴 KAPALI"
                         push_status = "🟢 ACIK" if push_on else "🔴 KAPALI"
+                        token_status = f"🟢 ACIK ({_mask_token(gh_token)})" if gh_token else "🔴 YOK"
                         lines = [
                             f"*🤖 Self-Dev Pipeline — {status}*",
                             f"  Push (Evre 2.2): {push_status}",
+                            f"  GITHUB_TOKEN (Evre 2.3): {token_status}",
                             "",
                             f"  • Toplam brief: *{n_briefs}* (drafted: {n_drafts})",
                             f"  • Son 24h araç çağrısı: *{n_audit_24h}*",
@@ -3274,6 +3283,8 @@ async def try_fast_response(
                         lines.append("_• `brief #N draft yap` — diff dosyasi üret (sandbox)_")
                         lines.append("_• `brief #N branch` — bot/draft branch + commit (lokal)_")
                         lines.append("_• `branch <name> push` — GitHub'a push (push acik ise)_")
+                        lines.append("_• `brief #N PR` — full pipeline: branch+push+PR draft_")
+                        lines.append("_• `pr #N durum/kapat` — PR sorgu/iptal_")
                         lines.append("_• `branch liste` — bot/draft-* branch'ler_")
                         return "\n".join(lines)
                     # Brief + Draft komutları → None (Claude akışı tool çağıracak)
@@ -3286,6 +3297,9 @@ async def try_fast_response(
                         "claude_selfdev_branch_brief", "claude_selfdev_branch_list",
                         "claude_selfdev_branch_status", "claude_selfdev_push",
                         "claude_selfdev_branch_delete",
+                        # Evre 2.3
+                        "claude_selfdev_full_pipeline", "claude_selfdev_pr_status",
+                        "claude_selfdev_pr_close",
                     ):
                         return None
                     # Evre 2.2 — Push flag toggle (Neo komutu)

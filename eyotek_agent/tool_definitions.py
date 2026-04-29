@@ -1872,6 +1872,75 @@ TOOLS: list[dict] = [
             "required": ["branch"],
         },
     },
+    # ── Evre 2.3 — GitHub PR Draft Otomasyonu (Oturum 25.29) ──
+    # Bot push edilmis bot/draft-* branch icin PR draft acar.
+    # PR HER ZAMAN draft=true (merge edilemez). Bot kendi PR'ini merge edemez.
+    # GITHUB_TOKEN env yoksa graceful skip + kurulum talimati doner.
+    {
+        "name": "selfdev_create_pr_draft",
+        "description": (
+            "[SELF-DEV / ADMIN — Evre 2.3] Push edilmis bot/draft-* branch icin "
+            "GitHub PR draft acar. PR draft=true HARDCODED (merge edilemez). "
+            "Body brief'ten otomatik uretilir (problem, files, decision_trace, rollback). "
+            "GITHUB_TOKEN env yoksa graceful skip + kurulum talimati."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "brief_id": {"type": "integer"},
+                "branch": {"type": "string", "description": "bot/draft-YYYYMMDD-N"},
+            },
+            "required": ["brief_id", "branch"],
+        },
+    },
+    {
+        "name": "selfdev_get_pr_status",
+        "description": "[SELF-DEV / ADMIN — Evre 2.3] PR durumu sorgula (state, draft, merged, files).",
+        "input_schema": {
+            "type": "object",
+            "properties": {"pr_number": {"type": "integer"}},
+            "required": ["pr_number"],
+        },
+    },
+    {
+        "name": "selfdev_pr_comment",
+        "description": (
+            "[SELF-DEV / ADMIN — Evre 2.3] Bir PR'a yorum ekle (Evre 2.4 pytest sonucu icin)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "pr_number": {"type": "integer"},
+                "body": {"type": "string", "description": "Markdown yorum"},
+            },
+            "required": ["pr_number", "body"],
+        },
+    },
+    {
+        "name": "selfdev_close_pr",
+        "description": (
+            "[SELF-DEV / ADMIN — Evre 2.3] Bir PR'i kapat (merge YAPMADAN). "
+            "Sadece bot/draft-* head branch'li PR'lar kapatilabilir."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"pr_number": {"type": "integer"}},
+            "required": ["pr_number"],
+        },
+    },
+    {
+        "name": "selfdev_full_pipeline",
+        "description": (
+            "[SELF-DEV / ADMIN — Evre 2.3 Orkestrasyon] Brief → branch + commit + push + PR draft. "
+            "Tek cagri ile full akis. Adim hatasinda otomatik rollback. "
+            "Push veya PR token yoksa graceful skip + kurulum talimati."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"brief_id": {"type": "integer"}},
+            "required": ["brief_id"],
+        },
+    },
 ]
 
 

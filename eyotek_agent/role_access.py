@@ -74,6 +74,10 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "selfdev_draft_to_local_branch", "selfdev_push_branch",
         "selfdev_list_bot_branches", "selfdev_branch_status",
         "selfdev_delete_branch",
+        # Evre 2.3 — GitHub PR Draft (token gerek)
+        "selfdev_create_pr_draft", "selfdev_get_pr_status",
+        "selfdev_pr_comment", "selfdev_close_pr",
+        "selfdev_full_pipeline",
     },
     # Yönetim üyesi: müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     "yonetim": {
