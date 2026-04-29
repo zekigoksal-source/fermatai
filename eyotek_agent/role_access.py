@@ -123,6 +123,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)
+    # 25.29-vedat: sinav_sonuclari + eyotek_query açıldı, INTERNAL filter (teacher_acl_filter) ile
+    #              sadece KENDI SINIFININ ogrencileri görünür (post-filter dispatch'te yapılır)
     "ogretmen": {
         "get_student_analytics", "get_ayt_analysis", "check_teacher_availability",
         "get_class_summary",
@@ -148,6 +150,13 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "ogretmen_etut_takvimim", "ogretmen_etut_onerisi",
         # 23 Nisan FAZ 1 A2 — LGS öğrenci konu durumu
         "get_lgs_konu_durumu",
+        # 25.29-vedat: Eyotek anlik veri tool'lari (Neo karari — Vedat hoca vakasi)
+        # ACL gecirir AMA dispatch'te teacher_acl_filter ile kendi sinif filtre.
+        # Baska sinif/ogretmen verisi YASAK kalir, post-filter siler.
+        "sinav_sonuclari",       # Bir sinavin TUM ogrenci sonuclari → Vedat'in sinifi filtre
+        "eyotek_query",          # Eyotek query (agentic) → Vedat'in sinifi filtre
+        "ogrenci_drilldown",     # Tek ogrenci → onceden ogrenci kontrol gerek (sonra)
+        "eyotek_read",           # Eyotek sayfa okuma → filtre uygulanir
     },
     # Rehber öğretmen: TÜM öğrenci + TÜM öğretmen programı + etüt yazma + rehberlik notu
     "rehber": {

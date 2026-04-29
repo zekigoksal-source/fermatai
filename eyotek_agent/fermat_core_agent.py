@@ -2524,6 +2524,27 @@ async def run_tool(name: str, input_data: dict,
                 logger.debug(f"  tool topic trace hatasi: {_tc_e}")
         else:
             result = await fn(input_data)
+
+        # ── Oturum 25.29 — Vedat hoca vakası: ÖĞRETMEN ACL POST-FILTER ──
+        # Eyotek anlık veri tool'larında ogretmen rolü için kendi sınıfı filtresi.
+        # Tool çağrısı ACL'den geçti, ama bot başka sınıfların öğrencilerine
+        # erişemesin diye sonucu kendi sınıflarına göre süzeriz.
+        TEACHER_FILTERED_TOOLS = {
+            "sinav_sonuclari", "eyotek_query", "ogrenci_drilldown", "eyotek_read",
+        }
+        if (caller_role == "ogretmen" and name in TEACHER_FILTERED_TOOLS
+                and isinstance(result, dict) and caller_phone):
+            try:
+                from teacher_acl_filter import filter_tool_result_for_teacher
+                result = await filter_tool_result_for_teacher(result, caller_phone)
+            except Exception as _flt_err:
+                logger.warning(f"Teacher ACL filter hatası: {_flt_err}")
+                # Filtre çalışmazsa ham sonucu DÖNDÜRME — güvenli yan
+                return json.dumps({
+                    "error": "Öğretmen ACL filtresi uygulanamadı, güvenlik için sonuç gizlendi",
+                    "details": str(_flt_err)[:200],
+                }, ensure_ascii=False)
+
         return json.dumps(result, ensure_ascii=False, indent=2, default=str)
     except Exception as e:
         logger.error(f"Tool '{name}' hatası: {e}")
