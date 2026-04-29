@@ -409,9 +409,15 @@ async def analytics(
 async def dashboard_html(
     request: Request,
     fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+    soz_no: Optional[int] = Query(default=None),
 ):
-    """Öğrenci günlük takip dashboard HTML — modern glassmorphism UI."""
+    """Öğrenci günlük takip dashboard HTML — modern glassmorphism UI.
+
+    Oturum 25.29 — Admin/mudur soz_no parametresi olmadan açarsa
+    "Test Mode Öğrenci Picker" sayfası render edilir (dev test için).
+    """
     # Auth check (öğrenci/admin/mudur erişebilir)
+    sess = None
     try:
         from web_chat import _extract_token
         from web_chat_auth import get_session
@@ -425,6 +431,11 @@ async def dashboard_html(
     except Exception:
         pass
 
+    # ── Oturum 25.29 — Admin/Mudur Test Mode Picker ──
+    role = (sess or {}).get("role", "")
+    if role in ("admin", "mudur") and not soz_no:
+        return HTMLResponse(content=_render_admin_picker(request), status_code=200)
+
     import os
     here = os.path.dirname(os.path.abspath(__file__))
     html_path = os.path.join(here, "student_daily_ui.html")
@@ -432,3 +443,67 @@ async def dashboard_html(
         return HTMLResponse("<h1>UI dosyasi eksik</h1>", status_code=500)
     with open(html_path, "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read(), status_code=200)
+
+
+def _render_admin_picker(request: Request) -> str:
+    """Admin/mudur için: 'Hangi öğrenci panelini test edeyim?' picker sayfası."""
+    # Token query string'inde gelmiş olabilir — koru
+    token_param = ""
+    try:
+        from urllib.parse import parse_qs
+        qs = parse_qs(request.url.query or "")
+        if "token" in qs and qs["token"]:
+            token_param = f"&token={qs['token'][0]}"
+    except Exception:
+        pass
+
+    return f"""<!DOCTYPE html>
+<html lang="tr"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Çalışmam — Test Mode Picker</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0F172A,#1e293b);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;color:#e5e7eb}}
+.card{{background:rgba(30,41,59,.7);backdrop-filter:blur(12px);border:1px solid rgba(245,158,11,.3);border-radius:20px;padding:36px 32px;max-width:520px;width:100%;box-shadow:0 24px 48px rgba(0,0,0,.4)}}
+h1{{font-size:24px;font-weight:700;margin-bottom:8px;background:linear-gradient(90deg,#f59e0b,#fbbf24);-webkit-background-clip:text;background-clip:text;color:transparent}}
+.subtitle{{color:#94a3b8;font-size:13px;line-height:1.5;margin-bottom:24px}}
+.form-row{{margin-bottom:20px}}
+label{{display:block;font-size:13px;color:#cbd5e1;margin-bottom:8px;font-weight:500}}
+input,select{{width:100%;padding:14px 16px;background:rgba(15,23,42,.6);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#fff;font-size:15px;outline:none;transition:.15s}}
+input:focus,select:focus{{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.15)}}
+button{{width:100%;padding:14px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a0d00;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:.15s}}
+button:hover{{transform:translateY(-1px);box-shadow:0 8px 24px rgba(245,158,11,.4)}}
+.hint{{margin-top:20px;padding:14px;background:rgba(245,158,11,.08);border-left:3px solid #f59e0b;border-radius:6px;font-size:12px;color:#fde68a;line-height:1.6}}
+.hint b{{color:#fbbf24}}
+.test-banner{{display:inline-block;padding:4px 12px;background:rgba(245,158,11,.2);color:#fbbf24;font-size:11px;font-weight:600;border-radius:20px;margin-bottom:12px;letter-spacing:.5px}}
+</style></head><body>
+<div class="card">
+<div class="test-banner">🧪 TEST MODE — DEV ARAYÜZ</div>
+<h1>Çalışmam Paneli — Öğrenci Seç</h1>
+<p class="subtitle">
+Admin olarak panelin nasıl çalıştığını test ediyorsun. Hangi öğrencinin paneline girip
+arayüzü ve işlevleri inceleyelim?
+</p>
+
+<form method="get" action="/student/daily/dashboard" onsubmit="this.querySelector('button').textContent='Yükleniyor...'">
+<div class="form-row">
+<label for="soz_no">Öğrenci soz_no</label>
+<input type="number" name="soz_no" id="soz_no" placeholder="örn: 137, 244, 314" required autofocus>
+</div>
+{f'<input type="hidden" name="token" value="{token_param[7:]}">' if token_param else ''}
+<button type="submit">🚀 Panele Gir (Test Mode)</button>
+</form>
+
+<div class="hint">
+<b>💡 Test Mode özellikleri:</b><br>
+• Eklediğin/sildiğin veriler <b>"test"</b> olarak işaretlenir<br>
+• Bot konuşurken bu test verisini gerçek öğrenci context'ine eklemez<br>
+• Öğrencinin gerçek verisi etkilenmez (kendi panelinde test verini görmez)<br>
+• Senin için tam dev sandbox — istediğin kadar dene, ekle, sil<br><br>
+<b>🆔 Hızlı seçim:</b><br>
+• <b>137</b> ALİ KÜÇÜKUYSAL — eski test öğrencisi<br>
+• <b>244</b> ÇAĞAN YAKAY — Mehmet bug demosu<br>
+• <b>314</b> EZGİ ÇÖZGÜCÜ — yeni öğrenci<br>
+</div>
+</div>
+</body></html>"""
