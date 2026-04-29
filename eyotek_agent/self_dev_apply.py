@@ -339,6 +339,7 @@ async def _generate_unified_diff(brief: dict, files_to_change: list[str]) -> tup
     from self_dev_tools import read_file as _read_file
 
     # Mevcut dosya içerikleri (LLM context için)
+    # Path key'i HER ZAMAN repo-relative olmalı (LLM diff'inde mutlak yol kullanmasin)
     file_contents: dict[str, str] = {}
     for f in files_to_change[:6]:  # max 6 dosya (token limiti)
         # Try absolute path
@@ -348,10 +349,17 @@ async def _generate_unified_diff(brief: dict, files_to_change: list[str]) -> tup
                 os.path.join("/opt/fermatai", f),
                 os.path.join("/opt/fermatai/eyotek_agent", f),
             ])
+        # Repo-relative key hesapla
+        rel_key = f
+        if os.path.isabs(f):
+            # /opt/fermatai/X/Y → X/Y
+            rel_key = f.replace("/opt/fermatai/", "", 1).lstrip("/")
+        elif f.startswith("opt/fermatai/"):
+            rel_key = f.replace("opt/fermatai/", "", 1)
         for c in candidates:
             res = await _read_file(c, _caller_phone="self_dev_apply")
             if "error" not in res:
-                file_contents[f] = res.get("content", "")[:30000]  # 30KB/dosya
+                file_contents[rel_key] = res.get("content", "")[:30000]  # 30KB/dosya
                 break
 
     if not file_contents:
@@ -364,26 +372,35 @@ GORE V: Verilen brief + mevcut dosya içeriklerinden UNIFIED GIT DIFF üret.
 
 KURALLAR:
 1. Output SADECE unified diff formatinda (git apply ile uyumlu)
-2. Format:
+2. Format (PATH'LER REPO-RELATIVE — mutlak yol YASAK):
    ```
-   diff --git a/path/to/file.py b/path/to/file.py
-   --- a/path/to/file.py
-   +++ b/path/to/file.py
+   diff --git a/eyotek_agent/conversation_memory.py b/eyotek_agent/conversation_memory.py
+   --- a/eyotek_agent/conversation_memory.py
+   +++ b/eyotek_agent/conversation_memory.py
    @@ -line,count +line,count @@
     context line
    -removed line
    +added line
     context line
    ```
-3. Her degisiklik icin yeterli context (3 satir uste, 3 satir alta)
-4. Yorum ekleme, baska metin yazma
-5. Eger degisiklik yapilamiyorsa veya brief belirsizse:
+3. PATH KURALI ŞART:
+   - YASAK: a/opt/fermatai/eyotek_agent/...  (mutlak yol)
+   - YASAK: a//opt/fermatai/...
+   - DOĞRU: a/eyotek_agent/conversation_memory.py
+   - DOĞRU: a/tests/test_route_regression.py
+   - Verilen dosya yolu mutlak ise (/opt/fermatai/X/Y) → REPO-RELATIVE'e çevir (X/Y)
+4. Her degisiklik icin yeterli context (3 satir uste, 3 satir alta)
+5. Yorum ekleme, baska metin yazma
+6. Eger degisiklik yapilamiyorsa veya brief belirsizse:
    "# CANNOT_GENERATE_DIFF: <sebep>" yaz
-6. Gercek dosyalar disindaki satirlari ASLA degistirme — verilen icerige sadik kal
+7. Gercek dosyalar disindaki satirlari ASLA degistirme — verilen icerige sadik kal
+8. Hunk header satir numaralari MEVCUT dosya icerigine gore DOGRU olmali
+   (yanlis line numbers → git apply --check fail → reddedilir)
 
 ONEMLI:
 - Eger brief soyut ise (gercek kod degisikligi anlatmiyorsa), cikti `# CANNOT_GENERATE_DIFF: <sebep>` olsun
 - Eger dosyalardan biri eksik gorunuyorsa, sadece var olanlar icin diff yaz
+- Verilen dosya icerigine BAKI degisikligi yap, hayal kurma
 """
 
     user_prompt_parts = [
