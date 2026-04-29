@@ -1910,8 +1910,11 @@ ADMIN_PATTERNS = [
     (r"^(merhaba|selam)[\s,]+(zeki|admin|neo|hocam|ustad|bey|kardesim|kardeşim)[.!\s]*$", "selamlasma", "Selam + hitap"),
     # Selam + nasılsın ("merhaba nasilsin")
     (r"^(merhaba|selam)[\s,]+(nasilsin|nasılsın|nbr|naber|ne\s*haber|iyi\s*misin)[.!?\s]*$", "selamlasma", "Selam + hal"),
-    # Admin tek-kelime selamlama (neo/admin/yardim/menu — sadece mini cmd)
-    (r"^(neo|admin|yardim|yardım|menu|menü|help)$", "selamlasma", "Tek kelime admin"),
+    # Oturum 25.29 — Neo Komut Merkezi (kategorize menü)
+    # `neo` → ana menü, `neo dev/eyotek/sistem/kurum/rapor/data/guncelle/yardim` → alt menü
+    (r"^neo(\s+\w+)?\s*$", "neo_menu", "Neo komut merkezi"),
+    # Admin tek-kelime selamlama (admin/yardim/menu — sadece mini cmd, neo zaten yukarıda)
+    (r"^(admin|yardim|yardım|menu|menü|help)$", "neo_menu", "Tek kelime admin → menü"),
 ]
 
 
@@ -2243,7 +2246,9 @@ async def try_fast_response(
             r'pr\s*#?\d+)',
             msg_lower.strip(),
         ))
-        if not _is_greeting and not _is_note and not _is_web_kodu and not _is_selfdev_cmd:
+        # Neo Komut Merkezi — kategorize hierarchical menu (Oturum 25.29)
+        _is_neo_menu = bool(re.match(r'^neo(\s+\w+)?\s*$', msg_lower.strip()))
+        if not _is_greeting and not _is_note and not _is_web_kodu and not _is_selfdev_cmd and not _is_neo_menu:
             return None  # → Claude premium (admin her zaman kaliteli cevap alır)
 
     # ── ŞİDDET/TEHDİT TESPİTİ — acil bildirim gerektirebilir ──
@@ -3244,6 +3249,15 @@ async def try_fast_response(
                         return await admin_ogrenci_ara(message)
                     elif handler == "selamlasma":
                         return "Merhaba! FermatAI hazir. Ne sormak istersiniz?"
+                    # ── Oturum 25.29 — Neo Komut Merkezi (kategorize menü) ──
+                    elif handler == "neo_menu":
+                        from neo_menu import route_neo_command
+                        # Mesaj direkt route edilir (örn "neo", "neo dev", "neo sistem")
+                        # `admin/yardim/menu/help` gibi tek kelimeler de menü açar
+                        if msg_lower.strip() in ("admin", "yardim", "yardım", "menu", "menü", "help"):
+                            from neo_menu import main_menu
+                            return main_menu()
+                        return route_neo_command(message) or "_Komut anlaşılmadı._"
                     # ── Self-dev kill switch komutlari (Oturum 25.29) ──
                     elif handler == "selfdev_killswitch_on":
                         from self_dev_tools import set_pipeline_active
