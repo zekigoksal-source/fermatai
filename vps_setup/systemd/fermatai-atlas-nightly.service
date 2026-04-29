@@ -1,0 +1,14 @@
+[Unit]
+Description=FermatAI - Atlas nightly auto-scan (observer + advisor)
+Documentation=Oturum 25.29 - #4 Atlas auto-scan
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/fermatai/eyotek_agent
+ExecStart=/bin/bash /opt/fermatai/vps_setup/scripts/atlas_nightly.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fermatai-atlas-nightly
+TimeoutStartSec=600

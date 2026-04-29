@@ -1,0 +1,12 @@
+[Unit]
+Description=FermatAI - Atlas nightly timer (02:30 UTC daily)
+Documentation=Oturum 25.29 - #4 Atlas auto-scan
+Requires=fermatai-atlas-nightly.service
+
+[Timer]
+OnCalendar=*-*-* 02:30:00 UTC
+Persistent=true
+Unit=fermatai-atlas-nightly.service
+
+[Install]
+WantedBy=timers.target
