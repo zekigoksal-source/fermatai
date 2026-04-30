@@ -34,6 +34,15 @@
 <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
 <!-- Three.js: ```3d preset sahneler (Calabi-Yau, kara delik, manyetik alan vb.) -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<!-- Oturum 25.32 — Yeni renderer CDN'leri -->
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+  window.mermaid = mermaid;
+</script>
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 <!-- GSAP: ```formula adım adım animasyon (3Blue1Brown tarzı) -->
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <style>
@@ -484,9 +493,38 @@ html[data-theme="dark"] .msg.bot .karne-zayif { color: #FCA5A5; }
 .msg.bot .gauge-container .render-title,
 .msg.bot .timeline-container .render-title,
 .msg.bot .progress-container .render-title,
-.msg.bot .compare-container .render-title {
+.msg.bot .compare-container .render-title,
+.msg.bot .desmos-container .render-title,
+.msg.bot .geogebra-container .render-title,
+.msg.bot .plotly-container .render-title,
+.msg.bot .mermaid-container .render-title,
+.msg.bot .vr-container .render-title {
   font-size: 13px; font-weight: 700; color: var(--accent);
   margin-bottom: 12px; letter-spacing: 0.3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Oturum 25.32 — 5 yeni renderer CSS (Desmos, GeoGebra, Plotly, Mermaid, VR)
+   ═══════════════════════════════════════════════════════════════ */
+.msg.bot .desmos-container,
+.msg.bot .geogebra-container,
+.msg.bot .plotly-container,
+.msg.bot .mermaid-container,
+.msg.bot .vr-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin: 12px 0;
+}
+.msg.bot .render-sub {
+  font-size: 11px; color: var(--fg-muted); margin-top: 8px;
+  font-style: italic; text-align: center;
+}
+/* VR scene — tam yükseklik canvas */
+.msg.bot .vr-stage a-scene {
+  width: 100% !important; height: 100% !important;
+}
+/* Mermaid — beyaz arkaplan kontrast */
+.msg.bot .mermaid-container svg {
+  max-width: 100%; height: auto;
 }
 :root {
   /* Claude.ai palette — sade, sıcak, rahat (LIGHT) */
@@ -1987,6 +2025,38 @@ function formatMsg(text) {
     return `\n\n<div class="compare-pending" data-compare-idx="${idx}"></div>\n\n`;
   });
 
+  // ── Oturum 25.32 (Neo) — 5 yeni renderer: Desmos, GeoGebra, Plotly, Mermaid, A-Frame ──
+  const desmosPlaceholders = [];
+  md = md.replace(/```desmos\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = desmosPlaceholders.length;
+    desmosPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="desmos-pending" data-desmos-idx="${idx}"></div>\n\n`;
+  });
+  const geogebraPlaceholders = [];
+  md = md.replace(/```geogebra\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = geogebraPlaceholders.length;
+    geogebraPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="geogebra-pending" data-geogebra-idx="${idx}"></div>\n\n`;
+  });
+  const plotlyPlaceholders = [];
+  md = md.replace(/```plot3d\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = plotlyPlaceholders.length;
+    plotlyPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="plotly-pending" data-plotly-idx="${idx}"></div>\n\n`;
+  });
+  const mermaidPlaceholders = [];
+  md = md.replace(/```mermaid\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, code) => {
+    const idx = mermaidPlaceholders.length;
+    mermaidPlaceholders.push(code.trim());
+    return `\n\n<div class="mermaid-pending" data-mermaid-idx="${idx}"></div>\n\n`;
+  });
+  const vrPlaceholders = [];
+  md = md.replace(/```vr\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = vrPlaceholders.length;
+    vrPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="vr-pending" data-vr-idx="${idx}"></div>\n\n`;
+  });
+
   // ── 2. Collapsible blokları — :::detay ... ::: syntax ──
   // Format: :::detay Özet\n...\n:::
   md = md.replace(/:::detay\s+(.+?)\n([\s\S]*?)\n?:::/g, (m, summary, content) => {
@@ -2080,6 +2150,32 @@ function formatMsg(text) {
         html = html.replace(new RegExp(`<div class="compare-pending" data-compare-idx="${i}"></div>`, 'g'),
           `<div class="compare-pending" data-compare="${escaped}"></div>`);
       });
+      // Oturum 25.32 — 5 yeni renderer veri bağlama
+      desmosPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="desmos-pending" data-desmos-idx="${i}"></div>`, 'g'),
+          `<div class="desmos-pending" data-desmos="${escaped}"></div>`);
+      });
+      geogebraPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="geogebra-pending" data-geogebra-idx="${i}"></div>`, 'g'),
+          `<div class="geogebra-pending" data-geogebra="${escaped}"></div>`);
+      });
+      plotlyPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="plotly-pending" data-plotly-idx="${i}"></div>`, 'g'),
+          `<div class="plotly-pending" data-plotly="${escaped}"></div>`);
+      });
+      mermaidPlaceholders.forEach((code, i) => {
+        const escaped = code.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="mermaid-pending" data-mermaid-idx="${i}"></div>`, 'g'),
+          `<div class="mermaid-pending" data-mermaid="${escaped}"></div>`);
+      });
+      vrPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="vr-pending" data-vr-idx="${i}"></div>`, 'g'),
+          `<div class="vr-pending" data-vr="${escaped}"></div>`);
+      });
 
       // DOMPurify — tüm pending div'lerine izin ver
       if (typeof DOMPurify !== "undefined") {
@@ -2091,7 +2187,10 @@ function formatMsg(text) {
                      "data-radar", "data-radar-idx", "data-heatmap", "data-heatmap-idx",
                      "data-karne", "data-karne-idx", "data-gauge", "data-gauge-idx",
                      "data-timeline", "data-timeline-idx", "data-progress", "data-progress-idx",
-                     "data-compare", "data-compare-idx", "open"],
+                     "data-compare", "data-compare-idx",
+                     "data-desmos", "data-desmos-idx", "data-geogebra", "data-geogebra-idx",
+                     "data-plotly", "data-plotly-idx", "data-mermaid", "data-mermaid-idx",
+                     "data-vr", "data-vr-idx", "open"],
           ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
         });
       }
@@ -3015,6 +3114,222 @@ function rerenderCompare(el) {
   });
 }
 
+// ═════════════════════════════════════════════════════════════════
+// Oturum 25.32 (Neo) — 5 yeni renderer: Desmos, GeoGebra, Plotly, Mermaid, A-Frame
+// ═════════════════════════════════════════════════════════════════
+
+// Helper: data attribute'tan JSON oku (mevcut _readJsonAttr varsa kullan)
+function _readJsonOrText(el, attrName) {
+  let raw = el.getAttribute(attrName) || "";
+  raw = raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&")
+           .replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+  return raw;
+}
+
+// 13) ```desmos — Desmos Calculator iframe (matematik fonksiyonları)
+let _desmosCounter = 0;
+function rerenderDesmos(el) {
+  if (!el) return;
+  el.querySelectorAll(".desmos-pending").forEach((ph) => {
+    try {
+      const raw = _readJsonOrText(ph, "data-desmos");
+      let cfg = {};
+      try { cfg = JSON.parse(raw); } catch { cfg = { expression: raw }; }
+      const wrap = document.createElement("div");
+      wrap.className = "desmos-container";
+      const title = cfg.title || "İnteraktif Grafik";
+      const expr = cfg.expression || cfg.expr || "y=x^2";
+      const mode = cfg.mode === "3d" ? "3d" : "calculator";
+      // URL build: Desmos calc embed
+      // Onceki: state JSON expressions array — Desmos state URL ile encode
+      const state = {
+        version: 11,
+        graph: { viewport: cfg.viewport || { xmin: -10, xmax: 10, ymin: -10, ymax: 10 } },
+        expressions: { list: (cfg.expressions || [{ id: "g1", latex: expr, color: "#C76F3E" }]) }
+      };
+      const stateB64 = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+      const url = mode === "3d"
+        ? `https://www.desmos.com/3d?embed`
+        : `https://www.desmos.com/calculator?embed`;
+      wrap.innerHTML = `
+        <div class="render-title">📈 ${escapeHtml(title)}</div>
+        <iframe src="${url}" width="100%" height="420"
+          style="border:1px solid var(--border); border-radius:10px;"
+          allowfullscreen></iframe>
+        <div class="render-sub">Desmos — değiştir, kaydır, oyna</div>`;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Desmos render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Desmos render hatası]</div>';
+      ph.classList.remove("desmos-pending");
+    }
+  });
+}
+
+// 14) ```geogebra — GeoGebra geometri/3D iframe
+let _geogebraCounter = 0;
+function rerenderGeogebra(el) {
+  if (!el) return;
+  el.querySelectorAll(".geogebra-pending").forEach((ph) => {
+    try {
+      const raw = _readJsonOrText(ph, "data-geogebra");
+      let cfg = {};
+      try { cfg = JSON.parse(raw); } catch { cfg = { type: "geometry" }; }
+      const type = cfg.type || cfg.app || "geometry";  // geometry | graphing | 3d | classic
+      const title = cfg.title || "GeoGebra Etkileşimli";
+      // Material ID varsa direkt embed, yoksa boş calculator
+      let url;
+      if (cfg.material_id) {
+        url = `https://www.geogebra.org/material/iframe/id/${cfg.material_id}/width/640/height/480/border/E7E5DE/sfsb/false/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false`;
+      } else {
+        const appMap = { "3d": "3d", "geometry": "geometry", "graphing": "graphing", "classic": "classic" };
+        url = `https://www.geogebra.org/${appMap[type] || "calculator"}?embed&lang=tr`;
+      }
+      const wrap = document.createElement("div");
+      wrap.className = "geogebra-container";
+      wrap.innerHTML = `
+        <div class="render-title">📐 ${escapeHtml(title)}</div>
+        <iframe src="${url}" width="100%" height="500"
+          style="border:1px solid var(--border); border-radius:10px;"
+          allowfullscreen></iframe>
+        <div class="render-sub">GeoGebra — geometri, cebir, 3D matematik</div>`;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("GeoGebra render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[GeoGebra render hatası]</div>';
+      ph.classList.remove("geogebra-pending");
+    }
+  });
+}
+
+// 15) ```plot3d — Plotly.js bilimsel 3D grafik
+let _plotlyCounter = 0;
+function rerenderPlotly(el) {
+  if (!el || typeof Plotly === "undefined") return;
+  el.querySelectorAll(".plotly-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-plotly"));
+      const wrap = document.createElement("div");
+      wrap.className = "plotly-container";
+      wrap.innerHTML = `<div class="render-title">📊 ${escapeHtml(cfg.title || "Bilimsel Grafik")}</div>`;
+      const div = document.createElement("div");
+      div.id = "plotly-" + (++_plotlyCounter);
+      div.style.cssText = "width:100%;height:420px;";
+      wrap.appendChild(div);
+      ph.replaceWith(wrap);
+      requestAnimationFrame(() => {
+        try {
+          const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+          const layout = Object.assign({
+            paper_bgcolor: isDark ? "#1F1F1B" : "#FAFAF7",
+            plot_bgcolor: isDark ? "#1F1F1B" : "#FAFAF7",
+            font: { color: isDark ? "#E5E5E5" : "#2F2F2F", family: "system-ui" },
+            margin: { l: 50, r: 30, t: 30, b: 50 },
+            autosize: true,
+          }, cfg.layout || {});
+          Plotly.newPlot(div.id, cfg.data || [], layout, { responsive: true, displayModeBar: false });
+        } catch (e) {
+          console.warn("Plotly render hata:", e);
+          wrap.innerHTML += `<div style="color:#c00;font-size:12px">[Plotly hata: ${e.message}]</div>`;
+        }
+      });
+    } catch (e) {
+      console.warn("Plotly parse hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Plotly veri hatası]</div>';
+      ph.classList.remove("plotly-pending");
+    }
+  });
+}
+
+// 16) ```mermaid — Mermaid diyagram (akış, kavram haritası)
+let _mermaidCounter = 0;
+function rerenderMermaid(el) {
+  if (!el || typeof window.mermaid === "undefined") return;
+  el.querySelectorAll(".mermaid-pending").forEach(async (ph) => {
+    try {
+      const code = _readJsonOrText(ph, "data-mermaid");
+      const wrap = document.createElement("div");
+      wrap.className = "mermaid-container";
+      wrap.innerHTML = `<div class="render-title">🗺️ Diyagram</div>`;
+      const id = "mermaid-" + (++_mermaidCounter);
+      const target = document.createElement("div");
+      target.id = id;
+      target.style.cssText = "width:100%; text-align:center; background:#fff; padding:14px; border-radius:8px;";
+      wrap.appendChild(target);
+      ph.replaceWith(wrap);
+      try {
+        const { svg } = await window.mermaid.render(id + "-svg", code);
+        target.innerHTML = svg;
+      } catch (rerr) {
+        target.innerHTML = `<div style="color:#c00;font-size:12px">Mermaid render hata: ${rerr.message}</div>`;
+      }
+    } catch (e) {
+      console.warn("Mermaid render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Mermaid veri hatası]</div>';
+      ph.classList.remove("mermaid-pending");
+    }
+  });
+}
+
+// 17) ```vr — A-Frame VR/AR sahne
+let _vrCounter = 0;
+function rerenderVR(el) {
+  if (!el) return;
+  el.querySelectorAll(".vr-pending").forEach((ph) => {
+    try {
+      const raw = _readJsonOrText(ph, "data-vr");
+      let cfg = {};
+      try { cfg = JSON.parse(raw); } catch { cfg = { scene: "atom" }; }
+      const scene = (cfg.scene || "atom").toLowerCase();
+      const title = cfg.title || `VR Sahne — ${scene}`;
+      const wrap = document.createElement("div");
+      wrap.className = "vr-container";
+      // Scene presetler — text-tabanli A-Frame entity tag'leri
+      const presets = {
+        atom: `
+          <a-sphere position="0 1.6 -3" radius="0.5" color="#C76F3E"></a-sphere>
+          <a-torus position="0 1.6 -3" radius="1.2" radius-tubular="0.02" color="#A78BFA" rotation="90 0 0"
+                   animation="property: rotation; to: 90 360 0; loop: true; dur: 6000"></a-torus>
+          <a-torus position="0 1.6 -3" radius="1.5" radius-tubular="0.02" color="#6B8E7F" rotation="60 30 0"
+                   animation="property: rotation; to: 60 390 0; loop: true; dur: 8000"></a-torus>
+          <a-sphere position="1.2 1.6 -3" radius="0.08" color="#fbbf24"
+                    animation="property: position; to: -1.2 1.6 -3; dir: alternate; loop: true; dur: 3000"></a-sphere>`,
+        solar: `
+          <a-sphere position="0 1.6 -5" radius="1" color="#fbbf24"></a-sphere>
+          <a-sphere position="2 1.6 -5" radius="0.2" color="#3b82f6"
+                    animation="property: rotation; to: 0 360 0; loop: true; dur: 8000"></a-sphere>
+          <a-sphere position="3.5 1.6 -5" radius="0.3" color="#dc2626"
+                    animation="property: rotation; to: 0 360 0; loop: true; dur: 12000"></a-sphere>`,
+        molecule: `
+          <a-sphere position="0 1.6 -3" radius="0.3" color="#C76F3E"></a-sphere>
+          <a-sphere position="0.8 2 -3" radius="0.2" color="#3b82f6"></a-sphere>
+          <a-sphere position="-0.8 2 -3" radius="0.2" color="#3b82f6"></a-sphere>
+          <a-cylinder position="0.4 1.8 -3" rotation="0 0 -45" height="0.7" radius="0.04" color="#888"></a-cylinder>
+          <a-cylinder position="-0.4 1.8 -3" rotation="0 0 45" height="0.7" radius="0.04" color="#888"></a-cylinder>`,
+        cube: `<a-box position="0 1.6 -3" rotation="45 45 0" color="#C76F3E"
+                animation="property: rotation; to: 45 405 0; loop: true; dur: 6000"></a-box>`,
+      };
+      const sceneContent = presets[scene] || presets.atom;
+      wrap.innerHTML = `
+        <div class="render-title">🥽 ${escapeHtml(title)}</div>
+        <div class="vr-stage" style="position:relative; width:100%; height:380px; border-radius:10px; overflow:hidden;">
+          <a-scene embedded background="color: #0F172A" vr-mode-ui="enabled: true">
+            <a-light type="ambient" color="#fff" intensity="0.6"></a-light>
+            <a-light type="directional" position="1 2 1" intensity="0.8"></a-light>
+            ${sceneContent}
+            <a-camera position="0 1.6 0" look-controls wasd-controls></a-camera>
+          </a-scene>
+        </div>
+        <div class="render-sub">🖱️ Sürükle döndür · ⌨️ WASD ile gez · 🥽 VR moduna geç</div>`;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("VR render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[VR sahne hatası]</div>';
+      ph.classList.remove("vr-pending");
+    }
+  });
+}
+
 // Tek çağrı: tüm görsel renderer'ları toplu çalıştır
 function rerenderAllVisuals(el) {
   try { rerenderCharts(el); } catch (e) {}
@@ -3030,6 +3345,12 @@ function rerenderAllVisuals(el) {
   try { rerenderTimeline(el); } catch (e) {}
   try { rerenderProgress(el); } catch (e) {}
   try { rerenderCompare(el); } catch (e) {}
+  // Oturum 25.32 — 5 yeni renderer
+  try { rerenderDesmos(el); } catch (e) {}
+  try { rerenderGeogebra(el); } catch (e) {}
+  try { rerenderPlotly(el); } catch (e) {}
+  try { rerenderMermaid(el); } catch (e) {}
+  try { rerenderVR(el); } catch (e) {}
 }
 
 // Prism syntax highlight

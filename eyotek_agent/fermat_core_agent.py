@@ -2194,7 +2194,67 @@ TOOL_DISPATCH = {
     "selfdev_full_pipeline":       lambda p: _selfdev_full_pipeline_w(**p),
     # Oturum 25.31 (Neo) — Render endpoint: bot ozel HTML uretirse kalici link
     "make_render_link":            lambda p: _tool_make_render_link(**p),
+    # Oturum 25.32 (Neo) — 5 yeni external API tool
+    "nasa_apod":                   lambda p: _tool_nasa_apod(**p),
+    "nasa_image_search":           lambda p: _tool_nasa_image_search(**p),
+    "wolfram_query":               lambda p: _tool_wolfram_query(**p),
+    "wolfram_full":                lambda p: _tool_wolfram_full(**p),
+    "wiki_lookup":                 lambda p: _tool_wiki_lookup(**p),
+    "arxiv_search":                lambda p: _tool_arxiv_search(**p),
+    "generate_image":              lambda p: _tool_generate_image(**p),
 }
+
+
+# ── Oturum 25.32 — External API tool wrapperları ──
+async def _tool_nasa_apod(query_date: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v2 import nasa_apod
+        return await nasa_apod(query_date=query_date)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_nasa_image_search(query: str = "", page: int = 1, **_extra) -> dict:
+    try:
+        from external_apis_v2 import nasa_image_search
+        return await nasa_image_search(query=query, page=int(page or 1))
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_wolfram_query(query: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v2 import wolfram_query
+        return await wolfram_query(query=query)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_wolfram_full(query: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v2 import wolfram_full
+        return await wolfram_full(query=query)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_wiki_lookup(query: str = "", lang: str = "tr", **_extra) -> dict:
+    try:
+        from external_apis_v2 import wiki_lookup
+        return await wiki_lookup(query=query, lang=lang)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_arxiv_search(query: str = "", max_results: int = 5, **_extra) -> dict:
+    try:
+        from external_apis_v2 import arxiv_search
+        return await arxiv_search(query=query, max_results=int(max_results or 5))
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_generate_image(prompt: str = "", style: str = "educational",
+                                provider: str = "auto", **_extra) -> dict:
+    try:
+        from external_apis_v2 import generate_image
+        return await generate_image(prompt=prompt, style=style, provider=provider)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 # ── Oturum 25.31 — Render Endpoint Tool wrapper ──

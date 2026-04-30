@@ -2009,6 +2009,105 @@ TOOLS.append({
     }
 })
 
+# ── Oturum 25.32 (Neo) — 5 yeni external API tool ──
+TOOLS.extend([
+    {
+        "name": "nasa_apod",
+        "description": "NASA Astronomy Picture of the Day — gunun astronomi gorseli + bilim aciklamasi. "
+                       "Karadelik/galaksi/uzay konularinda RESMI NASA gorseli. Donus: title, image_url, "
+                       "explanation. Tarihli istek icin query_date='YYYY-MM-DD'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query_date": {"type": "string", "description": "Optional 'YYYY-MM-DD'. Bos = bugun."}
+            }
+        }
+    },
+    {
+        "name": "nasa_image_search",
+        "description": "NASA Image Library arama — 'black hole', 'galaxy', 'mars', 'einstein' vb. "
+                       "Bot astrofizik konularinda RESMI gorsel kaynagi olarak kullansin.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Ingilizce arama kelimesi."},
+                "page": {"type": "integer", "description": "Sayfa no, default 1"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "wolfram_query",
+        "description": "Wolfram Alpha kisa cevap API — matematik/fizik komputasyonal sorgu. "
+                       "Ornek: 'integral x^2 from 0 to 5', 'speed of light', 'solve x^2+5x-6=0'. "
+                       "Ingilizce sor, kisa text cevap doner. Matematik hesaplari icin %100 dogru.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Ingilizce komputasyonal sorgu"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "wolfram_full",
+        "description": "Wolfram Alpha tam sonuc — adim adim cozum + grafik URL'leri. "
+                       "Karmasık denklemler, integral cozumleri, fizik problemleri icin. "
+                       "Donus: pods listesi (her biri title + text + image).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Ingilizce sorgu"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "wiki_lookup",
+        "description": "Wikipedia ozet cek — kavram dogrulama, kisa biyografi. "
+                       "Once Turkce dener, bulunamazsa Ingilizce'e dusuyor. Donus: title, extract (600 char), "
+                       "url, thumbnail.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Aranacak kavram/kisi (Turkce veya Ingilizce)"},
+                "lang": {"type": "string", "description": "'tr' veya 'en'. Default 'tr'."}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "arxiv_search",
+        "description": "arXiv bilimsel makale arama — astrofizik/kuantum/ileri bilim konulari. "
+                       "YKS sınırı ustu meraklı ogrenci icin guncel arastirma referansi. "
+                       "Donus: title, summary, authors, published, url.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Ingilizce arama (ornek: 'plank length', 'compton scattering')"},
+                "max_results": {"type": "integer", "description": "Default 5, max 10"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "generate_image",
+        "description": "AI image uret (DALL-E 3 veya SDXL) — bot konuya ozel illustrasyon. "
+                       "Mitokondri, atom yapisi, elektromanyetik dalga gibi sema gerek olunca kullan. "
+                       "GUNDE 30 cagri limit. Style: educational/scientific/diagram/photo. "
+                       "Donus: image_url, provider, today_used.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "prompt": {"type": "string", "description": "Ingilizce gorsel aciklamasi (clear and detailed)"},
+                "style": {"type": "string", "description": "educational | scientific | diagram | photo"},
+                "provider": {"type": "string", "description": "auto | openai | replicate"}
+            },
+            "required": ["prompt"]
+        }
+    },
+])
+
 # Active TOOLS — Claude system prompt'a gonderilen liste
 TOOLS_ACTIVE: list[dict] = [t for t in TOOLS if t.get("name") not in DEAD_TOOLS]
 

@@ -1024,6 +1024,81 @@ Web kanalinda 12 hazir renderer var, ham <html><script> ASLA dokme:
     ]}
     ```
 
+13) ```desmos — Desmos interaktif matematik grafigi
+    Kullan: fonksiyon grafikleri, parametrik denklem, kalkulus gorselleme
+    ```desmos
+    {"title":"Parabol Ailesi","expressions":[
+    {"id":"e1","latex":"y=x^2","color":"#C76F3E"},
+    {"id":"e2","latex":"y=2x^2","color":"#A78BFA"}
+    ]}
+    ```
+
+14) ```geogebra — GeoGebra geometri/3D matematik
+    Kullan: ucgen, kompleks sayi, 3D koordinat, geometri ispati
+    ```geogebra
+    {"type":"3d","title":"3D Koordinat Sistemi"}
+    ```
+    type: "geometry" | "graphing" | "3d" | "classic"
+
+15) ```plot3d — Plotly bilimsel 3D grafik
+    Kullan: 3D scatter, surface, contour, sankey, advanced viz
+    ```plot3d
+    {"title":"Atom Orbital","data":[
+    {"type":"surface","z":[[1,2,3],[4,5,6],[7,8,9]],"colorscale":"Viridis"}
+    ]}
+    ```
+
+16) ```mermaid — Diyagram / akis / kavram haritasi
+    Kullan: konsept haritasi, hucre dongusu, organik kimya, akis semasi
+    ```mermaid
+    graph LR
+      A[Foton] --> B{Enerji yeterli mi?}
+      B -->|Evet| C[Elektron firlatilir]
+      B -->|Hayir| D[Etki yok]
+    ```
+
+17) ```vr — A-Frame VR/AR sahne (3D etkilesimli)
+    Kullan: atom yapisi, gunes sistemi, molekul, deney sahnesi
+    Hazir scene'ler: atom, solar, molecule, cube
+    ```vr
+    {"scene":"atom","title":"Hidrojen Atomu"}
+    ```
+
+═══════════════════════════════════════════════════════════════════════
+EXTERNAL API TOOL'lari (Oturum 25.32 — Neo direktifi)
+═══════════════════════════════════════════════════════════════════════
+Bu araclari konuya gore secip Cagir, sonuclari ogrenciye sun:
+
+nasa_apod() — gunun astronomi gorseli (kara delik, galaksi, plank)
+nasa_image_search(query) — RESMI NASA gorsel arama
+  Ornek: "kara delik anlat" → nasa_image_search("black hole") → resmi NASA fotograflari
+
+wolfram_query(query) — matematik/fizik kisa cevap (Ingilizce sor!)
+  Ornek: "integral hesapla" → wolfram_query("integral x^2 from 0 to 5") → kesin sonuc
+wolfram_full(query) — adim adim cozum + grafik
+
+wiki_lookup(query, lang='tr') — kavram dogrulama (TR fallback EN)
+  Ornek: "compton sacilmasi" → wiki_lookup("Compton saçılması")
+
+arxiv_search(query) — bilimsel makale (YKS ustu meraklı ogrenci)
+  Ornek: "kuantum dolanma anlat" → arxiv_search("quantum entanglement basics")
+
+generate_image(prompt, style='educational') — AI illustrasyon
+  Ornek: "mitokondri sema" → generate_image("mitochondria detailed cross-section labeled")
+  GUNLUK 30 LIMIT — sadece gerek olunca, ucuz alternatif olarak ```sim/```3d
+
+KARAR AGACI:
+  Matematik soru → wolfram_query (kesin) + ```desmos (gorsel)
+  Geometri → ```geogebra
+  Astrofizik → nasa_image_search (resmi gorsel) + wiki_lookup (acklama)
+  Kavram dogrulama → wiki_lookup
+  Akis semasi → ```mermaid
+  3D atom/molekul → ```vr (interaktif) veya ```3d (Three.js)
+  Kompleks bilimsel grafik → ```plot3d
+  Acık ucu illustrasyon → generate_image (son care)
+
+══════════════════════════════════════════════════════════════════════
+
 KURAL — RENDERER NE ZAMAN KULLANILIR:
 - channel == 'web' VE konu uygunsa → MUTLAKA renderer kullan, ham HTML asla
 - channel != 'web' (whatsapp) → text + emoji ile anlat, blok yazma

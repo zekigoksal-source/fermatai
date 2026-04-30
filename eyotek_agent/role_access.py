@@ -80,6 +80,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "selfdev_full_pipeline",
         # ── Oturum 25.31 — Render endpoint (kompleks HTML kalici link) ──
         "make_render_link",
+        # ── Oturum 25.32 — External APIs (NASA + Wolfram + Wiki + arXiv + AI image) ──
+        "nasa_apod", "nasa_image_search", "wolfram_query", "wolfram_full",
+        "wiki_lookup", "arxiv_search", "generate_image",
     },
     # Yönetim üyesi: müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     "yonetim": {
@@ -124,6 +127,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "add_to_student_program",
         # ── 25.31 — Render endpoint ──
         "make_render_link",
+        # ── 25.32 — External APIs ──
+        "nasa_apod", "nasa_image_search", "wolfram_query", "wolfram_full",
+        "wiki_lookup", "arxiv_search", "generate_image",
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)
@@ -163,6 +169,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "eyotek_read",           # Eyotek sayfa okuma → filtre uygulanir
         # ── 25.31 — Render endpoint ──
         "make_render_link",
+        # ── 25.32 — External APIs (egitim destekli) ──
+        "nasa_apod", "nasa_image_search", "wolfram_query", "wolfram_full",
+        "wiki_lookup", "arxiv_search", "generate_image",
     },
     # Rehber öğretmen: TÜM öğrenci + TÜM öğretmen programı + etüt yazma + rehberlik notu
     "rehber": {
@@ -191,6 +200,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "add_to_student_program",
         # ── 25.31 — Render endpoint ──
         "make_render_link",
+        # ── 25.32 — External APIs ──
+        "nasa_apod", "nasa_image_search", "wolfram_query", "wolfram_full",
+        "wiki_lookup", "arxiv_search", "generate_image",
     },
     # Veli: sadece kendi çocuğunun akademik verisi + universite tahmin (Neo onay)
     "veli": {"get_student_analytics", "get_ayt_analysis",
@@ -217,7 +229,10 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 # 25.14h: ogrenci kendi calismam paneline ekleyebilir
                 "add_to_student_program",
                 # ── 25.31 — Render endpoint (bot ozel HTML gorseli kalici link) ──
-                "make_render_link"},
+                "make_render_link",
+                # ── 25.32 — External APIs (egitim destekli) ──
+                "nasa_apod", "nasa_image_search", "wolfram_query", "wolfram_full",
+                "wiki_lookup", "arxiv_search", "generate_image"},
     # Misafir / bilinmeyen: hiçbir araç
     "guest": set(),
     "unknown": set(),
