@@ -2114,8 +2114,8 @@ html[data-theme="dark"] .msg.bot.streaming::after {
       <button class="admin-dash-btn" id="adminDashBtn" onclick="openAdminDashboard()" title="Yönetim Paneli — bildirim, routing, sınıf/öğretmen analiz, Atlas-2" style="display:none;background:linear-gradient(135deg,#5E6AD2,#8B5CF6);border:none;color:#fff;cursor:pointer;font-size:13px;padding:6px 14px;margin-right:8px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(94,106,210,0.3);">📊 Yönetim Paneli</button>
       <!-- 22.1n-vizyon3: Admin/Mudur eski Insight Panel (modal — geriye uyum) -->
       <button class="admin-btn" id="adminBtn" onclick="openAdminPanel()" title="Insight + Outreach (modal)" style="display:none;background:transparent;border:none;color:var(--fg-muted);cursor:pointer;font-size:18px;padding:4px 8px;margin-right:4px;">⚙️</button>
-      <!-- 25.36 (Neo): Arşivlerim galerisi -->
-      <button class="archives-btn" id="archivesBtn" onclick="openArchivesModal()" title="Arşivlediğim simülasyonlar" style="background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.25);color:#B45309;cursor:pointer;font-size:13px;padding:5px 12px;margin-right:6px;border-radius:14px;font-weight:600;display:inline-flex;align-items:center;gap:5px;">⭐ Arşivlerim</button>
+      <!-- 25.36 (Neo karari 25.36-fix): Arşivlerim header butonu KALDIRILDI — mobilde kalabalık yapıyordu.
+           Render kart altindaki ⭐ Arşive Ekle butonu zaten yeterli. openArchivesModal() fonksiyonu hala JS'de duruyor — istenirse header'dan tetiklenir. -->
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Tema değiştir">🌙</button>
       <span id="userName">—</span>
       <button class="logout" onclick="doLogout()">Çıkış</button>
