@@ -543,14 +543,17 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     overflow: hidden;
   }
   body {
-    /* Fiziksel pin — iOS klavye scroll'unu bile zorla durdurur */
+    /* Fiziksel pin — iOS klavye scroll'unu bile zorla durdurur.
+       --vvh: visualViewport.height (JS ile dinamik) → klavye/AutoFill toolbar
+       acildiginda body height kucuilur, input toolbar'in uzerinde kalir.
+       Fallback 100% (eski tarayici). */
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    bottom: 0;
     width: 100%;
-    height: 100%;
+    height: var(--vvh, 100%);
+    max-height: var(--vvh, 100%);
     overflow: hidden;
     overscroll-behavior: contain;
   }
@@ -561,8 +564,8 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     left: 0;
     right: 0;
     bottom: 0;
-    height: auto;
-    max-height: 100%;
+    height: var(--vvh, 100%);
+    max-height: var(--vvh, 100%);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1080,6 +1083,19 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
         window.addEventListener('load', sendHeight);
         window.addEventListener('resize', sendHeight);
       } catch (_e) {}
+    }
+    // visualViewport — klavye/AutoFill toolbar acildiginda gercek gorunur height.
+    // iPad+Magic Keyboard'da toolbar (sifre/kart/konum) input'u kapatmasin diye
+    // body height'i visualViewport.height'a kilitleriz → chat-input her zaman
+    // toolbar'in UZERINDE kalir.
+    if (window.visualViewport) {
+      var updateVVH = function() {
+        var h = window.visualViewport.height;
+        document.documentElement.style.setProperty('--vvh', h + 'px');
+      };
+      window.visualViewport.addEventListener('resize', updateVVH);
+      window.visualViewport.addEventListener('scroll', updateVVH);
+      updateVVH();
     }
   } catch (e) {
     console.warn('iframe-touch-pin init hata:', e);
