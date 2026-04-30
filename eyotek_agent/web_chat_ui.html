@@ -483,16 +483,16 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
   .login-box .trust-footer .badge .label { font-size: 8.5px; letter-spacing: 0.5px; }
 }
 
-/* Tablet (iPad portrait + Android tablet portrait) — login-box uzun içerik kaydırılabilir olsun.
-   Web (>1024px) ve mobil (<481px) etkilenmez, sadece tablet aralığı için.
-   Wix HtmlComponent iframe sabit-yukseklik sebebiyle scroll bile yetmiyorsa,
-   DENGELI kompakt: rozetleri (tech-label + 4 trust-badge) ve kurumsal kimligi koru,
-   sadece UZUN marketing METINLERINI (motto + subtitle + manifesto + brand) gizle.
+/* Tablet (iPad portrait + landscape, Magic Keyboard'li iPad, Android tablet) — kompakt login.
+   Web (mouse-only, no touch) ve mobil (<481px) etkilenmez.
 
-   IKINCI media query: touch-device + landscape iPad'leri de yakala.
-   pointer: coarse → sadece dokunmatik cihazlar. Laptop/PC'de pointer: fine (mouse) → etkilenmez. */
+   any-pointer: coarse — cihazda EN AZ BIR dokunmatik input var mi (parmak/stylus).
+   Magic Keyboard takili iPad'de bile touch destegi var → match.
+   Mouse-only PC/laptop'ta touch yok → match etmez → orijinal davranis korunur.
+
+   Breakpoint 1366px: iPad Pro 12.9 landscape (1366) ve daha kucuk tum tabletleri kapsar. */
 @media (min-width: 481px) and (max-width: 1024px),
-       (hover: none) and (pointer: coarse) and (min-width: 481px) and (max-width: 1366px) {
+       (any-pointer: coarse) and (min-width: 481px) and (max-width: 1366px) {
   .login-wrap {
     align-items: flex-start;          /* ortala değil, üstten başla — alt/üst kesilmesin */
     padding: 18px 20px 28px;
@@ -535,8 +535,9 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
    gozden cikar. Onlemek icin body POSITION: FIXED ile fiziksel pinli, iOS bile
    override edemez. chat-wrap absolute inset:0 → tum iframe alanini kaplar.
 
-   PC/laptop (mouse, pointer:fine) ETKILESMEZ — orijinal davranis korunur. */
-@media (hover: none) and (pointer: coarse) and (min-width: 481px) {
+   any-pointer: coarse → Magic Keyboard takili iPad bile yakalanir (touch desteği var).
+   Mouse-only PC ETKILESMEZ — orijinal davranis korunur. */
+@media (any-pointer: coarse) and (min-width: 481px) {
   html {
     height: 100%;
     overflow: hidden;
