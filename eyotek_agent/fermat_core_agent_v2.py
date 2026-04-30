@@ -1,6 +1,6 @@
 """
-FermatCoreAgentV2 — Kapı 6 / Brief #4 (Oturum 25.29)
-======================================================
+FermatCoreAgentV2 — Kapı 6 / Brief #4 + #5 (Oturum 25.29-30)
+=============================================================
 
 V1 agent'a DOKUNMADAN paralel çalışan v2.
 LiveSignalBus'a subscribe olur, mesaj işlenirken anlık sinyal yayar
@@ -42,6 +42,8 @@ from loguru import logger
 
 from fermat_core_agent import FermatCoreAgent
 from live_signal_bus import get_bus, KNOWN_SIGNAL_TYPES
+# Brief #5 — müdahale handler'ları (wrong_route, low_rag_score, frustration)
+from signal_handlers import handle_wrong_route, handle_low_rag_score, handle_frustration
 
 
 class FermatCoreAgentV2(FermatCoreAgent):
@@ -56,19 +58,29 @@ class FermatCoreAgentV2(FermatCoreAgent):
         self.v2_run_count = 0
         self._last_pre_flight: Optional[dict] = None
         self._last_post_flight: Optional[dict] = None
+        # Brief #5 — müdahale state'i
+        self._escalation_flag: bool = False           # crisis sinyali → True
+        self._stats: dict = {"quality_events": []}    # quality_feedback geçmişi
+        self._context_cache: dict = {}                # context_check phone→context map
         # v2 subscriber'larını kur (kendi davranışına geri etki için)
         self._setup_subscribers()
-        logger.info("[V2] FermatCoreAgentV2 init — v1 inherit, bus subscribed")
+        logger.info("[V2] FermatCoreAgentV2 init — v1 inherit, bus subscribed (handlers v5)")
 
     def _setup_subscribers(self):
         """Bus'a kendi callback'lerini ekle.
 
-        Şu an sadece log alır — müdahale mantığı (yarın) on_signal() ile gelecek.
+        Brief #4: crisis, quality, context (log + state).
+        Brief #5: wrong_route, low_rag_score, frustration (müdahale handler'ları).
         """
+        # Brief #4 — gözlem
         self.bus.subscribe("crisis_signal", self._on_crisis_signal)
         self.bus.subscribe("quality_feedback", self._on_quality_feedback)
         self.bus.subscribe("context_check", self._on_context_check)
-        logger.debug("[V2] subscriber'lar kuruldu (crisis, quality, context)")
+        # Brief #5 — müdahale (lambda ile self'i pass eder, async handler döner)
+        self.bus.subscribe("wrong_route", lambda d: handle_wrong_route(d, self))
+        self.bus.subscribe("low_rag_score", lambda d: handle_low_rag_score(d, self))
+        self.bus.subscribe("frustration", lambda d: handle_frustration(d, self))
+        logger.debug("[V2] subscriber'lar kuruldu (crisis, quality, context, wrong_route, low_rag_score, frustration)")
 
     # ─── PRE-FLIGHT (cevap üretilmeden ÖNCE) ─────────────────────────────
 
@@ -153,31 +165,36 @@ class FermatCoreAgentV2(FermatCoreAgent):
     # ─── SIGNAL HANDLERS (subscribe'lı callback'ler) ─────────────────────
 
     def _on_crisis_signal(self, signal: dict) -> None:
-        """Crisis pattern algılandı — şimdilik sadece log, yarın müdahale.
+        """Crisis pattern algılandı.
 
-        Müdahale planı (yarın):
-          - Claude'a override (fast_response yerine premium)
-          - 112/182 destek hattı bilgisi cevaba inject
-          - Rehber öğretmene WP bildirim
+        Brief #5: escalation_flag=True → run() sonrası inspection için.
+        Yarın müdahale: Claude override, 112/182 inject, rehber bildirim.
         """
         payload = signal.get("payload", {})
         actor = signal.get("actor_phone", "")
         logger.warning(f"[V2-CRISIS] phone={actor[-4:] if actor else '?'}, payload={payload}")
+        logger.critical(f"CRISIS: {signal}")
+        self._escalation_flag = True
 
     def _on_quality_feedback(self, signal: dict) -> None:
         """Quality_log periyodik tarama sonucunda gelen feedback.
 
-        Müdahale planı (yarın): Grade C/D dominantsa Cerebras → Claude'a yönlendir.
+        Brief #5: stats geçmişine ekle (analiz için).
+        Müdahale planı: Grade C/D dominantsa Cerebras → Claude'a yönlendir.
         """
-        # Şimdilik sadece counter
-        pass
+        self._stats["quality_events"].append(signal)
 
     def _on_context_check(self, signal: dict) -> None:
         """Context drift / RAG kalitesi sinyali.
 
-        Müdahale planı (yarın): RAG hit_score < 0.3 ise yeniden sorgula.
+        Brief #5: payload['context'] varsa phone bazlı cache.
+        Müdahale planı: RAG hit_score < 0.3 ise yeniden sorgula (low_rag_score emit).
         """
-        pass
+        payload = signal.get("payload") or {}
+        phone = signal.get("actor_phone") or payload.get("phone", "")
+        context = payload.get("context")
+        if phone and context is not None:
+            self._context_cache[phone] = context
 
     # ─── ANA RUN OVERRIDE ─────────────────────────────────────────────────
 
