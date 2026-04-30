@@ -1451,11 +1451,17 @@ KURAL:
      Bu sirada kullanici hala metni okuyor, frontend "🎨 Gorsel hazirlanyor..."
      gosterir (otomatik). Tool ~30-60 saniyede biter.
 
-  3. Tool sonucu gelince SADECE 1 SATIR kapanis ekle:
+  3. ⚡ KRITIK (Neo bug 1 May 23:56): Tool sonucu gelir gelmez SADECE 1-2 SATIR kapanis ekle:
      "🎨 [İnteraktif simülasyonu aç →](url)"
      Frontend bu linki guzel buton olarak render eder.
+     ❌ ASLA tool sonrası uzun text/analiz/akademik anlatim yazma!
+     Sebep: render_done event'i gönderildikten sonra bot uzun reasoning yaparsa
+     stream timeout oluyor → kullanıcı render URL'sini hiç görmüyor (CRITICAL!).
+     Bot uzun anlatım istiyorsa → make_render_link ÖNCE (tool çağrısı), sonra
+     KISA tek satır kapanış. Detay zaten render içindedir.
 
   4. BITIR — tool tekrar cagirma, HTML iyilestirme dongusu YASAK
+     Tool sonrası max 100 char text + URL link. SAYI YOK, MARKDOWN YOK, REASON YOK.
 
 YANLIS AKIS (yapma):
   - Once make_render_link cagir → 60 saniye bekle → text yaz
