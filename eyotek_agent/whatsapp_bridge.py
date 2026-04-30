@@ -3785,8 +3785,14 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
             # yarım metnini history'den görür, kaldığı yerden devam eder.
             try:
                 from fermat_core_agent import _log_conversation
+                # 25.36-fix: 'role' bu scope'ta tanimsiz olabilir → profile.get fallback
+                _role_safe = "unknown"
+                try:
+                    _role_safe = profile.get("role", "unknown") if profile else "unknown"
+                except Exception:
+                    pass
                 await _log_conversation(
-                    agent.session_id, phone, role or "unknown",
+                    agent.session_id, phone, _role_safe,
                     "assistant", response, ["timeout_partial"]
                 )
             except Exception as _log_e:
