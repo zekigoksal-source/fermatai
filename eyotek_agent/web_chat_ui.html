@@ -668,28 +668,44 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     bottom: 0;
   }
   /* Dashboard modal — tablet/touch'ta full viewport.
-     iframe sandbox icinde position:fixed quirky calismadigi icin
-     flex-based yayilim kullanildi. Overlay zaten position:fixed inset:0 →
-     panel onun flex child'i %100 boyutta (max-width/max-height kaldirdik). */
+     STRATEJI: panel kendisi overflow:hidden, header SABIT (flex:0 0 auto),
+     content TEK SCROLL alani (flex:1 1 0). Bu boylelik iframe sandbox
+     quirklarinda da kesin calisir. */
   .dashboard-overlay {
     padding: 0 !important;
     align-items: stretch !important;
-    flex-direction: column !important;
+    justify-content: stretch !important;
+    flex-direction: row !important;
   }
   .dashboard-panel {
-    width: 100% !important;
+    width: 100vw !important;
     max-width: none !important;
-    height: 100% !important;
-    max-height: none !important;
-    flex: 1 1 100% !important;
+    min-width: 0 !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    min-height: 0 !important;
+    flex: 1 1 auto !important;
     margin: 0 !important;
     border-radius: 0 !important;
     border: none !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden !important;          /* panel SCROLL ETMEZ */
     display: flex !important;
     flex-direction: column !important;
+  }
+  .dashboard-header {
+    flex: 0 0 auto !important;            /* SABIT, kaybolmaz */
+    position: relative !important;        /* sticky degil — flex container'da scroll yok */
+    z-index: 10000 !important;
+  }
+  .dashboard-content {
+    flex: 1 1 0 !important;               /* kalan tum alani al */
+    min-height: 0 !important;             /* flex overflow icin sart */
+    overflow-y: auto !important;          /* TEK SCROLL ALANI */
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    padding: 18px 16px 30px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
   }
   /* X butonu — iframe'de click event'i kacirmasin */
   .dashboard-close {
@@ -699,11 +715,6 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     min-width: 44px !important;
     min-height: 44px !important;
     font-size: 24px !important;
-  }
-  .dashboard-header {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 10000 !important;
   }
   .dashboard-content {
     padding: 18px 16px 30px !important;
