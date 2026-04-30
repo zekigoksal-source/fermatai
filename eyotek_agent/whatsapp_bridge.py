@@ -1057,6 +1057,197 @@ except Exception as _serr:
     import logging as _lg
     _lg.warning(f"static mount hata: {_serr}")
 
+# ── Renderer Test Page (Oturum 25.35) — tum 22 renderer ornek data ile ──
+@app.get("/render-test", include_in_schema=False)
+async def render_test_page():
+    """Tüm renderer'ları örnek data ile gösteren test sayfası."""
+    from fastapi.responses import HTMLResponse
+    from pathlib import Path as _P
+    chat_html = _P("/opt/fermatai/eyotek_agent/web_chat_ui.html").read_text(encoding="utf-8")
+    # head ve script CDN'leri olduğu gibi al
+    import re
+    head_match = re.search(r"<head>([\s\S]*?)</head>", chat_html)
+    head_content = head_match.group(1) if head_match else ""
+    # Tüm renderer örnek data
+    test_md = """
+# 🧪 FermatAI Renderer Test Sayfası
+
+22 renderer + animasyonlar canlı test.
+
+---
+## 1. ```sim — p5.js (sinüs dalgası)
+```sim
+let t=0;
+function setup(){createCanvas(500,250);}
+function draw(){background(245);t+=0.05;stroke(199,111,62);strokeWeight(2);noFill();beginShape();for(let x=0;x<width;x++){vertex(x,height/2+sin(x*0.04+t)*40);}endShape();}
+```
+
+---
+## 2. ```3d — Three.js DNA helix
+```3d
+{"scene":"dna_helix","title":"DNA Çift Sarmal"}
+```
+
+---
+## 3. ```formula — KaTeX adım adım
+```formula
+step: $E = h\\nu$
+step: $E_k = h\\nu - \\phi$
+step: $\\nu_0 = \\phi/h$
+```
+
+---
+## 4. ```calc — Slider hesaplama
+```calc
+frekans: 0..20 [Hz] (varsayilan 10)
+genlik: 0..5 (varsayilan 2)
+→ omega = 2 * 3.14159 * frekans
+```
+
+---
+## 5. ```chart — Chart.js line
+```chart
+{"type":"line","data":{"labels":["TYT-1","TYT-2","TYT-3","TYT-4"],"datasets":[{"label":"Net","data":[68,72,75,82],"borderColor":"#C76F3E"}]}}
+```
+
+---
+## 6. ```radar — Yetkinlik spider
+```radar
+{"title":"TYT Profili","labels":["Türkçe","Mat","Fen","Sosyal"],"datasets":[{"label":"Sen","data":[28,32,18,22]},{"label":"Ortalama","data":[24,26,20,23]}]}
+```
+
+---
+## 7. ```heatmap — Konu × hafta
+```heatmap
+{"title":"Fizik Hata Yoğunluğu","x":["Hafta 1","Hafta 2","Hafta 3"],"y":["Kuvvet","Enerji","Manyetizma"],"values":[[2,1,3],[5,4,2],[8,7,9]]}
+```
+
+---
+## 8. ```karne — Renk kodlu matris
+```karne
+{"title":"Karne","rows":[{"ders":"Fizik","konular":[{"ad":"Kuvvet","puan":85,"renk":"yesil"},{"ad":"Manyetizma","puan":42,"renk":"sari"},{"ad":"Modern","puan":18,"renk":"kirmizi"}]}]}
+```
+
+---
+## 9. ```gauge — Yüzdelik
+```gauge
+{"title":"YKS Hedef","value":78,"min":0,"max":100,"unit":"%","label":"Mevcut"}
+```
+
+---
+## 10. ```timeline — Zaman çizgisi
+```timeline
+{"title":"Deneme Tarihçen","events":[{"tarih":"2026-01-15","baslik":"TYT-1","aciklama":"Net: 68","tip":"sinav"},{"tarih":"2026-02-20","baslik":"TYT-2","aciklama":"Net: 72","tip":"sinav"},{"tarih":"2026-03-25","baslik":"TYT-3","aciklama":"Net: 75","tip":"sinav"}]}
+```
+
+---
+## 11. ```progress — Donut tamamlanma
+```progress
+{"title":"Müfredat","items":[{"label":"Fizik","value":68,"color":"#C76F3E"},{"label":"Mat","value":82,"color":"#6B8E7F"},{"label":"Kimya","value":45,"color":"#A78BFA"}]}
+```
+
+---
+## 12. ```compare — Yan yana
+```compare
+{"title":"TYT-2 vs TYT-3","cards":[{"baslik":"TYT-2","puan":420,"net":72,"detay":["Mat: 28","Fen: 18"]},{"baslik":"TYT-3","puan":445,"net":75,"detay":["Mat: 30 (+2)","Fen: 19 (+1)"]}]}
+```
+
+---
+## 13. ```desmos — Matematik grafik
+```desmos
+{"title":"Parabol","expressions":[{"id":"e1","latex":"y=x^2","color":"#C76F3E"}]}
+```
+
+---
+## 14. ```geogebra — Geometri 3D
+```geogebra
+{"type":"3d","title":"3D Koordinat"}
+```
+
+---
+## 15. ```plot3d — Plotly 3D
+```plot3d
+{"title":"3D Surface","data":[{"type":"surface","z":[[1,2,3,4],[2,4,6,8],[3,6,9,12],[4,8,12,16]],"colorscale":"Viridis"}]}
+```
+
+---
+## 16. ```mermaid — Akış
+```mermaid
+graph LR
+  A[Foton] --> B{Enerji yeterli?}
+  B -->|Evet| C[Elektron firlar]
+  B -->|Hayir| D[Etki yok]
+```
+
+---
+## 17. ```vr — A-Frame atom
+```vr
+{"scene":"atom","title":"Hidrojen"}
+```
+
+---
+## 18. ```mol3d — Kafein 3D (PubChem)
+```mol3d
+{"cid":2519,"title":"Kafein","style":"stick"}
+```
+
+---
+## 19. ```sound — Tone.js frekans
+```sound
+{"title":"440 Hz - La","frequency":440,"min":100,"max":2000,"wave":"sine"}
+```
+
+---
+## 20. ```element — Demir
+```element
+{"symbol":"Fe","title":"Demir","note":"Hemoglobin temeli"}
+```
+
+---
+## 21. ```excalidraw — Çizim
+```excalidraw
+{"title":"Boş çizim tahtası"}
+```
+
+---
+## 22. ```codeout — Python output
+```codeout
+{"title":"factorial(10)","code":"import math\\nprint(math.factorial(10))","stdout":"3628800","success":true}
+```
+
+---
+## ✅ Eğer hepsi düzgün render ediyorsa: **22/22 renderer çalışıyor.**
+"""
+    test_md_safe = test_md.replace("</script>", "<\\/script>").replace("`", "\\`")
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="tr"><head>{head_content}</head>
+<body>
+<div class="chat-wrap active" style="height:100vh; overflow-y:auto;">
+  <div class="chat-messages" id="messages" style="max-width: 900px; margin: 0 auto; padding: 24px 16px;">
+    <div class="msg bot" id="testbot"></div>
+  </div>
+</div>
+<script>
+const TEST_MD = `{test_md_safe}`;
+window.addEventListener("DOMContentLoaded", () => {{
+  setTimeout(() => {{
+    const el = document.getElementById("testbot");
+    if (typeof formatMsg === "function") {{
+      el.innerHTML = formatMsg(TEST_MD);
+      if (typeof rerenderAllVisuals === "function") {{
+        rerenderAllVisuals(el);
+      }}
+      if (typeof rerenderMath === "function") {{
+        try {{ rerenderMath(el); }} catch(e) {{ console.warn(e); }}
+      }}
+    }} else {{
+      el.textContent = "formatMsg fonksiyonu yuklenemedi";
+    }}
+  }}, 500);
+}});
+</script>
+</body></html>""")
+
 # 22.1n-neo Paket A: HybridDict wrapper — memory mode davranisi aynen, Redis aktif
 # olunca (REDIS_URL set) otomatik multi-worker shared state.
 # _AGENT_SESSIONS FermatCoreAgent INSTANCE tuttugu icin serialize edilemez → memory only.

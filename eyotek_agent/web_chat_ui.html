@@ -1238,8 +1238,9 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
 .msg { max-width: 80%; padding: 12px 16px; border-radius: 14px; line-height: 1.5; word-wrap: break-word; white-space: pre-wrap; font-size: 15px; }
 .msg.user { background: var(--user-bubble); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
 .msg.bot  { background: var(--bot-bubble); color: var(--fg); align-self: flex-start; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
-.msg.bot .cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent); margin-left: 2px; vertical-align: text-bottom; animation: blink 0.8s infinite; }
-@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+/* 25.35 (Neo): yanıp sönen imleç KALDIRILDI — yerine .msg.bot.streaming::after shimmer pill */
+.msg.bot .cursor { display: none; }
+@keyframes blink { 0%, 100% { opacity: 0; } }
 
 .msg-welcome { text-align: center; color: var(--fg-muted); font-size: 14px; padding: 40px 20px; line-height: 1.7; }
 .msg-welcome h2 { font-size: 20px; color: var(--fg); margin-bottom: 12px; font-weight: 600; }
@@ -1308,6 +1309,61 @@ html[data-theme="dark"] .msg.thinking {
     rgba(199,111,62,0.10) 100%);
   background-size: 200% 100%;
   border-color: rgba(199,111,62,0.35);
+}
+
+/* Bot streaming sırasında — yanıp sönen imleç YERINE shimmer pill (Oturum 25.35 — Neo) */
+.msg.bot.streaming::after {
+  content: "✨ üretiliyor";
+  display: inline-block;
+  margin-left: 8px;
+  margin-top: 4px;
+  padding: 5px 12px 5px 28px;
+  background: linear-gradient(110deg,
+    rgba(199,111,62,0.10) 0%,
+    rgba(199,111,62,0.20) 35%,
+    rgba(167,139,250,0.18) 50%,
+    rgba(199,111,62,0.20) 65%,
+    rgba(199,111,62,0.10) 100%);
+  background-size: 200% 100%;
+  animation: streamPillShimmer 2.2s ease-in-out infinite;
+  border: 1px solid rgba(199,111,62,0.30);
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+  position: relative;
+  vertical-align: middle;
+  box-shadow: 0 2px 8px rgba(199,111,62,0.10);
+}
+.msg.bot.streaming::before {
+  content: "";
+  position: absolute;
+  margin-left: 12px;
+  margin-top: 9px;
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: streamPillDot 1.2s ease-in-out infinite;
+  z-index: 2;
+  box-shadow: 0 0 8px rgba(199,111,62,0.5);
+}
+@keyframes streamPillShimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+@keyframes streamPillDot {
+  0%, 100% { opacity: 0.5; transform: scale(0.85); }
+  50%      { opacity: 1; transform: scale(1.15); box-shadow: 0 0 14px rgba(199,111,62,0.7); }
+}
+html[data-theme="dark"] .msg.bot.streaming::after {
+  background: linear-gradient(110deg,
+    rgba(199,111,62,0.16) 0%,
+    rgba(199,111,62,0.28) 35%,
+    rgba(167,139,250,0.22) 50%,
+    rgba(199,111,62,0.28) 65%,
+    rgba(199,111,62,0.16) 100%);
+  background-size: 200% 100%;
 }
 
 .chat-input {
@@ -2531,20 +2587,37 @@ function rerenderSims(el) {
                   .replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 
       // 25.34-fix (Neo bug raporu): bot bazen JSON config veya bos kod yaziyor → BEYAZ EKRAN
+      // 25.35-fix: JSON gelirse OTOMATIK fallback simülasyon üret — kullanici beyaz ekran gormesin
       const hasSetup = /function\s+setup\s*\(/.test(code);
       const hasDraw = /function\s+draw\s*\(/.test(code);
       if (!hasSetup || !hasDraw) {
-        const wrapErr = document.createElement("div");
-        wrapErr.className = "sim-container sim-invalid";
-        wrapErr.innerHTML = `
-          <div class="render-title">⚠️ Geçersiz Simülasyon Kodu</div>
-          <div style="padding:14px; background:rgba(245,158,11,0.1); border-radius:8px; font-size:13px;">
-            Bu sim block <code>function setup()</code> ve <code>function draw()</code> içermiyor.
-            Bot p5.js kodu yerine ${code.trim().startsWith('{') ? 'JSON config' : 'geçersiz içerik'} yazmış.
-            <br><br><strong>Botu bilgilendir:</strong> "sim block için p5.js kodu (setup+draw) yaz" de.
-          </div>`;
-        ph.replaceWith(wrapErr);
-        return;
+        // Eğer JSON ise: konuya göre otomatik fallback simülasyon üret
+        let fallbackTitle = "Otomatik Fallback Simülasyon";
+        let cfg = {};
+        if (code.trim().startsWith('{')) {
+          try { cfg = JSON.parse(code); } catch {}
+        }
+        const type = (cfg.type || cfg.scene || "wave").toLowerCase();
+        fallbackTitle = cfg.title || `${type} simülasyonu`;
+        // Konuya göre uygun fallback — hep güzel görsel
+        const FALLBACKS = {
+          // Kuantum/parçacık → dalga + parçacıklar
+          quantum: "let t=0; function setup(){createCanvas(500,300);} function draw(){background(20,20,40);t+=0.04;noFill();stroke(167,139,250);strokeWeight(2);for(let i=0;i<3;i++){beginShape();for(let x=0;x<width;x++){let y=height/2+sin(x*0.04+t+i*PI/2)*30*exp(-abs(x-width/2)*0.005);vertex(x,y);}endShape();}fill(199,111,62);noStroke();ellipse(width/2+sin(t*2)*100,height/2,18,18);}",
+          tunneling: "let t=0; function setup(){createCanvas(500,300);} function draw(){background(15,15,30);t+=0.05;stroke(167,139,250,150);noFill();strokeWeight(1.5);for(let x=0;x<width;x++){let amp=x<200?40*exp(-abs(x-100)*0.02):x>300?15*exp(-abs(x-400)*0.02):15;let y=height/2+sin(x*0.1-t)*amp;point(x,y);}fill(80,80,80,200);noStroke();rect(200,50,100,200);fill(199,111,62);ellipse(50+t*30%500,height/2,16,16);}",
+          spacetime: "let t=0; function setup(){createCanvas(500,300);} function draw(){background(10,10,30);t+=0.02;stroke(167,139,250);noFill();for(let i=0;i<15;i++){let r=20+i*15;let dist=dist(width/2,height/2,mouseX||250,mouseY||150);beginShape();for(let a=0;a<TWO_PI;a+=0.1){let dip=20*exp(-r*0.005);let x=width/2+cos(a)*r;let y=height/2+sin(a)*r*0.5+dip;vertex(x,y);}endShape(CLOSE);}fill(255,200,50);noStroke();ellipse(width/2,height/2,30,30);}",
+          compton: "let t=0,phi=0;function setup(){createCanvas(500,300);} function draw(){background(20,20,30);t+=0.03;phi+=0.02;stroke(199,111,62);strokeWeight(2);noFill();beginShape();for(let x=0;x<200;x++){vertex(x,height/2+sin(x*0.2-t)*15);}endShape();stroke(107,142,127);beginShape();for(let x=200;x<width;x++){let dx=x-200;vertex(200+dx*cos(phi/3),height/2+dx*sin(phi/3)+sin(dx*0.15-t)*10);}endShape();fill(255,200,50);noStroke();ellipse(200,height/2,20,20);}",
+          fotoelektrik: "let t=0,electrons=[]; function setup(){createCanvas(500,300);} function draw(){background(20,20,40);t+=0.03;fill(180,180,200);noStroke();rect(50,100,30,100);if(frameCount%15===0){for(let i=0;i<3;i++)electrons.push({x:random(80,90),y:random(110,180),vx:random(2,4)});}stroke(255,200,50,150);strokeWeight(2);for(let i=0;i<5;i++){let x=200-i*20+sin(t+i)*5;line(x,150-30,x+15,150);line(x+15,150,x+30,150-30);}fill(199,111,62);noStroke();for(let i=electrons.length-1;i>=0;i--){let e=electrons[i];e.x+=e.vx;ellipse(e.x,e.y,8,8);if(e.x>width)electrons.splice(i,1);}}",
+          // Genel dalga
+          wave: "let t=0; function setup(){createCanvas(500,300);} function draw(){background(245);t+=0.05;stroke(199,111,62);strokeWeight(2);noFill();beginShape();for(let x=0;x<width;x++){vertex(x,height/2+sin(x*0.04+t)*40);}endShape();stroke(167,139,250);beginShape();for(let x=0;x<width;x++){vertex(x,height/2+sin(x*0.06-t*0.7)*30);}endShape();}",
+        };
+        // Pattern-match — title veya type'tan ipucu
+        let chosen = "wave";
+        const lowerInput = (type + " " + fallbackTitle).toLowerCase();
+        for (const k of Object.keys(FALLBACKS)) {
+          if (lowerInput.includes(k)) { chosen = k; break; }
+        }
+        code = FALLBACKS[chosen];
+        console.warn(`[sim-fallback] JSON algılandı, '${chosen}' fallback p5.js kullanıldı`);
       }
 
       const wrap = document.createElement("div");
@@ -5205,18 +5278,20 @@ async function doSend() {
             const welcome = messages.querySelector(".msg-welcome");
             if (welcome) welcome.remove();
             botMsg = document.createElement("div");
-            botMsg.className = "msg bot";
-            botMsg.innerHTML = '<span class="cursor"></span>';
+            // 25.35 (Neo): yanip sonen imlec → shimmer pill (streaming class CSS'te ::after)
+            botMsg.className = "msg bot streaming";
             messages.appendChild(botMsg);
           }
           accumulated += d.chunk;
-          botMsg.innerHTML = formatMsg(accumulated) + '<span class="cursor"></span>';
+          botMsg.innerHTML = formatMsg(accumulated);
           smartScroll();
           if (!isNearBottom()) showNewMessageChip();
         }
 
         if (d.done) {
           if (botMsg) {
+            // 25.35: streaming class kaldır → shimmer pill yok olur
+            botMsg.classList.remove("streaming");
             botMsg.innerHTML = formatMsg(accumulated);
             finalizeBotMsg(botMsg);
             smartScroll();
@@ -5228,6 +5303,7 @@ async function doSend() {
     }
   } catch (e) {
     clearThinking();
+    if (botMsg) botMsg.classList.remove("streaming");
     if (botMsg && accumulated) {
       botMsg.innerHTML = formatMsg(accumulated);
       try { saveChatSnapshot(); } catch(err) {}
@@ -5237,6 +5313,7 @@ async function doSend() {
   } finally {
     clearTimeout(_watchdogTimer);
     clearThinking();
+    if (botMsg) botMsg.classList.remove("streaming");
     sendBtn.disabled = false;
     chatInput.focus();
   }
