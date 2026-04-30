@@ -172,8 +172,8 @@ async def wiki_lookup(query: str, lang: str = "tr") -> dict:
     # Wikipedia URL: boşluk = "_", özel karakterler = % encoded
     def _wiki_title(q: str) -> str:
         return quote(q.replace(" ", "_"), safe="_")
-    # Wikipedia API User-Agent zorunlu (yoksa 403/empty response)
-    headers = {"User-Agent": "FermatAI/1.0 (+https://fermategitimkurumlari.com; egitim asistanı)"}
+    # Wikipedia API User-Agent zorunlu (yoksa 403/empty response) — ASCII only
+    headers = {"User-Agent": "FermatAI/1.0 (+https://fermategitimkurumlari.com; education assistant)"}
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True, headers=headers) as client:
         for try_lang in langs:
             try:
