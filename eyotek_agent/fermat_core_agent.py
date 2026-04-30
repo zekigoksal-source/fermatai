@@ -2972,6 +2972,16 @@ async def run_tool(name: str, input_data: dict,
             enriched["_caller_phone"] = caller_phone
             enriched["_caller_role"] = caller_role
             result = await fn(enriched)
+        elif name in (
+            "add_behavior_rule", "list_behavior_rules", "deactivate_behavior_rule",
+            "schedule_recall", "get_pending_recalls", "build_knowledge_graph"
+        ):
+            # 25.37 (Neo) — yeni tool'lar caller bilgisi ile çalışır
+            enriched = dict(input_data)
+            enriched["_caller_phone"] = caller_phone
+            enriched["_caller_role"] = caller_role
+            enriched["_caller_soz_no"] = getattr(run_tool, '_current_soz_no', None) or 0
+            result = await fn(enriched)
         else:
             result = await fn(input_data)
 
