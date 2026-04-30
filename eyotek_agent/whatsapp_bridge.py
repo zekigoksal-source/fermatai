@@ -3737,8 +3737,14 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
         filler_sent = False
         progress_task = None
 
-        # ── KANAL FARKINDALIĞI ── Web kanalında WP'ya filler GÖNDERME
+        # ── KANAL FARKINDALIĞI ── SADECE channel='whatsapp' WHEN WP'ya filler gönder
+        # 25.37 (Neo bug 1 May): /agent endpoint default 'whatsapp' bırakıyordu → spam filler
+        # Whitelist defense: channel literal 'whatsapp' OLMALI (web/agent_api/cli/test → WP YOK)
         _use_wa_filler = (channel == "whatsapp")
+        if _use_wa_filler:
+            logger.info(f"  [WATCHDOG] WP filler aktif (channel={channel})")
+        else:
+            logger.info(f"  [WATCHDOG] Filler KAPALI (channel={channel}, WP'ya mesaj atilmaz)")
 
         async def _watchdog():
             """3sn'de cevap yoksa filler at, 12sn'de progress at. (Sadece WP kanalı)"""
@@ -4713,6 +4719,15 @@ async def agent_direct(request: Request):
 
     phone   = body.get("phone", "cli")
     message = body.get("message", "")
+    # 25.37 KRITIK FIX (Neo bug): /agent endpoint cagrilarinda channel
+    # parametresi process_message'a iletilmiyordu -> default 'whatsapp' kaliyordu ->
+    # _use_wa_filler=True -> 3sn watchdog WP'ya filler atiyordu (KALICI #3 ihlal!).
+    # Now: channel parametresini body'den al, default 'agent_api' (WP DEGIL).
+    channel = body.get("channel", "agent_api")
+    if channel == "whatsapp":
+        # /agent endpoint'ten gelen mesajlari WP gibi davranma — agent_api olarak isaretle
+        # (filler/auto-message guvenlik kalkani)
+        channel = "agent_api"
     if not message:
         raise HTTPException(status_code=400, detail="message zorunlu")
 
@@ -4722,7 +4737,7 @@ async def agent_direct(request: Request):
     if not _check_rate_limit(phone_norm, msg_len=len(message or "")):
         raise HTTPException(status_code=429, detail="Cok fazla istek — dakikada max 10 mesaj")
 
-    response = await process_message(phone, message)
+    response = await process_message(phone, message, channel=channel)
     return {"success": True, "response": response, "phone": phone}
 
 
