@@ -2531,18 +2531,18 @@ async def run_tool(name: str, input_data: dict,
             enriched["_caller_channel"] = caller_channel  # 22.1n-rev Atlas #16
             result = await fn(enriched)
         elif name == "make_render_link":
-            # Oturum 25.31 — render link icin caller bilgisi + LOOP GUARD
-            # Bot ayni conversation'da 1 BAŞARILI cagirabilir (132s loop bug onleme).
-            # 25.31-fix: Sayim "BAŞARILI" cagri sayisi — html bos cagri retry'a izin ver.
+            # Oturum 25.31 — render link + LOOP GUARD
+            # Phone bazli cache (run_tool standalone fonksiyon, self yok)
+            # Yalnizca BASARILI cagri sayilir — bos html retry'a izin ver
+            global _RENDER_LINK_SUCCESS_CACHE
             try:
-                _success_calls = sum(
-                    1 for _entry in (getattr(self, '_render_link_history', []))
-                    if _entry == "success"
-                )
-            except Exception:
-                _success_calls = 0
+                _RENDER_LINK_SUCCESS_CACHE
+            except NameError:
+                _RENDER_LINK_SUCCESS_CACHE = {}
+            _phone_key = (caller_phone or "anon")[-4:]
+            _success_calls = _RENDER_LINK_SUCCESS_CACHE.get(_phone_key, 0)
             if _success_calls >= 1:
-                logger.warning(f"🚫 make_render_link tek-shot guard: {_success_calls}. basarili cagri sonrasi engellendi")
+                logger.warning(f"🚫 make_render_link tek-shot guard ({_phone_key}): basarili cagri sonrasi engellendi")
                 result = {
                     "success": False,
                     "error": "make_render_link bu sohbette zaten basariyla kullanildi. Onceki linki kullaniciya sun, yeni HTML uretme. Eger ilk versiyonun yetersizse 12 renderer (```sim/```3d/```formula vb.) ile devam et."
@@ -2551,11 +2551,11 @@ async def run_tool(name: str, input_data: dict,
                 enriched = dict(input_data)
                 enriched["_caller_phone"] = caller_phone
                 result = await fn(enriched)
-                # Basarili cagriyi historisine kaydet
-                if not hasattr(self, '_render_link_history'):
-                    self._render_link_history = []
                 if isinstance(result, dict) and result.get("success"):
-                    self._render_link_history.append("success")
+                    _RENDER_LINK_SUCCESS_CACHE[_phone_key] = _success_calls + 1
+                    # Cache temizleme — 50+ key birikmesin
+                    if len(_RENDER_LINK_SUCCESS_CACHE) > 50:
+                        _RENDER_LINK_SUCCESS_CACHE.clear()
         elif name == "get_atlas_trend":
             enriched = dict(input_data)
             enriched["_caller_role"] = caller_role
