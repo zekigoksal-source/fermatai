@@ -72,27 +72,66 @@ async def ensure_table():
         logger.warning(f"render_artifacts ensure_table hata: {e}")
 
 
+def calculate_quality_score(html: str) -> tuple[int, dict]:
+    """25.36 — HTML kalite puanı (100 üzerinden) + breakdown.
+    Neo direktif: tutarsız kalite sorunu için otomatik puanlama."""
+    if not html:
+        return 0, {"reason": "empty"}
+    h = html.lower()
+    breakdown = {}
+    score = 0
+    # Canvas/SVG/WebGL (+25)
+    if any(k in h for k in ["<canvas", "<svg", "webgl", "three.", "p5.", "babylon"]):
+        score += 25; breakdown["canvas_or_svg"] = True
+    # Animation (+20)
+    if any(k in h for k in ["requestanimationframe", "@keyframes", "gsap.", "tween", "animate("]):
+        score += 20; breakdown["animation"] = True
+    # User interaction (+15)
+    if any(k in h for k in ['type="range"', 'type="button"', "<button", "onclick", "addeventlistener", "oninput"]):
+        score += 15; breakdown["interaction"] = True
+    # Try/catch + error handling (+10)
+    if "try" in h and "catch" in h:
+        score += 10; breakdown["error_handling"] = True
+    # Responsive (+10)
+    if "viewport" in h and ("width=device-width" in h or "100%" in h):
+        score += 10; breakdown["responsive"] = True
+    # Formula/Math/LaTeX (+10)
+    if any(k in h for k in ["katex", "mathjax", "math.", "formula", "$", "\\frac"]):
+        score += 10; breakdown["formula"] = True
+    # Size optimization (10-200KB) (+5)
+    size_kb = len(html.encode("utf-8")) / 1024
+    if 5 <= size_kb <= 200:
+        score += 5; breakdown["optimal_size"] = True
+    # Labels/text content (+5)
+    if any(k in h for k in ["label", "<text", "title", "<h1", "<h2", "<h3"]):
+        score += 5; breakdown["labels"] = True
+    breakdown["total_score"] = score
+    breakdown["size_kb"] = round(size_kb, 1)
+    return score, breakdown
+
+
 async def create_artifact(html: str, title: str = "FermatAI Görsel",
                           creator_phone: str = "", ttl_days: int = DEFAULT_TTL_DAYS) -> Optional[str]:
     """
     Bot tool'undan çağrılır — HTML kaydet, UUID döndür.
-
-    Returns:
-        uuid string (örn. 'a1b2c3d4...') veya None (hata)
+    25.36: Otomatik kalite skoru hesapla + DB'ye kaydet.
     """
     if not html or len(html.encode('utf-8')) > MAX_HTML_BYTES:
-        logger.warning(f"render: html bos veya >200KB ({len(html)} bytes)")
+        logger.warning(f"render: html bos veya >800KB ({len(html)} bytes)")
         return None
     try:
         await ensure_table()
-        uuid = secrets.token_urlsafe(12)  # ~16 char URL-safe
+        uuid = secrets.token_urlsafe(12)
         expires = datetime.now() + timedelta(days=ttl_days)
+        # 25.36 — kalite skoru
+        score, breakdown = calculate_quality_score(html)
         await db_execute(
-            """INSERT INTO render_artifacts (uuid, title, html, creator_phone, expires_at)
-               VALUES ($1, $2, $3, $4, $5)""",
-            uuid, title[:200], html, creator_phone, expires
+            """INSERT INTO render_artifacts (uuid, title, html, creator_phone, expires_at, quality_score)
+               VALUES ($1, $2, $3, $4, $5, $6)""",
+            uuid, title[:200], html, creator_phone, expires, score
         )
-        logger.info(f"render: artifact yaratildi uuid={uuid} title={title[:40]}")
+        quality_label = "🌟" if score >= 80 else ("✓" if score >= 60 else "⚠")
+        logger.info(f"render: {quality_label} artifact uuid={uuid} score={score}/100 title={title[:40]}")
         return uuid
     except Exception as e:
         logger.error(f"render create_artifact hata: {e}")
@@ -263,7 +302,7 @@ async def list_archived(phone: str = "", limit: int = 50):
         if phone:
             phone_clean = phone.replace("+", "").replace(" ", "")[-20:]
             rows = await db_fetch(
-                """SELECT uuid, title, archived_at, archive_note, view_count, creator_phone
+                """SELECT uuid, title, archived_at, archive_note, view_count, creator_phone, quality_score
                    FROM render_artifacts
                    WHERE archived = TRUE AND (
                        archived_by_phone = $1 OR creator_phone = $1
@@ -275,7 +314,7 @@ async def list_archived(phone: str = "", limit: int = 50):
             )
         else:
             rows = await db_fetch(
-                """SELECT uuid, title, archived_at, archive_note, view_count, creator_phone
+                """SELECT uuid, title, archived_at, archive_note, view_count, creator_phone, quality_score
                    FROM render_artifacts
                    WHERE archived = TRUE
                    ORDER BY archived_at DESC LIMIT $1""",
@@ -291,9 +330,109 @@ async def list_archived(phone: str = "", limit: int = 50):
                 "archived_at": str(r["archived_at"]) if r["archived_at"] else "",
                 "note": r["archive_note"] or "",
                 "view_count": r["view_count"] or 0,
+                "quality_score": r["quality_score"] or 0,
                 "url": f"{base}/render/{r['uuid']}",
             })
         return JSONResponse({"success": True, "count": len(items), "items": items})
     except Exception as e:
         logger.warning(f"list_archived hata: {e}")
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 25.36 — Render Templates Library (başarılı şablonlardan öğren)
+# ═══════════════════════════════════════════════════════════════════════
+async def ensure_templates_table():
+    """render_templates — başarılı simülasyonların referans şablonu."""
+    try:
+        await db_execute("""
+            CREATE TABLE IF NOT EXISTS render_templates (
+                id SERIAL PRIMARY KEY,
+                konu TEXT NOT NULL,
+                ders TEXT,
+                title TEXT,
+                source_uuid TEXT,
+                description TEXT,
+                approach_summary TEXT,
+                success_count INTEGER DEFAULT 1,
+                quality_score INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT NOW(),
+                last_used_at TIMESTAMP,
+                approved BOOLEAN DEFAULT FALSE
+            )
+        """)
+        await db_execute(
+            "CREATE INDEX IF NOT EXISTS idx_template_konu ON render_templates(konu, approved)"
+        )
+    except Exception as e:
+        logger.warning(f"render_templates ensure_table hata: {e}")
+
+
+async def get_top_templates(konu_hint: str = "", limit: int = 5) -> list:
+    """Bot prompt'u için en başarılı template örnekleri."""
+    try:
+        await ensure_templates_table()
+        from db_pool import db_fetch
+        if konu_hint:
+            rows = await db_fetch(
+                """SELECT konu, ders, title, approach_summary, quality_score, success_count
+                   FROM render_templates
+                   WHERE approved = TRUE AND (konu ILIKE $1 OR ders ILIKE $1)
+                   ORDER BY quality_score DESC, success_count DESC LIMIT $2""",
+                f"%{konu_hint}%", limit
+            )
+        else:
+            rows = await db_fetch(
+                """SELECT konu, ders, title, approach_summary, quality_score, success_count
+                   FROM render_templates
+                   WHERE approved = TRUE
+                   ORDER BY quality_score DESC, success_count DESC LIMIT $1""",
+                limit
+            )
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
+
+
+@router.post("/templates/promote/{uuid}")
+async def promote_to_template(uuid: str, request: Request):
+    """Bir başarılı artifact'ı template'e dönüştür (admin onayı).
+    Body: {"konu": "...", "ders": "...", "approach_summary": "..."}"""
+    if not uuid or len(uuid) > 64:
+        raise HTTPException(404, "Geçersiz")
+    try:
+        body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+        konu = (body.get("konu") or "").strip()[:120]
+        ders = (body.get("ders") or "").strip()[:60]
+        summary = (body.get("approach_summary") or "")[:500]
+        if not konu:
+            return JSONResponse({"success": False, "error": "konu zorunlu"}, status_code=400)
+        await ensure_table()
+        await ensure_templates_table()
+        art = await db_fetchrow(
+            "SELECT title, quality_score FROM render_artifacts WHERE uuid = $1", uuid
+        )
+        if not art:
+            raise HTTPException(404, "Artifact bulunamadı")
+        await db_execute(
+            """INSERT INTO render_templates
+               (konu, ders, title, source_uuid, approach_summary, quality_score, approved)
+               VALUES ($1, $2, $3, $4, $5, $6, TRUE)""",
+            konu, ders, art["title"] or "", uuid, summary, art["quality_score"] or 0
+        )
+        logger.info(f"render: template promoted from uuid={uuid} konu={konu}")
+        return JSONResponse({"success": True, "uuid": uuid, "konu": konu})
+    except HTTPException:
+        raise
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@router.get("/templates/list")
+async def list_templates(konu: str = "", limit: int = 20):
+    """Onaylı template'ler — bot prompt için."""
+    try:
+        templates = await get_top_templates(konu_hint=konu, limit=limit)
+        return JSONResponse({"success": True, "count": len(templates), "items": templates})
+    except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
