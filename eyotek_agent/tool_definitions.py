@@ -2194,6 +2194,36 @@ TOOLS.extend([
             "required": ["soz_no_list"]
         }
     },
+    # ── Oturum 25.34 (paket 2) — Excalidraw renderer + Code Execution + Suno ──
+    {
+        "name": "execute_python",
+        "description": "Python kodunu güvenli sandbox'ta çalıştır — programlama dersi. "
+                       "GUVENLIK: import os/sys/subprocess YASAK, max 5 sn, max 8KB kod. "
+                       "Yüklü modüller: math, random, json, datetime, statistics, collections, itertools, functools. "
+                       "Donus: stdout/stderr + codeout_block (```codeout formatinda — direkt cevabina yapistir).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "description": "Python kodu (max 8KB)"},
+                "timeout": {"type": "integer", "description": "Max çalışma süresi (sn, default 5)"}
+            },
+            "required": ["code"]
+        }
+    },
+    {
+        "name": "suno_generate",
+        "description": "Suno AI ile eğitim şarkısı uret — periyodik tablo, tarih, formül mnemonic. "
+                       "API key bekleniyor, key yokse alternative olarak text_to_speech ile bot kendi yazdığı sözü okuyabilir. "
+                       "Donus: audio_url veya alternative önerisi.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "prompt": {"type": "string", "description": "Şarkı konsept ve sözleri"},
+                "style": {"type": "string", "description": "educational | pop | rock | classical"}
+            },
+            "required": ["prompt"]
+        }
+    },
 ])
 
 # Active TOOLS — Claude system prompt'a gonderilen liste

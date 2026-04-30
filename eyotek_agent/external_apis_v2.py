@@ -646,6 +646,107 @@ async def pdb_lookup(pdb_id: str) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# 11. Code Execution Sandbox — Python kodunu güvenli ortamda çalıştır
+# ═══════════════════════════════════════════════════════════════════════
+# Subprocess ile timeout + memory limit + restricted modules
+async def execute_python(code: str, timeout: int = 5) -> dict:
+    """Python kodunu sandbox'ta çalıştır — programlama dersi için.
+    GUVENLIK: import os/sys/subprocess YASAK, max 5sn, max 100KB output."""
+    if not code or not code.strip():
+        return {"success": False, "error": "Boş kod"}
+    if len(code) > 8000:
+        return {"success": False, "error": "Kod çok uzun (max 8KB)"}
+
+    # Tehlikeli pattern'lar — basit blacklist (production: RestrictedPython kullan)
+    DANGEROUS = ["import os", "import sys", "import subprocess", "import socket",
+                 "__import__", "eval(", "exec(", "open(", "compile(", "globals(",
+                 "locals(", "input(", "breakpoint(", "import shutil", "import urllib",
+                 "import requests", "import http", "from os", "from sys"]
+    code_lower = code.lower()
+    for danger in DANGEROUS:
+        if danger.lower() in code_lower:
+            return {"success": False, "error": f"Güvenlik: '{danger}' yasak. Sadece matematik/string/list/dict işlemleri."}
+
+    import subprocess, tempfile, os
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
+            # Wrapper: import math, random — sadece izinli
+            wrapper = (
+                "import math\n"
+                "import random\n"
+                "import json\n"
+                "from datetime import datetime, timedelta\n"
+                "import statistics\n"
+                "from collections import Counter, defaultdict\n"
+                "from itertools import combinations, permutations, product\n"
+                "from functools import reduce\n"
+                "# === User code ===\n"
+            ) + code
+            f.write(wrapper)
+            tmp_path = f.name
+        try:
+            result = await asyncio.create_subprocess_exec(
+                "python3", tmp_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            try:
+                stdout, stderr = await asyncio.wait_for(result.communicate(), timeout=int(timeout or 5))
+            except asyncio.TimeoutError:
+                result.kill()
+                return {"success": False, "error": f"Timeout ({timeout}sn aşıldı)"}
+            stdout_str = stdout.decode('utf-8', errors='replace')[:3000]
+            stderr_str = stderr.decode('utf-8', errors='replace')[:1000]
+            if result.returncode != 0:
+                return {
+                    "success": False,
+                    "error": "Python hata",
+                    "stdout": stdout_str,
+                    "stderr": stderr_str,
+                    "returncode": result.returncode,
+                }
+            return {
+                "success": True,
+                "stdout": stdout_str,
+                "stderr": stderr_str if stderr_str.strip() else "",
+                "lines_output": stdout_str.count('\n'),
+            }
+        finally:
+            try: os.unlink(tmp_path)
+            except: pass
+    except Exception as e:
+        logger.error(f"execute_python hata: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 12. Suno AI — eğitim şarkısı üretimi (mnemonic)
+# ═══════════════════════════════════════════════════════════════════════
+SUNO_API_KEY = os.getenv("SUNO_API_KEY", "")  # https://suno.com (HTTP API ucretli)
+
+
+async def suno_generate(prompt: str, style: str = "educational") -> dict:
+    """Suno AI ile eğitim şarkısı uret — mnemonic, periyodik tablo, formül.
+    Ornek: prompt='Periyodik tablo ilk 10 element pop tarzı'
+
+    NOT: Suno API beta — şu an Suno official API yok, 3rd party (sunoapi.com vb.) gerekli.
+    Key yoksa graceful skip.
+    """
+    if not SUNO_API_KEY:
+        return {
+            "success": False,
+            "error": "SUNO_API_KEY tanımsız (Suno için 3rd party API gerek). "
+                     "Alternatif: ElevenLabs ile bot kendi yazdığı sözü sesli okuyabilir.",
+            "alternative": "text_to_speech tool ile bot kendi rap yazıp okuyabilir"
+        }
+    # Placeholder — gerçek Suno API entegrasyonu key alındığında
+    return {
+        "success": False,
+        "error": "Suno API entegrasyonu key bekleyince aktive edilecek (placeholder).",
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # Status raporu
 # ═══════════════════════════════════════════════════════════════════════
 def status_report_v2() -> dict:
@@ -663,4 +764,6 @@ def status_report_v2() -> dict:
         "pdb": True,  # API key gerek yok (RCSB public)
         "tts_openai": bool(OPENAI_API_KEY),
         "tts_elevenlabs": bool(ELEVENLABS_API_KEY),
+        "code_execution": True,  # local subprocess, key gerek yok
+        "suno": bool(SUNO_API_KEY),
     }

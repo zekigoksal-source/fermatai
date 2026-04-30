@@ -2210,7 +2210,42 @@ TOOL_DISPATCH = {
     "text_to_speech":              lambda p: _tool_text_to_speech(**p),
     "pdb_lookup":                  lambda p: _tool_pdb_lookup(**p),
     "student_heatmap":             lambda p: _tool_student_heatmap(**p),
+    # Oturum 25.34 (Neo bug-fix paketi) — Code execution + Suno
+    "execute_python":              lambda p: _tool_execute_python(**p),
+    "suno_generate":               lambda p: _tool_suno_generate(**p),
 }
+
+
+# ── Oturum 25.34 (paket 2) — Code + Suno wrapperlari ──
+async def _tool_execute_python(code: str = "", timeout: int = 5, **_extra) -> dict:
+    try:
+        from external_apis_v2 import execute_python
+        r = await execute_python(code=code, timeout=int(timeout or 5))
+        # Yardımcı: bot ```codeout block'unu doğrudan dönderelim
+        if r.get("success") or r.get("stdout") or r.get("stderr"):
+            import json as _j
+            r["codeout_block"] = (
+                "```codeout\n"
+                + _j.dumps({
+                    "title": "Python Çıktı",
+                    "code": code[:2000],
+                    "stdout": r.get("stdout", ""),
+                    "stderr": r.get("stderr", ""),
+                    "success": r.get("success", False),
+                }, ensure_ascii=False)
+                + "\n```"
+            )
+            r["kullanim"] = "codeout_block alanini direkt cevabina yapistir"
+        return r
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_suno_generate(prompt: str = "", style: str = "educational", **_extra) -> dict:
+    try:
+        from external_apis_v2 import suno_generate
+        return await suno_generate(prompt=prompt, style=style)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 # ── Oturum 25.34 — TTS + PDB + Heatmap wrapperlari ──
@@ -2726,11 +2761,13 @@ async def run_tool(name: str, input_data: dict,
                 _RENDER_LINK_SUCCESS_CACHE = {}
             _phone_key = (caller_phone or "anon")[-4:]
             _success_calls = _RENDER_LINK_SUCCESS_CACHE.get(_phone_key, 0)
-            if _success_calls >= 1:
-                logger.warning(f"🚫 make_render_link tek-shot guard ({_phone_key}): basarili cagri sonrasi engellendi")
+            # 25.34-fix (Neo bug raporu): tek-shot çok kısıtlı — kullanıcı 'tekrar modelle' derse
+            # retry yapabilsin. 5 başarılı çağrıya kadar izin (1 sohbet ortalama).
+            if _success_calls >= 5:
+                logger.warning(f"🚫 make_render_link 5x guard ({_phone_key}): basarili cagri sonrasi engellendi")
                 result = {
                     "success": False,
-                    "error": "make_render_link bu sohbette zaten basariyla kullanildi. Onceki linki kullaniciya sun, yeni HTML uretme. Eger ilk versiyonun yetersizse 12 renderer (```sim/```3d/```formula vb.) ile devam et."
+                    "error": "make_render_link bu sohbette 5 kez kullanildi (limit). Onceki linkleri kullaniciya sun veya 12 renderer (```sim/```3d/```mol3d/```formula vb.) ile devam et."
                 }
             else:
                 enriched = dict(input_data)

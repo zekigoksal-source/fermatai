@@ -87,6 +87,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "pubchem_lookup", "usgs_earthquakes", "generate_pdf",
         # ── 25.34 — TTS + PDB + Heatmap (heatmap sadece ogretmen+) ──
         "text_to_speech", "pdb_lookup", "student_heatmap",
+        # ── 25.34 paket 2 — Code execution + Suno ──
+        "execute_python", "suno_generate",
     },
     # Yönetim üyesi: müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     "yonetim": {
@@ -138,6 +140,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "pubchem_lookup", "usgs_earthquakes", "generate_pdf",
         # ── 25.34 — TTS + PDB + Heatmap (heatmap sadece ogretmen+) ──
         "text_to_speech", "pdb_lookup", "student_heatmap",
+        # ── 25.34 paket 2 — Code execution + Suno ──
+        "execute_python", "suno_generate",
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)
@@ -184,6 +188,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "pubchem_lookup", "usgs_earthquakes", "generate_pdf",
         # ── 25.34 — TTS + PDB + Heatmap (heatmap sadece ogretmen+) ──
         "text_to_speech", "pdb_lookup", "student_heatmap",
+        # ── 25.34 paket 2 — Code execution + Suno ──
+        "execute_python", "suno_generate",
     },
     # Rehber öğretmen: TÜM öğrenci + TÜM öğretmen programı + etüt yazma + rehberlik notu
     "rehber": {
@@ -219,6 +225,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "pubchem_lookup", "usgs_earthquakes", "generate_pdf",
         # ── 25.34 — TTS + PDB + Heatmap (heatmap sadece ogretmen+) ──
         "text_to_speech", "pdb_lookup", "student_heatmap",
+        # ── 25.34 paket 2 — Code execution + Suno ──
+        "execute_python", "suno_generate",
     },
     # Veli: sadece kendi çocuğunun akademik verisi + universite tahmin (Neo onay)
     "veli": {"get_student_analytics", "get_ayt_analysis",
@@ -252,7 +260,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 # ── 25.33 — Kimya/Jeoloji/PDF ──
                 "pubchem_lookup", "usgs_earthquakes", "generate_pdf",
                 # ── 25.34 — TTS + PDB (heatmap YOK, ogretmen ozel) ──
-                "text_to_speech", "pdb_lookup"},
+                "text_to_speech", "pdb_lookup",
+                # ── 25.34 paket 2 — Code execution + Suno ──
+                "execute_python", "suno_generate"},
     # Misafir / bilinmeyen: hiçbir araç
     "guest": set(),
     "unknown": set(),

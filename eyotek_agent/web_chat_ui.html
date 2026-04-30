@@ -597,6 +597,48 @@ html[data-theme="dark"] .msg.bot .karne-zayif { color: #FCA5A5; }
   text-transform: uppercase; letter-spacing: 0.5px;
   margin-top: 4px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Oturum 25.34 — Excalidraw + CodeOut renderer CSS
+   ═══════════════════════════════════════════════════════════════ */
+.msg.bot .excalidraw-container,
+.msg.bot .codeout-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin: 12px 0;
+}
+.msg.bot .excalidraw-container .render-title,
+.msg.bot .codeout-container .render-title {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  margin-bottom: 12px; letter-spacing: 0.3px;
+}
+.msg.bot .codeout-code {
+  margin-bottom: 12px;
+}
+.msg.bot .codeout-code pre {
+  margin: 0; border-radius: 8px;
+}
+.msg.bot .codeout-terminal {
+  background: #1F1F1B; color: #E5E5E5;
+  border-radius: 8px; padding: 14px;
+  font-family: "SF Mono", Monaco, Menlo, monospace;
+  font-size: 13px; line-height: 1.5;
+  border-left: 3px solid #6B8E7F;
+}
+.msg.bot .codeout-terminal.codeout-error {
+  border-left-color: #dc2626;
+}
+.msg.bot .codeout-header {
+  font-size: 11px; opacity: 0.7; margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.msg.bot .codeout-stdout,
+.msg.bot .codeout-stderr {
+  margin: 0; padding: 0; background: transparent !important;
+  white-space: pre-wrap; word-break: break-word;
+  font-family: inherit !important; font-size: 13px !important;
+  color: inherit !important;
+}
+.msg.bot .codeout-stderr { color: #fca5a5 !important; }
 :root {
   /* Claude.ai palette — sade, sıcak, rahat (LIGHT) */
   --bg: #F5F4ED;
@@ -2146,6 +2188,19 @@ function formatMsg(text) {
     elementPlaceholders.push(jsonStr.trim());
     return `\n\n<div class="element-pending" data-element-idx="${idx}"></div>\n\n`;
   });
+  // ── Oturum 25.34 — Excalidraw + Code result renderer ──
+  const excalidrawPlaceholders = [];
+  md = md.replace(/```excalidraw\s*\r?\n?([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = excalidrawPlaceholders.length;
+    excalidrawPlaceholders.push(jsonStr.trim() || "{}");
+    return `\n\n<div class="excalidraw-pending" data-excalidraw-idx="${idx}"></div>\n\n`;
+  });
+  const codeoutPlaceholders = [];
+  md = md.replace(/```codeout\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = codeoutPlaceholders.length;
+    codeoutPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="codeout-pending" data-codeout-idx="${idx}"></div>\n\n`;
+  });
 
   // ── 2. Collapsible blokları — :::detay ... ::: syntax ──
   // Format: :::detay Özet\n...\n:::
@@ -2282,6 +2337,17 @@ function formatMsg(text) {
         html = html.replace(new RegExp(`<div class="element-pending" data-element-idx="${i}"></div>`, 'g'),
           `<div class="element-pending" data-element="${escaped}"></div>`);
       });
+      // Oturum 25.34 — Excalidraw + CodeOut bağlama
+      excalidrawPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="excalidraw-pending" data-excalidraw-idx="${i}"></div>`, 'g'),
+          `<div class="excalidraw-pending" data-excalidraw="${escaped}"></div>`);
+      });
+      codeoutPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="codeout-pending" data-codeout-idx="${i}"></div>`, 'g'),
+          `<div class="codeout-pending" data-codeout="${escaped}"></div>`);
+      });
 
       // DOMPurify — tüm pending div'lerine izin ver
       if (typeof DOMPurify !== "undefined") {
@@ -2298,7 +2364,9 @@ function formatMsg(text) {
                      "data-plotly", "data-plotly-idx", "data-mermaid", "data-mermaid-idx",
                      "data-vr", "data-vr-idx",
                      "data-mol3d", "data-mol3d-idx", "data-sound", "data-sound-idx",
-                     "data-element", "data-element-idx", "open"],
+                     "data-element", "data-element-idx",
+                     "data-excalidraw", "data-excalidraw-idx",
+                     "data-codeout", "data-codeout-idx", "open"],
           ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
         });
       }
@@ -2630,6 +2698,135 @@ function rerender3D(el) {
             );
             scene.add(m);
             mainObj = m;
+          } else if (scene_name === "dna" || scene_name === "dna_helix" || scene_name === "double_helix") {
+            // 25.34-fix (Neo bug): DNA cift sarmal — Watson-Crick yapisi
+            const dna = new THREE.Group();
+            const turns = 4, pointsPerTurn = 24, totalPoints = turns * pointsPerTurn;
+            const radius = 0.7, height = 4, baseColors = [0xC76F3E, 0x6B8E7F, 0xA78BFA, 0xfbbf24];
+            // İki sarmal (helix)
+            for (let strand = 0; strand < 2; strand++) {
+              for (let i = 0; i < totalPoints; i++) {
+                const t = i / totalPoints;
+                const angle = t * Math.PI * 2 * turns + (strand * Math.PI);
+                const x = Math.cos(angle) * radius;
+                const y = (t - 0.5) * height;
+                const z = Math.sin(angle) * radius;
+                const sphere = new THREE.Mesh(
+                  new THREE.SphereGeometry(0.08, 8, 8),
+                  new THREE.MeshStandardMaterial({ color: strand === 0 ? 0xC76F3E : 0x6B8E7F })
+                );
+                sphere.position.set(x, y, z);
+                dna.add(sphere);
+              }
+            }
+            // Baz çiftleri (her 3 noktada bir bağ)
+            for (let i = 0; i < totalPoints; i += 3) {
+              const t = i / totalPoints;
+              const angle = t * Math.PI * 2 * turns;
+              const x1 = Math.cos(angle) * radius, z1 = Math.sin(angle) * radius;
+              const x2 = Math.cos(angle + Math.PI) * radius, z2 = Math.sin(angle + Math.PI) * radius;
+              const y = (t - 0.5) * height;
+              const dx = x2 - x1, dz = z2 - z1;
+              const len = Math.sqrt(dx*dx + dz*dz);
+              const cyl = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.025, 0.025, len, 6),
+                new THREE.MeshBasicMaterial({ color: baseColors[(i/3) % 4] })
+              );
+              cyl.position.set((x1+x2)/2, y, (z1+z2)/2);
+              cyl.rotation.z = Math.PI / 2;
+              cyl.rotation.y = -Math.atan2(dz, dx);
+              dna.add(cyl);
+            }
+            scene.add(dna);
+            mainObj = dna;
+          } else if (scene_name === "water" || scene_name === "h2o") {
+            // 25.34-fix: H2O su molekülü
+            const grp = new THREE.Group();
+            // Oksijen (kırmızı, merkez)
+            const O = new THREE.Mesh(
+              new THREE.SphereGeometry(0.45, 32, 32),
+              new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.3, roughness: 0.4 })
+            );
+            grp.add(O);
+            // Hidrojenler — 104.5° açı
+            const angle = (104.5 * Math.PI / 180) / 2;
+            const dist = 0.95;
+            const H1 = new THREE.Mesh(
+              new THREE.SphereGeometry(0.25, 32, 32),
+              new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 0.1, roughness: 0.3 })
+            );
+            H1.position.set(Math.sin(angle) * dist, -Math.cos(angle) * dist, 0);
+            grp.add(H1);
+            const H2 = new THREE.Mesh(
+              new THREE.SphereGeometry(0.25, 32, 32),
+              new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 0.1, roughness: 0.3 })
+            );
+            H2.position.set(-Math.sin(angle) * dist, -Math.cos(angle) * dist, 0);
+            grp.add(H2);
+            // Bağlar
+            for (const H of [H1, H2]) {
+              const dir = H.position.clone();
+              const len = dir.length();
+              const cyl = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.06, 0.06, len, 8),
+                new THREE.MeshStandardMaterial({ color: 0x888888 })
+              );
+              cyl.position.copy(dir).multiplyScalar(0.5);
+              cyl.lookAt(H.position);
+              cyl.rotateX(Math.PI/2);
+              grp.add(cyl);
+            }
+            scene.add(grp);
+            mainObj = grp;
+          } else if (scene_name === "atom_proper" || scene_name === "atom_model") {
+            // 25.34: Bohr atom modeli (3 yörünge)
+            const grp = new THREE.Group();
+            // Çekirdek
+            const nucleus = new THREE.Mesh(
+              new THREE.SphereGeometry(0.3, 32, 32),
+              new THREE.MeshStandardMaterial({ color: 0xC76F3E, emissive: 0x661f0e, emissiveIntensity: 0.3 })
+            );
+            grp.add(nucleus);
+            // 3 yörünge + elektronlar
+            const orbitRadii = [1.0, 1.6, 2.2];
+            const orbitColors = [0xA78BFA, 0x6B8E7F, 0xfbbf24];
+            const orbitTilts = [0, Math.PI/3, Math.PI/6];
+            orbitRadii.forEach((r, i) => {
+              // Yörünge çizgisi
+              const points = [];
+              for (let a = 0; a <= 64; a++) {
+                const t = (a / 64) * Math.PI * 2;
+                points.push(new THREE.Vector3(Math.cos(t) * r, 0, Math.sin(t) * r));
+              }
+              const geo = new THREE.BufferGeometry().setFromPoints(points);
+              const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: orbitColors[i], transparent: true, opacity: 0.6 }));
+              line.rotation.x = orbitTilts[i];
+              line.rotation.z = orbitTilts[i] * 0.5;
+              grp.add(line);
+              // Elektron
+              const electron = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 16, 16),
+                new THREE.MeshBasicMaterial({ color: orbitColors[i] })
+              );
+              electron.userData.r = r; electron.userData.tilt = orbitTilts[i]; electron.userData.speed = 0.5 + i * 0.3;
+              electron.userData.phase = i * 1.0;
+              grp.add(electron);
+              if (!grp.userData.electrons) grp.userData.electrons = [];
+              grp.userData.electrons.push(electron);
+            });
+            grp.userData.update = (t) => {
+              if (!grp.userData.electrons) return;
+              grp.userData.electrons.forEach((el, i) => {
+                const a = (t * 0.001 * el.userData.speed) + el.userData.phase;
+                el.position.set(
+                  Math.cos(a) * el.userData.r,
+                  Math.sin(a + el.userData.tilt) * 0.3,
+                  Math.sin(a) * el.userData.r * Math.cos(el.userData.tilt)
+                );
+              });
+            };
+            scene.add(grp);
+            mainObj = grp;
           } else {
             // Default: küre
             const m = new THREE.Mesh(
@@ -3626,6 +3823,68 @@ function rerenderElement(el) {
   });
 }
 
+// ═════════════════════════════════════════════════════════════════
+// Oturum 25.34 — 2 yeni renderer: Excalidraw embed + Code execution output
+// ═════════════════════════════════════════════════════════════════
+
+// 21) ```excalidraw — Excalidraw embed (el çizimi)
+function rerenderExcalidraw(el) {
+  if (!el) return;
+  el.querySelectorAll(".excalidraw-pending").forEach((ph) => {
+    try {
+      const raw = _readJsonOrText(ph, "data-excalidraw");
+      let cfg = {};
+      try { cfg = JSON.parse(raw); } catch { cfg = {}; }
+      const wrap = document.createElement("div");
+      wrap.className = "excalidraw-container";
+      const title = cfg.title || "Çizim Tahtası";
+      const url = cfg.url || "https://excalidraw.com/";  // boş tahta veya custom share link
+      wrap.innerHTML = `
+        <div class="render-title">✏️ ${escapeHtml(title)}</div>
+        <iframe src="${url}" width="100%" height="500"
+          style="border:1px solid var(--border); border-radius:10px;"
+          allowfullscreen></iframe>
+        <div class="render-sub">Çiz · paylaş · ders sırasında matematik ispatı, geometri kanıtı, kavram haritası</div>`;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Excalidraw render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Excalidraw render hatası]</div>';
+      ph.classList.remove("excalidraw-pending");
+    }
+  });
+}
+
+// 22) ```codeout — Python code execution output (terminal-style)
+function rerenderCodeOut(el) {
+  if (!el) return;
+  el.querySelectorAll(".codeout-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-codeout"));
+      const wrap = document.createElement("div");
+      wrap.className = "codeout-container";
+      const stdout = cfg.stdout || "";
+      const stderr = cfg.stderr || "";
+      const code = cfg.code || "";
+      const success = cfg.success !== false;
+      wrap.innerHTML = `
+        <div class="render-title">🐍 ${escapeHtml(cfg.title || "Python Çıktı")}</div>
+        ${code ? `<div class="codeout-code"><pre><code class="language-python">${escapeHtml(code)}</code></pre></div>` : ""}
+        <div class="codeout-terminal ${success ? '' : 'codeout-error'}">
+          <div class="codeout-header">${success ? '✓ Başarılı' : '✗ Hata'} · stdout</div>
+          <pre class="codeout-stdout">${escapeHtml(stdout) || '<em style="color:#888">(boş çıktı)</em>'}</pre>
+          ${stderr ? `<div class="codeout-header" style="margin-top:10px;color:#dc2626;">stderr</div><pre class="codeout-stderr">${escapeHtml(stderr)}</pre>` : ""}
+        </div>`;
+      ph.replaceWith(wrap);
+      // Prism syntax highlight
+      try { if (window.Prism) Prism.highlightAllUnder(wrap); } catch {}
+    } catch (e) {
+      console.warn("CodeOut render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[CodeOut render hatası]</div>';
+      ph.classList.remove("codeout-pending");
+    }
+  });
+}
+
 // Tek çağrı: tüm görsel renderer'ları toplu çalıştır
 function rerenderAllVisuals(el) {
   try { rerenderCharts(el); } catch (e) {}
@@ -3651,6 +3910,9 @@ function rerenderAllVisuals(el) {
   try { rerenderMol3d(el); } catch (e) {}
   try { rerenderSound(el); } catch (e) {}
   try { rerenderElement(el); } catch (e) {}
+  // Oturum 25.34 — 2 yeni renderer
+  try { rerenderExcalidraw(el); } catch (e) {}
+  try { rerenderCodeOut(el); } catch (e) {}
 }
 
 // Prism syntax highlight
