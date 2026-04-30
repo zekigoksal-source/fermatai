@@ -483,51 +483,127 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
   .login-box .trust-footer .badge .label { font-size: 8.5px; letter-spacing: 0.5px; }
 }
 
-/* Tablet (iPad portrait + landscape, Magic Keyboard'li iPad, Android tablet) — kompakt login.
-   Web (mouse-only, no touch) ve mobil (<481px) etkilenmez.
+/* Tablet (iPad portrait/landscape + Magic Keyboard iPad + Android tablet) — PRO FRONTLINE.
+   Web (mouse-only PC, >1366px) ETKILESMEZ.
 
-   any-pointer: coarse — cihazda EN AZ BIR dokunmatik input var mi (parmak/stylus).
-   Magic Keyboard takili iPad'de bile touch destegi var → match.
-   Mouse-only PC/laptop'ta touch yok → match etmez → orijinal davranis korunur.
-
-   Breakpoint 1366px: iPad Pro 12.9 landscape (1366) ve daha kucuk tum tabletleri kapsar. */
+   FELSEFE (Neo karari, ui-ux-pro-max):
+     Tablet ekrani rakipler ve ogrenci adaylari icin ilk intiba. KOMPAKT-GIZLEME yerine
+     PREMIUM GLASS + AURORA BG + ANIMATED elements + tum kurumsal icerik. Kullanici
+     scroll'la tum metinleri gorur, etkileyici hava bozulmaz. */
 @media (min-width: 481px) and (max-width: 1024px),
        (any-pointer: coarse) and (min-width: 481px) and (max-width: 1366px) {
+  /* Login wrap — premium aurora background + scroll edilebilir */
   .login-wrap {
-    align-items: flex-start;          /* ortala değil, üstten başla — alt/üst kesilmesin */
-    padding: 18px 20px 28px;
-    overflow-y: auto;                 /* icerik uzunsa scroll (iframe izin verirse) */
-    -webkit-overflow-scrolling: touch;/* iOS smooth scroll */
+    align-items: flex-start;
+    padding: 28px 24px 40px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background:
+      radial-gradient(circle at 15% 12%, rgba(199,111,62,0.14) 0%, transparent 38%),
+      radial-gradient(circle at 85% 88%, rgba(107,142,127,0.12) 0%, transparent 42%),
+      radial-gradient(circle at 50% 50%, rgba(167,139,250,0.06) 0%, transparent 55%),
+      var(--bg);
   }
+  /* Animated ambient blob — buyuk, hareketli, premium */
+  .login-wrap::before {
+    width: 720px !important;
+    height: 720px !important;
+    background: radial-gradient(circle, rgba(199,111,62,0.07) 0%, rgba(167,139,250,0.04) 40%, transparent 70%) !important;
+    animation: orbit 18s linear infinite !important;
+  }
+  /* Login-box — Liquid Glass premium */
   .login-box {
-    padding: 26px 28px 22px;
-    max-width: 480px;
+    padding: 38px 36px 30px;
+    max-width: 540px;
+    border-radius: 22px;
+    border: 1px solid rgba(199,111,62,0.18);
+    background: rgba(255,255,255,0.78);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow:
+      0 32px 80px rgba(199,111,62,0.10),
+      0 8px 24px rgba(0,0,0,0.06),
+      inset 0 1px 0 rgba(255,255,255,0.7);
   }
-  /* Tech-label (AGENTIC AI · NEXT-GEN EDTECH) — kalsin, kurumsal etki */
-  .login-box .tech-label { margin-bottom: 10px; }
-  .login-box h1 { font-size: 26px; margin-bottom: 4px; }
-  .login-box .brand-tagline { font-size: 15px; margin: 4px 0 8px; }
-  /* Uzun marketing metinleri gizle (motto + subtitle iframe'de gerekli degil) */
-  .login-box .brand-motto { display: none; }
-  .login-box .subtitle { display: none; }
-  /* 3 feature-pill — aynen, hafif kompakt */
-  .login-box .feature-row { margin-bottom: 14px; gap: 7px; }
-  .login-box .feature-pill { padding: 9px 4px; }
-  .login-box .feature-pill .fp-icon { font-size: 16px; margin-bottom: 3px; }
-  .login-box .feature-pill .fp-text { font-size: 10.5px; letter-spacing: 0.25px; }
-  .login-box .feature-pill .fp-sub { font-size: 8px; margin-top: 2px; }
-  /* Form — input + buton standart, aralar hafif sikilastir */
-  .login-box label { font-size: 12px; margin-bottom: 5px; }
-  .login-box input { padding: 11px 13px; font-size: 14.5px; margin-bottom: 10px; }
-  .login-box button { padding: 12px; font-size: 14.5px; }
-  .login-box .hint { margin-top: 10px; font-size: 11.5px; line-height: 1.5; }
-  /* Trust-footer — 4 ROZET KALSIN (60+/48K/7-24/<1sn), sadece uzun manifesto + brand gizle */
-  .login-box .trust-footer { margin-top: 16px; padding-top: 14px; }
-  .login-box .trust-footer .badges { margin-bottom: 0; }
-  .login-box .trust-footer .badge .num { font-size: 12px; }
-  .login-box .trust-footer .badge .label { font-size: 8.5px; letter-spacing: 0.5px; }
-  .login-box .trust-footer .manifesto { display: none; }
-  .login-box .trust-footer .brand { display: none; }
+  html[data-theme="dark"] .login-box {
+    background: rgba(20,20,15,0.62);
+    border-color: rgba(199,111,62,0.22);
+    box-shadow:
+      0 32px 80px rgba(0,0,0,0.5),
+      0 8px 24px rgba(199,111,62,0.08),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  /* Tech-label — keskin glow, premium */
+  .login-box .tech-label {
+    margin-bottom: 14px;
+    padding: 6px 12px;
+    font-size: 10.5px;
+    letter-spacing: 2.4px;
+    box-shadow: 0 0 24px rgba(199,111,62,0.15);
+  }
+  /* H1 — buyuk, cesur tipografi */
+  .login-box h1 {
+    font-size: 34px;
+    letter-spacing: -0.8px;
+    margin-bottom: 6px;
+  }
+  .login-box .brand-tagline {
+    font-size: 17px;
+    margin: 6px 0 8px;
+  }
+  /* TUM KURUMSAL ICERIK GORUNUR — gizleme yok */
+  .login-box .brand-motto {
+    display: block;
+    font-size: 13.5px;
+    margin: 0 0 22px;
+  }
+  .login-box .subtitle {
+    display: block;
+    font-size: 13.5px;
+    margin-bottom: 22px;
+  }
+  /* Feature-pill — buyuk, etkileyici, hover-lift */
+  .login-box .feature-row { margin-bottom: 24px; gap: 9px; }
+  .login-box .feature-pill {
+    padding: 14px 6px;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+  }
+  .login-box .feature-pill .fp-icon { font-size: 22px; margin-bottom: 6px; }
+  .login-box .feature-pill .fp-text { font-size: 12px; letter-spacing: 0.3px; }
+  .login-box .feature-pill .fp-sub { font-size: 9px; margin-top: 4px; }
+  /* Form — premium input/button */
+  .login-box label { font-size: 13px; margin-bottom: 6px; }
+  .login-box input {
+    padding: 13px 16px;
+    font-size: 15.5px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    background: rgba(255,255,255,0.6);
+  }
+  html[data-theme="dark"] .login-box input { background: rgba(0,0,0,0.25); }
+  .login-box input:focus {
+    box-shadow: 0 0 0 3px rgba(199,111,62,0.18);
+  }
+  .login-box button {
+    padding: 14px;
+    font-size: 15.5px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(199,111,62,0.28);
+    transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  }
+  .login-box button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgba(199,111,62,0.36);
+  }
+  .login-box .hint { margin-top: 16px; font-size: 12px; line-height: 1.6; }
+  /* Trust-footer — 4 rozet + manifesto + brand HEPSI gorunur (kurumsal etki) */
+  .login-box .trust-footer { margin-top: 24px; padding-top: 22px; }
+  .login-box .trust-footer .badges { margin-bottom: 16px; }
+  .login-box .trust-footer .badge .num { font-size: 13.5px; }
+  .login-box .trust-footer .badge .label { font-size: 9px; letter-spacing: 0.6px; }
+  .login-box .trust-footer .manifesto { display: block; font-size: 11.5px; line-height: 1.7; }
+  .login-box .trust-footer .brand { display: block; font-size: 9px; margin-top: 14px; }
 }
 
 /* Tablet/Touch — Chat ekrani Wix iframe icinde IFRAME-SCROLL'a kacmasin.
@@ -591,9 +667,11 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     right: 0;
     bottom: 0;
   }
-  /* Dashboard modal — tablet/touch'ta full viewport (yarim gorunme bug fix) */
+  /* Dashboard modal — tablet/touch'ta full viewport + horizontal kesik fix */
   .dashboard-overlay {
     padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
   }
   .dashboard-panel {
     width: 100% !important;
@@ -603,7 +681,42 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     border-radius: 0 !important;
     border: none !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch;
+  }
+  .dashboard-content {
+    padding: 18px 16px 30px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+  .dashboard-header {
+    padding: 14px 16px !important;
+  }
+  /* KPI 3-kolondan 2-kolona (tablet portrait icin) */
+  .dashboard-kpis {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  /* Dashboard grid — tablette tek kolon, hicbir sey kesilmesin */
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .dashboard-card-wide { grid-column: 1 !important; }
+  .chart-container { height: 220px !important; }
+  /* KPI cards - kompakt ama okunakli */
+  .kpi-card { padding: 12px 14px !important; }
+  .kpi-value { font-size: 24px !important; }
+  /* Landscape tablet — daha fazla yer var, KPI 3-col tut */
+  @media (orientation: landscape) and (min-width: 900px) {
+    .dashboard-kpis {
+      grid-template-columns: repeat(3, 1fr) !important;
+    }
+    .dashboard-grid {
+      grid-template-columns: 2fr 1fr !important;
+    }
+    .dashboard-card-wide { grid-column: 1 / -1 !important; }
   }
 }
 .login-box .step { display: none; }
