@@ -43,6 +43,10 @@
   window.mermaid = mermaid;
 </script>
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+<!-- Oturum 25.33 — 3Dmol.js (kimya 3D molekül) + Tone.js (ses/frekans) -->
+<script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
 <!-- GSAP: ```formula adım adım animasyon (3Blue1Brown tarzı) -->
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <style>
@@ -525,6 +529,73 @@ html[data-theme="dark"] .msg.bot .karne-zayif { color: #FCA5A5; }
 /* Mermaid — beyaz arkaplan kontrast */
 .msg.bot .mermaid-container svg {
   max-width: 100%; height: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Oturum 25.33 — 3 yeni renderer CSS (Mol3D, Sound, Element)
+   ═══════════════════════════════════════════════════════════════ */
+.msg.bot .mol3d-container,
+.msg.bot .sound-container,
+.msg.bot .element-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin: 12px 0;
+}
+.msg.bot .mol3d-container .render-title,
+.msg.bot .sound-container .render-title,
+.msg.bot .element-container .render-title {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  margin-bottom: 12px; letter-spacing: 0.3px;
+}
+
+/* SOUND — frekans control */
+.msg.bot .sound-controls { padding: 14px; }
+.msg.bot .sound-freq-display {
+  text-align: center; font-size: 28px; font-weight: 700;
+  color: var(--accent); margin-bottom: 8px;
+}
+.msg.bot .sound-freq-value { font-variant-numeric: tabular-nums; }
+.msg.bot .sound-btn {
+  background: var(--accent); color: white; border: none;
+  padding: 10px 20px; border-radius: 8px; font-size: 14px;
+  font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.msg.bot .sound-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.msg.bot .sound-btn.sound-stop {
+  background: rgba(220,38,38,0.9);
+}
+.msg.bot .sound-btn.sound-stop:hover { background: #b91c1c; }
+
+/* ELEMENT — periodic table card */
+.msg.bot .element-card {
+  width: 200px; aspect-ratio: 1; margin: 16px auto;
+  border: 2px solid; border-radius: 14px;
+  display: flex; flex-direction: column;
+  padding: 16px; color: white; position: relative;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  transition: transform 0.3s;
+}
+.msg.bot .element-card:hover { transform: scale(1.04) rotate(1deg); }
+.msg.bot .element-num {
+  position: absolute; top: 10px; left: 14px;
+  font-size: 14px; font-weight: 700; opacity: 0.9;
+}
+.msg.bot .element-symbol {
+  font-size: 56px; font-weight: 800; text-align: center;
+  margin: auto 0; letter-spacing: -1px;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.msg.bot .element-name {
+  font-size: 14px; font-weight: 600; text-align: center;
+  letter-spacing: 0.3px;
+}
+.msg.bot .element-mass {
+  font-size: 12px; text-align: center; opacity: 0.85;
+  margin-top: 2px; font-variant-numeric: tabular-nums;
+}
+.msg.bot .element-category {
+  font-size: 10px; text-align: center; opacity: 0.8;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-top: 4px;
 }
 :root {
   /* Claude.ai palette — sade, sıcak, rahat (LIGHT) */
@@ -2056,6 +2127,25 @@ function formatMsg(text) {
     vrPlaceholders.push(jsonStr.trim());
     return `\n\n<div class="vr-pending" data-vr-idx="${idx}"></div>\n\n`;
   });
+  // ── Oturum 25.33 (Neo) — 3 yeni renderer: mol3d (3Dmol), sound (Tone), element ──
+  const mol3dPlaceholders = [];
+  md = md.replace(/```mol3d\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = mol3dPlaceholders.length;
+    mol3dPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="mol3d-pending" data-mol3d-idx="${idx}"></div>\n\n`;
+  });
+  const soundPlaceholders = [];
+  md = md.replace(/```sound\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = soundPlaceholders.length;
+    soundPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="sound-pending" data-sound-idx="${idx}"></div>\n\n`;
+  });
+  const elementPlaceholders = [];
+  md = md.replace(/```element\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = elementPlaceholders.length;
+    elementPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="element-pending" data-element-idx="${idx}"></div>\n\n`;
+  });
 
   // ── 2. Collapsible blokları — :::detay ... ::: syntax ──
   // Format: :::detay Özet\n...\n:::
@@ -2176,6 +2266,22 @@ function formatMsg(text) {
         html = html.replace(new RegExp(`<div class="vr-pending" data-vr-idx="${i}"></div>`, 'g'),
           `<div class="vr-pending" data-vr="${escaped}"></div>`);
       });
+      // Oturum 25.33 — 3 yeni renderer veri bağlama
+      mol3dPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="mol3d-pending" data-mol3d-idx="${i}"></div>`, 'g'),
+          `<div class="mol3d-pending" data-mol3d="${escaped}"></div>`);
+      });
+      soundPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="sound-pending" data-sound-idx="${i}"></div>`, 'g'),
+          `<div class="sound-pending" data-sound="${escaped}"></div>`);
+      });
+      elementPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="element-pending" data-element-idx="${i}"></div>`, 'g'),
+          `<div class="element-pending" data-element="${escaped}"></div>`);
+      });
 
       // DOMPurify — tüm pending div'lerine izin ver
       if (typeof DOMPurify !== "undefined") {
@@ -2190,7 +2296,9 @@ function formatMsg(text) {
                      "data-compare", "data-compare-idx",
                      "data-desmos", "data-desmos-idx", "data-geogebra", "data-geogebra-idx",
                      "data-plotly", "data-plotly-idx", "data-mermaid", "data-mermaid-idx",
-                     "data-vr", "data-vr-idx", "open"],
+                     "data-vr", "data-vr-idx",
+                     "data-mol3d", "data-mol3d-idx", "data-sound", "data-sound-idx",
+                     "data-element", "data-element-idx", "open"],
           ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
         });
       }
@@ -3330,6 +3438,194 @@ function rerenderVR(el) {
   });
 }
 
+// ═════════════════════════════════════════════════════════════════
+// Oturum 25.33 — 3 yeni renderer: Mol3D (kimya), Sound (Tone.js), Periodic Table
+// ═════════════════════════════════════════════════════════════════
+
+// 18) ```mol3d — 3Dmol.js kimya molekül viewer
+let _mol3dCounter = 0;
+function rerenderMol3d(el) {
+  if (!el || typeof window.$3Dmol === "undefined") return;
+  el.querySelectorAll(".mol3d-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-mol3d"));
+      const wrap = document.createElement("div");
+      wrap.className = "mol3d-container";
+      wrap.innerHTML = `<div class="render-title">⚗️ ${escapeHtml(cfg.title || "Molekül 3D")}</div>`;
+      const id = "mol3d-" + (++_mol3dCounter);
+      const stage = document.createElement("div");
+      stage.id = id;
+      stage.style.cssText = "width:100%; height:380px; position:relative; background:#fff; border-radius:8px;";
+      wrap.appendChild(stage);
+      const sub = document.createElement("div");
+      sub.className = "render-sub";
+      sub.textContent = "🖱️ Sürükle döndür · Scroll yakınlaştır";
+      wrap.appendChild(sub);
+      ph.replaceWith(wrap);
+      requestAnimationFrame(async () => {
+        try {
+          const viewer = window.$3Dmol.createViewer(id, { backgroundColor: "white" });
+          // Veri kaynağı: cid (PubChem) veya smiles veya pdb
+          if (cfg.cid) {
+            const sdf_url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cfg.cid}/SDF?record_type=3d`;
+            const resp = await fetch(sdf_url);
+            const sdf = await resp.text();
+            viewer.addModel(sdf, "sdf");
+          } else if (cfg.pdb) {
+            const pdb_url = `https://files.rcsb.org/view/${cfg.pdb}.pdb`;
+            const resp = await fetch(pdb_url);
+            const pdb = await resp.text();
+            viewer.addModel(pdb, "pdb");
+          } else if (cfg.smiles) {
+            // SMILES → name lookup (basit)
+            viewer.addModel(cfg.smiles, "smi");
+          } else if (cfg.sdf) {
+            viewer.addModel(cfg.sdf, "sdf");
+          }
+          const style = cfg.style || "stick";  // stick | line | cartoon | sphere
+          if (style === "cartoon") {
+            viewer.setStyle({}, { cartoon: { color: "spectrum" } });
+          } else if (style === "sphere") {
+            viewer.setStyle({}, { sphere: { scale: 0.3 } });
+          } else if (style === "line") {
+            viewer.setStyle({}, { line: {} });
+          } else {
+            viewer.setStyle({}, { stick: { radius: 0.15 }, sphere: { scale: 0.25 } });
+          }
+          viewer.zoomTo();
+          viewer.render();
+        } catch (e) {
+          console.warn("Mol3d render hata:", e);
+          stage.innerHTML = `<div style="padding:30px;text-align:center;color:#c00">[Molekül yüklenemedi: ${e.message}]</div>`;
+        }
+      });
+    } catch (e) {
+      console.warn("Mol3d parse hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Mol3D veri hatası]</div>';
+      ph.classList.remove("mol3d-pending");
+    }
+  });
+}
+
+// 19) ```sound — Tone.js frekans/dalga sesli (fizik)
+let _soundCounter = 0;
+function rerenderSound(el) {
+  if (!el || typeof window.Tone === "undefined") return;
+  el.querySelectorAll(".sound-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-sound"));
+      const wrap = document.createElement("div");
+      wrap.className = "sound-container";
+      const title = cfg.title || "Frekans Deneyimi";
+      const baseFreq = cfg.frequency || 440;
+      const minFreq = cfg.min || 100;
+      const maxFreq = cfg.max || 2000;
+      const id = "sound-" + (++_soundCounter);
+      wrap.innerHTML = `
+        <div class="render-title">🔊 ${escapeHtml(title)}</div>
+        <div class="sound-controls">
+          <div class="sound-freq-display">
+            <span class="sound-freq-value" id="${id}-val">${baseFreq}</span> Hz
+          </div>
+          <input type="range" id="${id}-slider" min="${minFreq}" max="${maxFreq}" value="${baseFreq}" step="1"
+                 style="width:100%; accent-color:var(--accent); margin: 12px 0;">
+          <div style="display:flex; gap:8px; justify-content:center;">
+            <button id="${id}-play" class="sound-btn">▶️ Çal</button>
+            <button id="${id}-stop" class="sound-btn sound-stop">⏹️ Durdur</button>
+          </div>
+          <div class="render-sub">Sürgüyü kaydır → frekansı işit · Düşük freq = bas, yüksek = tiz</div>
+        </div>`;
+      ph.replaceWith(wrap);
+      requestAnimationFrame(() => {
+        const slider = document.getElementById(id + "-slider");
+        const valDisp = document.getElementById(id + "-val");
+        const playBtn = document.getElementById(id + "-play");
+        const stopBtn = document.getElementById(id + "-stop");
+        let osc = null;
+        slider.addEventListener("input", () => {
+          valDisp.textContent = slider.value;
+          if (osc) osc.frequency.value = parseFloat(slider.value);
+        });
+        playBtn.addEventListener("click", async () => {
+          await window.Tone.start();
+          if (osc) osc.dispose();
+          osc = new window.Tone.Oscillator(parseFloat(slider.value), cfg.wave || "sine").toDestination();
+          osc.volume.value = -12;
+          osc.start();
+        });
+        stopBtn.addEventListener("click", () => {
+          if (osc) { osc.stop(); osc.dispose(); osc = null; }
+        });
+      });
+    } catch (e) {
+      console.warn("Sound render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Sound veri hatası]</div>';
+      ph.classList.remove("sound-pending");
+    }
+  });
+}
+
+// 20) ```element — Periodic table element kartı
+const _PERIODIC_DATA = {
+  // Symbol: [Number, Name TR, AtomicMass, Category, Color]
+  "H":  [1, "Hidrojen", 1.008, "Ametal", "#A78BFA"],
+  "He": [2, "Helyum", 4.003, "Soygaz", "#fbbf24"],
+  "Li": [3, "Lityum", 6.94, "Alkali metal", "#dc2626"],
+  "Be": [4, "Berilyum", 9.012, "Alkali toprak", "#f59e0b"],
+  "B":  [5, "Bor", 10.81, "Yari metal", "#16a34a"],
+  "C":  [6, "Karbon", 12.011, "Ametal", "#A78BFA"],
+  "N":  [7, "Azot", 14.007, "Ametal", "#A78BFA"],
+  "O":  [8, "Oksijen", 15.999, "Ametal", "#A78BFA"],
+  "F":  [9, "Flor", 18.998, "Halojen", "#22c55e"],
+  "Ne": [10, "Neon", 20.180, "Soygaz", "#fbbf24"],
+  "Na": [11, "Sodyum", 22.990, "Alkali metal", "#dc2626"],
+  "Mg": [12, "Magnezyum", 24.305, "Alkali toprak", "#f59e0b"],
+  "Al": [13, "Aluminyum", 26.982, "Metal", "#3b82f6"],
+  "Si": [14, "Silisyum", 28.085, "Yari metal", "#16a34a"],
+  "P":  [15, "Fosfor", 30.974, "Ametal", "#A78BFA"],
+  "S":  [16, "Kukurt", 32.06, "Ametal", "#A78BFA"],
+  "Cl": [17, "Klor", 35.45, "Halojen", "#22c55e"],
+  "Ar": [18, "Argon", 39.948, "Soygaz", "#fbbf24"],
+  "K":  [19, "Potasyum", 39.098, "Alkali metal", "#dc2626"],
+  "Ca": [20, "Kalsiyum", 40.078, "Alkali toprak", "#f59e0b"],
+  "Fe": [26, "Demir", 55.845, "Gecis metali", "#C76F3E"],
+  "Cu": [29, "Bakir", 63.546, "Gecis metali", "#C76F3E"],
+  "Zn": [30, "Cinko", 65.38, "Gecis metali", "#C76F3E"],
+  "Ag": [47, "Gumus", 107.868, "Gecis metali", "#C76F3E"],
+  "Au": [79, "Altin", 196.967, "Gecis metali", "#fbbf24"],
+  "Hg": [80, "Civa", 200.59, "Gecis metali", "#C76F3E"],
+  "Pb": [82, "Kursun", 207.2, "Metal", "#3b82f6"],
+  "U":  [92, "Uranyum", 238.029, "Aktinid", "#A78BFA"],
+};
+function rerenderElement(el) {
+  if (!el) return;
+  el.querySelectorAll(".element-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-element"));
+      const symbol = (cfg.symbol || "H").toUpperCase();
+      const data = _PERIODIC_DATA[symbol] || [0, "Bilinmeyen", 0, "—", "#888"];
+      const [num, name, mass, category, color] = data;
+      const wrap = document.createElement("div");
+      wrap.className = "element-container";
+      wrap.innerHTML = `
+        <div class="render-title">⚛️ ${escapeHtml(cfg.title || "Element Kartı")}</div>
+        <div class="element-card" style="background:linear-gradient(135deg,${color},${color}dd); border-color:${color};">
+          <div class="element-num">${num}</div>
+          <div class="element-symbol">${symbol}</div>
+          <div class="element-name">${name}</div>
+          <div class="element-mass">${mass} u</div>
+          <div class="element-category">${category}</div>
+        </div>
+        ${cfg.note ? `<div class="render-sub">${escapeHtml(cfg.note)}</div>` : ""}`;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Element render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Element veri hatası]</div>';
+      ph.classList.remove("element-pending");
+    }
+  });
+}
+
 // Tek çağrı: tüm görsel renderer'ları toplu çalıştır
 function rerenderAllVisuals(el) {
   try { rerenderCharts(el); } catch (e) {}
@@ -3351,6 +3647,10 @@ function rerenderAllVisuals(el) {
   try { rerenderPlotly(el); } catch (e) {}
   try { rerenderMermaid(el); } catch (e) {}
   try { rerenderVR(el); } catch (e) {}
+  // Oturum 25.33 — 3 yeni renderer
+  try { rerenderMol3d(el); } catch (e) {}
+  try { rerenderSound(el); } catch (e) {}
+  try { rerenderElement(el); } catch (e) {}
 }
 
 // Prism syntax highlight

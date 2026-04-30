@@ -2106,6 +2106,46 @@ TOOLS.extend([
             "required": ["prompt"]
         }
     },
+    # ── Oturum 25.33 — 3 yeni external API ──
+    {
+        "name": "pubchem_lookup",
+        "description": "PubChem kimya molekul arama — 'glucose', 'caffeine', 'water', 'aspirin' vb. "
+                       "Donus: cid, molecular_formula, molecular_weight, iupac_name, image_2d_url, "
+                       "sdf_3d_url. cid ile ```mol3d renderer'a baglanabilir.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Molekul adı (Ingilizce, ornek: 'caffeine')"}
+            },
+            "required": ["name"]
+        }
+    },
+    {
+        "name": "usgs_earthquakes",
+        "description": "USGS son 24 saatin onemli depremleri — cografya/jeoloji dersi. "
+                       "Donus: magnitude, place, time, tsunami flag.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "min_magnitude": {"type": "number", "description": "Default 4.5"},
+                "max_results": {"type": "integer", "description": "Default 10"}
+            }
+        }
+    },
+    {
+        "name": "generate_pdf",
+        "description": "HTML icerikten PDF uret — calisma plani, deneme analizi, rapor icin. "
+                       "FermatAI brand wrapper otomatik eklenir. Ogrenci PDF dosyasini indirir. "
+                       "Donus: pdf_path, pdf_filename, pdf_size_kb. weasyprint kurulu olmali.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "html_content": {"type": "string", "description": "PDF icerigi (Markdown veya HTML)"},
+                "title": {"type": "string", "description": "Baslik (default 'FermatAI Rapor')"}
+            },
+            "required": ["html_content"]
+        }
+    },
 ])
 
 # Active TOOLS — Claude system prompt'a gonderilen liste

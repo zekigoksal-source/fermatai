@@ -372,6 +372,133 @@ async def generate_image(prompt: str, style: str = "educational",
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# 6. PubChem API — kimya molekül bilgisi (CID, formula, struktur)
+# ═══════════════════════════════════════════════════════════════════════
+async def pubchem_lookup(name: str) -> dict:
+    """PubChem REST — molekül arama (örn: 'glucose', 'caffeine', 'water', 'ethanol').
+    Donus: cid, molecular_formula, molecular_weight, iupac_name, image_url, 3d_url."""
+    headers = {"User-Agent": "FermatAI/1.0 education"}
+    try:
+        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True, headers=headers) as client:
+            # 1) Name → CID
+            cid_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{quote_plus(name)}/cids/JSON"
+            r = await client.get(cid_url)
+            if r.status_code != 200:
+                return {"success": False, "error": f"'{name}' PubChem'de bulunamadı"}
+            cids = r.json().get("IdentifierList", {}).get("CID", [])
+            if not cids:
+                return {"success": False, "error": f"'{name}' icin CID yok"}
+            cid = cids[0]
+            # 2) Properties
+            prop_url = (f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/property/"
+                        f"MolecularFormula,MolecularWeight,IUPACName,Charge/JSON")
+            r2 = await client.get(prop_url)
+            props = {}
+            if r2.status_code == 200:
+                p = r2.json().get("PropertyTable", {}).get("Properties", [{}])[0]
+                props = {
+                    "molecular_formula": p.get("MolecularFormula", ""),
+                    "molecular_weight": p.get("MolecularWeight", ""),
+                    "iupac_name": p.get("IUPACName", ""),
+                    "charge": p.get("Charge", 0),
+                }
+            return {
+                "success": True,
+                "name": name,
+                "cid": cid,
+                **props,
+                "image_2d_url": f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/PNG",
+                "structure_url": f"https://pubchem.ncbi.nlm.nih.gov/compound/{cid}",
+                "sdf_3d_url": f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/SDF?record_type=3d",
+            }
+    except Exception as e:
+        logger.warning(f"pubchem_lookup hata: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 7. USGS Earthquake API — son depremler (jeoloji/coğrafya)
+# ═══════════════════════════════════════════════════════════════════════
+async def usgs_earthquakes(min_magnitude: float = 4.5, max_results: int = 10) -> dict:
+    """USGS — son 1 günün önemli depremleri (mag >= min_magnitude)."""
+    try:
+        url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_day.geojson"
+        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True) as client:
+            r = await client.get(url)
+            r.raise_for_status()
+            d = r.json()
+            features = d.get("features", [])
+            results = []
+            for f in features[:max_results]:
+                p = f.get("properties", {})
+                if p.get("mag", 0) < min_magnitude:
+                    continue
+                results.append({
+                    "magnitude": p.get("mag", 0),
+                    "place": p.get("place", ""),
+                    "time": p.get("time", 0),
+                    "url": p.get("url", ""),
+                    "tsunami": bool(p.get("tsunami", 0)),
+                })
+            return {"success": True, "count": len(results), "results": results,
+                    "metadata": d.get("metadata", {}).get("title", "")}
+    except Exception as e:
+        logger.warning(f"usgs_earthquakes hata: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 8. PDF üretici — bot çalışma planı/rapor PDF olusturur
+# ═══════════════════════════════════════════════════════════════════════
+async def generate_pdf(html_content: str, title: str = "FermatAI Rapor") -> dict:
+    """HTML'den PDF üret — bot çalışma planı, deneme analizi, rapor için.
+    Returns: {success, pdf_path, pdf_url}"""
+    import os, tempfile, secrets
+    from pathlib import Path
+    try:
+        # WeasyPrint ile HTML→PDF (pip install weasyprint)
+        try:
+            from weasyprint import HTML
+        except ImportError:
+            return {"success": False, "error": "weasyprint kurulu değil (pip install weasyprint)"}
+        # Kalıcı path: /opt/fermatai/eyotek_agent/logs/pdfs/{uuid}.pdf
+        pdf_dir = Path("/opt/fermatai/eyotek_agent/logs/pdfs")
+        pdf_dir.mkdir(parents=True, exist_ok=True)
+        uuid = secrets.token_urlsafe(10)
+        pdf_path = pdf_dir / f"{uuid}.pdf"
+        # Wrapper HTML
+        full_html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>{title}</title>
+<style>
+  body {{ font-family: -apple-system, sans-serif; padding: 40px; color: #2F2F2F; line-height: 1.6; }}
+  h1, h2, h3 {{ color: #C76F3E; }}
+  .header {{ border-bottom: 2px solid #C76F3E; padding-bottom: 12px; margin-bottom: 24px; }}
+  .footer {{ margin-top: 40px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 11px; color: #888; text-align: center; }}
+  table {{ border-collapse: collapse; width: 100%; margin: 12px 0; }}
+  th, td {{ border: 1px solid #E7E5DE; padding: 8px 12px; text-align: left; }}
+  th {{ background: #FAFAF7; font-weight: 700; }}
+</style></head><body>
+<div class="header"><h1>⚡ {title}</h1></div>
+<div class="content">{html_content}</div>
+<div class="footer">FermatAI · fermategitimkurumlari.com</div>
+</body></html>"""
+        # Sync call thread'e at
+        await asyncio.to_thread(lambda: HTML(string=full_html).write_pdf(str(pdf_path)))
+        # Public URL: bridge'in /pdfs/{uuid}.pdf static endpoint'i ile servis edilebilir
+        # Şimdilik URL render endpoint'i üzerinden — render_endpoint'a basit static HTML wrapper
+        return {
+            "success": True,
+            "pdf_path": str(pdf_path),
+            "pdf_filename": f"{uuid}.pdf",
+            "pdf_size_kb": round(pdf_path.stat().st_size / 1024, 1),
+            "title": title,
+        }
+    except Exception as e:
+        logger.error(f"generate_pdf hata: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # Status raporu
 # ═══════════════════════════════════════════════════════════════════════
 def status_report_v2() -> dict:
@@ -383,4 +510,7 @@ def status_report_v2() -> dict:
         "arxiv": True,  # API key gerek yok
         "openai_image": bool(OPENAI_API_KEY),
         "replicate_image": bool(REPLICATE_API_TOKEN),
+        "pubchem": True,  # API key gerek yok
+        "usgs": True,  # API key gerek yok
+        "pdf_generator": True,  # weasyprint kurulu olmalı (yoksa graceful skip)
     }

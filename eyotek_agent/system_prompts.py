@@ -1064,6 +1064,28 @@ Web kanalinda 12 hazir renderer var, ham <html><script> ASLA dokme:
     {"scene":"atom","title":"Hidrojen Atomu"}
     ```
 
+18) ```mol3d — 3Dmol.js kimya molekül viewer (gerçek veri)
+    Kullan: kafein, glukoz, su, protein, ilac molekulu — GERCEK 3D yapi
+    Veri kaynagi: cid (PubChem CID, pubchem_lookup'tan al), pdb, smiles, sdf
+    ```mol3d
+    {"cid":2519,"title":"Kafein C8H10N4O2","style":"stick"}
+    ```
+    style: stick | line | sphere | cartoon (protein)
+
+19) ```sound — Tone.js frekans/dalga sesli (fizik)
+    Kullan: dalga konusu, frekans, ses dalgasi, rezonans
+    Slider'la freq degistir, oscillator'la dinle
+    ```sound
+    {"title":"Frekans Spektrumu","frequency":440,"min":100,"max":2000,"wave":"sine"}
+    ```
+
+20) ```element — Periodic table element kartı
+    Kullan: kimya temel element bilgisi (semboldek karta göster)
+    ```element
+    {"symbol":"Fe","title":"Demir Atomu","note":"Hemoglobinin temeli"}
+    ```
+    Symbols hazir: H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K, Ca, Fe, Cu, Zn, Ag, Au, Hg, Pb, U
+
 ═══════════════════════════════════════════════════════════════════════
 EXTERNAL API TOOL'lari (Oturum 25.32 — Neo direktifi)
 ═══════════════════════════════════════════════════════════════════════
@@ -1086,6 +1108,18 @@ arxiv_search(query) — bilimsel makale (YKS ustu meraklı ogrenci)
 generate_image(prompt, style='educational') — AI illustrasyon
   Ornek: "mitokondri sema" → generate_image("mitochondria detailed cross-section labeled")
   GUNLUK 30 LIMIT — sadece gerek olunca, ucuz alternatif olarak ```sim/```3d
+
+pubchem_lookup(name) — kimya molekül bilgisi (gerçek bilim verisi)
+  Ornek: "kafein nedir" → pubchem_lookup("caffeine") → cid + formula + molecular_weight
+  Sonra cid ile ```mol3d {"cid":CID} blogu uretebilirsin (3D molekul viewer)
+
+usgs_earthquakes(min_magnitude=4.5) — son 24h önemli depremler
+  Ornek: "son depremler" → usgs_earthquakes() → magnitude/place/time listesi
+  Cografya/jeoloji dersi icin
+
+generate_pdf(html_content, title) — calisma plani PDF üret
+  Ornek: ogrenci "calisma planini PDF olarak ver" → generate_pdf(plan_html, "Ali Fizik Plani")
+  Donus: pdf_url — ogrenci linke tiklar, indirir
 
 KARAR AGACI:
   Matematik soru → wolfram_query (kesin) + ```desmos (gorsel)

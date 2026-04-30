@@ -2202,7 +2202,35 @@ TOOL_DISPATCH = {
     "wiki_lookup":                 lambda p: _tool_wiki_lookup(**p),
     "arxiv_search":                lambda p: _tool_arxiv_search(**p),
     "generate_image":              lambda p: _tool_generate_image(**p),
+    # Oturum 25.33 (Neo) — 3 yeni external API tool
+    "pubchem_lookup":              lambda p: _tool_pubchem_lookup(**p),
+    "usgs_earthquakes":            lambda p: _tool_usgs_earthquakes(**p),
+    "generate_pdf":                lambda p: _tool_generate_pdf(**p),
 }
+
+
+# ── Oturum 25.33 — 3 yeni external API wrapper ──
+async def _tool_pubchem_lookup(name: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v2 import pubchem_lookup
+        return await pubchem_lookup(name=name)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_usgs_earthquakes(min_magnitude: float = 4.5, max_results: int = 10, **_extra) -> dict:
+    try:
+        from external_apis_v2 import usgs_earthquakes
+        return await usgs_earthquakes(min_magnitude=float(min_magnitude or 4.5),
+                                       max_results=int(max_results or 10))
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_generate_pdf(html_content: str = "", title: str = "FermatAI Rapor", **_extra) -> dict:
+    try:
+        from external_apis_v2 import generate_pdf
+        return await generate_pdf(html_content=html_content, title=title)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 # ── Oturum 25.32 — External API tool wrapperları ──
