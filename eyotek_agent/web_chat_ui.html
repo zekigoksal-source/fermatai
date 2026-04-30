@@ -487,8 +487,12 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
    Web (>1024px) ve mobil (<481px) etkilenmez, sadece tablet aralığı için.
    Wix HtmlComponent iframe sabit-yukseklik sebebiyle scroll bile yetmiyorsa,
    AGRESIF kompakt: dekoratif tum elemanlar (motto/subtitle/manifesto/brand/badges/tech-label) gizlenir,
-   sadece h1 + tagline + feature-pill + form + buton + hint kalir. */
-@media (min-width: 481px) and (max-width: 1024px) {
+   sadece h1 + tagline + feature-pill + form + buton + hint kalir.
+
+   IKINCI media query (asagida): touch-device + landscape iPad'leri de yakala.
+   pointer: coarse → sadece dokunmatik cihazlar. Laptop/PC'de pointer: fine (mouse) → etkilenmez. */
+@media (min-width: 481px) and (max-width: 1024px),
+       (hover: none) and (pointer: coarse) and (min-width: 481px) and (max-width: 1366px) {
   .login-wrap {
     align-items: flex-start;          /* ortala değil, üstten başla — alt/üst kesilmesin */
     padding: 16px 20px 24px;
