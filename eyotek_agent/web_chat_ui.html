@@ -304,6 +304,35 @@
   transform: translateX(3px);
 }
 
+/* 25.36 — Arşive ekle butonu (render link altinda) */
+.msg.bot .render-archive-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.30);
+  color: #B45309;
+  font-size: 12px; font-weight: 600;
+  padding: 6px 14px; border-radius: 18px;
+  cursor: pointer; margin-top: 8px;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+}
+.msg.bot .render-archive-btn:hover {
+  background: rgba(245,158,11,0.20);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(245,158,11,0.20);
+}
+.msg.bot .render-archive-btn.loading {
+  opacity: 0.6; cursor: wait;
+  animation: actionLoading 1.4s ease-in-out infinite;
+}
+.msg.bot .render-archive-btn.done {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.40);
+  color: #15803D;
+  cursor: default;
+}
+.msg.bot .render-archive-btn .ico { font-size: 14px; }
+html[data-theme="dark"] .msg.bot .render-archive-btn { color: #FCD34D; }
+html[data-theme="dark"] .msg.bot .render-archive-btn.done { color: #86EFAC; }
+
 /* ═══════════════════════════════════════════════════════════════
    Oturum 25.31 — 7 yeni eğitim odaklı renderer (Neo direktifi)
    ═══════════════════════════════════════════════════════════════ */
@@ -5503,6 +5532,9 @@ async function doSend() {
           if (card) {
             // Auto-evolve timer'i temizle
             if (card._evolveTimer) { clearInterval(card._evolveTimer); }
+            // 25.36: uuid'i URL'den çıkar (arşiv için)
+            const uuidMatch = url.match(/\/render\/([^?#]+)/);
+            const uuid = uuidMatch ? uuidMatch[1] : "";
             card.className = 'render-ready-card';
             card.innerHTML = `
               <a href="${url}" target="_blank" rel="noopener" class="render-ready-link">
@@ -5512,7 +5544,44 @@ async function doSend() {
                   <span class="render-ready-sub">Hazır — tıkla, yeni sekmede aç</span>
                 </span>
                 <span class="render-ready-arrow">→</span>
-              </a>`;
+              </a>
+              ${uuid ? `<button class="render-archive-btn" data-uuid="${uuid}" data-title="${title.replace(/"/g, '&quot;')}" title="Bu simulasyonu arsive ekle (kalici)">
+                <span class="ico">⭐</span>
+                <span class="lbl">Arşive Ekle</span>
+              </button>` : ""}`;
+            // Arşiv butonu event
+            const archBtn = card.querySelector(".render-archive-btn");
+            if (archBtn) {
+              archBtn.addEventListener("click", async (e) => {
+                e.preventDefault();
+                if (archBtn.classList.contains("done")) return;
+                if (archBtn.classList.contains("loading")) return;
+                archBtn.classList.add("loading");
+                archBtn.querySelector(".lbl").textContent = "Arşiveniyor...";
+                try {
+                  const r = await fetch(API_BASE + "/render/archive/" + uuid, {
+                    method: "POST", credentials: "include",
+                    headers: authHeaders({"Content-Type": "application/json"}),
+                    body: JSON.stringify({note: ""})
+                  });
+                  const data = await r.json();
+                  if (data.success) {
+                    archBtn.classList.remove("loading");
+                    archBtn.classList.add("done");
+                    archBtn.querySelector(".ico").textContent = "✓";
+                    archBtn.querySelector(".lbl").textContent = "Arşivlendi (Kalıcı)";
+                  } else throw new Error(data.error || "?");
+                } catch (err) {
+                  archBtn.classList.remove("loading");
+                  archBtn.querySelector(".ico").textContent = "⚠️";
+                  archBtn.querySelector(".lbl").textContent = "Hata: " + err.message.slice(0,30);
+                  setTimeout(() => {
+                    archBtn.querySelector(".ico").textContent = "⭐";
+                    archBtn.querySelector(".lbl").textContent = "Arşive Ekle";
+                  }, 3000);
+                }
+              });
+            }
             smartScroll();
           }
         }

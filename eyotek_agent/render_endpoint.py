@@ -50,11 +50,23 @@ async def ensure_table():
                 last_viewed_at TIMESTAMP
             )
         """)
+        # 25.36 — arşiv kolonları (kullanıcı talebi: 30gün TTL kısa, kalıcı tut)
+        await db_execute("""
+            ALTER TABLE render_artifacts
+            ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE,
+            ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP,
+            ADD COLUMN IF NOT EXISTS archived_by_phone TEXT,
+            ADD COLUMN IF NOT EXISTS archive_note TEXT,
+            ADD COLUMN IF NOT EXISTS quality_score INTEGER DEFAULT 0
+        """)
         await db_execute(
             "CREATE INDEX IF NOT EXISTS idx_render_uuid ON render_artifacts(uuid)"
         )
         await db_execute(
             "CREATE INDEX IF NOT EXISTS idx_render_expires ON render_artifacts(expires_at)"
+        )
+        await db_execute(
+            "CREATE INDEX IF NOT EXISTS idx_render_archived ON render_artifacts(archived) WHERE archived = TRUE"
         )
     except Exception as e:
         logger.warning(f"render_artifacts ensure_table hata: {e}")
@@ -89,14 +101,16 @@ async def create_artifact(html: str, title: str = "FermatAI Görsel",
 
 @router.get("/{uuid}", response_class=HTMLResponse)
 async def serve_artifact(uuid: str, request: Request):
-    """Public URL — HTML'i sandbox iframe ile serve et."""
+    """Public URL — HTML'i sandbox iframe ile serve et.
+    25.36: Arşivlenenler süresiz — expires_at kontrolünden muaf."""
     if not uuid or len(uuid) > 64:
         raise HTTPException(404, "Geçersiz")
     try:
         await ensure_table()
         row = await db_fetchrow(
-            """SELECT title, html, expires_at FROM render_artifacts
-               WHERE uuid = $1 AND (expires_at IS NULL OR expires_at > NOW())""",
+            """SELECT title, html, expires_at, archived FROM render_artifacts
+               WHERE uuid = $1
+                 AND (archived = TRUE OR expires_at IS NULL OR expires_at > NOW())""",
             uuid
         )
         if not row:
@@ -167,13 +181,119 @@ async def list_recent(limit: int = 20):
         await ensure_table()
         rows = await db_fetchrow(
             """SELECT COUNT(*) as toplam, COUNT(*) FILTER (WHERE expires_at > NOW()) as aktif,
+                      COUNT(*) FILTER (WHERE archived = TRUE) as arsivli,
                       MAX(created_at) as son
                FROM render_artifacts"""
         )
         return JSONResponse({
             "toplam": rows["toplam"] if rows else 0,
             "aktif": rows["aktif"] if rows else 0,
+            "arsivli": rows["arsivli"] if rows else 0,
             "son_olusum": str(rows["son"]) if rows and rows["son"] else None,
         })
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 25.36 — Arşiv sistemi (Neo direktifi: 30 gün TTL kısa, kalıcı tut)
+# ═══════════════════════════════════════════════════════════════════════
+@router.post("/archive/{uuid}")
+async def archive_artifact(uuid: str, request: Request):
+    """Render artifact'ı arşive ekle (kalıcı yap).
+    Body: {"phone": "...", "note": "Optional açıklama"}"""
+    if not uuid or len(uuid) > 64:
+        raise HTTPException(404, "Geçersiz")
+    try:
+        body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+        phone = (body.get("phone") or "").strip()[:20]
+        note = (body.get("note") or "")[:500]
+        await ensure_table()
+        # Kontrol: artifact var mı?
+        existing = await db_fetchrow(
+            "SELECT id, archived FROM render_artifacts WHERE uuid = $1", uuid
+        )
+        if not existing:
+            raise HTTPException(404, "Artifact bulunamadı")
+        if existing["archived"]:
+            return JSONResponse({"success": True, "already_archived": True, "uuid": uuid})
+        await db_execute(
+            """UPDATE render_artifacts
+               SET archived = TRUE, archived_at = NOW(),
+                   archived_by_phone = $2, archive_note = $3,
+                   expires_at = NULL
+               WHERE uuid = $1""",
+            uuid, phone, note
+        )
+        logger.info(f"render: archive uuid={uuid} by={phone[-4:] if phone else '?'}")
+        return JSONResponse({"success": True, "uuid": uuid, "archived": True})
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"archive_artifact hata: {e}")
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@router.post("/unarchive/{uuid}")
+async def unarchive_artifact(uuid: str, request: Request):
+    """Arşivden çıkar — orijinal TTL geri yüklenir (7 gün)."""
+    if not uuid or len(uuid) > 64:
+        raise HTTPException(404, "Geçersiz")
+    try:
+        await ensure_table()
+        await db_execute(
+            """UPDATE render_artifacts
+               SET archived = FALSE, archived_at = NULL,
+                   archived_by_phone = NULL, archive_note = NULL,
+                   expires_at = COALESCE(expires_at, NOW() + INTERVAL '7 days')
+               WHERE uuid = $1""",
+            uuid
+        )
+        return JSONResponse({"success": True, "uuid": uuid, "archived": False})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+@router.get("/archived/list")
+async def list_archived(phone: str = "", limit: int = 50):
+    """Kullanıcının arşivledikleri (veya tüm arşiv)."""
+    try:
+        await ensure_table()
+        from db_pool import db_fetch
+        if phone:
+            phone_clean = phone.replace("+", "").replace(" ", "")[-20:]
+            rows = await db_fetch(
+                """SELECT uuid, title, archived_at, archive_note, view_count, creator_phone
+                   FROM render_artifacts
+                   WHERE archived = TRUE AND (
+                       archived_by_phone = $1 OR creator_phone = $1
+                       OR REPLACE(archived_by_phone, '+', '') = $1
+                       OR REPLACE(creator_phone, '+', '') = $1
+                   )
+                   ORDER BY archived_at DESC LIMIT $2""",
+                phone_clean, int(limit or 50)
+            )
+        else:
+            rows = await db_fetch(
+                """SELECT uuid, title, archived_at, archive_note, view_count, creator_phone
+                   FROM render_artifacts
+                   WHERE archived = TRUE
+                   ORDER BY archived_at DESC LIMIT $1""",
+                int(limit or 50)
+            )
+        items = []
+        import os
+        base = os.getenv("PUBLIC_BASE_URL", "https://api.fermategitimkurumlari.com").rstrip("/")
+        for r in rows:
+            items.append({
+                "uuid": r["uuid"],
+                "title": r["title"] or "Başlıksız",
+                "archived_at": str(r["archived_at"]) if r["archived_at"] else "",
+                "note": r["archive_note"] or "",
+                "view_count": r["view_count"] or 0,
+                "url": f"{base}/render/{r['uuid']}",
+            })
+        return JSONResponse({"success": True, "count": len(items), "items": items})
+    except Exception as e:
+        logger.warning(f"list_archived hata: {e}")
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
