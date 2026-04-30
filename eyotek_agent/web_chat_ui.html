@@ -1210,7 +1210,12 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
             t.classList.contains('chat-messages') ||
             t.classList.contains('login-wrap') ||
             t.classList.contains('quick-prompts-list') ||
-            t.classList.contains('dashboard-modal-body') ||
+            t.classList.contains('dashboard-content') ||  // gercek class adi
+            t.classList.contains('dashboard-panel') ||    // dashboard parent
+            t.classList.contains('dashboard-overlay') ||  // dashboard root
+            t.classList.contains('dashboard-modal-body') || // legacy/eski
+            t.classList.contains('history-list') ||       // gecmis paneli
+            t.classList.contains('drawer-content') ||     // drawer scroll
             t.tagName === 'TEXTAREA' ||
             t.tagName === 'INPUT' ||
             t.tagName === 'SELECT'
