@@ -1216,7 +1216,75 @@ graph LR
 ```
 
 ---
-## ✅ Eğer hepsi düzgün render ediyorsa: **22/22 renderer çalışıyor.**
+## 23. ```steps — Step-by-step solver
+```steps
+{"title":"x²+5x+6=0 köklerini bul","steps":[
+  {"title":"Çarpanlara ayır","body":"x²+5x+6 = (x+2)(x+3)","reason":"Sabit terim 6 = 2×3 ve 2+3 = 5 = ortadaki katsayı"},
+  {"title":"Sıfıra eşitle","body":"(x+2)·(x+3) = 0\\n\\nÇarpım sıfır → en az biri sıfır"},
+  {"title":"Kökleri yaz","body":"x+2=0 → x=-2\\nx+3=0 → x=-3"}
+],"conclusion":"x ∈ {-2, -3}"}
+```
+
+---
+## 24. ```kgraph — Knowledge Graph (D3 force layout)
+```kgraph
+{"title":"Matematik Konu Haritası","nodes":[
+  {"id":"limit","label":"Limit","ders":"Mat","mastery":0.4,"size":22},
+  {"id":"turev","label":"Türev","ders":"Mat","mastery":0.6,"size":18},
+  {"id":"integral","label":"İntegral","ders":"Mat","mastery":0.3,"size":24},
+  {"id":"fonk","label":"Fonksiyonlar","ders":"Mat","mastery":0.85,"size":14},
+  {"id":"trig","label":"Trigonometri","ders":"Mat","mastery":0.5,"size":17}
+],"links":[
+  {"source":"limit","target":"turev","weight":0.9},
+  {"source":"turev","target":"integral","weight":0.95},
+  {"source":"fonk","target":"limit","weight":0.7},
+  {"source":"trig","target":"turev","weight":0.6}
+],"stats":{"weakest_3":["İntegral","Limit","Trigonometri"]}}
+```
+
+---
+## 25. ```quiz — Interactive quiz (multi-choice + feedback)
+```quiz
+{"title":"Limit Hızlı Test","questions":[
+  {"stem":"lim(x→0) sin(x)/x = ?","choices":["0","1","∞","tanımsız"],"correct":1,
+   "explanation":"Standart limit (L'Hôpital veya Taylor): sin(x)/x → 1"},
+  {"stem":"lim(x→2) (x²-4)/(x-2) = ?","choices":["0","2","4","∞"],"correct":2,
+   "explanation":"(x²-4)=(x-2)(x+2) → sadeleşir, x+2 yerine 2 koy → 4"}
+]}
+```
+
+---
+## 26. ```compare2 — Concept Comparison Matrix
+```compare2
+{"title":"Mitoz vs Mayoz","left":{"label":"Mitoz","summary":"Vücut hücreleri"},"right":{"label":"Mayoz","summary":"Üreme hücreleri"},
+"rows":[
+  {"aspect":"Hücre sayısı","left":"2","right":"4","highlight":true},
+  {"aspect":"Kromozom","left":"2n (diploid)","right":"n (haploid)"},
+  {"aspect":"Crossing-over","left":"Yok","right":"Var (Profaz I)","highlight":true},
+  {"aspect":"Çeşitlilik","left":"Yok (klon)","right":"Yüksek"}
+],"takeaway":"Mayoz çeşitlilik üretir, mitoz büyütür"}
+```
+
+---
+## 27. ```recall — Active Recall hatırlatma
+```recall
+{"konu":"Fotoelektrik Olayı","ders":"Fizik",
+"summary":"Foton enerjisi E = hν, eşik frekansı altında elektron çıkmaz",
+"action":"Şimdi sen anlat — fotoelektrik olayı kısaca nasıl çalışır? Eşik frekansı ne demek?",
+"interval_hours":24}
+```
+
+---
+## 28. ```compound — 2-3 renderer tek kart
+```compound
+{"title":"Newton 2. Yasa Tam Paket","panels":[
+  {"type":"formula","label":"Yasa","data":{"body":"$F = m \\\\cdot a$"}},
+  {"type":"karne","label":"Senin Durumun","data":{"title":"Mekanik","konular":[{"konu":"Newton","skor":65,"hedef":80}]}}
+],"note":"Formül + senin durumun = compound learning"}
+```
+
+---
+## ✅ Eğer hepsi düzgün render ediyorsa: **28/28 renderer çalışıyor.**
 """
     test_md_safe = test_md.replace("</script>", "<\\/script>").replace("`", "\\`")
     return HTMLResponse(f"""<!DOCTYPE html>
