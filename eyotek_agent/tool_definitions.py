@@ -1980,21 +1980,28 @@ TOOLS.append({
     "name": "make_render_link",
     "description": (
         "⚠️ KOMPLEKS HTML/JS/CSS uretirse kalici URL verir. ZORUNLU: html parametresi BOS olamaz. "
-        "ONCE 12 hazir renderer'i dene (```sim/```3d/```formula/```calc/```chart/"
-        "```radar/```heatmap/```karne/```gauge/```timeline/```progress/```compare). "
-        "Sadece bunlar yetmediginde bu tool'u kullan — ornek: cok parcali interaktif "
+        "🚨 OGRENCI PROFIL/SIMULASYON istegi geldiginde KULLANMA — buyuk HTML uretirken tool call "
+        "kesiliyor (300s timeout). Yerine ```karne + ```chart + ```radar + ```timeline + ```kgraph "
+        "kombinasyonu kullan (compound rendering). Sadece KAVRAMSAL deney/sim icin kullan: "
+        "ornek 'fotoelektrik simulasyonu', 'kepler yorunge', 'Compton sacilmasi'. "
+        "ONCE 28 hazir renderer'i dene (```sim/```3d/```formula/```calc/```chart/"
+        "```radar/```heatmap/```karne/```gauge/```timeline/```progress/```compare/```desmos/"
+        "```geogebra/```plotly/```mermaid/```vr/```mol3d/```sound/```element/```excalidraw/```codeout/"
+        "```steps/```kgraph/```quiz/```compare2/```recall/```compound). "
+        "Sadece bunlar yetmediginde son care kullan — ornek: cok parcali interaktif "
         "deney duzenegi, oyun benzeri etkilesim, WebGL/Canvas2D ozel sahneler. "
         "DOGRU CAGRI: make_render_link(title='X', html='<!DOCTYPE html>...tum HTML kodu...</html>'). "
-        "html parametresi 100B - 800KB arasi olmali (ideal 30-100KB). Bos string CAGRI HATASI doner."
+        "html parametresi 200B - 1MB arasi olmali (ideal 200-400KB). Bos string CAGRI HATASI doner."
     ),
     "input_schema": {
         "type": "object",
         "properties": {
             "html": {
                 "type": "string",
-                "description": "ZORUNLU. Tam HTML icerigi (head + body + script). 100B - 800KB. "
+                "description": "ZORUNLU. Tam HTML icerigi (head + body + script). 200B - 1MB. "
                               "<!DOCTYPE> ile baslamasi gerekmez — wrapper otomatik eklenir. "
-                              "BOS STRING CAGRI HATASI doner. Tum simulasyon kodunu BURAYA YAZ."
+                              "BOS STRING CAGRI HATASI doner. Tum simulasyon kodunu BURAYA YAZ. "
+                              "Ogrenci profil/simulasyon istegi → bu tool yerine ```karne + ```chart + ```kgraph kombosu kullan."
             },
             "title": {
                 "type": "string",

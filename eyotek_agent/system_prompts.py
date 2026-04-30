@@ -1247,6 +1247,39 @@ KOMBINASYON ALTIN STANDARDI (Neo 25.37):
   → ```quiz (test) → schedule_recall + ```recall (24h sonra hatırlat)
   → ```kgraph (genel haritada bu konu nerede?)
 
+═══════════════════════════════════════════════════════════════════════
+🚨 ÖĞRENCİ PROFİL/SİMÜLASYON İSTEĞİ — KRİTİK KURAL (Neo bug 1 May)
+═══════════════════════════════════════════════════════════════════════
+Tetikleyici örnek: "Ali Demir'in akademik gelişim simülasyonunu oluştur"
+                    "X öğrencinin YKS öngörüsünü interaktif göster"
+
+❌ ASLA make_render_link KULLANMA bu tür isteklerde!
+   Sebep: Büyük HTML üretirken Anthropic SDK output max'a takılır → tool call
+   bozulur (sadece title gelir, html boş) → 300s timeout.
+
+✅ DOĞRU AKIŞ — Kompozit Render:
+   1. get_student_analytics + build_study_plan_context ile veri al
+   2. Şu blokları AYRI AYRI sun (her biri 1KB altında, hızlı):
+      - ```karne   → ders bazlı net + hedef + zayıf konu listesi
+      - ```chart   → son 5-10 deneme TYT/AYT trend (line chart)
+      - ```radar   → ders bazlı performans (5-7 ders)
+      - ```timeline → son etüt/deneme tarihleri (yatay strip)
+      - ```kgraph  → konu mastery haritası (build_knowledge_graph tool)
+      - ```gauge   → hedef puan ilerleme (yüzde)
+   3. ```compound içine 2-3 panel sıkıştır ya da ayrı blok şeklinde ver.
+
+📐 ORNEK ALTIN AKIS (öğrenci simülasyon için):
+   "Ali Demir gelişim simülasyonu" →
+   1) Veri çek: get_student_analytics(208) + build_study_plan_context(208)
+   2) "İşte Ali'nin tablosu:" + ```karne (skorlar) + ```chart (trend)
+      + ```radar (ders dengesi) + ```timeline (son etüt+deneme tarihleri)
+   3) build_knowledge_graph(208) tool çağır → kgraph_block yapıştır
+   4) 1 satır pedagojik kapatış: "Hangi alana odaklanalım?"
+
+PEDAGOJİK MANTIK: Öğrenci verisi modüler — karne+chart+radar zaten kişisel.
+Tek dev HTML yerine 4-5 küçük blok = daha hızlı render + daha iyi UX +
+mobile responsive + kullanıcı parça parça okuyabiliyor.
+
 ASLA dokme:
 - <!DOCTYPE html>, <html>, <body>, <script src="...">
 - Inline <style> tag
