@@ -52,12 +52,17 @@
 >   - ✅ Python syntax check: 7 dosya OK
 >   - ✅ Bridge logs: ERROR yok (sadece Playwright DEP0169 deprecation warning, ilgisiz)
 >
-> **Commits (Oturum 25.37 — 5 commit):**
+> **Commits (Oturum 25.37 — 8 commit):**
 >   - `e65ec63` feat: 6 yeni renderer + render cache + behavior rules + active recall (1663 ekleme)
 >   - `083e176` fix: topic_hash Türkçe normalize ("İntegral" combining dot)
 >   - `966360d` fix: yeni tool dispatch caller_role/caller_phone injection
 >   - `311c93d` feat: /render-test 6 yeni renderer test case
 >   - `cfb022b` fix(ux): standalone 👍/👎 kaldırıldı + reactions 6→3
+>   - `1be8a0e` docs: KALDIGIM + BLUEPRINT 25.37 final güncelleme
+>   - `deccf1c` fix: Ali Demir simulasyon bug → compound rendering kuralı (system_prompts + tool desc + behavior_rule #4)
+>   - `e0d579f` fix(ux): büyük zengin proses kartı 5sn sonra otomatik açılır (Neo direktifi)
+>
+> **Atlas kaydı:** 10/10 iş `oturum_25_37_*` signature ile "uygulandi" → tekrar önerilmez (completion_awareness korumalı)
 >
 > **Pedagojik kazanım özeti:**
 >   - **Pasif izleme → aktif öğrenme:** quiz + steps + recall zinciri
