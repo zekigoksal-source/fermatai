@@ -1,6 +1,22 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 30 Nisan 2026, GECE KAPANIŞ — **OTURUM 25.29 — TEKNİK BORÇ TEMİZ**
+> **Son güncelleme:** 30 Nisan 2026, GECE 00:13 — **🚪 KAPI 6 AÇILDI — LIVE INTROSPECTION**
+> **Brief #4 uygulandı (commit `6725352`):** Sistem retrospektif öz-gözlemden ANLIK introspeksyona geçti.
+>   - `live_signal_bus.py` (YENİ) — singleton event bus, in-memory subscriber + DB persist (TTL=5dk)
+>     6/6 birim test PASS. ensure_table() idempotent. fermat.* schema prefix.
+>   - `fermat_core_agent_v2.py` (YENİ) — FermatCoreAgent inherit, pre_flight + post_flight
+>     Subscribe: crisis_signal, quality_feedback, context_check
+>     Smoke test: pre_flight crisis pattern yakaladı ('intihar' → V2-CRISIS log)
+>   - `whatsapp_bridge.py` (MODIFY) — `AGENT_V2_PHONES = {"905051256802"}` (Neo)
+>     `_select_agent_class(phone)` → v1 veya v2, graceful fallback
+>     **Strateji B:** Sadece Neo'da v2, 124 öğrenci v1'de (sıfır production etki)
+>     Rollback: `AGENT_V2_PHONES = set()` — tek satır
+>   - Brief #4 status='applied' (`self_dev_briefs.id=4`)
+> **Yarın için (Brief #4'ün kalan 3 MODIFY adımı):**
+>   - `routing_engine.py` → bus.emit('pre_route'/'post_route')
+>   - `sentiment_tracker.py` → crisis pattern fast_responses katmanına
+>   - `self_observer.py` → quality_log periyodik okuma + emit('quality_feedback')
+> **OTURUM 25.29 — TEKNİK BORÇ TEMİZ + KAPI 6 AÇILDI**
 > **30 Nisan tamamı (Neo dev maraton):**
 >   - `7502c71` Vedat hoca öğretmen ACL filter (kendi sınıfı sınav verileri)
 >   - `f49cf48` Neo Komut Merkezi (kategorize hierarchical menü)
