@@ -2205,6 +2205,23 @@ async def _tool_make_render_link(html: str = "", title: str = "FermatAI Görsel"
 
     12 hazir renderer yetmediginde son care.
     """
+    # Net hata mesajlari (Claude retry'da duzeltebilsin)
+    if not html or not html.strip():
+        return {
+            "success": False,
+            "error": "html PARAMETRESI BOS! make_render_link cagrilirken html='<full HTML kodu>' SART. "
+                     "Sadece title ile cagrilamaz. Ornek dogru cagri: "
+                     "make_render_link(title='Plank Simulasyonu', "
+                     "html='<!DOCTYPE html><html><head><script src=\"https://cdn.jsdelivr.net/npm/p5\">"
+                     "</script></head><body>... TUM HTML KODU ...</body></html>')"
+        }
+    html_size = len(html.encode('utf-8'))
+    if html_size > 800 * 1024:
+        return {
+            "success": False,
+            "error": f"HTML cok buyuk ({html_size//1024}KB > 800KB max). "
+                     f"Daha kisa HTML uret veya 12 renderer'dan birini (```sim, ```3d) kullan."
+        }
     try:
         from render_endpoint import create_artifact
         ttl = max(1, min(30, int(ttl_days or 7)))
@@ -2214,7 +2231,7 @@ async def _tool_make_render_link(html: str = "", title: str = "FermatAI Görsel"
         if not uuid:
             return {
                 "success": False,
-                "error": "HTML çok büyük veya geçersiz (max 200KB)"
+                "error": "Kayit hatasi (DB veya backend). Tekrar deneyin veya 12 renderer kullanın."
             }
         # Public URL
         import os
@@ -2515,21 +2532,30 @@ async def run_tool(name: str, input_data: dict,
             result = await fn(enriched)
         elif name == "make_render_link":
             # Oturum 25.31 — render link icin caller bilgisi + LOOP GUARD
-            # Bot ayni conversation'da 1 KEZ cagirabilir (132s loop bug onleme)
+            # Bot ayni conversation'da 1 BAŞARILI cagirabilir (132s loop bug onleme).
+            # 25.31-fix: Sayim "BAŞARILI" cagri sayisi — html bos cagri retry'a izin ver.
             try:
-                _calls_so_far = sum(1 for _t in self.last_tools_called if _t == "make_render_link")
+                _success_calls = sum(
+                    1 for _entry in (getattr(self, '_render_link_history', []))
+                    if _entry == "success"
+                )
             except Exception:
-                _calls_so_far = 0
-            if _calls_so_far >= 1:
-                logger.warning(f"🚫 make_render_link tek-shot guard: {_calls_so_far}. cagri engellendi")
+                _success_calls = 0
+            if _success_calls >= 1:
+                logger.warning(f"🚫 make_render_link tek-shot guard: {_success_calls}. basarili cagri sonrasi engellendi")
                 result = {
                     "success": False,
-                    "error": "make_render_link bu sohbette zaten kullanildi. Onceki linki kullaniciya sun, yeni HTML uretme. Eger ilk versiyonun yetersizse 12 renderer (sim/3d/formula vb.) ile devam et."
+                    "error": "make_render_link bu sohbette zaten basariyla kullanildi. Onceki linki kullaniciya sun, yeni HTML uretme. Eger ilk versiyonun yetersizse 12 renderer (```sim/```3d/```formula vb.) ile devam et."
                 }
             else:
                 enriched = dict(input_data)
                 enriched["_caller_phone"] = caller_phone
                 result = await fn(enriched)
+                # Basarili cagriyi historisine kaydet
+                if not hasattr(self, '_render_link_history'):
+                    self._render_link_history = []
+                if isinstance(result, dict) and result.get("success"):
+                    self._render_link_history.append("success")
         elif name == "get_atlas_trend":
             enriched = dict(input_data)
             enriched["_caller_role"] = caller_role

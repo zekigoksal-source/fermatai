@@ -1979,20 +1979,22 @@ DEAD_TOOLS: set[str] = {
 TOOLS.append({
     "name": "make_render_link",
     "description": (
-        "Bot kompleks ozel HTML/JS/CSS uretirse kalici link verir. "
+        "⚠️ KOMPLEKS HTML/JS/CSS uretirse kalici URL verir. ZORUNLU: html parametresi BOS olamaz. "
         "ONCE 12 hazir renderer'i dene (```sim/```3d/```formula/```calc/```chart/"
         "```radar/```heatmap/```karne/```gauge/```timeline/```progress/```compare). "
         "Sadece bunlar yetmediginde bu tool'u kullan — ornek: cok parcali interaktif "
-        "deney duzenegi, oyun benzeri etkilesim, ya da WebGL/Canvas2D ozel sahneler. "
-        "Donus: {url, uuid, expires_at}. Linki ogrenciye 'Buyuk gorseli ac: <url>' diye sun."
+        "deney duzenegi, oyun benzeri etkilesim, WebGL/Canvas2D ozel sahneler. "
+        "DOGRU CAGRI: make_render_link(title='X', html='<!DOCTYPE html>...tum HTML kodu...</html>'). "
+        "html parametresi 100B - 800KB arasi olmali (ideal 30-100KB). Bos string CAGRI HATASI doner."
     ),
     "input_schema": {
         "type": "object",
         "properties": {
             "html": {
                 "type": "string",
-                "description": "Tam HTML icerigi (head + body + script). Max 200KB. "
-                              "<!DOCTYPE> ile baslamasi gerekmez — wrapper otomatik eklenir."
+                "description": "ZORUNLU. Tam HTML icerigi (head + body + script). 100B - 800KB. "
+                              "<!DOCTYPE> ile baslamasi gerekmez — wrapper otomatik eklenir. "
+                              "BOS STRING CAGRI HATASI doner. Tum simulasyon kodunu BURAYA YAZ."
             },
             "title": {
                 "type": "string",
