@@ -486,42 +486,48 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
 /* Tablet (iPad portrait + Android tablet portrait) — login-box uzun içerik kaydırılabilir olsun.
    Web (>1024px) ve mobil (<481px) etkilenmez, sadece tablet aralığı için.
    Wix HtmlComponent iframe sabit-yukseklik sebebiyle scroll bile yetmiyorsa,
-   AGRESIF kompakt: dekoratif tum elemanlar (motto/subtitle/manifesto/brand/badges/tech-label) gizlenir,
-   sadece h1 + tagline + feature-pill + form + buton + hint kalir.
+   DENGELI kompakt: rozetleri (tech-label + 4 trust-badge) ve kurumsal kimligi koru,
+   sadece UZUN marketing METINLERINI (motto + subtitle + manifesto + brand) gizle.
 
-   IKINCI media query (asagida): touch-device + landscape iPad'leri de yakala.
+   IKINCI media query: touch-device + landscape iPad'leri de yakala.
    pointer: coarse → sadece dokunmatik cihazlar. Laptop/PC'de pointer: fine (mouse) → etkilenmez. */
 @media (min-width: 481px) and (max-width: 1024px),
        (hover: none) and (pointer: coarse) and (min-width: 481px) and (max-width: 1366px) {
   .login-wrap {
     align-items: flex-start;          /* ortala değil, üstten başla — alt/üst kesilmesin */
-    padding: 16px 20px 24px;
+    padding: 18px 20px 28px;
     overflow-y: auto;                 /* icerik uzunsa scroll (iframe izin verirse) */
     -webkit-overflow-scrolling: touch;/* iOS smooth scroll */
   }
   .login-box {
-    padding: 22px 24px 18px;          /* siki kompakt */
+    padding: 26px 28px 22px;
     max-width: 480px;
   }
-  /* Marketing rozet sirasi gizle (tablette gerek yok, form on planda) */
-  .login-box .tech-label { display: none; }
-  .login-box h1 { font-size: 24px; margin-bottom: 2px; }
-  .login-box .brand-tagline { font-size: 14px; margin: 2px 0 10px; }
+  /* Tech-label (AGENTIC AI · NEXT-GEN EDTECH) — kalsin, kurumsal etki */
+  .login-box .tech-label { margin-bottom: 10px; }
+  .login-box h1 { font-size: 26px; margin-bottom: 4px; }
+  .login-box .brand-tagline { font-size: 15px; margin: 4px 0 8px; }
+  /* Uzun marketing metinleri gizle (motto + subtitle iframe'de gerekli degil) */
   .login-box .brand-motto { display: none; }
   .login-box .subtitle { display: none; }
-  /* 3 feature-pill kalir ama daha kompakt */
-  .login-box .feature-row { margin-bottom: 12px; gap: 6px; }
-  .login-box .feature-pill { padding: 8px 4px; }
-  .login-box .feature-pill .fp-icon { font-size: 15px; margin-bottom: 2px; }
-  .login-box .feature-pill .fp-text { font-size: 10px; letter-spacing: 0.2px; }
-  .login-box .feature-pill .fp-sub { font-size: 7.5px; margin-top: 2px; }
-  /* Form — input + buton aynen, sadece arasi sikilastir */
-  .login-box label { font-size: 12px; margin-bottom: 4px; }
-  .login-box input { padding: 10px 12px; font-size: 14px; margin-bottom: 8px; }
-  .login-box button { padding: 11px; font-size: 14px; }
-  .login-box .hint { margin-top: 8px; font-size: 11px; line-height: 1.5; }
-  /* Trust-footer (manifesto + 4 badge + brand) tamamen gizle — iframe height tasarrufu */
-  .login-box .trust-footer { display: none; }
+  /* 3 feature-pill — aynen, hafif kompakt */
+  .login-box .feature-row { margin-bottom: 14px; gap: 7px; }
+  .login-box .feature-pill { padding: 9px 4px; }
+  .login-box .feature-pill .fp-icon { font-size: 16px; margin-bottom: 3px; }
+  .login-box .feature-pill .fp-text { font-size: 10.5px; letter-spacing: 0.25px; }
+  .login-box .feature-pill .fp-sub { font-size: 8px; margin-top: 2px; }
+  /* Form — input + buton standart, aralar hafif sikilastir */
+  .login-box label { font-size: 12px; margin-bottom: 5px; }
+  .login-box input { padding: 11px 13px; font-size: 14.5px; margin-bottom: 10px; }
+  .login-box button { padding: 12px; font-size: 14.5px; }
+  .login-box .hint { margin-top: 10px; font-size: 11.5px; line-height: 1.5; }
+  /* Trust-footer — 4 ROZET KALSIN (60+/48K/7-24/<1sn), sadece uzun manifesto + brand gizle */
+  .login-box .trust-footer { margin-top: 16px; padding-top: 14px; }
+  .login-box .trust-footer .badges { margin-bottom: 0; }
+  .login-box .trust-footer .badge .num { font-size: 12px; }
+  .login-box .trust-footer .badge .label { font-size: 8.5px; letter-spacing: 0.5px; }
+  .login-box .trust-footer .manifesto { display: none; }
+  .login-box .trust-footer .brand { display: none; }
 }
 .login-box .step { display: none; }
 .login-box .step.active { display: block; }
