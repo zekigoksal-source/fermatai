@@ -1805,14 +1805,37 @@ def verify_signature(payload: bytes, signature: str, client_ip: str = "") -> boo
 
 # ── Agent Session Yönetimi ───────────────────────────────────────────────────
 
-def get_agent(phone: str):
-    """Telefon başına tek agent instance — konuşma geçmişi korunur + DB'den yüklenir."""
+# Oturum 25.29 — Kapı 6 / Brief #4: paralel v2 agent (LiveSignalBus)
+# Strateji B: production'a dokunma, sadece Neo'nun hattında v2 aktif.
+# Rollback: AGENT_V2_PHONES = set() — tek satır, anında tüm kullanıcılar v1'e döner.
+AGENT_V2_PHONES: set[str] = {"905051256802"}  # Neo (Zeki Goksal — admin)
+
+
+def _select_agent_class(phone: str):
+    """Telefon → uygun agent class. v2 listedeyse FermatCoreAgentV2, değilse v1."""
+    if phone in AGENT_V2_PHONES:
+        try:
+            from fermat_core_agent_v2 import FermatCoreAgentV2
+            return FermatCoreAgentV2, "v2"
+        except Exception as e:
+            # v2 import hatası → v1'e graceful fallback (production etki yok)
+            logger.warning(f"[BRIDGE] v2 import fail, v1 fallback: {e}")
     from fermat_core_agent import FermatCoreAgent
+    return FermatCoreAgent, "v1"
+
+
+def get_agent(phone: str):
+    """Telefon başına tek agent instance — konuşma geçmişi korunur + DB'den yüklenir.
+
+    25.29: Kapı 6 — AGENT_V2_PHONES'da olan telefonlar V2 alır (LiveSignalBus aktif),
+           diğerleri V1'de kalır (production etki YOK).
+    """
     if phone not in _AGENT_SESSIONS:
         try:
-            agent = FermatCoreAgent()
+            AgentClass, ver = _select_agent_class(phone)
+            agent = AgentClass()
             _AGENT_SESSIONS[phone] = agent
-            logger.info(f"Yeni agent session: {phone}")
+            logger.info(f"Yeni agent session ({ver}): {phone}")
 
             # DB'den son konuşma bağlamını yükle (son 10 mesaj)
             try:
@@ -2049,9 +2072,11 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
         try:
             agent = get_agent(phone)
             if not agent:
-                from fermat_core_agent import FermatCoreAgent
-                _AGENTS[phone] = FermatCoreAgent()
+                # Oturum 25.29: v2-aware fallback (Neo hattıysa v2)
+                AgentClass, ver = _select_agent_class(phone)
+                _AGENTS[phone] = AgentClass()
                 agent = _AGENTS[phone]
+                logger.info(f"Inline fallback agent ({ver}): {phone}")
             response = await agent.run(user_input=text, caller_phone=phone)
 
             # Yabancı numara logla — iletişim bilgisi çıkar
