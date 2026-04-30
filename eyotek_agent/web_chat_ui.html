@@ -6038,6 +6038,8 @@ async function doSend() {
 
   let botMsg = null;
   let thinkingMsg = null;
+  let richThinkingCard = null;  // 25.37 (Neo): büyük zengin process kartı (5sn sonra)
+  let richUpgradeTimer = null;
   let accumulated = "";
 
   // Helper: thinking bubble göster — auto-evolve message (Oturum 25.31)
@@ -6053,6 +6055,69 @@ async function doSend() {
     { delay: 60000, txt: "⚡ Kapsamlı içerik üretiliyor — neredeyse hazır, lütfen bekle..." },
     { delay: 90000, txt: "🚀 Çok kapsamlı bir cevap üretiliyor — sayfa bozulmuş değil, sürüyor..." },
   ];
+
+  // 25.37 (Neo direktifi) — uzun işlemlerde küçük pill 5sn sonra büyük zengin karta evrim
+  // Bu kart hem genel (analitik) hem render (make_render_link) için kullanılır.
+  const _RICH_PROCESS_EVOLUTIONS = [
+    { delay: 0,      icon: "🤔", title: "Düşünüyor",                            sub: "Soru analiz ediliyor..." },
+    { delay: 4000,   icon: "🔍", title: "Veriler taranıyor",                    sub: "Akademik kayıtlar + müfredat bankası kontrol ediliyor..." },
+    { delay: 10000,  icon: "📊", title: "Analiz yapılıyor",                     sub: "Sınav netleri, trend, zayıf konular işleniyor..." },
+    { delay: 18000,  icon: "🎨", title: "Görsel içerik hazırlanıyor",          sub: "Grafikler, formüller ve interaktif öğeler ekleniyor..." },
+    { delay: 28000,  icon: "⚙️",  title: "Animasyonlar ve formüller işleniyor", sub: "Fizik formülleri ve hareket eklenıyor..." },
+    { delay: 42000,  icon: "🎯", title: "İnteraktif kontroller ekleniyor",     sub: "Sürgüler, butonlar, anlık hesaplama..." },
+    { delay: 60000,  icon: "🖌️", title: "Renkler ve görsel detaylar son rötuş",sub: "Birazdan hazır olacak..." },
+    { delay: 90000,  icon: "🚀", title: "Karmaşık bir içerik — hala üretiliyor",sub: "Detaylı çıktı için biraz daha sabır..." },
+    { delay: 130000, icon: "⏳", title: "Çok kapsamlı bir cevap — neredeyse hazır", sub: "Bot derin bir analiz yazıyor..." },
+    { delay: 180000, icon: "🎬", title: "Final hazırlıklar — emin ol bekleyişin değer", sub: "Çok yakında bitiyor..." },
+  ];
+
+  function _evolveRichCard() {
+    if (!richThinkingCard || !document.body.contains(richThinkingCard)) {
+      if (richUpgradeTimer) { clearInterval(richUpgradeTimer); richUpgradeTimer = null; }
+      return;
+    }
+    const elapsed = Date.now() - thinkingStart;
+    let chosen = _RICH_PROCESS_EVOLUTIONS[0];
+    for (const ev of _RICH_PROCESS_EVOLUTIONS) {
+      if (elapsed >= ev.delay) chosen = ev;
+    }
+    const titleEl = richThinkingCard.querySelector('.render-pending-title');
+    const subEl = richThinkingCard.querySelector('.render-pending-sub');
+    if (titleEl && titleEl.textContent !== `${chosen.icon} ${chosen.title}`) {
+      titleEl.style.transition = "opacity 0.3s";
+      subEl.style.transition = "opacity 0.3s";
+      titleEl.style.opacity = "0.3"; subEl.style.opacity = "0.3";
+      setTimeout(() => {
+        if (titleEl) { titleEl.textContent = `${chosen.icon} ${chosen.title}`; titleEl.style.opacity = "1"; }
+        if (subEl)   { subEl.textContent = chosen.sub; subEl.style.opacity = "1"; }
+      }, 300);
+    }
+  }
+
+  function upgradeToRichCard() {
+    // Eğer zaten büyük kart varsa (render_pending önce geldi) skip
+    if (richThinkingCard) return;
+    if (!thinkingMsg) return;
+    // Küçük pili kaldır
+    try { thinkingMsg.remove(); } catch(_) {}
+    thinkingMsg = null;
+    if (thinkingTimer) { clearInterval(thinkingTimer); thinkingTimer = null; }
+    // Büyük kart oluştur (render-pending-card aynı CSS — kalitesi var)
+    richThinkingCard = document.createElement('div');
+    richThinkingCard.className = 'msg bot render-pending-card';
+    richThinkingCard.innerHTML = `
+      <div class="render-spinner"></div>
+      <div class="render-pending-text">
+        <div class="render-pending-title">🔍 Veriler taranıyor</div>
+        <div class="render-pending-sub">Akademik kayıtlar + müfredat bankası kontrol ediliyor...</div>
+      </div>`;
+    messages.appendChild(richThinkingCard);
+    smartScroll();
+    // Auto-evolve başlat
+    if (richUpgradeTimer) clearInterval(richUpgradeTimer);
+    richUpgradeTimer = setInterval(_evolveRichCard, 1500);
+  }
+
   function _autoEvolveThinking() {
     if (!thinkingMsg) return;
     const elapsed = Date.now() - thinkingStart;
@@ -6069,7 +6134,7 @@ async function doSend() {
     }
   }
   function showThinking(txt) {
-    if (!thinkingMsg) {
+    if (!thinkingMsg && !richThinkingCard) {
       const welcome = messages.querySelector(".msg-welcome");
       if (welcome) welcome.remove();
       thinkingMsg = document.createElement("div");
@@ -6079,6 +6144,13 @@ async function doSend() {
       // Her 1.5 saniyede bir mesaj kontrol et — evrim kaçırma
       if (thinkingTimer) clearInterval(thinkingTimer);
       thinkingTimer = setInterval(_autoEvolveThinking, 1500);
+      // 25.37 (Neo): 5 saniye sonra otomatik büyük zengin karta upgrade et
+      // (kullanıcı küçük pile bakıp tutukluk sanmasın, görsel kalite hızlı gelsin)
+      setTimeout(() => {
+        if (thinkingMsg && !richThinkingCard) {
+          upgradeToRichCard();
+        }
+      }, 5000);
     }
     // Backend ozel mesaj gönderdiyse store et (override)
     if (txt && txt.trim().length > 0) {
@@ -6092,10 +6164,18 @@ async function doSend() {
       clearInterval(thinkingTimer);
       thinkingTimer = null;
     }
+    if (richUpgradeTimer) {
+      clearInterval(richUpgradeTimer);
+      richUpgradeTimer = null;
+    }
     thinkingCustomTxt = null;
     if (thinkingMsg) {
       thinkingMsg.remove();
       thinkingMsg = null;
+    }
+    if (richThinkingCard) {
+      richThinkingCard.remove();
+      richThinkingCard = null;
     }
   }
 
@@ -6168,10 +6248,17 @@ async function doSend() {
         }
 
         // ── render_pending: bot make_render_link cagiriyor — text okurken arkada hazirlaniyor
-        if (d.render_pending && botMsg) {
-          // Bot mesajinin ALTINA pending kart ekle (DINAMIK auto-evolve mesaj)
-          let card = botMsg.querySelector('.render-pending-card');
-          if (!card) {
+        // 25.37 (Neo): standalone richThinkingCard varsa onu reuse et, yoksa yeni kart
+        if (d.render_pending) {
+          let card = botMsg ? botMsg.querySelector('.render-pending-card') : null;
+          // Standalone richThinkingCard varsa kullan (5sn upgrade'den)
+          if (!card && richThinkingCard && document.body.contains(richThinkingCard)) {
+            card = richThinkingCard;
+            // Rich evolution timer'i durdur, render-specific timeline başlayacak
+            if (richUpgradeTimer) { clearInterval(richUpgradeTimer); richUpgradeTimer = null; }
+          }
+          if (!card && botMsg) {
+            // Yeni kart üret (botMsg altında)
             card = document.createElement('div');
             card.className = 'render-pending-card';
             card.innerHTML = `
@@ -6181,6 +6268,8 @@ async function doSend() {
                 <div class="render-pending-sub">Metni okurken arka planda üretiliyor...</div>
               </div>`;
             botMsg.appendChild(card);
+          }
+          if (card && !card._evolveTimer) {
             // Auto-evolve dinamik yazi — kullaniciya ilerleme hissi
             const _RENDER_EVOLUTIONS = [
               { delay: 0,     title: "🎨 İnteraktif görsel hazırlanıyor",     sub: "Metni okurken arka planda üretiliyor..." },
@@ -6221,8 +6310,15 @@ async function doSend() {
           }
         }
         // ── render_done: tool bitti, pending kart → tiklanabilir butona donus
-        if (d.render_done && botMsg) {
-          const card = botMsg.querySelector('.render-pending-card');
+        // 25.37: standalone richThinkingCard'da ise onu da bul
+        if (d.render_done) {
+          let card = botMsg ? botMsg.querySelector('.render-pending-card') : null;
+          if (!card && richThinkingCard && document.body.contains(richThinkingCard)) {
+            card = richThinkingCard;
+            // Standalone'dan render-ready'ye dönüştür: artık thinking bitiyor
+            richThinkingCard = null;
+            if (richUpgradeTimer) { clearInterval(richUpgradeTimer); richUpgradeTimer = null; }
+          }
           const url = d.render_done.url || d.render_done;
           const title = d.render_done.title || "İnteraktif simülasyonu aç";
           if (card) {
