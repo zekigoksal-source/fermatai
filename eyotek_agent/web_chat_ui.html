@@ -484,14 +484,38 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
 }
 
 /* Tablet (iPad portrait + Android tablet portrait) — login-box uzun içerik kaydırılabilir olsun.
-   Web (>1024px) ve mobil (<481px) etkilenmez, sadece tablet aralığı için. */
+   Web (>1024px) ve mobil (<481px) etkilenmez, sadece tablet aralığı için.
+   Wix HtmlComponent iframe sabit-yukseklik sebebiyle scroll bile yetmiyorsa,
+   dekoratif elemanlari gizleyerek iceri sigdiriyoruz. */
 @media (min-width: 481px) and (max-width: 1024px) {
   .login-wrap {
     align-items: flex-start;          /* ortala değil, üstten başla — alt/üst kesilmesin */
-    padding: 28px 20px 40px;
-    overflow-y: auto;                 /* içerik viewport'tan uzunsa scroll */
+    padding: 20px 20px 32px;
+    overflow-y: auto;                 /* icerik uzunsa scroll (iframe izin verirse) */
     -webkit-overflow-scrolling: touch;/* iOS smooth scroll */
   }
+  .login-box {
+    padding: 26px 26px 22px;          /* daha kompakt */
+  }
+  .login-box h1 { font-size: 26px; margin-bottom: 4px; }
+  .login-box .tech-label { margin-bottom: 10px; }
+  .login-box .brand-tagline { font-size: 15px; margin: 4px 0; }
+  /* Tablette dekoratif metinleri gizle — fonksiyonel hicbir sey kaybedilmiyor */
+  .login-box .brand-motto { display: none; }
+  .login-box .subtitle { display: none; }
+  .login-box .feature-row { margin-bottom: 14px; }
+  .login-box .feature-pill { padding: 9px 4px; }
+  .login-box .feature-pill .fp-icon { font-size: 16px; margin-bottom: 2px; }
+  .login-box .feature-pill .fp-text { font-size: 10.5px; }
+  .login-box .feature-pill .fp-sub { font-size: 8px; margin-top: 2px; }
+  /* Footer — rozet seti dursun (kurumsal etki), manifesto + brand gizlensin */
+  .login-box .trust-footer { margin-top: 14px; padding-top: 14px; }
+  .login-box .trust-footer .badges { margin-bottom: 0; }
+  .login-box .trust-footer .manifesto { display: none; }
+  .login-box .trust-footer .brand { display: none; }
+  /* Form — input ve buton aynen, sadece arasi biraz daha kompakt */
+  .login-box input { margin-bottom: 10px; }
+  .login-box .hint { margin-top: 10px; font-size: 11px; }
 }
 .login-box .step { display: none; }
 .login-box .step.active { display: block; }
