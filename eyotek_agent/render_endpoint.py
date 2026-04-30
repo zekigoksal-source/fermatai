@@ -12,7 +12,7 @@ Güvenlik:
 - Sadece bot tool'u kayıt yapabilir (internal call)
 - HTML iframe sandbox içinde serve edilir (allow-scripts only)
 - TTL 7 gün (geçici içerik)
-- Maksimum 200KB HTML (DoS koruma)
+- Maksimum 1MB HTML (DoS koruma; ideal 200-400KB)
 
 DB tablosu: render_artifacts
 """
@@ -30,7 +30,7 @@ from db_pool import db_execute, db_fetchrow, db_fetchval
 
 router = APIRouter(prefix="/render", tags=["render"])
 
-MAX_HTML_BYTES = 800 * 1024  # 800KB (Neo: kompleks simulasyonlar 200KB asabiliyor)
+MAX_HTML_BYTES = 1024 * 1024  # 1MB (25.37 Neo: 800KB de yetmedi karmaşık fizik simlerine)
 DEFAULT_TTL_DAYS = 7
 
 
@@ -59,6 +59,15 @@ async def ensure_table():
             ADD COLUMN IF NOT EXISTS archive_note TEXT,
             ADD COLUMN IF NOT EXISTS quality_score INTEGER DEFAULT 0
         """)
+        # 25.37 — Render cache (Neo direktifi): aynı topic_hash → tekrar üretme, var olanı reuse
+        await db_execute("""
+            ALTER TABLE render_artifacts
+            ADD COLUMN IF NOT EXISTS topic_hash TEXT,
+            ADD COLUMN IF NOT EXISTS reuse_count INTEGER DEFAULT 0
+        """)
+        await db_execute(
+            "CREATE INDEX IF NOT EXISTS idx_render_topic_hash ON render_artifacts(topic_hash) WHERE topic_hash IS NOT NULL"
+        )
         await db_execute(
             "CREATE INDEX IF NOT EXISTS idx_render_uuid ON render_artifacts(uuid)"
         )
@@ -98,9 +107,9 @@ def calculate_quality_score(html: str) -> tuple[int, dict]:
     # Formula/Math/LaTeX (+10)
     if any(k in h for k in ["katex", "mathjax", "math.", "formula", "$", "\\frac"]):
         score += 10; breakdown["formula"] = True
-    # Size optimization (10-200KB) (+5)
+    # Size optimization (10-400KB ideal) (+5)
     size_kb = len(html.encode("utf-8")) / 1024
-    if 5 <= size_kb <= 200:
+    if 5 <= size_kb <= 400:
         score += 5; breakdown["optimal_size"] = True
     # Labels/text content (+5)
     if any(k in h for k in ["label", "<text", "title", "<h1", "<h2", "<h3"]):
@@ -110,28 +119,89 @@ def calculate_quality_score(html: str) -> tuple[int, dict]:
     return score, breakdown
 
 
+def _topic_hash(title: str, html_size_bucket: int = 0) -> str:
+    """Cache key — title + html size bucket (10KB)."""
+    import hashlib
+    norm = (title or "").strip().lower()[:120]
+    # Türkçe karakterleri normalize et
+    norm = norm.translate(str.maketrans("çğıöşüâîû", "cgiosuaiu"))
+    base = f"{norm}|{html_size_bucket}"
+    return hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
+
+
+async def lookup_cached_render(title: str, max_age_days: int = 30) -> Optional[dict]:
+    """Aynı title ile son N gün içinde başarılı (kalite >=60) render var mı?
+
+    Returns: {'uuid', 'title', 'quality_score', 'created_at'} veya None
+    25.37 (Neo): Newton 2. yasa 1 kez üret, 1000 kişiye sun.
+    """
+    try:
+        await ensure_table()
+        thash = _topic_hash(title or "")
+        row = await db_fetchrow(
+            """SELECT uuid, title, quality_score, created_at, expires_at, archived
+               FROM render_artifacts
+               WHERE topic_hash = $1
+                 AND (archived = TRUE OR expires_at > NOW())
+                 AND quality_score >= 60
+                 AND created_at > NOW() - ($2::int * INTERVAL '1 day')
+               ORDER BY quality_score DESC, created_at DESC LIMIT 1""",
+            thash, max_age_days
+        )
+        if row:
+            return {
+                "uuid": row["uuid"],
+                "title": row["title"],
+                "quality_score": row["quality_score"],
+                "created_at": str(row["created_at"]),
+            }
+        return None
+    except Exception as e:
+        logger.debug(f"lookup_cached_render hata: {e}")
+        return None
+
+
 async def create_artifact(html: str, title: str = "FermatAI Görsel",
-                          creator_phone: str = "", ttl_days: int = DEFAULT_TTL_DAYS) -> Optional[str]:
+                          creator_phone: str = "", ttl_days: int = DEFAULT_TTL_DAYS,
+                          allow_cache: bool = True) -> Optional[str]:
     """
     Bot tool'undan çağrılır — HTML kaydet, UUID döndür.
     25.36: Otomatik kalite skoru hesapla + DB'ye kaydet.
+    25.37: Cache lookup — aynı title kalite>=60 var → reuse, üretme.
     """
     if not html or len(html.encode('utf-8')) > MAX_HTML_BYTES:
-        logger.warning(f"render: html bos veya >800KB ({len(html)} bytes)")
+        logger.warning(f"render: html bos veya >1MB ({len(html)} bytes)")
         return None
     try:
         await ensure_table()
+        # 25.37 — cache check (allow_cache=True default)
+        if allow_cache and title:
+            cached = await lookup_cached_render(title, max_age_days=30)
+            if cached and cached.get("uuid"):
+                # reuse counter ++
+                try:
+                    await db_execute(
+                        "UPDATE render_artifacts SET reuse_count = reuse_count + 1, last_viewed_at = NOW() WHERE uuid = $1",
+                        cached["uuid"]
+                    )
+                except Exception:
+                    pass
+                logger.info(f"render: ♻️ CACHE HIT title={title[:40]} → reuse {cached['uuid']} (score={cached['quality_score']})")
+                return cached["uuid"]
+
         uuid = secrets.token_urlsafe(12)
         expires = datetime.now() + timedelta(days=ttl_days)
         # 25.36 — kalite skoru
         score, breakdown = calculate_quality_score(html)
+        # 25.37 — topic_hash
+        thash = _topic_hash(title or "")
         await db_execute(
-            """INSERT INTO render_artifacts (uuid, title, html, creator_phone, expires_at, quality_score)
-               VALUES ($1, $2, $3, $4, $5, $6)""",
-            uuid, title[:200], html, creator_phone, expires, score
+            """INSERT INTO render_artifacts (uuid, title, html, creator_phone, expires_at, quality_score, topic_hash)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)""",
+            uuid, title[:200], html, creator_phone, expires, score, thash
         )
         quality_label = "🌟" if score >= 80 else ("✓" if score >= 60 else "⚠")
-        logger.info(f"render: {quality_label} artifact uuid={uuid} score={score}/100 title={title[:40]}")
+        logger.info(f"render: {quality_label} artifact uuid={uuid} score={score}/100 hash={thash[:6]} title={title[:40]}")
         return uuid
     except Exception as e:
         logger.error(f"render create_artifact hata: {e}")

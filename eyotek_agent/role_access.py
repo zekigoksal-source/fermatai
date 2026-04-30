@@ -89,6 +89,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "text_to_speech", "pdb_lookup", "student_heatmap",
         # ── 25.34 paket 2 — Code execution + Suno ──
         "execute_python", "suno_generate",
+        # ── 25.37 (Neo) — Davranış kuralı yönetimi + Active Recall + KGraph ──
+        "add_behavior_rule", "list_behavior_rules", "deactivate_behavior_rule",
+        "schedule_recall", "get_pending_recalls", "build_knowledge_graph",
     },
     # Yönetim üyesi: müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     "yonetim": {
@@ -142,6 +145,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "text_to_speech", "pdb_lookup", "student_heatmap",
         # ── 25.34 paket 2 — Code execution + Suno ──
         "execute_python", "suno_generate",
+        # ── 25.37 (Neo) — Davranış kuralı yönetimi + Active Recall + KGraph ──
+        "add_behavior_rule", "list_behavior_rules", "deactivate_behavior_rule",
+        "schedule_recall", "get_pending_recalls", "build_knowledge_graph",
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)
@@ -262,7 +268,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 # ── 25.34 — TTS + PDB (heatmap YOK, ogretmen ozel) ──
                 "text_to_speech", "pdb_lookup",
                 # ── 25.34 paket 2 — Code execution + Suno ──
-                "execute_python", "suno_generate"},
+                "execute_python", "suno_generate",
+                # ── 25.37 (Neo) — Active Recall + Knowledge Graph (kendi profili) ──
+                "schedule_recall", "get_pending_recalls", "build_knowledge_graph"},
     # Misafir / bilinmeyen: hiçbir araç
     "guest": set(),
     "unknown": set(),

@@ -2213,6 +2213,14 @@ TOOL_DISPATCH = {
     # Oturum 25.34 (Neo bug-fix paketi) — Code execution + Suno
     "execute_python":              lambda p: _tool_execute_python(**p),
     "suno_generate":               lambda p: _tool_suno_generate(**p),
+    # Oturum 25.37 (Neo) — Davranış kuralı yönetimi (admin only)
+    "add_behavior_rule":           lambda p: _tool_add_behavior_rule(**p),
+    "list_behavior_rules":         lambda p: _tool_list_behavior_rules(**p),
+    "deactivate_behavior_rule":    lambda p: _tool_deactivate_behavior_rule(**p),
+    # Oturum 25.37 (Neo) — Active Recall + Knowledge Graph
+    "schedule_recall":             lambda p: _tool_schedule_recall(**p),
+    "get_pending_recalls":         lambda p: _tool_get_pending_recalls(**p),
+    "build_knowledge_graph":       lambda p: _tool_build_knowledge_graph(**p),
 }
 
 
@@ -2244,6 +2252,100 @@ async def _tool_suno_generate(prompt: str = "", style: str = "educational", **_e
     try:
         from external_apis_v2 import suno_generate
         return await suno_generate(prompt=prompt, style=style)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# ── Oturum 25.37 — Davranış kuralı yönetimi (admin only) ──
+async def _tool_add_behavior_rule(rule_text: str = "", scope: str = "global",
+                                   category: str = "misc", priority: int = 5,
+                                   ttl_hours: int = 0, _caller_phone: str = "",
+                                   _caller_role: str = "", **_extra) -> dict:
+    """Yeni davranış kuralı ekle (DB'ye yaz, prompt'a inject olur)."""
+    if _caller_role not in ("admin", "mudur"):
+        return {"success": False, "error": "Bu komutu sadece admin/mudur kullanabilir"}
+    try:
+        from behavior_rules import add_rule
+        from datetime import datetime, timedelta
+        expires = None
+        if ttl_hours and int(ttl_hours) > 0:
+            expires = datetime.now() + timedelta(hours=int(ttl_hours))
+        return await add_rule(
+            rule_text=rule_text, scope=scope, category=category,
+            priority=int(priority or 5), expires_at=expires,
+            created_by=_caller_phone or ""
+        )
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+async def _tool_list_behavior_rules(scope_filter: str = "", category_filter: str = "",
+                                      only_active: bool = True, limit: int = 50,
+                                      _caller_role: str = "", **_extra) -> dict:
+    if _caller_role not in ("admin", "mudur"):
+        return {"success": False, "error": "Sadece admin/mudur"}
+    try:
+        from behavior_rules import list_rules
+        rows = await list_rules(scope_filter=scope_filter, category_filter=category_filter,
+                                 only_active=bool(only_active), limit=int(limit or 50))
+        return {"success": True, "rules": rows, "count": len(rows)}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+async def _tool_deactivate_behavior_rule(rule_id: int = 0, _caller_role: str = "", **_extra) -> dict:
+    if _caller_role not in ("admin", "mudur"):
+        return {"success": False, "error": "Sadece admin/mudur"}
+    try:
+        from behavior_rules import deactivate_rule
+        return await deactivate_rule(int(rule_id or 0))
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# ── Oturum 25.37 — Active Recall (Ebbinghaus eğrisi) ──
+async def _tool_schedule_recall(soz_no: int = 0, konu: str = "", ders: str = "",
+                                  context_summary: str = "", recall_at: str = "",
+                                  _caller_phone: str = "", _caller_soz_no: int = 0,
+                                  **_extra) -> dict:
+    """Öğrenciye N saat sonra konu hatırlatması planla."""
+    try:
+        from active_recall import schedule_recall
+        if not soz_no and _caller_soz_no:
+            soz_no = _caller_soz_no
+        return await schedule_recall(
+            soz_no=int(soz_no or 0), konu=konu[:120], ders=ders[:60],
+            context_summary=context_summary[:500],
+            recall_after_hours=24  # default 24h, ileri tarihte spaced reps
+        )
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+async def _tool_get_pending_recalls(soz_no: int = 0, _caller_role: str = "",
+                                      _caller_soz_no: int = 0, **_extra) -> dict:
+    try:
+        from active_recall import get_pending_recalls
+        target = int(soz_no or _caller_soz_no or 0)
+        if _caller_role == "ogrenci" and target != _caller_soz_no:
+            target = _caller_soz_no
+        rows = await get_pending_recalls(target)
+        return {"success": True, "recalls": rows, "count": len(rows)}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+async def _tool_build_knowledge_graph(soz_no: int = 0, _caller_soz_no: int = 0,
+                                        _caller_role: str = "", **_extra) -> dict:
+    """D3.js kgraph data + ```kgraph render block."""
+    try:
+        from knowledge_graph import build_graph_for_student
+        target = int(soz_no or _caller_soz_no or 0)
+        if _caller_role == "ogrenci" and target != _caller_soz_no:
+            target = _caller_soz_no
+        if not target:
+            return {"success": False, "error": "soz_no gerekli"}
+        return await build_graph_for_student(target)
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -2430,11 +2532,11 @@ async def _tool_make_render_link(html: str = "", title: str = "FermatAI Görsel"
                      "</script></head><body>... TUM HTML KODU ...</body></html>')"
         }
     html_size = len(html.encode('utf-8'))
-    if html_size > 800 * 1024:
+    if html_size > 1024 * 1024:
         return {
             "success": False,
-            "error": f"HTML cok buyuk ({html_size//1024}KB > 800KB max). "
-                     f"Daha kisa HTML uret veya 12 renderer'dan birini (```sim, ```3d) kullan."
+            "error": f"HTML cok buyuk ({html_size//1024}KB > 1024KB/1MB max). "
+                     f"Daha kisa HTML uret (~200-400KB ideal) veya 22 renderer'dan birini kullan."
         }
     try:
         from render_endpoint import create_artifact
@@ -2751,33 +2853,67 @@ async def run_tool(name: str, input_data: dict,
             enriched["_caller_phone"] = caller_phone
             result = await fn(enriched)
         elif name == "make_render_link":
-            # Oturum 25.31 — render link + LOOP GUARD
-            # Phone bazli cache (run_tool standalone fonksiyon, self yok)
-            # Yalnizca BASARILI cagri sayilir — bos html retry'a izin ver
-            global _RENDER_LINK_SUCCESS_CACHE
+            # Oturum 25.37 (Neo) — Per-saat + per-konu cooldown
+            # Eski 5-shot global cache YERINE: sliding hour window + topic 60s lock
+            global _RENDER_LINK_HISTORY, _RENDER_LINK_TOPIC_LOCK
             try:
-                _RENDER_LINK_SUCCESS_CACHE
+                _RENDER_LINK_HISTORY
             except NameError:
-                _RENDER_LINK_SUCCESS_CACHE = {}
-            _phone_key = (caller_phone or "anon")[-4:]
-            _success_calls = _RENDER_LINK_SUCCESS_CACHE.get(_phone_key, 0)
-            # 25.34-fix (Neo bug raporu): tek-shot çok kısıtlı — kullanıcı 'tekrar modelle' derse
-            # retry yapabilsin. 5 başarılı çağrıya kadar izin (1 sohbet ortalama).
-            if _success_calls >= 5:
-                logger.warning(f"🚫 make_render_link 5x guard ({_phone_key}): basarili cagri sonrasi engellendi")
+                _RENDER_LINK_HISTORY = {}  # phone → [(timestamp, title_hash), ...]
+                _RENDER_LINK_TOPIC_LOCK = {}  # (phone, title_hash) → timestamp
+
+            import time as _time, hashlib as _hashlib
+            _phone_key = (caller_phone or "anon")[-6:]
+            _now = _time.time()
+            _title = (input_data.get("title") or "untitled")[:80].lower().strip()
+            _topic_hash = _hashlib.md5(_title.encode("utf-8")).hexdigest()[:10]
+
+            # Sliding window: son 1 saat
+            _hist = _RENDER_LINK_HISTORY.get(_phone_key, [])
+            _hist = [(t, h) for (t, h) in _hist if _now - t < 3600]
+            _RENDER_LINK_HISTORY[_phone_key] = _hist
+
+            # 1) Saatlik limit — 12/saat (kullanıcı uzun sohbette ~6 render yapabilir)
+            HOURLY_LIMIT = 12
+            if len(_hist) >= HOURLY_LIMIT:
+                _wait_min = int((3600 - (_now - _hist[0][0])) / 60) + 1
+                logger.warning(f"🚫 make_render_link hourly limit ({_phone_key}): {len(_hist)}/{HOURLY_LIMIT}")
                 result = {
                     "success": False,
-                    "error": "make_render_link bu sohbette 5 kez kullanildi (limit). Onceki linkleri kullaniciya sun veya 12 renderer (```sim/```3d/```mol3d/```formula vb.) ile devam et."
+                    "error": f"Saatlik render limiti ({HOURLY_LIMIT}/saat) doldu. {_wait_min} dk bekle veya text/22 renderer ile devam et."
                 }
             else:
-                enriched = dict(input_data)
-                enriched["_caller_phone"] = caller_phone
-                result = await fn(enriched)
-                if isinstance(result, dict) and result.get("success"):
-                    _RENDER_LINK_SUCCESS_CACHE[_phone_key] = _success_calls + 1
-                    # Cache temizleme — 50+ key birikmesin
-                    if len(_RENDER_LINK_SUCCESS_CACHE) > 50:
-                        _RENDER_LINK_SUCCESS_CACHE.clear()
+                # 2) Per-konu cooldown — ayni baslik 60s icinde tekrar gelirse engelle
+                #    (Bu duplicate retry/halusinasyonu engeller ama farkli konularda OK)
+                _topic_key = (_phone_key, _topic_hash)
+                _last_topic_t = _RENDER_LINK_TOPIC_LOCK.get(_topic_key, 0)
+                if _now - _last_topic_t < 60:
+                    _wait_s = int(60 - (_now - _last_topic_t))
+                    logger.info(f"⏳ topic-cooldown ({_phone_key},{_title[:30]}): {_wait_s}s")
+                    result = {
+                        "success": False,
+                        "error": f"Ayni konu ({_title[:30]}) {_wait_s}s once render edildi. Cooldown — onceki linki sun veya farkli baslikla cagir."
+                    }
+                else:
+                    enriched = dict(input_data)
+                    enriched["_caller_phone"] = caller_phone
+                    result = await fn(enriched)
+                    if isinstance(result, dict) and result.get("success"):
+                        _hist.append((_now, _topic_hash))
+                        _RENDER_LINK_HISTORY[_phone_key] = _hist
+                        _RENDER_LINK_TOPIC_LOCK[_topic_key] = _now
+                        # Cleanup — 200+ key birikmesin
+                        if len(_RENDER_LINK_HISTORY) > 200:
+                            _cutoff = _now - 7200
+                            _RENDER_LINK_HISTORY = {
+                                k: [(t, h) for (t, h) in v if t > _cutoff]
+                                for k, v in _RENDER_LINK_HISTORY.items()
+                            }
+                            _RENDER_LINK_HISTORY = {k: v for k, v in _RENDER_LINK_HISTORY.items() if v}
+                        if len(_RENDER_LINK_TOPIC_LOCK) > 500:
+                            _RENDER_LINK_TOPIC_LOCK = {
+                                k: t for k, t in _RENDER_LINK_TOPIC_LOCK.items() if _now - t < 3600
+                            }
         elif name == "get_atlas_trend":
             enriched = dict(input_data)
             enriched["_caller_role"] = caller_role
@@ -4122,6 +4258,16 @@ class FermatCoreAgent:
                     )
         except Exception as _ps_e:
             logger.debug(f"pedagojik_sablonlar hata: {_ps_e}")
+
+        # 25.37 (Neo) — Dinamik davranış kuralları DB'den inject
+        # bot_behavior_rules tablosu — prompt şişmesin, kalıcı kurallar burada
+        try:
+            from behavior_rules import build_rules_prompt_block
+            _behavior_block = await build_rules_prompt_block(role)
+            if _behavior_block:
+                _role_aware_prompt += _behavior_block
+        except Exception as _br_e:
+            logger.debug(f"behavior_rules inject hata: {_br_e}")
 
         system = _role_aware_prompt + dynamic_context
 

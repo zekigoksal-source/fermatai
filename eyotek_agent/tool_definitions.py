@@ -2224,6 +2224,87 @@ TOOLS.extend([
             "required": ["prompt"]
         }
     },
+    # ── Oturum 25.37 (Neo) — Davranış kuralı yönetimi (admin only) ──
+    {
+        "name": "add_behavior_rule",
+        "description": "ADMIN ONLY — yeni davranış kuralı ekle. Konuşmada öğrendiğin kalıcı kuralları "
+                       "DB'ye kaydet, prompt şişmesin. Örn: 'Yönetimde isim verme' / 'Bugün/yarın → Eyotek önce'. "
+                       "Kural otomatik prompt'a inject olur (rolu eslesirse).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "rule_text": {"type": "string", "description": "Kural metni (max 800 char, net + kısa)"},
+                "scope": {"type": "string", "description": "global|admin|mudur|ogretmen|rehber|ogrenci|veli (default global)"},
+                "category": {"type": "string", "description": "data_priority|naming|safety|tone|format|render|misc"},
+                "priority": {"type": "integer", "description": "1 (kritik) - 10 (önemsiz), default 5"},
+                "ttl_hours": {"type": "integer", "description": "Saat cinsinden TTL — 0 = kalıcı"}
+            },
+            "required": ["rule_text"]
+        }
+    },
+    {
+        "name": "list_behavior_rules",
+        "description": "ADMIN ONLY — mevcut davranış kurallarını listele.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "scope_filter": {"type": "string", "description": "Filtre: global|admin|... (boş = hepsi)"},
+                "category_filter": {"type": "string", "description": "Kategori filtresi"},
+                "only_active": {"type": "boolean", "description": "Sadece aktifler (default true)"}
+            }
+        }
+    },
+    {
+        "name": "deactivate_behavior_rule",
+        "description": "ADMIN ONLY — kural deaktive et (silmek yerine).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "rule_id": {"type": "integer", "description": "Kural ID"}
+            },
+            "required": ["rule_id"]
+        }
+    },
+    # ── Oturum 25.37 (Neo) — Active Recall (Ebbinghaus eğrisi) ──
+    {
+        "name": "schedule_recall",
+        "description": "Öğrenciye N saat sonra konu hatırlatması planla. Spaced repetition için ZORUNLU. "
+                       "Kullanıcıya konu anlattıktan sonra çağır → 24/72/168 saat sonra otomatik 'şu konu nasıl' diye sor. "
+                       "Dönüş: scheduled_at + recall_id.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Öğrenci soz_no (boşsa caller'dan alır)"},
+                "konu": {"type": "string", "description": "Konu adı (kısa, 60 char)"},
+                "ders": {"type": "string", "description": "Ders (Fizik/Mat/Bio/...)"},
+                "context_summary": {"type": "string", "description": "Kısa özet (~300 char) — ne anlatıldı"}
+            },
+            "required": ["konu"]
+        }
+    },
+    {
+        "name": "get_pending_recalls",
+        "description": "Öğrencinin bekleyen recall hatırlatmalarını getir. Dönüş: konu listesi + tarih.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Öğrenci soz_no"}
+            }
+        }
+    },
+    # ── Oturum 25.37 (Neo) — Knowledge Graph (D3.js) ──
+    {
+        "name": "build_knowledge_graph",
+        "description": "Öğrenci için konu-bağlantı haritası üret (D3 force layout). "
+                       "Zayıf konular kırmızı, güçlüler yeşil. Tıklayınca o konunun render'ı açılır. "
+                       "Dönüş: kgraph_block (```kgraph JSON formatında — direkt cevaba yapıştır).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Öğrenci soz_no (boşsa caller)"}
+            }
+        }
+    },
 ])
 
 # Active TOOLS — Claude system prompt'a gonderilen liste

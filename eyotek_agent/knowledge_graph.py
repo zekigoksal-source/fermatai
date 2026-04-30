@@ -308,6 +308,113 @@ async def get_concept_tree(ders: str, seviye: Optional[str] = None) -> list[dict
     return [dict(r) for r in (rows or [])]
 
 
+# ─────────────────────────────────────────────────────────────────────────
+# 25.37 (Neo) — D3.js force-layout için kgraph_block üretici (Claude tool)
+# build_knowledge_graph aracı bu fonksiyonu çağırır
+# ─────────────────────────────────────────────────────────────────────────
+async def build_graph_for_student(soz_no: int, seviye: Optional[str] = None) -> dict:
+    """Öğrenci için D3-uyumlu kgraph_block döndür.
+
+    Frontend ```kgraph render eder: zayıf konular kırmızı, güçlüler yeşil.
+    Tıklayınca o konunun search_curriculum'una git.
+    """
+    if not soz_no:
+        return {"success": False, "error": "soz_no gerekli"}
+    try:
+        graph = await get_student_graph(int(soz_no), seviye)
+        if not graph["nodes"]:
+            # Fallback: student_topic_tracker tablosundan zayıf konu çek
+            fallback_rows = await _fetch(
+                """SELECT konu, ders, hata_orani
+                   FROM student_topic_tracker
+                   WHERE soz_no = $1 AND hata_orani IS NOT NULL
+                   ORDER BY hata_orani DESC LIMIT 20""",
+                int(soz_no)
+            )
+            if not fallback_rows:
+                return {
+                    "success": False,
+                    "error": "Bu öğrenci için konu takibi verisi yok",
+                    "fallback": "Birkaç deneme katılımı sonrası grafik oluşturulabilir"
+                }
+            # Basit fallback graph
+            d3_nodes = []
+            for r in fallback_rows:
+                hata = float(r["hata_orani"] or 0)
+                weakness = max(0, min(1, hata / 100.0)) if hata > 1 else hata
+                d3_nodes.append({
+                    "id": (r["konu"] or "?")[:40].lower(),
+                    "label": r["konu"] or "?",
+                    "ders": r["ders"] or "?",
+                    "mastery": round(1 - weakness, 2),
+                    "size": 12 + (weakness * 14),
+                })
+            d3_links: list[dict] = []
+            kgraph_data = {
+                "title": "Konu Haritası — Hata Oranları",
+                "nodes": d3_nodes,
+                "links": d3_links,
+                "stats": {"node_count": len(d3_nodes), "link_count": 0,
+                          "weakest_3": [n["label"] for n in d3_nodes[:3]]}
+            }
+        else:
+            # Tam concept graph (mastery + edges)
+            d3_nodes = []
+            id_to_label = {}
+            for n in graph["nodes"]:
+                # Sadece mastery > 0 veya örnek var olanları al (boş node'ları temizle)
+                samples = n.get("samples", 0)
+                mastery = float(n.get("mastery", 0) or 0)
+                if samples == 0 and mastery == 0:
+                    continue
+                label = f"{n['konu']}"[:40]
+                node_id = str(n["id"])
+                id_to_label[n["id"]] = node_id
+                size = 14 + ((1 - mastery) * 14)  # zayıf → büyük gözüksün
+                d3_nodes.append({
+                    "id": node_id,
+                    "label": label,
+                    "ders": n["ders"],
+                    "seviye": n["seviye"],
+                    "mastery": round(mastery, 2),
+                    "size": round(size, 1),
+                })
+            d3_links = []
+            for e in graph["edges"]:
+                if e["from"] in id_to_label and e["to"] in id_to_label:
+                    d3_links.append({
+                        "source": id_to_label[e["from"]],
+                        "target": id_to_label[e["to"]],
+                        "weight": e["strength"],
+                        "type": e.get("type", "prerequisite"),
+                    })
+            kgraph_data = {
+                "title": "Konu Haritası — Concept Mastery",
+                "nodes": d3_nodes,
+                "links": d3_links,
+                "stats": {
+                    "node_count": len(d3_nodes),
+                    "link_count": len(d3_links),
+                    "avg_mastery": graph["stats"].get("avg_mastery", 0),
+                    "weak_count": graph["stats"].get("weak_count", 0),
+                    "strong_count": graph["stats"].get("strong_count", 0),
+                    "weakest_3": [n["label"] for n in sorted(d3_nodes, key=lambda x: x["mastery"])[:3]],
+                }
+            }
+        kgraph_block = "```kgraph\n" + json.dumps(kgraph_data, ensure_ascii=False) + "\n```"
+        return {
+            "success": True,
+            "node_count": len(kgraph_data["nodes"]),
+            "link_count": len(kgraph_data["links"]),
+            "weakest_3": kgraph_data["stats"].get("weakest_3", []),
+            "kgraph_block": kgraph_block,
+            "kullanim": "kgraph_block alanini direkt cevabina yapistir, frontend D3 ile render eder",
+        }
+    except Exception as e:
+        logger.error(f"build_graph_for_student hata: {e}")
+        return {"success": False, "error": str(e)}
+
+
 if __name__ == "__main__":
     print(f"Curriculum entries: {len(YKS_CURRICULUM)}")
     derslar = set(c[0] for c in YKS_CURRICULUM)

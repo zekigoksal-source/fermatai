@@ -2435,6 +2435,43 @@ function formatMsg(text) {
     codeoutPlaceholders.push(jsonStr.trim());
     return `\n\n<div class="codeout-pending" data-codeout-idx="${idx}"></div>\n\n`;
   });
+  // ── Oturum 25.37 (Neo) — 6 yeni renderer: steps/kgraph/quiz/compare2/adaptive/compound ──
+  const stepsPlaceholders = [];
+  md = md.replace(/```steps\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = stepsPlaceholders.length;
+    stepsPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="steps-pending" data-steps-idx="${idx}"></div>\n\n`;
+  });
+  const kgraphPlaceholders = [];
+  md = md.replace(/```kgraph\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = kgraphPlaceholders.length;
+    kgraphPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="kgraph-pending" data-kgraph-idx="${idx}"></div>\n\n`;
+  });
+  const quizPlaceholders = [];
+  md = md.replace(/```quiz\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = quizPlaceholders.length;
+    quizPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="quiz-pending" data-quiz-idx="${idx}"></div>\n\n`;
+  });
+  const compare2Placeholders = [];
+  md = md.replace(/```compare2\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = compare2Placeholders.length;
+    compare2Placeholders.push(jsonStr.trim());
+    return `\n\n<div class="compare2-pending" data-compare2-idx="${idx}"></div>\n\n`;
+  });
+  const recallPlaceholders = [];
+  md = md.replace(/```recall\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = recallPlaceholders.length;
+    recallPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="recall-pending" data-recall-idx="${idx}"></div>\n\n`;
+  });
+  const compoundPlaceholders = [];
+  md = md.replace(/```compound\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = compoundPlaceholders.length;
+    compoundPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="compound-pending" data-compound-idx="${idx}"></div>\n\n`;
+  });
 
   // ── 2. Collapsible blokları — :::detay ... ::: syntax ──
   // Format: :::detay Özet\n...\n:::
@@ -2582,6 +2619,37 @@ function formatMsg(text) {
         html = html.replace(new RegExp(`<div class="codeout-pending" data-codeout-idx="${i}"></div>`, 'g'),
           `<div class="codeout-pending" data-codeout="${escaped}"></div>`);
       });
+      // Oturum 25.37 — 6 yeni renderer veri bağlama
+      stepsPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="steps-pending" data-steps-idx="${i}"></div>`, 'g'),
+          `<div class="steps-pending" data-steps="${escaped}"></div>`);
+      });
+      kgraphPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="kgraph-pending" data-kgraph-idx="${i}"></div>`, 'g'),
+          `<div class="kgraph-pending" data-kgraph="${escaped}"></div>`);
+      });
+      quizPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="quiz-pending" data-quiz-idx="${i}"></div>`, 'g'),
+          `<div class="quiz-pending" data-quiz="${escaped}"></div>`);
+      });
+      compare2Placeholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="compare2-pending" data-compare2-idx="${i}"></div>`, 'g'),
+          `<div class="compare2-pending" data-compare2="${escaped}"></div>`);
+      });
+      recallPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="recall-pending" data-recall-idx="${i}"></div>`, 'g'),
+          `<div class="recall-pending" data-recall="${escaped}"></div>`);
+      });
+      compoundPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="compound-pending" data-compound-idx="${i}"></div>`, 'g'),
+          `<div class="compound-pending" data-compound="${escaped}"></div>`);
+      });
 
       // DOMPurify — tüm pending div'lerine izin ver
       if (typeof DOMPurify !== "undefined") {
@@ -2600,7 +2668,14 @@ function formatMsg(text) {
                      "data-mol3d", "data-mol3d-idx", "data-sound", "data-sound-idx",
                      "data-element", "data-element-idx",
                      "data-excalidraw", "data-excalidraw-idx",
-                     "data-codeout", "data-codeout-idx", "open"],
+                     "data-codeout", "data-codeout-idx",
+                     // 25.37 — 6 yeni renderer
+                     "data-steps", "data-steps-idx",
+                     "data-kgraph", "data-kgraph-idx",
+                     "data-quiz", "data-quiz-idx",
+                     "data-compare2", "data-compare2-idx",
+                     "data-recall", "data-recall-idx",
+                     "data-compound", "data-compound-idx", "open"],
           ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
         });
       }
@@ -3928,9 +4003,25 @@ function rerenderVR(el) {
 // ═════════════════════════════════════════════════════════════════
 
 // 18) ```mol3d — 3Dmol.js kimya molekül viewer
+// 25.37 (Neo): retry + library-load wait + helpful error card
 let _mol3dCounter = 0;
 function rerenderMol3d(el) {
-  if (!el || typeof window.$3Dmol === "undefined") return;
+  if (!el) return;
+  // Library hazır değilse 200ms aralıkla 10 kez bekle (CDN gecikmesi)
+  if (typeof window.$3Dmol === "undefined") {
+    const _retryCount = (el.__mol3dRetry || 0) + 1;
+    el.__mol3dRetry = _retryCount;
+    if (_retryCount < 10) {
+      setTimeout(() => rerenderMol3d(el), 200);
+      return;
+    }
+    // 10x denedik, library hala yok → helpful card
+    el.querySelectorAll(".mol3d-pending").forEach((ph) => {
+      ph.outerHTML = _mol3dErrorCard("3Dmol.js kütüphanesi yüklenemedi (CDN sorunu olabilir).",
+        ["Sayfayı yenile (F5)", "Internet bağlantını kontrol et", "Bot'a 'tekrar dene' yaz"]);
+    });
+    return;
+  }
   el.querySelectorAll(".mol3d-pending").forEach((ph) => {
     try {
       const cfg = JSON.parse(_readJsonOrText(ph, "data-mol3d"));
@@ -3941,61 +4032,112 @@ function rerenderMol3d(el) {
       const stage = document.createElement("div");
       stage.id = id;
       stage.style.cssText = "width:100%; height:380px; position:relative; background:#fff; border-radius:8px;";
+      // Loading spinner (CDN bekleme süresi olabilir)
+      stage.innerHTML = '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#888;font-size:13px;"><div style="width:32px;height:32px;border:3px solid #ddd;border-top:3px solid #C76F3E;border-radius:50%;animation:mol3dSpin 1s linear infinite;margin:0 auto 8px;"></div>Molekül yükleniyor...</div>';
+      // Spinner CSS (tek seferlik enjekt)
+      if (!document.getElementById("mol3d-spinner-css")) {
+        const css = document.createElement("style");
+        css.id = "mol3d-spinner-css";
+        css.textContent = "@keyframes mol3dSpin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}";
+        document.head.appendChild(css);
+      }
       wrap.appendChild(stage);
       const sub = document.createElement("div");
       sub.className = "render-sub";
       sub.textContent = "🖱️ Sürükle döndür · Scroll yakınlaştır";
       wrap.appendChild(sub);
       ph.replaceWith(wrap);
-      requestAnimationFrame(() => {
+
+      // Retry mekanizması — 3 deneme, exponential backoff
+      const _maxAttempts = 3;
+      let _attempt = 0;
+      const _tryLoad = () => {
+        _attempt++;
         try {
           const viewer = window.$3Dmol.createViewer(id, { backgroundColor: "white" });
           const style = cfg.style || "stick";
-          // 25.36-fix (Neo bug raporu): "Failed to fetch" CORS hatası →
-          // $3Dmol.download() built-in fonksiyonu kullan (CORS sorunu yok, RCSB CDN proxy)
-          const applyStyle = () => {
-            if (style === "cartoon") {
-              viewer.setStyle({}, { cartoon: { color: "spectrum" } });
-            } else if (style === "sphere") {
-              viewer.setStyle({}, { sphere: { scale: 0.3 } });
-            } else if (style === "line") {
-              viewer.setStyle({}, { line: {} });
-            } else {
-              viewer.setStyle({}, { stick: { radius: 0.15 }, sphere: { scale: 0.25 } });
+          let _loaded = false;
+          const _timeout = setTimeout(() => {
+            if (!_loaded && _attempt < _maxAttempts) {
+              console.warn(`[mol3d] timeout attempt ${_attempt}, retrying...`);
+              _tryLoad();
+            } else if (!_loaded) {
+              stage.innerHTML = _mol3dErrorBlock(cfg);
             }
-            viewer.zoomTo();
-            viewer.render();
+          }, 8000); // 8 saniye timeout
+
+          const applyStyle = () => {
+            _loaded = true;
+            clearTimeout(_timeout);
+            try {
+              if (style === "cartoon") {
+                viewer.setStyle({}, { cartoon: { color: "spectrum" } });
+              } else if (style === "sphere") {
+                viewer.setStyle({}, { sphere: { scale: 0.3 } });
+              } else if (style === "line") {
+                viewer.setStyle({}, { line: {} });
+              } else {
+                viewer.setStyle({}, { stick: { radius: 0.15 }, sphere: { scale: 0.25 } });
+              }
+              viewer.zoomTo();
+              viewer.render();
+            } catch (e2) {
+              stage.innerHTML = _mol3dErrorBlock(cfg, e2.message);
+            }
           };
-          // Veri kaynağı: cid (PubChem) | pdb (RCSB) | smiles | sdf
           if (cfg.pdb) {
-            // 3Dmol.js native download — CORS sorunu yok
-            window.$3Dmol.download("pdb:" + cfg.pdb.toUpperCase(), viewer, {}, () => {
-              applyStyle();
-            });
+            window.$3Dmol.download("pdb:" + cfg.pdb.toUpperCase(), viewer, {}, applyStyle);
           } else if (cfg.cid) {
-            window.$3Dmol.download("cid:" + cfg.cid, viewer, {}, () => {
-              applyStyle();
-            });
+            window.$3Dmol.download("cid:" + cfg.cid, viewer, {}, applyStyle);
           } else if (cfg.smiles) {
-            viewer.addModel(cfg.smiles, "smi");
-            applyStyle();
+            try { viewer.addModel(cfg.smiles, "smi"); applyStyle(); }
+            catch (e3) { _loaded = true; clearTimeout(_timeout); stage.innerHTML = _mol3dErrorBlock(cfg, "SMILES parse: " + e3.message); }
           } else if (cfg.sdf) {
-            viewer.addModel(cfg.sdf, "sdf");
-            applyStyle();
+            try { viewer.addModel(cfg.sdf, "sdf"); applyStyle(); }
+            catch (e4) { _loaded = true; clearTimeout(_timeout); stage.innerHTML = _mol3dErrorBlock(cfg, "SDF parse: " + e4.message); }
           } else {
-            stage.innerHTML = '<div style="padding:30px;text-align:center;color:#888">[Veri yok: cid, pdb, smiles veya sdf parametresi gerek]</div>';
+            _loaded = true;
+            clearTimeout(_timeout);
+            stage.innerHTML = _mol3dErrorBlock(cfg, "Veri parametresi yok (cid/pdb/smiles/sdf gerekli)");
           }
         } catch (e) {
-          console.warn("Mol3d render hata:", e);
-          stage.innerHTML = `<div style="padding:30px;text-align:center;color:#c00">[Molekül yüklenemedi: ${e.message}]</div>`;
+          console.warn(`[mol3d] attempt ${_attempt} hata:`, e);
+          if (_attempt < _maxAttempts) {
+            setTimeout(_tryLoad, 500 * _attempt); // 500ms, 1000ms, 1500ms
+          } else {
+            stage.innerHTML = _mol3dErrorBlock(cfg, e.message);
+          }
         }
-      });
+      };
+      requestAnimationFrame(_tryLoad);
     } catch (e) {
       console.warn("Mol3d parse hata:", e);
-      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Mol3D veri hatası]</div>';
+      ph.innerHTML = _mol3dErrorCard("Veri formatı hatalı", ["Bot'a 'tekrar dene' yaz", "Farklı bir molekül adı dene"]);
       ph.classList.remove("mol3d-pending");
     }
   });
+}
+
+// Helpful error block — bot prompt'a "make_render_link ile tekrar dene" demesini sağlar
+function _mol3dErrorBlock(cfg, errMsg) {
+  const ident = cfg.pdb ? `PDB: ${cfg.pdb}` : (cfg.cid ? `CID: ${cfg.cid}` : (cfg.smiles ? "SMILES" : "?"));
+  const _err = errMsg ? `\n<div style="font-size:11px;color:#999;margin-top:6px;">${escapeHtml(errMsg)}</div>` : "";
+  return `<div style="padding:24px;text-align:center;background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1px solid #fed7aa;border-radius:8px;color:#9a3412;">
+    <div style="font-size:32px;margin-bottom:8px;">⚗️</div>
+    <div style="font-weight:600;margin-bottom:4px;">Molekül 3D yüklenemedi</div>
+    <div style="font-size:12px;opacity:0.85;">${escapeHtml(cfg.title || ident)}</div>
+    <div style="font-size:11px;color:#666;margin-top:8px;">PubChem/RCSB CDN'inden veri alınamadı (3 retry başarısız)</div>${_err}
+    <div style="margin-top:12px;font-size:12px;color:#7c2d12;">💡 Bot'a "<b>make_render_link ile DNA/molekül göster</b>" yaz — özel HTML ile çalışır.</div>
+  </div>`;
+}
+
+function _mol3dErrorCard(msg, suggestions) {
+  const sugs = (suggestions || []).map(s => `<li style="margin:4px 0;">${escapeHtml(s)}</li>`).join("");
+  return `<div style="padding:20px;text-align:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;color:#9a3412;margin:12px 0;">
+    <div style="font-size:28px;margin-bottom:6px;">⚠️</div>
+    <div style="font-weight:600;margin-bottom:8px;">${escapeHtml(msg)}</div>
+    <ul style="text-align:left;display:inline-block;font-size:12px;color:#7c2d12;margin:0;padding-left:18px;">${sugs}</ul>
+  </div>`;
 }
 
 // 19) ```sound — Tone.js frekans/dalga sesli (fizik)
@@ -4179,6 +4321,445 @@ function rerenderCodeOut(el) {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// 25.37 (Neo) — 6 YENİ RENDERER
+// 23) ```steps — Step-by-step solver (expand/collapse)
+// 24) ```kgraph — Knowledge Graph (D3.js force layout)
+// 25) ```quiz — Interactive quiz (multi-choice + feedback)
+// 26) ```compare2 — Concept Comparison Matrix (2 sütun yan yana)
+// 27) ```recall — Active recall card (hatırlatma)
+// 28) ```compound — 2-3 renderer tek kart (formula+sim+karne)
+// ═══════════════════════════════════════════════════════════════════════
+
+// 23) ```steps — Step-by-step solver
+function rerenderSteps(el) {
+  if (!el) return;
+  el.querySelectorAll(".steps-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-steps"));
+      const wrap = document.createElement("div");
+      wrap.className = "render-card steps-container";
+      wrap.style.cssText = "padding:16px;background:#fafaf9;border-radius:10px;border:1px solid #e7e5e4;margin:12px 0;";
+      const title = cfg.title || "Adım Adım Çözüm";
+      const steps = Array.isArray(cfg.steps) ? cfg.steps : [];
+      let stepsHtml = "";
+      steps.forEach((s, i) => {
+        const stepNo = i + 1;
+        const stepTitle = (typeof s === "string") ? `Adım ${stepNo}` : (s.title || `Adım ${stepNo}`);
+        const stepBody = (typeof s === "string") ? s : (s.body || s.text || "");
+        const stepReason = (typeof s === "object" && s.reason) ? s.reason : "";
+        stepsHtml += `
+          <details class="step-item" style="margin-bottom:10px;border:1px solid #d6d3d1;border-radius:8px;overflow:hidden;">
+            <summary style="padding:12px 16px;cursor:pointer;font-weight:600;background:linear-gradient(135deg,#fff,#fafaf9);">
+              <span style="display:inline-block;width:28px;height:28px;line-height:28px;text-align:center;background:#C76F3E;color:white;border-radius:50%;margin-right:10px;font-size:13px;">${stepNo}</span>
+              ${escapeHtml(stepTitle)}
+            </summary>
+            <div style="padding:14px 18px;background:white;font-size:14px;line-height:1.6;">
+              ${escapeHtml(stepBody).replace(/\n/g, '<br>')}
+              ${stepReason ? `<div style="margin-top:12px;padding:10px;background:#fef3c7;border-radius:6px;font-size:13px;color:#78350f;"><b>💡 Neden bu adım?</b><br>${escapeHtml(stepReason)}</div>` : ""}
+            </div>
+          </details>`;
+      });
+      const conclusion = cfg.conclusion ? `<div style="margin-top:14px;padding:12px;background:#dcfce7;border-radius:8px;border:1px solid #86efac;color:#166534;font-weight:600;">✓ ${escapeHtml(cfg.conclusion)}</div>` : "";
+      wrap.innerHTML = `
+        <div class="render-title" style="font-size:16px;font-weight:700;margin-bottom:14px;">📐 ${escapeHtml(title)}</div>
+        ${stepsHtml}
+        ${conclusion}
+        <div class="render-sub" style="margin-top:10px;font-size:12px;color:#78716c;">▸ Adıma tıkla, açılır</div>`;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Steps render hata:", e);
+      ph.innerHTML = '<div style="color:#999;font-size:12px;">[Steps render hatası]</div>';
+      ph.classList.remove("steps-pending");
+    }
+  });
+}
+
+// 24) ```kgraph — Knowledge Graph (D3 force layout)
+function rerenderKgraph(el) {
+  if (!el) return;
+  // D3 yoksa CDN'den yükle
+  if (typeof window.d3 === "undefined") {
+    const _retryCount = (el.__kgraphRetry || 0) + 1;
+    el.__kgraphRetry = _retryCount;
+    if (_retryCount === 1) {
+      // Tek seferlik script enjekte et
+      const sc = document.createElement("script");
+      sc.src = "https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js";
+      sc.onload = () => rerenderKgraph(el);
+      sc.onerror = () => {
+        el.querySelectorAll(".kgraph-pending").forEach((ph) => {
+          ph.outerHTML = '<div style="padding:20px;background:#fff7ed;border-radius:8px;color:#9a3412;text-align:center;">D3.js CDN yüklenemedi — internet kontrol et.</div>';
+        });
+      };
+      document.head.appendChild(sc);
+      return;
+    }
+    if (_retryCount < 25) {
+      setTimeout(() => rerenderKgraph(el), 200);
+      return;
+    }
+    return;
+  }
+  el.querySelectorAll(".kgraph-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-kgraph"));
+      const wrap = document.createElement("div");
+      wrap.className = "render-card kgraph-container";
+      wrap.style.cssText = "padding:14px;background:#0f172a;border-radius:12px;color:#e2e8f0;margin:12px 0;";
+      const title = cfg.title || "Konu Haritası";
+      const nodes = Array.isArray(cfg.nodes) ? cfg.nodes.map(n => Object.assign({}, n)) : [];
+      const links = Array.isArray(cfg.links) ? cfg.links.map(l => Object.assign({}, l)) : [];
+      const stats = cfg.stats || {};
+      const id = "kgraph-" + Math.random().toString(36).slice(2, 8);
+      wrap.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="render-title" style="color:#f59e0b;font-weight:700;">🕸️ ${escapeHtml(title)}</div>
+          <div style="font-size:12px;color:#94a3b8;">${nodes.length} konu · ${links.length} bağ</div>
+        </div>
+        <svg id="${id}" width="100%" height="420" style="background:#1e293b;border-radius:8px;"></svg>
+        <div style="margin-top:8px;font-size:12px;color:#94a3b8;">
+          🟢 Güçlü &nbsp; 🟡 Orta &nbsp; 🔴 Zayıf &nbsp;·&nbsp; sürükle, kaydır
+          ${stats.weakest_3 && stats.weakest_3.length ? `<br><span style="color:#fca5a5;">📌 Öncelik konular: ${stats.weakest_3.map(escapeHtml).join(", ")}</span>` : ""}
+        </div>`;
+      ph.replaceWith(wrap);
+      requestAnimationFrame(() => {
+        try {
+          const svg = window.d3.select("#" + id);
+          const w = svg.node().clientWidth || 600;
+          const h = 420;
+          // Color: weakness 0 (green) → 1 (red)
+          const colorFor = (n) => {
+            const wknRaw = (n.weakness !== undefined) ? n.weakness : (1 - (n.mastery || 0));
+            const wkn = Math.max(0, Math.min(1, wknRaw));
+            // green (#22c55e) → yellow (#eab308) → red (#ef4444)
+            if (wkn < 0.34) return "#22c55e";
+            if (wkn < 0.67) return "#eab308";
+            return "#ef4444";
+          };
+          const sim = window.d3.forceSimulation(nodes)
+            .force("link", window.d3.forceLink(links).id(d => d.id).distance(70).strength(0.6))
+            .force("charge", window.d3.forceManyBody().strength(-160))
+            .force("center", window.d3.forceCenter(w / 2, h / 2))
+            .force("collision", window.d3.forceCollide(d => (d.size || 16) + 4));
+          const link = svg.append("g")
+            .attr("stroke", "#475569").attr("stroke-opacity", 0.6)
+            .selectAll("line").data(links).join("line")
+            .attr("stroke-width", d => Math.max(1, (d.weight || 0.5) * 2.5));
+          const node = svg.append("g")
+            .selectAll("g").data(nodes).join("g")
+            .style("cursor", "pointer");
+          node.append("circle")
+            .attr("r", d => d.size || 14)
+            .attr("fill", colorFor)
+            .attr("stroke", "#fff").attr("stroke-width", 1.5);
+          node.append("text")
+            .text(d => d.label || d.id || "")
+            .attr("text-anchor", "middle").attr("dy", 4)
+            .attr("font-size", "11px").attr("font-weight", "600").attr("fill", "#fff")
+            .style("pointer-events", "none")
+            .each(function (d) {
+              // Eger label cok uzunsa kirp
+              if ((d.label || "").length > 14) {
+                window.d3.select(this).text((d.label || "").slice(0, 12) + "…");
+              }
+            });
+          node.append("title").text(d => `${d.label || d.id}\nDers: ${d.ders || "?"}\nMastery: ${(d.mastery !== undefined ? Math.round((d.mastery)*100) : Math.round((1-(d.weakness||0))*100))}%`);
+          node.call(window.d3.drag()
+            .on("start", (event, d) => { if (!event.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+            .on("drag", (event, d) => { d.fx = event.x; d.fy = event.y; })
+            .on("end", (event, d) => { if (!event.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+          node.on("click", (event, d) => {
+            // Bot'a "X konusunu anlat" mesajı gönder
+            try {
+              const ti = document.getElementById("ta");
+              if (ti) {
+                ti.value = `${d.label || d.id} konusunu anlat`;
+                ti.focus();
+              }
+            } catch {}
+          });
+          sim.on("tick", () => {
+            link
+              .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+              .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+            node.attr("transform", d => `translate(${d.x},${d.y})`);
+          });
+        } catch (e2) {
+          console.warn("kgraph d3 render hata:", e2);
+        }
+      });
+    } catch (e) {
+      console.warn("kgraph parse hata:", e);
+      ph.innerHTML = '<div style="color:#999;font-size:12px;">[Knowledge graph render hatası]</div>';
+      ph.classList.remove("kgraph-pending");
+    }
+  });
+}
+
+// 25) ```quiz — Interactive multi-choice quiz
+function rerenderQuiz(el) {
+  if (!el) return;
+  el.querySelectorAll(".quiz-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-quiz"));
+      const wrap = document.createElement("div");
+      wrap.className = "render-card quiz-container";
+      wrap.style.cssText = "padding:18px;background:white;border:1px solid #e7e5e4;border-radius:12px;margin:12px 0;";
+      const title = cfg.title || "Hızlı Test";
+      const questions = Array.isArray(cfg.questions) ? cfg.questions : [];
+      const id = "quiz-" + Math.random().toString(36).slice(2, 8);
+      let body = `<div class="render-title" style="font-size:16px;font-weight:700;margin-bottom:6px;">📝 ${escapeHtml(title)}</div>`;
+      body += `<div style="font-size:13px;color:#78716c;margin-bottom:14px;">${questions.length} soru · cevapla, anlık geri bildirim al</div>`;
+      questions.forEach((q, qi) => {
+        const stem = q.stem || q.question || "";
+        const choices = Array.isArray(q.choices) ? q.choices : [];
+        const correct = (q.correct !== undefined) ? q.correct : 0;
+        const explanation = q.explanation || "";
+        body += `<div class="quiz-q" data-qi="${qi}" data-correct="${correct}" data-explanation="${escapeHtml(explanation).replace(/"/g,'&quot;')}" style="margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #f5f5f4;">
+          <div style="font-weight:600;margin-bottom:10px;">${qi + 1}. ${escapeHtml(stem)}</div>
+          <div class="quiz-choices" style="display:flex;flex-direction:column;gap:6px;">`;
+        choices.forEach((c, ci) => {
+          body += `<button class="quiz-choice" data-ci="${ci}" style="padding:10px 14px;text-align:left;background:#fafaf9;border:1px solid #d6d3d1;border-radius:8px;cursor:pointer;font-size:14px;transition:all 0.2s;">${String.fromCharCode(65+ci)}) ${escapeHtml(c)}</button>`;
+        });
+        body += `</div><div class="quiz-feedback" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px;"></div></div>`;
+      });
+      body += `<div class="quiz-summary" id="${id}-summary" style="margin-top:14px;padding:12px;background:#fafaf9;border-radius:8px;font-size:14px;color:#57534e;display:none;"></div>`;
+      wrap.innerHTML = body;
+      ph.replaceWith(wrap);
+      // State
+      const state = { answered: 0, correct: 0, total: questions.length };
+      wrap.querySelectorAll(".quiz-choice").forEach(btn => {
+        btn.addEventListener("click", function() {
+          const q = this.closest(".quiz-q");
+          if (q.__answered) return;
+          q.__answered = true;
+          const ci = parseInt(this.dataset.ci, 10);
+          const correct = parseInt(q.dataset.correct, 10);
+          const isRight = (ci === correct);
+          state.answered++;
+          if (isRight) state.correct++;
+          // Tüm choice butonları render et
+          q.querySelectorAll(".quiz-choice").forEach((b, bi) => {
+            b.disabled = true;
+            if (bi === correct) {
+              b.style.background = "#dcfce7";
+              b.style.borderColor = "#22c55e";
+              b.style.color = "#166534";
+              b.style.fontWeight = "600";
+            } else if (bi === ci) {
+              b.style.background = "#fee2e2";
+              b.style.borderColor = "#ef4444";
+              b.style.color = "#991b1b";
+            } else {
+              b.style.opacity = "0.6";
+            }
+            b.style.cursor = "default";
+          });
+          const fb = q.querySelector(".quiz-feedback");
+          fb.style.display = "block";
+          if (isRight) {
+            fb.style.background = "#dcfce7";
+            fb.style.color = "#166534";
+            fb.innerHTML = `✓ <b>Doğru!</b> ${q.dataset.explanation ? escapeHtml(q.dataset.explanation) : ""}`;
+          } else {
+            fb.style.background = "#fef3c7";
+            fb.style.color = "#78350f";
+            fb.innerHTML = `✗ <b>Yanlış.</b> Doğru: <b>${String.fromCharCode(65+correct)}</b>${q.dataset.explanation ? `<br>${escapeHtml(q.dataset.explanation)}` : ""}`;
+          }
+          // Tüm sorular cevaplandıysa özet
+          if (state.answered === state.total) {
+            const sum = wrap.querySelector(".quiz-summary");
+            const pct = Math.round((state.correct / state.total) * 100);
+            const emoji = pct >= 80 ? "🌟" : (pct >= 60 ? "👍" : "💪");
+            sum.style.display = "block";
+            sum.style.background = pct >= 60 ? "#dcfce7" : "#fef3c7";
+            sum.innerHTML = `${emoji} <b>${state.correct}/${state.total}</b> doğru (%${pct}). ${pct < 60 ? "Bu konuyu yeniden anlatayım mı?" : "Devam et, başka konu var mı?"}`;
+          }
+        });
+        btn.addEventListener("mouseenter", function() {
+          if (!this.disabled) this.style.background = "#fef3c7";
+        });
+        btn.addEventListener("mouseleave", function() {
+          if (!this.disabled) this.style.background = "#fafaf9";
+        });
+      });
+    } catch (e) {
+      console.warn("Quiz render hata:", e);
+      ph.innerHTML = '<div style="color:#999;font-size:12px;">[Quiz render hatası]</div>';
+      ph.classList.remove("quiz-pending");
+    }
+  });
+}
+
+// 26) ```compare2 — Concept Comparison Matrix (yan yana 2 kutu)
+function rerenderCompare2(el) {
+  if (!el) return;
+  el.querySelectorAll(".compare2-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-compare2"));
+      const wrap = document.createElement("div");
+      wrap.className = "render-card compare2-container";
+      wrap.style.cssText = "padding:16px;margin:12px 0;";
+      const title = cfg.title || "Karşılaştırma";
+      const left = cfg.left || {};
+      const right = cfg.right || {};
+      const rows = Array.isArray(cfg.rows) ? cfg.rows : [];
+      let body = `<div class="render-title" style="font-size:16px;font-weight:700;margin-bottom:14px;text-align:center;">⚖️ ${escapeHtml(title)}</div>`;
+      body += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div style="padding:14px;background:linear-gradient(135deg,#dbeafe,#eff6ff);border:1px solid #bfdbfe;border-radius:10px;">
+          <div style="font-weight:700;color:#1e40af;font-size:15px;margin-bottom:4px;">${escapeHtml(left.label || "Sol")}</div>
+          ${left.summary ? `<div style="font-size:12px;color:#3730a3;">${escapeHtml(left.summary)}</div>` : ""}
+        </div>
+        <div style="padding:14px;background:linear-gradient(135deg,#fce7f3,#fdf2f8);border:1px solid #fbcfe8;border-radius:10px;">
+          <div style="font-weight:700;color:#9d174d;font-size:15px;margin-bottom:4px;">${escapeHtml(right.label || "Sağ")}</div>
+          ${right.summary ? `<div style="font-size:12px;color:#831843;">${escapeHtml(right.summary)}</div>` : ""}
+        </div>
+      </div>`;
+      // Row by row karşılaştırma tablosu
+      if (rows.length) {
+        body += `<div style="border:1px solid #e7e5e4;border-radius:10px;overflow:hidden;background:white;">`;
+        rows.forEach((r, ri) => {
+          const aspect = r.aspect || r.label || "";
+          const lv = r.left || "";
+          const rv = r.right || "";
+          const highlight = r.highlight ? "background:#fef3c7;" : (ri % 2 ? "background:#fafaf9;" : "background:white;");
+          body += `<div style="display:grid;grid-template-columns:140px 1fr 1fr;${highlight}padding:10px 14px;font-size:13px;align-items:center;border-bottom:1px solid #f5f5f4;">
+            <div style="font-weight:600;color:#57534e;">${escapeHtml(aspect)}</div>
+            <div style="color:#1e40af;padding-right:8px;">${escapeHtml(lv).replace(/\n/g,'<br>')}</div>
+            <div style="color:#9d174d;padding-left:8px;border-left:1px solid #e7e5e4;">${escapeHtml(rv).replace(/\n/g,'<br>')}</div>
+          </div>`;
+        });
+        body += `</div>`;
+      }
+      if (cfg.takeaway) {
+        body += `<div style="margin-top:14px;padding:12px;background:#dcfce7;border-radius:8px;font-size:13px;color:#166534;font-weight:600;">💡 ${escapeHtml(cfg.takeaway)}</div>`;
+      }
+      wrap.innerHTML = body;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("compare2 render hata:", e);
+      ph.innerHTML = '<div style="color:#999;font-size:12px;">[Compare2 render hatası]</div>';
+      ph.classList.remove("compare2-pending");
+    }
+  });
+}
+
+// 27) ```recall — Active recall hatırlatma kartı
+function rerenderRecall(el) {
+  if (!el) return;
+  el.querySelectorAll(".recall-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-recall"));
+      const wrap = document.createElement("div");
+      wrap.className = "render-card recall-container";
+      wrap.style.cssText = "padding:16px;background:linear-gradient(135deg,#fef3c7,#fffbeb);border:1px solid #fde68a;border-radius:12px;margin:12px 0;";
+      const konu = cfg.konu || "konu";
+      const interval = cfg.interval_hours || 24;
+      const intervalLabel = (interval >= 168) ? `${Math.round(interval/168)} hafta` : (interval >= 24 ? `${Math.round(interval/24)} gün` : `${interval} saat`);
+      const ders = cfg.ders ? `[${escapeHtml(cfg.ders)}] ` : "";
+      const summary = cfg.summary || "";
+      const action = cfg.action || "Şimdi sen anlat — bu konuyu kendi cümlenle nasıl tarif edersin?";
+      wrap.innerHTML = `
+        <div style="display:flex;align-items:start;gap:12px;">
+          <div style="font-size:32px;flex-shrink:0;">🧠</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;color:#78350f;font-size:15px;margin-bottom:4px;">Active Recall — ${ders}${escapeHtml(konu)}</div>
+            ${summary ? `<div style="font-size:13px;color:#92400e;margin-bottom:8px;">${escapeHtml(summary)}</div>` : ""}
+            <div style="background:white;padding:10px 12px;border-radius:8px;font-size:14px;color:#451a03;font-weight:500;">
+              ${escapeHtml(action)}
+            </div>
+            <div style="margin-top:8px;font-size:11px;color:#a16207;">⏱️ Spaced repetition: ${intervalLabel} sonra tekrar sorulacak</div>
+          </div>
+        </div>`;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("recall render hata:", e);
+      ph.innerHTML = '<div style="color:#999;font-size:12px;">[Recall render hatası]</div>';
+      ph.classList.remove("recall-pending");
+    }
+  });
+}
+
+// 28) ```compound — 2-3 renderer tek kart (formula+sim+karne combo)
+function rerenderCompound(el) {
+  if (!el) return;
+  el.querySelectorAll(".compound-pending").forEach((ph) => {
+    try {
+      const cfg = JSON.parse(_readJsonOrText(ph, "data-compound"));
+      const wrap = document.createElement("div");
+      wrap.className = "render-card compound-container";
+      wrap.style.cssText = "padding:14px;background:white;border:1px solid #e7e5e4;border-radius:12px;margin:12px 0;";
+      const title = cfg.title || "Çok Panelli Görsel";
+      const panels = Array.isArray(cfg.panels) ? cfg.panels : [];
+      let body = `<div class="render-title" style="font-size:16px;font-weight:700;margin-bottom:12px;">🧩 ${escapeHtml(title)}</div>`;
+      // Layout: tek satır 1, 2 panel yan yana, 3+ panel grid
+      const cols = panels.length === 1 ? "1fr" : (panels.length === 2 ? "1fr 1fr" : "1fr 1fr 1fr");
+      body += `<div style="display:grid;grid-template-columns:${cols};gap:14px;">`;
+      panels.forEach((p, pi) => {
+        const ptype = (p.type || "text").toLowerCase();
+        const pdata = p.data || p;
+        const plabel = p.label || "";
+        // Each panel: render the inner block as ```<type> ...```
+        const inner = JSON.stringify(pdata);
+        body += `<div class="compound-panel" data-panel-type="${escapeHtml(ptype)}" data-panel-data="${escapeHtml(inner).replace(/"/g, '&quot;')}" style="padding:10px;background:#fafaf9;border-radius:8px;border:1px solid #f5f5f4;">
+          ${plabel ? `<div style="font-size:12px;font-weight:600;color:#57534e;margin-bottom:8px;">${escapeHtml(plabel)}</div>` : ""}
+          <div class="compound-slot"></div>
+        </div>`;
+      });
+      body += `</div>`;
+      if (cfg.note) {
+        body += `<div style="margin-top:10px;font-size:12px;color:#78716c;">${escapeHtml(cfg.note)}</div>`;
+      }
+      wrap.innerHTML = body;
+      ph.replaceWith(wrap);
+      // Her panel için inner type'a göre re-render yap
+      requestAnimationFrame(() => {
+        wrap.querySelectorAll(".compound-panel").forEach((panelEl) => {
+          try {
+            const ptype = panelEl.dataset.panelType;
+            const pdata = JSON.parse(panelEl.dataset.panelData);
+            const slot = panelEl.querySelector(".compound-slot");
+            if (!slot) return;
+            // Inner block oluştur ve uygun renderer'ı çağır
+            const tempDiv = document.createElement("div");
+            tempDiv.className = `${ptype}-pending`;
+            tempDiv.dataset[ptype.replace(/-/g, "")] = JSON.stringify(pdata);
+            // setAttribute for data-XXX
+            tempDiv.setAttribute(`data-${ptype}`, JSON.stringify(pdata));
+            slot.appendChild(tempDiv);
+            // Renderer dispatch
+            const fnMap = {
+              "formula": rerenderFormulas, "sim": rerenderSims, "3d": rerender3D,
+              "chart": rerenderCharts, "calc": rerenderCalcs, "radar": rerenderRadar,
+              "heatmap": rerenderHeatmap, "karne": rerenderKarne, "gauge": rerenderGauge,
+              "timeline": rerenderTimeline, "progress": rerenderProgress, "compare": rerenderCompare,
+              "desmos": rerenderDesmos, "geogebra": rerenderGeogebra, "plotly": rerenderPlotly,
+              "mermaid": rerenderMermaid, "vr": rerenderVR, "mol3d": rerenderMol3d,
+              "sound": rerenderSound, "element": rerenderElement,
+              "excalidraw": rerenderExcalidraw, "codeout": rerenderCodeOut,
+              "steps": rerenderSteps, "kgraph": rerenderKgraph, "quiz": rerenderQuiz,
+              "compare2": rerenderCompare2, "recall": rerenderRecall,
+            };
+            const fn = fnMap[ptype];
+            if (fn) {
+              try { fn(slot); } catch (e2) { console.warn("compound inner fail:", e2); }
+            } else {
+              slot.innerHTML = `<div style="color:#999;font-size:12px;">[Bilinmeyen panel tipi: ${escapeHtml(ptype)}]</div>`;
+            }
+          } catch (ee) {
+            console.warn("compound panel hata:", ee);
+          }
+        });
+      });
+    } catch (e) {
+      console.warn("compound render hata:", e);
+      ph.innerHTML = '<div style="color:#999;font-size:12px;">[Compound render hatası]</div>';
+      ph.classList.remove("compound-pending");
+    }
+  });
+}
+
 // Tek çağrı: tüm görsel renderer'ları toplu çalıştır
 function rerenderAllVisuals(el) {
   try { rerenderCharts(el); } catch (e) {}
@@ -4207,6 +4788,13 @@ function rerenderAllVisuals(el) {
   // Oturum 25.34 — 2 yeni renderer
   try { rerenderExcalidraw(el); } catch (e) {}
   try { rerenderCodeOut(el); } catch (e) {}
+  // Oturum 25.37 — 6 yeni renderer (steps/kgraph/quiz/compare2/recall/compound)
+  try { rerenderSteps(el); } catch (e) {}
+  try { rerenderKgraph(el); } catch (e) {}
+  try { rerenderQuiz(el); } catch (e) {}
+  try { rerenderCompare2(el); } catch (e) {}
+  try { rerenderRecall(el); } catch (e) {}
+  try { rerenderCompound(el); } catch (e) {}
 }
 
 // Prism syntax highlight
