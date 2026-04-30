@@ -1121,6 +1121,21 @@ generate_pdf(html_content, title) — calisma plani PDF üret
   Ornek: ogrenci "calisma planini PDF olarak ver" → generate_pdf(plan_html, "Ali Fizik Plani")
   Donus: pdf_url — ogrenci linke tiklar, indirir
 
+text_to_speech(text, voice='nova') — bot anlatimini sesli oku (Turkce destekli)
+  Ornek: ogrenci "bunu sesli oku" / "dinleyebilir miyim" → text_to_speech(metin)
+  Donus: audio_url. Yanitta ` 🔊 [Dinle](url) ` linki sun.
+  GUNDE 100 limit. Kisa anlatımlar icin ideal (max 4000 char).
+
+pdb_lookup(pdb_id) — protein 3D yapı (biyoloji)
+  Ornek: hemoglobin → pdb_lookup("1HHO") → mol3d_block alanini direkt cevabina yapistir
+  Yaygin PDB ID: 1HHO (hemoglobin), 6LU7 (COVID), 1MBN (myoglobin), 1AKE (kinaz)
+  Donus: title + image_url + mol3d_block (```mol3d formatinda hazir, yapistirip 3D goster)
+
+student_heatmap(soz_no_list, ders, weeks) — OGRETMEN+ aracı (ogrenci yasak)
+  Ornek: ogretmen "9-A sinifi fizik durumu" → student_heatmap([137,138,...], "Fizik", 8)
+  Donus: heatmap_block — direkt cevabina yapistir, ```heatmap renderer ile gorunur
+  Hangi ogrenci hangi konuda zayif gorsel matrisi.
+
 KARAR AGACI:
   Matematik soru → wolfram_query (kesin) + ```desmos (gorsel)
   Geometri → ```geogebra

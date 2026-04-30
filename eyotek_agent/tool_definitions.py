@@ -2146,6 +2146,54 @@ TOOLS.extend([
             "required": ["html_content"]
         }
     },
+    # ── Oturum 25.34 — TTS + PDB + Heatmap Dashboard ──
+    {
+        "name": "text_to_speech",
+        "description": "Bot anlatımını sesli oku — Türkçe destekli (OpenAI tts-1 veya ElevenLabs). "
+                       "Erişilebilirlik + multitasking. Ogrenci '🔊 Dinle' butonu ile mp3 oynatir. "
+                       "GUNDE 100 limit. Donus: audio_filename + audio_size_kb. "
+                       "Voice OpenAI: alloy/echo/fable/onyx/nova/shimmer. Default 'nova' (genc kadın ses).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "Sesli okunacak metin (max 4000 char)"},
+                "voice": {"type": "string", "description": "OpenAI voice (alloy/echo/fable/onyx/nova/shimmer) veya ElevenLabs voice_id"},
+                "provider": {"type": "string", "description": "auto | openai | elevenlabs"}
+            },
+            "required": ["text"]
+        }
+    },
+    {
+        "name": "pdb_lookup",
+        "description": "RCSB Protein Data Bank — protein 3D yapı bilgi. Biyoloji icin altın. "
+                       "PDB ID 4 karakter (orn: '1HHO' hemoglobin, '6LU7' COVID protease, '1MBN' myoglobin). "
+                       "Donus: title, organism, image_url, structure_url, mol3d_block. "
+                       "mol3d_block dogrudan ```mol3d formatinda — direkt cevabina yapistir, 3D goruntule.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "pdb_id": {"type": "string", "description": "4-karakter PDB ID (orn '1HHO')"}
+            },
+            "required": ["pdb_id"]
+        }
+    },
+    {
+        "name": "student_heatmap",
+        "description": "OGRETMEN+ aracı — coklu ogrenci × konu performans heatmap. "
+                       "Sınıf karşılaştırma, hangi öğrenci hangi konuda zayıf görsel. "
+                       "Donus: students/konular matrix + heatmap_block (```heatmap formatinda). "
+                       "ACL: sadece admin/mudur/ogretmen/rehber. Ogretmen sadece kendi sinifi.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no_list": {"type": "array", "items": {"type": "integer"},
+                                "description": "Ogrenci soz_no listesi (orn: [137, 138, 139])"},
+                "ders": {"type": "string", "description": "Filtre: Fizik|Mat|Kimya|Biyoloji vb. Bos = tum dersler"},
+                "weeks": {"type": "integer", "description": "Kac haftalik veri (default 8)"}
+            },
+            "required": ["soz_no_list"]
+        }
+    },
 ])
 
 # Active TOOLS — Claude system prompt'a gonderilen liste

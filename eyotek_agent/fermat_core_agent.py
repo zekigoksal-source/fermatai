@@ -2206,7 +2206,92 @@ TOOL_DISPATCH = {
     "pubchem_lookup":              lambda p: _tool_pubchem_lookup(**p),
     "usgs_earthquakes":            lambda p: _tool_usgs_earthquakes(**p),
     "generate_pdf":                lambda p: _tool_generate_pdf(**p),
+    # Oturum 25.34 (Neo) — TTS + PDB + Heatmap dashboard
+    "text_to_speech":              lambda p: _tool_text_to_speech(**p),
+    "pdb_lookup":                  lambda p: _tool_pdb_lookup(**p),
+    "student_heatmap":             lambda p: _tool_student_heatmap(**p),
 }
+
+
+# ── Oturum 25.34 — TTS + PDB + Heatmap wrapperlari ──
+async def _tool_text_to_speech(text: str = "", voice: str = "nova",
+                                provider: str = "auto", **_extra) -> dict:
+    try:
+        from external_apis_v2 import text_to_speech
+        r = await text_to_speech(text=text, voice=voice, provider=provider)
+        if r.get("success") and r.get("audio_filename"):
+            import os
+            base = os.getenv("PUBLIC_BASE_URL", "https://api.fermategitimkurumlari.com").rstrip("/")
+            r["audio_url"] = f"{base}/audio/{r['audio_filename']}"
+            r["kullanim"] = f"Cevabina '🔊 [Sesli dinle]({r['audio_url']})' linkini ekle"
+        return r
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_pdb_lookup(pdb_id: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v2 import pdb_lookup
+        return await pdb_lookup(pdb_id=pdb_id)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_student_heatmap(soz_no_list: list = None, ders: str = "",
+                                  weeks: int = 8, _caller_role: str = "ogrenci",
+                                  _caller_phone: str = "", **_extra) -> dict:
+    """Öğrenci × konu performans heatmap — sınıf karşılaştırma.
+
+    Sadece öğretmen+ rol görür (ACL). Sonuç ```heatmap renderer formatında.
+    """
+    try:
+        if _caller_role not in ("admin", "mudur", "ogretmen", "rehber"):
+            return {"success": False, "error": "Bu tool sadece öğretmen+ icin"}
+        from db_pool import db_fetch
+        if not soz_no_list:
+            return {"success": False, "error": "soz_no_list gerekli (orn: [137, 138, 139])"}
+        # Öğrenci adları + konu × öğrenci hata yüzdesi matrisi
+        rows = await db_fetch(
+            f"""SELECT s.full_name, t.konu, ROUND(AVG(t.hata_yuzdesi)::numeric, 0) as avg_hata
+                FROM students s
+                JOIN student_topic_tracker t ON s.soz_no::text = t.soz_no::text
+                WHERE s.soz_no = ANY($1::int[])
+                  AND ($2 = '' OR t.ders = $2)
+                  AND t.created_at > NOW() - INTERVAL '{int(weeks or 8)} weeks'
+                GROUP BY s.full_name, t.konu
+                ORDER BY t.konu, s.full_name""",
+            [int(x) for x in soz_no_list], ders
+        )
+        if not rows:
+            return {"success": False, "error": "Veri yok (öğrenciler veya ders eşleşmiyor)"}
+        # Pivot: y=konu, x=öğrenci, value=hata%
+        students = sorted({r["full_name"] for r in rows})
+        konular = sorted({r["konu"] for r in rows})
+        matrix = [[0 for _ in students] for _ in konular]
+        for r in rows:
+            yi = konular.index(r["konu"])
+            xi = students.index(r["full_name"])
+            matrix[yi][xi] = int(r["avg_hata"] or 0)
+        # ```heatmap formatında dön
+        return {
+            "success": True,
+            "students": students,
+            "konular": konular,
+            "matrix": matrix,
+            "ders_filter": ders or "tüm dersler",
+            "weeks": int(weeks or 8),
+            "heatmap_block": (
+                "```heatmap\n"
+                + json.dumps({
+                    "title": f"{ders or 'Tüm Dersler'} — Konu × Öğrenci Hata Haritası ({weeks} hafta)",
+                    "x": [s.split()[0] for s in students],  # ilk ad (kısalt)
+                    "y": konular,
+                    "values": matrix,
+                }, ensure_ascii=False)
+                + "\n```"
+            ),
+            "kullanim": "heatmap_block alanini direkt cevabina yapistir, frontend render eder",
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 # ── Oturum 25.33 — 3 yeni external API wrapper ──
@@ -2228,7 +2313,13 @@ async def _tool_usgs_earthquakes(min_magnitude: float = 4.5, max_results: int = 
 async def _tool_generate_pdf(html_content: str = "", title: str = "FermatAI Rapor", **_extra) -> dict:
     try:
         from external_apis_v2 import generate_pdf
-        return await generate_pdf(html_content=html_content, title=title)
+        r = await generate_pdf(html_content=html_content, title=title)
+        if r.get("success") and r.get("pdf_filename"):
+            import os
+            base = os.getenv("PUBLIC_BASE_URL", "https://api.fermategitimkurumlari.com").rstrip("/")
+            r["pdf_url"] = f"{base}/pdfs/{r['pdf_filename']}"
+            r["kullanim"] = f"Cevabina '📄 [PDF indir]({r['pdf_url']})' linkini ekle"
+        return r
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -2617,6 +2708,12 @@ async def run_tool(name: str, input_data: dict,
             enriched = dict(input_data)
             enriched["_caller_phone"] = caller_phone
             enriched["_caller_channel"] = caller_channel  # 22.1n-rev Atlas #16
+            result = await fn(enriched)
+        elif name == "student_heatmap":
+            # Oturum 25.34 — heatmap icin role kontrolu
+            enriched = dict(input_data)
+            enriched["_caller_role"] = caller_role
+            enriched["_caller_phone"] = caller_phone
             result = await fn(enriched)
         elif name == "make_render_link":
             # Oturum 25.31 — render link + LOOP GUARD

@@ -499,6 +499,153 @@ async def generate_pdf(html_content: str, title: str = "FermatAI Rapor") -> dict
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# 9. TTS — OpenAI / ElevenLabs Türkçe sesli okuma
+# ═══════════════════════════════════════════════════════════════════════
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+TTS_DAILY_LIMIT = int(os.getenv("TTS_DAILY_LIMIT", "100"))  # bot per gün
+_TTS_DAILY = {"date": "", "count": 0}
+
+
+async def text_to_speech(text: str, voice: str = "nova",
+                         provider: str = "auto") -> dict:
+    """Bot anlatımı sesli oku — Türkçe destekli.
+
+    provider: 'openai' | 'elevenlabs' | 'auto'
+    voice (OpenAI): 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer'
+    voice (ElevenLabs): voice_id (örn 'pNInz6obpgDQGcFmaJgB' = Adam)
+    """
+    from datetime import date
+    today_str = date.today().isoformat()
+    if _TTS_DAILY["date"] != today_str:
+        _TTS_DAILY["date"] = today_str; _TTS_DAILY["count"] = 0
+    if _TTS_DAILY["count"] >= TTS_DAILY_LIMIT:
+        return {"success": False, "error": f"Günlük TTS limiti ({TTS_DAILY_LIMIT}) doldu"}
+
+    # Limit metin uzunluğu
+    text = (text or "").strip()
+    if not text:
+        return {"success": False, "error": "Boş metin"}
+    if len(text) > 4000:
+        text = text[:3997] + "..."
+
+    use_provider = provider
+    if provider == "auto":
+        use_provider = "openai" if OPENAI_API_KEY else ("elevenlabs" if ELEVENLABS_API_KEY else None)
+    if not use_provider:
+        return {"success": False, "error": "TTS API key yok (OPENAI_API_KEY veya ELEVENLABS_API_KEY)"}
+
+    import secrets
+    from pathlib import Path
+    audio_dir = Path("/opt/fermatai/eyotek_agent/logs/audio")
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    uuid = secrets.token_urlsafe(10)
+
+    try:
+        if use_provider == "openai":
+            if not OPENAI_API_KEY:
+                return {"success": False, "error": "OPENAI_API_KEY tanımsız"}
+            audio_path = audio_dir / f"{uuid}.mp3"
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                r = await client.post(
+                    "https://api.openai.com/v1/audio/speech",
+                    headers={"Authorization": f"Bearer {OPENAI_API_KEY}",
+                             "Content-Type": "application/json"},
+                    json={
+                        "model": "tts-1",  # 'tts-1-hd' yüksek kalite ama 2x maliyet
+                        "input": text,
+                        "voice": voice if voice in ("alloy","echo","fable","onyx","nova","shimmer") else "nova",
+                        "response_format": "mp3",
+                        "speed": 1.0,
+                    })
+                r.raise_for_status()
+                audio_path.write_bytes(r.content)
+                _TTS_DAILY["count"] += 1
+                return {
+                    "success": True,
+                    "provider": "openai/tts-1",
+                    "audio_filename": f"{uuid}.mp3",
+                    "audio_path": str(audio_path),
+                    "audio_size_kb": round(audio_path.stat().st_size / 1024, 1),
+                    "duration_chars": len(text),
+                    "today_used": _TTS_DAILY["count"],
+                }
+        elif use_provider == "elevenlabs":
+            if not ELEVENLABS_API_KEY:
+                return {"success": False, "error": "ELEVENLABS_API_KEY tanımsız"}
+            audio_path = audio_dir / f"{uuid}.mp3"
+            voice_id = voice if len(voice) > 5 else "pNInz6obpgDQGcFmaJgB"  # Adam
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                r = await client.post(
+                    f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+                    headers={"xi-api-key": ELEVENLABS_API_KEY,
+                             "Content-Type": "application/json"},
+                    json={
+                        "text": text,
+                        "model_id": "eleven_multilingual_v2",  # Türkçe destekli
+                        "voice_settings": {"stability": 0.5, "similarity_boost": 0.7},
+                    })
+                r.raise_for_status()
+                audio_path.write_bytes(r.content)
+                _TTS_DAILY["count"] += 1
+                return {
+                    "success": True,
+                    "provider": "elevenlabs/multilingual_v2",
+                    "audio_filename": f"{uuid}.mp3",
+                    "audio_path": str(audio_path),
+                    "audio_size_kb": round(audio_path.stat().st_size / 1024, 1),
+                    "today_used": _TTS_DAILY["count"],
+                }
+    except httpx.HTTPStatusError as e:
+        logger.warning(f"TTS HTTP {e.response.status_code}: {e.response.text[:200]}")
+        return {"success": False, "error": f"API hata: {e.response.status_code}"}
+    except Exception as e:
+        logger.error(f"TTS hata: {e}")
+        return {"success": False, "error": str(e)}
+    return {"success": False, "error": "Beklenmeyen"}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 10. PDB API — Protein Data Bank (biyoloji 3D protein)
+# ═══════════════════════════════════════════════════════════════════════
+async def pdb_lookup(pdb_id: str) -> dict:
+    """RCSB PDB REST — protein bilgi (4-karakter PDB ID).
+    Ornek: '1HHO' (hemoglobin), '4HHB' (deoxy-hemoglobin), '1AKE' (adenylate kinase),
+    '1MBN' (myoglobin), '6LU7' (COVID-19 ana proteaz).
+    Donus: title, organism, methods, resolution, image_url, mol3d_pdb_id."""
+    pdb_id = (pdb_id or "").upper().strip()
+    if len(pdb_id) != 4:
+        return {"success": False, "error": "PDB ID 4 karakter olmali (orn: 1HHO)"}
+    try:
+        url = f"https://data.rcsb.org/rest/v1/core/entry/{pdb_id}"
+        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True) as client:
+            r = await client.get(url)
+            if r.status_code == 404:
+                return {"success": False, "error": f"PDB ID '{pdb_id}' bulunamadi"}
+            r.raise_for_status()
+            d = r.json()
+            struct = d.get("struct", {})
+            entry = d.get("entry_info", {}) or d.get("rcsb_entry_info", {})
+            citation = (d.get("citation") or [{}])[0] if d.get("citation") else {}
+            return {
+                "success": True,
+                "pdb_id": pdb_id,
+                "title": struct.get("title", "")[:200],
+                "keywords": struct.get("pdbx_descriptor", "")[:200],
+                "experimental_methods": entry.get("experimental_method", ""),
+                "resolution_a": entry.get("resolution_combined", [None])[0] if entry.get("resolution_combined") else None,
+                "molecular_weight_da": entry.get("molecular_weight"),
+                "polymer_count": entry.get("polymer_entity_count_protein"),
+                "image_url": f"https://cdn.rcsb.org/images/structures/{pdb_id.lower()}_assembly-1.jpeg",
+                "structure_url": f"https://www.rcsb.org/structure/{pdb_id}",
+                "mol3d_block": f'```mol3d\n{{"pdb":"{pdb_id}","title":"{struct.get("title", pdb_id)[:60]}","style":"cartoon"}}\n```',
+                "citation_title": citation.get("title", "") if citation else "",
+            }
+    except Exception as e:
+        logger.warning(f"pdb_lookup hata: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # Status raporu
 # ═══════════════════════════════════════════════════════════════════════
 def status_report_v2() -> dict:
@@ -513,4 +660,7 @@ def status_report_v2() -> dict:
         "pubchem": True,  # API key gerek yok
         "usgs": True,  # API key gerek yok
         "pdf_generator": True,  # weasyprint kurulu olmalı (yoksa graceful skip)
+        "pdb": True,  # API key gerek yok (RCSB public)
+        "tts_openai": bool(OPENAI_API_KEY),
+        "tts_elevenlabs": bool(ELEVENLABS_API_KEY),
     }

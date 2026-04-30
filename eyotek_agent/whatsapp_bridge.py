@@ -1042,6 +1042,21 @@ except Exception as _rerr:
     import logging as _lg
     _lg.warning(f"render_endpoint router yuklenemedi: {_rerr}")
 
+# ── Static endpoints — audio (TTS) + pdf (Oturum 25.34) ──
+try:
+    from fastapi import FastAPI as _F
+    from fastapi.staticfiles import StaticFiles as _SF
+    from pathlib import Path as _P
+    _audio_dir = _P("/opt/fermatai/eyotek_agent/logs/audio")
+    _pdf_dir = _P("/opt/fermatai/eyotek_agent/logs/pdfs")
+    _audio_dir.mkdir(parents=True, exist_ok=True)
+    _pdf_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/audio", _SF(directory=str(_audio_dir)), name="audio")
+    app.mount("/pdfs", _SF(directory=str(_pdf_dir)), name="pdfs")
+except Exception as _serr:
+    import logging as _lg
+    _lg.warning(f"static mount hata: {_serr}")
+
 # 22.1n-neo Paket A: HybridDict wrapper — memory mode davranisi aynen, Redis aktif
 # olunca (REDIS_URL set) otomatik multi-worker shared state.
 # _AGENT_SESSIONS FermatCoreAgent INSTANCE tuttugu icin serialize edilemez → memory only.
