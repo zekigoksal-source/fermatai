@@ -196,6 +196,204 @@
   padding: 14px !important; font-size: 13px;
 }
 .msg.bot code[class*="language-"] { font-family: "SF Mono", Menlo, monospace; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Oturum 25.31 — 7 yeni eğitim odaklı renderer (Neo direktifi)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 6) RADAR — Chart.js radar wrapper */
+.msg.bot .radar-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin: 12px 0;
+  position: relative; height: 350px;
+}
+.msg.bot .radar-container canvas { max-height: 300px !important; }
+
+/* 7) HEATMAP — konu × hafta yoğunluk grid */
+.msg.bot .heatmap-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin: 12px 0; overflow-x: auto;
+}
+.msg.bot .heatmap-grid {
+  display: grid; gap: 3px; min-width: 400px;
+  font-size: 12px;
+}
+.msg.bot .heatmap-cell {
+  padding: 8px 6px; text-align: center; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 32px;
+}
+.msg.bot .heatmap-corner { background: transparent; }
+.msg.bot .heatmap-xlabel,
+.msg.bot .heatmap-ylabel {
+  font-weight: 600; color: var(--fg-muted); font-size: 11px;
+  background: rgba(199,111,62,0.05);
+}
+.msg.bot .heatmap-ylabel { text-align: right; padding-right: 10px; }
+.msg.bot .heatmap-data {
+  color: #fff; font-weight: 600; font-size: 13px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  cursor: default; transition: transform 0.15s;
+}
+.msg.bot .heatmap-data:hover { transform: scale(1.08); z-index: 2; }
+
+/* 8) KARNE — renk kodlu ders × konu matrisi */
+.msg.bot .karne-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin: 12px 0;
+}
+.msg.bot .karne-table { display: flex; flex-direction: column; gap: 14px; }
+.msg.bot .karne-row {
+  display: grid; grid-template-columns: 100px 1fr; gap: 12px;
+  align-items: start;
+}
+.msg.bot .karne-ders {
+  font-weight: 700; font-size: 14px; color: var(--fg);
+  padding-top: 6px; border-right: 2px solid var(--border);
+  padding-right: 10px;
+}
+.msg.bot .karne-konular {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 6px;
+}
+.msg.bot .karne-konu {
+  padding: 8px 10px; border-radius: 8px; font-size: 12px;
+  display: flex; flex-direction: column; gap: 2px;
+  border: 1px solid;
+}
+.msg.bot .karne-konu .karne-konu-ad { font-weight: 500; }
+.msg.bot .karne-konu .karne-konu-puan {
+  font-weight: 700; font-size: 16px; align-self: flex-end;
+}
+.msg.bot .karne-iyi {
+  background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.4); color: #166534;
+}
+.msg.bot .karne-orta {
+  background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.4); color: #92400E;
+}
+.msg.bot .karne-zayif {
+  background: rgba(220,38,38,0.12); border-color: rgba(220,38,38,0.4); color: #991B1B;
+}
+html[data-theme="dark"] .msg.bot .karne-iyi { color: #86EFAC; }
+html[data-theme="dark"] .msg.bot .karne-orta { color: #FCD34D; }
+html[data-theme="dark"] .msg.bot .karne-zayif { color: #FCA5A5; }
+.msg.bot .karne-legend {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+}
+.msg.bot .karne-leg {
+  padding: 3px 8px; border-radius: 6px;
+}
+
+/* 9) GAUGE — SVG arc yüzdelik */
+.msg.bot .gauge-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin: 12px 0;
+  text-align: center;
+}
+.msg.bot .gauge-svg-wrap { display: flex; justify-content: center; padding: 8px 0; }
+.msg.bot .gauge-svg { width: 100%; max-width: 280px; height: auto; }
+.msg.bot .gauge-range {
+  display: flex; justify-content: space-between; padding: 0 24px;
+  font-size: 11px; color: var(--fg-muted); margin-top: 4px;
+}
+
+/* 10) TIMELINE — yatay zaman çizgisi */
+.msg.bot .timeline-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin: 12px 0; overflow-x: auto;
+}
+.msg.bot .timeline-line {
+  display: flex; gap: 14px; padding: 8px 0; min-width: 100%;
+  position: relative;
+}
+.msg.bot .timeline-line::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 24px;
+  height: 2px; background: var(--border); z-index: 0;
+}
+.msg.bot .timeline-event {
+  flex: 1 0 160px; min-width: 160px; max-width: 220px;
+  text-align: center; position: relative; z-index: 1;
+}
+.msg.bot .timeline-dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; margin: 0 auto 8px; border: 3px solid var(--panel);
+  box-shadow: 0 2px 8px rgba(199,111,62,0.3);
+}
+.msg.bot .timeline-content {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 12px;
+}
+.msg.bot .timeline-tarih { font-size: 10px; color: var(--accent); font-weight: 600; }
+.msg.bot .timeline-baslik { font-weight: 600; color: var(--fg); margin: 2px 0; }
+.msg.bot .timeline-aciklama { font-size: 11px; color: var(--fg-muted); }
+
+/* 11) PROGRESS — donut/ring tamamlanma */
+.msg.bot .progress-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin: 12px 0;
+}
+.msg.bot .progress-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+.msg.bot .progress-item { text-align: center; }
+.msg.bot .progress-ring { width: 100px; height: 100px; }
+.msg.bot .progress-ring text { fill: var(--fg); }
+.msg.bot .progress-label {
+  font-size: 12px; color: var(--fg); font-weight: 500; margin-top: 4px;
+}
+
+/* 12) COMPARE — yan yana karşılaştırma kartları */
+.msg.bot .compare-container {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin: 12px 0;
+}
+.msg.bot .compare-grid { display: grid; gap: 12px; }
+.msg.bot .compare-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px;
+  transition: all 0.2s;
+}
+.msg.bot .compare-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(199,111,62,0.12);
+  transform: translateY(-1px);
+}
+.msg.bot .compare-card-baslik {
+  font-weight: 700; color: var(--accent); font-size: 13px;
+  letter-spacing: 0.3px; margin-bottom: 8px; text-transform: uppercase;
+}
+.msg.bot .compare-card-puan {
+  font-size: 28px; font-weight: 700; color: var(--fg); line-height: 1;
+}
+.msg.bot .compare-card-net {
+  font-size: 13px; color: var(--fg-muted); margin: 4px 0 8px;
+}
+.msg.bot .compare-card-detay {
+  margin: 8px 0 0; padding: 0; list-style: none;
+  font-size: 12px; color: var(--fg);
+}
+.msg.bot .compare-card-detay li {
+  padding: 3px 0; border-bottom: 1px dashed var(--border);
+}
+.msg.bot .compare-card-detay li:last-child { border-bottom: none; }
+
+/* Render title — tüm yeni renderer'larda ortak */
+.msg.bot .radar-container .render-title,
+.msg.bot .heatmap-container .render-title,
+.msg.bot .karne-container .render-title,
+.msg.bot .gauge-container .render-title,
+.msg.bot .timeline-container .render-title,
+.msg.bot .progress-container .render-title,
+.msg.bot .compare-container .render-title {
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  margin-bottom: 12px; letter-spacing: 0.3px;
+}
 :root {
   /* Claude.ai palette — sade, sıcak, rahat (LIGHT) */
   --bg: #F5F4ED;
@@ -1597,6 +1795,57 @@ function formatMsg(text) {
     return `\n\n<div class="calc-pending" data-calc-idx="${idx}"></div>\n\n`;
   });
 
+  // ── Oturum 25.31 (Neo) — 7 yeni eğitim odaklı renderer ──
+  // ```radar — Chart.js radar (ders bazlı yetkinlik spider)
+  const radarPlaceholders = [];
+  md = md.replace(/```radar\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = radarPlaceholders.length;
+    radarPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="radar-pending" data-radar-idx="${idx}"></div>\n\n`;
+  });
+  // ```heatmap — Konu × Hafta hata yoğunluğu
+  const heatmapPlaceholders = [];
+  md = md.replace(/```heatmap\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = heatmapPlaceholders.length;
+    heatmapPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="heatmap-pending" data-heatmap-idx="${idx}"></div>\n\n`;
+  });
+  // ```karne — Renk kodlu ders × konu performans matrisi
+  const karnePlaceholders = [];
+  md = md.replace(/```karne\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = karnePlaceholders.length;
+    karnePlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="karne-pending" data-karne-idx="${idx}"></div>\n\n`;
+  });
+  // ```gauge — Yüzdelik hedef göstergesi (SVG arc)
+  const gaugePlaceholders = [];
+  md = md.replace(/```gauge\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = gaugePlaceholders.length;
+    gaugePlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="gauge-pending" data-gauge-idx="${idx}"></div>\n\n`;
+  });
+  // ```timeline — Yatay zaman çizgisi (deneme tarihleri vb.)
+  const timelinePlaceholders = [];
+  md = md.replace(/```timeline\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = timelinePlaceholders.length;
+    timelinePlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="timeline-pending" data-timeline-idx="${idx}"></div>\n\n`;
+  });
+  // ```progress — Donut/ring tamamlanma yüzdesi
+  const progressPlaceholders = [];
+  md = md.replace(/```progress\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = progressPlaceholders.length;
+    progressPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="progress-pending" data-progress-idx="${idx}"></div>\n\n`;
+  });
+  // ```compare — Yan yana karşılaştırma kartları
+  const comparePlaceholders = [];
+  md = md.replace(/```compare\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = comparePlaceholders.length;
+    comparePlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="compare-pending" data-compare-idx="${idx}"></div>\n\n`;
+  });
+
   // ── 2. Collapsible blokları — :::detay ... ::: syntax ──
   // Format: :::detay Özet\n...\n:::
   md = md.replace(/:::detay\s+(.+?)\n([\s\S]*?)\n?:::/g, (m, summary, content) => {
@@ -1654,6 +1903,42 @@ function formatMsg(text) {
           `<div class="calc-pending" data-calc="${escaped}"></div>`
         );
       });
+      // Oturum 25.31 — 7 yeni renderer veri bağlama
+      radarPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="radar-pending" data-radar-idx="${i}"></div>`, 'g'),
+          `<div class="radar-pending" data-radar="${escaped}"></div>`);
+      });
+      heatmapPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="heatmap-pending" data-heatmap-idx="${i}"></div>`, 'g'),
+          `<div class="heatmap-pending" data-heatmap="${escaped}"></div>`);
+      });
+      karnePlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="karne-pending" data-karne-idx="${i}"></div>`, 'g'),
+          `<div class="karne-pending" data-karne="${escaped}"></div>`);
+      });
+      gaugePlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="gauge-pending" data-gauge-idx="${i}"></div>`, 'g'),
+          `<div class="gauge-pending" data-gauge="${escaped}"></div>`);
+      });
+      timelinePlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="timeline-pending" data-timeline-idx="${i}"></div>`, 'g'),
+          `<div class="timeline-pending" data-timeline="${escaped}"></div>`);
+      });
+      progressPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="progress-pending" data-progress-idx="${i}"></div>`, 'g'),
+          `<div class="progress-pending" data-progress="${escaped}"></div>`);
+      });
+      comparePlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="compare-pending" data-compare-idx="${i}"></div>`, 'g'),
+          `<div class="compare-pending" data-compare="${escaped}"></div>`);
+      });
 
       // DOMPurify — tüm pending div'lerine izin ver
       if (typeof DOMPurify !== "undefined") {
@@ -1661,7 +1946,11 @@ function formatMsg(text) {
           ADD_TAGS: ["span", "details", "summary"],
           ADD_ATTR: ["class", "data-chart", "data-chart-idx", "data-sim", "data-sim-idx",
                      "data-threed", "data-threed-idx", "data-formula", "data-formula-idx",
-                     "data-calc", "data-calc-idx", "open"],
+                     "data-calc", "data-calc-idx",
+                     "data-radar", "data-radar-idx", "data-heatmap", "data-heatmap-idx",
+                     "data-karne", "data-karne-idx", "data-gauge", "data-gauge-idx",
+                     "data-timeline", "data-timeline-idx", "data-progress", "data-progress-idx",
+                     "data-compare", "data-compare-idx", "open"],
           ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
         });
       }
@@ -2264,6 +2553,327 @@ function rerenderCalcs(el) {
   });
 }
 
+// ═════════════════════════════════════════════════════════════════
+// Oturum 25.31 (Neo) — 7 yeni eğitim odaklı renderer
+// ═════════════════════════════════════════════════════════════════
+
+// Helper: data-* attribute'tan JSON oku, decode et
+function _readJsonAttr(el, attrName) {
+  let raw = el.getAttribute(attrName) || "{}";
+  raw = raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&")
+           .replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+  return JSON.parse(raw);
+}
+
+// 6) ```radar — Chart.js radar (ders bazlı yetkinlik spider)
+let _radarCounter = 0;
+function rerenderRadar(el) {
+  if (!el || typeof Chart === "undefined") return;
+  el.querySelectorAll(".radar-pending").forEach((ph) => {
+    try {
+      const cfg = _readJsonAttr(ph, "data-radar");
+      const wrap = document.createElement("div");
+      wrap.className = "radar-container";
+      wrap.innerHTML = `<div class="render-title">📡 ${escapeHtml(cfg.title || "Yetkinlik Profili")}</div>`;
+      const canvas = document.createElement("canvas");
+      canvas.id = "radar-" + (++_radarCounter);
+      canvas.height = 300;
+      wrap.appendChild(canvas);
+      ph.replaceWith(wrap);
+      requestAnimationFrame(() => {
+        try {
+          const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+          const colors = ["#C76F3E", "#6B8E7F", "#A78BFA", "#F59E0B"];
+          const datasets = (cfg.datasets || []).map((ds, i) => ({
+            label: ds.label || `Set ${i+1}`,
+            data: ds.data || [],
+            backgroundColor: colors[i % colors.length] + "33",
+            borderColor: colors[i % colors.length],
+            borderWidth: 2, pointRadius: 4
+          }));
+          new Chart(canvas, {
+            type: "radar",
+            data: { labels: cfg.labels || [], datasets },
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              scales: { r: {
+                beginAtZero: true,
+                pointLabels: { font: { size: 12 }, color: isDark ? "#E5E5E5" : "#2F2F2F" },
+                ticks: { color: isDark ? "#888" : "#666", backdropColor: "transparent" },
+                grid: { color: isDark ? "#3A3A36" : "#E5E5E5" },
+                angleLines: { color: isDark ? "#3A3A36" : "#E5E5E5" }
+              }},
+              plugins: { legend: { labels: { color: isDark ? "#E5E5E5" : "#2F2F2F" }}}
+            }
+          });
+        } catch (e) { console.warn("Radar render hata:", e); wrap.innerHTML += `<div style="color:#c00;font-size:12px">[Radar hata: ${e.message}]</div>`; }
+      });
+    } catch (e) {
+      console.warn("Radar parse hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Radar veri hatalı]</div>';
+      ph.classList.remove("radar-pending");
+    }
+  });
+}
+
+// 7) ```heatmap — Konu × Hafta hata yoğunluğu
+function rerenderHeatmap(el) {
+  if (!el) return;
+  el.querySelectorAll(".heatmap-pending").forEach((ph) => {
+    try {
+      const cfg = _readJsonAttr(ph, "data-heatmap");
+      const xLabels = cfg.x || [];
+      const yLabels = cfg.y || [];
+      const values = cfg.values || [];
+      // Min/max bul
+      let max = 0;
+      values.forEach(row => row.forEach(v => { if (v > max) max = v; }));
+      if (max === 0) max = 1;
+      const wrap = document.createElement("div");
+      wrap.className = "heatmap-container";
+      let html = `<div class="render-title">🔥 ${escapeHtml(cfg.title || "Yoğunluk Haritası")}</div>`;
+      html += `<div class="heatmap-grid" style="grid-template-columns: 100px repeat(${xLabels.length}, 1fr);">`;
+      // Header satır
+      html += `<div class="heatmap-cell heatmap-corner"></div>`;
+      xLabels.forEach(x => { html += `<div class="heatmap-cell heatmap-xlabel">${escapeHtml(x)}</div>`; });
+      // Data satırları
+      yLabels.forEach((y, yi) => {
+        html += `<div class="heatmap-cell heatmap-ylabel">${escapeHtml(y)}</div>`;
+        const row = values[yi] || [];
+        xLabels.forEach((x, xi) => {
+          const v = row[xi] || 0;
+          const intensity = v / max;
+          // Renk: yeşil (düşük) → sarı (orta) → kırmızı (yüksek)
+          let r, g, b;
+          if (intensity < 0.5) {
+            r = Math.round(107 + (245 - 107) * intensity * 2);
+            g = Math.round(142 + (158 - 142) * intensity * 2);
+            b = Math.round(127 + (11 - 127) * intensity * 2);
+          } else {
+            const t = (intensity - 0.5) * 2;
+            r = Math.round(245 + (220 - 245) * t);
+            g = Math.round(158 + (38 - 158) * t);
+            b = Math.round(11 + (38 - 11) * t);
+          }
+          const bg = `rgba(${r},${g},${b},${0.3 + intensity * 0.7})`;
+          html += `<div class="heatmap-cell heatmap-data" style="background:${bg};" title="${escapeHtml(y)} / ${escapeHtml(x)}: ${v}">${v}</div>`;
+        });
+      });
+      html += `</div>`;
+      wrap.innerHTML = html;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Heatmap render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Heatmap veri hatalı]</div>';
+      ph.classList.remove("heatmap-pending");
+    }
+  });
+}
+
+// 8) ```karne — Renk kodlu ders × konu performans matrisi
+function rerenderKarne(el) {
+  if (!el) return;
+  el.querySelectorAll(".karne-pending").forEach((ph) => {
+    try {
+      const cfg = _readJsonAttr(ph, "data-karne");
+      const wrap = document.createElement("div");
+      wrap.className = "karne-container";
+      let html = `<div class="render-title">📋 ${escapeHtml(cfg.title || "Akademik Karne")}</div>`;
+      html += `<div class="karne-table">`;
+      (cfg.rows || []).forEach(row => {
+        html += `<div class="karne-row">`;
+        html += `<div class="karne-ders">${escapeHtml(row.ders || "")}</div>`;
+        html += `<div class="karne-konular">`;
+        (row.konular || []).forEach(k => {
+          let renkClass = "karne-orta";
+          const renk = (k.renk || "").toLowerCase();
+          if (renk === "yesil" || renk === "green" || (k.puan >= 70)) renkClass = "karne-iyi";
+          else if (renk === "kirmizi" || renk === "red" || (k.puan < 40)) renkClass = "karne-zayif";
+          else renkClass = "karne-orta";
+          html += `<div class="karne-konu ${renkClass}">
+            <div class="karne-konu-ad">${escapeHtml(k.ad || "")}</div>
+            <div class="karne-konu-puan">${k.puan != null ? k.puan : "—"}</div>
+          </div>`;
+        });
+        html += `</div>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+      // Legend
+      html += `<div class="karne-legend">
+        <span class="karne-leg karne-iyi">🟢 İyi (≥70)</span>
+        <span class="karne-leg karne-orta">🟡 Orta (40-69)</span>
+        <span class="karne-leg karne-zayif">🔴 Zayıf (&lt;40)</span>
+      </div>`;
+      wrap.innerHTML = html;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Karne render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Karne veri hatalı]</div>';
+      ph.classList.remove("karne-pending");
+    }
+  });
+}
+
+// 9) ```gauge — SVG arc yüzdelik göstergesi
+function rerenderGauge(el) {
+  if (!el) return;
+  el.querySelectorAll(".gauge-pending").forEach((ph) => {
+    try {
+      const cfg = _readJsonAttr(ph, "data-gauge");
+      const value = Number(cfg.value) || 0;
+      const min = Number(cfg.min) || 0;
+      const max = Number(cfg.max) || 100;
+      const pct = Math.max(0, Math.min(1, (value - min) / (max - min)));
+      const angle = pct * 180; // semi-circle 0..180 deg
+      // Renk: kırmızı → sarı → yeşil
+      let color;
+      if (pct < 0.4) color = "#DC2626";
+      else if (pct < 0.7) color = "#F59E0B";
+      else color = "#16A34A";
+      const wrap = document.createElement("div");
+      wrap.className = "gauge-container";
+      // SVG arc path: r=80, viewBox 0 0 200 120
+      const r = 80, cx = 100, cy = 100;
+      const startX = cx - r, startY = cy;
+      const endRad = (180 - angle) * Math.PI / 180;
+      const endX = cx + r * Math.cos(endRad);
+      const endY = cy - r * Math.sin(endRad);
+      const largeArc = angle > 180 ? 1 : 0;
+      const arcPath = `M ${startX} ${startY} A ${r} ${r} 0 ${largeArc} 1 ${endX} ${endY}`;
+      const bgPath = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+      wrap.innerHTML = `
+        <div class="render-title">⚡ ${escapeHtml(cfg.title || "Gösterge")}</div>
+        <div class="gauge-svg-wrap">
+          <svg viewBox="0 0 200 120" class="gauge-svg">
+            <path d="${bgPath}" stroke="#E5E5E5" stroke-width="14" fill="none" stroke-linecap="round"/>
+            <path d="${arcPath}" stroke="${color}" stroke-width="14" fill="none" stroke-linecap="round"
+                  style="transition: all 0.8s cubic-bezier(0.16,1,0.3,1);"/>
+            <text x="100" y="85" text-anchor="middle" font-size="32" font-weight="700" fill="${color}">${value}${escapeHtml(cfg.unit || "")}</text>
+            <text x="100" y="110" text-anchor="middle" font-size="11" fill="var(--fg-muted)">${escapeHtml(cfg.label || "")}</text>
+          </svg>
+        </div>
+        <div class="gauge-range">
+          <span>${min}${escapeHtml(cfg.unit || "")}</span>
+          <span>${max}${escapeHtml(cfg.unit || "")}</span>
+        </div>`;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Gauge render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Gauge veri hatalı]</div>';
+      ph.classList.remove("gauge-pending");
+    }
+  });
+}
+
+// 10) ```timeline — Yatay zaman çizgisi
+function rerenderTimeline(el) {
+  if (!el) return;
+  el.querySelectorAll(".timeline-pending").forEach((ph) => {
+    try {
+      const cfg = _readJsonAttr(ph, "data-timeline");
+      const events = (cfg.events || []).slice().sort((a, b) =>
+        (a.tarih || "").localeCompare(b.tarih || ""));
+      const wrap = document.createElement("div");
+      wrap.className = "timeline-container";
+      let html = `<div class="render-title">📅 ${escapeHtml(cfg.title || "Zaman Çizelgesi")}</div>`;
+      html += `<div class="timeline-line">`;
+      events.forEach((ev, i) => {
+        const tipIcon = { sinav: "📝", etut: "📚", odev: "✏️", olay: "📌" }[ev.tip] || "📍";
+        html += `<div class="timeline-event">
+          <div class="timeline-dot">${tipIcon}</div>
+          <div class="timeline-content">
+            <div class="timeline-tarih">${escapeHtml(ev.tarih || "")}</div>
+            <div class="timeline-baslik">${escapeHtml(ev.baslik || "")}</div>
+            ${ev.aciklama ? `<div class="timeline-aciklama">${escapeHtml(ev.aciklama)}</div>` : ""}
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+      wrap.innerHTML = html;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Timeline render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Timeline veri hatalı]</div>';
+      ph.classList.remove("timeline-pending");
+    }
+  });
+}
+
+// 11) ```progress — Donut/ring tamamlanma yüzdesi
+function rerenderProgress(el) {
+  if (!el) return;
+  el.querySelectorAll(".progress-pending").forEach((ph) => {
+    try {
+      const cfg = _readJsonAttr(ph, "data-progress");
+      const items = cfg.items || [];
+      const wrap = document.createElement("div");
+      wrap.className = "progress-container";
+      let html = `<div class="render-title">⭕ ${escapeHtml(cfg.title || "İlerleme")}</div>`;
+      html += `<div class="progress-grid">`;
+      items.forEach(it => {
+        const pct = Math.max(0, Math.min(100, Number(it.value) || 0));
+        const color = it.color || "#C76F3E";
+        const r = 36, c = 2 * Math.PI * r;
+        const dash = c * pct / 100;
+        html += `<div class="progress-item">
+          <svg viewBox="0 0 100 100" class="progress-ring">
+            <circle cx="50" cy="50" r="${r}" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="none"/>
+            <circle cx="50" cy="50" r="${r}" stroke="${color}" stroke-width="8" fill="none"
+                    stroke-linecap="round"
+                    stroke-dasharray="${dash} ${c}"
+                    transform="rotate(-90 50 50)"
+                    style="transition: stroke-dasharray 0.8s cubic-bezier(0.16,1,0.3,1);"/>
+            <text x="50" y="56" text-anchor="middle" font-size="20" font-weight="700" fill="${color}">${pct}%</text>
+          </svg>
+          <div class="progress-label">${escapeHtml(it.label || "")}</div>
+        </div>`;
+      });
+      html += `</div>`;
+      wrap.innerHTML = html;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Progress render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Progress veri hatalı]</div>';
+      ph.classList.remove("progress-pending");
+    }
+  });
+}
+
+// 12) ```compare — Yan yana karşılaştırma kartları
+function rerenderCompare(el) {
+  if (!el) return;
+  el.querySelectorAll(".compare-pending").forEach((ph) => {
+    try {
+      const cfg = _readJsonAttr(ph, "data-compare");
+      const cards = cfg.cards || [];
+      const wrap = document.createElement("div");
+      wrap.className = "compare-container";
+      let html = `<div class="render-title">⚖️ ${escapeHtml(cfg.title || "Karşılaştırma")}</div>`;
+      html += `<div class="compare-grid" style="grid-template-columns: repeat(${Math.min(cards.length, 3)}, 1fr);">`;
+      cards.forEach((c, i) => {
+        html += `<div class="compare-card">
+          <div class="compare-card-baslik">${escapeHtml(c.baslik || "")}</div>`;
+        if (c.puan != null) html += `<div class="compare-card-puan">${escapeHtml(String(c.puan))}</div>`;
+        if (c.net != null) html += `<div class="compare-card-net">Net: <strong>${escapeHtml(String(c.net))}</strong></div>`;
+        if (c.detay && Array.isArray(c.detay)) {
+          html += `<ul class="compare-card-detay">`;
+          c.detay.forEach(d => { html += `<li>${escapeHtml(d)}</li>`; });
+          html += `</ul>`;
+        }
+        html += `</div>`;
+      });
+      html += `</div>`;
+      wrap.innerHTML = html;
+      ph.replaceWith(wrap);
+    } catch (e) {
+      console.warn("Compare render hata:", e);
+      ph.innerHTML = '<div style="color:var(--fg-muted);font-size:12px">[Compare veri hatalı]</div>';
+      ph.classList.remove("compare-pending");
+    }
+  });
+}
+
 // Tek çağrı: tüm görsel renderer'ları toplu çalıştır
 function rerenderAllVisuals(el) {
   try { rerenderCharts(el); } catch (e) {}
@@ -2271,6 +2881,14 @@ function rerenderAllVisuals(el) {
   try { rerender3D(el); } catch (e) {}
   try { rerenderFormulas(el); } catch (e) {}
   try { rerenderCalcs(el); } catch (e) {}
+  // Oturum 25.31 — 7 yeni renderer
+  try { rerenderRadar(el); } catch (e) {}
+  try { rerenderHeatmap(el); } catch (e) {}
+  try { rerenderKarne(el); } catch (e) {}
+  try { rerenderGauge(el); } catch (e) {}
+  try { rerenderTimeline(el); } catch (e) {}
+  try { rerenderProgress(el); } catch (e) {}
+  try { rerenderCompare(el); } catch (e) {}
 }
 
 // Prism syntax highlight

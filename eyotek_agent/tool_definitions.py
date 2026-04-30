@@ -1973,6 +1973,40 @@ DEAD_TOOLS: set[str] = {
     "ogrenci_nereye_girebilir",      # 2 — yeni predict_yks_score + universite_taban
 }
 
+# ── Oturum 25.31 (Neo) — Render Endpoint Tool ──
+# 12 hazir renderer (sim/3d/formula/calc/chart/radar/heatmap/karne/gauge/timeline/
+# progress/compare) yetmediginde son care: ham HTML kaydet, kalici link ver.
+TOOLS.append({
+    "name": "make_render_link",
+    "description": (
+        "Bot kompleks ozel HTML/JS/CSS uretirse kalici link verir. "
+        "ONCE 12 hazir renderer'i dene (```sim/```3d/```formula/```calc/```chart/"
+        "```radar/```heatmap/```karne/```gauge/```timeline/```progress/```compare). "
+        "Sadece bunlar yetmediginde bu tool'u kullan — ornek: cok parcali interaktif "
+        "deney duzenegi, oyun benzeri etkilesim, ya da WebGL/Canvas2D ozel sahneler. "
+        "Donus: {url, uuid, expires_at}. Linki ogrenciye 'Buyuk gorseli ac: <url>' diye sun."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "html": {
+                "type": "string",
+                "description": "Tam HTML icerigi (head + body + script). Max 200KB. "
+                              "<!DOCTYPE> ile baslamasi gerekmez — wrapper otomatik eklenir."
+            },
+            "title": {
+                "type": "string",
+                "description": "Kisa basliki (60 char), ornek: 'Fotoelektrik Olay Simulasyonu'"
+            },
+            "ttl_days": {
+                "type": "integer",
+                "description": "Link gecerlilik suresi gun olarak. Default 7. Max 30."
+            }
+        },
+        "required": ["html", "title"]
+    }
+})
+
 # Active TOOLS — Claude system prompt'a gonderilen liste
 TOOLS_ACTIVE: list[dict] = [t for t in TOOLS if t.get("name") not in DEAD_TOOLS]
 

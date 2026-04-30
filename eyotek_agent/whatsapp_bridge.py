@@ -1034,6 +1034,14 @@ except Exception as _sderr:
     import logging as _lg
     _lg.warning(f"student_daily_api router yuklenemedi: {_sderr}")
 
+# ── Render Endpoint Router (Oturum 25.31, Neo) — bot HTML üretirse kalıcı link ──
+try:
+    from render_endpoint import router as _render_router
+    app.include_router(_render_router)
+except Exception as _rerr:
+    import logging as _lg
+    _lg.warning(f"render_endpoint router yuklenemedi: {_rerr}")
+
 # 22.1n-neo Paket A: HybridDict wrapper — memory mode davranisi aynen, Redis aktif
 # olunca (REDIS_URL set) otomatik multi-worker shared state.
 # _AGENT_SESSIONS FermatCoreAgent INSTANCE tuttugu icin serialize edilemez → memory only.

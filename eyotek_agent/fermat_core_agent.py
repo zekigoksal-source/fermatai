@@ -2192,7 +2192,45 @@ TOOL_DISPATCH = {
     "selfdev_pr_comment":          lambda p: _selfdev_pr_comment_w(**p),
     "selfdev_close_pr":            lambda p: _selfdev_close_pr_w(**p),
     "selfdev_full_pipeline":       lambda p: _selfdev_full_pipeline_w(**p),
+    # Oturum 25.31 (Neo) — Render endpoint: bot ozel HTML uretirse kalici link
+    "make_render_link":            lambda p: _tool_make_render_link(**p),
 }
+
+
+# ── Oturum 25.31 — Render Endpoint Tool wrapper ──
+async def _tool_make_render_link(html: str = "", title: str = "FermatAI Görsel",
+                                 ttl_days: int = 7, _caller_phone: str = "",
+                                 **_extra) -> dict:
+    """Bot tool — kompleks HTML kaydet, kalici link ver.
+
+    12 hazir renderer yetmediginde son care.
+    """
+    try:
+        from render_endpoint import create_artifact
+        ttl = max(1, min(30, int(ttl_days or 7)))
+        uuid = await create_artifact(html=html, title=title,
+                                      creator_phone=_caller_phone or "",
+                                      ttl_days=ttl)
+        if not uuid:
+            return {
+                "success": False,
+                "error": "HTML çok büyük veya geçersiz (max 200KB)"
+            }
+        # Public URL
+        import os
+        base = os.getenv("PUBLIC_BASE_URL", "https://api.fermategitimkurumlari.com").rstrip("/")
+        url = f"{base}/render/{uuid}"
+        from datetime import datetime, timedelta
+        return {
+            "success": True,
+            "url": url,
+            "uuid": uuid,
+            "ttl_days": ttl,
+            "expires_at": (datetime.now() + timedelta(days=ttl)).isoformat(),
+            "kullanim": f"Ogrenciye 'Buyuk gorseli ac: {url}' diye sun. Mobilde tek tikla acilir."
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 # ── Oturum 25.29 Self-Dev Tool Wrappers ───────────────────────────────────
@@ -2474,6 +2512,11 @@ async def run_tool(name: str, input_data: dict,
             enriched = dict(input_data)
             enriched["_caller_phone"] = caller_phone
             enriched["_caller_channel"] = caller_channel  # 22.1n-rev Atlas #16
+            result = await fn(enriched)
+        elif name == "make_render_link":
+            # Oturum 25.31 — render link icin caller bilgisi
+            enriched = dict(input_data)
+            enriched["_caller_phone"] = caller_phone
             result = await fn(enriched)
         elif name == "get_atlas_trend":
             enriched = dict(input_data)
