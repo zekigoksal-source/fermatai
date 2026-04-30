@@ -1494,42 +1494,30 @@ html[data-theme="dark"] .msg.thinking {
   border-color: rgba(199,111,62,0.35);
 }
 
-/* Bot streaming sırasında — yanıp sönen imleç YERINE shimmer pill (Oturum 25.35 — Neo) */
+/* Bot streaming sırasında — yanıp sönen imleç YERINE shimmer pill (Oturum 25.35 — Neo)
+   25.36-fix: ortalandı (sol alt yerine merkez alt) + display block + width fit-content */
 .msg.bot.streaming::after {
   content: "✨ üretiliyor";
-  display: inline-block;
-  margin-left: 8px;
-  margin-top: 4px;
-  padding: 5px 12px 5px 28px;
+  display: block;
+  width: fit-content;
+  margin: 14px auto 4px;
+  padding: 7px 18px;
   background: linear-gradient(110deg,
     rgba(199,111,62,0.10) 0%,
-    rgba(199,111,62,0.20) 35%,
-    rgba(167,139,250,0.18) 50%,
-    rgba(199,111,62,0.20) 65%,
+    rgba(199,111,62,0.22) 35%,
+    rgba(167,139,250,0.20) 50%,
+    rgba(199,111,62,0.22) 65%,
     rgba(199,111,62,0.10) 100%);
   background-size: 200% 100%;
   animation: streamPillShimmer 2.2s ease-in-out infinite;
   border: 1px solid rgba(199,111,62,0.30);
-  border-radius: 14px;
-  font-size: 11px;
+  border-radius: 18px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--accent);
-  letter-spacing: 0.3px;
-  position: relative;
-  vertical-align: middle;
-  box-shadow: 0 2px 8px rgba(199,111,62,0.10);
-}
-.msg.bot.streaming::before {
-  content: "";
-  position: absolute;
-  margin-left: 12px;
-  margin-top: 9px;
-  width: 8px; height: 8px;
-  background: var(--accent);
-  border-radius: 50%;
-  animation: streamPillDot 1.2s ease-in-out infinite;
-  z-index: 2;
-  box-shadow: 0 0 8px rgba(199,111,62,0.5);
+  letter-spacing: 0.4px;
+  text-align: center;
+  box-shadow: 0 3px 12px rgba(199,111,62,0.12);
 }
 @keyframes streamPillShimmer {
   0%   { background-position: 200% center; }
