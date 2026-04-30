@@ -1030,6 +1030,63 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
 </head>
 <body>
 
+<script>
+// Tablet/touch + iframe icindeyken agresif scroll-engelleme.
+// Wix iframe parent'inin scroll bouncing yapmasini engeller.
+// Mouse-only PC bu kodu HIC calistirmaz (any-pointer:coarse false).
+(function() {
+  try {
+    var inIframe = window.self !== window.top;
+    var hasTouch = window.matchMedia && window.matchMedia('(any-pointer: coarse)').matches;
+    if (!hasTouch) return;
+    // Body level touchmove'u prevent et — sadece chat-messages/login-wrap icindeki
+    // scrollable alanlar haric. iOS Safari klavye scroll'unu da bloke eder.
+    document.addEventListener('touchmove', function(e) {
+      var t = e.target;
+      while (t && t !== document.body) {
+        if (t.classList && (
+            t.classList.contains('chat-messages') ||
+            t.classList.contains('login-wrap') ||
+            t.classList.contains('quick-prompts-list') ||
+            t.classList.contains('dashboard-modal-body') ||
+            t.tagName === 'TEXTAREA' ||
+            t.tagName === 'INPUT' ||
+            t.tagName === 'SELECT'
+        )) {
+          // Bu alan scroll edebilir — overflow:auto ise scroll, degilse prevent
+          var style = getComputedStyle(t);
+          if (style.overflowY === 'auto' || style.overflowY === 'scroll' || style.overflow === 'auto' || style.overflow === 'scroll') {
+            return; // izin ver
+          }
+          if (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT' || t.tagName === 'SELECT') {
+            return; // form alanı, izin ver
+          }
+        }
+        t = t.parentNode;
+      }
+      // Body-level scroll attempt → prevent
+      e.preventDefault();
+    }, { passive: false });
+    // iframe-resizer'a yanlissiz height gonderme — Wix iframe'i kucuk tut.
+    // Eger Wix iframe-resizer protokolu aktifse, viewport height'i bildir.
+    if (inIframe) {
+      try {
+        var sendHeight = function() {
+          window.parent.postMessage({
+            type: 'set-iframe-height',
+            height: window.innerHeight
+          }, '*');
+        };
+        window.addEventListener('load', sendHeight);
+        window.addEventListener('resize', sendHeight);
+      } catch (_e) {}
+    }
+  } catch (e) {
+    console.warn('iframe-touch-pin init hata:', e);
+  }
+})();
+</script>
+
 <!-- LOGIN -->
 <div class="login-wrap" id="loginWrap">
   <div class="login-box">
