@@ -121,11 +121,28 @@ def calculate_quality_score(html: str) -> tuple[int, dict]:
 
 def _topic_hash(title: str, html_size_bucket: int = 0) -> str:
     """Cache key — title + html size bucket (10KB)."""
-    import hashlib
-    norm = (title or "").strip().lower()[:120]
-    # Türkçe karakterleri normalize et
-    norm = norm.translate(str.maketrans("çğıöşüâîû", "cgiosuaiu"))
-    base = f"{norm}|{html_size_bucket}"
+    import hashlib, unicodedata, re
+    norm = (title or "").strip()[:120]
+    # Türkçe-aware lower (İ → i, I → ı sorunu): Türkçe-ascii fold
+    # 1) İ, I, Ş, Ç, Ö, Ü, Ğ harfleri → ascii eşdeğer
+    tr_map = {
+        "ı": "i", "I": "i", "İ": "i", "i": "i",
+        "ç": "c", "Ç": "c",
+        "ş": "s", "Ş": "s",
+        "ğ": "g", "Ğ": "g",
+        "ö": "o", "Ö": "o",
+        "ü": "u", "Ü": "u",
+        "â": "a", "Â": "a",
+        "î": "i", "Î": "i",
+        "û": "u", "Û": "u",
+    }
+    folded = "".join(tr_map.get(c, c) for c in norm).lower()
+    # 2) Combining diakritikleri çöz (i̇ vs i normalize)
+    folded = unicodedata.normalize("NFKD", folded)
+    folded = "".join(c for c in folded if not unicodedata.combining(c))
+    # 3) Çoklu boşluk → tek boşluk
+    folded = re.sub(r"\s+", " ", folded).strip()
+    base = f"{folded}|{html_size_bucket}"
     return hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
 
 
