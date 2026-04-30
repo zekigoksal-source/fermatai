@@ -230,6 +230,65 @@ class FeedbackReq(BaseModel):
     category: str = ""  # Opsiyonel: deneme/konu_anlatimi/analiz/genel
 
 
+@router.post("/tts")
+async def chat_tts(
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """Oturum 25.35 — Web chat'te bot mesajına 'Sesli oku' butonu için TTS endpoint."""
+    token = _extract_token(request, fermat_session)
+    if not token:
+        raise HTTPException(status_code=401, detail="Oturum yok")
+    sess = await get_session(token)
+    if not sess:
+        raise HTTPException(status_code=401, detail="Oturum süresi doldu")
+    try:
+        body = await request.json()
+        text = (body.get("text") or "").strip()
+        if not text:
+            return JSONResponse(status_code=400, content={"success": False, "error": "text bos"})
+        from external_apis_v2 import text_to_speech
+        r = await text_to_speech(text=text[:3500], voice=body.get("voice", "nova"))
+        if r.get("success") and r.get("audio_filename"):
+            import os
+            base = os.getenv("PUBLIC_BASE_URL", "https://api.fermategitimkurumlari.com").rstrip("/")
+            r["audio_url"] = f"{base}/audio/{r['audio_filename']}"
+        return JSONResponse(content=r)
+    except Exception as e:
+        logger.warning(f"chat_tts hata: {e}")
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
+@router.post("/pdf")
+async def chat_pdf(
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """Oturum 25.35 — Web chat'te bot mesajına 'PDF al' butonu için PDF endpoint."""
+    token = _extract_token(request, fermat_session)
+    if not token:
+        raise HTTPException(status_code=401, detail="Oturum yok")
+    sess = await get_session(token)
+    if not sess:
+        raise HTTPException(status_code=401, detail="Oturum süresi doldu")
+    try:
+        body = await request.json()
+        html = (body.get("html_content") or "").strip()
+        title = (body.get("title") or "FermatAI Yanıt")[:200]
+        if not html:
+            return JSONResponse(status_code=400, content={"success": False, "error": "html_content bos"})
+        from external_apis_v2 import generate_pdf
+        r = await generate_pdf(html_content=html, title=title)
+        if r.get("success") and r.get("pdf_filename"):
+            import os
+            base = os.getenv("PUBLIC_BASE_URL", "https://api.fermategitimkurumlari.com").rstrip("/")
+            r["pdf_url"] = f"{base}/pdfs/{r['pdf_filename']}"
+        return JSONResponse(content=r)
+    except Exception as e:
+        logger.warning(f"chat_pdf hata: {e}")
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+
 @router.post("/feedback")
 async def submit_feedback(
     body: FeedbackReq,

@@ -1181,6 +1181,39 @@ make_render_link KULLANIMI — KRITIK KURALLAR (Neo UX direktifi)
 ASLA bu tool'u 2+ kez ayni cevapta cagirma. KESIN TEK-SHOT.
 
 ═══════════════════════════════════════════════════════════════════════
+🎯 İLERİ BİLİM SİMÜLASYON KALİTE STANDARDI (Neo direktif 25.35)
+═══════════════════════════════════════════════════════════════════════
+Compton sacılması simülasyonu Neo onayli kalite referansı oldu.
+TÜM ileri bilim/fizik/kimya/biyoloji simülasyonlarinda BU SEVIYEYI HEDEF AL:
+
+1. ZENGIN FIZIK ANLATIMI (text):
+   - Tarihsel arka plan (kim/ne zaman keşfetti)
+   - Temel mekanizma (nasıl çalışır)
+   - Matematiksel altyapı ($formul$ KaTeX ile)
+   - Günlük hayat baglantisi
+   - Yaygin yanlis anlamalar
+   ~250-450 kelime, sadece kuru bilgi degil — anlam katmani.
+
+2. INTERAKTIF GORSEL:
+   - 12 renderer'dan UYGUNUNU sec (sim/3d/mol3d/calc/sound vb.)
+   - VE AYRICA make_render_link ile detaylı ozel HTML uretebilirsin
+   - Animasyon, slider, anlik hesaplama — pasif izleme YASAK
+
+3. PEDAGOJIK KAPATIS:
+   - 'Bu konuyu derinlestirmek istersen [arXiv link]'
+   - 'Benzer konular: [ders linkleri]'
+   - 'Sınavda nasıl çıkar: [örnek soru tipi]'
+
+ORNEK ALTIN STANDART (Compton):
+  - search_curriculum → mufredat
+  - 250 kelime tarih + mekanizma + formuller
+  - ```formula step-by-step Klein-Nishina
+  - make_render_link ile interaktif sahne (foton-elektron çarpışması)
+  - 1 satır pedagojik kapatis
+
+ASLA: tek paragraf yuzeysel anlatim + 'iste link' tarzı kuru çıktı.
+
+═══════════════════════════════════════════════════════════════════════
 ⚠️ BAĞLAM YÖNETİMİ — KRITIK KURAL (Neo bug raporu 25.34)
 ═══════════════════════════════════════════════════════════════════════
 SORUN: Bot önceki konunun bağlamından çıkamayıp YENI soruya YANLIS cevap döndü.

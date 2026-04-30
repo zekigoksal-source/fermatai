@@ -676,13 +676,39 @@ html[data-theme="dark"] .msg.bot code:not(pre code) { background: rgba(217,119,8
 html[data-theme="dark"] .chart-container { background: #262622; }
 
 /* Theme toggle button */
+/* 25.35 (Neo): Tema toggle vurgu artirildi — animated pill */
 .theme-toggle {
-  background: transparent; border: none; color: var(--fg-muted);
-  font-size: 18px; cursor: pointer; padding: 4px 8px; margin-right: 4px;
-  border-radius: 6px; transition: all 0.15s;
+  background: linear-gradient(135deg, rgba(199,111,62,0.10), rgba(167,139,250,0.10));
+  border: 1px solid rgba(199,111,62,0.25);
+  color: var(--accent);
+  font-size: 16px; cursor: pointer;
+  padding: 6px 12px 6px 10px; margin-right: 6px;
+  border-radius: 18px;
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  position: relative;
+  display: inline-flex; align-items: center; gap: 4px;
+  box-shadow: 0 2px 6px rgba(199,111,62,0.10);
+  font-weight: 600; line-height: 1;
 }
-.theme-toggle:hover { background: rgba(0,0,0,0.04); color: var(--accent); }
-html[data-theme="dark"] .theme-toggle:hover { background: rgba(255,255,255,0.06); }
+.theme-toggle:hover {
+  background: linear-gradient(135deg, rgba(199,111,62,0.20), rgba(167,139,250,0.20));
+  border-color: rgba(199,111,62,0.45);
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 4px 12px rgba(199,111,62,0.20);
+}
+.theme-toggle:active { transform: translateY(0) scale(0.98); }
+.theme-toggle::after {
+  content: attr(data-mode-label);
+  font-size: 11px; opacity: 0.75; margin-left: 2px;
+  font-weight: 500;
+}
+html[data-theme="dark"] .theme-toggle {
+  background: linear-gradient(135deg, rgba(199,111,62,0.18), rgba(167,139,250,0.15));
+  border-color: rgba(199,111,62,0.35);
+}
+html[data-theme="dark"] .theme-toggle:hover {
+  background: linear-gradient(135deg, rgba(199,111,62,0.30), rgba(167,139,250,0.25));
+}
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
 /* Oturum 23 UX fix (Neo raporu): Chat altında büyük boşluk + dış scrollbar bug.
    Klasik flex container overflow bug — child min-height:0 olmadığı için
@@ -1241,6 +1267,96 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
 /* 25.35 (Neo): yanıp sönen imleç KALDIRILDI — yerine .msg.bot.streaming::after shimmer pill */
 .msg.bot .cursor { display: none; }
 @keyframes blink { 0%, 100% { opacity: 0; } }
+
+/* ═══════════════════════════════════════════════════════════════
+   Oturum 25.35 — Bot mesajı quick actions + reactions
+   ═══════════════════════════════════════════════════════════════ */
+.msg.bot .msg-actions {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  opacity: 0.55; transition: opacity 0.2s;
+  flex-wrap: wrap;
+}
+.msg.bot:hover .msg-actions { opacity: 1; }
+.msg.bot .msg-action-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(199,111,62,0.06);
+  border: 1px solid rgba(199,111,62,0.20);
+  color: var(--accent);
+  font-size: 11.5px; font-weight: 600;
+  padding: 4px 10px; border-radius: 16px;
+  cursor: pointer; transition: all 0.18s;
+}
+.msg.bot .msg-action-btn:hover {
+  background: rgba(199,111,62,0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(199,111,62,0.15);
+}
+.msg.bot .msg-action-btn.loading {
+  opacity: 0.55; cursor: wait;
+  animation: actionLoading 1.4s ease-in-out infinite;
+}
+@keyframes actionLoading {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.9; }
+}
+.msg.bot .msg-action-btn .ico { font-size: 13px; }
+
+/* Reactions */
+.msg.bot .msg-reactions {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: auto;
+}
+.msg.bot .reaction-btn {
+  background: transparent; border: 1px solid transparent;
+  font-size: 14px; padding: 3px 6px; border-radius: 12px;
+  cursor: pointer; transition: all 0.15s;
+  opacity: 0.5;
+}
+.msg.bot .reaction-btn:hover {
+  background: rgba(199,111,62,0.10);
+  border-color: rgba(199,111,62,0.20);
+  opacity: 1; transform: scale(1.18);
+}
+.msg.bot .reaction-btn.active {
+  background: rgba(199,111,62,0.18);
+  border-color: rgba(199,111,62,0.35);
+  opacity: 1;
+}
+.msg.bot .reaction-count {
+  font-size: 10px; color: var(--fg-muted); margin-left: 2px;
+  font-weight: 600;
+}
+
+/* Inline audio player (TTS sonucu) */
+.msg.bot .inline-audio {
+  margin-top: 10px; padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(199,111,62,0.08), rgba(167,139,250,0.06));
+  border: 1px solid rgba(199,111,62,0.20);
+  border-radius: 12px;
+  display: flex; align-items: center; gap: 12px;
+}
+.msg.bot .inline-audio audio { flex: 1; max-width: 100%; }
+.msg.bot .inline-audio .audio-label {
+  font-size: 12px; color: var(--accent); font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Inline PDF link */
+.msg.bot .inline-pdf {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 10px 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: white !important; text-decoration: none;
+  border-radius: 12px; font-size: 13px; font-weight: 600;
+  box-shadow: 0 4px 14px rgba(199,111,62,0.25);
+  transition: all 0.2s;
+}
+.msg.bot .inline-pdf:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(199,111,62,0.35);
+}
 
 .msg-welcome { text-align: center; color: var(--fg-muted); font-size: 14px; padding: 40px 20px; line-height: 1.7; }
 .msg-welcome h2 { font-size: 20px; color: var(--fg); margin-bottom: 12px; font-weight: 600; }
@@ -2010,7 +2126,12 @@ function applyTheme(t) {
   try {
     document.documentElement.setAttribute("data-theme", t);
     const btn = document.getElementById("themeToggle");
-    if (btn) btn.textContent = t === "dark" ? "☀️" : "🌙";
+    if (btn) {
+      // 25.35 (Neo): Icon + label vurgu
+      btn.innerHTML = t === "dark" ? "☀️" : "🌙";
+      btn.setAttribute("data-mode-label", t === "dark" ? "Açık" : "Koyu");
+      btn.setAttribute("title", t === "dark" ? "Açık temaya geç" : "Koyu temaya geç");
+    }
   } catch(e){}
 }
 function toggleTheme() {
@@ -4105,6 +4226,131 @@ function finalizeBotMsg(el) {
   addArchiveButton(el);
   // D1: 👍/👎 feedback butonları
   addFeedbackButtons(el);
+  // Oturum 25.35 (Neo): Quick actions (Sesli oku + PDF al) + Reactions
+  addQuickActions(el);
+}
+
+// ═════════════════════════════════════════════════════════════════
+// Oturum 25.35 (Neo) — Quick actions + Reactions
+// ═════════════════════════════════════════════════════════════════
+const _REACTIONS = ["👍", "❤️", "😂", "😮", "🤔", "🔥"];
+function addQuickActions(botEl) {
+  if (!botEl || botEl.querySelector(".msg-actions")) return;
+  // Çok kısa mesajlara eklemе (selamlama vb.)
+  const txt = (botEl.textContent || "").trim();
+  if (txt.length < 80) return;
+
+  const bar = document.createElement("div");
+  bar.className = "msg-actions";
+
+  // 🔊 Sesli Oku
+  const ttsBtn = document.createElement("button");
+  ttsBtn.className = "msg-action-btn";
+  ttsBtn.innerHTML = '<span class="ico">🔊</span><span>Sesli Oku</span>';
+  ttsBtn.title = "Bot mesajını sesli dinle";
+  ttsBtn.addEventListener("click", async () => {
+    if (ttsBtn.classList.contains("loading")) return;
+    // Eğer zaten audio varsa toggle play
+    const existing = botEl.querySelector(".inline-audio audio");
+    if (existing) { existing.play(); return; }
+    ttsBtn.classList.add("loading");
+    ttsBtn.innerHTML = '<span class="ico">⏳</span><span>Hazırlanıyor...</span>';
+    try {
+      // Markdown'ı temiz text'e dönüştür (bot mesaj içeriği)
+      const clean = botEl.textContent.replace(/\s+/g, ' ').trim().substring(0, 3500);
+      const r = await fetch(API_BASE + "/chat/tts", {
+        method: "POST", credentials: "include",
+        headers: authHeaders({"Content-Type": "application/json"}),
+        body: JSON.stringify({text: clean})
+      });
+      if (!r.ok) throw new Error("TTS başarısız (" + r.status + ")");
+      const data = await r.json();
+      if (!data.success || !data.audio_url) throw new Error(data.error || "Audio URL yok");
+      // Inline audio player ekle
+      const audioWrap = document.createElement("div");
+      audioWrap.className = "inline-audio";
+      audioWrap.innerHTML = `
+        <span class="audio-label">🔊 Bot anlatımı</span>
+        <audio controls autoplay style="height:32px;">
+          <source src="${data.audio_url}" type="audio/mpeg">
+        </audio>`;
+      botEl.insertBefore(audioWrap, bar);
+      ttsBtn.classList.remove("loading");
+      ttsBtn.innerHTML = '<span class="ico">🔊</span><span>Tekrar Çal</span>';
+    } catch (e) {
+      console.warn("TTS hata:", e);
+      ttsBtn.classList.remove("loading");
+      ttsBtn.innerHTML = '<span class="ico">⚠️</span><span>Hata</span>';
+      setTimeout(() => { ttsBtn.innerHTML = '<span class="ico">🔊</span><span>Sesli Oku</span>'; }, 2000);
+    }
+  });
+  bar.appendChild(ttsBtn);
+
+  // 📄 PDF Al
+  const pdfBtn = document.createElement("button");
+  pdfBtn.className = "msg-action-btn";
+  pdfBtn.innerHTML = '<span class="ico">📄</span><span>PDF Al</span>';
+  pdfBtn.title = "Bot mesajını PDF indir";
+  pdfBtn.addEventListener("click", async () => {
+    if (pdfBtn.classList.contains("loading")) return;
+    pdfBtn.classList.add("loading");
+    pdfBtn.innerHTML = '<span class="ico">⏳</span><span>Üretiliyor...</span>';
+    try {
+      const html = botEl.innerHTML.replace(/<div class="msg-actions"[\s\S]*?<\/div>/g, "")
+                                  .replace(/<div class="inline-audio"[\s\S]*?<\/div>/g, "")
+                                  .replace(/<div class="feedback-row"[\s\S]*?<\/div>/g, "");
+      const r = await fetch(API_BASE + "/chat/pdf", {
+        method: "POST", credentials: "include",
+        headers: authHeaders({"Content-Type": "application/json"}),
+        body: JSON.stringify({html_content: html, title: "FermatAI Yanıt"})
+      });
+      if (!r.ok) throw new Error("PDF başarısız (" + r.status + ")");
+      const data = await r.json();
+      if (!data.success || !data.pdf_url) throw new Error(data.error || "PDF URL yok");
+      // Inline PDF link butonu ekle
+      const pdfLink = document.createElement("a");
+      pdfLink.className = "inline-pdf";
+      pdfLink.href = data.pdf_url;
+      pdfLink.target = "_blank";
+      pdfLink.rel = "noopener";
+      pdfLink.innerHTML = `<span style="font-size:18px">📄</span><span>PDF hazır — tıkla indir (${data.pdf_size_kb} KB)</span>`;
+      botEl.insertBefore(pdfLink, bar);
+      pdfBtn.classList.remove("loading");
+      pdfBtn.innerHTML = '<span class="ico">✓</span><span>PDF Hazır</span>';
+    } catch (e) {
+      console.warn("PDF hata:", e);
+      pdfBtn.classList.remove("loading");
+      pdfBtn.innerHTML = '<span class="ico">⚠️</span><span>Hata</span>';
+      setTimeout(() => { pdfBtn.innerHTML = '<span class="ico">📄</span><span>PDF Al</span>'; }, 2000);
+    }
+  });
+  bar.appendChild(pdfBtn);
+
+  // Reactions (emoji)
+  const reactBox = document.createElement("div");
+  reactBox.className = "msg-reactions";
+  // Local storage'dan oku — basit (production: backend persist)
+  const msgKey = "rxn_" + (botEl.dataset.msgId || Date.now() + "_" + Math.random().toString(36).slice(2,7));
+  botEl.dataset.msgId = msgKey;
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(msgKey) || "{}"); } catch {}
+  _REACTIONS.forEach(emoji => {
+    const b = document.createElement("button");
+    b.className = "reaction-btn" + (saved[emoji] ? " active" : "");
+    b.innerHTML = emoji + (saved[emoji] ? `<span class="reaction-count">${saved[emoji]}</span>` : "");
+    b.title = "Tepki ver";
+    b.addEventListener("click", () => {
+      saved[emoji] = saved[emoji] ? 0 : 1;
+      if (!saved[emoji]) delete saved[emoji];
+      try { localStorage.setItem(msgKey, JSON.stringify(saved)); } catch {}
+      b.classList.toggle("active");
+      b.innerHTML = emoji + (saved[emoji] ? `<span class="reaction-count">${saved[emoji]}</span>` : "");
+    });
+    reactBox.appendChild(b);
+  });
+  bar.appendChild(reactBox);
+
+  botEl.appendChild(bar);
 }
 
 // 👍/👎 Geribildirim butonları — D1 (Neo 19 Nisan 00:10)
@@ -5284,6 +5530,20 @@ async function doSend() {
           }
           accumulated += d.chunk;
           botMsg.innerHTML = formatMsg(accumulated);
+          // Oturum 25.35 (Neo): KaTeX streaming — formuller anlik render
+          // Her chunk'ta TUM rerender pahali (chart/sim ağır), sadece KaTeX hafif
+          try {
+            if (typeof renderMathInElement === "function") {
+              renderMathInElement(botMsg, {
+                delimiters: [
+                  {left: '$$', right: '$$', display: true},
+                  {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false,
+                ignoredTags: ['script','noscript','style','textarea','pre','code']
+              });
+            }
+          } catch (_e) {}
           smartScroll();
           if (!isNearBottom()) showNewMessageChip();
         }
