@@ -2530,6 +2530,23 @@ function rerenderSims(el) {
       code = code.replace(/&quot;/g, '"').replace(/&amp;/g, "&")
                   .replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 
+      // 25.34-fix (Neo bug raporu): bot bazen JSON config veya bos kod yaziyor → BEYAZ EKRAN
+      const hasSetup = /function\s+setup\s*\(/.test(code);
+      const hasDraw = /function\s+draw\s*\(/.test(code);
+      if (!hasSetup || !hasDraw) {
+        const wrapErr = document.createElement("div");
+        wrapErr.className = "sim-container sim-invalid";
+        wrapErr.innerHTML = `
+          <div class="render-title">⚠️ Geçersiz Simülasyon Kodu</div>
+          <div style="padding:14px; background:rgba(245,158,11,0.1); border-radius:8px; font-size:13px;">
+            Bu sim block <code>function setup()</code> ve <code>function draw()</code> içermiyor.
+            Bot p5.js kodu yerine ${code.trim().startsWith('{') ? 'JSON config' : 'geçersiz içerik'} yazmış.
+            <br><br><strong>Botu bilgilendir:</strong> "sim block için p5.js kodu (setup+draw) yaz" de.
+          </div>`;
+        ph.replaceWith(wrapErr);
+        return;
+      }
+
       const wrap = document.createElement("div");
       wrap.className = "sim-container";
       wrap.setAttribute("data-sim", ph.getAttribute("data-sim") || "");

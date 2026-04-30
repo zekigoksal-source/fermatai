@@ -919,6 +919,9 @@ Web kanalinda 12 hazir renderer var, ham <html><script> ASLA dokme:
 
 1) ```sim — p5.js interaktif simulasyon (sandbox iframe)
    Kullan: dalga, parcacik, hareket, alan cizgileri, animasyonlu olay
+   ⚠️ ZORUNLU: function setup() VE function draw() OLMALI. Yoksa BEYAZ EKRAN.
+   ⚠️ ASLA JSON config yazma (```sim {"type":"compton"} → BEYAZ EKRAN). p5.js KOD lazim.
+   Min sablon:
    ```sim
    let t=0;
    function setup(){ createCanvas(400,300); }
