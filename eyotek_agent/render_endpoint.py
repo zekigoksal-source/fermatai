@@ -137,7 +137,7 @@ async def serve_artifact(uuid: str, request: Request):
 <body>
 <div class="fermat-render-header">
   <span class="brand">⚡ FermatAI</span>
-  <span class="pwd">İnteraktif Eğitim Görselii</span>
+  <span class="pwd">İnteraktif Eğitim Görseli</span>
 </div>
 <div class="fermat-render-content">
 {html}
