@@ -4895,16 +4895,19 @@ function finalizeBotMsg(el) {
   suggestChartIfRelevant(el);
   // Arşiv butonu ekle (kısa cevaplara hariç)
   addArchiveButton(el);
-  // D1: 👍/👎 feedback butonları
-  addFeedbackButtons(el);
+  // 25.37 (Neo): eski history-load mesajlardaki standalone 👍/👎 satirlarini temizle
+  try { _legacy_clean_stale_feedback_rows(el); } catch (_) {}
   // Oturum 25.35 (Neo): Quick actions (Sesli oku + PDF al) + Reactions
+  // 25.37: feedback (👍/👎) reactions icine birlestirildi — addFeedbackButtons KALDIRILDI
   addQuickActions(el);
 }
 
 // ═════════════════════════════════════════════════════════════════
 // Oturum 25.35 (Neo) — Quick actions + Reactions
 // ═════════════════════════════════════════════════════════════════
-const _REACTIONS = ["👍", "❤️", "😂", "😮", "🤔", "🔥"];
+// 25.37 (Neo) — kalabaliki azalttim: 6 → 3. 👍/👎 feedback API'ye de gider, ❤️ saf reaction.
+const _REACTIONS = ["👍", "👎", "❤️"];
+const _FEEDBACK_REACTIONS = new Set(["👍", "👎"]);  // bunlar /chat/feedback POST eder
 function addQuickActions(botEl) {
   if (!botEl || botEl.querySelector(".msg-actions")) return;
   // Çok kısa mesajlara eklemе (selamlama vb.)
@@ -5005,17 +5008,63 @@ function addQuickActions(botEl) {
   botEl.dataset.msgId = msgKey;
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(msgKey) || "{}"); } catch {}
+  // 25.37 (Neo): 👍/👎 hem reaction hem feedback API. ❤️ saf reaction.
+  // Bot text + son user mesaji feedback için
+  const _botText = (botEl.textContent || "").trim();
+  const _allMsgs = messages ? messages.querySelectorAll(".msg") : [];
+  let _userPrompt = "";
+  for (let i = _allMsgs.length - 1; i >= 0; i--) {
+    if (_allMsgs[i] === botEl) continue;
+    if (_allMsgs[i].classList.contains("user")) {
+      _userPrompt = (_allMsgs[i].textContent || "").trim();
+      break;
+    }
+  }
+  const _msgHash = (typeof simpleHash === "function") ? simpleHash(_botText.slice(0, 200) + "_" + _botText.length) : msgKey;
   _REACTIONS.forEach(emoji => {
     const b = document.createElement("button");
+    const titleMap = {"👍": "Beğendim (geri bildirim)", "👎": "Beğenmedim (geri bildirim)", "❤️": "Sevdim"};
     b.className = "reaction-btn" + (saved[emoji] ? " active" : "");
     b.innerHTML = emoji + (saved[emoji] ? `<span class="reaction-count">${saved[emoji]}</span>` : "");
-    b.title = "Tepki ver";
+    b.title = titleMap[emoji] || "Tepki ver";
     b.addEventListener("click", () => {
-      saved[emoji] = saved[emoji] ? 0 : 1;
+      const wasActive = !!saved[emoji];
+      // Tek seçim: 👍 ile 👎 mutex (biri aktifse digerini sıfırla)
+      if (!wasActive && _FEEDBACK_REACTIONS.has(emoji)) {
+        const opposite = (emoji === "👍") ? "👎" : "👍";
+        if (saved[opposite]) {
+          delete saved[opposite];
+          // diğer butonu DOM'da güncelle
+          reactBox.querySelectorAll(".reaction-btn").forEach(ob => {
+            if (ob.textContent.startsWith(opposite)) {
+              ob.classList.remove("active");
+              ob.innerHTML = opposite;
+            }
+          });
+        }
+      }
+      saved[emoji] = wasActive ? 0 : 1;
       if (!saved[emoji]) delete saved[emoji];
       try { localStorage.setItem(msgKey, JSON.stringify(saved)); } catch {}
       b.classList.toggle("active");
       b.innerHTML = emoji + (saved[emoji] ? `<span class="reaction-count">${saved[emoji]}</span>` : "");
+      // 25.37: 👍/👎 → /chat/feedback API
+      if (!wasActive && _FEEDBACK_REACTIONS.has(emoji)) {
+        const fbValue = (emoji === "👍") ? "up" : "down";
+        try {
+          fetch(API_BASE + "/chat/feedback", {
+            method: "POST", credentials: "include",
+            headers: authHeaders({"Content-Type": "application/json"}),
+            body: JSON.stringify({
+              message_hash: _msgHash,
+              user_prompt: _userPrompt.slice(0, 500),
+              bot_response_preview: _botText.slice(0, 500),
+              feedback: fbValue,
+              category: (typeof detectCategory === "function") ? detectCategory(_botText, _userPrompt) : "genel",
+            }),
+          }).catch(() => {});
+        } catch {}
+      }
     });
     reactBox.appendChild(b);
   });
@@ -5024,11 +5073,16 @@ function addQuickActions(botEl) {
   botEl.appendChild(bar);
 }
 
-// 👍/👎 Geribildirim butonları — D1 (Neo 19 Nisan 00:10)
-// Her bot mesajına eklenir, tek seçim, değiştirilebilir.
-// Oturum 25.29: stale feedback-row temizleme (history-load mesajlarda eski
-// onclick'siz HTML olarak yuklenmis olabilir — temizleyip yeni JS-eklenen
-// versiyonu ekle).
+// 25.37 (Neo) — addFeedbackButtons DEPRECATED: feedback artik reactions icinde (👍/👎).
+// Bu fonksiyon eski history-load mesajlarda kalan stale .feedback-row'lari TEMIZLEMEK icin
+// hala cagrilabilir, ama yeni feedback-row eklemiyor.
+function _legacy_clean_stale_feedback_rows(botEl) {
+  if (!botEl) return;
+  const stale = botEl.querySelectorAll(".feedback-row");
+  stale.forEach(el => { try { el.remove(); } catch (_) {} });
+}
+
+// LEGACY (devre disi — call site temizlendi)
 function addFeedbackButtons(botEl) {
   if (!botEl) return;
   const stale = botEl.querySelectorAll(".feedback-row");
