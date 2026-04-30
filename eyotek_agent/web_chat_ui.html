@@ -529,6 +529,40 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
   .login-box .trust-footer .manifesto { display: none; }
   .login-box .trust-footer .brand { display: none; }
 }
+
+/* Tablet/Touch — Chat ekrani Wix iframe icinde IFRAME-SCROLL'a kacmasin.
+   Onceden chat-messages kendi icinde scroll ediyordu (header+input sabit). iPad'de
+   iframe-resizer veya scroll-kaymasi yuzunden tum layout disa scroll oluyor.
+
+   Cozum: tablet/touch'ta chat-wrap viewport'a pinli, sadece chat-messages icten scroll.
+   PC/laptop (mouse, pointer:fine) ETKILESMEZ — orijinal davranis korunur. */
+@media (hover: none) and (pointer: coarse) and (min-width: 481px) {
+  html, body {
+    height: 100%;
+    max-height: 100vh;
+    overflow: hidden;
+    overscroll-behavior: contain;     /* iframe parent'a scroll bouncing'i kacirma */
+  }
+  .chat-wrap.active {
+    height: 100%;
+    max-height: 100vh;
+    overflow: hidden;
+    flex: 1 1 100%;
+  }
+  .chat-messages {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;     /* chat-messages icindeki scroll outer'a takimasin */
+  }
+  .chat-input {
+    flex: 0 0 auto;                   /* alt sabit - flex hesabinda buyume yok */
+  }
+  .chat-header {
+    flex: 0 0 auto;                   /* ust sabit */
+  }
+}
 .login-box .step { display: none; }
 .login-box .step.active { display: block; }
 .login-box label { display: block; font-size: 13px; color: var(--fg-muted); margin-bottom: 6px; }
