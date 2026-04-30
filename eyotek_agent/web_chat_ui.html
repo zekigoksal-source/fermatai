@@ -4123,7 +4123,10 @@ async function doSend() {
           showThinking(d.thinking);
         }
         if (d.thinking_clear) {
-          clearThinking();
+          // 25.31 fix: Sadece flag set, asil silme ilk chunk'ta.
+          // Onceden hemen siliyorduk → backend chunk gecikirse arada bos ekran kaliyordu
+          // (kullanici 'imlec yanıp sönüyor' raporu).
+          // Now: thinking gosterge ilk gercek chunk'a kadar dursun.
         }
 
         // ── chunk: asıl cevap — token token
