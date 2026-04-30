@@ -150,6 +150,30 @@ def decide_route(
     # Bot tespit: "chatgpt'ye gidiyom" Ollama'da kaybolmuştu.
     # Artık her rolde frustration keyword → ZORLA Claude (empati + eskalasyon için).
     if detect_frustration(message):
+        # Brief #6 — Kapı 6: V2 agent'a frustration sinyali yay (sync→async fire-forget)
+        # Try/except içinde: bus yoksa veya hata olursa routing kararını ETKILEMESIN
+        try:
+            from live_signal_bus import get_bus as _get_bus
+            import asyncio as _asyncio
+            _bus = _get_bus()
+            try:
+                _loop = _asyncio.get_event_loop()
+                if _loop.is_running():
+                    _loop.create_task(_bus.emit(
+                        "frustration",
+                        {
+                            "phone": phone or "",
+                            "message_preview": (message or "")[:120],
+                            "role": role or "",
+                            "trigger": "routing_intercept",
+                        },
+                        actor_phone=phone or "",
+                    ))
+            except RuntimeError:
+                # Event loop yoksa skip (test/sync context)
+                pass
+        except Exception:
+            pass  # bus import veya emit hatası routing'i durdurmasın
         return "claude"
 
     # ── 0b. DUYGU/PSIKOLOJI INTERCEPT (Fix 21 Nisan 15:30) ──────────────────

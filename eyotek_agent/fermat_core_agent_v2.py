@@ -141,8 +141,8 @@ class FermatCoreAgentV2(FermatCoreAgent):
                                 caller_phone: str, ms: int = 0) -> dict:
         """Cevap üretildikten sonra log + quality_feedback emit.
 
-        - quality_feedback sinyali (self_observer hook'u için altyapı)
-        - response_length, ms, route_info DB'ye kaydedilir
+        Brief #6: quality_feedback sonrası self._last_rag_score < 0.3 ise
+        low_rag_score sinyali yay (handler retry tetikleyecek).
         """
         result = {"signal_id": None}
         try:
@@ -157,6 +157,23 @@ class FermatCoreAgentV2(FermatCoreAgent):
                 actor_phone=caller_phone,
             )
             result["signal_id"] = r.get("signal_id")
+
+            # Brief #6: RAG skoru düşükse retry sinyali yay
+            try:
+                rag_score = getattr(self, "_last_rag_score", None)
+                if rag_score is not None and rag_score < 0.3:
+                    await self.bus.emit(
+                        "low_rag_score",
+                        {
+                            "query": (user_input or "")[:120],
+                            "score": float(rag_score),
+                            "attempt": 1,
+                        },
+                        actor_phone=caller_phone,
+                    )
+                    logger.info(f"[V2] low_rag_score emit: score={rag_score:.3f}")
+            except Exception as _rag_e:
+                logger.debug(f"[V2] low_rag_score check hata: {_rag_e}")
         except Exception as e:
             logger.debug(f"[V2] quality_feedback emit fail: {e}")
         self._last_post_flight = result
@@ -195,6 +212,167 @@ class FermatCoreAgentV2(FermatCoreAgent):
         context = payload.get("context")
         if phone and context is not None:
             self._context_cache[phone] = context
+
+    # ─── BRIEF #6 — MÜDAHALE METODLARI (signal_handlers.py çağırır) ────────
+
+    async def _override_route(self, suggested: str) -> None:
+        """wrong_route sinyali → bir sonraki run'da route override.
+
+        signal_handlers.handle_wrong_route() bunu çağırır.
+        run() sırasında self._forced_route'u kontrol etmek üst akışın işi
+        (şu an sadece state set + log; routing_engine entegrasyonu ileride).
+        """
+        try:
+            self._forced_route = suggested
+            logger.info(f"[V2] route override aktif: {suggested}")
+        except Exception as e:
+            logger.warning(f"[V2] _override_route hata: {e}")
+
+    async def _retry_rag(self, query: str = "", attempt: int = 1) -> None:
+        """low_rag_score sinyali → RAG yeniden sorgu (max 2 attempt).
+
+        Şu an log + state takibi. Gerçek rag_engine.retry_query çağrısı
+        ileride; şimdilik attempt counter + retry threshold kontrolü.
+        """
+        try:
+            attempt = int(attempt or 1)
+            if attempt > 2:
+                logger.debug(f"[V2] retry_rag max attempt asildi ({attempt}), skip")
+                return
+            self._last_rag_retry = {"query": (query or "")[:120],
+                                      "attempt": attempt,
+                                      "ts": time.time()}
+            logger.info(f"[V2] RAG retry attempt={attempt} query='{str(query)[:60]}'")
+        except Exception as e:
+            logger.warning(f"[V2] _retry_rag hata: {e}")
+
+    async def _adjust_tone(self, phone: str = "", tone: str = "empathic") -> None:
+        """frustration sinyali → ton ayarı + (escalation_flag varsa) Kardelen'e bildir.
+
+        signal_handlers.handle_frustration() bunu çağırır.
+        Ton override sonraki cevaplarda kullanılabilir (system prompt eki).
+        Eğer crisis flag aktif ise rehbere yönlendirme tetiklenir.
+        """
+        try:
+            self._tone_override = tone or "empathic"
+            logger.info(f"[V2] tone override: {self._tone_override} phone={phone[-4:] if phone else '?'}")
+            if self._escalation_flag:
+                await self._escalate_to_kardelen(phone)
+        except Exception as e:
+            logger.warning(f"[V2] _adjust_tone hata: {e}")
+
+    async def _escalate_to_kardelen(self, phone: str = "") -> None:
+        """Crisis tespit → rehber öğretmen Kardelen'e yönlendirme.
+
+        ⚠️ NEO KURALI (KALICI): Onaysız WP/SMS/email YASAK. Bu metod
+        sadece DB INSERT + log yapar. send_whatsapp_message ÇAĞRILMAZ
+        (ENV flag KARDELEN_WP_NOTIFY_ENABLED=false default).
+        Neo "ac" diyene kadar dış mesaj gönderilmez.
+
+        Adımlar (her biri ayrı try/except):
+          (a) DB'den öğrenciyi bul (phone → soz_no, full_name)
+          (b) counsellor_notes tablosuna INSERT (rehberlik kayıt)
+          (c) ACL'den Kardelen'in phone'unu çek (görselleme için)
+          (d) WP bildirim → DISABLED (Neo onayı bekleniyor)
+          (e) self._escalation_flag = False (tek seferlik trigger)
+        """
+        import os
+        student_info = None
+        kardelen_phone = None
+
+        # (a) DB'den öğrenciyi bul
+        try:
+            from db_pool import db_fetchrow
+            student_info = await db_fetchrow(
+                """SELECT soz_no, full_name FROM students
+                   WHERE REPLACE(COALESCE(phone, ''), '+', '') = $1
+                   LIMIT 1""",
+                (phone or "").replace("+", ""),
+            )
+            if student_info:
+                logger.info(f"[V2-ESCALATE] (a) öğrenci bulundu: "
+                            f"{student_info['full_name']} (soz_no={student_info['soz_no']})")
+        except Exception as e:
+            logger.warning(f"[V2-ESCALATE] (a) öğrenci sorgu hata: {e}")
+
+        # (b) counsellor_notes INSERT (rehberlik kayıt)
+        # Gerçek schema: soz_no, ogrenci_adi, ogrenci_soyadi, ogretmen, gorusme_tarihi,
+        # not_turu, gorusulen, gorusme_turu, not_metni
+        try:
+            from db_pool import get_pool
+            pool = await get_pool()
+            soz_no = (student_info or {}).get("soz_no") if student_info else None
+            full_name = (student_info or {}).get("full_name", "") if student_info else ""
+            # Ad+soyad ayrımı (full_name → first/last)
+            parts = (full_name or "").strip().split(maxsplit=1)
+            ad = parts[0] if parts else ""
+            soyad = parts[1] if len(parts) > 1 else ""
+            note_text = (
+                f"[Otomatik Bot Eskalasyonu — Kapı 6 V2] Crisis sinyal tespit edildi. "
+                f"Phone: ***{phone[-4:] if phone else '?'}, isim: {full_name or 'bilinmiyor'}. "
+                f"Bot frustration + escalation_flag birlikte tetiklendi. "
+                f"Rehber kontrolü önerilir."
+            )
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """INSERT INTO fermat.counsellor_notes
+                       (soz_no, ogrenci_adi, ogrenci_soyadi, ogretmen,
+                        gorusme_tarihi, not_turu, gorusme_turu, not_metni)
+                       VALUES ($1, $2, $3, 'FermatAI Bot V2',
+                               NOW(), 'kriz_alarmi', 'bot_otomatik', $4)
+                       ON CONFLICT (soz_no, gorusme_tarihi, ogretmen) DO NOTHING""",
+                    soz_no, ad, soyad, note_text,
+                )
+            logger.info(f"[V2-ESCALATE] (b) counsellor_notes INSERT OK (soz_no={soz_no})")
+        except Exception as e:
+            logger.warning(f"[V2-ESCALATE] (b) counsellor_notes hata: {e}")
+
+        # (c) ACL'den Kardelen'in phone'unu çek (sadece referans, mesaj göndermek için DEĞİL)
+        try:
+            from db_pool import db_fetchval
+            kardelen_phone = await db_fetchval(
+                """SELECT phone FROM fermat.acl_users
+                   WHERE full_name ILIKE '%Kardelen%' AND is_active = TRUE
+                   LIMIT 1"""
+            )
+            if kardelen_phone:
+                logger.info(f"[V2-ESCALATE] (c) Kardelen phone tespit edildi: ***{kardelen_phone[-4:]}")
+        except Exception as e:
+            logger.warning(f"[V2-ESCALATE] (c) Kardelen ACL sorgu hata: {e}")
+
+        # (d) WP bildirim — KAPALI (Neo'nun kuralı: onaysız dış mesaj YASAK)
+        wp_notify_enabled = os.getenv("KARDELEN_WP_NOTIFY_ENABLED", "false").lower() == "true"
+        if wp_notify_enabled and kardelen_phone:
+            try:
+                # Sadece flag açıksa: gerçek mesaj gönder
+                from secure_messenger import send_wp_message
+                await send_wp_message(
+                    to=kardelen_phone,
+                    message=(
+                        f"🚨 *Bot Eskalasyon Bildirimi*\n\n"
+                        f"Öğrenci: {(student_info or {}).get('full_name', 'bilinmiyor')}\n"
+                        f"Telefon: ***{phone[-4:] if phone else '?'}\n\n"
+                        f"Bot crisis pattern + frustration tespit etti. "
+                        f"Rehberlik kaydı düşürüldü, kontrol önerilir.\n\n"
+                        f"_Otomatik Kapı 6 V2 eskalasyonu_"
+                    ),
+                    reason="bot_v2_kapi6_escalate",
+                )
+                logger.warning(f"[V2-ESCALATE] (d) Kardelen'e WP bildirim GÖNDERİLDİ")
+            except Exception as e:
+                logger.warning(f"[V2-ESCALATE] (d) WP gönderim hata: {e}")
+        else:
+            logger.info(
+                f"[V2-ESCALATE] (d) WP bildirim SKIP "
+                f"(KARDELEN_WP_NOTIFY_ENABLED=false — Neo onayı bekliyor)"
+            )
+
+        # (e) escalation_flag sıfırla (tek seferlik trigger, spam önleme)
+        try:
+            self._escalation_flag = False
+            logger.info(f"[V2-ESCALATE] (e) escalation_flag sıfırlandı")
+        except Exception as e:
+            logger.warning(f"[V2-ESCALATE] (e) flag reset hata: {e}")
 
     # ─── ANA RUN OVERRIDE ─────────────────────────────────────────────────
 

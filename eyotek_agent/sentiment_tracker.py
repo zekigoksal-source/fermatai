@@ -153,6 +153,41 @@ async def check_and_alert_rehber():
         lines.append(f"---")
         lines.append(f"_Otomatik analiz — FermatAI_")
 
+        # ── Brief #6 — Kapı 6: Her riskli öğrenci için frustration sinyali yay ──
+        # V2 agent (sadece Neo hattında) bu sinyalleri yakalar; gerçek WP bildirimi
+        # KARDELEN_WP_NOTIFY_ENABLED flag'iyle korumalı (Neo onayı bekliyor).
+        try:
+            from live_signal_bus import get_bus
+            import asyncio
+            bus = get_bus()
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    for r in risky:
+                        sinyal = r['sinyal_sayisi']
+                        tipler = r['tipler'] or ""
+                        # Crisis tipi varsa daha kritik (escalation_flag tetikleyici)
+                        is_crisis = "crisis" in tipler
+                        loop.create_task(bus.emit(
+                            "frustration",
+                            {
+                                "soz_no": r.get('soz_no'),
+                                "full_name": r.get('full_name', ''),
+                                "class_name": r.get('class_name', ''),
+                                "signal_count": int(sinyal or 0),
+                                "signal_types": tipler,
+                                "last_signal_date": str(r.get('son_sinyal', '')),
+                                "is_crisis": is_crisis,
+                                "trigger": "sentiment_tracker_periodic",
+                            },
+                            actor_phone="",  # bot tarafından tetiklendi (sistem)
+                        ))
+            except RuntimeError:
+                pass  # event loop yok (sync context)
+        except Exception as _e:
+            # Bus hatası rehber raporunu durdurmasın
+            pass
+
         return "\n".join(lines)
 
     except Exception as e:

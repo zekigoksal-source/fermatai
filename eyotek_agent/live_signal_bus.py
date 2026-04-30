@@ -48,6 +48,10 @@ KNOWN_SIGNAL_TYPES = {
     "quality_feedback",
     "token_emit",
     "context_check",
+    # Brief #6 — müdahale sinyalleri
+    "wrong_route",
+    "low_rag_score",
+    "frustration",
     # Test/debug için
     "test_signal",
 }
