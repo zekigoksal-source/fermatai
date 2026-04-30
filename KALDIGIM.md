@@ -1,6 +1,28 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 30 Nisan 2026, ÖĞLEDEN SONRA 13:25 — **🎨 GÖRSEL ZENGİNLİK 3-KATMAN + ATLAS TEMİZ**
+> **Son güncelleme:** 1 Mayıs 2026, GECE 00:30 — **🚀 22 RENDERER + 16 API + 5 UX KATMAN — PRODUCTION KAPASİTE PEAK**
+> **Oturum 25.32-25.35 (4-saatlik mega genişleme):**
+>   - **22 görsel renderer** (eski 5 → yeni 22): sim · 3d · formula · calc · chart · radar · heatmap · karne · gauge · timeline · progress · compare · desmos · geogebra · plot3d · mermaid · vr · mol3d · sound · element · excalidraw · codeout
+>   - **16 external API tool**: nasa_apod · nasa_image_search · wolfram_query · wolfram_full · wiki_lookup · arxiv_search · generate_image · make_render_link · pubchem_lookup · usgs_earthquakes · generate_pdf · text_to_speech · pdb_lookup · student_heatmap · execute_python · suno_generate
+>   - **5 UX katman** (Oturum 25.35): Streaming Markdown + Sesli Oku/PDF Al butonları + Latex math streaming + Mesaj reactions (👍❤️😂😮🤔🔥) + Animated tema toggle pill
+>   - **Compton-seviyesi kalite standardı** system_prompts'a eklendi (Neo direktif)
+>   - **3D scene preset'leri**: blackhole · lattice · magnetic_field · sine_wave · calabi_yau · sphere · dna_helix · water/h2o · atom_proper
+>   - **API key durumu**: NASA_API_KEY ✅ (sınırsız) · WOLFRAM_APP_ID ✅ (2000/ay) · OPENAI_API_KEY ✅ (DALL-E + TTS + Whisper)
+>   - **Yeni endpoint'ler**: /audio (TTS mp3 serve) · /pdfs (PDF download) · /render-test (22 renderer test sayfası) · /chat/tts · /chat/pdf
+>   - **Test**: 8/8 API canlı doğrulandı (NASA, Wolfram, Wiki, PubChem, PDB, Code Exec, TTS, PDF)
+>   - **Atlas**: 30 uygulandi · 0 açık · 1 ertelendi (Yeni Sezon)
+>   - **Toplam tool**: 112 dispatch
+> **Sistem durumu (oturum sonu):**
+>   - ✅ Bridge active, public/localhost HTTP 200 (chat + render + audio + pdfs + render-test)
+>   - ✅ 22 renderer JS function serve ediliyor
+>   - ✅ 16 API tool wrapper kayıtlı
+>   - ✅ 5 rol × ACL × yeni tool = tamamı doğru
+>   - ✅ Streaming pill (gradient + pulsing) yanıp sönen imleci değiştirdi
+>   - ✅ Bot mesajlarına 🔊/📄/emoji reaction butonları otomatik eklenir
+>   - ✅ KaTeX formülleri streaming sırasında anlık render
+>   - ✅ Compton-kalite simülasyon standardı bot prompt'unda
+
+> **Önceki oturum:** 30 Nisan 2026, ÖĞLEDEN SONRA 13:25 — **🎨 GÖRSEL ZENGİNLİK 3-KATMAN + ATLAS TEMİZ**
 > **Oturum 25.31 (öğleden sonra) — Neo direktifi: 'tablet frontline pro, atlas eski sorunlari resolve, %100 bitir teknik borc sıfır':**
 >   - `f1c9229` Görsel zenginlik 3-katmanlı paket CANLI (1011 satır kod):
 >     - **Katman 1** (`system_prompts.py`): GORSEL RENDERER PROTOKOLU (130 satır, channel-aware)
