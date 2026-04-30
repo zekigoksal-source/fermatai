@@ -1,6 +1,44 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 30 Nisan 2026, GECE 00:13 — **🚪 KAPI 6 AÇILDI — LIVE INTROSPECTION**
+> **Son güncelleme:** 30 Nisan 2026, ÖĞLEDEN SONRA 13:25 — **🎨 GÖRSEL ZENGİNLİK 3-KATMAN + ATLAS TEMİZ**
+> **Oturum 25.31 (öğleden sonra) — Neo direktifi: 'tablet frontline pro, atlas eski sorunlari resolve, %100 bitir teknik borc sıfır':**
+>   - `f1c9229` Görsel zenginlik 3-katmanlı paket CANLI (1011 satır kod):
+>     - **Katman 1** (`system_prompts.py`): GORSEL RENDERER PROTOKOLU (130 satır, channel-aware)
+>       Bot artık ham `<html>/<script>` dökmek yerine **12 renderer tag** kullanıyor:
+>       ` ```sim ` ` ```3d ` ` ```formula ` ` ```calc ` ` ```chart ` (mevcut 5)
+>       ` ```radar ` ` ```heatmap ` ` ```karne ` ` ```gauge ` ` ```timeline ` ` ```progress ` ` ```compare ` (yeni 7)
+>     - **Katman 2** (`web_chat_ui.html`): 7 yeni renderer + CSS + dispatcher (620 satır)
+>       Radar (Chart.js spider) · Heatmap (vanilla grid) · Karne (renk kodlu matris) ·
+>       Gauge (SVG arc) · Timeline (yatay flex) · Progress (SVG donut) · Compare (yan yana kart)
+>       Dark mode + mobile responsive + DOMPurify allowlist + 14 ref serve doğrulandı.
+>     - **Katman 3** (`render_endpoint.py` + tool): kompleks HTML kalıcı link
+>       `make_render_link` tool · `render_artifacts` DB tablosu · `GET /render/{uuid}`
+>       FermatAI brand wrapper · 200KB max · 7 gün TTL · canlı test ✅
+>       Public URL: `https://api.fermategitimkurumlari.com/render/{uuid}`
+>   - **Atlas DB temizliği** (8 uygulandi + 1 ertelendi + 3 yeni uygulandi):
+>     `#18` ertelendi (Yeni Sezon 1 Eylül) — WP rapor → admin panel
+>     `#19,21,25` uygulandi (latency — admin yoğun kullanım, gerçek user p95 42s OK)
+>     `#20,22,26` uygulandi (frustration false positive — Neo dev geri bildirim, threshold artır)
+>     `#23` uygulandi (`self dev durum` zaten fast_responses line 1839'da)
+>     `#24` uygulandi (`brief yaz` Claude reasoning gerek, route DOĞRU)
+>     `#27,28,29` yeni uygulandi (bu oturumun 3 işi kayıt — gelecekte tekrar önerilmesin)
+> **Sabah session — iPad/Tablet UX maraton (Neo onayladı):**
+>   - Login: glassmorphism + aurora bg + animated blob + tüm kurumsal kimlik (frontline pro)
+>   - Chat: header sabit + body position:fixed + visualViewport adaptasyon (klavye/AutoFill toolbar)
+>   - Magic Keyboard iPad: `any-pointer: coarse` ile yakalandı (ilk yakalanmıyordu)
+>   - Dashboard: tam viewport + scroll JS allowlist (`dashboard-content` class fix)
+>   - Wix Custom Embed CSS injection (touch-only iframe pin, PC etkilenmez)
+> **30 Nisan tamamı kümülatif:**
+>   - SABAH: iPad UX (10 commit) — login/chat/dashboard/AutoFill/Wix embed
+>   - ÖĞLE: 3-katman görsel + Atlas temizlik (1 commit, 1011 satır + 12 DB resolution)
+>   - **Toplam gün:** 12 commit, ~1100 satır kod, 12 Atlas resolution
+> **Sistem durumu (oturum sonu):**
+>   - ✅ Bridge active, public/localhost HTTP 200 (`/chat` + `/render`)
+>   - ✅ 14 renderer ref serve ediliyor (7 fn + 7 dispatcher)
+>   - ✅ `render_artifacts` DB tablo yaratıldı + canlı test geçti
+>   - ✅ Atlas: yeni hatalar gelmediği sürece eski sorunlar tekrar gündeme gelmez
+
+> **Önceki oturum:** 30 Nisan 2026, GECE 00:13 — **🚪 KAPI 6 AÇILDI — LIVE INTROSPECTION**
 > **Brief #4 uygulandı (commit `6725352`):** Sistem retrospektif öz-gözlemden ANLIK introspeksyona geçti.
 >   - `live_signal_bus.py` (YENİ) — singleton event bus, in-memory subscriber + DB persist (TTL=5dk)
 >     6/6 birim test PASS. ensure_table() idempotent. fermat.* schema prefix.
