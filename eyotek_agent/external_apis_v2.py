@@ -166,13 +166,17 @@ async def wolfram_full(query: str) -> dict:
 # ═══════════════════════════════════════════════════════════════════════
 async def wiki_lookup(query: str, lang: str = "tr") -> dict:
     """Wikipedia REST API — başlık özeti çek (önce TR, bulunamazsa EN).
-    25.32-fix: Direct summary endpoint (search ara basamağı atla, daha güvenilir)."""
+    25.32-fix: Direct summary endpoint + URL encoding (boşluk → _, quote not quote_plus)."""
+    from urllib.parse import quote
     langs = [lang, "en"] if lang != "en" else ["en"]
+    # Wikipedia URL: boşluk = "_", özel karakterler = % encoded
+    def _wiki_title(q: str) -> str:
+        return quote(q.replace(" ", "_"), safe="_")
     async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True) as client:
         for try_lang in langs:
             try:
                 # 1) Direct summary endpoint (TR karakterleri ile çoğunlukla işe yarıyor)
-                summary_url = f"https://{try_lang}.wikipedia.org/api/rest_v1/page/summary/{quote_plus(query)}"
+                summary_url = f"https://{try_lang}.wikipedia.org/api/rest_v1/page/summary/{_wiki_title(query)}"
                 r = await client.get(summary_url)
                 if r.status_code == 200:
                     d = r.json()
@@ -197,7 +201,7 @@ async def wiki_lookup(query: str, lang: str = "tr") -> dict:
                     continue
                 # İlk başarılı title — disambiguation hariç
                 for title in titles:
-                    summary_url = f"https://{try_lang}.wikipedia.org/api/rest_v1/page/summary/{quote_plus(title)}"
+                    summary_url = f"https://{try_lang}.wikipedia.org/api/rest_v1/page/summary/{_wiki_title(title)}"
                     r2 = await client.get(summary_url)
                     if r2.status_code != 200:
                         continue
