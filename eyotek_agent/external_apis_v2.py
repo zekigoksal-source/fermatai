@@ -126,13 +126,14 @@ async def wolfram_query(query: str) -> dict:
 
 
 async def wolfram_full(query: str) -> dict:
-    """Wolfram Full Results — adım adım çözüm + grafik URL'leri."""
+    """Wolfram Full Results — adım adım çözüm + grafik URL'leri.
+    25.32-fix: format=plaintext,image bazi sorgularda 500 hata — plaintext only daha stabil."""
     if not WOLFRAM_APP_ID:
         return {"success": False, "error": "WOLFRAM_APP_ID env tanımsız"}
     try:
         url = (f"https://api.wolframalpha.com/v2/query"
                f"?appid={WOLFRAM_APP_ID}&input={quote_plus(query)}"
-               f"&output=json&format=plaintext,image&units=metric")
+               f"&output=json&format=plaintext&units=metric")
         async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT * 2, follow_redirects=True) as client:
             r = await client.get(url)
             r.raise_for_status()
