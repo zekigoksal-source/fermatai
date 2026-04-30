@@ -591,6 +591,20 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     right: 0;
     bottom: 0;
   }
+  /* Dashboard modal — tablet/touch'ta full viewport (yarim gorunme bug fix) */
+  .dashboard-overlay {
+    padding: 0 !important;
+  }
+  .dashboard-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: var(--vvh, 100%) !important;
+    max-height: var(--vvh, 100%) !important;
+    border-radius: 0 !important;
+    border: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 .login-box .step { display: none; }
 .login-box .step.active { display: block; }
@@ -1088,15 +1102,36 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     // iPad+Magic Keyboard'da toolbar (sifre/kart/konum) input'u kapatmasin diye
     // body height'i visualViewport.height'a kilitleriz → chat-input her zaman
     // toolbar'in UZERINDE kalir.
-    if (window.visualViewport) {
-      var updateVVH = function() {
-        var h = window.visualViewport.height;
+    var updateVVH = function() {
+      var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight || document.documentElement.clientHeight;
+      if (h && h > 100) {
         document.documentElement.style.setProperty('--vvh', h + 'px');
-      };
+      }
+    };
+    if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', updateVVH);
       window.visualViewport.addEventListener('scroll', updateVVH);
-      updateVVH();
     }
+    // Ek event'ler: klavye kapatma, orientation degisimi, focus/blur — Safari
+    // visualViewport resize'i her zaman emit etmez. Bu listener'lar eski state'e
+    // donerken --vvh dogru deger almasini sagla
+    window.addEventListener('resize', updateVVH);
+    window.addEventListener('orientationchange', function() {
+      // Orientation animasyonu bitince yeniden hesapla
+      setTimeout(updateVVH, 100);
+      setTimeout(updateVVH, 400);
+    });
+    document.addEventListener('focusout', function() {
+      // Klavye kapaninca biraz bekle, sonra reset
+      setTimeout(updateVVH, 150);
+      setTimeout(updateVVH, 350);
+    });
+    document.addEventListener('focusin', function() {
+      // Klavye acilinca da update (Safari bazen resize emit etmiyor)
+      setTimeout(updateVVH, 100);
+      setTimeout(updateVVH, 350);
+    });
+    updateVVH();
   } catch (e) {
     console.warn('iframe-touch-pin init hata:', e);
   }
