@@ -482,6 +482,17 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
   .login-box .trust-footer .badge .num { font-size: 12px; }
   .login-box .trust-footer .badge .label { font-size: 8.5px; letter-spacing: 0.5px; }
 }
+
+/* Tablet (iPad portrait + Android tablet portrait) — login-box uzun içerik kaydırılabilir olsun.
+   Web (>1024px) ve mobil (<481px) etkilenmez, sadece tablet aralığı için. */
+@media (min-width: 481px) and (max-width: 1024px) {
+  .login-wrap {
+    align-items: flex-start;          /* ortala değil, üstten başla — alt/üst kesilmesin */
+    padding: 28px 20px 40px;
+    overflow-y: auto;                 /* içerik viewport'tan uzunsa scroll */
+    -webkit-overflow-scrolling: touch;/* iOS smooth scroll */
+  }
+}
 .login-box .step { display: none; }
 .login-box .step.active { display: block; }
 .login-box label { display: block; font-size: 13px; color: var(--fg-muted); margin-bottom: 6px; }
