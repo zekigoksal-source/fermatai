@@ -50,7 +50,7 @@ async def nasa_apod(query_date: str = "") -> dict:
         url = f"https://api.nasa.gov/planetary/apod?api_key={NASA_API_KEY}"
         if query_date:
             url += f"&date={query_date}"
-        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True) as client:
             r = await client.get(url)
             r.raise_for_status()
             d = r.json()
@@ -74,7 +74,7 @@ async def nasa_image_search(query: str, page: int = 1) -> dict:
     Örnek: 'black hole', 'galaxy', 'mars', 'quantum', 'einstein'."""
     try:
         url = f"https://images-api.nasa.gov/search?q={quote_plus(query)}&media_type=image&page={page}"
-        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True) as client:
             r = await client.get(url)
             r.raise_for_status()
             d = r.json()
@@ -111,7 +111,7 @@ async def wolfram_query(query: str) -> dict:
     try:
         url = (f"https://api.wolframalpha.com/v1/result"
                f"?appid={WOLFRAM_APP_ID}&i={quote_plus(query)}&units=metric")
-        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True) as client:
             r = await client.get(url)
             if r.status_code == 200:
                 return {"success": True, "query": query, "answer": r.text}
@@ -133,7 +133,7 @@ async def wolfram_full(query: str) -> dict:
         url = (f"https://api.wolframalpha.com/v2/query"
                f"?appid={WOLFRAM_APP_ID}&input={quote_plus(query)}"
                f"&output=json&format=plaintext,image&units=metric")
-        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT * 2) as client:
+        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT * 2, follow_redirects=True) as client:
             r = await client.get(url)
             r.raise_for_status()
             d = r.json()
@@ -165,12 +165,29 @@ async def wolfram_full(query: str) -> dict:
 # 3. Wikipedia API — kavram doğrulama, kısa özet
 # ═══════════════════════════════════════════════════════════════════════
 async def wiki_lookup(query: str, lang: str = "tr") -> dict:
-    """Wikipedia REST API — başlık özeti çek (önce TR, bulunamazsa EN)."""
-    for try_lang in [lang, "en"] if lang != "en" else ["en"]:
-        try:
-            search_url = (f"https://{try_lang}.wikipedia.org/w/api.php"
-                          f"?action=opensearch&search={quote_plus(query)}&limit=1&format=json")
-            async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
+    """Wikipedia REST API — başlık özeti çek (önce TR, bulunamazsa EN).
+    25.32-fix: Direct summary endpoint (search ara basamağı atla, daha güvenilir)."""
+    langs = [lang, "en"] if lang != "en" else ["en"]
+    async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True) as client:
+        for try_lang in langs:
+            try:
+                # 1) Direct summary endpoint (TR karakterleri ile çoğunlukla işe yarıyor)
+                summary_url = f"https://{try_lang}.wikipedia.org/api/rest_v1/page/summary/{quote_plus(query)}"
+                r = await client.get(summary_url)
+                if r.status_code == 200:
+                    d = r.json()
+                    if d.get("type") != "disambiguation":
+                        return {
+                            "success": True,
+                            "lang": try_lang,
+                            "title": d.get("title", query),
+                            "extract": d.get("extract", "")[:600],
+                            "url": d.get("content_urls", {}).get("desktop", {}).get("page", ""),
+                            "thumbnail": d.get("thumbnail", {}).get("source", "") if d.get("thumbnail") else "",
+                        }
+                # 2) Fallback: opensearch ile başlığı bul, sonra summary çek
+                search_url = (f"https://{try_lang}.wikipedia.org/w/api.php"
+                              f"?action=opensearch&search={quote_plus(query)}&limit=3&format=json&utf8=1")
                 r = await client.get(search_url)
                 if r.status_code != 200:
                     continue
@@ -178,24 +195,27 @@ async def wiki_lookup(query: str, lang: str = "tr") -> dict:
                 titles = data[1] if len(data) > 1 else []
                 if not titles:
                     continue
-                title = titles[0]
-                summary_url = f"https://{try_lang}.wikipedia.org/api/rest_v1/page/summary/{quote_plus(title)}"
-                r2 = await client.get(summary_url)
-                if r2.status_code != 200:
-                    continue
-                d = r2.json()
-                return {
-                    "success": True,
-                    "lang": try_lang,
-                    "title": d.get("title", title),
-                    "extract": d.get("extract", "")[:600],
-                    "url": d.get("content_urls", {}).get("desktop", {}).get("page", ""),
-                    "thumbnail": d.get("thumbnail", {}).get("source", "") if d.get("thumbnail") else "",
-                }
-        except Exception as e:
-            logger.warning(f"wiki_lookup hata ({try_lang}): {e}")
-            continue
-    return {"success": False, "error": "Wikipedia'da bulunamadı (TR/EN)"}
+                # İlk başarılı title — disambiguation hariç
+                for title in titles:
+                    summary_url = f"https://{try_lang}.wikipedia.org/api/rest_v1/page/summary/{quote_plus(title)}"
+                    r2 = await client.get(summary_url)
+                    if r2.status_code != 200:
+                        continue
+                    d = r2.json()
+                    if d.get("type") == "disambiguation":
+                        continue
+                    return {
+                        "success": True,
+                        "lang": try_lang,
+                        "title": d.get("title", title),
+                        "extract": d.get("extract", "")[:600],
+                        "url": d.get("content_urls", {}).get("desktop", {}).get("page", ""),
+                        "thumbnail": d.get("thumbnail", {}).get("source", "") if d.get("thumbnail") else "",
+                    }
+            except Exception as e:
+                logger.warning(f"wiki_lookup hata ({try_lang}): {e}")
+                continue
+    return {"success": False, "error": f"Wikipedia'da '{query}' bulunamadı (TR/EN)"}
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -207,7 +227,7 @@ async def arxiv_search(query: str, max_results: int = 5) -> dict:
     try:
         url = (f"http://export.arxiv.org/api/query?search_query=all:{quote_plus(query)}"
                f"&start=0&max_results={max_results}&sortBy=relevance")
-        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT, follow_redirects=True) as client:
             r = await client.get(url)
             r.raise_for_status()
             import re
