@@ -1245,7 +1245,10 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     <button class="aux-btn paperclip" onclick="document.getElementById('photoInput').click()" title="Fotoğraf yükle (soru çözümü)">📎</button>
     <button class="aux-btn mic-btn" id="micBtn" onclick="toggleMic()" title="Sesle yaz (mikrofon)">🎤</button>
     <button class="aux-btn" onclick="openMathModal()" title="Denklem yaz (matematik/fizik formül)" style="font-size:16px;">∑</button>
-    <textarea id="chatInput" placeholder="Mesajını yaz... (Shift+Enter = yeni satır)" rows="1"></textarea>
+    <textarea id="chatInput" placeholder="Mesajını yaz... (Shift+Enter = yeni satır)" rows="1"
+              autocomplete="off" autocorrect="on" autocapitalize="sentences" spellcheck="true"
+              data-1p-ignore="true" data-lpignore="true" data-bwignore="true"
+              name="fermatai-chat-message"></textarea>
     <button id="sendBtn" onclick="doSend()">Gönder</button>
   </div>
 </div>
