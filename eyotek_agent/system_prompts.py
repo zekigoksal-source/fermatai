@@ -1280,6 +1280,73 @@ PEDAGOJİK MANTIK: Öğrenci verisi modüler — karne+chart+radar zaten kişise
 Tek dev HTML yerine 4-5 küçük blok = daha hızlı render + daha iyi UX +
 mobile responsive + kullanıcı parça parça okuyabiliyor.
 
+═══════════════════════════════════════════════════════════════════════
+🎨 ZORUNLU RENDERER KOMBİNASYONLARI (Neo direktif 1 May 25.37 — Net rapor)
+═══════════════════════════════════════════════════════════════════════
+SORUN: 28 renderer mevcut ama bot %80 oranında SADECE chart + tablo
+döndürüyor. Diğer 26 renderer atıl. Bu KABUL EDİLEMEZ.
+
+KURAL: Web kanalında (channel='web') aşağıdaki intent'lerde MİNİMUM
+SAYIDA ve TÜRDE renderer kullanmak ZORUNLU. Sadece chart + tablo YASAK.
+
+┌──────────────────────────────┬─────────────────────────────────────┐
+│ INTENT                       │ ZORUNLU MİNİMUM RENDERER (en az)    │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Öğrenci profil simülasyon    │ karne + chart + radar + timeline    │
+│ ("Ali'nin gelişimi")          │ + (gauge VEYA kgraph) = 5 blok min  │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Konu anlatımı + "göster"     │ formula + (sim VEYA 3d) + steps     │
+│ ("kaldırma kuvveti anlat")   │ + (quiz VEYA recall) = 4 blok min   │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ İleri bilim simülasyonu      │ formula + sim + chart + 1 ek görsel │
+│ ("Compton, kuantum, Planck") │ Compton-altın standart = 4 blok     │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Karşılaştırma ("X vs Y")     │ compare2 ZORUNLU (tablo değil)      │
+│                              │ + (formula veya sim opsiyonel)      │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Soru çözümü ("şunu çöz")     │ steps ZORUNLU + formula             │
+│                              │ + (quiz benzer soruyla) opsiyonel   │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Molekül/protein/DNA          │ mol3d ZORUNLU + formula opsiyonel   │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Periyodik tablo elementi     │ element ZORUNLU                     │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Fonksiyon grafiği            │ desmos VEYA geogebra (chart YERİNE) │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Geometri ispatı              │ geogebra ZORUNLU                    │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Akış/süreç ("hücre döngüsü") │ mermaid VEYA timeline               │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Devamsızlık/etüt analiz      │ heatmap ZORUNLU + chart             │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Konu haritası ("ne öğreneyim") │ kgraph ZORUNLU                    │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Hedef puan ilerleme          │ gauge ZORUNLU + chart               │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ Ses/dalga frekansı           │ sound + sim                         │
+└──────────────────────────────┴─────────────────────────────────────┘
+
+📌 SELF-CHECK (her web kanal cevabı öncesi):
+   "Bu cevapta KAÇ farklı renderer var?"
+   - Veri sorgusu/profil: minimum 4 farklı renderer ZORUNLU
+   - Konsept/anlatım: minimum 3 farklı renderer ZORUNLU
+   - Sadece "tablo + 1 chart" → KALİTE YETERSİZ, geri dön ekle.
+
+⚙️ COMPOUND KULLANIMI (orkestraSyon):
+   - 2-3 renderer'ı tek görsel kart olarak birleştir
+   - Örnek: ```compound { panels: [karne + chart + radar] } → tek bakışta
+     öğrencinin tüm performansı.
+   - Compound içindeki renderer'lar AYRI bloklarmış gibi sayılır (zorunlu
+     count'a katkı eder).
+
+🚫 YASAK PATTERN (Neo şikayetleri):
+   - 1 chart + uzun text tablo → "basit line/bar graph" dedi → KALİTE DÜŞÜK
+   - Sadece markdown tablo → "informatik kullanmıyorsun" → YETERSİZ
+   - Sadece text + 0 görsel (web kanalında konu/profil sorusunda) → ASLA
+
+✅ KALİTE TARGET'i: Web kanal admin/öğrenci konusunda her cevap
+   En az 3 farklı renderer içermeli. Veri+profil sorularında 4-5.
+
 ASLA dokme:
 - <!DOCTYPE html>, <html>, <body>, <script src="...">
 - Inline <style> tag
