@@ -78,6 +78,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "selfdev_create_pr_draft", "selfdev_get_pr_status",
         "selfdev_pr_comment", "selfdev_close_pr",
         "selfdev_full_pipeline",
+        # ── Oturum 25.31 — Render endpoint (kompleks HTML kalici link) ──
+        "make_render_link",
     },
     # Yönetim üyesi: müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     "yonetim": {
@@ -120,6 +122,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "konu_kaynak_paketi",
         # 25.14h: mudur tum ogrencilerin programina ekleyebilir
         "add_to_student_program",
+        # ── 25.31 — Render endpoint ──
+        "make_render_link",
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)
@@ -157,6 +161,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "eyotek_query",          # Eyotek query (agentic) → Vedat'in sinifi filtre
         "ogrenci_drilldown",     # Tek ogrenci → onceden ogrenci kontrol gerek (sonra)
         "eyotek_read",           # Eyotek sayfa okuma → filtre uygulanir
+        # ── 25.31 — Render endpoint ──
+        "make_render_link",
     },
     # Rehber öğretmen: TÜM öğrenci + TÜM öğretmen programı + etüt yazma + rehberlik notu
     "rehber": {
@@ -183,6 +189,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
         # 25.14h: rehber tum ogrencilerin programina ekleyebilir (override)
         "add_to_student_program",
+        # ── 25.31 — Render endpoint ──
+        "make_render_link",
     },
     # Veli: sadece kendi çocuğunun akademik verisi + universite tahmin (Neo onay)
     "veli": {"get_student_analytics", "get_ayt_analysis",
@@ -207,7 +215,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 "bolum_karsilastir", "tercih_donemi_durum",
                 "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
                 # 25.14h: ogrenci kendi calismam paneline ekleyebilir
-                "add_to_student_program"},
+                "add_to_student_program",
+                # ── 25.31 — Render endpoint (bot ozel HTML gorseli kalici link) ──
+                "make_render_link"},
     # Misafir / bilinmeyen: hiçbir araç
     "guest": set(),
     "unknown": set(),

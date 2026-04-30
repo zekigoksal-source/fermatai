@@ -1003,19 +1003,66 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
 .msg strong, .msg b { font-weight: 600; }
 .msg em, .msg i { font-style: italic; color: var(--fg-muted); }
 
-/* Thinking placeholder — düşünce bubble */
+/* Thinking placeholder — düşünce bubble (Oturum 25.31 — UX upgrade)
+   Kullanıcı tutukluk sanmasın diye belirgin animasyonlu gösterge */
 .msg.thinking {
-  color: var(--fg-muted); font-style: italic; background: transparent; border: 1px dashed var(--border);
-  opacity: 0.8;
+  background: linear-gradient(110deg,
+    rgba(199,111,62,0.06) 0%,
+    rgba(199,111,62,0.12) 30%,
+    rgba(167,139,250,0.08) 50%,
+    rgba(199,111,62,0.12) 70%,
+    rgba(199,111,62,0.06) 100%);
+  background-size: 200% 100%;
+  animation: thinkingShimmer 2.5s ease-in-out infinite;
+  border: 1px solid rgba(199,111,62,0.25);
+  color: var(--fg);
+  padding: 14px 18px !important;
+  border-radius: 14px;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  display: flex; align-items: center; gap: 10px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(199,111,62,0.08);
 }
 .msg.thinking::before {
-  content: ""; display: inline-block; width: 6px; height: 6px; background: var(--accent);
-  border-radius: 50%; margin-right: 8px; vertical-align: middle;
-  animation: pulse 1.4s infinite;
+  content: ""; display: inline-block;
+  width: 10px; height: 10px; flex-shrink: 0;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: thinkingPulse 1.2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(199,111,62,0.5);
 }
-@keyframes pulse {
-  0%, 60%, 100% { opacity: 0.4; transform: scale(1); }
-  30% { opacity: 1; transform: scale(1.3); }
+.msg.thinking::after {
+  content: "•••";
+  color: var(--accent); font-weight: 700; letter-spacing: 4px;
+  animation: thinkingDots 1.4s steps(4,end) infinite;
+  margin-left: auto;
+}
+@keyframes thinkingShimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+@keyframes thinkingPulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.85); box-shadow: 0 0 8px rgba(199,111,62,0.3); }
+  50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 16px rgba(199,111,62,0.7); }
+}
+@keyframes thinkingDots {
+  0%, 20% { color: rgba(199,111,62,0.3); }
+  40% { color: rgba(199,111,62,0.6); }
+  60% { color: rgba(199,111,62,0.85); }
+  80%, 100% { color: rgba(199,111,62,1); }
+}
+html[data-theme="dark"] .msg.thinking {
+  background: linear-gradient(110deg,
+    rgba(199,111,62,0.10) 0%,
+    rgba(199,111,62,0.18) 30%,
+    rgba(167,139,250,0.12) 50%,
+    rgba(199,111,62,0.18) 70%,
+    rgba(199,111,62,0.10) 100%);
+  background-size: 200% 100%;
+  border-color: rgba(199,111,62,0.35);
 }
 
 .chat-input {
@@ -3955,7 +4002,34 @@ async function doSend() {
   let thinkingMsg = null;
   let accumulated = "";
 
-  // Helper: thinking bubble göster (grup halinde)
+  // Helper: thinking bubble göster — auto-evolve message (Oturum 25.31)
+  // Kullanıcı tutukluk sanmasın diye süre uzadıkça mesaj evrim eder.
+  let thinkingStart = 0;
+  let thinkingTimer = null;
+  let thinkingCustomTxt = null; // backend'den gelen ozel mesaj varsa
+  const _THINKING_EVOLUTIONS = [
+    { delay: 0,     txt: "🤔 Düşünüyor..." },
+    { delay: 5000,  txt: "✍️ Cevap hazırlanıyor..." },
+    { delay: 15000, txt: "📚 Müfredat banka taranıyor, içerik üretiliyor..." },
+    { delay: 30000, txt: "🎨 Detaylı analiz + görseller hazırlanıyor — beklemeye değer..." },
+    { delay: 60000, txt: "⚡ Kapsamlı içerik üretiliyor — neredeyse hazır, lütfen bekle..." },
+    { delay: 90000, txt: "🚀 Çok kapsamlı bir cevap üretiliyor — sayfa bozulmuş değil, sürüyor..." },
+  ];
+  function _autoEvolveThinking() {
+    if (!thinkingMsg) return;
+    const elapsed = Date.now() - thinkingStart;
+    // Backend'den ozel mesaj geldiyse onu kullan
+    if (thinkingCustomTxt) {
+      thinkingMsg.textContent = thinkingCustomTxt;
+    } else {
+      // En son eşiği aşan evrim mesajı
+      let chosen = _THINKING_EVOLUTIONS[0].txt;
+      for (const ev of _THINKING_EVOLUTIONS) {
+        if (elapsed >= ev.delay) chosen = ev.txt;
+      }
+      thinkingMsg.textContent = chosen;
+    }
+  }
   function showThinking(txt) {
     if (!thinkingMsg) {
       const welcome = messages.querySelector(".msg-welcome");
@@ -3963,16 +4037,37 @@ async function doSend() {
       thinkingMsg = document.createElement("div");
       thinkingMsg.className = "msg bot thinking";
       messages.appendChild(thinkingMsg);
+      thinkingStart = Date.now();
+      // Her 1.5 saniyede bir mesaj kontrol et — evrim kaçırma
+      if (thinkingTimer) clearInterval(thinkingTimer);
+      thinkingTimer = setInterval(_autoEvolveThinking, 1500);
     }
-    thinkingMsg.textContent = txt;
+    // Backend ozel mesaj gönderdiyse store et (override)
+    if (txt && txt.trim().length > 0) {
+      thinkingCustomTxt = txt;
+    }
+    _autoEvolveThinking();
     smartScroll();
   }
   function clearThinking() {
+    if (thinkingTimer) {
+      clearInterval(thinkingTimer);
+      thinkingTimer = null;
+    }
+    thinkingCustomTxt = null;
     if (thinkingMsg) {
       thinkingMsg.remove();
       thinkingMsg = null;
     }
   }
+
+  // Oturum 25.31 — Watchdog: 3 saniye sonra hala chunk gelmezse thinking göster
+  // (backend chunk yerine direkt JSON dönerse fast path; yoksa Claude'a düştü)
+  const _watchdogTimer = setTimeout(() => {
+    if (!botMsg && !thinkingMsg) {
+      showThinking("");  // boş = auto-evolve devreye girer
+    }
+  }, 3000);
 
   try {
     // 22.1n-fikir4: Arşiv sohbet devam — archive_day state'i varsa gönder
@@ -4068,6 +4163,7 @@ async function doSend() {
       addMsg("Bağlantı hatası: " + e.message, "bot");
     }
   } finally {
+    clearTimeout(_watchdogTimer);
     clearThinking();
     sendBtn.disabled = false;
     chatInput.focus();
