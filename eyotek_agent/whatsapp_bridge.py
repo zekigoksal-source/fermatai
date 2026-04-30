@@ -3537,7 +3537,9 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
             # Web UI streaming gösterdiği için kullanıcı beklemeye hazır,
             # uzun pedagojik rapor + multi-tool chain için 180s gerekli.
             # WhatsApp'ta fazla bekleme bad UX → 90s (eski 75s yetmedi).
-            _agent_timeout = 180.0 if channel == "web" else 90.0
+            # Oturum 25.31 — Neo timeout raporu: kompleks render + history birikimi 180s asildi
+            # Web kanalinda Claude reasoning + tool-calling icin 300s makul
+            _agent_timeout = 300.0 if channel == "web" else 90.0
             response = await asyncio.wait_for(
                 agent.run(text, caller_phone=phone, channel=channel, _stream_queue=_stream_queue),
                 timeout=_agent_timeout
