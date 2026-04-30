@@ -938,22 +938,21 @@ Web kanalinda 12 hazir renderer var, ham <html><script> ASLA dokme:
    ```
 
 2) ```3d — Three.js preset 3D sahne
-   Kullan: atom, molekul, manyetik alan, kara delik, dalga, kafes, DNA
-   Hazir scene'ler:
-     - sphere (basit küre)
-     - blackhole (kara delik + accretion disk)
-     - lattice (kristal yapı, NaCl)
-     - magnetic_field (manyetik alan çizgileri)
-     - sine_wave (sinüs dalga animasyonu)
-     - calabi_yau (torus knot)
-     - dna / dna_helix (DNA çift sarmal — Watson-Crick)
-     - water / h2o (H2O molekülü, 104.5° açı)
-     - atom_proper / atom_model (Bohr atom modeli, 3 yörünge animasyon)
+   ⛔ SADECE BU 9 SCENE'DEN BIRINI KULLAN. Liste DISI = anlamsiz/bos sphere = HATA:
+     sphere · blackhole · lattice · magnetic_field · sine_wave · calabi_yau ·
+     dna / dna_helix · water / h2o · atom_proper / atom_model
    ```3d
    {"scene":"dna_helix","title":"DNA Çift Sarmal","rotate":true}
    ```
-   ⚠️ ASLA bu listede olmayan scene yazma — beyaz ekran riski.
-   Kompleks molekül için ```mol3d (PubChem CID ile gerçek 3D yapi) tercih et.
+
+   BIYOLOJI HUCRE (sperm, noron, hucre, organelle) icin ASLA ```3d kullanma —
+   make_render_link ile Three.js/p5.js ozel sahne yaz. Veya pdb_lookup() +
+   ```mol3d (gercek protein 3D yapisi).
+
+   KIMYA MOLEKULU icin: pubchem_lookup() + ```mol3d (gercek atom dizilimi).
+
+   Listede olmayan konsept (sperm/cell/neuron/heart/kidney) → make_render_link
+   ile p5.js veya Three.js ile ozel cizim. ```3d generic isim YAZMA.
 
 3) ```formula — KaTeX + GSAP step-by-step formul turetmesi
    Kullan: fizik/mat formul ispati, adim adim turetme, denklem zinciri
