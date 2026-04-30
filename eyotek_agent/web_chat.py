@@ -2426,11 +2426,28 @@ async def stream_message(
                             thinking_cleared = True
                         yield f"data: {json.dumps({'chunk': ev_data}, ensure_ascii=False)}\n\n"
                     elif ev_type == "tool_start":
-                        # Tool çalışırken kullanıcıya bilgi ver
-                        yield f"data: {json.dumps({'thinking': f'🔍 Veri çekiyorum ({ev_data})...'}, ensure_ascii=False)}\n\n"
-                        thinking_cleared = False
+                        # Oturum 25.31 — make_render_link ozel UX: text okunurken
+                        # arka planda hazirlaniyor inline kart goster
+                        if ev_data == "make_render_link":
+                            yield f"data: {json.dumps({'render_pending': True})}\n\n"
+                        else:
+                            # Diger tool'lar icin klasik thinking
+                            yield f"data: {json.dumps({'thinking': f'🔍 Veri çekiyorum ({ev_data})...'}, ensure_ascii=False)}\n\n"
+                            thinking_cleared = False
                     elif ev_type == "tool_done":
-                        yield f"data: {json.dumps({'thinking': '✓ Veriyi aldım, yazıyorum...'}, ensure_ascii=False)}\n\n"
+                        # ev_data tuple olabilir: (tool_name, result_dict)
+                        _tool_nm, _tool_res = (ev_data, None)
+                        if isinstance(ev_data, tuple) and len(ev_data) == 2:
+                            _tool_nm, _tool_res = ev_data
+                        # make_render_link bittiginde URL ile inline buton
+                        if _tool_nm == "make_render_link" and _tool_res and _tool_res.get("success"):
+                            _payload = {
+                                "url": _tool_res.get("url", ""),
+                                "title": _tool_res.get("title") or "İnteraktif simülasyonu aç"
+                            }
+                            yield f"data: {json.dumps({'render_done': _payload}, ensure_ascii=False)}\n\n"
+                        else:
+                            yield f"data: {json.dumps({'thinking': '✓ Veriyi aldım, yazıyorum...'}, ensure_ascii=False)}\n\n"
 
                 # Final sonucu al (timeout güvencesi)
                 try:

@@ -198,6 +198,100 @@
 .msg.bot code[class*="language-"] { font-family: "SF Mono", Menlo, monospace; }
 
 /* ═══════════════════════════════════════════════════════════════
+   Oturum 25.31 — Render Pending → Ready inline kart (Neo UX direktifi)
+   "Önce text, sonra görsel butonu" akışı için pedagojik bekleme
+   ═══════════════════════════════════════════════════════════════ */
+.msg.bot .render-pending-card {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(110deg,
+    rgba(199,111,62,0.08) 0%,
+    rgba(167,139,250,0.10) 50%,
+    rgba(199,111,62,0.08) 100%);
+  background-size: 200% 100%;
+  animation: renderPendingShimmer 2.5s ease-in-out infinite;
+  border: 1px solid rgba(199,111,62,0.25);
+  border-radius: 12px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 4px 12px rgba(199,111,62,0.08);
+}
+@keyframes renderPendingShimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.msg.bot .render-spinner {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border: 3px solid rgba(199,111,62,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: renderSpin 0.9s linear infinite;
+}
+@keyframes renderSpin {
+  to { transform: rotate(360deg); }
+}
+.msg.bot .render-pending-text {
+  flex: 1; min-width: 0;
+}
+.msg.bot .render-pending-title {
+  font-size: 13.5px; font-weight: 600; color: var(--fg);
+  letter-spacing: 0.2px;
+}
+.msg.bot .render-pending-sub {
+  font-size: 11.5px; color: var(--fg-muted); margin-top: 2px;
+  font-style: italic;
+}
+
+/* HAZIR — tıklanabilir buton (smooth dönüşüm) */
+.msg.bot .render-ready-card {
+  margin-top: 14px;
+  animation: renderReadyAppear 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes renderReadyAppear {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.msg.bot .render-ready-link {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: white !important;
+  text-decoration: none;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(199,111,62,0.28);
+  transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+  cursor: pointer;
+}
+.msg.bot .render-ready-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(199,111,62,0.40);
+  filter: brightness(1.05);
+}
+.msg.bot .render-ready-link:active {
+  transform: translateY(0);
+}
+.msg.bot .render-ready-icon {
+  font-size: 26px; flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+.msg.bot .render-ready-text {
+  flex: 1; min-width: 0; display: flex; flex-direction: column;
+}
+.msg.bot .render-ready-title {
+  font-size: 14px; font-weight: 700; letter-spacing: 0.2px;
+}
+.msg.bot .render-ready-sub {
+  font-size: 11.5px; opacity: 0.88; margin-top: 1px;
+  font-weight: 400;
+}
+.msg.bot .render-ready-arrow {
+  font-size: 22px; flex-shrink: 0; font-weight: 700;
+  transition: transform 0.2s;
+}
+.msg.bot .render-ready-link:hover .render-ready-arrow {
+  transform: translateX(3px);
+}
+
+/* ═══════════════════════════════════════════════════════════════
    Oturum 25.31 — 7 yeni eğitim odaklı renderer (Neo direktifi)
    ═══════════════════════════════════════════════════════════════ */
 
@@ -4127,6 +4221,43 @@ async function doSend() {
           // Onceden hemen siliyorduk → backend chunk gecikirse arada bos ekran kaliyordu
           // (kullanici 'imlec yanıp sönüyor' raporu).
           // Now: thinking gosterge ilk gercek chunk'a kadar dursun.
+        }
+
+        // ── render_pending: bot make_render_link cagiriyor — text okurken arkada hazirlaniyor
+        if (d.render_pending && botMsg) {
+          // Bot mesajinin ALTINA pending kart ekle
+          let card = botMsg.querySelector('.render-pending-card');
+          if (!card) {
+            card = document.createElement('div');
+            card.className = 'render-pending-card';
+            card.innerHTML = `
+              <div class="render-spinner"></div>
+              <div class="render-pending-text">
+                <div class="render-pending-title">🎨 İnteraktif görsel hazırlanıyor</div>
+                <div class="render-pending-sub">Metni okurken arka planda üretiliyor...</div>
+              </div>`;
+            botMsg.appendChild(card);
+            smartScroll();
+          }
+        }
+        // ── render_done: tool bitti, pending kart → tiklanabilir butona donus
+        if (d.render_done && botMsg) {
+          const card = botMsg.querySelector('.render-pending-card');
+          const url = d.render_done.url || d.render_done;
+          const title = d.render_done.title || "İnteraktif simülasyonu aç";
+          if (card) {
+            card.className = 'render-ready-card';
+            card.innerHTML = `
+              <a href="${url}" target="_blank" rel="noopener" class="render-ready-link">
+                <span class="render-ready-icon">🎨</span>
+                <span class="render-ready-text">
+                  <span class="render-ready-title">${title}</span>
+                  <span class="render-ready-sub">Hazır — tıkla, yeni sekmede aç</span>
+                </span>
+                <span class="render-ready-arrow">→</span>
+              </a>`;
+            smartScroll();
+          }
         }
 
         // ── chunk: asıl cevap — token token

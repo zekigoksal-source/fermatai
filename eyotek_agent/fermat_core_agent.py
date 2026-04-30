@@ -4521,10 +4521,15 @@ class FermatCoreAgent:
                 }
 
             # Streaming: tool çalışmadan önce kullanıcıya bilgi ver
+            # Oturum 25.31 — Tool ismi ozel handling icin gercek isim gonderilir
             if self._stream_queue is not None:
                 try:
-                    _tool_names = ", ".join(tc.name for tc in tool_calls[:3])
-                    await self._stream_queue.put(("tool_start", _tool_names))
+                    # Tek tool varsa ismi direk yolla (frontend make_render_link'i tanir)
+                    if len(tool_calls) == 1:
+                        await self._stream_queue.put(("tool_start", tool_calls[0].name))
+                    else:
+                        _tool_names = ", ".join(tc.name for tc in tool_calls[:3])
+                        await self._stream_queue.put(("tool_start", _tool_names))
                 except Exception:
                     pass
 
@@ -4536,9 +4541,19 @@ class FermatCoreAgent:
                 tool_results = await asyncio.gather(*[_run_one_tool(tc) for tc in tool_calls])
 
             # Streaming: tool bitti
+            # Oturum 25.31 — make_render_link sonucu (URL) frontend'e iletilir
             if self._stream_queue is not None:
                 try:
-                    await self._stream_queue.put(("tool_done", len(tool_calls)))
+                    if len(tool_calls) == 1 and tool_calls[0].name == "make_render_link":
+                        # Tool sonucunun JSON content'inden URL cikar
+                        try:
+                            _content = tool_results[0].get("content", "")
+                            _parsed = json.loads(_content) if isinstance(_content, str) else _content
+                            await self._stream_queue.put(("tool_done", ("make_render_link", _parsed)))
+                        except Exception:
+                            await self._stream_queue.put(("tool_done", ("make_render_link", None)))
+                    else:
+                        await self._stream_queue.put(("tool_done", len(tool_calls)))
                 except Exception:
                     pass
 

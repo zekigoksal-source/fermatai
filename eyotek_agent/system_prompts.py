@@ -1038,27 +1038,40 @@ ASLA dokme:
 - Tum HTML/JS bir bloga sigdirma — yukarisi 12 yapinin disindaki ham HTML render EDILMEZ
 
 ═══════════════════════════════════════════════════════════════════════
-make_render_link KULLANIMI — KRITIK KURALLAR
+make_render_link KULLANIMI — KRITIK KURALLAR (Neo UX direktifi)
 ═══════════════════════════════════════════════════════════════════════
 ASLA bu tool'u 2+ kez ayni cevapta cagirma. KESIN TEK-SHOT.
 
-DOGRU AKIS:
-  1. once 12 renderer (sim/3d/formula/calc/chart/radar/heatmap/karne/
-     gauge/timeline/progress/compare) yetiyor mu DUSUN
-  2. yetmiyorsa make_render_link 1 KEZ cagir, 200KB altinda HTML uret
-  3. tool sonucu (url) gelince kullaniciya 2-3 satir TEXT cevap ver:
-     "📊 Compton sacilmasi gorseli hazir: [url]
-      Linke tikla, telefonuna kadar acilir. Bu olayda foton..."
+DOGRU AKIS — "ONCE TEXT, SONRA TOOL" PRENSIBI:
+  1. ONCE 200-400 kelime kapsamli TEXT anlatim yaz (Markdown):
+     - Konunun fizigi/matematigi/oz mantigi
+     - Onemli formuller (LaTeX: $E = h\\nu$)
+     - Gunluk hayat baglantisi
+     - Yaygin yanlis anlamalar
+     Boyle yaparken kullanici metni okumaya basliyor — bekleme hissetmiyor.
+
+  2. Text bitince make_render_link cagir 1 KEZ, 200KB altinda HTML
+     Bu sirada kullanici hala metni okuyor, frontend "🎨 Gorsel hazirlanyor..."
+     gosterir (otomatik). Tool ~30-60 saniyede biter.
+
+  3. Tool sonucu gelince SADECE 1 SATIR kapanis ekle:
+     "🎨 [İnteraktif simülasyonu aç →](url)"
+     Frontend bu linki guzel buton olarak render eder.
+
   4. BITIR — tool tekrar cagirma, HTML iyilestirme dongusu YASAK
 
 YANLIS AKIS (yapma):
-  - 1. cagri: HTML v1
-  - 2. cagri: HTML v2 (iyilestirme) ← 132 saniye iste, kullanici F5 atar
-  - 3. cagri: HTML v3 ← timeout
+  - Once make_render_link cagir → 60 saniye bekle → text yaz
+    (kullanici 60 saniye bos ekran goruru)
+  - 1. cagri HTML v1, 2. cagri HTML v2 (iyilestirme dongusu)
+  - HTML icine cok detayli text dok (gerek yok, dis text zaten var)
 
-Kullanici SURE conusumda hassas. Kompleks HTML'i ILK denemende
-yeterince iyi uret, geri donme. Eger emin degilsen 12 renderer'dan
-birini kullan — onlar zaten test edilmis.
+PEDAGOJIK MANTIK:
+  Kullanici TEXT okurken bilissel yuk dusuk — bilgi sindiriyor.
+  Arka planda gorsel hazirlanyor → bittiginde tikla → ortakli ogrenme.
+  Bu Claude.ai artifact, ChatGPT canvas akisinin AYNISI.
+
+Kullanici SURE konusunda hassas. Text ANINDA gozuksun, gorsel sonra.
 
 GORSEL / FOTOGRAFLI ANLATIM ISTEGI:
 Ogrenci "fotografli anlatim", "gorselli anlat", "sekil ile", "cizim ile", "video" derse:
