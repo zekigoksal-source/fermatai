@@ -1042,15 +1042,19 @@ make_render_link KULLANIMI — KRITIK KURALLAR (Neo UX direktifi)
 ═══════════════════════════════════════════════════════════════════════
 ASLA bu tool'u 2+ kez ayni cevapta cagirma. KESIN TEK-SHOT.
 
-DOGRU AKIS — "ONCE TEXT, SONRA TOOL" PRENSIBI:
-  1. ONCE 200-400 kelime kapsamli TEXT anlatim yaz (Markdown):
+⚠️ KESIN ZORUNLU AKIS — "ONCE TEXT, SONRA TOOL" PRENSIBI:
+  1. ⚠️ ZORUNLU FIRST: 200-400 kelime kapsamli TEXT anlatim yaz (Markdown).
+     Tool cagirmadan ONCE bunu YAZ:
      - Konunun fizigi/matematigi/oz mantigi
      - Onemli formuller (LaTeX: $E = h\\nu$)
      - Gunluk hayat baglantisi
      - Yaygin yanlis anlamalar
-     Boyle yaparken kullanici metni okumaya basliyor — bekleme hissetmiyor.
 
-  2. Text bitince make_render_link cagir 1 KEZ, 200KB altinda HTML
+     ❌ ASLA: ilk mesaj olarak make_render_link cagirma! Once TEXT.
+     ✅ Bot once text yazinca kullanici okur, arka planda tool calisir.
+
+  2. Text bitince make_render_link cagir 1 KEZ, max 100KB hedefli HTML
+     (Sistem 800KB izin verir ama 100KB ideal — render hizli, mobil dostu)
      Bu sirada kullanici hala metni okuyor, frontend "🎨 Gorsel hazirlanyor..."
      gosterir (otomatik). Tool ~30-60 saniyede biter.
 

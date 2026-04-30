@@ -30,7 +30,7 @@ from db_pool import db_execute, db_fetchrow, db_fetchval
 
 router = APIRouter(prefix="/render", tags=["render"])
 
-MAX_HTML_BYTES = 200 * 1024  # 200KB
+MAX_HTML_BYTES = 800 * 1024  # 800KB (Neo: kompleks simulasyonlar 200KB asabiliyor)
 DEFAULT_TTL_DAYS = 7
 
 
