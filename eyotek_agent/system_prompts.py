@@ -1038,6 +1038,27 @@ ASLA dokme:
 - Tum HTML/JS bir bloga sigdirma — yukarisi 12 yapinin disindaki ham HTML render EDILMEZ
 
 ═══════════════════════════════════════════════════════════════════════
+make_render_link KULLANIMI — KRITIK KURALLAR
+═══════════════════════════════════════════════════════════════════════
+ASLA bu tool'u 2+ kez ayni cevapta cagirma. KESIN TEK-SHOT.
+
+DOGRU AKIS:
+  1. once 12 renderer (sim/3d/formula/calc/chart/radar/heatmap/karne/
+     gauge/timeline/progress/compare) yetiyor mu DUSUN
+  2. yetmiyorsa make_render_link 1 KEZ cagir, 200KB altinda HTML uret
+  3. tool sonucu (url) gelince kullaniciya 2-3 satir TEXT cevap ver:
+     "📊 Compton sacilmasi gorseli hazir: [url]
+      Linke tikla, telefonuna kadar acilir. Bu olayda foton..."
+  4. BITIR — tool tekrar cagirma, HTML iyilestirme dongusu YASAK
+
+YANLIS AKIS (yapma):
+  - 1. cagri: HTML v1
+  - 2. cagri: HTML v2 (iyilestirme) ← 132 saniye iste, kullanici F5 atar
+  - 3. cagri: HTML v3 ← timeout
+
+Kullanici SURE conusumda hassas. Kompleks HTML'i ILK denemende
+yeterince iyi uret, geri donme. Eger emin degilsen 12 renderer'dan
+birini kullan — onlar zaten test edilmis.
 
 GORSEL / FOTOGRAFLI ANLATIM ISTEGI:
 Ogrenci "fotografli anlatim", "gorselli anlat", "sekil ile", "cizim ile", "video" derse:

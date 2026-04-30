@@ -2514,10 +2514,22 @@ async def run_tool(name: str, input_data: dict,
             enriched["_caller_channel"] = caller_channel  # 22.1n-rev Atlas #16
             result = await fn(enriched)
         elif name == "make_render_link":
-            # Oturum 25.31 — render link icin caller bilgisi
-            enriched = dict(input_data)
-            enriched["_caller_phone"] = caller_phone
-            result = await fn(enriched)
+            # Oturum 25.31 — render link icin caller bilgisi + LOOP GUARD
+            # Bot ayni conversation'da 1 KEZ cagirabilir (132s loop bug onleme)
+            try:
+                _calls_so_far = sum(1 for _t in self.last_tools_called if _t == "make_render_link")
+            except Exception:
+                _calls_so_far = 0
+            if _calls_so_far >= 1:
+                logger.warning(f"🚫 make_render_link tek-shot guard: {_calls_so_far}. cagri engellendi")
+                result = {
+                    "success": False,
+                    "error": "make_render_link bu sohbette zaten kullanildi. Onceki linki kullaniciya sun, yeni HTML uretme. Eger ilk versiyonun yetersizse 12 renderer (sim/3d/formula vb.) ile devam et."
+                }
+            else:
+                enriched = dict(input_data)
+                enriched["_caller_phone"] = caller_phone
+                result = await fn(enriched)
         elif name == "get_atlas_trend":
             enriched = dict(input_data)
             enriched["_caller_role"] = caller_role
