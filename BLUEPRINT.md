@@ -1,6 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 28 Nisan 2026 · **Oturum:** 25.29 (gece final) — Unified Context Engine + Service Layer + Brain-Centralized İlke
+> **Belge tarihi:** 1 Mayıs 2026 (gece 02:30) · **Oturum:** 25.37 — **Pedagojik Sıçrama: 28 Renderer + Davranış Kuralı + Aktif Hatırlatma + Render Cache**
+> **Önceki güncelleme:** 28 Nisan 2026, Oturum 25.29 (gece final) — Unified Context Engine + Service Layer
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)
 > **Hedef okuyucu:** Yeni bir LLM, geliştirici veya iş ortağı. Sistemin teknik yetkinlik tablosunu LLM'e attığında doyurucu bir mimari resim alır.
 > **Amaç:** Mimari + kapasite + sağlık + güvenlik + workflow tek dokümanda — proje teknik durumunu tam yansıtan referans.
@@ -50,7 +51,7 @@
 - **Vektör arama:** pgvector (rag_content tablosu, 1024-dim)
 - **Embedding:** Ollama nomic-embed-text:latest (VPS lokal)
 
-### Mevcut durum (28 Nisan 2026 — Oturum 25.29 akşam)
+### Mevcut durum (1 Mayıs 2026 — Oturum 25.37 gece final)
 
 **Production yetkinlik özeti:**
 
@@ -63,6 +64,11 @@
 | Test paketi | 138 unit + 8 round otonom (33/33 PASS) |
 | LLM provider sayısı | 3 (Cerebras-primary + Groq fallback + Claude tool-call) |
 | KVKK uyumluluk | Test ile kanıtlanmış sızıntı yok |
+| **Görsel renderer (web kanal)** | **28** (Oturum 25.37, eski 22 + 6 pedagojik) |
+| **External API tool** | 16 (NASA, Wolfram, Wiki, arXiv, DALL-E, PubChem, USGS, PDB, TTS, Suno, Code) |
+| **Toplam Claude tool dispatch** | **118** (Oturum 25.37, eski 112 + 6 yeni) |
+| **Davranış kuralı (canlı)** | 3 (yönetim_isim_yasak, eyotek_db_oncelik, sezon_mesaj_yasak) |
+| **Render cache** | Aktif (topic_hash + 30g TTL, ~%40-60 maliyet düşüşü tahmini) |
 
 **Veri sistemleri canlı:**
 
@@ -79,6 +85,42 @@
 | routing_stats | 691+ | Her mesaj canlı kayıt |
 | sync_run_log | 3 | Audit trail (sync_recent_exams) |
 | data_freshness | 11 modül | success/failure ayrı tracking |
+| **bot_behavior_rules** | **3** | Oturum 25.37 — admin kuralı yazar, prompt'a inject olur |
+| **active_recalls** | 1+ | Oturum 25.37 — Ebbinghaus spaced repetition (24/72/168h) |
+| **render_artifacts** | 37+ | Oturum 25.31+25.37 — make_render_link + topic_hash cache (1MB max) |
+
+**Oturum 25.37 — Pedagojik Sıçrama Tablosu (1 Mayıs 2026 gece, 3.5 saat):**
+
+| Madde | Önce | Sonra | Etki |
+|---|---|---|---|
+| Renderer sayısı | 22 | **28** | +6 pedagojik (steps/kgraph/quiz/compare2/recall/compound) |
+| make_render_link guard | 5/session blok | **12/h sliding window + 60s per-konu cooldown** | Akış kırılmıyor |
+| HTML max | 200KB | **1024KB (1MB)**, ideal 200-400KB | Karmaşık fizik simleri geçer |
+| Render cache | Yok | **Topic_hash sha256 + Türkçe normalize, 30g TTL** | Aynı title reuse → ~%40-60 maliyet düşüşü |
+| mol3d hata | Beyaz ekran | **3-retry + spinner + helpful error card** | "make_render_link ile dene" yönlendirme |
+| Davranış kuralı persistence | Prompt'a yaz (şişme) | **bot_behavior_rules DB tablosu + role-aware inject** | 3 kural canlı, prompt sabit kalır |
+| Active recall | Yok | **Ebbinghaus spaced repetition (24/72/168h, x2.5 interval)** | Pasif izleme → aktif öğrenme |
+| Knowledge graph | Yok | **D3.js force layout (zayıf=kırmızı, tıklayınca konu)** | Bilgi haritası görünür |
+| UX cleanup | 6 reaction + 2 thumbs (8 buton) | **3 reaction (👍 👎 ❤️) tek satır** | Kalabalık azaldı, feedback API korundu |
+
+**3 yeni modül (Oturum 25.37):**
+
+| Dosya | Satır | Rol |
+|---|---|---|
+| `behavior_rules.py` | 200 | bot_behavior_rules tablo + add/list/deactivate + role-aware prompt block builder |
+| `active_recall.py` | 180 | Ebbinghaus algoritması (Anki x2.5), schedule/get_pending/mark_completed |
+| `knowledge_graph.py::build_graph_for_student` | +110 | D3-uyumlu kgraph_block (concept_nodes + mastery + topic_tracker fallback) |
+
+**6 yeni Claude tool (Oturum 25.37):**
+
+| Tool | Rol Erişimi | Amaç |
+|---|---|---|
+| `add_behavior_rule` | admin/mudur | Konuşmada öğrenilen kuralı DB'ye yaz, prompt'a inject olur |
+| `list_behavior_rules` | admin/mudur | Mevcut kuralları gör + filter (scope/category) |
+| `deactivate_behavior_rule` | admin/mudur | Kural sil yerine deaktive (audit log korunur) |
+| `schedule_recall` | öğrenci kendi profili | N saat sonra konu hatırlatması planla |
+| `get_pending_recalls` | öğrenci kendi profili | Bekleyen recall listesi |
+| `build_knowledge_graph` | admin/mudur/öğrenci kendi | D3 kgraph_block üret, bot direkt cevaba yapıştırır |
 
 **Mimari kabiliyetler:**
 
@@ -489,7 +531,7 @@ CDN'ler: Chart.js 4.4, p5.js 1.9.4, Three.js 0.160, GSAP 3.12, KaTeX 0.16. Cereb
 
 ## 7. Claude Tool Ekosistemi
 
-55 tool, 4 kategoride. Her tool `tool_definitions.py`'da Anthropic schema, `fermat_core_agent.py`'da `_tool_*` wrapper.
+**118 tool dispatch** (Oturum 25.37'de 55 → 118 büyüme: 16 external API + 6 davranış/recall/kgraph + render + diğer). Her tool `tool_definitions.py`'da Anthropic schema, `fermat_core_agent.py`'da `_tool_*` wrapper.
 
 ### Akademik veri (öğrenci için)
 - `get_student_analytics(soz_no)` — Sınav, davranış, devamsızlık özet
@@ -540,6 +582,26 @@ CDN'ler: Chart.js 4.4, p5.js 1.9.4, Three.js 0.160, GSAP 3.12, KaTeX 0.16. Cereb
   ACL: hassas alt sayfalar (genel/ozel/odeme/taksit/borc/indirim) sadece admin/mudur
 
 Bu üç tool birlikte **agentic Eyotek erişiminin tamamını** karşılar — bot artık tahmin yerine canlı veri çeker.
+
+### Pedagojik araçlar (Oturum 25.37 — Neo direktifi)
+
+- **`make_render_link(html, title)`** — Kompleks HTML → kalıcı UUID link
+  - 1MB max, 7 gün TTL, kalite skoru 0-100 (canvas/animation/interaction/error_handling/responsive/formula/optimal_size/labels)
+  - **Render cache** (Oturum 25.37): aynı title sha256 hash 30 gün reuse → maliyet düşüşü
+  - **Cooldown** (Oturum 25.37): 12/h sliding window + 60s per-konu lock
+- **`add_behavior_rule(rule_text, scope, category, priority, ttl_hours)`** — admin
+  - Konuşmada öğrenilen kalıcı kuralı DB'ye yaz, prompt'a inject olur
+  - Scope: global / admin / mudur / ogretmen / rehber / ogrenci / veli
+  - Category: data_priority / naming / safety / tone / format / render / misc
+- **`list_behavior_rules(scope_filter, only_active)`** — admin
+- **`deactivate_behavior_rule(rule_id)`** — admin (silmek yerine deaktive, audit korunur)
+- **`schedule_recall(soz_no, konu, ders, context_summary)`** — öğrenci kendi profili
+  - Ebbinghaus spaced repetition, default 24h sonra hatırlat
+  - 6h içinde aynı konu → skip (duplicate önle)
+- **`get_pending_recalls(soz_no)`** — öğrenci kendi profili
+- **`build_knowledge_graph(soz_no)`** — öğrenci kendi profili / admin tüm öğrenciler
+  - D3.js force layout: nodes (konu mastery + size), links (prerequisite edges)
+  - Frontend: zayıf=kırmızı, güçlü=yeşil, tıklayınca "X konusunu anlat" auto-prompt
 
 ---
 

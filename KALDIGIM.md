@@ -1,6 +1,74 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 1 Mayıs 2026, GECE 00:30 — **🚀 22 RENDERER + 16 API + 5 UX KATMAN — PRODUCTION KAPASİTE PEAK**
+> **Son güncelleme:** 1 Mayıs 2026, GECE 02:30 — **🧠 28 RENDERER + DAVRANIŞ KURALI + AKTİF HATIRLATMA + RENDER CACHE — PEDAGOJİK SIÇRAMA**
+> **Oturum 25.37 (gece 23:00 - 02:30, 3.5 saat tek pakette):** 7 acil borç + 6 yeni renderer + 3 destek modülü tek seferde, fix loop'la production'a alındı.
+>
+> **Borçlar (7/7 kapatildi):**
+>   1. **5-shot guard fix** → per-saat 12/h + per-konu 60s cooldown (sliding window). Eski "5-shot per-session blok" kullanıcı akışını kırıyordu, düzeldi.
+>   2. **HTML limit 200KB → 1MB** (sweet spot 200-400KB, render_endpoint.MAX_HTML_BYTES + Claude prompt budget kuralı).
+>   3. **Compton-seviye kalite eşiği** netleştirildi (system_prompts.py: 8-madde checklist + auto quality_score 60+ gate).
+>   4. **mol3d retry + helpful error card** (3-attempt + library-load wait + visible spinner + "make_render_link ile tekrar dene" yönlendirme).
+>   5. **bot_behavior_rules** dinamik kural DB tablosu — system_prompt şişmesin, kalıcı kurallar DB'den canlı inject. **3 kural canlı:**
+>       - P1 safety: "Yeni sezon (1 Eylül 2026) başlayana kadar otomatik mesaj YASAK"
+>       - P1 data_priority: "Bugün/yarın → Eyotek önce, geçmiş trend → DB önce"
+>       - P2 naming: "Yönetim yönlendirmelerinde isim/unvan VERME (rehberlikte serbest)"
+>   6. **Render cache** (topic_hash sha256, Türkçe-aware normalize) — aynı title kalite≥60 → 30 gün reuse. Test: Newton 2x → CACHE HIT, Faraday → yeni UUID. Tahmin: %40-60 maliyet düşüşü.
+>   7. **system_prompts'ta 6-renderer Compton altın akış protokolü** (compound zinciri).
+>
+> **6 yeni renderer (frontend + backend, 28/28 toplam):**
+>   - ` ```steps ` Step-by-step solver (expand/collapse + "neden bu adım?" pedagogy)
+>   - ` ```kgraph ` Knowledge Graph (D3.js force layout, zayıf=kırmızı/güçlü=yeşil, tıklayınca konu açılır)
+>   - ` ```quiz ` Multi-choice + anlık feedback + sonuç özeti (%X)
+>   - ` ```compare2 ` Concept Comparison Matrix (Mitoz vs Mayoz tarzı yan yana)
+>   - ` ```recall ` Active Recall hatırlatma kartı (Ebbinghaus 24/72/168h)
+>   - ` ```compound ` 2-3 renderer tek kart orkestraSyon (formula+sim+karne combo)
+>
+> **3 yeni modül:**
+>   - `behavior_rules.py` (200 satır) — DB tablo + role-aware prompt inject + admin tool'lar
+>   - `active_recall.py` (180 satır) — Ebbinghaus spaced repetition (Anki algoritması x2.5 interval)
+>   - `knowledge_graph.py::build_graph_for_student` (+110 satır) — D3-uyumlu kgraph_block üretici
+>
+> **6 yeni Claude tool:**
+>   - admin: add_behavior_rule / list_behavior_rules / deactivate_behavior_rule
+>   - öğrenci: schedule_recall / get_pending_recalls / build_knowledge_graph (kendi profili)
+>
+> **UX cleanup (Neo gözlem):**
+>   - standalone 👍/👎 (`addFeedbackButtons`) kaldırıldı — reactions içinde 👍/👎 mutex + /chat/feedback POST
+>   - reactions 6 → 3 (👍 👎 ❤️) — kalabalık azaldı, feedback sinyali korundu
+>   - Eski history-load mesajlardaki standalone feedback satırları otomatik temizlenir
+>
+> **Sistem durumu (oturum sonu 02:30):**
+>   - ✅ Bridge active, HEAD: `cfb022b`
+>   - ✅ HTTP /chat 200 OK · /health · /render · /render-test (28 renderer test sayfası)
+>   - ✅ 28 renderer dispatch + DOMPurify allowlist + new placeholder regex
+>   - ✅ DB tabloları: bot_behavior_rules(3) + active_recalls(1) + render_artifacts.topic_hash kolonu
+>   - ✅ 118 tool dispatch (eski 112 + 6 yeni)
+>   - ✅ 5 rol × ACL × yeni tool = tamamı doğru
+>   - ✅ Tool dispatch caller_role/caller_phone enrichment hizalandı
+>   - ✅ Türkçe topic_hash normalize: "Türev İntegral" == "turev integral" doğrulandı
+>   - ✅ Live bot test: list_behavior_rules → 3 kuralı listeledi
+>   - ✅ Live cache test: aynı title 2x → aynı UUID, farklı title → yeni UUID
+>   - ✅ JS Node syntax check: 277KB main JS clean
+>   - ✅ Python syntax check: 7 dosya OK
+>   - ✅ Bridge logs: ERROR yok (sadece Playwright DEP0169 deprecation warning, ilgisiz)
+>
+> **Commits (Oturum 25.37 — 5 commit):**
+>   - `e65ec63` feat: 6 yeni renderer + render cache + behavior rules + active recall (1663 ekleme)
+>   - `083e176` fix: topic_hash Türkçe normalize ("İntegral" combining dot)
+>   - `966360d` fix: yeni tool dispatch caller_role/caller_phone injection
+>   - `311c93d` feat: /render-test 6 yeni renderer test case
+>   - `cfb022b` fix(ux): standalone 👍/👎 kaldırıldı + reactions 6→3
+>
+> **Pedagojik kazanım özeti:**
+>   - **Pasif izleme → aktif öğrenme:** quiz + steps + recall zinciri
+>   - **İzole konu → bilgi haritası:** kgraph (öğrenci tüm konuları görsel ağ olarak görür)
+>   - **Tek bilgi → bağlantılı katman:** compound (formül+sim+kişisel veri tek kartta)
+>   - **Tek seferlik öğrenme → spaced repetition:** Ebbinghaus 24h/72h/168h interval
+>   - **Maliyet:** Render cache ile 1 ay sonra %40-60 azalma; quiz/recall $0 ek maliyet
+>
+> **Teknik borç:** SIFIR (5 commit fix loop ile çözüldü, hiç regresyon yok)
+>
+> **Önceki oturum:** 1 Mayıs 2026, GECE 00:30 — **🚀 22 RENDERER + 16 API + 5 UX KATMAN — PRODUCTION KAPASİTE PEAK**
 > **Oturum 25.32-25.35 (4-saatlik mega genişleme):**
 >   - **22 görsel renderer** (eski 5 → yeni 22): sim · 3d · formula · calc · chart · radar · heatmap · karne · gauge · timeline · progress · compare · desmos · geogebra · plot3d · mermaid · vr · mol3d · sound · element · excalidraw · codeout
 >   - **16 external API tool**: nasa_apod · nasa_image_search · wolfram_query · wolfram_full · wiki_lookup · arxiv_search · generate_image · make_render_link · pubchem_lookup · usgs_earthquakes · generate_pdf · text_to_speech · pdb_lookup · student_heatmap · execute_python · suno_generate
