@@ -3098,27 +3098,28 @@ function rerender3D(el) {
           } else {
             // 25.36-fix (Neo bug): bilinmeyen scene → mor sphere fallback ANLAMSIZ
             // Kullaniciya net hata + alternatif öneri göster
-            wrap.innerHTML = `
-              <div class="render-title">⚠️ Bilinmeyen 3D Sahne: "${escapeHtml(scene_name)}"</div>
-              <div style="padding:20px;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);border-radius:10px;font-size:13px;line-height:1.6;color:var(--fg);">
-                <div style="font-weight:600;margin-bottom:8px;">Bot bu scene için preset bulamadı.</div>
-                <div style="margin-bottom:10px;">Mevcut <code>\`\`\`3d</code> presetleri:</div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
-                  ${["sphere","blackhole","lattice","magnetic_field","sine_wave","calabi_yau","dna_helix","water","atom_proper"].map(s =>
-                    `<code style="background:rgba(199,111,62,0.10);padding:3px 8px;border-radius:6px;font-size:11.5px;color:var(--accent);">${s}</code>`).join("")}
-                </div>
-                <div style="font-size:12px;color:var(--fg-muted);">
-                  💡 Bu konu için daha iyisi: bota <strong>"${escapeHtml(scene_name)} için ```mol3d veya make_render_link ile özel simülasyon yap"</strong> de.
-                  Biyoloji hücreleri (sperm, nöron, hücre) için <code>make_render_link</code> Three.js veya p5.js ile özel sahne çizebilir.
-                </div>
-              </div>`;
+            const presetList = ["sphere","blackhole","lattice","magnetic_field","sine_wave","calabi_yau","dna_helix","water","atom_proper"];
+            const chips = presetList.map(function(s){
+              return '<code style="background:rgba(199,111,62,0.10);padding:3px 8px;border-radius:6px;font-size:11.5px;color:var(--accent);">' + s + '</code>';
+            }).join("");
+            wrap.innerHTML =
+              '<div class="render-title">⚠️ Bilinmeyen 3D Sahne: "' + escapeHtml(scene_name) + '"</div>' +
+              '<div style="padding:20px;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);border-radius:10px;font-size:13px;line-height:1.6;color:var(--fg);">' +
+                '<div style="font-weight:600;margin-bottom:8px;">Bot bu scene için preset bulamadı.</div>' +
+                '<div style="margin-bottom:10px;">Mevcut 3D presetleri:</div>' +
+                '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">' + chips + '</div>' +
+                '<div style="font-size:12px;color:var(--fg-muted);">' +
+                  '💡 Bu konu için bota <strong>"make_render_link ile özel simülasyon yap"</strong> de. ' +
+                  'Biyoloji hücreleri (sperm, nöron, hücre) için make_render_link Three.js veya p5.js ile özel sahne çizebilir.' +
+                '</div>' +
+              '</div>';
             return; // sphere ÇİZME
           }
+          // (mainObj burada tanımlı kalır, aşağıdaki rotate döngüsü için)
           {
-            // (eski default sphere — artık ulaşılmıyor, ama scope için tutuluyor)
             const m = new THREE.Mesh(
               new THREE.SphereGeometry(config.radius || 1, 32, 32),
-              new THREE.MeshStandardMaterial({ color: parseInt((config.color || "0xa78bfa").toString().replace("0x", ""), 16) || 0xa78bfa })
+              new THREE.MeshStandardMaterial({ color: 0xa78bfa })
             );
             scene.add(m);
             mainObj = m;
