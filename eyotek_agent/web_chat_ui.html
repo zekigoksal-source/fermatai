@@ -1475,7 +1475,7 @@ function rerenderSims(el) {
   #defaultCanvas0{display:block;margin:0 auto;border:1px solid #e5e7eb;border-radius:6px}
   .err{color:#c00;background:#fee;padding:8px;border-radius:6px;font-size:12px;margin-top:8px;font-family:monospace}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"><\/script>
 </head><body>
 <script>
 try {
@@ -1488,7 +1488,7 @@ window.addEventListener('error', function(e) {
   d.textContent = 'Sim hatası: ' + (e.message || 'bilinmeyen');
   document.body.appendChild(d);
 });
-</script>
+<\/script>
 </body></html>`;
       iframe.srcdoc = html;
       wrap.appendChild(iframe);
