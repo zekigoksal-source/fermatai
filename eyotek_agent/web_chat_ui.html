@@ -652,6 +652,34 @@ html[data-theme="dark"] .msg.bot .karne-zayif { color: #FCA5A5; }
   font-size: 11px; color: var(--fg-muted); margin-top: 4px;
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   Oturum 25.38 — PhET iframe + YouTube embed CSS
+   PhET = DESTEK altyapı (kendi simulasyonlarımız 1. sınıf)
+   YouTube = kaliteli ders videosu önerisi
+   ════════════════════════════════════════════════════════════════════ */
+.msg.bot .phet-embed {
+  width: 100%; max-width: 800px; margin: 12px auto;
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0,0,0,.15);
+  background: var(--panel, #1f2937);
+}
+.msg.bot .phet-embed iframe {
+  width: 100%; height: 500px; border: 0; display: block;
+}
+.msg.bot .yt-embed {
+  width: 100%; max-width: 720px; margin: 12px auto;
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0,0,0,.12);
+  position: relative;
+}
+.msg.bot .yt-embed iframe {
+  width: 100%; aspect-ratio: 16 / 9; border: 0; display: block;
+}
+@media (max-width: 540px) {
+  .msg.bot .phet-embed iframe { height: 380px; }
+  .msg.bot .yt-embed iframe { aspect-ratio: 16 / 9; }
+}
+
 /* 10) TIMELINE — yatay zaman çizgisi */
 .msg.bot .timeline-container {
   background: var(--panel); border: 1px solid var(--border);

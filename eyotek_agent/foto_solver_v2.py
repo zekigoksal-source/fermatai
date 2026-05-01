@@ -198,11 +198,42 @@ async def solve_photo_v2(image_bytes: bytes, user_prompt: str = "",
                          soz_no: str = None, phone: str = None,
                          role: str = "ogrenci") -> str:
     """
-    v2 foto cozum: Vision + post-processing katmanlari.
+    v2 foto cozum: MathPix OCR (preflight) + Vision + post-processing katmanlari.
+
+    Oturum 25.38: MathPix Snip API entegre edildi.
+    - Matematik soruda MathPix daha doğru OCR yapar (~%95 vs Vision ~%75)
+    - MathPix sonucu Claude'a context olarak veriliyor (zenginleştirme, yedekleme değil)
+    - Claude hala görüntüye bakarak pedagojik çözüm üretiyor
     """
-    # 1. Mevcut Vision cozumunu kullan
+    # 0. MathPix preflight (varsa) — paralel başlat, Vision ile birlikte çalışsın
+    mathpix_task = None
+    try:
+        from mathpix_client import is_available as mp_available, ocr_image, format_for_claude
+        if mp_available():
+            mathpix_task = asyncio.create_task(ocr_image(image_bytes))
+    except ImportError:
+        pass
+
+    # 1. Mevcut Vision cozumunu kullan (paralel olarak MathPix bekler)
     from whatsapp_bridge import _solve_photo_question
-    answer = await _solve_photo_question(image_bytes, user_prompt)
+
+    # Eğer MathPix sonucu varsa user_prompt'a context olarak ekle
+    enhanced_prompt = user_prompt
+    if mathpix_task:
+        try:
+            mp_result = await asyncio.wait_for(mathpix_task, timeout=8.0)
+            if mp_result.get("success") and mp_result.get("confidence", 0) > 0.5:
+                mp_context = format_for_claude(mp_result)
+                if mp_context:
+                    enhanced_prompt = (mp_context + "\n\n" + (user_prompt or "")).strip()
+                    logger.info(f"📐 MathPix OCR ekendi: confidence={mp_result.get('confidence'):.0%}, "
+                                f"is_math={mp_result.get('is_math')}, len={len(mp_result.get('text',''))}")
+        except asyncio.TimeoutError:
+            logger.debug("MathPix timeout (>8sn), Vision tek başına devam ediyor")
+        except Exception as e:
+            logger.debug(f"MathPix preflight hata: {e}")
+
+    answer = await _solve_photo_question(image_bytes, enhanced_prompt)
 
     if not answer or "Foto analizi icin" in answer:
         return answer

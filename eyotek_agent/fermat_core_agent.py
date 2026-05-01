@@ -2221,6 +2221,12 @@ TOOL_DISPATCH = {
     "schedule_recall":             lambda p: _tool_schedule_recall(**p),
     "get_pending_recalls":         lambda p: _tool_get_pending_recalls(**p),
     "build_knowledge_graph":       lambda p: _tool_build_knowledge_graph(**p),
+    # Oturum 25.38 (Neo) — PhET + YouTube + Anki + Wolfram step-by-step
+    "search_phet_simulation":      lambda p: _tool_search_phet(**p),
+    "embed_phet_simulation":       lambda p: _tool_embed_phet(**p),
+    "find_youtube_lesson":         lambda p: _tool_find_youtube(**p),
+    "export_anki_deck":            lambda p: _tool_export_anki(**p),
+    "wolfram_step_by_step":        lambda p: _tool_wolfram_step_by_step(**p),
 }
 
 
@@ -2487,6 +2493,84 @@ async def _tool_wolfram_full(query: str = "", **_extra) -> dict:
     try:
         from external_apis_v2 import wolfram_full
         return await wolfram_full(query=query)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_wolfram_step_by_step(query: str = "", scanner: str = "", **_extra) -> dict:
+    """Oturum 25.38 — Wolfram step-by-step Pro."""
+    try:
+        from external_apis_v2 import wolfram_step_by_step
+        return await wolfram_step_by_step(query=query, scanner=scanner)
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# ── Oturum 25.38 — PhET + YouTube + Anki ──
+async def _tool_search_phet(ders: str = "", konu: str = "", limit: int = 3, **_extra) -> dict:
+    try:
+        from phet_catalog import search_simulations
+        results = search_simulations(ders=ders, konu=konu, limit=int(limit or 3))
+        if not results:
+            return {"success": True, "results": [], "hint": "PhET'te eşleşme yok — kendi make_render_link kullan."}
+        return {"success": True, "results": results, "kullanim": "embed_phet_simulation ile birini embed et."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_embed_phet(sim_id: str = "", title: str = "", **_extra) -> dict:
+    try:
+        from phet_catalog import get_iframe_url, PHET_CATALOG
+        if not sim_id:
+            return {"success": False, "error": "sim_id gerekli"}
+        url = get_iframe_url(sim_id)
+        info = PHET_CATALOG.get(sim_id, {})
+        display_title = title or info.get("title") or sim_id
+
+        # Phet block — frontend bunu iframe olarak render edecek
+        phet_block = (
+            f'<div class="phet-embed" style="width:100%;max-width:800px;margin:12px auto;'
+            f'border-radius:12px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.15);">\n'
+            f'  <div style="background:#1f2937;color:white;padding:8px 14px;font-size:13px;">'
+            f'🧪 {display_title} <span style="opacity:.6;font-size:11px">(PhET — Colorado Üni)</span></div>\n'
+            f'  <iframe src="{url}" width="100%" height="500" frameborder="0" allowfullscreen></iframe>\n'
+            f'</div>'
+        )
+        return {
+            "success": True,
+            "sim_id": sim_id,
+            "title": display_title,
+            "iframe_url": url,
+            "phet_block": phet_block,
+            "kullanim": "phet_block alanını direkt cevabına yapıştır.",
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_find_youtube(konu: str = "", ders: str = "", limit: int = 3, **_extra) -> dict:
+    try:
+        from youtube_client import search_videos
+        return await search_videos(konu=konu, ders=ders, limit=int(limit or 3))
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+async def _tool_export_anki(soz_no: int = 0, max_cards: int = 30,
+                             ders_filter: str = "", _caller_phone: str = "", **_extra) -> dict:
+    """Anki .apkg deck export — soz_no boşsa caller'ın profilinden çek."""
+    try:
+        from anki_exporter import build_deck_for_student, is_available as anki_avail
+        if not anki_avail():
+            return {"success": False,
+                    "error": "Anki export şu an pasif (genanki kurulu değil)."}
+        if not soz_no and _caller_phone:
+            from db_pool import db_fetchval
+            soz_no = await db_fetchval(
+                "SELECT soz_no FROM students WHERE phone=$1 LIMIT 1", _caller_phone)
+        if not soz_no:
+            return {"success": False, "error": "soz_no gerekli (öğrenci tanımlanamadı)"}
+
+        return await build_deck_for_student(
+            soz_no=int(soz_no),
+            max_cards=min(int(max_cards or 30), 100),
+            ders_filter=ders_filter or None,
+        )
     except Exception as e:
         return {"success": False, "error": str(e)}
 

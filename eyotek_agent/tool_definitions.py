@@ -2314,6 +2314,94 @@ TOOLS.extend([
     },
 ])
 
+# ────────────────────────────────────────────────────────────────────
+# Oturum 25.38 — 4 yeni dış entegrasyon: PhET, YouTube, Anki, Wolfram step
+# ────────────────────────────────────────────────────────────────────
+TOOLS.extend([
+    {
+        "name": "search_phet_simulation",
+        "description": "PhET (Colorado Üni) interaktif simulasyon kataloğunda ara. "
+                       "ÖNEMLİ: Bu DESTEK altyapı — kendi make_render_link simulasyonların "
+                       "BIRINCI SINIF, daha güzel ve özgün. PhET'i SADECE şu durumlarda kullan: "
+                       "(a) Çok karmaşık/uzun simulasyon (kuantum tüneli, gen-net), "
+                       "(b) Öğrenci özellikle 'PhET' istemişse, "
+                       "(c) make_render_link başarısız olduysa son çare. "
+                       "Genel kuralda ÖNCE make_render_link dene. "
+                       "Dönüş: list[{sim_id, title, ders, konu, iframe_url, lang}]",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "ders": {"type": "string", "description": "Fizik | Kimya | Matematik | Biyoloji | Coğrafya"},
+                "konu": {"type": "string", "description": "Anahtar kelime (örn 'kuvvet', 'sarkaç', 'pH')"},
+                "limit": {"type": "integer", "description": "Maksimum sonuç (default 3)"}
+            }
+        }
+    },
+    {
+        "name": "embed_phet_simulation",
+        "description": "PhET simulasyonunu öğrenci cevabına embed et. ÖNCE search_phet_simulation ile "
+                       "sim_id bul, sonra bu tool ile iframe blok döndür. "
+                       "BU FALLBACK — kendi make_render_link'in 1. sınıf. "
+                       "Dönüş: phet_block (HTML iframe formatında — direkt cevaba yapıştır).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "sim_id": {"type": "string", "description": "PhET sim_id (örn 'pendulum-lab')"},
+                "title": {"type": "string", "description": "Görünen başlık (opsiyonel)"}
+            },
+            "required": ["sim_id"]
+        }
+    },
+    {
+        "name": "find_youtube_lesson",
+        "description": "YouTube'da konu bazlı KALITELİ Türkçe ders videosu ara. "
+                       "Tonguç, Hocalara Geldik, Benim Hocam, 3D Lise gibi resmi kanallarda filtre. "
+                       "View/like skoruna göre sıralı, max 30dk süreli (uzun değil). "
+                       "Dönüş: list[{title, channel, video_id, duration_min, views, url, thumbnail, embed_block}]. "
+                       "embed_block direkt mesaja yapıştırılabilir — öğrenci tıklar/oynar.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "konu": {"type": "string", "description": "Aranacak YKS konusu (örn 'türev grafik yorumu')"},
+                "ders": {"type": "string", "description": "Fizik|Mat|Kimya|Bio (filtre — opsiyonel)"},
+                "limit": {"type": "integer", "description": "Default 3"}
+            },
+            "required": ["konu"]
+        }
+    },
+    {
+        "name": "export_anki_deck",
+        "description": "Öğrencinin active_recall + topic_tracker zayıf konularından Anki .apkg deck üret. "
+                       "Öğrenci .apkg dosyasını telefonuna indirir, Anki Mobile uygulamasında çalışır. "
+                       "Spaced repetition zaten DB'mizde — Anki sadece offline mobil arayüz. "
+                       "Dönüş: download_url, card_count, deck_name, expires_at.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Öğrenci soz_no (boşsa caller)"},
+                "max_cards": {"type": "integer", "description": "Default 30, max 100"},
+                "ders_filter": {"type": "string", "description": "Sadece bu dersin kartları (opsiyonel)"}
+            }
+        }
+    },
+    {
+        "name": "wolfram_step_by_step",
+        "description": "Wolfram Alpha STEP-BY-STEP solver — adım adım çözüm açıklaması. "
+                       "Matematik integrali, türev, denklem çözümü için pedagojik adımlar. "
+                       "wolfram_full'dan farkı: hesap aşamalarını detay açıklamayla döner. "
+                       "Pro endpoint — daha zengin pods. "
+                       "Dönüş: pods (her biri title + steps[] + image).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Ingilizce sorgu (örn 'integrate x^2 sin(x) dx')"},
+                "scanner": {"type": "string", "description": "Solve | Integral | Derivative (opsiyonel)"}
+            },
+            "required": ["query"]
+        }
+    },
+])
+
 # Active TOOLS — Claude system prompt'a gonderilen liste
 TOOLS_ACTIVE: list[dict] = [t for t in TOOLS if t.get("name") not in DEAD_TOOLS]
 

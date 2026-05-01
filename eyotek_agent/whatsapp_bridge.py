@@ -997,6 +997,47 @@ if os.getenv("JSON_LOGGING", "false").lower() in ("1", "true", "yes"):
     except Exception as _jle:
         logger.warning(f"json_logging setup fail: {_jle}")
 
+# ─────────────────────────────────────────────────────────────────────
+# Oturum 25.38 — Sentry error tracking (production-grade)
+# .env'de SENTRY_DSN tanımlıysa aktif olur. Free tier 5K event/ay yeterli.
+# ─────────────────────────────────────────────────────────────────────
+_SENTRY_DSN = os.getenv("SENTRY_DSN", "").strip()
+_SENTRY_ENABLED = False
+if _SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.starlette import StarletteIntegration
+        from sentry_sdk.integrations.asyncio import AsyncioIntegration
+        sentry_sdk.init(
+            dsn=_SENTRY_DSN,
+            integrations=[
+                FastApiIntegration(transaction_style="endpoint"),
+                StarletteIntegration(transaction_style="endpoint"),
+                AsyncioIntegration(),
+            ],
+            traces_sample_rate=float(os.getenv("SENTRY_TRACES_RATE", "0.1")),
+            profiles_sample_rate=0.0,
+            environment=os.getenv("SENTRY_ENV", "production"),
+            release=os.getenv("SENTRY_RELEASE", "fermatai@25.38"),
+            send_default_pii=False,  # KVKK — kullanıcı verisi gönderme
+            before_send=lambda event, hint: (
+                None if any(
+                    skip in str(event.get("logger") or "")
+                    for skip in ["uvicorn.access", "httpx", "asyncpg.compat"]
+                )
+                else event
+            ),
+        )
+        _SENTRY_ENABLED = True
+        logger.info(f"✓ Sentry aktif (env={os.getenv('SENTRY_ENV', 'production')})")
+    except ImportError:
+        logger.warning("sentry-sdk kurulu değil — pip install 'sentry-sdk[fastapi]'")
+    except Exception as _se:
+        logger.warning(f"Sentry init hata: {_se}")
+else:
+    logger.debug("SENTRY_DSN tanımsız — Sentry pasif")
+
 app = FastAPI(
     title="FermatAI WhatsApp Bridge",
     version="1.0.0",
@@ -1060,17 +1101,20 @@ except Exception as _rerr:
     import logging as _lg
     _lg.warning(f"render_endpoint router yuklenemedi: {_rerr}")
 
-# ── Static endpoints — audio (TTS) + pdf (Oturum 25.34) ──
+# ── Static endpoints — audio (TTS) + pdf + anki (Oturum 25.34/25.38) ──
 try:
     from fastapi import FastAPI as _F
     from fastapi.staticfiles import StaticFiles as _SF
     from pathlib import Path as _P
     _audio_dir = _P("/opt/fermatai/eyotek_agent/logs/audio")
     _pdf_dir = _P("/opt/fermatai/eyotek_agent/logs/pdfs")
+    _anki_dir = _P(__file__).parent / "static" / "anki"  # Oturum 25.38
     _audio_dir.mkdir(parents=True, exist_ok=True)
     _pdf_dir.mkdir(parents=True, exist_ok=True)
+    _anki_dir.mkdir(parents=True, exist_ok=True)
     app.mount("/audio", _SF(directory=str(_audio_dir)), name="audio")
     app.mount("/pdfs", _SF(directory=str(_pdf_dir)), name="pdfs")
+    app.mount("/static/anki", _SF(directory=str(_anki_dir)), name="anki")
 except Exception as _serr:
     import logging as _lg
     _lg.warning(f"static mount hata: {_serr}")

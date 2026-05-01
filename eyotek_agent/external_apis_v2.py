@@ -128,12 +128,44 @@ async def wolfram_query(query: str) -> dict:
 async def wolfram_full(query: str) -> dict:
     """Wolfram Full Results — adım adım çözüm + grafik URL'leri.
     25.32-fix: format=plaintext,image bazi sorgularda 500 hata — plaintext only daha stabil."""
+    return await _wolfram_full_internal(query)
+
+
+async def wolfram_step_by_step(query: str, scanner: str = "") -> dict:
+    """Wolfram Step-by-Step Pro — pedagojik adım adım çözüm.
+    Oturum 25.38: ayrı endpoint — &podstate=Step-by-step solution flag.
+    Pro yetki gerekiyor (basic plan'da bazen 'show steps' butonu görünür ama API'da yok).
+    Eğer Pro değilsek, wolfram_full düşer.
+
+    scanner: 'Solve' | 'Integral' | 'Derivative' | '' (auto)
+    """
+    if not WOLFRAM_APP_ID:
+        return {"success": False, "error": "WOLFRAM_APP_ID env tanımsız"}
+
+    extra_params = "&podstate=Step-by-step+solution&podstate=Show+steps"
+    if scanner:
+        extra_params += f"&scanner={quote_plus(scanner)}"
+
+    res = await _wolfram_full_internal(query, extra_params=extra_params)
+    # Step-by-step pods varsa öne çıkar
+    if res.get("success") and res.get("pods"):
+        # Step pods'u öne taşı
+        steps = [p for p in res["pods"] if "step" in p.get("title", "").lower()
+                 or "solution" in p.get("title", "").lower()]
+        non_steps = [p for p in res["pods"] if p not in steps]
+        res["pods"] = steps + non_steps
+        res["has_steps"] = bool(steps)
+    return res
+
+
+async def _wolfram_full_internal(query: str, extra_params: str = "") -> dict:
+    """Wolfram Full ortak iç fonksiyon."""
     if not WOLFRAM_APP_ID:
         return {"success": False, "error": "WOLFRAM_APP_ID env tanımsız"}
     try:
         url = (f"https://api.wolframalpha.com/v2/query"
                f"?appid={WOLFRAM_APP_ID}&input={quote_plus(query)}"
-               f"&output=json&format=plaintext&units=metric")
+               f"&output=json&format=plaintext&units=metric{extra_params}")
         async with httpx.AsyncClient(timeout=_HTTP_TIMEOUT * 2, follow_redirects=True) as client:
             r = await client.get(url)
             r.raise_for_status()
@@ -143,16 +175,16 @@ async def wolfram_full(query: str) -> dict:
                 return {"success": False, "error": "Wolfram cevap üretmedi"}
             pods = qresult.get("pods", [])
             extracted = []
-            for pod in pods[:5]:
+            for pod in pods[:8]:  # step-by-step için 8'e çıkardık
                 title = pod.get("title", "")
                 subpods = pod.get("subpods", [])
-                for sp in subpods[:2]:
+                for sp in subpods[:3]:  # 2→3 (step pods çoklu olabiliyor)
                     plaintext = sp.get("plaintext", "")
                     img = sp.get("img", {})
                     if plaintext or img.get("src"):
                         extracted.append({
                             "title": title,
-                            "text": plaintext[:300],
+                            "text": plaintext[:400],
                             "image": img.get("src", ""),
                         })
             return {"success": True, "query": query, "pods": extracted,

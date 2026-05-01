@@ -92,6 +92,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # ── 25.37 (Neo) — Davranış kuralı yönetimi + Active Recall + KGraph ──
         "add_behavior_rule", "list_behavior_rules", "deactivate_behavior_rule",
         "schedule_recall", "get_pending_recalls", "build_knowledge_graph",
+        # ── 25.38 (Neo) — PhET + YouTube + Anki + Wolfram step-by-step ──
+        "search_phet_simulation", "embed_phet_simulation",
+        "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step",
     },
     # Yönetim üyesi: müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     "yonetim": {
@@ -148,6 +151,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # ── 25.37 (Neo) — Davranış kuralı yönetimi + Active Recall + KGraph ──
         "add_behavior_rule", "list_behavior_rules", "deactivate_behavior_rule",
         "schedule_recall", "get_pending_recalls", "build_knowledge_graph",
+        # ── 25.38 (Neo) — PhET + YouTube + Anki + Wolfram step ──
+        "search_phet_simulation", "embed_phet_simulation",
+        "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step",
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)
@@ -196,6 +202,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "text_to_speech", "pdb_lookup", "student_heatmap",
         # ── 25.34 paket 2 — Code execution + Suno ──
         "execute_python", "suno_generate",
+        # ── 25.38 (Neo) — PhET + YouTube + Wolfram step ──
+        "search_phet_simulation", "embed_phet_simulation",
+        "find_youtube_lesson", "wolfram_step_by_step",
     },
     # Rehber öğretmen: TÜM öğrenci + TÜM öğretmen programı + etüt yazma + rehberlik notu
     "rehber": {
@@ -233,6 +242,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "text_to_speech", "pdb_lookup", "student_heatmap",
         # ── 25.34 paket 2 — Code execution + Suno ──
         "execute_python", "suno_generate",
+        # ── 25.38 (Neo) — PhET + YouTube + Anki + Wolfram step (rehber öğrenci için Anki üretebilir) ──
+        "search_phet_simulation", "embed_phet_simulation",
+        "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step",
     },
     # Veli: sadece kendi çocuğunun akademik verisi + universite tahmin (Neo onay)
     "veli": {"get_student_analytics", "get_ayt_analysis",
@@ -270,7 +282,10 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 # ── 25.34 paket 2 — Code execution + Suno ──
                 "execute_python", "suno_generate",
                 # ── 25.37 (Neo) — Active Recall + Knowledge Graph (kendi profili) ──
-                "schedule_recall", "get_pending_recalls", "build_knowledge_graph"},
+                "schedule_recall", "get_pending_recalls", "build_knowledge_graph",
+                # ── 25.38 (Neo) — PhET (DESTEK) + YouTube + Anki (kendi profili) + Wolfram step ──
+                "search_phet_simulation", "embed_phet_simulation",
+                "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step"},
     # Misafir / bilinmeyen: hiçbir araç
     "guest": set(),
     "unknown": set(),
