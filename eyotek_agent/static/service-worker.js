@@ -1,15 +1,16 @@
 /* FermatAI Service Worker (Oturum 25.40 — Neo PWA direktif)
  * Strateji:
  *   - Static asset (manifest, icon, CSS, JS CDN): stale-while-revalidate (önce cache, arka planda güncelle)
- *   - HTML/chat ana sayfa: network-first (her zaman fresh, çünkü mesaj akışı dinamik)
+ *   - HTML/chat ana sayfa: STALE-WHILE-REVALIDATE (Neo bug fix — anında açılış)
  *   - /render/{uuid}: stale-while-revalidate (öğrenci offline iken arşivlenmiş simülasyonu açar)
  *   - /chat/stream (SSE): sürekli network — cache YOK
  *   - POST/PUT/DELETE: sürekli network — cache YOK
  *   - /api/, /agent: network-first (data sorgusu fresh olmalı)
  *
+ * 25.40 (Neo): /chat artık cache-first → PWA açılışı 1sn beyaz ekran ortadan kalktı
  * Versiyon değiştir → tüm cache temizlenir.
  */
-const VERSION = 'fermatai-v25.40';
+const VERSION = 'fermatai-v25.40b';
 const STATIC_CACHE = `${VERSION}-static`;
 const RENDER_CACHE = `${VERSION}-render`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
@@ -91,9 +92,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // /chat ana sayfa — network-first (HTML her zaman fresh, fallback cache offline)
+  // /chat ana sayfa — STALE-WHILE-REVALIDATE (Oturum 25.40 Neo: 1sn beyaz ekran fix)
+  // Cache'den anında render, network arka planda günceller → PWA açılışı INSTANT
   if (url.pathname === '/chat' || url.pathname === '/chat/') {
-    event.respondWith(networkFirst(request, RUNTIME_CACHE));
+    event.respondWith(staleWhileRevalidate(request, RUNTIME_CACHE));
     return;
   }
 

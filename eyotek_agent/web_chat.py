@@ -177,10 +177,10 @@ async def chat_ui():
     )
     # X-Frame-Options legacy (bazi Wix setup icin)
     response.headers["X-Frame-Options"] = "ALLOWALL"
-    # Cache kontrolleri — her F5'te taze HTML, versiyon takibi kolaylığı
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
+    # Oturum 25.40 (Neo PWA): Cache 5 dakika, must-revalidate
+    # Eski: no-store → SW cache edemiyor → PWA açılışı 1sn beyaz ekran
+    # Yeni: short cache + revalidate → SW cache eder, F5'te ETag ile fresh kontrol
+    response.headers["Cache-Control"] = "public, max-age=300, must-revalidate"
     return response
 
 
