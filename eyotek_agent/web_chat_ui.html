@@ -6424,7 +6424,64 @@ async function doSend() {
             messages.appendChild(botMsg);
           }
           accumulated += d.chunk;
+          // 25.37: yeni chunk geldiğinde duraklamadan oluşan chunk-pause-card kaldır
+          // (botMsg.innerHTML reset edilmeden ÖNCE temizle, yoksa formatMsg overwrite eder)
+          const _existingPauseCard = botMsg.querySelector('.chunk-pause-card');
+          if (_existingPauseCard) {
+            try {
+              if (_existingPauseCard._evolveTimer) clearInterval(_existingPauseCard._evolveTimer);
+              _existingPauseCard.remove();
+            } catch (_) {}
+          }
           botMsg.innerHTML = formatMsg(accumulated);
+          // 25.37 (Neo bug 1 May 23:54): chunk arasında uzun pause olursa rich card aç
+          // Bot kısa text yazıp sonra 5sn+ tool call için bekliyorsa kullanıcı sıkılıyor
+          // Bu mekanizma render_pending/render_done geldiğinde kendini kapatır
+          window._lastChunkTime = Date.now();
+          if (window._chunkPauseTimer) clearTimeout(window._chunkPauseTimer);
+          window._chunkPauseTimer = setTimeout(() => {
+            // 5 saniyedir chunk yok — botMsg altına rich card ekle (henüz render_pending gelmedi)
+            if (!botMsg || !document.body.contains(botMsg)) return;
+            // Zaten render-pending-card varsa skip
+            if (botMsg.querySelector('.render-pending-card')) return;
+            const card = document.createElement('div');
+            card.className = 'render-pending-card chunk-pause-card';
+            card.innerHTML = `
+              <div class="render-spinner"></div>
+              <div class="render-pending-text">
+                <div class="render-pending-title">⚙️ İçerik derinleştiriliyor</div>
+                <div class="render-pending-sub">Veri analizi, formüller ve görsel hazırlığı...</div>
+              </div>`;
+            botMsg.appendChild(card);
+            // Rich evolution timer (5/12/25/40/60s sonra mesaj evrim)
+            const _CHUNK_EVOLUTIONS = [
+              { delay: 0,     icon: "⚙️",  title: "İçerik derinleştiriliyor",         sub: "Veri analizi, formüller ve görsel hazırlığı..." },
+              { delay: 8000,  icon: "🎨", title: "Görsel içerik üretiliyor",          sub: "Grafikler ve interaktif öğeler ekleniyor..." },
+              { delay: 20000, icon: "⚙️",  title: "Animasyonlar ve formüller işleniyor", sub: "Fizik formülleri ve hareket eklenıyor..." },
+              { delay: 35000, icon: "🎯", title: "İnteraktif kontroller ekleniyor",   sub: "Sürgüler, butonlar, anlık hesaplama..." },
+              { delay: 55000, icon: "🚀", title: "Karmaşık bir simülasyon — devam",   sub: "Detaylı çıktı için biraz daha sabır..." },
+              { delay: 90000, icon: "⏳", title: "Çok kapsamlı içerik — neredeyse hazır", sub: "Bot derin bir analiz yapıyor..." },
+            ];
+            const _start = Date.now();
+            card._evolveTimer = setInterval(() => {
+              if (!document.body.contains(card)) { clearInterval(card._evolveTimer); return; }
+              const elapsed = Date.now() - _start;
+              let chosen = _CHUNK_EVOLUTIONS[0];
+              for (const ev of _CHUNK_EVOLUTIONS) { if (elapsed >= ev.delay) chosen = ev; }
+              const titleEl = card.querySelector('.render-pending-title');
+              const subEl = card.querySelector('.render-pending-sub');
+              if (titleEl && titleEl.textContent !== `${chosen.icon} ${chosen.title}`) {
+                titleEl.style.transition = "opacity 0.3s";
+                subEl.style.transition = "opacity 0.3s";
+                titleEl.style.opacity = "0.3"; subEl.style.opacity = "0.3";
+                setTimeout(() => {
+                  if (titleEl) { titleEl.textContent = `${chosen.icon} ${chosen.title}`; titleEl.style.opacity = "1"; }
+                  if (subEl) { subEl.textContent = chosen.sub; subEl.style.opacity = "1"; }
+                }, 300);
+              }
+            }, 1500);
+            smartScroll();
+          }, 5000);
           // Oturum 25.35 (Neo): KaTeX streaming — formuller anlik render
           // Her chunk'ta TUM rerender pahali (chart/sim ağır), sadece KaTeX hafif
           try {
@@ -6444,7 +6501,17 @@ async function doSend() {
         }
 
         if (d.done) {
+          // 25.37: chunk-pause-card temizliği (stream bittiğinde geriye kalan timer)
+          if (window._chunkPauseTimer) {
+            clearTimeout(window._chunkPauseTimer);
+            window._chunkPauseTimer = null;
+          }
           if (botMsg) {
+            const _pauseCard = botMsg.querySelector('.chunk-pause-card');
+            if (_pauseCard && _pauseCard._evolveTimer) {
+              clearInterval(_pauseCard._evolveTimer);
+              try { _pauseCard.remove(); } catch (_) {}
+            }
             // 25.35: streaming class kaldır → shimmer pill yok olur
             botMsg.classList.remove("streaming");
             botMsg.innerHTML = formatMsg(accumulated);

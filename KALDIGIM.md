@@ -1,6 +1,80 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 1 Mayıs 2026, GECE 02:30 — **🧠 28 RENDERER + DAVRANIŞ KURALI + AKTİF HATIRLATMA + RENDER CACHE — PEDAGOJİK SIÇRAMA**
+> **Son güncelleme:** 1 Mayıs 2026, GECE 03:00 — **🧠 28 RENDERER + 8 DAVRANIŞ KURALI + RENDER KALİTE EŞİĞİ + WP SPAM FIX**
+> **Oturum 25.37 ek (gece 02:30 - 03:00, 30 dk):** Neo'nun gerçek-kullanım gözlemleri sonrası 4 yeni kalite + bug fix:
+>
+> **A) Render Kalite Patch (Neo gözlem: "28 renderer var ama sadece chart kullanıyorsun")**
+>   - **ZORUNLU RENDERER KOMBİNASYON tablosu** (system_prompts.py): 13 intent için minimum renderer set
+>     - Öğrenci profil sim → karne+chart+radar+timeline+(gauge VEYA kgraph) = 5 blok min
+>     - Konu anlatım+göster → formula+(sim VEYA 3d)+steps+(quiz VEYA recall) = 4 blok min
+>     - Karşılaştırma → compare2 ZORUNLU
+>     - Soru çözümü → steps+formula
+>     - Molekül → mol3d, Geometri → geogebra, Akış → mermaid
+>     - Devamsızlık analiz → heatmap, Konu haritası → kgraph, Hedef puan → gauge
+>   - **3 yeni davranış kuralı** (DB'de canlı, prompt'a auto-inject):
+>     - #5 [render/p1]: Web her cevapta min 3 farklı renderer + 26 atıl renderer listesi
+>     - #6 [render/p1]: Öğrenci profil sim min 5 renderer
+>     - #7 [render/p2]: Karşılaştırma compare2 zorunlu
+>   - **Live test BAŞARI:** "Mehmet Alp profil simulasyonu" → 5 renderer döndü (chart+radar+karne+timeline+gauge), 5796 char zengin cevap
+>
+> **B) 🚨 KRİTİK WP SPAM BUG FIX (KALICI #3 ihlal)**
+>   - Neo şikayeti: "WhatsApp'a spam mesaj gidiyor, oradan birşey yazmadım"
+>   - Kök neden: `/agent` endpoint POST çağrılarında `channel` parametresi `process_message`'a iletilmiyordu → default `channel="whatsapp"` kalıyordu → 3sn watchdog → WhatsApp'a "Düşünüyorum..." filler atıyordu
+>   - Fix: `/agent` body'den channel okur (default agent_api), `_use_wa_filler` whitelist (sadece literal "whatsapp"), defense in depth
+>   - Verified: bridge log → `Filler KAPALI (channel=agent_api, WP'ya mesaj atilmaz)` her test çağrımda
+>
+> **C) make_render_link Sonrası Stream Timeout Bug Fix**
+>   - Neo: "güneş simülasyonu cevap gelmedi" — bot 23:56:38'de UUID 8xDobUgU14VBHPcx kalite 90/100 üretti AMA Neo görmedi
+>   - Kök neden: Bot make_render_link sonrası uzun "akademik anlatım" yazıyordu → frontend SSE timeout → URL kullanıcıya hiç ulaşmıyordu
+>   - Fix:
+>     - system_prompts'ta madde #3 güçlendirildi: tool sonrası MAX 100 char "🎨 [Simulasyonu aç →](url)" + BITIR
+>     - behavior_rule #8 [render/p1]: aynı kural DB'ye, prompt'a inject
+>
+> **D) Bekleme Kartı Fine-Tune (Neo: "büyük kart geç açılıyor")**
+>   - Önceki fix (5sn upgrade) çalıştı ama: bot **kısa text** yazıp duraklarsa botMsg oluşuyor → küçük thinking pill kayboluyor → rich card upgrade timer kaçırıyor
+>   - Yeni fix: **chunk-pause-card** mekanizması — chunk'lar arası 5sn boşluk olunca botMsg ALTINA rich card eklenir (6 kademeli evrim: 0/8/20/35/55/90s)
+>   - Yeni chunk veya render_pending/render_done geldiğinde otomatik temizlenir
+>
+> **Toplam aktif davranış kuralı (DB):** 4 → **8** (#1-8)
+>   - #1 naming/p2: Yönetim isim/unvan yasak
+>   - #2 data_priority/p1: Bugün/yarın → Eyotek, geçmiş → DB
+>   - #3 safety/p1: Yeni sezon (1 Eylül 2026) öncesi otomatik mesaj YASAK
+>   - #4 render/p2: Öğrenci profil sim → make_render_link YERİNE compound
+>   - #5 render/p1: Web cevapta min 3 farklı renderer
+>   - #6 render/p1: Öğrenci profil sim min 5 renderer
+>   - #7 render/p2: Karşılaştırma compare2 zorunlu
+>   - #8 render/p1: make_render_link sonrası MAX 100 char + URL
+>
+> **Sistem durumu (oturum sonu 03:00):**
+>   - ✅ Bridge active, HEAD: `947be63`
+>   - ✅ 8 davranış kuralı + 10 atlas kaydı + 28 renderer aktif
+>   - ✅ /agent endpoint WP spam'e karşı 3-katmanlı koruma
+>   - ✅ Render quality bar: chart+tablo (eski) → 5 renderer (yeni)
+>   - ✅ Bekleme UX: küçük pill → 5sn rich card OR botMsg child rich card (chunk-pause-card)
+>
+> **Commits (Oturum 25.37 final — 14 commit):**
+>   - `e65ec63` 6 yeni renderer + cache + behavior + active_recall (1663 ekleme)
+>   - `083e176` topic_hash Türkçe normalize
+>   - `966360d` yeni tool dispatch caller_role injection
+>   - `311c93d` /render-test 6 yeni test case
+>   - `cfb022b` reactions 6→3 + standalone thumbs kaldır
+>   - `1be8a0e` docs KALDIGIM + BLUEPRINT 25.37
+>   - `deccf1c` Ali Demir compound rendering kuralı
+>   - `e0d579f` rich card 5sn upgrade
+>   - `1ab7c68` KALDIGIM final 8 commit + Atlas 10/10
+>   - `e426a32` ZORUNLU RENDERER KOMBİNASYON tablosu
+>   - `bea89c3` /agent WP filler spam kritik bug fix
+>   - `947be63` make_render_link sonrası uzun text yasak
+>   - `[next]` chunk-pause-card botMsg child rich upgrade
+>   - `[final]` KALDIGIM + BLUEPRINT final + Atlas 14/14
+>
+> **Atlas kaydı:** 10/10 → 14/14 (oturum 25.37 işleri "uygulandi" — tekrar önerme korumalı)
+>
+> **Önceki oturum:** 1 Mayıs 2026, GECE 00:30 — **🚀 22 RENDERER + 16 API + 5 UX KATMAN — PRODUCTION KAPASİTE PEAK**
+
+---
+
+> **Son güncelleme (eski):** 1 Mayıs 2026, GECE 02:30 — **🧠 28 RENDERER + DAVRANIŞ KURALI + AKTİF HATIRLATMA + RENDER CACHE — PEDAGOJİK SIÇRAMA**
 > **Oturum 25.37 (gece 23:00 - 02:30, 3.5 saat tek pakette):** 7 acil borç + 6 yeni renderer + 3 destek modülü tek seferde, fix loop'la production'a alındı.
 >
 > **Borçlar (7/7 kapatildi):**

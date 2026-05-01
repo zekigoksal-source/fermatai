@@ -1,6 +1,6 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 1 Mayıs 2026 (gece 02:30) · **Oturum:** 25.37 — **Pedagojik Sıçrama: 28 Renderer + Davranış Kuralı + Aktif Hatırlatma + Render Cache**
+> **Belge tarihi:** 1 Mayıs 2026 (gece 03:00) · **Oturum:** 25.37 final — **Pedagojik Sıçrama + Render Kalite Eşiği + WP Spam Fix**
 > **Önceki güncelleme:** 28 Nisan 2026, Oturum 25.29 (gece final) — Unified Context Engine + Service Layer
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)
 > **Hedef okuyucu:** Yeni bir LLM, geliştirici veya iş ortağı. Sistemin teknik yetkinlik tablosunu LLM'e attığında doyurucu bir mimari resim alır.
@@ -67,8 +67,12 @@
 | **Görsel renderer (web kanal)** | **28** (Oturum 25.37, eski 22 + 6 pedagojik) |
 | **External API tool** | 16 (NASA, Wolfram, Wiki, arXiv, DALL-E, PubChem, USGS, PDB, TTS, Suno, Code) |
 | **Toplam Claude tool dispatch** | **118** (Oturum 25.37, eski 112 + 6 yeni) |
-| **Davranış kuralı (canlı)** | 3 (yönetim_isim_yasak, eyotek_db_oncelik, sezon_mesaj_yasak) |
+| **Davranış kuralı (canlı)** | **8** (yönetim_isim/data_priority/safety/render×5) |
 | **Render cache** | Aktif (topic_hash + 30g TTL, ~%40-60 maliyet düşüşü tahmini) |
+| **Render kalite eşiği** | 8-madde checklist + auto quality_score 60+ gate |
+| **ZORUNLU renderer kombinasyonu** | 13 intent → minimum renderer set (system_prompts) |
+| **/agent endpoint güvenlik** | WP spam koruması: channel='agent_api' default + whitelist |
+| **Bekleme UX** | Küçük pill → 5sn rich card upgrade + chunk-pause-card (botMsg child) |
 
 **Veri sistemleri canlı:**
 
@@ -89,7 +93,7 @@
 | **active_recalls** | 1+ | Oturum 25.37 — Ebbinghaus spaced repetition (24/72/168h) |
 | **render_artifacts** | 37+ | Oturum 25.31+25.37 — make_render_link + topic_hash cache (1MB max) |
 
-**Oturum 25.37 — Pedagojik Sıçrama Tablosu (1 Mayıs 2026 gece, 3.5 saat):**
+**Oturum 25.37 — Pedagojik Sıçrama + Kalite Patch Tablosu (1 Mayıs 2026 gece 03:00, 4 saat):**
 
 | Madde | Önce | Sonra | Etki |
 |---|---|---|---|
@@ -102,6 +106,10 @@
 | Active recall | Yok | **Ebbinghaus spaced repetition (24/72/168h, x2.5 interval)** | Pasif izleme → aktif öğrenme |
 | Knowledge graph | Yok | **D3.js force layout (zayıf=kırmızı, tıklayınca konu)** | Bilgi haritası görünür |
 | UX cleanup | 6 reaction + 2 thumbs (8 buton) | **3 reaction (👍 👎 ❤️) tek satır** | Kalabalık azaldı, feedback API korundu |
+| ZORUNLU renderer kombinasyonu | %80 chart+tablo (atil 26 renderer) | **13 intent → min renderer set** | Live test 5 renderer döndü |
+| /agent WP spam | channel param iletilmiyor → default WP filler | **channel=agent_api default + whitelist** | KALICI #3 ihlal düzeltildi |
+| make_render_link kapanış | Tool sonrası uzun text → SSE timeout | **Max 100 char + URL + BITIR** | URL artık kullanıcıya ulaşır |
+| Bekleme UX (kısa text + uzun pause) | Sadece thinking pill | **chunk-pause-card 5sn sonra rich kart** | botMsg altına 6 kademe evrim |
 
 **3 yeni modül (Oturum 25.37):**
 
