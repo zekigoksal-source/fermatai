@@ -1,26 +1,33 @@
 <!DOCTYPE html>
-<html lang="tr" style="background:#0A0E1A;">
+<html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>FermatAI</title>
-<!-- 25.40 (Neo bug fix): HTML parse edilmeden once browser default beyaz background
-     gosteriyordu → 1sn beyaz flash. Inline style ile her sayfa yuklenmesinde
-     INSTANT dark bg → splash hazir olunca yumusak gecis. -->
+<!-- 25.40c (Neo bug fix): Tema toggle bozulmus durumdaydi cunku inline style ve
+     hardcoded background rule'lari mevcut --bg CSS variable sistemini override
+     ediyordu. COZUM: No-FOUC pattern — head'in en basinda kucuk inline script
+     localStorage'dan tema okur ve html'e data-theme set eder. Sonra CSS yuklenince
+     mevcut sistem (line 1024 :root --bg, line 1040 [data-theme="dark"]) dogru
+     calisir. Boylece beyaz flash YOK + tema toggle CALISIR. -->
+<script>
+  (function() {
+    try {
+      var t = localStorage.getItem('fermat_theme');
+      if (!t) {
+        // Ilk ziyaret: sistem tercihi
+        t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', t);
+    } catch(e) {
+      // localStorage erisilemezse default dark (beyaz flash kacin)
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
 <style>
-  /* 25.40b (Neo bug fix): Onceki versiyonda html,body bg !important ile zorlanmisti
-     → light/dark toggle calismaz hale gelmisti ("Acik" secili ama bg koyu).
-     COZUM: default olarak dark bg, [data-theme="light"] selector ile override.
-     Splash sirasinda zaten dark bg gosteriyoruz — light secili kullanici splash'tan
-     sonra acik temaya gecisi gorur. */
+  /* No-FOUC: html bg degisken-bagimli, var(--bg) data-theme'e gore degisir */
   html, body { margin: 0; padding: 0; }
-  html { background: #0A0E1A; }
-  body { background: #0A0E1A; color: #F5F4ED; }
-  html[data-theme="light"], html[data-theme="light"] body { background: #F5F4ED; color: #2F2F2F; }
-  /* 25.40b (Neo direktif): Pre-splash (statik duz F) kaldirildi.
-     Inline dark bg zaten beyaz flash'i engelliyor + cool splash CSS head'de
-     parse anida hazir → ilk frame'den itibaren mesh gradient + neon logo + tagline
-     gozukur. JS sadece particle canvas + cyclical tagline + fade-out icin gerek. */
 </style>
 <!-- PWA — telefona sabitlenebilir (Oturum 25.40 Neo PWA splash optimize) -->
 <link rel="manifest" href="https://api.fermategitimkurumlari.com/manifest.json">
@@ -2539,11 +2546,11 @@ html[data-theme="dark"] .msg.bot.streaming::after {
 }
 </style>
 </head>
-<body style="background:#0A0E1A;">
+<body>
 
-<!-- 25.40b (Neo direktif): Pre-splash kaldirildi — direkt cool splash devrede.
-     Inline dark bg + head'deki splash CSS sayesinde ilk frame'den itibaren
-     mesh gradient + neon logo + tagline gozukur. -->
+<!-- 25.40c: Body inline style KALDIRILDI — tema toggle bozuyordu.
+     No-FOUC head script'i data-theme'i set ediyor → CSS var(--bg) dogru calisir.
+     Pre-splash YOK — cool splash CSS head'de hazir, ilk frame'den mesh gradient. -->
 
 <!-- 25.40 (Neo direktif): COOL splash — particle constellation + mesh gradient
      + cyclical tagline + neon glow + scan line. Sıfır anında açılır,
