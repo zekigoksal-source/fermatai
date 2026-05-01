@@ -1101,23 +1101,59 @@ except Exception as _rerr:
     import logging as _lg
     _lg.warning(f"render_endpoint router yuklenemedi: {_rerr}")
 
-# ── Static endpoints — audio (TTS) + pdf + anki (Oturum 25.34/25.38) ──
+# ── Static endpoints — audio (TTS) + pdf + anki + img (Oturum 25.34/25.38/25.40) ──
 try:
     from fastapi import FastAPI as _F
     from fastapi.staticfiles import StaticFiles as _SF
     from pathlib import Path as _P
     _audio_dir = _P("/opt/fermatai/eyotek_agent/logs/audio")
     _pdf_dir = _P("/opt/fermatai/eyotek_agent/logs/pdfs")
-    _anki_dir = _P(__file__).parent / "static" / "anki"  # Oturum 25.38
+    _anki_dir = _P(__file__).parent / "static" / "anki"   # Oturum 25.38
+    _img_dir = _P(__file__).parent / "static" / "img"     # Oturum 25.40 (PWA iconlar)
     _audio_dir.mkdir(parents=True, exist_ok=True)
     _pdf_dir.mkdir(parents=True, exist_ok=True)
     _anki_dir.mkdir(parents=True, exist_ok=True)
+    _img_dir.mkdir(parents=True, exist_ok=True)
     app.mount("/audio", _SF(directory=str(_audio_dir)), name="audio")
     app.mount("/pdfs", _SF(directory=str(_pdf_dir)), name="pdfs")
     app.mount("/static/anki", _SF(directory=str(_anki_dir)), name="anki")
+    app.mount("/static/img", _SF(directory=str(_img_dir)), name="pwa_img")
 except Exception as _serr:
     import logging as _lg
     _lg.warning(f"static mount hata: {_serr}")
+
+
+# ── Oturum 25.40 (Neo PWA): Service Worker ROOT scope serve ──
+# SW /service-worker.js root'tan serve edilmeli ki scope='/' alabilsin
+# (Aksi takdirde /chat altında scope sınırlı kalır → /render/ cache edemez)
+@app.get("/service-worker.js", include_in_schema=False)
+async def root_service_worker():
+    """Service Worker — root scope (cache /chat + /render + /static)."""
+    from fastapi.responses import FileResponse
+    sw_path = _P(__file__).parent / "static" / "service-worker.js"
+    if not sw_path.exists():
+        raise HTTPException(404, "service-worker.js bulunamadı")
+    response = FileResponse(path=str(sw_path), media_type="application/javascript")
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
+@app.get("/manifest.json", include_in_schema=False)
+async def root_manifest():
+    """PWA Manifest — root scope için duplicate (PWA standard)."""
+    from web_chat import pwa_manifest
+    return await pwa_manifest()
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Favicon — fallback PNG."""
+    from fastapi.responses import FileResponse
+    fav = _P(__file__).parent / "static" / "img" / "favicon.png"
+    if fav.exists():
+        return FileResponse(path=str(fav), media_type="image/png")
+    raise HTTPException(404)
 
 # ── Renderer Test Page (Oturum 25.35) — tum 22 renderer ornek data ile ──
 @app.get("/render-test", include_in_schema=False)

@@ -9195,7 +9195,243 @@ async function outreachSubmit(action, ids) {
   } catch (e) { alert("Bağlantı hatası: " + e.message); }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// 25.40 (Neo PWA): Service Worker register + Install prompt UI
+// ═══════════════════════════════════════════════════════════════════
+(function setupPWA() {
+  // SW register
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+        .then(reg => {
+          console.log('[PWA] SW registered, scope:', reg.scope);
+          // Update kontrolü her saatte
+          setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+        })
+        .catch(err => console.warn('[PWA] SW register fail:', err));
+    });
+  }
+
+  // Install prompt — Chrome BeforeInstallPromptEvent
+  let deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();  // Browser default banner'i engelle
+    deferredInstallPrompt = e;
+    showCustomInstallBanner();
+  });
+
+  // Zaten yüklü mü kontrol et
+  window.addEventListener('appinstalled', () => {
+    console.log('[PWA] kuruldu ✓');
+    deferredInstallPrompt = null;
+    hideCustomInstallBanner();
+    try { localStorage.setItem('pwa_installed', '1'); } catch (_) {}
+  });
+
+  function showCustomInstallBanner() {
+    // Daha önce reddedildiyse 7 gün gösterme
+    let dismissedAt = 0;
+    try { dismissedAt = parseInt(localStorage.getItem('pwa_dismissed_at') || '0'); } catch (_) {}
+    if (Date.now() - dismissedAt < 7 * 24 * 3600 * 1000) return;
+    // Zaten yüklü
+    try { if (localStorage.getItem('pwa_installed') === '1') return; } catch (_) {}
+    // standalone mode'da zaten — banner gerekmez
+    if (window.matchMedia('(display-mode: standalone)').matches) return;
+    if (document.getElementById('pwa-install-banner')) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'pwa-install-banner';
+    banner.innerHTML = `
+      <div class="pwa-banner-icon">
+        <img src="/static/img/fermatai-192.png" alt="FermatAI" width="40" height="40" />
+      </div>
+      <div class="pwa-banner-text">
+        <div class="pwa-banner-title">FermatAI'yi yükle</div>
+        <div class="pwa-banner-sub">Telefonuna icon olarak ekle, tek tıkla aç</div>
+      </div>
+      <div class="pwa-banner-actions">
+        <button class="pwa-banner-cancel" type="button" aria-label="Kapat">×</button>
+        <button class="pwa-banner-install" type="button">Yükle</button>
+      </div>
+    `;
+    document.body.appendChild(banner);
+
+    banner.querySelector('.pwa-banner-install').addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return hideCustomInstallBanner();
+      deferredInstallPrompt.prompt();
+      try {
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        console.log('[PWA] kullanıcı seçimi:', outcome);
+        if (outcome !== 'accepted') {
+          try { localStorage.setItem('pwa_dismissed_at', String(Date.now())); } catch (_) {}
+        }
+      } catch (e) {}
+      deferredInstallPrompt = null;
+      hideCustomInstallBanner();
+    });
+
+    banner.querySelector('.pwa-banner-cancel').addEventListener('click', () => {
+      try { localStorage.setItem('pwa_dismissed_at', String(Date.now())); } catch (_) {}
+      hideCustomInstallBanner();
+    });
+
+    setTimeout(() => banner.classList.add('show'), 100);
+  }
+
+  function hideCustomInstallBanner() {
+    const b = document.getElementById('pwa-install-banner');
+    if (!b) return;
+    b.classList.remove('show');
+    setTimeout(() => { try { b.remove(); } catch (_) {} }, 250);
+  }
+
+  // iOS için (Safari "Add to Home Screen" çıkmaz, manuel öneri)
+  function isIos() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  }
+  function isInStandaloneMode() {
+    return window.navigator.standalone === true;
+  }
+  if (isIos() && !isInStandaloneMode()) {
+    let lastShown = 0;
+    try { lastShown = parseInt(localStorage.getItem('pwa_ios_hint') || '0'); } catch (_) {}
+    if (Date.now() - lastShown > 14 * 24 * 3600 * 1000) {
+      // 30 saniye sonra hafif bir iOS rehber göster
+      setTimeout(() => {
+        if (document.getElementById('pwa-ios-hint')) return;
+        const hint = document.createElement('div');
+        hint.id = 'pwa-ios-hint';
+        hint.innerHTML = `
+          <div class="pwa-ios-row">
+            <span>📱 iPhone'a icon ekle: <b>Paylaş</b> → <b>Ana Ekrana Ekle</b></span>
+            <button type="button" aria-label="Kapat">×</button>
+          </div>`;
+        document.body.appendChild(hint);
+        hint.querySelector('button').addEventListener('click', () => {
+          try { localStorage.setItem('pwa_ios_hint', String(Date.now())); } catch (_) {}
+          hint.remove();
+        });
+        setTimeout(() => hint.classList.add('show'), 100);
+      }, 30000);
+    }
+  }
+})();
+
 </script>
+
+<style>
+/* ═══ PWA Install Banner ═══ (Oturum 25.40 Neo) */
+#pwa-install-banner {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120%);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #C76F3E, #A75A2D);
+  color: white;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(199,111,62,0.40), 0 4px 12px rgba(0,0,0,0.18);
+  max-width: 92vw;
+  width: 380px;
+  transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
+  font-family: inherit;
+}
+#pwa-install-banner.show { transform: translateX(-50%) translateY(0); }
+#pwa-install-banner .pwa-banner-icon img {
+  border-radius: 9px;
+  display: block;
+}
+#pwa-install-banner .pwa-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+#pwa-install-banner .pwa-banner-title {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+#pwa-install-banner .pwa-banner-sub {
+  font-size: 12px;
+  opacity: 0.90;
+  line-height: 1.3;
+}
+#pwa-install-banner .pwa-banner-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+#pwa-install-banner .pwa-banner-install {
+  background: white;
+  color: #C76F3E;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#pwa-install-banner .pwa-banner-install:hover {
+  background: #FFF7E8;
+  transform: scale(1.04);
+}
+#pwa-install-banner .pwa-banner-cancel {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#pwa-install-banner .pwa-banner-cancel:hover { background: rgba(255,255,255,0.25); }
+
+/* iOS hint — Safari için */
+#pwa-ios-hint {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120%);
+  z-index: 99998;
+  background: #1F2937;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.30);
+  max-width: 92vw;
+  font-size: 13px;
+  transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
+}
+#pwa-ios-hint.show { transform: translateX(-50%) translateY(0); }
+#pwa-ios-hint .pwa-ios-row { display: flex; align-items: center; gap: 8px; }
+#pwa-ios-hint button {
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: white;
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Standalone mode (PWA açıldığında) — küçük "FermatAI App" rozeti header'a */
+@media (display-mode: standalone) {
+  body::before {
+    content: "";
+    display: none;
+  }
+  /* PWA modunda banner zaten gerekmez, gizle */
+  #pwa-install-banner, #pwa-ios-hint { display: none !important; }
+}
+</style>
 
 </body>
 </html>

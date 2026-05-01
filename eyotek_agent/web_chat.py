@@ -73,14 +73,78 @@ class SendMsgReq(BaseModel):
 
 @router.get("/manifest.json")
 async def pwa_manifest():
-    """PWA manifest — telefona icon olarak sabitlenebilir uygulama (A10)."""
-    manifest_path = Path(__file__).parent / "pwa_manifest.json"
-    if not manifest_path.exists():
-        raise HTTPException(status_code=404, detail="Manifest bulunamadı")
-    import json as _json
-    data = _json.loads(manifest_path.read_text(encoding="utf-8"))
-    response = JSONResponse(data)
+    """PWA manifest — telefona icon olarak sabitlenebilir uygulama.
+    Oturum 25.40 (Neo): PNG iconlar (192/512/maskable) — Android adaptive icon destek.
+    """
+    # Oturum 25.40: dinamik manifest — PNG iconlar /static/img/'den
+    manifest = {
+        "name": "FermatAI — Akademik Koç",
+        "short_name": "FermatAI",
+        "description": "Fermat Eğitim Kurumları — Pedagojik Yapay Zeka Asistanı",
+        "start_url": "/chat",
+        "scope": "/chat",
+        "display": "standalone",
+        "orientation": "portrait",
+        "background_color": "#F5F4ED",
+        "theme_color": "#C76F3E",
+        "lang": "tr",
+        "dir": "ltr",
+        "icons": [
+            # Standard (any) icons
+            {"src": "/static/img/fermatai-192.png", "sizes": "192x192",
+             "type": "image/png", "purpose": "any"},
+            {"src": "/static/img/fermatai-512.png", "sizes": "512x512",
+             "type": "image/png", "purpose": "any"},
+            # Maskable (Android adaptive icon)
+            {"src": "/static/img/fermatai-192-maskable.png", "sizes": "192x192",
+             "type": "image/png", "purpose": "maskable"},
+            {"src": "/static/img/fermatai-512-maskable.png", "sizes": "512x512",
+             "type": "image/png", "purpose": "maskable"},
+        ],
+        "categories": ["education", "productivity"],
+        "shortcuts": [
+            {
+                "name": "Yeni Soru Sor",
+                "short_name": "Soru",
+                "description": "Hemen yeni bir akademik soru sor",
+                "url": "/chat?q=sor",
+                "icons": [{"src": "/static/img/fermatai-shortcut-96.png", "sizes": "96x96"}],
+            },
+            {
+                "name": "Çalışmam Paneli",
+                "short_name": "Çalışmam",
+                "description": "Günlük çalışma paneline git",
+                "url": "/student-daily",
+                "icons": [{"src": "/static/img/fermatai-shortcut-96.png", "sizes": "96x96"}],
+            },
+        ],
+        "screenshots": [],
+        # Oturum 25.40: Display override modern Android için
+        "display_override": ["standalone", "minimal-ui"],
+        "prefer_related_applications": False,
+    }
+    response = JSONResponse(manifest)
     response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+@router.get("/service-worker.js")
+async def service_worker():
+    """PWA Service Worker — offline cache + push notification.
+    Oturum 25.40 (Neo): Render artifact'leri offline çalışsın diye SW.
+    """
+    sw_path = Path(__file__).parent / "static" / "service-worker.js"
+    if not sw_path.exists():
+        raise HTTPException(status_code=404, detail="service-worker.js bulunamadı")
+    from fastapi.responses import FileResponse
+    response = FileResponse(
+        path=str(sw_path),
+        media_type="application/javascript",
+    )
+    # SW dosyası — Service-Worker-Allowed scope geniş
+    response.headers["Service-Worker-Allowed"] = "/"
+    # Browser SW'i her zaman fresh çekmeli (kritik update)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return response
 
 
