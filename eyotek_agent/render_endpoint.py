@@ -120,11 +120,20 @@ def calculate_quality_score(html: str) -> tuple[int, dict]:
 
 
 def _topic_hash(title: str, html_size_bucket: int = 0) -> str:
-    """Cache key — title + html size bucket (10KB)."""
+    """Cache key — title normalize + stop word filter + html size bucket.
+
+    25.37+ (Neo audit #7): Title varyasyonları aynı hash'e düşer:
+    'Newton 2. Yasa Simülasyonu' == 'Newton'un 2. Yasası' == 'Newton 2nd Law'
+
+    Akış:
+      1. Türkçe → ascii fold (İ/Ş/Ç/Ö/Ü/Ğ)
+      2. Combining diakritik temizle (NFKD)
+      3. STOP WORD filter (simülasyon, interaktif, göster, yap...)
+      4. Tek boşluk + sıralı kelimeler (alfabetik)
+    """
     import hashlib, unicodedata, re
     norm = (title or "").strip()[:120]
-    # Türkçe-aware lower (İ → i, I → ı sorunu): Türkçe-ascii fold
-    # 1) İ, I, Ş, Ç, Ö, Ü, Ğ harfleri → ascii eşdeğer
+    # 1) Türkçe-aware lower
     tr_map = {
         "ı": "i", "I": "i", "İ": "i", "i": "i",
         "ç": "c", "Ç": "c",
@@ -137,12 +146,36 @@ def _topic_hash(title: str, html_size_bucket: int = 0) -> str:
         "û": "u", "Û": "u",
     }
     folded = "".join(tr_map.get(c, c) for c in norm).lower()
-    # 2) Combining diakritikleri çöz (i̇ vs i normalize)
+    # 2) Combining diakritikleri çöz
     folded = unicodedata.normalize("NFKD", folded)
     folded = "".join(c for c in folded if not unicodedata.combining(c))
-    # 3) Çoklu boşluk → tek boşluk
+    # 3) Noktalama ve fazla boşlukları temizle
+    folded = re.sub(r"[^\w\s]", " ", folded)
     folded = re.sub(r"\s+", " ", folded).strip()
-    base = f"{folded}|{html_size_bucket}"
+    # 4) STOP WORD FILTER — title varyasyonları aynı kategoriye düşsün
+    STOP_WORDS = {
+        # Render isteği kelimeleri
+        "simulasyon", "simulasyonu", "simülasyon", "simülasyonu",
+        "interaktif", "interactive", "animasyon", "animasyonu",
+        "model", "modeli", "modelleme", "infografik",
+        "gosteren", "göster", "goster", "gosteri",
+        "yap", "yapan", "olustur", "oluşturan",
+        "kapsamli", "kapsamlı", "detayli", "detaylı", "tam",
+        "tum", "tüm", "hakkinda", "hakkında", "ile", "icin", "için",
+        # İngilizce karşılıkları
+        "simulation", "show", "create", "make", "full",
+        # Bağlaçlar
+        "ve", "veya", "ile", "ile", "den", "dan",
+        # Sayı sıraları (Newton 2. → newton + 2)
+        "1", "2", "3", "1.", "2.", "3.",
+        # Fizik prefiksleri (genel)
+        "3d", "2d", "fizik", "kimya", "biyoloji",
+    }
+    words = [w for w in folded.split() if w not in STOP_WORDS and len(w) > 1]
+    # Sıralı (kelime sırası farkı yok edilir)
+    words.sort()
+    canonical = " ".join(words[:6])  # max 6 anlamlı kelime (overflow önle)
+    base = f"{canonical}|{html_size_bucket}"
     return hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
 
 

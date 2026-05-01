@@ -760,3 +760,77 @@ async def get_cikmis_soru_menu(ders: str, name: str = "") -> str:
     lines.append(f"_Ornegin: \"{sorted_konular[0][0][:20]} sorusu goster\" yaz_ {ders_emoji}")
 
     return "\n".join(lines)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 25.37+ (Neo audit #5) — WEB RENDER ENRICHMENT TEMPLATES
+# Web kanalında sade text yanıtları compound block ile zenginleştirme
+# kalıpları. Bot bunları referans alarak otomatik renderer ekler.
+# ═══════════════════════════════════════════════════════════════════════
+
+WEB_ENRICH_TEMPLATES = {
+    # Öğrenci profil göstergesi — karne + chart + radar tek kart
+    "ogrenci_profil_compound": (
+        '```compound\n'
+        '{"title":"{ogrenci_ad} — Akademik Profil","panels":['
+        '{"type":"karne","label":"Ders Netleri","data":{"konular":[]}},'
+        '{"type":"chart","label":"Trend","data":{"type":"line","labels":[],"datasets":[]}},'
+        '{"type":"radar","label":"Ders Dengesi","data":{"labels":[],"datasets":[]}}'
+        '],"note":"Son 5 deneme + ders bazlı performans"}\n```'
+    ),
+    # Konu anlatımı — formula + sim + steps zinciri
+    "konu_anlatim_compound": (
+        '```compound\n'
+        '{"title":"{konu_adi} — Tam Anlatım","panels":['
+        '{"type":"formula","label":"Temel","data":{"body":"$E = mc^2$"}},'
+        '{"type":"sim","label":"İnteraktif","data":{"code":"p5 kodu"}},'
+        '{"type":"steps","label":"Çözüm","data":{"steps":[]}}'
+        '],"note":"Formül + simülasyon + step-by-step"}\n```'
+    ),
+    # Karşılaştırma — compare2 (markdown tablo YASAK)
+    "kiyas_compare2": (
+        '```compare2\n'
+        '{"title":"{kavram_a} vs {kavram_b}",'
+        '"left":{"label":"{kavram_a}","summary":""},'
+        '"right":{"label":"{kavram_b}","summary":""},'
+        '"rows":[{"aspect":"","left":"","right":"","highlight":true}],'
+        '"takeaway":""}\n```'
+    ),
+    # Quiz pekiştirme — multi-choice + feedback
+    "konu_quiz": (
+        '```quiz\n'
+        '{"title":"{konu_adi} — Hızlı Test","questions":['
+        '{"stem":"?","choices":["A","B","C","D"],"correct":1,"explanation":""}'
+        ']}\n```'
+    ),
+    # Hedef/puan ilerleme — gauge + progress + timeline
+    "hedef_compound": (
+        '```compound\n'
+        '{"title":"Hedefin Yolculuğu","panels":['
+        '{"type":"gauge","label":"İlerleme","data":{"value":65,"max":100}},'
+        '{"type":"progress","label":"Müfredat","data":{"items":[]}},'
+        '{"type":"timeline","label":"Zaman","data":{"events":[]}}]}\n```'
+    ),
+    # Çalışma planı — timeline + kgraph + progress
+    "plan_compound": (
+        '```compound\n'
+        '{"title":"Haftalık Plan","panels":['
+        '{"type":"timeline","label":"Plan","data":{}},'
+        '{"type":"kgraph","label":"Konular","data":{}},'
+        '{"type":"progress","label":"Tamamlanma","data":{}}]}\n```'
+    ),
+}
+
+
+def get_enrich_template(intent: str) -> str:
+    """Intent'e göre web compound template'i döndür."""
+    intent_to_template = {
+        "kavram_aciklama": "konu_anlatim_compound",
+        "deneme_analiz":   "ogrenci_profil_compound",
+        "analiz_iste":     "ogrenci_profil_compound",
+        "karsilastirma":   "kiyas_compare2",
+        "hedef_analiz":    "hedef_compound",
+        "plan_yap":        "plan_compound",
+    }
+    key = intent_to_template.get(intent, "")
+    return WEB_ENRICH_TEMPLATES.get(key, "")

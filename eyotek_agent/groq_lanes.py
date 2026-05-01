@@ -133,12 +133,52 @@ _KISA_MOTIVASYON = re.compile(
     re.IGNORECASE,
 )
 
+# 8. RENDER_REQUEST — simulasyon/3D/görsel istekleri (Brief #11 etkin kullanım)
+# "X simülasyon yap", "interaktif göster", "3D çiz", "görselleştir", "kara delik göster"
+# Cerebras'a gider, renderer hint inject olur, zengin görsel cevap üretilir
+# NOT: son \b YOK — "simulasyonu", "simulasyonunu" gibi suffix'leri de yakalar
+_RENDER_REQUEST = re.compile(
+    r'\b(simul[aäe]?sy|simul[aäe]?sy[oö]n|interaktif|3d\s+(g[oö]ster|g[oö]st|[cç]iz|cizi|model|animasy)|'
+    r'g[oö]rsel(?:l|le[sş]|lesti|leştir|lestir)|animasy[oö]n|infografik|'
+    r'g[oö]ster\s+(bana|nas[iı]l)|sahnesini\s+yap|3\s*boyut|three[\.\s]?js|p5[\.\s]?js|'
+    r'\d+d\s+(g[oö]ster|model|cizim|animasy))',
+    re.IGNORECASE,
+)
+
+# 9. KARSILASTIRMA — X vs Y, kıyasla, fark — compare2 renderer için
+_KARSILASTIRMA = re.compile(
+    r'\b(kıyasla|kiyasla|karşılaştır|karsilastir|karşılaştırma|karsilastirma|'
+    r'\bvs\b|\bvs\.\s|farkı?|farkı\s+nedir|farkı?\s+ne|farklı?l[ıi]k|'
+    r'(arasındaki|arasindaki)\s+(fark|benzerlik|ilişki|iliski)|'
+    r'mı\s+(daha\s+)?(iyi|fazla|kötü|kotu|önemli|onemli|zor|kolay)|'
+    r'mi\s+(daha\s+)?(iyi|fazla|kotu|onemli|zor|kolay))',
+    re.IGNORECASE,
+)
+
+# 10. QUIZ_REQUEST — interaktif test/quiz istekleri
+_QUIZ_REQUEST = re.compile(
+    r'\b(quiz|test|sınav|sinav|soru\s*c?ozdür|soru\s*sor|kısa\s+test|kisa\s+test|'
+    r'(test|quiz|sınav|sinav|soru)(?:\s+\w+){0,3}\s+(yap|olustur|olu[sş]tur|hazırla|hazirla|haz[iı]rla|cözdür|cozdur))',
+    re.IGNORECASE,
+)
+
+# 11. KONU_HARITASI — knowledge graph / bağlantı ağı
+_KONU_HARITASI = re.compile(
+    r'\b((konu|bilgi)\s*(harita|haritası|haritasi|ağı|agi|grafi[ğg]i)|'
+    r'graph\s+(göster|olustur|oluştur)|'
+    r'(bağlant|baglant|ilişki|iliski)\s*(ağı|agi|haritası|haritasi)|'
+    r'kgraph|knowledge\s+graph)',
+    re.IGNORECASE,
+)
+
 
 # ── Lane Classifier ────────────────────────────────────────────────────────
 
 GroqSafeLane = Literal[
     "kavramsal_kisa", "sohbet", "meta_direktif", "kibarlik",
     "egitim_icerik", "red_generik", "kisa_motivasyon",
+    # 25.37+ (Neo): Cerebras-safe render istekleri (renderer hint inject ile zenginleşir)
+    "render_request", "karsilastirma", "quiz_request", "konu_haritasi",
 ]
 
 
@@ -179,7 +219,8 @@ def classify_lane(message: str, role: str = "", phone: str = "") -> Optional[str
         return None
 
     # Sayı + "kim/hangi" → veri sorgusu
-    if re.search(r'(kim|kimler|hangi|kac|kaç|kim\s+(sordu|kullan|en\s+))', text_lower):
+    # 25.37+ fix: word boundary — "akImI" içindeki "kim" false positive olmasın
+    if re.search(r'\b(kim|kimler|hangi|kac|kaç)\b', text_lower):
         # İstisna: kavramsal "X nedir" + "kim" geçebilir ("Newton kimdir")
         if not _KAVRAMSAL_PATTERN.search(text_lower):
             # Ek istisna: meta_direktif veya genel sohbet
@@ -237,16 +278,68 @@ def classify_lane(message: str, role: str = "", phone: str = "") -> Optional[str
     if _EGITIM_ICERIK.search(text_lower) and text_len < 200:
         return "egitim_icerik"
 
+    # ── 25.37+ (Neo): RENDER ISTEKLERI — Cerebras-safe + renderer hint inject ──
+    # Bu lane'ler Cerebras'a gider, Brief #11 ile system_prompt'a renderer hint
+    # eklenir, bot zenginleştirilmiş cevap üretir (chart/sim/3d/compare2/quiz/kgraph).
+
+    # 11. KONU_HARITASI — kgraph renderer (build_knowledge_graph tool)
+    if _KONU_HARITASI.search(text_lower) and text_len < 200:
+        return "konu_haritasi"
+
+    # 9. KARSILASTIRMA — compare2 renderer (yan yana matris)
+    if _KARSILASTIRMA.search(text_lower) and text_len < 200:
+        # Kişisel kıyas (benim X vs Y'nin) → Claude (data sorgu)
+        if not re.search(r'\b(benim|kendi|ben(de|im))', text_lower):
+            return "karsilastirma"
+
+    # 10. QUIZ_REQUEST — quiz renderer (multi-choice + feedback)
+    if _QUIZ_REQUEST.search(text_lower) and text_len < 200:
+        return "quiz_request"
+
+    # 8. RENDER_REQUEST — sim/3d/formula renderer (geniş kategori, en sona)
+    # ÖNEMLI: kavramsal_kisa veya egitim_icerik ile çakışırsa render kazanır
+    # (kullanıcı "X anlat ve göster" derse render lane'i Cerebras'a renderer hint ile gönderir)
+    if _RENDER_REQUEST.search(text_lower) and text_len < 250:
+        # Kişisel render istekleri (Ali'nin profili gibi) → Claude (compound karne+chart+...)
+        if not re.search(r'\b(benim|kendi|\b\w+\s+(adli|adlı|isimli)\s+(öğrenci|ogrenci))', text_lower):
+            return "render_request"
+
     # Hiçbir lane'e uymadı → Claude'a (default güvenli)
     return None
 
 
 def is_groq_safe(lane: Optional[str]) -> bool:
-    """Lane Groq-SAFE mi (vs None=Claude)."""
+    """Lane Groq/Cerebras-SAFE mi (vs None=Claude)."""
     return lane in {
         "kavramsal_kisa", "sohbet", "meta_direktif", "kibarlik",
         "egitim_icerik", "red_generik", "kisa_motivasyon",
+        # 25.37+ (Neo): render istekleri Cerebras'a, renderer hint inject ile zenginleşir
+        "render_request", "karsilastirma", "quiz_request", "konu_haritasi",
     }
+
+
+# 25.37+ (Neo): Lane → Intent eşlemesi (Cerebras renderer hint için)
+# Bu eşleşme cerebras_handler.INTENT_RENDERER_MAP key'leri ile uyumlu olmalı
+LANE_TO_INTENT = {
+    "kavramsal_kisa":  "kavram_aciklama",
+    "egitim_icerik":   "kavram_aciklama",
+    "render_request":  "kavram_aciklama",  # formula+sim/3d+steps zorunlu
+    "karsilastirma":   "karsilastirma",    # compare2 zorunlu
+    "quiz_request":    "kavram_aciklama",  # quiz renderer (kavram için)
+    "konu_haritasi":   "plan_yap",         # kgraph
+    "sohbet":          "selamlama",
+    "kibarlik":        "selamlama",
+    "kisa_motivasyon": "motivasyon_destek",
+    "meta_direktif":   None,  # renderer YOK
+    "red_generik":     None,
+}
+
+
+def get_intent_for_lane(lane: Optional[str]) -> Optional[str]:
+    """Lane → INTENT_RENDERER_MAP key. Cerebras handler'a gönderilir."""
+    if not lane:
+        return None
+    return LANE_TO_INTENT.get(lane)
 
 
 def get_lane_system_addon(lane: str) -> str:
@@ -285,6 +378,31 @@ def get_lane_system_addon(lane: str) -> str:
             "OGRENCI KISA, BASIT 'YORGUNUM/SIKILIM' MESAJI. "
             "Empati + 1 somut oneri (kisa mola, su ic, basit aktivite). "
             "ASLA kriz analizi yapma — bu basit motivasyon. Max 60 kelime."
+        ),
+        # 25.37+ (Neo) — Render istekleri için lane prompt'lari
+        "render_request": (
+            "OGRENCI BIR KAVRAMI GORSEL/SIMULASYON ISTIYOR (kara delik, dna, atom vb). "
+            "Mutlaka renderer kullan (```formula + ```sim/```3d + ```steps zorunlu). "
+            "Onemli formul + 1-2 paragraf aciklama + interaktif gorsel + sinav baglantisi. "
+            "Compton-altin standart akis: tarih + mekanizma + formul + interaktif + AYT/TYT bagi."
+        ),
+        "karsilastirma": (
+            "OGRENCI IKI KAVRAMI KARSILASTIRMA ISTIYOR (X vs Y, fark, mitoz vs mayoz). "
+            "MUTLAKA ```compare2 renderer kullan — markdown tablo YASAK. "
+            "Yan yana iki kutu (sol/sag), 4-6 satir matris (aspect/left/right), takeaway 1 satir. "
+            "Renkli + pedagojik."
+        ),
+        "quiz_request": (
+            "OGRENCI INTERAKTIF QUIZ/TEST ISTIYOR. "
+            "MUTLAKA ```quiz renderer kullan: 3-5 multi-choice soru + dogru cevap + aciklama. "
+            "Konu sonrasi pekiştirme dongusu (Ebbinghaus). "
+            "schedule_recall tool'u da cagir (24h sonra hatirlat)."
+        ),
+        "konu_haritasi": (
+            "OGRENCI KONULAR ARASI ILISKI/HARITA ISTIYOR. "
+            "MUTLAKA build_knowledge_graph tool cagir, kgraph_block'u yapistir. "
+            "D3 force layout: zayif kirmizi, gucsu yesil. Kisa pedagojik kapanis: "
+            "'Hangi konuya odaklanalim?' sor."
         ),
     }
     return addons.get(lane, "")

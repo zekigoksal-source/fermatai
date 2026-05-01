@@ -217,16 +217,98 @@ async def update_rule(
         return {"success": False, "error": str(e)}
 
 
-async def build_rules_prompt_block(role: str) -> str:
+async def build_rules_prompt_block(role: str, message_hint: str = "") -> str:
     """Prompt'a inject edilecek tam blok metni.
-    Boşsa boş string döner (extra token harcamaz)."""
-    rules = await get_active_rules_for_role(role, limit=30)
-    if not rules:
+
+    25.37+ (Neo audit #9): CONTEXT-AWARE FİLTER.
+    Bağlamsız kuralları çıkar — token tasarrufu (~500 tok/cevap):
+      - Render kuralları SADECE konu/sim/quiz mesajlarında
+      - Naming kuralı SADECE yönetim/iletişim mesajlarında
+      - Safety + data_priority HER ZAMAN (kritik)
+      - Diğer kategoriler her zaman (varsayılan)
+
+    Boşsa boş string döner.
+    """
+    try:
+        await ensure_table()
+        # Tüm aktif kuralları rule_id + category ile çek (filter için lazım)
+        rows = await db_fetch(
+            """SELECT rule_id, rule_text, category, priority FROM bot_behavior_rules
+               WHERE active = TRUE
+                 AND (expires_at IS NULL OR expires_at > NOW())
+                 AND (scope = 'global' OR scope = $1)
+               ORDER BY priority ASC, created_at DESC LIMIT 30""",
+            role
+        )
+    except Exception as e:
+        logger.debug(f"build_rules_prompt_block fetch hata: {e}")
         return ""
+
+    if not rows:
+        return ""
+
+    msg_lower = (message_hint or "").lower()
+
+    # Context detection — hangi kategoriler aktif olmalı?
+    # Render keyword'leri → render kuralları aktif
+    has_render_context = bool(re.search(
+        r'\b(simul|3d|gostcr|göster|interaktif|grafik|chart|kavram|nedir|anlat|formul|formül|'
+        r'qu[iı]z|test|sınav|sinav|kıyas|kar[şs]ıla[şs]t|fark|graph|harita|hedef|plan)',
+        msg_lower
+    ))
+    # Yönetim keyword'leri → naming kuralı aktif
+    has_naming_context = bool(re.search(
+        r'\b(yönet|yonet|m[uü]d[uü]r|patron|y[öo]netici|kim[\s\?]|kime\s+ula[şs])',
+        msg_lower
+    ))
+    # Veri sorgusu keyword'leri → data_priority kuralı aktif
+    has_data_context = bool(re.search(
+        r'\b(bug[uü]n|yarın|yarin|bu\s+hafta|hangi|kac\s+tane|kaç\s+tane|toplam|kim\s+geldi)',
+        msg_lower
+    ))
+
+    # Filter logic
+    filtered = []
+    for r in rows:
+        cat = (r["category"] or "misc").lower()
+        prio = r["priority"]
+        # P1 safety + data_priority HER ZAMAN gönderilir (kritik)
+        if cat in ("safety", "data_priority") and prio <= 1:
+            filtered.append(r["rule_text"])
+            continue
+        # Render kuralları sadece render context'inde
+        if cat == "render":
+            if has_render_context or message_hint == "":
+                filtered.append(r["rule_text"])
+            continue
+        # Naming kuralı sadece yönetim context'inde
+        if cat == "naming":
+            if has_naming_context or message_hint == "":
+                filtered.append(r["rule_text"])
+            continue
+        # Data priority her veri context'inde
+        if cat == "data_priority":
+            if has_data_context or prio <= 2 or message_hint == "":
+                filtered.append(r["rule_text"])
+            continue
+        # Diğer kategoriler (misc, tone, format) her zaman gönder
+        filtered.append(r["rule_text"])
+
+    if not filtered:
+        return ""
+
+    # Async fire-forget: usage_count++
+    try:
+        rule_ids = [r["rule_id"] for r in rows if r["rule_text"] in filtered]
+        if rule_ids:
+            asyncio.create_task(_inc_usage(rule_ids))
+    except Exception:
+        pass
+
     lines = ["", "═══════════════════════════════════════════════════════════════════════",
-             "📋 DİNAMİK DAVRANIŞ KURALLARI (DB'den canlı, Neo onayli)",
+             f"📋 DİNAMİK DAVRANIŞ KURALLARI ({len(filtered)}/{len(rows)} bağlamsal filtre, Neo onayli)",
              "═══════════════════════════════════════════════════════════════════════"]
-    for i, r in enumerate(rules, 1):
+    for i, r in enumerate(filtered, 1):
         lines.append(f"{i}. {r}")
     lines.append("")
     return "\n".join(lines)

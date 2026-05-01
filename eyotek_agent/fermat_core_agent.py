@@ -2828,7 +2828,19 @@ async def run_tool(name: str, input_data: dict,
     """Araç çalıştır ve JSON string döndür.
 
     22.1n-rev: caller_channel eklendi (Atlas #16 — send_exam_image web/wp ayrimi).
+    25.37+ (Neo audit #3): Tool perf tracking (duration_ms + success → tool_usage_log).
     """
+    # 25.37+ — Tool perf tracking baslangic
+    import time as _tp_time
+    _tp_start = _tp_time.time()
+    _tp_success = True
+    _tp_error = ""
+    _tp_input_kb = 0
+    try:
+        _tp_input_kb = len(json.dumps(input_data, ensure_ascii=False, default=str).encode("utf-8")) // 1024
+    except Exception:
+        pass
+
     fn = TOOL_DISPATCH.get(name)
     if not fn:
         return json.dumps({"error": f"Bilinmeyen araç: {name}"}, ensure_ascii=False)
@@ -3024,9 +3036,38 @@ async def run_tool(name: str, input_data: dict,
                     "details": str(_flt_err)[:200],
                 }, ensure_ascii=False)
 
-        return json.dumps(result, ensure_ascii=False, indent=2, default=str)
+        # 25.37+ — Tool perf log (fire-forget, caller'ı bloklamasın)
+        try:
+            if isinstance(result, dict):
+                _tp_success = bool(result.get("success", True))
+                if not _tp_success:
+                    _tp_error = str(result.get("error", ""))[:300]
+        except Exception:
+            pass
+        _final_json = json.dumps(result, ensure_ascii=False, indent=2, default=str)
+        try:
+            _tp_dur = int((_tp_time.time() - _tp_start) * 1000)
+            _tp_out_kb = len(_final_json.encode("utf-8")) // 1024
+            from tool_perf import _log_call as _tp_log
+            asyncio.create_task(_tp_log(
+                name, _tp_dur, _tp_success, caller_role, caller_phone,
+                _tp_error, _tp_input_kb, _tp_out_kb
+            ))
+        except Exception:
+            pass
+        return _final_json
     except Exception as e:
         logger.error(f"Tool '{name}' hatası: {e}")
+        # 25.37+ — exception case da log
+        try:
+            _tp_dur = int((_tp_time.time() - _tp_start) * 1000)
+            from tool_perf import _log_call as _tp_log
+            asyncio.create_task(_tp_log(
+                name, _tp_dur, False, caller_role, caller_phone,
+                str(e)[:300], _tp_input_kb, 0
+            ))
+        except Exception:
+            pass
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 

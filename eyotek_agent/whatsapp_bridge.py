@@ -693,6 +693,24 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"  ⚠️  Hack tracker init hatasi: {e}")
 
+    # ── Tool Performance Tracking (25.37+ Neo audit #3) ──────────────────────
+    # 118 tool için süre + success log → optimize edilebilsin
+    try:
+        from tool_perf import ensure_table as _tp_init
+        await _tp_init()
+        logger.info("  📊  Tool perf tracker hazir (tool_usage_log)")
+    except Exception as e:
+        logger.warning(f"  ⚠️  Tool perf init hatasi: {e}")
+
+    # ── Behavior rules + Active recall (25.37 ensure DB) ─────────────────────
+    try:
+        from behavior_rules import ensure_table as _br_init
+        await _br_init()
+        from active_recall import ensure_table as _ar_init
+        await _ar_init()
+    except Exception as e:
+        logger.debug(f"  behavior/recall init: {e}")
+
     # ── Log filter (hassas veri maskeleme) 22.1d ─────────────────────────────
     try:
         from utils.log_filter import install_log_filter

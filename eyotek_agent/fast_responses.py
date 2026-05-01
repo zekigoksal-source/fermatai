@@ -1679,6 +1679,18 @@ OGRENCI_PATTERNS = [
     (r"^bo[sş]\s*konu[sş](iyor|uyor|iyorsun|uyorsun|uyosun|iyosun)", "web_daveti_ogrenci", "Boş konuşma"),
     (r"(sen|seni|burada|burayi|burayı).*(s[iı]k|s[iı]k[iı]c|b[iı]kt|yetersiz|anlam[iı]yor)", "web_daveti_ogrenci", "Sıkıldım/anlamıyor"),
 
+    # 25.37+ (Neo) — YENI 6 RENDERER YONLENDIRICILERI (Cerebras lane redirect)
+    # Bu pattern'ler "lane_render", "lane_quiz", "lane_compare", "lane_kgraph" döner.
+    # Caller (process_message) bu cevabı görüp routing_engine'e local'e zorla yönlendirir.
+    # Cerebras tarafında renderer hint inject edilir (Brief #11) → zengin cevap.
+    (r"\b(quiz|test|s[iı]nav|kisa\s+test|k[iı]sa\s+test).{0,30}(yap|olu[sş]tur|haz[iı]rla|ver)\b", "lane_quiz", "Quiz yap istegi"),
+    (r"\b(soru\s+sor|soru\s+co?zd[uü]r|test\s+co?z|interaktif\s+test)\b", "lane_quiz", "Soru sor/coz"),
+    (r"\b(k[iı]yas|kar[sş][iı]la[sş]t[iı]r|fark[iı]?\s+(nedir|ne|nas[iı]l))\s", "lane_compare2", "Kiyasla/karsilastir"),
+    (r"\b(\w+)\s+(vs|ile|ve)\s+(\w+).{0,20}(fark|aras[iı]ndaki|kiyas|kar[sş][iı]l)", "lane_compare2", "X vs Y fark"),
+    (r"\b(konu\s+haritas[iı]|bilgi\s+haritas[iı]|graph\s+g[oö]ster|baglant[iı]\s+ag[iı]|knowledge\s+graph|kgraph)\b", "lane_kgraph", "Konu haritasi"),
+    (r"\b(simul[aäe]?syon|simulasyon|interaktif\s+(g[oö]ster|sahne|model)|3d\s+(g[oö]ster|model|cizim)|g[oö]rselle[sş]tir|animasyon)\b", "lane_render", "Simulasyon istegi"),
+    (r"\b(animasyonlu\s+(g[oö]ster|anlat|cizim|model)|hareketli\s+g[oö]rsel|slider\s+ile|interaktif\s+kontrol)\b", "lane_render", "Animasyonlu gorsel"),
+
     # Selamlama — SADECE saf selam (soru YOKSA)
     # NOT: Handler icinde zaten len<30 kontrolu var (satir 1573), bu pattern yedek guvenlik
     (r"^(merhaba|selam|iyi\s*g[uü]n|hey|slm|sa$|selamun)[.!,\s]*$", "selamlama", "Saf selam"),
@@ -2463,6 +2475,15 @@ async def try_fast_response(
                 try: _fr_last_handler.set(handler)
                 except: pass
                 try:
+                    # 25.37+ (Neo) — YENI 6 RENDERER LANE REDIRECTORS
+                    # None döndürünce caller routing'e devam eder. Bu mesajlar groq_lanes'te
+                    # zaten yakalanır (render_request, karsilastirma, quiz_request, konu_haritasi)
+                    # → chat_local_async → Cerebras → renderer hint inject → zengin cevap.
+                    # fast_response burada SADECE pattern eşleşmesini hızlandırır (5ms log),
+                    # gerçek üretim Cerebras'ta yapılır (~2-3s).
+                    if handler in ("lane_quiz", "lane_compare2", "lane_kgraph", "lane_render"):
+                        return None  # Cerebras lane → renderer hint ile zengin cevap
+
                     if handler == "claude_ders_analiz":
                         return None  # Claude query_analytics ile detayli analiz yapsin
 

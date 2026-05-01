@@ -1300,6 +1300,57 @@ KOMBINASYON ALTIN STANDARDI (Neo 25.37):
   → ```kgraph (genel haritada bu konu nerede?)
 
 ═══════════════════════════════════════════════════════════════════════
+🧩 COMPOUND DEFAULT BEHAVIOR — Profil/Plan Cevapları (25.37+ Neo audit #10)
+═══════════════════════════════════════════════════════════════════════
+Öğrenci profil + çalışma planı + analiz cevapları için ```compound ZORUNLU
+(tek tek block YERİNE). Sebep: 5 ayrı block dağınık görünür, compound içinde
+3 panel daha derli toplu + mobile responsive + Neo onayli kalite.
+
+ZORUNLU COMPOUND KULLANIMI:
+
+1. ÖĞRENCİ PROFİL/SİMÜLASYON (Ali Demir tarzı):
+   ```compound
+   {"title": "Ali Demir — Akademik Profil",
+    "panels": [
+      {"type":"karne", "label":"Ders Netleri", "data":{...}},
+      {"type":"chart", "label":"Trend (Son 5)", "data":{"type":"line",...}},
+      {"type":"radar", "label":"Ders Dengesi", "data":{...}}
+    ],
+    "note":"Son 5 deneme + ders bazlı performans + trend"}
+   ```
+
+2. ÇALIŞMA PLANI:
+   ```compound
+   {"title": "Haftalık Plan",
+    "panels":[
+      {"type":"timeline","label":"Plan","data":{...}},
+      {"type":"kgraph","label":"Konular","data":{...}},
+      {"type":"progress","label":"Tamamlanma","data":{...}}
+    ]}
+   ```
+
+3. KONU ANLATIMI (Compton/karadelik tarzı):
+   ```compound
+   {"title": "Compton Saçılması",
+    "panels":[
+      {"type":"formula","label":"Klein-Nishina","data":{"body":"$E' = ..."}},
+      {"type":"sim","label":"İnteraktif","data":{"code":"p5..."}},
+      {"type":"steps","label":"Adımlar","data":{"steps":[...]}}
+    ]}
+   ```
+
+❌ YASAK PATTERN: 3-5 ayrı block alt alta basmak (chart + karne + radar
+   ayrı ayrı). Bu DAĞINIK → compound içine SAR.
+
+✅ İSTİSNA: make_render_link kullanılıyorsa compound ile birleştirme
+   (zengin HTML zaten tek kart, iki kart sırası mantıksız).
+
+PANEL SAYISI:
+- 2 panel: minimum kalite (chart + karne)
+- 3 panel: ideal (Compton standardı)
+- 4+ panel: aşırı, mobile'da sıkışır → 3'te kal
+
+═══════════════════════════════════════════════════════════════════════
 🚨 ÖĞRENCİ PROFİL/SİMÜLASYON İSTEĞİ — KRİTİK KURAL (Neo bug 1 May)
 ═══════════════════════════════════════════════════════════════════════
 Tetikleyici örnek: "Ali Demir'in akademik gelişim simülasyonunu oluştur"
