@@ -9196,7 +9196,9 @@ async function outreachSubmit(action, ids) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 25.40 (Neo PWA): Service Worker register + Install prompt UI
+// 25.40 (Neo PWA): Service Worker register + 2-mode Install banner
+// MOD A: beforeinstallprompt event geldi → 1-tıkla "Yükle" butonu
+// MOD B: event gelmedi (Chrome heuristic, iOS, vs) → manuel rehber göster
 // ═══════════════════════════════════════════════════════════════════
 (function setupPWA() {
   // SW register
@@ -9205,40 +9207,62 @@ async function outreachSubmit(action, ids) {
       navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
         .then(reg => {
           console.log('[PWA] SW registered, scope:', reg.scope);
-          // Update kontrolü her saatte
           setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
         })
         .catch(err => console.warn('[PWA] SW register fail:', err));
     });
   }
 
-  // Install prompt — Chrome BeforeInstallPromptEvent
+  // Helpers
+  function isIos() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  }
+  function isAndroid() {
+    return /Android/i.test(navigator.userAgent);
+  }
+  function isMobile() {
+    return isIos() || isAndroid() ||
+      /Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           window.navigator.standalone === true;
+  }
+  function isAlreadyInstalled() {
+    try { return localStorage.getItem('pwa_installed') === '1'; } catch (_) { return false; }
+  }
+  function isDismissedRecently(days = 7) {
+    try {
+      const ts = parseInt(localStorage.getItem('pwa_dismissed_at') || '0');
+      return Date.now() - ts < days * 24 * 3600 * 1000;
+    } catch (_) { return false; }
+  }
+
+  // ─── MOD A: BeforeInstallPromptEvent (Chrome native) ──────────────
   let deferredInstallPrompt = null;
+  let modeAShown = false;
   window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();  // Browser default banner'i engelle
+    e.preventDefault();
     deferredInstallPrompt = e;
-    showCustomInstallBanner();
+    if (!modeAShown && !isStandalone() && !isAlreadyInstalled() && !isDismissedRecently()) {
+      modeAShown = true;
+      // Mod B'yi (manual) gizle, Mod A göster
+      hideManualGuide();
+      showInstallButton();
+    }
   });
 
-  // Zaten yüklü mü kontrol et
   window.addEventListener('appinstalled', () => {
     console.log('[PWA] kuruldu ✓');
     deferredInstallPrompt = null;
-    hideCustomInstallBanner();
+    hideInstallButton();
+    hideManualGuide();
     try { localStorage.setItem('pwa_installed', '1'); } catch (_) {}
   });
 
-  function showCustomInstallBanner() {
-    // Daha önce reddedildiyse 7 gün gösterme
-    let dismissedAt = 0;
-    try { dismissedAt = parseInt(localStorage.getItem('pwa_dismissed_at') || '0'); } catch (_) {}
-    if (Date.now() - dismissedAt < 7 * 24 * 3600 * 1000) return;
-    // Zaten yüklü
-    try { if (localStorage.getItem('pwa_installed') === '1') return; } catch (_) {}
-    // standalone mode'da zaten — banner gerekmez
-    if (window.matchMedia('(display-mode: standalone)').matches) return;
+  // MOD A — 1-tıkla yükle butonu
+  function showInstallButton() {
     if (document.getElementById('pwa-install-banner')) return;
-
     const banner = document.createElement('div');
     banner.id = 'pwa-install-banner';
     banner.innerHTML = `
@@ -9247,7 +9271,7 @@ async function outreachSubmit(action, ids) {
       </div>
       <div class="pwa-banner-text">
         <div class="pwa-banner-title">FermatAI'yi yükle</div>
-        <div class="pwa-banner-sub">Telefonuna icon olarak ekle, tek tıkla aç</div>
+        <div class="pwa-banner-sub">Telefonuna ekle, tek tıkla aç</div>
       </div>
       <div class="pwa-banner-actions">
         <button class="pwa-banner-cancel" type="button" aria-label="Kapat">×</button>
@@ -9257,7 +9281,7 @@ async function outreachSubmit(action, ids) {
     document.body.appendChild(banner);
 
     banner.querySelector('.pwa-banner-install').addEventListener('click', async () => {
-      if (!deferredInstallPrompt) return hideCustomInstallBanner();
+      if (!deferredInstallPrompt) return hideInstallButton();
       deferredInstallPrompt.prompt();
       try {
         const { outcome } = await deferredInstallPrompt.userChoice;
@@ -9267,53 +9291,115 @@ async function outreachSubmit(action, ids) {
         }
       } catch (e) {}
       deferredInstallPrompt = null;
-      hideCustomInstallBanner();
+      hideInstallButton();
     });
 
     banner.querySelector('.pwa-banner-cancel').addEventListener('click', () => {
       try { localStorage.setItem('pwa_dismissed_at', String(Date.now())); } catch (_) {}
-      hideCustomInstallBanner();
+      hideInstallButton();
     });
 
     setTimeout(() => banner.classList.add('show'), 100);
   }
 
-  function hideCustomInstallBanner() {
+  function hideInstallButton() {
     const b = document.getElementById('pwa-install-banner');
     if (!b) return;
     b.classList.remove('show');
     setTimeout(() => { try { b.remove(); } catch (_) {} }, 250);
   }
 
-  // iOS için (Safari "Add to Home Screen" çıkmaz, manuel öneri)
-  function isIos() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  }
-  function isInStandaloneMode() {
-    return window.navigator.standalone === true;
-  }
-  if (isIos() && !isInStandaloneMode()) {
-    let lastShown = 0;
-    try { lastShown = parseInt(localStorage.getItem('pwa_ios_hint') || '0'); } catch (_) {}
-    if (Date.now() - lastShown > 14 * 24 * 3600 * 1000) {
-      // 30 saniye sonra hafif bir iOS rehber göster
-      setTimeout(() => {
-        if (document.getElementById('pwa-ios-hint')) return;
-        const hint = document.createElement('div');
-        hint.id = 'pwa-ios-hint';
-        hint.innerHTML = `
-          <div class="pwa-ios-row">
-            <span>📱 iPhone'a icon ekle: <b>Paylaş</b> → <b>Ana Ekrana Ekle</b></span>
-            <button type="button" aria-label="Kapat">×</button>
-          </div>`;
-        document.body.appendChild(hint);
-        hint.querySelector('button').addEventListener('click', () => {
-          try { localStorage.setItem('pwa_ios_hint', String(Date.now())); } catch (_) {}
-          hint.remove();
-        });
-        setTimeout(() => hint.classList.add('show'), 100);
-      }, 30000);
+  // ─── MOD B: Manuel kurulum rehberi (banner gelmediğinde) ──────────
+  // Android Chrome bazen heuristic'inden dolayı banner göstermez.
+  // iOS Safari hiç göstermez (PWA destekli ama event yok).
+  // Bu yüzden 5sn sonra banner gelmezse manuel rehber çıkar.
+  function showManualGuide() {
+    if (document.getElementById('pwa-manual-guide')) return;
+    if (isStandalone() || isAlreadyInstalled() || isDismissedRecently()) return;
+    if (modeAShown) return;  // Mod A zaten gösterdi
+
+    const guide = document.createElement('div');
+    guide.id = 'pwa-manual-guide';
+
+    let stepsHTML = '';
+    if (isIos()) {
+      // iPhone Safari: paylaş ikonu rehberi
+      stepsHTML = `
+        <div class="pwa-step">
+          <span class="pwa-step-num">1</span>
+          <span>Alt menüdeki <b>Paylaş</b> ikonuna dokun
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-left:2px;">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg></span>
+        </div>
+        <div class="pwa-step">
+          <span class="pwa-step-num">2</span>
+          <span>Aşağı kaydır → <b>"Ana Ekrana Ekle"</b></span>
+        </div>
+        <div class="pwa-step">
+          <span class="pwa-step-num">3</span>
+          <span><b>"Ekle"</b> bas — FermatAI ikonu hazır 🎉</span>
+        </div>
+      `;
+    } else {
+      // Android Chrome ve diğerleri: 3-nokta menü rehberi
+      stepsHTML = `
+        <div class="pwa-step">
+          <span class="pwa-step-num">1</span>
+          <span>Sağ üstteki <b>3 nokta menü</b> ⋮</span>
+        </div>
+        <div class="pwa-step">
+          <span class="pwa-step-num">2</span>
+          <span><b>"Ana ekrana ekle"</b> veya <b>"Uygulamayı yükle"</b></span>
+        </div>
+        <div class="pwa-step">
+          <span class="pwa-step-num">3</span>
+          <span><b>"Yükle"</b> bas — FermatAI ikonu hazır 🎉</span>
+        </div>
+      `;
     }
+
+    guide.innerHTML = `
+      <div class="pwa-guide-header">
+        <img src="/static/img/fermatai-192.png" alt="FermatAI" width="36" height="36" class="pwa-guide-logo" />
+        <div class="pwa-guide-title">
+          <div class="pwa-guide-h1">📲 FermatAI'yi telefona ekle</div>
+          <div class="pwa-guide-h2">Tek tıkla aç, daha akıcı kullan</div>
+        </div>
+        <button class="pwa-guide-close" type="button" aria-label="Kapat">×</button>
+      </div>
+      <div class="pwa-guide-steps">${stepsHTML}</div>
+      <div class="pwa-guide-footer">
+        Ücretsiz · Mağaza gerekmez · İstediğin zaman silersin
+      </div>
+    `;
+    document.body.appendChild(guide);
+
+    guide.querySelector('.pwa-guide-close').addEventListener('click', () => {
+      try { localStorage.setItem('pwa_dismissed_at', String(Date.now())); } catch (_) {}
+      hideManualGuide();
+    });
+
+    setTimeout(() => guide.classList.add('show'), 100);
+  }
+
+  function hideManualGuide() {
+    const g = document.getElementById('pwa-manual-guide');
+    if (!g) return;
+    g.classList.remove('show');
+    setTimeout(() => { try { g.remove(); } catch (_) {} }, 250);
+  }
+
+  // ─── Initial check (5sn sonra) ────────────────────────────────────
+  // Sadece mobile + standalone değilse + zaten yüklü değilse
+  if (isMobile() && !isStandalone() && !isAlreadyInstalled() && !isDismissedRecently()) {
+    setTimeout(() => {
+      if (modeAShown) return;  // beforeinstallprompt zaten geldi → mod A gösterir
+      // Banner gelmedi → manuel rehber göster
+      showManualGuide();
+    }, 5000);
   }
 })();
 
@@ -9394,42 +9480,133 @@ async function outreachSubmit(action, ids) {
 }
 #pwa-install-banner .pwa-banner-cancel:hover { background: rgba(255,255,255,0.25); }
 
-/* iOS hint — Safari için */
-#pwa-ios-hint {
+/* ═══ MOD B: Manuel kurulum rehberi (Neo direktif 25.40) ═══ */
+#pwa-manual-guide {
   position: fixed;
-  bottom: 12px;
+  bottom: 16px;
   left: 50%;
-  transform: translateX(-50%) translateY(120%);
+  transform: translateX(-50%) translateY(150%);
   z-index: 99998;
-  background: #1F2937;
-  color: white;
-  padding: 10px 14px;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.30);
-  max-width: 92vw;
-  font-size: 13px;
-  transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
+  background: linear-gradient(160deg, #FFF8F0 0%, #FFEFD5 100%);
+  border: 1.5px solid rgba(199,111,62,0.40);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(199,111,62,0.30), 0 4px 14px rgba(0,0,0,0.10);
+  max-width: 96vw;
+  width: 380px;
+  padding: 16px 18px;
+  transition: transform 0.36s cubic-bezier(0.16,1,0.3,1);
+  font-family: inherit;
 }
-#pwa-ios-hint.show { transform: translateX(-50%) translateY(0); }
-#pwa-ios-hint .pwa-ios-row { display: flex; align-items: center; gap: 8px; }
-#pwa-ios-hint button {
-  background: rgba(255,255,255,0.12);
-  border: none;
-  color: white;
-  width: 24px; height: 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
+#pwa-manual-guide.show { transform: translateX(-50%) translateY(0); }
+html[data-theme="dark"] #pwa-manual-guide {
+  background: linear-gradient(160deg, #1F2937 0%, #2D2018 100%);
+  border-color: rgba(245,158,11,0.40);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.50), 0 4px 14px rgba(199,111,62,0.20);
+  color: #F5F4ED;
 }
 
-/* Standalone mode (PWA açıldığında) — küçük "FermatAI App" rozeti header'a */
-@media (display-mode: standalone) {
-  body::before {
-    content: "";
-    display: none;
+#pwa-manual-guide .pwa-guide-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 12px;
+}
+#pwa-manual-guide .pwa-guide-logo {
+  border-radius: 9px;
+  flex-shrink: 0;
+  display: block;
+  box-shadow: 0 4px 10px rgba(199,111,62,0.30);
+}
+#pwa-manual-guide .pwa-guide-title { flex: 1; min-width: 0; }
+#pwa-manual-guide .pwa-guide-h1 {
+  font-size: 14.5px; font-weight: 700;
+  color: #1F2937;
+  margin-bottom: 2px;
+}
+html[data-theme="dark"] #pwa-manual-guide .pwa-guide-h1 { color: #F5F4ED; }
+#pwa-manual-guide .pwa-guide-h2 {
+  font-size: 12px;
+  color: #6B7280;
+  line-height: 1.3;
+}
+html[data-theme="dark"] #pwa-manual-guide .pwa-guide-h2 { color: #9CA3AF; }
+#pwa-manual-guide .pwa-guide-close {
+  background: rgba(199,111,62,0.10);
+  color: #C76F3E;
+  border: none;
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+#pwa-manual-guide .pwa-guide-close:hover {
+  background: rgba(199,111,62,0.20);
+  transform: scale(1.08);
+}
+
+#pwa-manual-guide .pwa-guide-steps {
+  display: flex; flex-direction: column; gap: 8px;
+  margin: 8px 0;
+}
+#pwa-manual-guide .pwa-step {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.55);
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #1F2937;
+}
+html[data-theme="dark"] #pwa-manual-guide .pwa-step {
+  background: rgba(255,255,255,0.05);
+  color: #F5F4ED;
+}
+#pwa-manual-guide .pwa-step-num {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  background: linear-gradient(135deg, #C76F3E, #A75A2D);
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+#pwa-manual-guide .pwa-step b {
+  color: #C76F3E;
+  font-weight: 700;
+}
+html[data-theme="dark"] #pwa-manual-guide .pwa-step b { color: #FCD34D; }
+
+#pwa-manual-guide .pwa-guide-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(199,111,62,0.15);
+  font-size: 11px;
+  color: #6B7280;
+  text-align: center;
+}
+html[data-theme="dark"] #pwa-manual-guide .pwa-guide-footer {
+  border-top-color: rgba(245,158,11,0.20);
+  color: #9CA3AF;
+}
+
+/* Mobile responsive */
+@media (max-width: 540px) {
+  #pwa-manual-guide {
+    width: calc(100vw - 24px);
+    bottom: 12px;
+    padding: 14px 14px;
   }
-  /* PWA modunda banner zaten gerekmez, gizle */
-  #pwa-install-banner, #pwa-ios-hint { display: none !important; }
+  #pwa-manual-guide .pwa-guide-h1 { font-size: 14px; }
+  #pwa-manual-guide .pwa-step { font-size: 12.5px; padding: 7px 9px; }
+}
+
+/* Standalone mode (PWA açıldığında) — kurulum gereksiz, gizle */
+@media (display-mode: standalone) {
+  body::before { content: ""; display: none; }
+  #pwa-install-banner, #pwa-manual-guide { display: none !important; }
 }
 </style>
 
