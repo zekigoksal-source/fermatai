@@ -96,7 +96,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "search_phet_simulation", "embed_phet_simulation",
         "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step",
     },
-    # Yönetim üyesi: müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
+    # Yönetim üyesi (Bilge): müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
+    # Oturum 25.40: get_blueprint_section kaldırıldı (admin-özel mimari iç bilgi)
     "yonetim": {
         "get_student_analytics", "get_ayt_analysis", "check_teacher_availability",
         "get_class_summary", "search_students", "get_class_plan", "query_analytics",
@@ -105,37 +106,42 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "plan_kaydet", "plan_getir", "plan_gun_guncelle",
         "counsellor_brief", "class_brief", "transfer_failure_analiz", "tercih_listesi_tasla",
         "get_recent_system_updates",
-        "get_blueprint_section",        # 25.29 BLUEPRINT mimari farkindalik
         "ogm_yonlendir",
         "branch_zayif_konu",
         # 23 Nisan — Tercih Robotu (okuma)
         "tercih_profili_getir", "tercih_listesi_uret", "bolum_karsilastir",
         "tercih_donemi_durum",
     },
-    # Müdür: admin ile aynı (atlas_trend ve yönetim system verisi HARİÇ — Neo only)
+    # Müdür (Mahsum, Duygu): TÜM kurum verisi (akademik + Eyotek + tercih + raporlar)
+    # Oturum 25.40 (Neo direktif): SİSTEM AYARLARI ve ADMIN-ÖZEL TOOL'LAR ÇIKARILDI.
+    # Müdür "admin paneli gibi" hissi vermesin — kurum operasyonu odaklı.
     "mudur": {
+        # Akademik veri
         "get_student_analytics", "get_ayt_analysis", "check_teacher_availability",
         "execute_eyotek_action", "get_class_summary",
         "search_students", "get_class_plan", "query_analytics",
         "build_study_plan_context",
         "search_curriculum", "send_exam_image", "list_exam_questions",
         "calculate_yks_score", "eyotek_read", "eyotek_query", "ogrenci_drilldown", "sinav_sonuclari",
+        # Hedef + tercih analizi
         "ogrenci_nereye_girebilir", "hedef_bolum_ara", "puan_tahmin", "hedef_puan_analiz",
         "plan_kaydet", "plan_getir", "plan_gun_guncelle",
+        # Brief / rapor
         "counsellor_brief", "class_brief", "transfer_failure_analiz", "tercih_listesi_tasla",
         "get_recent_system_updates",
-        "get_blueprint_section",        # 25.29 BLUEPRINT mimari farkindalik
+        # Etüt talep + öğrenci kıyas
         "hazirla_etut_talebi",
         "ogrenci_peer_kiyas",
+        # Müfredat + zayıf konu
         "ogm_yonlendir",
         "branch_zayif_konu",
-        # 23 Nisan — Tercih Robotu (tam erişim)
+        # Tercih Robotu
         "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
         "bolum_karsilastir", "tercih_donemi_durum",
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
-        # 23 Nisan — Konu kaynak paketi (YouTube + Wikipedia + OGM)
+        # Konu kaynak paketi
         "konu_kaynak_paketi",
-        # 25.14h: mudur tum ogrencilerin programina ekleyebilir
+        # 25.14h: müdür tüm öğrencilerin programına ekleyebilir
         "add_to_student_program",
         # ── 25.31 — Render endpoint ──
         "make_render_link",
@@ -146,11 +152,15 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "pubchem_lookup", "usgs_earthquakes", "generate_pdf",
         # ── 25.34 — TTS + PDB + Heatmap (heatmap sadece ogretmen+) ──
         "text_to_speech", "pdb_lookup", "student_heatmap",
-        # ── 25.34 paket 2 — Code execution + Suno ──
-        "execute_python", "suno_generate",
-        # ── 25.37 (Neo) — Davranış kuralı yönetimi + Active Recall + KGraph ──
-        "add_behavior_rule", "list_behavior_rules", "deactivate_behavior_rule",
-        "schedule_recall", "get_pending_recalls", "build_knowledge_graph",
+        # ── 25.40 (Neo direktif): KALDIRILDI — admin-özel ──
+        # "execute_python" → kod çalıştırma çok hassas, sadece admin
+        # "suno_generate" → şarkı üretimi gereksiz lüks, müdür operasyon odaklı
+        # "add_behavior_rule", "list_behavior_rules", "deactivate_behavior_rule"
+        #   → SİSTEM AYARI, sadece admin (Neo) sistem kurallarını yazar
+        # "get_blueprint_section" → MİMARİ İÇ BİLGİ, sadece admin (Neo)
+        # "build_knowledge_graph", "schedule_recall", "get_pending_recalls"
+        #   → ÖĞRENCİ KİŞİSEL özelliği (kendi konsept haritası, kendi recall listesi)
+        # ── ── ── ── ── ── ── ── ── ── ── ── ── ── ── ── ── ── ── ── ── ── ──
         # ── 25.38 (Neo) — PhET + YouTube + Anki + Wolfram step ──
         "search_phet_simulation", "embed_phet_simulation",
         "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step",
