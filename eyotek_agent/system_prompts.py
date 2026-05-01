@@ -1493,6 +1493,66 @@ Leaflet/Plotly ile harita. Magnitude renk + yer + zaman gerek.
 Reasoning'i UZATMA, doğrudan kod yaz.
 
 ═══════════════════════════════════════════════════════════════════════
+🌟 SIMULASYON = EN ÜST DÜZEY GÖREV (Neo direktif 25.39 — KRITIK)
+═══════════════════════════════════════════════════════════════════════
+Neo direktif: "Simulasyon işlerinde MAX kapasite + çok iyi olursa offline
+arşive girip kalıcı kullanılır — bu en üst düzey görev, kalite max."
+
+⛔ YASAK (kabul edilmez kalite):
+- Sadece UI iskeleti (başlık + alt-nav butonları + boş canvas) → kullanıcı KIZAR
+- Three.js CDN var ama new THREE.Scene() YOK → 30 puan TAVAN
+- "animate()" loop var ama scene.add() yok → bomboş ekran
+- 30KB altı HTML simulasyon istendi → muhtemelen iskelet only
+
+✅ ZORUNLU MIN ÇEKLİSTİ (3D simulasyon için):
+[1] CDN: <script src="https://cdn.jsdelivr.net/npm/three@0.160/build/three.min.js"></script>
+    + (gerekirse) OrbitControls: three@0.160/examples/js/controls/OrbitControls.js
+[2] Scene üçlüsü:
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+[3] En az 3 mesh — scene.add() ile sahneye eklenmeli:
+    const geo = new THREE.SphereGeometry(1, 32, 32);
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+    const sun = new THREE.Mesh(geo, mat); scene.add(sun);
+    // earth, mars, jupiter... vs (en az 3 obje)
+[4] Lights — sahnede ışık olmadan obje görünmez:
+    scene.add(new THREE.AmbientLight(0x404040, 0.5));
+    const dir = new THREE.DirectionalLight(0xffffff, 1);
+    dir.position.set(5, 5, 5); scene.add(dir);
+[5] OrbitControls — kullanıcı dönderebilsin:
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+[6] Camera position — objelerin görüleceği konumda:
+    camera.position.set(0, 5, 15);  // z=5-50 ideal, z=0 yapma!
+[7] animate() loop:
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      // sun.rotation.y += 0.01;  // animasyon
+      renderer.render(scene, camera);
+    }
+    animate();
+[8] Gerçek bilim verisi — yörünge dönemleri, gerçek mesafeler, gerçek renkler
+
+📊 SISTEM OTOMATIK KONTROL EDER:
+  - calculate_quality_score(html, title) çalışır
+  - Title 3D/simulasyon/evrim/galaksi içerirse + 3D scene yoksa → MAX 30 puan
+  - is_real_3d (Scene+Camera+Renderer+scene.add+mesh hepsi varsa) zorunlu
+  - Bu bir REGRESSION GUARD — daha önce "Yıldız Evrimi 3D" simulasyonunda
+    sadece UI çıkıp 3D yoktu (90/100 yanlış puan) — fix Oturum 25.39
+
+🎯 OFFLINE ARŞIV KALITESI:
+Bot bu render'ı bir kez doğru yaparsa → öğrenci ⭐ Arşivle der → kalıcı saklanır.
+Sonra her seferinde aynı kalite render'ı yeniden yapmak yerine arşivden çağrılır.
+Bu yüzden İLK ÜRETİM kalitesi MAX olmalı.
+
+🚫 ASLA: 3D simulasyon istendi → sadece div/button render et → "iste link" → BÜYÜK BUG
+✅ DOĞRU: Three.js scene + 3+ mesh + lights + controls + animate → 80+ puan
+
+═══════════════════════════════════════════════════════════════════════
 🎯 COMPTON-SEVİYE KALİTE EŞİĞİ — ZORUNLU ÇEKLIST (Neo direktif 25.35+25.37)
 ═══════════════════════════════════════════════════════════════════════
 Compton sacılması simülasyonu Neo onayli ALTIN STANDART.

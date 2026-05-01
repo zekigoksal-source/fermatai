@@ -1672,6 +1672,76 @@ html[data-theme="dark"] .msg.bot .msg-action-btn.done { color: #86EFAC; }
 }
 .msg.bot .msg-action-btn .ico { font-size: 14px; }
 
+/* 25.39 (Neo): action-bar Arşivle butonuna tıklayınca açılan inline form */
+.msg.bot .action-archive-form {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 10px;
+  font-size: 13px;
+  animation: archFormFadeIn 0.22s ease-out;
+}
+.msg.bot .action-archive-form.open { display: flex; }
+@keyframes archFormFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg.bot .action-archive-form input,
+.msg.bot .action-archive-form select {
+  width: 100%; padding: 7px 10px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 7px;
+  font-size: 13px;
+  background: var(--panel, #fff);
+  color: var(--fg, #2F2F2F);
+  font-family: inherit;
+}
+.msg.bot .action-archive-form input:focus,
+.msg.bot .action-archive-form select:focus {
+  outline: none;
+  border-color: rgba(245, 158, 11, 0.55);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+}
+html[data-theme="dark"] .msg.bot .action-archive-form input,
+html[data-theme="dark"] .msg.bot .action-archive-form select {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #e2e8f0;
+}
+html[data-theme="dark"] .msg.bot .action-archive-form {
+  background: rgba(245, 158, 11, 0.10);
+  border-color: rgba(245, 158, 11, 0.30);
+}
+.msg.bot .action-archive-form .archive-form-actions {
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+.msg.bot .action-archive-form button {
+  font-size: 12px; padding: 6px 14px; border-radius: 7px;
+  cursor: pointer; border: 1px solid transparent;
+  font-weight: 600; transition: all 0.15s ease;
+}
+.msg.bot .action-archive-form .save-btn {
+  background: #F59E0B; color: white;
+}
+.msg.bot .action-archive-form .save-btn:hover { background: #D97706; }
+.msg.bot .action-archive-form .save-btn:disabled { opacity: 0.5; cursor: wait; }
+.msg.bot .action-archive-form .cancel-btn {
+  background: transparent; color: var(--fg-muted, #8A8A8A);
+}
+.msg.bot .action-archive-form .cancel-btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+html[data-theme="dark"] .msg.bot .action-archive-form .cancel-btn {
+  color: #94A3B8;
+}
+html[data-theme="dark"] .msg.bot .action-archive-form .cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 /* Soft visual divider between actions and reactions */
 .msg.bot .msg-actions .action-divider {
   width: 1px; height: 18px;
@@ -5496,57 +5566,134 @@ function addQuickActions(botEl) {
   });
   bar.appendChild(pdfBtn);
 
-  // 25.37+ (Neo UI redesign): ⭐ Arşivle butonu — SADECE render-card YOKSA (duplicate önle)
-  const _hasRenderCard = !!botEl.querySelector('.render-ready-card .render-archive-btn');
-  if (!_hasRenderCard && txt.length >= 100) {
+  // 25.39 (Neo direktif): ⭐ Arşivle butonu — HER ZAMAN gözüksün (render-card varsa da)
+  // Tıklandığında inline form açar (isim + kategori + not). Kaydet → /render/archive/{uuid}
+  // veya /chat/archive (render uuid yoksa).
+  if (txt.length >= 100 || botEl.dataset.renderUuid) {
     const archBtn = document.createElement("button");
     archBtn.className = "msg-action-btn";
     archBtn.innerHTML = '<span class="ico">⭐</span><span class="lbl">Arşivle</span>';
-    archBtn.title = "Mesajı arşive ekle (kalıcı)";
-    archBtn.addEventListener("click", async () => {
-      if (archBtn.classList.contains("done") || archBtn.classList.contains("loading")) return;
-      archBtn.classList.add("loading");
-      archBtn.innerHTML = '<span class="ico">⏳</span><span class="lbl">Arşiveniyor...</span>';
-      // Son user mesajı (context için)
-      const allMsgs = messages ? messages.querySelectorAll(".msg") : [];
-      let lastUserPrompt = "";
-      for (let i = allMsgs.length - 1; i >= 0; i--) {
-        if (allMsgs[i] === botEl) continue;
-        if (allMsgs[i].classList.contains("user")) { lastUserPrompt = (allMsgs[i].textContent || "").trim(); break; }
-      }
-      // Otomatik başlık
-      let suggestedTitle = "";
+    archBtn.title = "Arşive ekle — kategori, isim ve not soracak (kalıcı)";
+
+    // Inline form (toggle ile açılır) — bar'ın altında full-width
+    const archForm = document.createElement("div");
+    archForm.className = "action-archive-form";
+    // Otomatik başlık tahmini
+    const allMsgs = messages ? messages.querySelectorAll(".msg") : [];
+    let lastUserPrompt = "";
+    for (let i = allMsgs.length - 1; i >= 0; i--) {
+      if (allMsgs[i] === botEl) continue;
+      if (allMsgs[i].classList.contains("user")) { lastUserPrompt = (allMsgs[i].textContent || "").trim(); break; }
+    }
+    let suggestedTitle = botEl.dataset.renderTitle || "";
+    if (!suggestedTitle) {
       const h2 = botEl.querySelector("h2, h3");
       if (h2) suggestedTitle = h2.textContent.trim().slice(0, 80);
       else if (lastUserPrompt) suggestedTitle = lastUserPrompt.slice(0, 80);
       else suggestedTitle = txt.slice(0, 60);
+    }
+    const isRender = !!botEl.dataset.renderUuid;
+    archForm.innerHTML = `
+      <input type="text" class="archive-name" placeholder="İsim..." value="${suggestedTitle.replace(/"/g, '&quot;')}" maxlength="100">
+      <select class="archive-category">
+        <option value="">Kategori seç...</option>
+        <option value="fizik">⚛️ Fizik</option>
+        <option value="matematik">📐 Matematik</option>
+        <option value="kimya">🧪 Kimya</option>
+        <option value="biyoloji">🧬 Biyoloji</option>
+        <option value="astronomi">🌌 Astronomi</option>
+        <option value="cografya">🌍 Coğrafya</option>
+        <option value="tarih">🏛️ Tarih</option>
+        <option value="edebiyat">📚 Edebiyat</option>
+        <option value="genel">📂 Genel</option>
+      </select>
+      <input type="text" class="archive-note" placeholder="Not (opsiyonel — örn: Ali için)" maxlength="120">
+      <div class="archive-form-actions">
+        <button class="cancel-btn" type="button">İptal</button>
+        <button class="save-btn" type="button">⭐ Kaydet</button>
+      </div>
+    `;
+
+    archBtn.addEventListener("click", () => {
+      if (archBtn.classList.contains("done") || archBtn.classList.contains("loading")) return;
+      archForm.classList.toggle("open");
+      if (archForm.classList.contains("open")) {
+        const nameInput = archForm.querySelector(".archive-name");
+        if (nameInput) { nameInput.focus(); nameInput.select(); }
+      }
+    });
+
+    // Cancel
+    archForm.querySelector(".cancel-btn")?.addEventListener("click",
+      () => archForm.classList.remove("open"));
+
+    // Save
+    archForm.querySelector(".save-btn")?.addEventListener("click", async () => {
+      const nameVal = archForm.querySelector(".archive-name")?.value?.trim() || "";
+      const catVal = archForm.querySelector(".archive-category")?.value || "";
+      const noteVal = archForm.querySelector(".archive-note")?.value?.trim() || "";
+      if (!nameVal) {
+        archForm.querySelector(".archive-name")?.focus();
+        return;
+      }
+      const saveBtn = archForm.querySelector(".save-btn");
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Kaydediliyor..."; }
+      archBtn.classList.add("loading");
+      archBtn.innerHTML = '<span class="ico">⏳</span><span class="lbl">Arşiveniyor...</span>';
       try {
-        const r = await fetch(API_BASE + "/chat/archive", {
-          method: "POST", credentials: "include",
-          headers: authHeaders({"Content-Type": "application/json"}),
-          body: JSON.stringify({
-            title: suggestedTitle,
-            content: botEl.innerHTML.slice(0, 9500),
-            category: "genel",
-            context_prompt: lastUserPrompt.slice(0, 500),
-            tags: ""
-          })
-        });
-        const data = await r.json();
-        if (data.success) {
+        let success = false, errMsg = "?";
+        if (isRender && botEl.dataset.renderUuid) {
+          // Render artifact arşivle (HTML preset olarak saklanır)
+          const r = await fetch(API_BASE + "/render/archive/" + botEl.dataset.renderUuid, {
+            method: "POST", credentials: "include",
+            headers: authHeaders({"Content-Type": "application/json"}),
+            body: JSON.stringify({
+              note: JSON.stringify({name: nameVal, category: catVal, note: noteVal}),
+              name: nameVal, category: catVal,
+            }),
+          });
+          const data = await r.json();
+          success = !!data.success;
+          errMsg = data.error || "?";
+        } else {
+          // Mesaj arşivi (chat archive)
+          const r = await fetch(API_BASE + "/chat/archive", {
+            method: "POST", credentials: "include",
+            headers: authHeaders({"Content-Type": "application/json"}),
+            body: JSON.stringify({
+              title: nameVal,
+              content: botEl.innerHTML.slice(0, 9500),
+              category: catVal || "genel",
+              context_prompt: lastUserPrompt.slice(0, 500),
+              tags: noteVal,
+            }),
+          });
+          const data = await r.json();
+          success = !!data.success;
+          errMsg = data.message || "?";
+        }
+        if (success) {
+          archForm.classList.remove("open");
           archBtn.classList.remove("loading");
           archBtn.classList.add("done");
           archBtn.innerHTML = '<span class="ico">✓</span><span class="lbl">Arşivlendi</span>';
-        } else throw new Error(data.message || "?");
+          archBtn.title = `Arşivlendi: ${nameVal}${catVal ? ' (' + catVal + ')' : ''}`;
+        } else {
+          throw new Error(errMsg);
+        }
       } catch (e) {
         archBtn.classList.remove("loading");
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "⭐ Kaydet"; }
         archBtn.innerHTML = '<span class="ico">⚠️</span><span class="lbl">Hata</span>';
         setTimeout(() => {
           archBtn.innerHTML = '<span class="ico">⭐</span><span class="lbl">Arşivle</span>';
-        }, 2500);
+        }, 3000);
       }
     });
+
     bar.appendChild(archBtn);
+    // Form'u botEl'e ekle (bar'ın altına)
+    botEl.appendChild(archForm);
   }
 
   // Visual divider
@@ -6905,129 +7052,18 @@ async function doSend() {
                 </span>
                 <span class="render-ready-arrow">→</span>
               </a>
-              ${uuid ? `<div class="render-extra-actions">
-                <button class="render-archive-btn" data-uuid="${uuid}" data-title="${title.replace(/"/g, '&quot;')}" title="Arşive ekle — isim ve kategori sorulur, kalıcı olur">
-                  <span class="ico">⭐</span>
-                  <span class="lbl">Arşive Ekle</span>
-                </button>
-                <button class="render-improve-btn" data-uuid="${uuid}" title="Daha gelişmiş bir v2 üret">
-                  <span class="ico">🚀</span>
-                  <span class="lbl">Geliştir</span>
-                </button>
-                <button class="render-alternative-btn" data-uuid="${uuid}" title="Aynı konu, farklı yaklaşım">
-                  <span class="ico">🔄</span>
-                  <span class="lbl">Alternatif</span>
-                </button>
-              </div>
-              <div class="render-archive-form" data-uuid="${uuid}">
-                <input type="text" class="archive-name" placeholder="İsim (örn: Yıldız Evrimi 3D)" value="${title.replace(/"/g, '&quot;')}" maxlength="80">
-                <div class="form-row">
-                  <select class="archive-category">
-                    <option value="">Kategori seç...</option>
-                    <option value="fizik">⚛️ Fizik</option>
-                    <option value="matematik">📐 Matematik</option>
-                    <option value="kimya">🧪 Kimya</option>
-                    <option value="biyoloji">🧬 Biyoloji</option>
-                    <option value="astronomi">🌌 Astronomi</option>
-                    <option value="cografya">🌍 Coğrafya</option>
-                    <option value="genel">📚 Genel</option>
-                  </select>
-                </div>
-                <input type="text" class="archive-note" placeholder="Not (opsiyonel — örn: Ali için, Compton seviyesi)" maxlength="120">
-                <div class="form-actions">
-                  <button class="cancel-btn" type="button">İptal</button>
-                  <button class="save-btn" type="button">⭐ Kaydet</button>
-                </div>
-              </div>` : ""}`;
-            // 25.36 — Geliştir + Alternatif butonları
-            const improveBtn = card.querySelector(".render-improve-btn");
-            if (improveBtn) {
-              improveBtn.addEventListener("click", (e) => {
-                e.preventDefault();
-                if (typeof chatInput !== "undefined" && chatInput) {
-                  chatInput.value = "Bu simülasyonu daha gelişmiş ve detaylı bir v2 olarak yeniden üret. Daha fazla interaktivite, daha doğru bilim, daha güzel görsel.";
-                  chatInput.focus();
-                  // Auto-send
-                  if (typeof doSend === "function") doSend();
-                }
-              });
+              `;
+            // 25.39 (Neo): render-card alt butonlar (Arşive/Geliştir/Alternatif) KALDIRILDI.
+            // - Arşive: aşağıdaki action bar'daki ⭐ Arşivle butonunda var (form ile)
+            // - Geliştir/Alternatif: kullanıcı zaten chat input'tan yazabilir ("daha iyisini yap")
+            // Render-card sade: link + quality badge + 📥 indir + → arrow yeterli.
+            // uuid'i bot mesajına data attr olarak ekle — action bar archive butonu kullanacak
+            if (uuid && botMsg) {
+              try { botMsg.dataset.renderUuid = uuid; botMsg.dataset.renderTitle = title; } catch(_) {}
             }
-            const altBtn = card.querySelector(".render-alternative-btn");
-            if (altBtn) {
-              altBtn.addEventListener("click", (e) => {
-                e.preventDefault();
-                if (typeof chatInput !== "undefined" && chatInput) {
-                  chatInput.value = "Aynı konu için farklı bir yaklaşımla alternatif bir simülasyon üret. Önceki versiyonu sakla, ben karşılaştıracağım.";
-                  chatInput.focus();
-                  if (typeof doSend === "function") doSend();
-                }
-              });
-            }
-            // 25.39 (Neo) — Arşiv: tıklayınca FORM açılır (isim + kategori + not)
-            const archBtn = card.querySelector(".render-archive-btn");
-            const archForm = card.querySelector(".render-archive-form");
-            if (archBtn && archForm) {
-              archBtn.addEventListener("click", (e) => {
-                e.preventDefault();
-                if (archBtn.classList.contains("done")) return;
-                // Toggle form
-                archForm.classList.toggle("open");
-                if (archForm.classList.contains("open")) {
-                  const nameInput = archForm.querySelector(".archive-name");
-                  if (nameInput) { nameInput.focus(); nameInput.select(); }
-                }
-              });
-
-              // Cancel
-              const cancelBtn = archForm.querySelector(".cancel-btn");
-              if (cancelBtn) {
-                cancelBtn.addEventListener("click", () => archForm.classList.remove("open"));
-              }
-
-              // Save
-              const saveBtn = archForm.querySelector(".save-btn");
-              if (saveBtn) {
-                saveBtn.addEventListener("click", async () => {
-                  const nameVal = archForm.querySelector(".archive-name")?.value?.trim() || "";
-                  const catVal = archForm.querySelector(".archive-category")?.value || "";
-                  const noteVal = archForm.querySelector(".archive-note")?.value?.trim() || "";
-                  if (!nameVal) {
-                    archForm.querySelector(".archive-name")?.focus();
-                    return;
-                  }
-                  saveBtn.disabled = true;
-                  saveBtn.textContent = "Kaydediliyor...";
-                  archBtn.classList.add("loading");
-                  try {
-                    // Note + kategori birleştir (backend tek note alanı kabul ediyor)
-                    const noteCombined = JSON.stringify({
-                      name: nameVal,
-                      category: catVal,
-                      note: noteVal,
-                    });
-                    const r = await fetch(API_BASE + "/render/archive/" + uuid, {
-                      method: "POST", credentials: "include",
-                      headers: authHeaders({"Content-Type": "application/json"}),
-                      body: JSON.stringify({note: noteCombined, name: nameVal, category: catVal})
-                    });
-                    const data = await r.json();
-                    if (data.success) {
-                      archForm.classList.remove("open");
-                      archBtn.classList.remove("loading");
-                      archBtn.classList.add("done");
-                      archBtn.querySelector(".ico").textContent = "✓";
-                      archBtn.title = `Arşivlendi: ${nameVal}${catVal ? ' (' + catVal + ')' : ''}`;
-                    } else throw new Error(data.error || "?");
-                  } catch (err) {
-                    archBtn.classList.remove("loading");
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = "⭐ Kaydet";
-                    archBtn.querySelector(".ico").textContent = "⚠️";
-                    setTimeout(() => archBtn.querySelector(".ico").textContent = "⭐", 3000);
-                  }
-                });
-              }
-            }
+            // 25.39 (Neo): render-card alt 3 buton + form KALDIRILDI (Neo direktif)
+            // Arşivleme akışı tamamen aşağıdaki action bar'daki ⭐ Arşivle butonunda
+            // (uuid botMsg.dataset.renderUuid'den okunur)
             // 25.37+ (Neo UX): Inline 📥 download emoji — link içinde, ekstra buton değil
             const dlInline = card.querySelector(".render-inline-dl");
             if (dlInline) {

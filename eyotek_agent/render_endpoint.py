@@ -81,41 +81,137 @@ async def ensure_table():
         logger.warning(f"render_artifacts ensure_table hata: {e}")
 
 
-def calculate_quality_score(html: str) -> tuple[int, dict]:
-    """25.36 — HTML kalite puanı (100 üzerinden) + breakdown.
-    Neo direktif: tutarsız kalite sorunu için otomatik puanlama."""
+def calculate_quality_score(html: str, title: str = "") -> tuple[int, dict]:
+    """25.39 — HTML kalite puanı (100) + breakdown (Neo: max kalite zorunlu).
+
+    KRITIK FIX:
+    - Önceki versiyon "three." string varsa 25 puan veriyordu — gerçek scene yok olsa da.
+    - Şimdi: gerçek 3D scene yapısı (Scene + Camera + Renderer + scene.add) ZORUNLU
+    - Simulasyon/3D istendiyse 3D scene yoksa MAX 25 puan (UI iskeleti yetmez)
+    """
     if not html:
         return 0, {"reason": "empty"}
     h = html.lower()
+    title_lower = (title or "").lower()
     breakdown = {}
     score = 0
-    # Canvas/SVG/WebGL (+25)
-    if any(k in h for k in ["<canvas", "<svg", "webgl", "three.", "p5.", "babylon"]):
-        score += 25; breakdown["canvas_or_svg"] = True
-    # Animation (+20)
-    if any(k in h for k in ["requestanimationframe", "@keyframes", "gsap.", "tween", "animate("]):
-        score += 20; breakdown["animation"] = True
-    # User interaction (+15)
-    if any(k in h for k in ['type="range"', 'type="button"', "<button", "onclick", "addeventlistener", "oninput"]):
-        score += 15; breakdown["interaction"] = True
-    # Try/catch + error handling (+10)
+
+    # Title'dan render tipi tahmini
+    is_3d_request = any(k in title_lower for k in [
+        "3d", "simulasyon", "simülasyon", "evrim", "yıldız", "yildiz",
+        "galaksi", "kuantum", "kara delik", "molekül", "molekul",
+        "atom", "evren", "kozmik", "uzay", "yörünge", "yorunge",
+    ])
+
+    # ─── Gerçek 3D scene kontrolü (Neo: simulasyonda ZORUNLU) ───────────────
+    has_three_scene = "new three.scene" in h or "= new scene(" in h
+    has_camera = any(k in h for k in [
+        "perspectivecamera", "orthographiccamera", "camera = new", "new threee.perspectivecamera"
+    ])
+    has_renderer = any(k in h for k in [
+        "webglrenderer", "renderer = new", "renderer.setsize", "canvasrenderer"
+    ])
+    has_scene_add = "scene.add" in h or ".add(mesh" in h or "add(this.scene" in h
+    has_animate_loop = "requestanimationframe" in h
+    has_3d_objects = any(k in h for k in [
+        "new three.mesh", "new three.points", "buffergeometry", "spheregeometry",
+        "boxgeometry", "planegeometry", "linegeometry", "torusgeometry"
+    ])
+    has_lights = any(k in h for k in [
+        "ambientlight", "pointlight", "directionallight", "spotlight", "hemispherelight"
+    ])
+    has_controls = any(k in h for k in [
+        "orbitcontrols", "trackballcontrols", "flycontrols", "controls.update"
+    ])
+
+    is_real_3d = has_three_scene and has_camera and has_renderer and has_scene_add and has_3d_objects
+    breakdown["3d_scene_complete"] = is_real_3d
+    breakdown["3d_components"] = {
+        "Scene": has_three_scene, "Camera": has_camera, "Renderer": has_renderer,
+        "scene.add": has_scene_add, "3D objects": has_3d_objects,
+        "Lights": has_lights, "Controls": has_controls, "animate()": has_animate_loop,
+    }
+
+    # ─── PUANLAMA ───────────────────────────────────────────────────────────
+    # 1. Görsel motor (+30 max)
+    if is_real_3d:
+        # Tam 3D scene → 30 puan
+        score += 30; breakdown["visual_engine"] = "3D_complete"
+    elif "<canvas" in h and ("getcontext" in h or "ctx.fillrect" in h or "ctx.beginpath" in h):
+        # 2D Canvas API kullanımı (gerçek çizim)
+        score += 22; breakdown["visual_engine"] = "2D_canvas"
+    elif "<svg" in h and ("<circle" in h or "<rect" in h or "<path" in h or "<line" in h):
+        # SVG gerçek geometri
+        score += 20; breakdown["visual_engine"] = "SVG"
+    elif "p5." in h or "babylon" in h:
+        score += 18; breakdown["visual_engine"] = "framework_detected"
+    elif "<canvas" in h or "<svg" in h:
+        # Sadece tag, gerçek çizim yok
+        score += 8; breakdown["visual_engine"] = "empty_canvas/svg"
+
+    # 2. Animation (+15)
+    if has_animate_loop:
+        score += 15; breakdown["animation"] = True
+    elif "@keyframes" in h or "gsap." in h or "tween" in h:
+        score += 8; breakdown["animation"] = "css_only"
+
+    # 3. User interaction (+15)
+    interaction_patterns = ['type="range"', 'type="button"', "<button", "onclick=",
+                            "addeventlistener", "oninput", "onchange", "onmousedown"]
+    interaction_count = sum(1 for p in interaction_patterns if p in h)
+    if interaction_count >= 3:
+        score += 15; breakdown["interaction"] = "rich"
+    elif interaction_count >= 1:
+        score += 8; breakdown["interaction"] = "basic"
+
+    # 4. Lights + Controls (3D bonus) (+10)
+    if is_real_3d and has_lights and has_controls:
+        score += 10; breakdown["3d_polish"] = "lights_and_controls"
+    elif is_real_3d and (has_lights or has_controls):
+        score += 5; breakdown["3d_polish"] = "partial"
+
+    # 5. Error handling (+5)
     if "try" in h and "catch" in h:
-        score += 10; breakdown["error_handling"] = True
-    # Responsive (+10)
+        score += 5; breakdown["error_handling"] = True
+
+    # 6. Responsive (+5)
     if "viewport" in h and ("width=device-width" in h or "100%" in h):
-        score += 10; breakdown["responsive"] = True
-    # Formula/Math/LaTeX (+10)
-    if any(k in h for k in ["katex", "mathjax", "math.", "formula", "$", "\\frac"]):
-        score += 10; breakdown["formula"] = True
-    # Size optimization (10-400KB ideal) (+5)
+        score += 5; breakdown["responsive"] = True
+
+    # 7. Formula/Math (+5)
+    if any(k in h for k in ["katex", "mathjax", "math.sin", "math.cos", "math.pi", "\\frac"]):
+        score += 5; breakdown["formula"] = True
+
+    # 8. Optimal size (10-600KB) (+5)
     size_kb = len(html.encode("utf-8")) / 1024
-    if 5 <= size_kb <= 400:
+    if 10 <= size_kb <= 600:
         score += 5; breakdown["optimal_size"] = True
-    # Labels/text content (+5)
-    if any(k in h for k in ["label", "<text", "title", "<h1", "<h2", "<h3"]):
+    elif size_kb < 10:
+        breakdown["optimal_size"] = "TOO_SMALL"
+
+    # 9. Labels/UI (+5)
+    if any(k in h for k in ["<label", "<h1", "<h2", "<h3", "info", "title"]):
         score += 5; breakdown["labels"] = True
+
+    # 10. Pedagojik içerik (+5) — formül, açıklama, etiketler
+    if all(k in h for k in ["<h", "<p"]) and any(k in h for k in ["açıklama", "formül", "formula", "info"]):
+        score += 5; breakdown["pedagogical"] = True
+
+    # ─── KRITIK CEZALAR (Neo: simulasyon istendi ama yok) ───────────────────
+    if is_3d_request and not is_real_3d:
+        # Simulasyon istendi ama 3D scene yok — TAVAN 30
+        original = score
+        score = min(score, 30)
+        breakdown["penalty"] = f"3D_REQUEST_BUT_NO_SCENE (orig {original} → max 30)"
+
+    if size_kb < 5:
+        score = min(score, 15)
+        breakdown["penalty"] = breakdown.get("penalty", "") + " | TOO_TINY"
+
     breakdown["total_score"] = score
     breakdown["size_kb"] = round(size_kb, 1)
+    breakdown["is_3d_request"] = is_3d_request
+    breakdown["is_real_3d"] = is_real_3d
     return score, breakdown
 
 
@@ -241,8 +337,8 @@ async def create_artifact(html: str, title: str = "FermatAI Görsel",
 
         uuid = secrets.token_urlsafe(12)
         expires = datetime.now() + timedelta(days=ttl_days)
-        # 25.36 — kalite skoru
-        score, breakdown = calculate_quality_score(html)
+        # 25.36 — kalite skoru (25.39: title da geçiyor — 3D/simulasyon istek tespiti için)
+        score, breakdown = calculate_quality_score(html, title=title or "")
         # 25.37 — topic_hash
         thash = _topic_hash(title or "")
         await db_execute(
