@@ -440,6 +440,37 @@ html[data-theme="dark"] .msg.bot .render-archive-btn.done { color: #86EFAC; }
 html[data-theme="dark"] .msg.bot .render-improve-btn { color: #C4B5FD; }
 html[data-theme="dark"] .msg.bot .render-alternative-btn { color: #86EFAC; }
 
+/* 25.37 (Neo): İndir butonu — HTML self-contained download */
+.msg.bot .render-download-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: rgba(59,130,246,0.10);
+  border: 1px solid rgba(59,130,246,0.30);
+  color: #1D4ED8;
+  border-radius: 18px;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.msg.bot .render-download-btn:hover {
+  background: rgba(59,130,246,0.20);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(59,130,246,0.22);
+}
+.msg.bot .render-download-btn.loading {
+  opacity: 0.6; cursor: wait;
+  background: rgba(59,130,246,0.05);
+}
+.msg.bot .render-download-btn.done {
+  background: rgba(34,197,94,0.12);
+  border-color: rgba(34,197,94,0.35);
+  color: #166534;
+}
+.msg.bot .render-download-btn .ico { font-size: 14px; }
+html[data-theme="dark"] .msg.bot .render-download-btn { color: #93C5FD; }
+html[data-theme="dark"] .msg.bot .render-download-btn.done { color: #86EFAC; }
+
 /* ═══════════════════════════════════════════════════════════════
    Oturum 25.31 — 7 yeni eğitim odaklı renderer (Neo direktifi)
    ═══════════════════════════════════════════════════════════════ */
@@ -6411,6 +6442,10 @@ async function doSend() {
                   <span class="ico">⭐</span>
                   <span class="lbl">Arşive Ekle</span>
                 </button>
+                <button class="render-download-btn" data-uuid="${uuid}" data-title="${title.replace(/"/g, '&quot;')}" title="HTML dosyasi olarak bilgisayara indir — offline calisir">
+                  <span class="ico">💾</span>
+                  <span class="lbl">İndir</span>
+                </button>
                 <button class="render-improve-btn" data-uuid="${uuid}" title="Bu simulasyonu daha gelişmiş bir versiyona evrim ettir">
                   <span class="ico">🚀</span>
                   <span class="lbl">Geliştir</span>
@@ -6474,6 +6509,59 @@ async function doSend() {
                     archBtn.querySelector(".ico").textContent = "⭐";
                     archBtn.querySelector(".lbl").textContent = "Arşive Ekle";
                   }, 3000);
+                }
+              });
+            }
+            // 25.37 (Neo): İndir butonu event — HTML self-contained dosya olarak indir
+            const dlBtn = card.querySelector(".render-download-btn");
+            if (dlBtn) {
+              dlBtn.addEventListener("click", async (e) => {
+                e.preventDefault();
+                if (dlBtn.classList.contains("loading") || dlBtn.classList.contains("done")) return;
+                dlBtn.classList.add("loading");
+                const oldLbl = dlBtn.querySelector(".lbl").textContent;
+                dlBtn.querySelector(".lbl").textContent = "İndiriliyor...";
+                try {
+                  // /render/{uuid} tam HTML wrapper döner (FermatAI brand + içerik)
+                  const r = await fetch(API_BASE + "/render/" + uuid, {credentials: "include"});
+                  if (!r.ok) throw new Error("HTTP " + r.status);
+                  const html = await r.text();
+                  // Self-contained blob (offline çalışır — CDN script'leri içeride zaten gömülü)
+                  const blob = new Blob([html], {type: "text/html;charset=utf-8"});
+                  const url = URL.createObjectURL(blob);
+                  // Dosya adı: title slugify
+                  const titleSafe = (dlBtn.dataset.title || "fermatai-simulasyon")
+                    .replace(/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ\s\-]/g, "")
+                    .replace(/\s+/g, "_")
+                    .slice(0, 80);
+                  const fname = `FermatAI_${titleSafe}_${uuid.slice(0,6)}.html`;
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = fname;
+                  document.body.appendChild(a);
+                  a.click();
+                  setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }, 100);
+                  dlBtn.classList.remove("loading");
+                  dlBtn.classList.add("done");
+                  dlBtn.querySelector(".ico").textContent = "✓";
+                  dlBtn.querySelector(".lbl").textContent = "İndirildi";
+                  setTimeout(() => {
+                    dlBtn.classList.remove("done");
+                    dlBtn.querySelector(".ico").textContent = "💾";
+                    dlBtn.querySelector(".lbl").textContent = oldLbl;
+                  }, 3000);
+                } catch (err) {
+                  dlBtn.classList.remove("loading");
+                  dlBtn.querySelector(".ico").textContent = "⚠️";
+                  dlBtn.querySelector(".lbl").textContent = "Hata";
+                  setTimeout(() => {
+                    dlBtn.querySelector(".ico").textContent = "💾";
+                    dlBtn.querySelector(".lbl").textContent = oldLbl;
+                  }, 3000);
+                  console.warn("İndir hatası:", err);
                 }
               });
             }

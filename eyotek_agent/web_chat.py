@@ -494,6 +494,34 @@ async def archive_message(
             tags_clean
         )
         logger.info(f"⭐ Arşive eklendi: {sess['phone'][-4:]} → {title[:40]} (tags: {tags_clean or '-'})")
+
+        # 25.37 (Neo): Mesaj içindeki render link'lerini OTOMATIK ARSIVLE
+        # Mesaj kalır ama render artifact 30 günde expire olursa link çürür → auto-archive
+        try:
+            import re as _re
+            # /render/{12-22 char alphanumeric+_-} pattern
+            uuids = _re.findall(r"/render/([A-Za-z0-9_\-]{8,32})", content)
+            uuids = list(set(uuids))  # unique
+            if uuids:
+                # render_artifacts'ta her birini archived=TRUE + expires_at=NULL yap
+                # Sadece kullanıcının kendi mesajındaki UUID'leri archive et (zaten content'inde var)
+                await db_execute(
+                    """UPDATE render_artifacts
+                       SET archived = TRUE,
+                           archived_at = COALESCE(archived_at, NOW()),
+                           archived_by_phone = COALESCE(archived_by_phone, $2),
+                           archive_note = COALESCE(archive_note, 'auto: mesaj arşive eklendi'),
+                           expires_at = NULL
+                       WHERE uuid = ANY($1::text[])""",
+                    uuids, sess["phone"]
+                )
+                logger.info(
+                    f"  ⭐ Mesaj içi render auto-archive: {len(uuids)} artifact → kalıcı "
+                    f"(uuids: {','.join(u[:6] for u in uuids[:3])}{'...' if len(uuids)>3 else ''})"
+                )
+        except Exception as _aa_e:
+            logger.debug(f"  render auto-archive hata (kritik değil): {_aa_e}")
+
         return {"success": True, "title": title or content[:50]}
     except Exception as e:
         logger.error(f"Arşiv ekleme hatası: {e}")
