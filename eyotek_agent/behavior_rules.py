@@ -26,6 +26,7 @@ Public API:
 from __future__ import annotations
 
 import asyncio
+import re
 from datetime import datetime, timedelta
 from typing import Optional
 from loguru import logger
