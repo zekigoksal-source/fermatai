@@ -276,23 +276,36 @@ def _topic_hash(title: str, html_size_bucket: int = 0) -> str:
 
 
 async def lookup_cached_render(title: str, max_age_days: int = 30) -> Optional[dict]:
-    """Aynı title ile son N gün içinde başarılı (kalite >=60) render var mı?
+    """Aynı title ile son N gün içinde HIGH-QUALITY render var mı?
 
     Returns: {'uuid', 'title', 'quality_score', 'created_at'} veya None
+
     25.37 (Neo): Newton 2. yasa 1 kez üret, 1000 kişiye sun.
+    25.39 (Neo bug fix): 3D/simulasyon istekleri için cache eşiği SIKILAŞTI
+        — score >= 75 (eski 60). Eski scorer 90 puan veriyordu boş 3D'ye,
+        bu yüzden aynı boş cache yeniden dönüyordu. Yeni scorer ile DB'deki
+        yanlış score'lu kayıtlar 30'a düşürüldü, artık reuse edilmiyor.
     """
     try:
         await ensure_table()
         thash = _topic_hash(title or "")
+        # 3D / simulasyon istekleri için min eşik 75 (kalite garantisi)
+        title_lower = (title or "").lower()
+        is_3d_request = any(k in title_lower for k in [
+            "3d", "simulasyon", "simülasyon", "evrim", "yıldız", "yildiz",
+            "galaksi", "kuantum", "kara delik", "molekül", "molekul",
+            "atom", "evren", "kozmik", "uzay", "yörünge", "yorunge",
+        ])
+        min_score = 75 if is_3d_request else 60
         row = await db_fetchrow(
             """SELECT uuid, title, quality_score, created_at, expires_at, archived
                FROM render_artifacts
                WHERE topic_hash = $1
                  AND (archived = TRUE OR expires_at > NOW())
-                 AND quality_score >= 60
+                 AND quality_score >= $3
                  AND created_at > NOW() - ($2::int * INTERVAL '1 day')
                ORDER BY quality_score DESC, created_at DESC LIMIT 1""",
-            thash, max_age_days
+            thash, max_age_days, min_score,
         )
         if row:
             return {
