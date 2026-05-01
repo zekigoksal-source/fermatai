@@ -74,31 +74,36 @@ class SendMsgReq(BaseModel):
 @router.get("/manifest.json")
 async def pwa_manifest():
     """PWA manifest — telefona icon olarak sabitlenebilir uygulama.
-    Oturum 25.40 (Neo): PNG iconlar (192/512/maskable) — Android adaptive icon destek.
+
+    Oturum 25.40 (Neo): PNG iconlar + ABSOLUTE URL'ler.
+    Sebep: Wix iframe-embed sayfasından (fermategitimkurumlari.com/fermatai)
+    yüklendiğinde scope karışıyordu. Absolute URL'lerle PWA HER ZAMAN
+    api.fermategitimkurumlari.com/chat'e yönlenir → Wix splash atlatılır.
     """
-    # Oturum 25.40: dinamik manifest — PNG iconlar /static/img/'den
+    BASE = "https://api.fermategitimkurumlari.com"
     manifest = {
         "name": "FermatAI — Akademik Koç",
         "short_name": "FermatAI",
         "description": "Fermat Eğitim Kurumları — Pedagojik Yapay Zeka Asistanı",
-        "start_url": "/chat",
-        "scope": "/chat",
+        # ABSOLUTE: Wix iframe parent atlatılır, direkt chat yüklenir
+        "start_url": f"{BASE}/chat",
+        "id": f"{BASE}/chat",  # PWA unique ID
+        "scope": f"{BASE}/",
         "display": "standalone",
         "orientation": "portrait",
-        "background_color": "#F5F4ED",
+        # Splash background — dark theme uyumlu, FermatAI premium hissi
+        "background_color": "#0F172A",
         "theme_color": "#C76F3E",
         "lang": "tr",
         "dir": "ltr",
         "icons": [
-            # Standard (any) icons
-            {"src": "/static/img/fermatai-192.png", "sizes": "192x192",
+            {"src": f"{BASE}/static/img/fermatai-192.png", "sizes": "192x192",
              "type": "image/png", "purpose": "any"},
-            {"src": "/static/img/fermatai-512.png", "sizes": "512x512",
+            {"src": f"{BASE}/static/img/fermatai-512.png", "sizes": "512x512",
              "type": "image/png", "purpose": "any"},
-            # Maskable (Android adaptive icon)
-            {"src": "/static/img/fermatai-192-maskable.png", "sizes": "192x192",
+            {"src": f"{BASE}/static/img/fermatai-192-maskable.png", "sizes": "192x192",
              "type": "image/png", "purpose": "maskable"},
-            {"src": "/static/img/fermatai-512-maskable.png", "sizes": "512x512",
+            {"src": f"{BASE}/static/img/fermatai-512-maskable.png", "sizes": "512x512",
              "type": "image/png", "purpose": "maskable"},
         ],
         "categories": ["education", "productivity"],
@@ -107,19 +112,18 @@ async def pwa_manifest():
                 "name": "Yeni Soru Sor",
                 "short_name": "Soru",
                 "description": "Hemen yeni bir akademik soru sor",
-                "url": "/chat?q=sor",
-                "icons": [{"src": "/static/img/fermatai-shortcut-96.png", "sizes": "96x96"}],
+                "url": f"{BASE}/chat?q=sor",
+                "icons": [{"src": f"{BASE}/static/img/fermatai-shortcut-96.png", "sizes": "96x96"}],
             },
             {
                 "name": "Çalışmam Paneli",
                 "short_name": "Çalışmam",
                 "description": "Günlük çalışma paneline git",
-                "url": "/student-daily",
-                "icons": [{"src": "/static/img/fermatai-shortcut-96.png", "sizes": "96x96"}],
+                "url": f"{BASE}/student-daily",
+                "icons": [{"src": f"{BASE}/static/img/fermatai-shortcut-96.png", "sizes": "96x96"}],
             },
         ],
         "screenshots": [],
-        # Oturum 25.40: Display override modern Android için
         "display_override": ["standalone", "minimal-ui"],
         "prefer_related_applications": False,
     }

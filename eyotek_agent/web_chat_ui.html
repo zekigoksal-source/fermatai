@@ -4,13 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>FermatAI</title>
-<!-- PWA — telefona sabitlenebilir (A10) -->
-<link rel="manifest" href="/chat/manifest.json">
+<!-- PWA — telefona sabitlenebilir (Oturum 25.40 Neo PWA splash optimize) -->
+<link rel="manifest" href="https://api.fermategitimkurumlari.com/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- Apple status bar: black-translucent → splash uyumlu (dark) -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FermatAI">
+<!-- Splash + status bar koyu tema (FermatAI premium hissi) -->
+<meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#C76F3E" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#C76F3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23C76F3E'/%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-size='110' font-weight='bold' fill='white' font-family='Arial'%3EF%3C/text%3E%3C/svg%3E">
+<!-- Apple touch iconlar (PNG, çoklu boyut) -->
+<link rel="apple-touch-icon" href="https://api.fermategitimkurumlari.com/static/img/fermatai-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="https://api.fermategitimkurumlari.com/static/img/fermatai-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="https://api.fermategitimkurumlari.com/static/img/fermatai-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://api.fermategitimkurumlari.com/static/img/fermatai-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="https://api.fermategitimkurumlari.com/static/img/fermatai-512.png">
+<!-- Microsoft Tile (Edge/Windows PWA için) -->
+<meta name="msapplication-TileColor" content="#0F172A">
+<meta name="msapplication-TileImage" content="https://api.fermategitimkurumlari.com/static/img/fermatai-192.png">
 
 <!-- Markdown + LaTeX + Chart.js + Prism — web'e özel zengin format (WP'dan farklı) -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -2298,8 +2311,110 @@ html[data-theme="dark"] .msg.bot.streaming::after {
   .kpi-value { font-size: 22px; }
 }
 </style>
+<style>
+/* 25.40 (Neo PWA): Instant splash — chat yüklenene kadar profesyonel açılış
+   Sebep: Wix iframe parent'tan PWA açılırken Wix splash + header geçişleri
+   amatör his veriyordu. Şimdi PWA modunda KENDI splash'imizi göster. */
+#fermatai-splash {
+  position: fixed; inset: 0;
+  background: linear-gradient(160deg, #0F172A 0%, #1E1B2E 60%, #2D2018 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 999999;
+  transition: opacity 0.32s ease-out;
+}
+#fermatai-splash.fade { opacity: 0; pointer-events: none; }
+#fermatai-splash .splash-logo {
+  width: 110px; height: 110px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #C76F3E, #A75A2D);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 64px; font-weight: 900; color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  box-shadow:
+    0 16px 48px rgba(199,111,62,0.40),
+    0 4px 14px rgba(0,0,0,0.30),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+  animation: splashBreathe 2.2s ease-in-out infinite;
+  margin-bottom: 22px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.25);
+}
+#fermatai-splash .splash-name {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #F5F4ED;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+#fermatai-splash .splash-tag {
+  font-size: 13px;
+  color: #94A3B8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.3px;
+}
+#fermatai-splash .splash-spinner {
+  margin-top: 32px;
+  width: 28px; height: 28px;
+  border: 3px solid rgba(199,111,62,0.18);
+  border-top-color: #C76F3E;
+  border-radius: 50%;
+  animation: splashSpin 0.85s linear infinite;
+}
+@keyframes splashBreathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 16px 48px rgba(199,111,62,0.40), 0 4px 14px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.18); }
+  50%      { transform: scale(1.04); box-shadow: 0 22px 64px rgba(199,111,62,0.55), 0 6px 18px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.24); }
+}
+@keyframes splashSpin {
+  to { transform: rotate(360deg); }
+}
+</style>
 </head>
 <body>
+
+<!-- 25.40 (Neo PWA): Instant splash — kullanıcı PWA'yı tıkladığı an gözükür,
+     chat yüklenince fade out. Wix splash + header geçişlerinin amatör hissini gizler. -->
+<div id="fermatai-splash" aria-hidden="true">
+  <div class="splash-logo">F</div>
+  <div class="splash-name">FermatAI</div>
+  <div class="splash-tag">Akademik Koç hazırlanıyor...</div>
+  <div class="splash-spinner"></div>
+</div>
+<script>
+// Splash hide: chat input görünür olunca hide et (DOMContentLoaded yetersiz olabilir)
+(function() {
+  function hideSplash() {
+    const sp = document.getElementById('fermatai-splash');
+    if (!sp) return;
+    sp.classList.add('fade');
+    setTimeout(() => { try { sp.remove(); } catch (_) {} }, 400);
+  }
+  // En geç fallback: 4sn sonra zorla kapat
+  setTimeout(hideSplash, 4000);
+  // Asıl tetik: chat input render olunca
+  function checkReady() {
+    const input = document.getElementById('chatInput') || document.querySelector('textarea');
+    const messages = document.getElementById('messages');
+    if (input || messages) {
+      // 250ms sonra hide (smooth — kullanıcı bir an logoyu görsün)
+      setTimeout(hideSplash, 250);
+      return true;
+    }
+    return false;
+  }
+  if (document.readyState !== 'loading') {
+    setTimeout(() => { if (!checkReady()) setTimeout(hideSplash, 1500); }, 50);
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => { if (!checkReady()) setTimeout(hideSplash, 1500); }, 100);
+    });
+  }
+  // Chat ilk mesajı render olunca da hide et
+  window.addEventListener('load', () => {
+    setTimeout(hideSplash, 600);
+  });
+})();
+</script>
 
 <script>
 // Tablet/touch + iframe icindeyken agresif scroll-engelleme.
