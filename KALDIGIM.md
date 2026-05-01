@@ -1,6 +1,77 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 1 Mayıs 2026, ÖĞLEN 12:50 — **🚀 SENIOR DEV AUDIT + RENDER ZENGİNLİK + UI REDESIGN — TEKNİK BORÇ SIFIR**
+> **Son güncelleme:** 1 Mayıs 2026, ÖĞLEDEN SONRA 21:30 — **🌐 6 EXTERNAL ENTEGRASYON — MathPix + PhET + YouTube + Anki + Wolfram step + Sentry**
+>
+> ## 🆕 OTURUM 25.38 (öğlen 18:00 → 21:30, 3.5 saat)
+>
+> Neo bekleme listesinden **6 yüksek değerli entegrasyon** eklendi.
+> Tüm tool'lar dispatch + ACL + frontend hazır. Live VPS'te çalışıyor (HEAD: `a93b558`).
+>
+> ### 🎯 6 Yeni Entegrasyon
+>
+> | # | Entegrasyon | Modül | Durum | Maliyet |
+> |---|---|---|---|---|
+> | 1 | **MathPix Snip API** | `mathpix_client.py` | ⚠️ API key bekleniyor | $0.04/foto |
+> | 2 | **PhET Simulations** | `phet_catalog.py` (55 sim) | ✅ AKTIF (DESTEK olarak) | $0 |
+> | 3 | **YouTube Data API v3** | `youtube_client.py` | ⚠️ API key bekleniyor | $0 (10K/gün) |
+> | 4 | **Anki .apkg export** | `anki_exporter.py` | ✅ AKTIF (test geçti) | $0 |
+> | 5 | **Wolfram Step-by-Step** | `external_apis_v2` | ✅ AKTIF | $0 (Pro $5/ay) |
+> | 6 | **Sentry FastAPI** | `whatsapp_bridge.py` | ⚠️ DSN bekleniyor | $0 (5K event/ay) |
+>
+> ### 🔧 Teknik Detaylar
+>
+> - **5 yeni Claude tool**: `search_phet_simulation`, `embed_phet_simulation`, `find_youtube_lesson`, `export_anki_deck`, `wolfram_step_by_step`
+> - **Tool dispatch**: ✅ DISPATCH OK 5/5 (TOOL_DISPATCH'e eklendi)
+> - **ACL**: admin/mudur/ogretmen/rehber/ogrenci — tüm rollerde uygun yetki
+> - **5 yeni behavior_rule** (DB'de aktif): PhET destek (öncelik 9), YouTube öner, Anki kart, Wolfram step, MathPix paralel
+> - **Toplam aktif kural**: 18 → **23**
+> - **Foto pipeline**: MathPix preflight paralel (8sn timeout, Vision ile race) → context olarak Claude'a verilir
+> - **Frontend**: phet-embed + yt-embed responsive CSS (mobile aspect-ratio 16:9)
+> - **Static endpoint**: `/static/anki/*.apkg` mount (200 OK + Content-Type `application/vnd.anki`)
+>
+> ### 🧪 Live VPS Test Sonuçları
+>
+> ```
+> PhET search:    True | 2 sim ✓
+>   First: pendulum-lab → https://phet.colorado.edu/sims/html/pendulum-lab/latest/...
+> PhET embed:     True | iframe block 494 chars ✓
+> Anki export:    True | 56.2KB apkg, 10 kart ✓
+>   URL: /static/anki/fermatai-215-1777660085-A7YaNBPZ7jA.apkg ✓
+>   HTTP: 200 OK + application/vnd.anki ✓
+> Tool dispatch:  5/5 OK ✓
+> ACL:            5/5 OK (öğrenci) ✓
+> ```
+>
+> ### 🔑 NEO İÇİN KALDIĞIM YER (.env'e eklenecek API anahtarları)
+>
+> Neo, sistem hazır — sadece şu key'leri `.env`'ye ekleyince entegrasyonlar tam aktive olur:
+>
+> ```bash
+> # ── MathPix Snip API (mathpix.com — free 200 req/ay) ──
+> MATHPIX_APP_ID=
+> MATHPIX_APP_KEY=
+>
+> # ── YouTube Data API v3 (Google Cloud Console — free 10K quota/gün) ──
+> YOUTUBE_API_KEY=
+>
+> # ── Sentry (sentry.io — free 5K event/ay) ──
+> SENTRY_DSN=
+> SENTRY_ENV=production
+> SENTRY_RELEASE=fermatai@25.38
+> ```
+>
+> Anahtar olmadan da sistem hatasız boot oluyor — ilgili tool çağrıldığında "API key tanımsız" cevabı dönüyor (graceful).
+>
+> ### 📌 PhET Stratejik Not (Neo direktif 25.38)
+>
+> "Bizim kendi simulasyonlarımız 1. SINIF, PhET sadece destek altyapı."
+> - PhET behavior_rule (priority=9, render kategorisi):
+>   "ÖNCE make_render_link dene. PhET sadece (a) çok karmaşık sim, (b) öğrenci PhET istemişse, (c) 2 kez başarısız son çare."
+> - System prompt'a inject olur (context-aware filter ile sadece render context'inde aktif)
+>
+> ---
+>
+> **Önceki güncelleme:** 1 Mayıs 2026, ÖĞLEN 12:50 — **🚀 SENIOR DEV AUDIT + RENDER ZENGİNLİK + UI REDESIGN — TEKNİK BORÇ SIFIR**
 > **Oturum 25.37+ (sabah 09:00 - öğlen 12:50, 4 saat — GÜNÜN MEGA SESSION):**
 >
 > Bu oturum 25.37 finalinden sonraki 4 saatlik audit + redesign + bug fix paketi.

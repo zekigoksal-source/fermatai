@@ -1,7 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 1 Mayıs 2026 (öğlen 12:50) · **Oturum:** 25.37+ final — **Senior Dev Audit + Render Zenginlik + UI Redesign + WP Spam Fix**
-> **Önceki güncelleme:** 1 Mayıs 2026, Oturum 25.37 (gece 03:00) — Pedagojik Sıçrama + Render Kalite Eşiği
+> **Belge tarihi:** 1 Mayıs 2026 (öğleden sonra 21:30) · **Oturum:** 25.38 — **6 External Entegrasyon: MathPix + PhET + YouTube + Anki + Wolfram step + Sentry**
+> **Önceki güncelleme:** 1 Mayıs 2026, Oturum 25.37+ (öğlen 12:50) — Senior Dev Audit + Render Zenginlik + UI Redesign
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)
 > **Hedef okuyucu:** Yeni bir LLM, geliştirici veya iş ortağı. Sistemin teknik yetkinlik tablosunu LLM'e attığında doyurucu bir mimari resim alır.
 > **Amaç:** Mimari + kapasite + sağlık + güvenlik + workflow tek dokümanda — proje teknik durumunu tam yansıtan referans.
@@ -79,6 +79,14 @@
 | **Inline 📥 download emoji** | render-ready-card + markdown link'lerine otomatik inject |
 | **Action bar v3** | 4-katman buton kalabalığı → tek segment toolbar (👍 👎 ❤️ + 4 ikon) |
 | **Cerebras renderer hint** | INTENT_RENDERER_MAP 12 intent → Claude'a düşmeden Cerebras'tan render |
+| **External tool sayısı (25.38)** | **21** (eski 16 + 5 yeni: search_phet, embed_phet, find_youtube, export_anki, wolfram_step) |
+| **Behavior rules (canlı)** | **23** (25.37+ 18 + 25.38 5 yeni) |
+| **MathPix Snip OCR** | ⚠️ API key bekleniyor — modül hazır, foto_solver_v2 paralel preflight entegre |
+| **PhET Simulations** | 55 Türkçe destekli sim, $0 (DESTEK altyapı — kendi sim 1. sınıf) |
+| **YouTube Data API** | ⚠️ API key bekleniyor — kalite skorlu Türkçe ders video (Tonguç/Hocalara Geldik whitelist) |
+| **Anki .apkg export** | ✅ AKTIF — `/static/anki/*.apkg` (genanki kütüphanesi, $0) |
+| **Wolfram step-by-step** | ✅ AKTIF — `&podstate=Step-by-step+solution` Pro endpoint |
+| **Sentry FastAPI** | ⚠️ DSN bekleniyor — KVKK send_default_pii=False, traces 10% |
 
 **Veri sistemleri canlı:**
 
