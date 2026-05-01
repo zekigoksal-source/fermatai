@@ -2526,22 +2526,21 @@ async def _tool_make_render_link(html: str = "", title: str = "FermatAI Görsel"
         return {
             "success": False,
             "error": (
-                "❌ html PARAMETRESI BOS — Claude output truncated. "
-                "Bu KRONIK BUG (3+ kez yasandı: Ali Demir, wormhole, karadelik). "
-                "ŞIMDI HEMEN ŞUNU YAP (sırayla dene):\n"
-                "1) Konu PRESET olarak varsa → make_render_link YERINE ```3d kullan: "
-                "karadelik→{\"scene\":\"blackhole\"}, dna→{\"scene\":\"dna_helix\"}, "
-                "kara cisim/atom→{\"scene\":\"atom_proper\"}, sine wave→{\"scene\":\"sine_wave\"}, "
-                "calabi yau→{\"scene\":\"calabi_yau\"}, lattice→{\"scene\":\"lattice\"}, "
-                "magnetic field→{\"scene\":\"magnetic_field\"}, water/h2o→{\"scene\":\"water\"}\n"
-                "2) PRESET yoksa → make_render_link RETRY ama HTML max 50KB hedef "
-                "(önceki uzun reasoning yerine kısa+öz HTML; dış CDN script + tek canvas yeter)\n"
-                "3) HALA çakılırsa → kullanıcıya 'Konu çok kapsamlı, alt başlıklara bölelim mi?' sun\n"
-                "ASLA ayni boyutta HTML ile retry etme — boyut DUSURDUR."
+                "❌ html PARAMETRESI BOS — Claude output truncated (kronik 3+ kez bug). "
+                "ACIL HEMEN AŞAĞIDAKİNİ UYGULA:\n"
+                "1) ⚡ ŞIMDI TEKRAR make_render_link CAGIR ama bu kez DAHA KISA HTML "
+                "(max 60-80KB hedefli). Onceki uzun reasoning'i BIRAK, sadece kompakt HTML yaz: "
+                "<!DOCTYPE html><html>...<canvas>+tek script CDN+~50 satır JS+formul...</html>\n"
+                "2) ASLA reasoning yapma, ASLA kullaniciya 'tekrar dene' yazma — HEMEN tool retry.\n"
+                "3) İkinci kez de empty olursa → o zaman ```3d preset'e gec (karadelik→blackhole, "
+                "dna→dna_helix, atom→atom_proper, dalga→sine_wave, calabi→calabi_yau, "
+                "kafes→lattice, manyetik→magnetic_field, su→water).\n"
+                "4) Kullanici 'devam et' demek ZORUNDA KALMAMALI — sen hemen retry yap."
             ),
-            "retry_hint": "use_preset_or_smaller_html",
-            "preset_alternatives": ["blackhole", "dna_helix", "atom_proper", "sine_wave",
-                                    "calabi_yau", "lattice", "magnetic_field", "water", "sphere"]
+            "retry_now": True,  # Claude'a programatik sinyal — hemen tool tekrar cagir
+            "max_retry_size_kb": 80,
+            "preset_fallback": ["blackhole", "dna_helix", "atom_proper", "sine_wave",
+                                "calabi_yau", "lattice", "magnetic_field", "water", "sphere"]
         }
     html_size = len(html.encode('utf-8'))
     if html_size > 1024 * 1024:
