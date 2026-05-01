@@ -1429,64 +1429,102 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
 @keyframes blink { 0%, 100% { opacity: 0; } }
 
 /* ═══════════════════════════════════════════════════════════════
-   Oturum 25.35 — Bot mesajı quick actions + reactions
+   25.37+ (Neo UI redesign) — Bot mesaj action bar v3
+   Modern segment toolbar, ikon-only mobile, hover'da label görünür
    ═══════════════════════════════════════════════════════════════ */
 .msg.bot .msg-actions {
-  display: flex; align-items: center; gap: 6px;
-  margin-top: 10px; padding-top: 8px;
-  border-top: 1px dashed var(--border);
-  opacity: 0.55; transition: opacity 0.2s;
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 2px;
+  margin-top: 12px;
+  padding: 4px 6px;
+  background: rgba(15, 23, 42, 0.025);
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  border-radius: 14px;
+  opacity: 0.7; transition: opacity 0.2s;
+  flex-wrap: nowrap;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+html[data-theme="dark"] .msg.bot .msg-actions {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.05);
 }
 .msg.bot:hover .msg-actions { opacity: 1; }
 .msg.bot .msg-action-btn {
   display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(199,111,62,0.06);
-  border: 1px solid rgba(199,111,62,0.20);
-  color: var(--accent);
-  font-size: 11.5px; font-weight: 600;
-  padding: 4px 10px; border-radius: 16px;
-  cursor: pointer; transition: all 0.18s;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg, #2F2F2F);
+  font-size: 12px; font-weight: 600;
+  padding: 6px 10px; border-radius: 10px;
+  cursor: pointer; transition: all 0.18s cubic-bezier(0.16,1,0.3,1);
+  white-space: nowrap;
+  letter-spacing: 0.1px;
 }
+html[data-theme="dark"] .msg.bot .msg-action-btn { color: #e2e8f0; }
 .msg.bot .msg-action-btn:hover {
-  background: rgba(199,111,62,0.18);
+  background: rgba(199,111,62,0.12);
+  color: var(--accent);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(199,111,62,0.15);
 }
+.msg.bot .msg-action-btn.done {
+  background: rgba(34,197,94,0.12);
+  color: #166534;
+}
+html[data-theme="dark"] .msg.bot .msg-action-btn.done { color: #86EFAC; }
 .msg.bot .msg-action-btn.loading {
-  opacity: 0.55; cursor: wait;
+  opacity: 0.6; cursor: wait;
   animation: actionLoading 1.4s ease-in-out infinite;
 }
 @keyframes actionLoading {
-  0%, 100% { opacity: 0.55; }
-  50%      { opacity: 0.9; }
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 0.95; }
 }
-.msg.bot .msg-action-btn .ico { font-size: 13px; }
+.msg.bot .msg-action-btn .ico { font-size: 14px; }
 
-/* Reactions */
+/* Soft visual divider between actions and reactions */
+.msg.bot .msg-actions .action-divider {
+  width: 1px; height: 18px;
+  background: rgba(15, 23, 42, 0.10);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+html[data-theme="dark"] .msg.bot .msg-actions .action-divider {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* Reactions — same toolbar, integrated */
 .msg.bot .msg-reactions {
-  display: inline-flex; align-items: center; gap: 4px;
-  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 1px;
+  margin-left: 4px;
 }
 .msg.bot .reaction-btn {
   background: transparent; border: 1px solid transparent;
-  font-size: 14px; padding: 3px 6px; border-radius: 12px;
-  cursor: pointer; transition: all 0.15s;
-  opacity: 0.5;
+  font-size: 14px; padding: 6px 8px; border-radius: 10px;
+  cursor: pointer; transition: all 0.15s cubic-bezier(0.16,1,0.3,1);
+  opacity: 0.55;
+  line-height: 1;
 }
 .msg.bot .reaction-btn:hover {
   background: rgba(199,111,62,0.10);
-  border-color: rgba(199,111,62,0.20);
-  opacity: 1; transform: scale(1.18);
+  opacity: 1; transform: scale(1.15);
 }
 .msg.bot .reaction-btn.active {
   background: rgba(199,111,62,0.18);
-  border-color: rgba(199,111,62,0.35);
   opacity: 1;
 }
 .msg.bot .reaction-count {
   font-size: 10px; color: var(--fg-muted); margin-left: 2px;
   font-weight: 600;
+}
+
+/* MOBILE — label gizle, sadece ikon */
+@media (max-width: 540px) {
+  .msg.bot .msg-action-btn .lbl,
+  .msg.bot .msg-action-btn span:not(.ico) { display: none; }
+  .msg.bot .msg-action-btn { padding: 7px 9px; }
+  .msg.bot .msg-action-btn.done .lbl,
+  .msg.bot .msg-action-btn.done span:not(.ico) { display: inline; font-size: 11px; }
 }
 
 /* Inline audio player (TTS sonucu) */
@@ -4984,14 +5022,25 @@ function finalizeBotMsg(el) {
   rerenderMath(el);
   rerenderCode(el);
   fixExternalLinks(el);
-  // A6: veri odakli cevaba chart onerisi ekle (chart yoksa)
-  suggestChartIfRelevant(el);
-  // Arşiv butonu ekle (kısa cevaplara hariç)
-  addArchiveButton(el);
+  // 25.37+ (Neo UI redesign): suggestChartIfRelevant DEVRE DISI — bot zaten Brief #11 ile
+  // her uygun mesajda chart üretiyor, bu duplicate "Grafikle göster" butonu kalabalık yapıyordu.
+  // suggestChartIfRelevant(el);  // KALDIRILDI
+
+  // 25.37+ (Neo UI redesign): addArchiveButton DEVRE DISI — render-card içinde zaten
+  // "⭐ Arşive Ekle" var; render-card yoksa addQuickActions içine entegre ediliyor.
+  // addArchiveButton(el);  // KALDIRILDI
+
   // 25.37 (Neo): eski history-load mesajlardaki standalone 👍/👎 satirlarini temizle
   try { _legacy_clean_stale_feedback_rows(el); } catch (_) {}
-  // Oturum 25.35 (Neo): Quick actions (Sesli oku + PDF al) + Reactions
-  // 25.37: feedback (👍/👎) reactions icine birlestirildi — addFeedbackButtons KALDIRILDI
+  // 25.37+ (Neo UI redesign): TEK action bar — Sesli + PDF + (render yoksa Arşivle) + Reactions
+  // Eski mesaj-sonu archive-btn varsa temizle
+  try {
+    const staleArch = el.querySelectorAll('.archive-btn');
+    staleArch.forEach(b => { try { b.remove(); } catch(_) {} });
+    // Eski "Grafikle göster" suggestion bar'ı da temizle
+    const staleChart = el.querySelectorAll('.chart-suggest, [class*="chart-suggest"]');
+    staleChart.forEach(b => { try { b.remove(); } catch(_) {} });
+  } catch(_) {}
   addQuickActions(el);
 }
 
@@ -5013,7 +5062,7 @@ function addQuickActions(botEl) {
   // 🔊 Sesli Oku
   const ttsBtn = document.createElement("button");
   ttsBtn.className = "msg-action-btn";
-  ttsBtn.innerHTML = '<span class="ico">🔊</span><span>Sesli Oku</span>';
+  ttsBtn.innerHTML = '<span class="ico">🔊</span><span class="lbl">Sesli Oku</span>';
   ttsBtn.title = "Bot mesajını sesli dinle";
   ttsBtn.addEventListener("click", async () => {
     if (ttsBtn.classList.contains("loading")) return;
@@ -5021,7 +5070,7 @@ function addQuickActions(botEl) {
     const existing = botEl.querySelector(".inline-audio audio");
     if (existing) { existing.play(); return; }
     ttsBtn.classList.add("loading");
-    ttsBtn.innerHTML = '<span class="ico">⏳</span><span>Hazırlanıyor...</span>';
+    ttsBtn.innerHTML = '<span class="ico">⏳</span><span class="lbl">Hazırlanıyor...</span>';
     try {
       // Markdown'ı temiz text'e dönüştür (bot mesaj içeriği)
       const clean = botEl.textContent.replace(/\s+/g, ' ').trim().substring(0, 3500);
@@ -5043,12 +5092,13 @@ function addQuickActions(botEl) {
         </audio>`;
       botEl.insertBefore(audioWrap, bar);
       ttsBtn.classList.remove("loading");
-      ttsBtn.innerHTML = '<span class="ico">🔊</span><span>Tekrar Çal</span>';
+      ttsBtn.classList.add("done");
+      ttsBtn.innerHTML = '<span class="ico">🔊</span><span class="lbl">Tekrar Çal</span>';
     } catch (e) {
       console.warn("TTS hata:", e);
       ttsBtn.classList.remove("loading");
-      ttsBtn.innerHTML = '<span class="ico">⚠️</span><span>Hata</span>';
-      setTimeout(() => { ttsBtn.innerHTML = '<span class="ico">🔊</span><span>Sesli Oku</span>'; }, 2000);
+      ttsBtn.innerHTML = '<span class="ico">⚠️</span><span class="lbl">Hata</span>';
+      setTimeout(() => { ttsBtn.innerHTML = '<span class="ico">🔊</span><span class="lbl">Sesli Oku</span>'; }, 2000);
     }
   });
   bar.appendChild(ttsBtn);
@@ -5056,12 +5106,12 @@ function addQuickActions(botEl) {
   // 📄 PDF Al
   const pdfBtn = document.createElement("button");
   pdfBtn.className = "msg-action-btn";
-  pdfBtn.innerHTML = '<span class="ico">📄</span><span>PDF Al</span>';
+  pdfBtn.innerHTML = '<span class="ico">📄</span><span class="lbl">PDF Al</span>';
   pdfBtn.title = "Bot mesajını PDF indir";
   pdfBtn.addEventListener("click", async () => {
     if (pdfBtn.classList.contains("loading")) return;
     pdfBtn.classList.add("loading");
-    pdfBtn.innerHTML = '<span class="ico">⏳</span><span>Üretiliyor...</span>';
+    pdfBtn.innerHTML = '<span class="ico">⏳</span><span class="lbl">Üretiliyor...</span>';
     try {
       const html = botEl.innerHTML.replace(/<div class="msg-actions"[\s\S]*?<\/div>/g, "")
                                   .replace(/<div class="inline-audio"[\s\S]*?<\/div>/g, "")
@@ -5083,15 +5133,74 @@ function addQuickActions(botEl) {
       pdfLink.innerHTML = `<span style="font-size:18px">📄</span><span>PDF hazır — tıkla indir (${data.pdf_size_kb} KB)</span>`;
       botEl.insertBefore(pdfLink, bar);
       pdfBtn.classList.remove("loading");
-      pdfBtn.innerHTML = '<span class="ico">✓</span><span>PDF Hazır</span>';
+      pdfBtn.classList.add("done");
+      pdfBtn.innerHTML = '<span class="ico">✓</span><span class="lbl">PDF Hazır</span>';
     } catch (e) {
       console.warn("PDF hata:", e);
       pdfBtn.classList.remove("loading");
-      pdfBtn.innerHTML = '<span class="ico">⚠️</span><span>Hata</span>';
-      setTimeout(() => { pdfBtn.innerHTML = '<span class="ico">📄</span><span>PDF Al</span>'; }, 2000);
+      pdfBtn.innerHTML = '<span class="ico">⚠️</span><span class="lbl">Hata</span>';
+      setTimeout(() => { pdfBtn.innerHTML = '<span class="ico">📄</span><span class="lbl">PDF Al</span>'; }, 2000);
     }
   });
   bar.appendChild(pdfBtn);
+
+  // 25.37+ (Neo UI redesign): ⭐ Arşivle butonu — SADECE render-card YOKSA (duplicate önle)
+  const _hasRenderCard = !!botEl.querySelector('.render-ready-card .render-archive-btn');
+  if (!_hasRenderCard && txt.length >= 100) {
+    const archBtn = document.createElement("button");
+    archBtn.className = "msg-action-btn";
+    archBtn.innerHTML = '<span class="ico">⭐</span><span class="lbl">Arşivle</span>';
+    archBtn.title = "Mesajı arşive ekle (kalıcı)";
+    archBtn.addEventListener("click", async () => {
+      if (archBtn.classList.contains("done") || archBtn.classList.contains("loading")) return;
+      archBtn.classList.add("loading");
+      archBtn.innerHTML = '<span class="ico">⏳</span><span class="lbl">Arşiveniyor...</span>';
+      // Son user mesajı (context için)
+      const allMsgs = messages ? messages.querySelectorAll(".msg") : [];
+      let lastUserPrompt = "";
+      for (let i = allMsgs.length - 1; i >= 0; i--) {
+        if (allMsgs[i] === botEl) continue;
+        if (allMsgs[i].classList.contains("user")) { lastUserPrompt = (allMsgs[i].textContent || "").trim(); break; }
+      }
+      // Otomatik başlık
+      let suggestedTitle = "";
+      const h2 = botEl.querySelector("h2, h3");
+      if (h2) suggestedTitle = h2.textContent.trim().slice(0, 80);
+      else if (lastUserPrompt) suggestedTitle = lastUserPrompt.slice(0, 80);
+      else suggestedTitle = txt.slice(0, 60);
+      try {
+        const r = await fetch(API_BASE + "/chat/archive", {
+          method: "POST", credentials: "include",
+          headers: authHeaders({"Content-Type": "application/json"}),
+          body: JSON.stringify({
+            title: suggestedTitle,
+            content: botEl.innerHTML.slice(0, 9500),
+            category: "genel",
+            context_prompt: lastUserPrompt.slice(0, 500),
+            tags: ""
+          })
+        });
+        const data = await r.json();
+        if (data.success) {
+          archBtn.classList.remove("loading");
+          archBtn.classList.add("done");
+          archBtn.innerHTML = '<span class="ico">✓</span><span class="lbl">Arşivlendi</span>';
+        } else throw new Error(data.message || "?");
+      } catch (e) {
+        archBtn.classList.remove("loading");
+        archBtn.innerHTML = '<span class="ico">⚠️</span><span class="lbl">Hata</span>';
+        setTimeout(() => {
+          archBtn.innerHTML = '<span class="ico">⭐</span><span class="lbl">Arşivle</span>';
+        }, 2500);
+      }
+    });
+    bar.appendChild(archBtn);
+  }
+
+  // Visual divider
+  const divider = document.createElement("span");
+  divider.className = "action-divider";
+  bar.appendChild(divider);
 
   // Reactions (emoji)
   const reactBox = document.createElement("div");
