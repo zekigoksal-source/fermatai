@@ -104,12 +104,12 @@ async def _gather_cards(soz_no: int, max_cards: int = 30,
         args.append(f"%{ders_filter}%")
 
     weak_topics = await db_fetch(f"""
-        SELECT ders, konu, sinav_hata_yuzdesi, sira_oncelik
+        SELECT ders, konu, sinav_hata_yuzdesi, sinav_hata_sayisi
         FROM student_topic_tracker
         WHERE soz_no::text = $1
           AND (sinav_hata_yuzdesi IS NULL OR sinav_hata_yuzdesi >= 40)
           {where_ders}
-        ORDER BY sira_oncelik ASC NULLS LAST, sinav_hata_yuzdesi DESC NULLS LAST
+        ORDER BY sinav_hata_yuzdesi DESC NULLS LAST, sinav_hata_sayisi DESC NULLS LAST
         LIMIT {max_cards}
     """, *args)
 
@@ -131,7 +131,7 @@ async def _gather_cards(soz_no: int, max_cards: int = 30,
     # 2. Active recall — bekleyen kartlar (eğer tablo varsa)
     try:
         recalls = await db_fetch(f"""
-            SELECT ders, konu, soru, scheduled_at
+            SELECT ders, konu, context_summary, scheduled_at
             FROM active_recalls
             WHERE soz_no::text = $1
               AND completed_at IS NULL
@@ -140,11 +140,14 @@ async def _gather_cards(soz_no: int, max_cards: int = 30,
             LIMIT {max(0, max_cards - len(cards))}
         """, str(soz_no))
         for row in recalls:
+            ders = row.get("ders") or "Genel"
+            konu = row.get("konu") or "Recall"
+            ctx = row.get("context_summary") or ""
             cards.append({
-                "soru": row.get("soru") or f"{row.get('konu')}'yu hatırla — ne biliyorsun?",
-                "cevap": "(Hatırlamaya çalış, sonra not aldıklarınla karşılaştır.)",
-                "ders": row.get("ders") or "Genel",
-                "konu": row.get("konu") or "Recall",
+                "soru": f"{konu} konusunda ne biliyorsun? Anlattığın için tekrar et.",
+                "cevap": ctx or "(Hatırlamaya çalış, sonra not aldıklarınla karşılaştır.)",
+                "ders": ders,
+                "konu": konu,
                 "notlar": f"Aktif hatırlama planı (Ebbinghaus) — planlanan: {row.get('scheduled_at')}",
             })
     except Exception as e:
