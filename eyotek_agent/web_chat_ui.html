@@ -376,56 +376,91 @@
   transform: translateX(3px);
 }
 
-/* 25.37 (Neo) — Render Action Toolbar v2: tek satır kompakt segment bar */
+/* 25.39 (Neo) — Render Action Toolbar v3: minimal emoji-only icon row
+   Üstteki render-ready-link 1. sınıf zaten — bu satır sadece sessiz aksiyonlar */
 .msg.bot .render-extra-actions {
-  display: flex; gap: 4px;
-  margin-top: 10px;
-  padding: 4px;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 14px;
-  flex-wrap: wrap;
-  align-items: stretch;
+  display: flex; gap: 2px;
+  margin-top: 6px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  opacity: 0.55;
+  transition: opacity 0.2s;
 }
-html[data-theme="dark"] .msg.bot .render-extra-actions {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.06);
-}
+.msg.bot .render-ready-card:hover .render-extra-actions { opacity: 1; }
 .msg.bot .render-extra-actions > button {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
   background: transparent; border: 1px solid transparent;
-  font-size: 12px; font-weight: 600;
-  padding: 7px 12px; border-radius: 10px;
+  font-size: 13px;
+  padding: 4px; border-radius: 6px;
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.16,1,0.3,1);
-  color: var(--fg, #2F2F2F);
-  letter-spacing: 0.1px;
-  white-space: nowrap;
+  transition: all 0.15s ease;
+  color: var(--fg-muted, #8A8A8A);
+  width: 28px; height: 28px;
+  line-height: 1;
 }
 .msg.bot .render-extra-actions > button:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-}
-html[data-theme="dark"] .msg.bot .render-extra-actions > button {
-  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.06);
+  transform: scale(1.08);
 }
 html[data-theme="dark"] .msg.bot .render-extra-actions > button:hover {
   background: rgba(255, 255, 255, 0.06);
 }
-.msg.bot .render-extra-actions > button .ico { font-size: 14px; }
+.msg.bot .render-extra-actions > button .ico { font-size: 13px; }
+.msg.bot .render-extra-actions > button .lbl { display: none; }
 
-/* Buton renk tematik vurguları (sadece hover/active'de güçlü) */
-.msg.bot .render-archive-btn { color: #B45309; }
-.msg.bot .render-archive-btn:hover { background: rgba(245, 158, 11, 0.12) !important; }
+/* Done/loading state — emoji yetiyor, label yok */
 .msg.bot .render-archive-btn.done {
-  background: rgba(34, 197, 94, 0.15) !important;
   color: #15803D !important;
-  border-color: rgba(34, 197, 94, 0.30) !important;
+  background: rgba(34, 197, 94, 0.10);
 }
-.msg.bot .render-archive-btn.loading { opacity: 0.6; cursor: wait; animation: actionLoading 1.4s ease-in-out infinite; }
-html[data-theme="dark"] .msg.bot .render-archive-btn { color: #FCD34D; }
 html[data-theme="dark"] .msg.bot .render-archive-btn.done { color: #86EFAC !important; }
+.msg.bot .render-archive-btn.loading { opacity: 0.5; cursor: wait; animation: actionLoading 1.4s ease-in-out infinite; }
+
+/* 25.39 (Neo) — Inline arşiv form (kategori + isim + not soruyor) */
+.msg.bot .render-archive-form {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.20);
+  border-radius: 10px;
+  font-size: 13px;
+  gap: 8px;
+  flex-direction: column;
+}
+.msg.bot .render-archive-form.open { display: flex; }
+.msg.bot .render-archive-form input,
+.msg.bot .render-archive-form select {
+  width: 100%; padding: 6px 9px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 7px;
+  font-size: 13px;
+  background: var(--panel, #fff);
+  color: var(--fg, #2F2F2F);
+  font-family: inherit;
+}
+html[data-theme="dark"] .msg.bot .render-archive-form input,
+html[data-theme="dark"] .msg.bot .render-archive-form select {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #e2e8f0;
+}
+.msg.bot .render-archive-form .form-row { display: flex; gap: 6px; }
+.msg.bot .render-archive-form .form-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+.msg.bot .render-archive-form button {
+  font-size: 12px; padding: 5px 11px; border-radius: 6px;
+  cursor: pointer; border: 1px solid transparent;
+  background: transparent; color: var(--fg-muted, #8A8A8A);
+}
+.msg.bot .render-archive-form .save-btn {
+  background: #F59E0B; color: white; font-weight: 600;
+}
+.msg.bot .render-archive-form .save-btn:hover { background: #D97706; }
+.msg.bot .render-archive-form .cancel-btn:hover { background: rgba(15, 23, 42, 0.06); }
 
 /* 25.37+ (Neo): Chat içi NASA/bilim görseli — responsive + tıkla-zoom (GLightbox) */
 .msg.bot img:not([class*="render-"]):not([data-no-lightbox]) {
@@ -521,19 +556,20 @@ html[data-theme="dark"] .msg.bot .render-inline-dl-md {
   100% { transform: scale(1.00); opacity: 1; }
 }
 
-.msg.bot .render-improve-btn { color: #6D28D9; }
-.msg.bot .render-improve-btn:hover { background: rgba(167, 139, 250, 0.14) !important; }
-html[data-theme="dark"] .msg.bot .render-improve-btn { color: #C4B5FD; }
+/* 25.39 (Neo): butonlar tamamen emoji-only zaten — eski hover renkleri kaldırıldı,
+   yeni minimal stil için neutral hover */
+.msg.bot .render-improve-btn:hover { color: #6D28D9; }
+html[data-theme="dark"] .msg.bot .render-improve-btn:hover { color: #C4B5FD; }
+.msg.bot .render-alternative-btn:hover { color: #166534; }
+html[data-theme="dark"] .msg.bot .render-alternative-btn:hover { color: #86EFAC; }
+.msg.bot .render-archive-btn:hover { color: #B45309; }
+html[data-theme="dark"] .msg.bot .render-archive-btn:hover { color: #FCD34D; }
 
-.msg.bot .render-alternative-btn { color: #166534; }
-.msg.bot .render-alternative-btn:hover { background: rgba(107, 142, 127, 0.14) !important; }
-html[data-theme="dark"] .msg.bot .render-alternative-btn { color: #86EFAC; }
-
-/* Mobile: 3 buton yan yana sığmazsa label saklı, ikon görünür */
+/* Mobile: emoji-only zaten kompakt, padding biraz büyüsün (touch-friendly) */
 @media (max-width: 520px) {
-  .msg.bot .render-extra-actions > button .lbl { display: none; }
-  .msg.bot .render-extra-actions > button { padding: 8px 10px; }
-  .msg.bot .render-extra-actions > button.render-archive-btn.done .lbl { display: inline; font-size: 11px; }
+  .msg.bot .render-extra-actions > button { width: 32px; height: 32px; }
+  .msg.bot .render-extra-actions { opacity: 0.85; }
+  .msg.bot .render-archive-form { padding: 12px; }
 }
 
 /* 25.37 (Neo) — Quality badge: link içinde göz alıcı */
@@ -6829,18 +6865,38 @@ async function doSend() {
                 <span class="render-ready-arrow">→</span>
               </a>
               ${uuid ? `<div class="render-extra-actions">
-                <button class="render-archive-btn" data-uuid="${uuid}" data-title="${title.replace(/"/g, '&quot;')}" title="Bu simulasyonu arsive ekle (kalici)">
+                <button class="render-archive-btn" data-uuid="${uuid}" data-title="${title.replace(/"/g, '&quot;')}" title="Arşive ekle — isim ve kategori sorulur, kalıcı olur">
                   <span class="ico">⭐</span>
                   <span class="lbl">Arşive Ekle</span>
                 </button>
-                <button class="render-improve-btn" data-uuid="${uuid}" title="Bu simulasyonu daha gelişmiş bir versiyona evrim ettir">
+                <button class="render-improve-btn" data-uuid="${uuid}" title="Daha gelişmiş bir v2 üret">
                   <span class="ico">🚀</span>
                   <span class="lbl">Geliştir</span>
                 </button>
-                <button class="render-alternative-btn" data-uuid="${uuid}" title="Aynı konuyu farklı bir yaklaşımla yeniden üret">
+                <button class="render-alternative-btn" data-uuid="${uuid}" title="Aynı konu, farklı yaklaşım">
                   <span class="ico">🔄</span>
                   <span class="lbl">Alternatif</span>
                 </button>
+              </div>
+              <div class="render-archive-form" data-uuid="${uuid}">
+                <input type="text" class="archive-name" placeholder="İsim (örn: Yıldız Evrimi 3D)" value="${title.replace(/"/g, '&quot;')}" maxlength="80">
+                <div class="form-row">
+                  <select class="archive-category">
+                    <option value="">Kategori seç...</option>
+                    <option value="fizik">⚛️ Fizik</option>
+                    <option value="matematik">📐 Matematik</option>
+                    <option value="kimya">🧪 Kimya</option>
+                    <option value="biyoloji">🧬 Biyoloji</option>
+                    <option value="astronomi">🌌 Astronomi</option>
+                    <option value="cografya">🌍 Coğrafya</option>
+                    <option value="genel">📚 Genel</option>
+                  </select>
+                </div>
+                <input type="text" class="archive-note" placeholder="Not (opsiyonel — örn: Ali için, Compton seviyesi)" maxlength="120">
+                <div class="form-actions">
+                  <button class="cancel-btn" type="button">İptal</button>
+                  <button class="save-btn" type="button">⭐ Kaydet</button>
+                </div>
               </div>` : ""}`;
             // 25.36 — Geliştir + Alternatif butonları
             const improveBtn = card.querySelector(".render-improve-btn");
@@ -6866,38 +6922,70 @@ async function doSend() {
                 }
               });
             }
-            // Arşiv butonu event
+            // 25.39 (Neo) — Arşiv: tıklayınca FORM açılır (isim + kategori + not)
             const archBtn = card.querySelector(".render-archive-btn");
-            if (archBtn) {
-              archBtn.addEventListener("click", async (e) => {
+            const archForm = card.querySelector(".render-archive-form");
+            if (archBtn && archForm) {
+              archBtn.addEventListener("click", (e) => {
                 e.preventDefault();
                 if (archBtn.classList.contains("done")) return;
-                if (archBtn.classList.contains("loading")) return;
-                archBtn.classList.add("loading");
-                archBtn.querySelector(".lbl").textContent = "Arşiveniyor...";
-                try {
-                  const r = await fetch(API_BASE + "/render/archive/" + uuid, {
-                    method: "POST", credentials: "include",
-                    headers: authHeaders({"Content-Type": "application/json"}),
-                    body: JSON.stringify({note: ""})
-                  });
-                  const data = await r.json();
-                  if (data.success) {
-                    archBtn.classList.remove("loading");
-                    archBtn.classList.add("done");
-                    archBtn.querySelector(".ico").textContent = "✓";
-                    archBtn.querySelector(".lbl").textContent = "Arşivlendi (Kalıcı)";
-                  } else throw new Error(data.error || "?");
-                } catch (err) {
-                  archBtn.classList.remove("loading");
-                  archBtn.querySelector(".ico").textContent = "⚠️";
-                  archBtn.querySelector(".lbl").textContent = "Hata: " + err.message.slice(0,30);
-                  setTimeout(() => {
-                    archBtn.querySelector(".ico").textContent = "⭐";
-                    archBtn.querySelector(".lbl").textContent = "Arşive Ekle";
-                  }, 3000);
+                // Toggle form
+                archForm.classList.toggle("open");
+                if (archForm.classList.contains("open")) {
+                  const nameInput = archForm.querySelector(".archive-name");
+                  if (nameInput) { nameInput.focus(); nameInput.select(); }
                 }
               });
+
+              // Cancel
+              const cancelBtn = archForm.querySelector(".cancel-btn");
+              if (cancelBtn) {
+                cancelBtn.addEventListener("click", () => archForm.classList.remove("open"));
+              }
+
+              // Save
+              const saveBtn = archForm.querySelector(".save-btn");
+              if (saveBtn) {
+                saveBtn.addEventListener("click", async () => {
+                  const nameVal = archForm.querySelector(".archive-name")?.value?.trim() || "";
+                  const catVal = archForm.querySelector(".archive-category")?.value || "";
+                  const noteVal = archForm.querySelector(".archive-note")?.value?.trim() || "";
+                  if (!nameVal) {
+                    archForm.querySelector(".archive-name")?.focus();
+                    return;
+                  }
+                  saveBtn.disabled = true;
+                  saveBtn.textContent = "Kaydediliyor...";
+                  archBtn.classList.add("loading");
+                  try {
+                    // Note + kategori birleştir (backend tek note alanı kabul ediyor)
+                    const noteCombined = JSON.stringify({
+                      name: nameVal,
+                      category: catVal,
+                      note: noteVal,
+                    });
+                    const r = await fetch(API_BASE + "/render/archive/" + uuid, {
+                      method: "POST", credentials: "include",
+                      headers: authHeaders({"Content-Type": "application/json"}),
+                      body: JSON.stringify({note: noteCombined, name: nameVal, category: catVal})
+                    });
+                    const data = await r.json();
+                    if (data.success) {
+                      archForm.classList.remove("open");
+                      archBtn.classList.remove("loading");
+                      archBtn.classList.add("done");
+                      archBtn.querySelector(".ico").textContent = "✓";
+                      archBtn.title = `Arşivlendi: ${nameVal}${catVal ? ' (' + catVal + ')' : ''}`;
+                    } else throw new Error(data.error || "?");
+                  } catch (err) {
+                    archBtn.classList.remove("loading");
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = "⭐ Kaydet";
+                    archBtn.querySelector(".ico").textContent = "⚠️";
+                    setTimeout(() => archBtn.querySelector(".ico").textContent = "⭐", 3000);
+                  }
+                });
+              }
             }
             // 25.37+ (Neo UX): Inline 📥 download emoji — link içinde, ekstra buton değil
             const dlInline = card.querySelector(".render-inline-dl");

@@ -360,32 +360,64 @@ async def list_recent(limit: int = 20):
 @router.post("/archive/{uuid}")
 async def archive_artifact(uuid: str, request: Request):
     """Render artifact'ı arşive ekle (kalıcı yap).
-    Body: {"phone": "...", "note": "Optional açıklama"}"""
+    Body: {"phone": "...", "note": "...", "name": "...", "category": "..."}
+
+    Oturum 25.39 (Neo): Kategori + isim opsiyonel parametreler.
+    name → render_artifacts.title güncellenir (kullanıcının verdiği isim).
+    category + note → archive_note JSON formatında saklanır."""
     if not uuid or len(uuid) > 64:
         raise HTTPException(404, "Geçersiz")
     try:
         body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
         phone = (body.get("phone") or "").strip()[:20]
-        note = (body.get("note") or "")[:500]
+        raw_note = (body.get("note") or "")[:600]
+        name = (body.get("name") or "").strip()[:80]
+        category = (body.get("category") or "").strip()[:30]
+
+        # Note: eğer JSON ise direkt kabul et, değilse kategori + note birleştir
+        note_payload = raw_note
+        if not raw_note.startswith("{"):
+            # Eski API uyumlu: sadece note geldiyse (kategori yok), JSON'a wrap et
+            import json as _j
+            note_payload = _j.dumps({
+                "name": name, "category": category, "note": raw_note,
+            }, ensure_ascii=False)
+
         await ensure_table()
-        # Kontrol: artifact var mı?
         existing = await db_fetchrow(
-            "SELECT id, archived FROM render_artifacts WHERE uuid = $1", uuid
+            "SELECT id, archived, title FROM render_artifacts WHERE uuid = $1", uuid
         )
         if not existing:
             raise HTTPException(404, "Artifact bulunamadı")
         if existing["archived"]:
             return JSONResponse({"success": True, "already_archived": True, "uuid": uuid})
-        await db_execute(
-            """UPDATE render_artifacts
-               SET archived = TRUE, archived_at = NOW(),
-                   archived_by_phone = $2, archive_note = $3,
-                   expires_at = NULL
-               WHERE uuid = $1""",
-            uuid, phone, note
-        )
-        logger.info(f"render: archive uuid={uuid} by={phone[-4:] if phone else '?'}")
-        return JSONResponse({"success": True, "uuid": uuid, "archived": True})
+
+        # Eğer kullanıcı isim verdiyse title'ı güncelle (eski title default'tu)
+        if name:
+            await db_execute(
+                """UPDATE render_artifacts
+                   SET archived = TRUE, archived_at = NOW(),
+                       archived_by_phone = $2, archive_note = $3,
+                       title = $4,
+                       expires_at = NULL
+                   WHERE uuid = $1""",
+                uuid, phone, note_payload, name,
+            )
+        else:
+            await db_execute(
+                """UPDATE render_artifacts
+                   SET archived = TRUE, archived_at = NOW(),
+                       archived_by_phone = $2, archive_note = $3,
+                       expires_at = NULL
+                   WHERE uuid = $1""",
+                uuid, phone, note_payload,
+            )
+        logger.info(f"render: archive uuid={uuid} by={phone[-4:] if phone else '?'} "
+                    f"name='{name[:30]}' cat={category}")
+        return JSONResponse({
+            "success": True, "uuid": uuid, "archived": True,
+            "name": name or existing["title"], "category": category,
+        })
     except HTTPException:
         raise
     except Exception as e:
