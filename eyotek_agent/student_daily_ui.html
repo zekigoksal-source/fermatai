@@ -1246,11 +1246,33 @@ body {
         <div class="module-meta" id="program-date"></div>
       </div>
       <div class="module-body" id="program-list"></div>
-      <form class="add-row" onsubmit="event.preventDefault(); addProgram();">
-        <input class="add-input" id="program-time" type="text" placeholder="09:00" maxlength="5" style="max-width:90px;text-align:center;font-family:'Fira Code',monospace;">
-        <input class="add-input" id="program-title" type="text" placeholder="AYT Matematik 35. Video" required>
-        <button class="add-btn" type="submit">Ekle</button>
+      <!-- 25.37 (Neo): Brief #X — tarih seçici + ders/konu opsiyonel teşvik edici -->
+      <form class="add-row" onsubmit="event.preventDefault(); addProgram();" style="flex-wrap:wrap;gap:6px;">
+        <input class="add-input" id="program-date" type="date" title="Tarih — boş bırakırsan bugün; geçmiş bir günü unuttuysan o tarihi seç (telafi)" style="max-width:148px;font-family:'Fira Code',monospace;">
+        <input class="add-input" id="program-time" type="text" placeholder="09:00" maxlength="5" title="Başlangıç saati (boş = 09:00)" style="max-width:78px;text-align:center;font-family:'Fira Code',monospace;">
+        <select class="add-input" id="program-ders" title="Ders (sonradan da ekleyebilirsin)" style="max-width:130px;">
+          <option value="">Ders (ops.)</option>
+          <option value="Matematik">📐 Matematik</option>
+          <option value="Fizik">⚛️ Fizik</option>
+          <option value="Kimya">⚗️ Kimya</option>
+          <option value="Biyoloji">🧬 Biyoloji</option>
+          <option value="Türkçe">📚 Türkçe</option>
+          <option value="Edebiyat">📖 Edebiyat</option>
+          <option value="Tarih">🏛️ Tarih</option>
+          <option value="Coğrafya">🌍 Coğrafya</option>
+          <option value="Felsefe">🧠 Felsefe</option>
+          <option value="Geometri">📏 Geometri</option>
+          <option value="İngilizce">🇬🇧 İngilizce</option>
+          <option value="Diğer">➕ Diğer</option>
+        </select>
+        <input class="add-input" id="program-konu" type="text" placeholder="Konu (örn: türev) — opsiyonel" title="Konu (sonradan da düzenleyebilirsin)" style="flex:1;min-width:140px;">
+        <input class="add-input" id="program-title" type="text" placeholder="Aktivite başlığı (örn: 35. soru, deneme analizi)" required style="flex:2;min-width:180px;">
+        <button class="add-btn" type="submit">+ Ekle</button>
       </form>
+      <div style="font-size:11px;color:var(--fg-muted);padding:6px 10px;line-height:1.5;opacity:0.75;">
+        💡 <b>Telafi giriş:</b> Geçmiş gün için tarih seç (30 gün öncesine kadar) ·
+        Ders/konu boş bıraksan da olur, sonra <b>düzenleyebilirsin</b>.
+      </div>
     </div>
 
     <!-- 2. TODO (col-4) -->
@@ -1613,16 +1635,65 @@ function renderProgram(items) {
     c.innerHTML = '<div class="empty"><span class="glyph">📅</span><p>Bugün için program yok</p><small>İlk bloğunu eklemeye başla!</small></div>';
     return;
   }
-  c.innerHTML = items.map(p => `
-    <div class="row${p.completed?' completed':''}">
+  // 25.37 (Neo Brief #X): Sonradan ders/konu ekleme — eksik olanlarda "ekle" linki, doluysa edit ikonu
+  c.innerHTML = items.map(p => {
+    const dersTxt = p.ders ? escapeHTML(p.ders) : '';
+    const konuTxt = p.konu ? escapeHTML(p.konu) : '';
+    const hasDersKonu = p.ders || p.konu;
+    const meta = hasDersKonu
+      ? `<div class="row-meta" style="cursor:pointer;" onclick="event.stopPropagation();editProgramFields(${p.id}, ${JSON.stringify(p.ders||'').replace(/"/g,'&quot;')}, ${JSON.stringify(p.konu||'').replace(/"/g,'&quot;')})" title="Düzenle">
+          ${dersTxt}${dersTxt && konuTxt ? ' · ' : ''}${konuTxt}
+          <span style="opacity:0.5;font-size:11px;margin-left:6px;">✏️</span>
+        </div>`
+      : `<div class="row-meta" style="opacity:0.6;cursor:pointer;font-style:italic;" onclick="event.stopPropagation();editProgramFields(${p.id}, '', '')" title="Ders ve konu ekle">
+          + ders/konu ekle
+        </div>`;
+    return `
+    <div class="row${p.completed?' completed':''}" data-pid="${p.id}">
       <div class="checkbox${p.completed?' checked':''}" onclick="completeProgram(${p.id})"></div>
       <div class="time-badge">${(p.start_time||'').slice(0,5)}${p.end_time?' - '+p.end_time.slice(0,5):''}</div>
       <div style="flex:1;">
         <div class="row-title">${escapeHTML(p.title)}</div>
-        ${p.ders?`<div class="row-meta">${escapeHTML(p.ders)}${p.konu?' · '+escapeHTML(p.konu):''}</div>`:''}
+        ${meta}
       </div>
       <button class="delete-btn" onclick="event.stopPropagation();deleteProgram(${p.id})">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+
+// 25.37 (Neo): inline edit — ders/konu sonradan eklenebilir/düzenlenebilir
+async function editProgramFields(programId, currentDers, currentKonu) {
+  // Basit prompt-based edit (modal yerine — hızlı UX)
+  const dersOptions = ['', 'Matematik', 'Fizik', 'Kimya', 'Biyoloji', 'Türkçe',
+                        'Edebiyat', 'Tarih', 'Coğrafya', 'Felsefe', 'Geometri',
+                        'İngilizce', 'Diğer'];
+  const dersIdx = prompt(
+    "📚 Ders (boş bırak = sil):\n\n" +
+    dersOptions.map((d, i) => `${i}: ${d || '— (boş)'}`).join('\n') +
+    "\n\nSayı gir (0-12). Mevcut: " + (currentDers || 'yok'),
+    String(Math.max(0, dersOptions.indexOf(currentDers || '')))
+  );
+  if (dersIdx === null) return;  // iptal
+  const dersIdxNum = parseInt(dersIdx, 10);
+  const newDers = (dersIdxNum >= 0 && dersIdxNum < dersOptions.length) ? dersOptions[dersIdxNum] : currentDers;
+
+  const newKonu = prompt(
+    "🎯 Konu (örn: türev, kaldırma kuvveti) — boş bırak = sil:",
+    currentKonu || ''
+  );
+  if (newKonu === null) return;  // iptal
+
+  try {
+    await api(`/student/daily/program/${programId}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ders: newDers || null, konu: newKonu || null})
+    });
+    toast('Düzenlendi'); loadAll();
+  } catch (e) {
+    toast('Düzenleme hatası', true);
+    console.warn(e);
+  }
 }
 
 function renderTodos(items) {
@@ -1814,13 +1885,44 @@ function renderNote(note) {
 async function addProgram() {
   const time = document.getElementById('program-time').value || '09:00';
   const title = document.getElementById('program-title').value.trim();
+  // 25.37 (Neo Brief #X): yeni opsiyonel alanlar — tarih + ders + konu
+  const dateEl = document.getElementById('program-date');
+  const dersEl = document.getElementById('program-ders');
+  const konuEl = document.getElementById('program-konu');
+  const planDate = dateEl ? (dateEl.value || null) : null;
+  const ders = dersEl ? (dersEl.value || null) : null;
+  const konu = konuEl ? (konuEl.value.trim() || null) : null;
   if (!title) return;
+  // Tarih validasyon: max bugün, min 30 gün önce
+  if (planDate) {
+    const today = new Date();
+    const min = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30);
+    const sel = new Date(planDate + "T00:00:00");
+    if (sel > today) {
+      toast('Geleceğe planlama için takvim modülünü kullan', true);
+      return;
+    }
+    if (sel < min) {
+      toast('En fazla 30 gün öncesine telafi girilebilir', true);
+      return;
+    }
+  }
   try {
+    const body = {title, start_time: time};
+    if (planDate) body.plan_date = planDate;
+    if (ders) body.ders = ders;
+    if (konu) body.konu = konu;
     await api('/student/daily/program', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({title, start_time: time})});
+      body: JSON.stringify(body)});
     document.getElementById('program-title').value = '';
     document.getElementById('program-time').value = '';
-    toast('Program eklendi'); loadAll();
+    if (dateEl) dateEl.value = '';
+    if (dersEl) dersEl.value = '';
+    if (konuEl) konuEl.value = '';
+    // Tarih telafi girişi → kullanıcı bilgilendir
+    const isPast = planDate && (new Date(planDate + "T00:00:00") < new Date(new Date().toDateString()));
+    toast(isPast ? `✓ ${planDate} için telafi eklendi` : 'Program eklendi');
+    loadAll();
   } catch(e) { toast('Hata oluştu', true); }
 }
 

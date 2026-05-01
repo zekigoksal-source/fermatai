@@ -733,9 +733,9 @@ TOOLS: list[dict] = [
                 "title": {"type": "string", "description": "Blok başlığı, örn 'Matematik — Limit'"},
                 "start_time": {"type": "string", "description": "Başlangıç saati HH:MM, örn '16:00'"},
                 "end_time": {"type": "string", "description": "Bitiş saati HH:MM, opsiyonel"},
-                "plan_date": {"type": "string", "description": "YYYY-MM-DD, default bugün"},
-                "ders": {"type": "string", "description": "Ders adı (Matematik, Fizik...), opsiyonel"},
-                "konu": {"type": "string", "description": "Spesifik konu (Limit, Kuvvet...), opsiyonel"},
+                "plan_date": {"type": "string", "description": "YYYY-MM-DD, default bugün. GERIYE DONUK GIRIS DESTEKLENIR — öğrenci 'dün giremedim, geçmişe yaz' der ise (max 30 gün önce) bu parametre ile o tarih iletilir. Frontend'de tarih seçici var."},
+                "ders": {"type": "string", "description": "Ders adı (Matematik, Fizik, Kimya, Biyoloji, Türkçe, Edebiyat, Tarih, Coğrafya, Felsefe, Geometri, İngilizce, Diğer), opsiyonel — sonradan da düzenlenebilir."},
+                "konu": {"type": "string", "description": "Spesifik konu (Limit, Kuvvet, Türev...), opsiyonel — teşvik edici, sonradan da eklenebilir."},
                 "notes": {"type": "string", "description": "Not, opsiyonel"}
             },
             "required": ["soz_no", "title", "start_time"]

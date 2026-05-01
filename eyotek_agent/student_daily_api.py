@@ -161,6 +161,28 @@ async def delete_program(
     return {"ok": True}
 
 
+@router.patch("/program/{block_id}")
+async def edit_program(
+    block_id: int,
+    request: Request,
+    payload: dict = Body(...),
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """25.37 (Neo Brief): Program bloğunu sonradan düzenle (ders/konu/title/notes).
+    Boş string ('') NULL yapar — alanı silmek için.
+    None ise dokunma.
+    """
+    sn = await _get_student_soz_no(request, fermat_session, payload.get("soz_no"))
+    ok = await sd.update_program_fields(
+        block_id, sn,
+        ders=payload.get("ders"),
+        konu=payload.get("konu"),
+        title=payload.get("title"),
+        notes=payload.get("notes"),
+    )
+    return {"ok": ok}
+
+
 # ── 2. TO DO LIST ──────────────────────────────────────────────────────────
 
 @router.get("/todo")

@@ -122,6 +122,43 @@ async def delete_program_block(block_id: int, soz_no: int) -> bool:
     return True
 
 
+async def update_program_fields(
+    block_id: int,
+    soz_no: int,
+    ders: Optional[str] = None,
+    konu: Optional[str] = None,
+    title: Optional[str] = None,
+    notes: Optional[str] = None,
+) -> bool:
+    """25.37 (Neo Brief #X): Sonradan ders/konu/başlık düzenleme.
+    None değerler iletilirse o alana dokunulmaz; boş string ('') gelirse NULL yapılır.
+    ACL: soz_no eşleşmeli (öğrenci sadece kendi kaydını düzenler).
+    """
+    sets = []
+    args = []
+    if ders is not None:
+        args.append(ders[:60] if ders else None)
+        sets.append(f"ders = ${len(args)}")
+    if konu is not None:
+        args.append(konu[:120] if konu else None)
+        sets.append(f"konu = ${len(args)}")
+    if title is not None:
+        args.append(title[:200] if title else None)
+        sets.append(f"title = ${len(args)}")
+    if notes is not None:
+        args.append(notes[:500] if notes else None)
+        sets.append(f"notes = ${len(args)}")
+    if not sets:
+        return False
+    args.extend([int(block_id), int(soz_no)])
+    sql = (
+        f"UPDATE student_daily_program SET {', '.join(sets)}, updated_at=NOW() "
+        f"WHERE id=${len(args) - 1} AND soz_no=${len(args)}"
+    )
+    await _exec(sql, *args)
+    return True
+
+
 # ── 2. TO DO LIST ───────────────────────────────────────────────────────
 
 async def add_todo(
