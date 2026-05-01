@@ -49,6 +49,9 @@
 <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
 <!-- GSAP: ```formula adım adım animasyon (3Blue1Brown tarzı) -->
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<!-- 25.37+ (Neo): GLightbox — mobil görsel viewer (NASA/bilim foto pinch-to-zoom) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+<script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js" defer></script>
 <style>
 /* Markdown output tables + code */
 .msg.bot table { border-collapse: collapse; margin: 10px 0; font-size: 13px; width: 100%; }
@@ -423,6 +426,44 @@ html[data-theme="dark"] .msg.bot .render-extra-actions > button:hover {
 .msg.bot .render-archive-btn.loading { opacity: 0.6; cursor: wait; animation: actionLoading 1.4s ease-in-out infinite; }
 html[data-theme="dark"] .msg.bot .render-archive-btn { color: #FCD34D; }
 html[data-theme="dark"] .msg.bot .render-archive-btn.done { color: #86EFAC !important; }
+
+/* 25.37+ (Neo): Chat içi NASA/bilim görseli — responsive + tıkla-zoom (GLightbox) */
+.msg.bot img:not([class*="render-"]):not([data-no-lightbox]) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  cursor: zoom-in;
+  margin: 8px 0;
+  display: block;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  transition: transform 0.2s;
+}
+.msg.bot img:not([class*="render-"]):not([data-no-lightbox]):hover {
+  transform: scale(1.02);
+}
+.msg.bot a.chat-img-zoom {
+  display: inline-block;
+  text-decoration: none;
+}
+/* Mobile özel: full width, daha az margin */
+@media (max-width: 540px) {
+  .msg.bot img:not([class*="render-"]):not([data-no-lightbox]) {
+    width: 100%;
+    margin: 6px 0;
+    border-radius: 10px;
+  }
+}
+/* GLightbox dark/sinematik tema override */
+.glightbox-clean .gslide-description {
+  background: rgba(0, 0, 0, 0.90) !important;
+  color: #fef3c7 !important;
+}
+.glightbox-clean .gslide-title {
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 14px;
+}
+.gloader { border-top-color: var(--accent, #C76F3E) !important; }
 
 /* 25.37+ (Neo UX): Inline indir emoji — link icinde, sallaniyor + yesil tik */
 .msg.bot .render-inline-dl {
@@ -5049,6 +5090,8 @@ function finalizeBotMsg(el) {
   rerenderMath(el);
   rerenderCode(el);
   fixExternalLinks(el);
+  // 25.37+ (Neo): NASA/bilim görsellerini GLightbox ile sar (mobil zoom + tap-to-expand)
+  try { wrapImagesForLightbox(el); } catch (_) {}
   // 25.37+ (Neo UI redesign): suggestChartIfRelevant DEVRE DISI — bot zaten Brief #11 ile
   // her uygun mesajda chart üretiyor, bu duplicate "Grafikle göster" butonu kalabalık yapıyordu.
   // suggestChartIfRelevant(el);  // KALDIRILDI
@@ -5069,6 +5112,81 @@ function finalizeBotMsg(el) {
     staleChart.forEach(b => { try { b.remove(); } catch(_) {} });
   } catch(_) {}
   addQuickActions(el);
+}
+
+// ═════════════════════════════════════════════════════════════════
+// 25.37+ (Neo) — Mobil görsel viewer: GLightbox sarmalayıcı
+// NASA/bilim fotoğrafları sohbet içinde tam görünür + tıkla zoom
+// PC: hiç dokunmaz (lightbox sadece mobil için CSS @media)
+// ═════════════════════════════════════════════════════════════════
+let _glightboxInstance = null;
+function _initGLightboxOnce() {
+  if (_glightboxInstance) return _glightboxInstance;
+  if (typeof window.GLightbox !== "function") return null;
+  try {
+    _glightboxInstance = window.GLightbox({
+      selector: '.chat-img-zoom',
+      touchNavigation: true,
+      loop: false,
+      zoomable: true,
+      draggable: true,
+      preload: false,
+      moreText: 'Detay',
+      closeOnOutsideClick: true,
+    });
+    return _glightboxInstance;
+  } catch (e) {
+    console.warn("GLightbox init fail:", e);
+    return null;
+  }
+}
+
+function wrapImagesForLightbox(botEl) {
+  if (!botEl) return;
+  // Tüm img'leri bul (NASA/bilim/diğer external) — render-card içindeki KONTROL'lere dokunma
+  const imgs = botEl.querySelectorAll('img:not(.chat-img-wrapped):not([data-no-lightbox])');
+  imgs.forEach(img => {
+    // Render-card iç içeriği veya inline-audio içindeki ikonları atla
+    if (img.closest('.render-ready-card, .render-pending-card, .inline-audio, .reaction-btn')) {
+      img.classList.add('chat-img-wrapped');
+      return;
+    }
+    // Mol3d/sim/3d canvas'lar img değil zaten — kontrol değil
+    const fullUrl = img.src;
+    if (!fullUrl) return;
+    // Title/alt'tan caption türet
+    const caption = (img.alt || img.title || "").slice(0, 200);
+    // Eğer parent zaten <a> ise sadece class ekle
+    const parent = img.parentElement;
+    if (parent && parent.tagName === 'A') {
+      parent.classList.add('chat-img-zoom');
+      parent.setAttribute('data-glightbox', 'type: image');
+      if (caption) parent.setAttribute('data-title', caption);
+    } else {
+      // Yeni wrapper oluştur
+      const link = document.createElement('a');
+      link.href = fullUrl;
+      link.className = 'chat-img-zoom';
+      link.setAttribute('data-glightbox', 'type: image');
+      if (caption) link.setAttribute('data-title', caption);
+      // Img'i link'in içine taşı
+      parent.insertBefore(link, img);
+      link.appendChild(img);
+    }
+    img.classList.add('chat-img-wrapped');
+    img.setAttribute('loading', 'lazy');
+    // Img stil — responsive (PC dahil her ekran)
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    img.style.borderRadius = '12px';
+    img.style.cursor = 'zoom-in';
+    img.style.transition = 'transform 0.2s';
+  });
+  // Yeni img'ler eklendi → GLightbox refresh
+  if (imgs.length > 0) {
+    const inst = _initGLightboxOnce();
+    if (inst && inst.reload) inst.reload();
+  }
 }
 
 // ═════════════════════════════════════════════════════════════════

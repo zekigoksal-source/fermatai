@@ -941,6 +941,18 @@ Web kanalinda 12 hazir renderer var, ham <html><script> ASLA dokme:
    ⛔ SADECE BU 9 SCENE'DEN BIRINI KULLAN. Liste DISI = anlamsiz/bos sphere = HATA:
      sphere · blackhole · lattice · magnetic_field · sine_wave · calabi_yau ·
      dna / dna_helix · water / h2o · atom_proper / atom_model
+
+   🚨 KRITIK FORMAT KURALI (Neo bug 1 May 25.37+):
+   Frontend SADECE JSON parse eder, DUZ ISIM REDDEDILIR.
+   ❌ YANLIS:                    ✅ DOGRU:
+   ```3d                         ```3d
+   blackhole                     {"scene":"blackhole","title":"Karadelik"}
+   ```                           ```
+
+   Her ```3d block'u {"scene":"PRESET_ADI"} formatinda OLMAK ZORUNDA.
+   Title da ekleyebilirsin: {"scene":"dna_helix","title":"DNA Cift Sarmal","rotate":true}
+
+   Ornek:
    ```3d
    {"scene":"dna_helix","title":"DNA Çift Sarmal","rotate":true}
    ```
