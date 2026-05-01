@@ -73,6 +73,54 @@ INTENT_TO_MODEL = {
 }
 
 
+# ═══════════════════════════════════════════════════════════════════
+# Brief #11 (Neo 1 May 25.37) — INTENT → RENDERER MAP
+# Cerebras 120b/235b modelleri channel='web' geldiğinde hangi
+# renderer'ı kullanacağını net bilsin diye system_prompt'a inject edilir.
+# ═══════════════════════════════════════════════════════════════════
+INTENT_RENDERER_MAP: dict[str, list[str]] = {
+    "kavram_aciklama":   ["formula", "steps", "quiz"],
+    "cozum_iste":        ["steps", "formula"],
+    "ornek_iste":        ["steps", "compare2"],
+    "ozet_iste":         ["steps", "kgraph"],
+    "karsilastirma":     ["compare2"],
+    "deneme_analiz":     ["chart", "radar", "karne"],
+    "analiz_iste":       ["chart", "radar"],
+    "hedef_analiz":      ["gauge", "progress", "timeline"],
+    "plan_yap":          ["timeline", "kgraph", "progress"],
+    "mufredat_bilgi":    ["progress", "karne"],
+    # Renderer YOK — bu intent'lerde sadece sıcak metin
+    "motivasyon_destek": [],
+    "duygu_paylasim":    [],
+    "selamlama":         [],
+    "veda":              [],
+    "tesekkur":          [],
+}
+
+
+def get_renderer_hint(intent: str, channel: str) -> str:
+    """Brief #11 — channel='web' VE intent eşleşirse renderer hint döndür.
+    Cerebras system_prompt'una inject edilir, modele renderer kullanmasını söyler.
+
+    Args:
+        intent: prompt_tiers/intent_classifier'dan gelen intent etiketi
+        channel: 'web' | 'whatsapp' | 'agent_api' | 'cli'
+    Returns:
+        Inject edilecek string (boş string = renderer yok)
+    """
+    if channel != "web":
+        return ""
+    renderers = INTENT_RENDERER_MAP.get(intent, [])
+    if not renderers:
+        return ""
+    r_str = " + ".join(f"```{r}" for r in renderers)
+    return (
+        f"\n\n🎨 [RENDERER — ZORUNLU KULLAN]: {r_str}\n"
+        f"Bu intent ({intent}) için web kanalında bu renderer'lar olmadan cevap KABUL EDİLMEZ.\n"
+        f"Düz metin + markdown tablo YETERSİZ.\n"
+    )
+
+
 class CerebrasClient:
     """OpenAI SDK üzerinden Cerebras API."""
 
@@ -98,8 +146,23 @@ class CerebrasClient:
         model: str = "gpt-oss-120b",
         max_tokens: int = 1500,
         temperature: float = 0.3,
+        intent: Optional[str] = None,
+        channel: str = "whatsapp",
     ) -> dict:
-        """Sync chat completion. Returns {text, model, usage, ms}."""
+        """Sync chat completion. Returns {text, model, usage, ms}.
+
+        Brief #11 (1 May 25.37): channel='web' + intent eşleşirse
+        renderer_hint otomatik system prompt'a inject edilir.
+        """
+        # Brief #11 — Renderer hint inject (web + tanımlı intent'te)
+        if intent and channel:
+            try:
+                renderer_hint = get_renderer_hint(intent, channel)
+                if renderer_hint:
+                    system = (system or "") + renderer_hint
+            except Exception:
+                pass
+
         msgs = []
         if system:
             msgs.append({"role": "system", "content": system})
@@ -151,13 +214,19 @@ class CerebrasClient:
         model: str = "gpt-oss-120b",
         max_tokens: int = 1500,
         temperature: float = 0.3,
+        intent: Optional[str] = None,
+        channel: str = "whatsapp",
     ) -> dict:
-        """Async wrapper — asyncio.to_thread ile sync client'i sar."""
+        """Async wrapper — asyncio.to_thread ile sync client'i sar.
+
+        Brief #11 (1 May 25.37): intent + channel param eklendi → renderer_hint inject.
+        """
         import asyncio
         return await asyncio.to_thread(
             self.complete,
             messages=messages, system=system, model=model,
             max_tokens=max_tokens, temperature=temperature,
+            intent=intent, channel=channel,
         )
 
 

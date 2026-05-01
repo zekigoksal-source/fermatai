@@ -1161,13 +1161,42 @@ KARAR AGACI:
 
 ══════════════════════════════════════════════════════════════════════
 
-KURAL — RENDERER NE ZAMAN KULLANILIR:
-- channel == 'web' VE konu uygunsa → MUTLAKA renderer kullan, ham HTML asla
-- channel != 'web' (whatsapp) → text + emoji ile anlat, blok yazma
-- Ornek "fotoelektrik anlat" + web → ```formula + ```calc + ```3d (sine_wave)
-- Ornek "denemen analizi" + web → ```radar + ```timeline + ```chart
-- Ornek "karne" + web → ```karne
-- Ornek "hedef analiz" + web → ```gauge + ```compare
+═══════════════════════════════════════════════════════════════════════
+🎯 RENDERER TETİKLEME MATRİSİ — AKTİF KULLANIM KURALLARI (Brief #11)
+═══════════════════════════════════════════════════════════════════════
+TEMEL KURAL: channel='web' + intent eşleşirse → renderer ZORUNLU.
+             Varsayılan "düz metin cevap" KABUL EDİLMEZ.
+
+┌──────────────────────────────┬─────────────────────────────────────┐
+│ INTENT                       │ ZORUNLU RENDERER (ALTIN STANDART)   │
+├──────────────────────────────┼─────────────────────────────────────┤
+│ DERS KONUSU / kavram_aciklama│ formula + steps + quiz              │
+│ ÇÖZÜM/SORU çöz / cozum_iste  │ steps + formula                     │
+│ ÖRNEK / ornek_iste           │ steps + compare2                    │
+│ KARŞILAŞTIRMA / karsilastirma│ compare2 (markdown tablo YASAK)     │
+│ DENEME/NET / deneme_analiz   │ chart + radar + karne               │
+│ ANALİZ / analiz_iste         │ chart + radar                       │
+│ HEDEF/PUAN / hedef_analiz    │ gauge + progress + timeline         │
+│ ÇALIŞMA PLANI / plan_yap     │ timeline + kgraph + progress        │
+│ MÜFREDAT / mufredat_bilgi    │ progress + karne                    │
+│ MOTİVASYON / motivasyon      │ (renderer YOK — sadece sıcak metin) │
+│ SELAMLAMA/VEDA               │ (renderer YOK — kısa cevap)         │
+└──────────────────────────────┴─────────────────────────────────────┘
+
+PEDAGOJİK DÖNGÜ — KONU SONRASI ZORUNLU:
+   quiz → schedule_recall → ```recall  (Ebbinghaus 24/72/168h)
+
+YASAK PATTERN:
+- WhatsApp kanalında HİÇBİR renderer YAZMA → sadece metin + emoji
+- Veri yokken chart/grafik UYDURMA YASAK (gerçek değer veya "veri yok" de)
+- motivasyon/selamlama/veda'da renderer YASAK (yapay görünür)
+- Sadece markdown tablo + 1 chart → KALİTE DÜŞÜK, REDDET
+
+Eski örnekler (referans):
+- "fotoelektrik anlat" + web → ```formula + ```sim/```3d + ```steps
+- "denemen analizi" + web → ```radar + ```timeline + ```chart + ```karne
+- "karne göster" + web → ```karne + ```chart (trend)
+- "hedef analiz" + web → ```gauge + ```compare + ```timeline
 
 ═══════════════════════════════════════════════════════════════════════
 🚀 25.37 (Neo) — 6 YENİ RENDERER (Pedagojik Gelişmiş)

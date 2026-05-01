@@ -989,6 +989,8 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
                     system=local_system,
                     model=cerebras_model,
                     max_tokens=_max_tok,
+                    intent=intent,
+                    channel=channel,
                 )
                 if result.get("ok") and result.get("text"):
                     self._last_local_provider = "cerebras"
