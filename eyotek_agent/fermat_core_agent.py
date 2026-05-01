@@ -4909,11 +4909,12 @@ class FermatCoreAgent:
             _claude_tools = get_tools(role=role)
             _selected_tier = "full"
 
-        # 25.40 (Neo direktif): Admin için MAX_TURNS sınırsız (yatırım yapılmış altyapı
-        # tam kapasitede kullanılsın). Diğer roller için 10 (token koruma).
-        # Neo: "benimle yaptığı her işlemlerde yazılımsal ve donanımsal limitimiz
-        # neyse onu kullanabiliyor olayım her açıdan"
-        MAX_TURNS = 50 if role == "admin" else 10
+        # 25.40b (Neo direktif): Admin icin MAX_TURNS pratikte SINIRSIZ.
+        # Onceki 50 hala bir sinirdi, Neo "max tur olmamasi lazim admin etkilesimi
+        # zaten en yuksek kapasite gerektirir" dedi.
+        # 999 = effectively unlimited ama infinite loop guard olarak duruyor.
+        # Diger roller icin 10 (token koruma).
+        MAX_TURNS = 999 if role == "admin" else 10
         for turn in range(MAX_TURNS):
             # KRITIK: Anthropic SDK sync — event loop'u bloke etmemesi icin
             # asyncio.to_thread ile arka plan thread'inde calistir.
