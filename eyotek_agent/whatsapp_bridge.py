@@ -1449,7 +1449,16 @@ NEO_PHONE = "905051256802"  # Zeki Göksal — tek ve değişmez
 
 
 def _check_rate_limit(phone: str, is_registered: bool = True, msg_len: int = 0) -> bool:
-    """Kapasite bazlı rate limiting. Kısa mesajlar ucuz, Claude çağrıları pahalı."""
+    """Kapasite bazlı rate limiting. Kısa mesajlar ucuz, Claude çağrıları pahalı.
+
+    Oturum 25.40 (Neo direktif): Admin (Neo) için rate limit BYPASS — yatırım
+    yapılmış altyapı tam kapasite kullanılabilsin, dev/test sınırsız.
+    """
+    # 25.40: Admin telefonu (Neo) için sınırsız
+    NEO_PHONE = "905051256802"
+    if phone == NEO_PHONE:
+        return True  # Neo sınırsız
+
     now = _time.time()
 
     # Temp ban kontrolu
@@ -4432,24 +4441,36 @@ async def _handle_single_message(msg: dict, value: dict) -> None:
             pass
 
         # Dinamik limit (aktif ogrenciye 5, digerlere 3)
-        try:
-            from foto_solver_v2 import get_dynamic_photo_limit
-            daily_limit = await get_dynamic_photo_limit(student_soz_no, _PHOTO_DAILY_LIMIT)
-        except Exception:
-            daily_limit = _PHOTO_DAILY_LIMIT
+        # Oturum 25.40 (Neo direktif): Admin (Neo) için foto limit BYPASS
+        NEO_PHONE = "905051256802"
+        if phone_normalized == NEO_PHONE:
+            # Neo sınırsız foto — dev/test
+            daily_limit = 9999
+            pc = _PHOTO_COUNTS.get(phone_normalized, {"date": today_str, "count": 0})
+            if pc["date"] != today_str:
+                pc = {"date": today_str, "count": 0}
+            pc["count"] += 1
+            _PHOTO_COUNTS[phone_normalized] = pc
+            kalan = 9999
+        else:
+            try:
+                from foto_solver_v2 import get_dynamic_photo_limit
+                daily_limit = await get_dynamic_photo_limit(student_soz_no, _PHOTO_DAILY_LIMIT)
+            except Exception:
+                daily_limit = _PHOTO_DAILY_LIMIT
 
-        pc = _PHOTO_COUNTS.get(phone_normalized, {"date": "", "count": 0})
-        if pc["date"] != today_str:
-            pc = {"date": today_str, "count": 0}
-        if pc["count"] >= daily_limit:
-            await send_wa_message(phone,
-                f"📸 Gunluk foto soru cozum limitine ulastin ({daily_limit}/{daily_limit}).\n\n"
-                f"Yarin yeniden kullanabilirsin!\n"
-                f"_Simdilik soruyu yazi olarak da sorabilirsin — yardimci olurum._ 🎯")
-            return
-        pc["count"] += 1
-        _PHOTO_COUNTS[phone_normalized] = pc
-        kalan = daily_limit - pc["count"]
+            pc = _PHOTO_COUNTS.get(phone_normalized, {"date": "", "count": 0})
+            if pc["date"] != today_str:
+                pc = {"date": today_str, "count": 0}
+            if pc["count"] >= daily_limit:
+                await send_wa_message(phone,
+                    f"📸 Gunluk foto soru cozum limitine ulastin ({daily_limit}/{daily_limit}).\n\n"
+                    f"Yarin yeniden kullanabilirsin!\n"
+                    f"_Simdilik soruyu yazi olarak da sorabilirsin — yardimci olurum._ 🎯")
+                return
+            pc["count"] += 1
+            _PHOTO_COUNTS[phone_normalized] = pc
+            kalan = daily_limit - pc["count"]
 
         # Fotoyu indir ve Vision API ile coz
         if image_id:

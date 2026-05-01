@@ -2312,92 +2312,361 @@ html[data-theme="dark"] .msg.bot.streaming::after {
 }
 </style>
 <style>
-/* 25.40 (Neo PWA): Instant splash — chat yüklenene kadar profesyonel açılış
-   Sebep: Wix iframe parent'tan PWA açılırken Wix splash + header geçişleri
-   amatör his veriyordu. Şimdi PWA modunda KENDI splash'imizi göster. */
+/* ════════════════════════════════════════════════════════════════
+   25.40 (Neo direktif): COOL splash — particle constellation +
+   mesh gradient + neon glow + cyclical tagline + scan line.
+   "Teknolojik, kurumsal, sade ama büyüleyici" — sıfır anında açılır.
+   ════════════════════════════════════════════════════════════════ */
 #fermatai-splash {
   position: fixed; inset: 0;
-  background: linear-gradient(160deg, #0F172A 0%, #1E1B2E 60%, #2D2018 100%);
+  background: #0A0E1A;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   z-index: 999999;
-  transition: opacity 0.32s ease-out;
+  transition: opacity 0.55s cubic-bezier(0.16,1,0.3,1),
+              transform 0.55s cubic-bezier(0.16,1,0.3,1);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
-#fermatai-splash.fade { opacity: 0; pointer-events: none; }
+#fermatai-splash.fade { opacity: 0; transform: scale(1.08); pointer-events: none; }
+
+/* Mesh gradient — 4 renkli animasyonlu arka plan */
+#fermatai-splash::before {
+  content: "";
+  position: absolute; inset: -25%;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 30%, rgba(199,111,62,0.35), transparent 60%),
+    radial-gradient(ellipse 50% 60% at 80% 20%, rgba(167,139,250,0.30), transparent 60%),
+    radial-gradient(ellipse 70% 40% at 50% 80%, rgba(245,158,11,0.25), transparent 60%),
+    radial-gradient(ellipse 40% 60% at 90% 70%, rgba(94,106,210,0.25), transparent 60%);
+  animation: splashMeshDrift 8s ease-in-out infinite alternate;
+  filter: blur(40px);
+}
+@keyframes splashMeshDrift {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  50%  { transform: translate(-3%, 2%) rotate(2deg); }
+  100% { transform: translate(2%, -3%) rotate(-2deg); }
+}
+
+/* Scan line — neon top→bottom sweep */
+#fermatai-splash::after {
+  content: "";
+  position: absolute; left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(199,111,62,0.85), transparent);
+  box-shadow: 0 0 20px rgba(199,111,62,0.6);
+  animation: splashScanLine 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes splashScanLine {
+  0%   { transform: translateY(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* Particle constellation (yıldız nokta network) */
+#fermatai-splash .splash-particles {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Logo container — neon ring + glow + breath */
+#fermatai-splash .splash-logo-wrap {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 28px;
+}
 #fermatai-splash .splash-logo {
-  width: 110px; height: 110px;
-  border-radius: 24px;
-  background: linear-gradient(135deg, #C76F3E, #A75A2D);
+  width: 124px; height: 124px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #E08456 0%, #C76F3E 50%, #A75A2D 100%);
   display: flex; align-items: center; justify-content: center;
-  font-size: 64px; font-weight: 900; color: white;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  font-size: 72px; font-weight: 900; color: white;
+  position: relative;
   box-shadow:
-    0 16px 48px rgba(199,111,62,0.40),
-    0 4px 14px rgba(0,0,0,0.30),
-    inset 0 1px 0 rgba(255,255,255,0.18);
-  animation: splashBreathe 2.2s ease-in-out infinite;
-  margin-bottom: 22px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    0 20px 60px rgba(199,111,62,0.45),
+    0 6px 20px rgba(0,0,0,0.40),
+    inset 0 2px 0 rgba(255,255,255,0.22),
+    inset 0 -3px 8px rgba(167,89,45,0.5);
+  animation: splashLogoBreath 2.4s ease-in-out infinite;
+  text-shadow: 0 3px 6px rgba(0,0,0,0.35);
+  z-index: 2;
 }
+/* Neon ring around logo */
+#fermatai-splash .splash-logo-wrap::before {
+  content: "";
+  position: absolute; inset: -8px;
+  border-radius: 36px;
+  border: 1.5px solid rgba(199,111,62,0.50);
+  box-shadow:
+    0 0 24px rgba(199,111,62,0.40),
+    inset 0 0 12px rgba(199,111,62,0.18);
+  animation: splashRingPulse 2.4s ease-in-out infinite;
+}
+#fermatai-splash .splash-logo-wrap::after {
+  content: "";
+  position: absolute; inset: -22px;
+  border-radius: 50px;
+  border: 1px solid rgba(167,139,250,0.30);
+  animation: splashRingPulse 3s ease-in-out infinite reverse;
+}
+@keyframes splashLogoBreath {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+@keyframes splashRingPulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 1.0; transform: scale(1.08); }
+}
+
+/* Brand name — large + glow */
 #fermatai-splash .splash-name {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  font-size: 24px;
-  font-weight: 700;
-  color: #F5F4ED;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  margin-bottom: 14px;
+  z-index: 2;
+  background: linear-gradient(135deg, #FFFFFF, #E2E8F0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(199,111,62,0.40);
+  filter: drop-shadow(0 2px 8px rgba(199,111,62,0.30));
 }
+#fermatai-splash .splash-name .accent {
+  background: linear-gradient(135deg, #FCD34D, #C76F3E);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Cyclical tagline — değişen mesaj */
 #fermatai-splash .splash-tag {
-  font-size: 13px;
+  position: relative;
+  font-size: 14px;
   color: #94A3B8;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.6px;
+  z-index: 2;
+  height: 22px;
+  min-width: 280px;
+  text-align: center;
+  display: flex; align-items: center; justify-content: center;
 }
-#fermatai-splash .splash-spinner {
-  margin-top: 32px;
-  width: 28px; height: 28px;
-  border: 3px solid rgba(199,111,62,0.18);
-  border-top-color: #C76F3E;
-  border-radius: 50%;
-  animation: splashSpin 0.85s linear infinite;
+#fermatai-splash .splash-tag span {
+  position: absolute;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.55s, transform 0.55s;
 }
-@keyframes splashBreathe {
-  0%, 100% { transform: scale(1); box-shadow: 0 16px 48px rgba(199,111,62,0.40), 0 4px 14px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.18); }
-  50%      { transform: scale(1.04); box-shadow: 0 22px 64px rgba(199,111,62,0.55), 0 6px 18px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.24); }
+#fermatai-splash .splash-tag span.active {
+  opacity: 1;
+  transform: translateY(0);
 }
-@keyframes splashSpin {
-  to { transform: rotate(360deg); }
+
+/* Progress bar — neon turuncu (fillBar animation) */
+#fermatai-splash .splash-progress {
+  margin-top: 38px;
+  width: 200px;
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  z-index: 2;
+  position: relative;
+}
+#fermatai-splash .splash-progress::after {
+  content: "";
+  position: absolute; left: -40%; top: 0;
+  width: 40%; height: 100%;
+  background: linear-gradient(90deg, transparent, #C76F3E, #FCD34D, #C76F3E, transparent);
+  box-shadow: 0 0 12px rgba(199,111,62,0.8);
+  animation: splashProgressSlide 1.4s ease-in-out infinite;
+}
+@keyframes splashProgressSlide {
+  0%   { left: -40%; }
+  100% { left: 100%; }
+}
+
+/* Footer marker — version + powered by */
+#fermatai-splash .splash-footer {
+  position: absolute;
+  bottom: 28px;
+  left: 50%; transform: translateX(-50%);
+  font-size: 11px;
+  color: rgba(148,163,184,0.5);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  z-index: 2;
+  animation: splashFooterFade 2.4s ease-in-out infinite;
+}
+#fermatai-splash .splash-footer .dot {
+  display: inline-block; width: 4px; height: 4px;
+  background: #C76F3E; border-radius: 50%;
+  margin: 0 8px; vertical-align: middle;
+  box-shadow: 0 0 8px rgba(199,111,62,0.7);
+}
+@keyframes splashFooterFade {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+/* Mobile responsive — küçük ekranda küçült */
+@media (max-width: 540px) {
+  #fermatai-splash .splash-logo { width: 100px; height: 100px; font-size: 60px; border-radius: 24px; }
+  #fermatai-splash .splash-name { font-size: 26px; }
+  #fermatai-splash .splash-tag { font-size: 12px; min-width: 240px; }
+  #fermatai-splash .splash-progress { width: 160px; }
 }
 </style>
 </head>
 <body>
 
-<!-- 25.40 (Neo PWA): Instant splash — kullanıcı PWA'yı tıkladığı an gözükür,
-     chat yüklenince fade out. Wix splash + header geçişlerinin amatör hissini gizler. -->
+<!-- 25.40 (Neo direktif): COOL splash — particle constellation + mesh gradient
+     + cyclical tagline + neon glow + scan line. Sıfır anında açılır,
+     "teknolojik, kurumsal, sade ama büyüleyici" his. Wix splash atlanır. -->
 <div id="fermatai-splash" aria-hidden="true">
-  <div class="splash-logo">F</div>
-  <div class="splash-name">FermatAI</div>
-  <div class="splash-tag">Akademik Koç hazırlanıyor...</div>
-  <div class="splash-spinner"></div>
+  <canvas class="splash-particles" id="splashCanvas"></canvas>
+  <div class="splash-logo-wrap">
+    <div class="splash-logo">F</div>
+  </div>
+  <div class="splash-name">Fermat<span class="accent">AI</span></div>
+  <div class="splash-tag">
+    <span class="active">Akademik Koç hazırlanıyor...</span>
+    <span>Sınav verisi okunuyor...</span>
+    <span>Pedagojik motor başlatılıyor...</span>
+    <span>Kişiselleştirilmiş analiz...</span>
+    <span>Senin için özel asistan...</span>
+  </div>
+  <div class="splash-progress"></div>
+  <div class="splash-footer">
+    Fermat Eğitim Kurumları <span class="dot"></span> Akademik Yapay Zeka
+  </div>
 </div>
 <script>
-// Splash hide: chat input görünür olunca hide et (DOMContentLoaded yetersiz olabilir)
+// Splash sistemleri: particle canvas + cyclical tagline + smooth hide
 (function() {
+  // ─── Particle constellation (canvas) ──────────────────────────
+  function initParticles() {
+    const canvas = document.getElementById('splashCanvas');
+    if (!canvas) return null;
+    const ctx = canvas.getContext('2d');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    function resize() {
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.scale(dpr, dpr);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Create particles (yıldız nokta network)
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const isMobile = W < 600;
+    const COUNT = isMobile ? 40 : 70;
+    const particles = [];
+    for (let i = 0; i < COUNT; i++) {
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        r: Math.random() * 1.6 + 0.4,
+        op: Math.random() * 0.5 + 0.25,
+      });
+    }
+
+    let running = true;
+    function tick() {
+      if (!running) return;
+      ctx.clearRect(0, 0, W, H);
+
+      // Update + draw particles
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(199, 111, 62, ${p.op})`;
+        ctx.fill();
+      }
+
+      // Connect close particles (constellation lines)
+      const MAX_DIST = isMobile ? 90 : 130;
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MAX_DIST) {
+            const op = (1 - dist / MAX_DIST) * 0.18;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(167, 139, 250, ${op})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+    return { stop: () => { running = false; } };
+  }
+
+  // ─── Cyclical tagline (her 1.5sn değişen mesaj) ────────────────
+  function initTagline() {
+    const tag = document.querySelector('#fermatai-splash .splash-tag');
+    if (!tag) return null;
+    const spans = tag.querySelectorAll('span');
+    if (spans.length < 2) return null;
+    let idx = 0;
+    const iv = setInterval(() => {
+      spans[idx].classList.remove('active');
+      idx = (idx + 1) % spans.length;
+      spans[idx].classList.add('active');
+    }, 1500);
+    return { stop: () => clearInterval(iv) };
+  }
+
+  const particleCtl = initParticles();
+  const tagCtl = initTagline();
+
+  // ─── Smooth hide: chat hazır olunca fade-out ───────────────────
   function hideSplash() {
     const sp = document.getElementById('fermatai-splash');
     if (!sp) return;
     sp.classList.add('fade');
-    setTimeout(() => { try { sp.remove(); } catch (_) {} }, 400);
+    if (particleCtl && particleCtl.stop) particleCtl.stop();
+    if (tagCtl && tagCtl.stop) tagCtl.stop();
+    setTimeout(() => { try { sp.remove(); } catch (_) {} }, 600);
   }
-  // En geç fallback: 4sn sonra zorla kapat
-  setTimeout(hideSplash, 4000);
-  // Asıl tetik: chat input render olunca
+
+  // En geç fallback: 5sn sonra zorla kapat
+  setTimeout(hideSplash, 5000);
+
+  // Min display: en az 800ms görüntülen ki kullanıcı görsün
+  const MIN_DISPLAY = 800;
+  const startedAt = Date.now();
+  function readyHide() {
+    const elapsed = Date.now() - startedAt;
+    const wait = Math.max(0, MIN_DISPLAY - elapsed);
+    setTimeout(hideSplash, wait);
+  }
+
   function checkReady() {
     const input = document.getElementById('chatInput') || document.querySelector('textarea');
     const messages = document.getElementById('messages');
     if (input || messages) {
-      // 250ms sonra hide (smooth — kullanıcı bir an logoyu görsün)
-      setTimeout(hideSplash, 250);
+      readyHide();
       return true;
     }
     return false;
@@ -2409,9 +2678,8 @@ html[data-theme="dark"] .msg.bot.streaming::after {
       setTimeout(() => { if (!checkReady()) setTimeout(hideSplash, 1500); }, 100);
     });
   }
-  // Chat ilk mesajı render olunca da hide et
   window.addEventListener('load', () => {
-    setTimeout(hideSplash, 600);
+    setTimeout(() => { if (!document.getElementById('fermatai-splash')) return; hideSplash(); }, 1000);
   });
 })();
 </script>
@@ -6785,9 +7053,10 @@ function showChat(name) {
   if (adminBtn && (role === "admin" || role === "mudur")) {
     adminBtn.style.display = "inline-block";
   }
-  // Oturum 25.14d: Admin/Mudur — Yönetim Paneli butonu (Cinema dashboard)
+  // 25.40 (Neo direktif): Yönetim Paneli butonu SADECE admin (Neo) görür.
+  // Müdür/yönetim için 'admin paneli gibi' hissi vermesin → mudur kaldırıldı.
   const adminDashBtn = document.getElementById("adminDashBtn");
-  if (adminDashBtn && (role === "admin" || role === "mudur")) {
+  if (adminDashBtn && role === "admin") {
     adminDashBtn.style.display = "inline-block";
   }
   // 23 Nisan (Neo bug fix): Önceki sohbeti restore et (YouTube link vb. tıklayıp dönünce)
@@ -6958,6 +7227,14 @@ async function doSend() {
     // Eğer zaten büyük kart varsa (render_pending önce geldi) skip
     if (richThinkingCard) return;
     if (!thinkingMsg) return;
+    // 25.40 (Neo bug fix): DUPLICATE engelle — herhangi bir chunk-pause-card varsa sil
+    try {
+      document.querySelectorAll('.chunk-pause-card').forEach(c => {
+        try { if (c._evolveTimer) clearInterval(c._evolveTimer); c.remove(); } catch (_) {}
+      });
+      // chunk pause timer'i da iptal et
+      if (window._chunkPauseTimer) { clearTimeout(window._chunkPauseTimer); window._chunkPauseTimer = null; }
+    } catch (_) {}
     // Küçük pili kaldır
     try { thinkingMsg.remove(); } catch(_) {}
     thinkingMsg = null;
@@ -7305,8 +7582,12 @@ async function doSend() {
           window._chunkPauseTimer = setTimeout(() => {
             // 5 saniyedir chunk yok — botMsg altına rich card ekle (henüz render_pending gelmedi)
             if (!botMsg || !document.body.contains(botMsg)) return;
-            // Zaten render-pending-card varsa skip
+            // 25.40 (Neo bug fix): DUPLICATE engelle — global rich thinking card varsa skip
+            if (richThinkingCard && document.body.contains(richThinkingCard)) return;
+            // Zaten render-pending-card varsa (botMsg child) skip
             if (botMsg.querySelector('.render-pending-card')) return;
+            // Document'ta herhangi bir render-pending-card varsa skip (failsafe)
+            if (document.querySelector('.render-pending-card')) return;
             const card = document.createElement('div');
             card.className = 'render-pending-card chunk-pause-card';
             card.innerHTML = `
@@ -7434,6 +7715,8 @@ async function openArchivesModal() {
 function closeArchivesModal() {
   const o = document.getElementById("archivesOverlay");
   if (o) o.style.display = "none";
+  // 25.40 (Neo bug fix): input bar restore (overlay'den döndükten sonra)
+  try { _restoreInputBar(); } catch (_) {}
 }
 async function loadArchivesList() {
   const container = document.getElementById("archivesContent");
@@ -7630,6 +7913,71 @@ function closeDashboard() {
     try { _dashboardCharts[k].destroy(); } catch(e) {}
   }
   _dashboardCharts = {};
+  // 25.40 (Neo bug fix): Panel'den dönüşte input bar restore et
+  // Bazı tarayıcılarda overlay style/transform DOM'a etki edip input gizleniyordu
+  try { _restoreInputBar(); } catch (_) {}
+}
+
+// 25.40 (Neo bug fix): herhangi bir overlay kapanışında otomatik input restore
+// MutationObserver ile body'deki overlay element'lerinin display='none' olduğunu izle
+(function setupInputBarFailsafe() {
+  if (window._inputBarFailsafeInstalled) return;
+  window._inputBarFailsafeInstalled = true;
+  // Overlay class'lı elementlerin display none/remove edilmesini izle
+  try {
+    const observer = new MutationObserver((mutations) => {
+      let needsRestore = false;
+      for (const mut of mutations) {
+        // overlay child gone
+        for (const node of mut.removedNodes) {
+          if (node.nodeType === 1 && node.id && /overlay|modal|panel/i.test(node.id)) {
+            needsRestore = true; break;
+          }
+        }
+        // overlay style change to display:none
+        if (mut.type === 'attributes' && mut.attributeName === 'style' && mut.target.id) {
+          if (/overlay|modal|panel/i.test(mut.target.id) && mut.target.style.display === 'none') {
+            needsRestore = true;
+          }
+        }
+        if (needsRestore) break;
+      }
+      if (needsRestore) {
+        setTimeout(() => { try { if (typeof _restoreInputBar === 'function') _restoreInputBar(); } catch (_) {} }, 50);
+      }
+    });
+    observer.observe(document.body, {
+      childList: true, attributes: true, subtree: true,
+      attributeFilter: ['style', 'class'],
+    });
+  } catch (e) { console.warn('input bar failsafe kurulamadi:', e); }
+})();
+
+// 25.40 (Neo bug fix): Panel/overlay'den dönüşte chat input bar zorla görünür yap
+// Sebep: bazen overlay z-index/display panel'i tam temizlemiyor → input gizli kalıyor
+function _restoreInputBar() {
+  const inputContainer = document.querySelector(".chat-input");
+  if (inputContainer) {
+    inputContainer.style.display = "";
+    inputContainer.style.visibility = "visible";
+    inputContainer.style.opacity = "1";
+    inputContainer.style.transform = "";
+    inputContainer.style.position = "";
+  }
+  const messages = document.getElementById("messages");
+  if (messages) {
+    messages.style.display = "";
+    messages.style.visibility = "visible";
+  }
+  const ci = document.getElementById("chatInput");
+  if (ci) {
+    ci.style.display = "";
+    ci.style.visibility = "visible";
+    setTimeout(() => { try { ci.focus(); } catch(_) {} }, 100);
+  }
+  // Body scroll'u geri ver (modal açıkken kapatılmış olabilir)
+  document.body.style.overflow = "";
+  document.documentElement.style.overflow = "";
 }
 
 async function loadDashboardData() {
@@ -7652,13 +8000,35 @@ async function loadDashboardData() {
 function renderDashboard(d) {
   // 22.1i2 — Rol-bazli render: ogretmen/rehber/mudur/admin/yonetim icin
   // ogrenci kismi alt kisimda kaliyor (orijinal)
+  // 25.40 (Neo direktif): Müdür/Yönetim için Admin Dashboard YASAK — kendi rolüne özel render gerek
+  // (mudur/yonetim için şimdilik admin'in basitleştirilmiş hali ama "admin paneli" hissi vermez)
   if (d.role === "ogretmen") return renderOgretmenDashboard(d);
   if (d.role === "rehber") return renderRehberDashboard(d);
-  if (d.role === "admin" || d.role === "mudur" || d.role === "yonetim") return renderAdminDashboard(d);
+  if (d.role === "admin") return renderAdminDashboard(d);
+  if (d.role === "mudur" || d.role === "yonetim") return renderMudurDashboard(d);
   // 22.1m — LGS ögrencisi özel render
   if (d.is_lgs) return renderLgsDashboard(d);
   // default: ogrenci YKS
   return renderOgrenciDashboard(d);
+}
+
+// 25.40 (Neo direktif): Müdür dashboard — admin'den TAMAMEN AYRI, kurum operasyonu odaklı
+// Atlas-2, routing stats, system updates, blueprint, behavior_rules YOK.
+// Sadece: kurum geneli akademik veri özet + öğretmen/sınıf brief + tercih durumu.
+function renderMudurDashboard(d) {
+  // Admin dashboard'ı çağır ama HASSAS bölümleri filtrele (system, blueprint, behavior, atlas)
+  // Bu fonksiyon admin dashboard'tan kaynak alıyor ama "admin-only" sectionları gizliyor
+  const html = renderAdminDashboard(d);
+  // String operations ile admin-only sectionları filtrele
+  const cleaned = html
+    // Atlas-2 / routing / system update bölümlerini sil
+    .replace(/<div[^>]*class="[^"]*atlas[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
+    .replace(/<section[^>]*>[\s\S]*?Atlas-2[\s\S]*?<\/section>/gi, "")
+    .replace(/<section[^>]*>[\s\S]*?Routing\s+Stats[\s\S]*?<\/section>/gi, "")
+    .replace(/<section[^>]*>[\s\S]*?Sistem\s+G[üu]ncellemeler[\s\S]*?<\/section>/gi, "")
+    .replace(/<section[^>]*>[\s\S]*?Behavior\s+Rules[\s\S]*?<\/section>/gi, "")
+    .replace(/<section[^>]*>[\s\S]*?Self.*Dev[\s\S]*?<\/section>/gi, "");
+  return cleaned;
 }
 
 // 22.1k — Dashboard Aksiyon Helper: kart/liste tıklanınca dashboard kapansın + chat'e prompt gönder

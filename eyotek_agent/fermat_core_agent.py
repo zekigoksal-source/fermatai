@@ -2993,13 +2993,14 @@ async def run_tool(name: str, input_data: dict,
             result = await fn(enriched)
         elif name == "make_render_link":
             # Oturum 25.37 (Neo) — Per-saat + per-konu cooldown
-            # Eski 5-shot global cache YERINE: sliding hour window + topic 60s lock
+            # Oturum 25.40 (Neo direktif): Admin SINIRSIZ — Neo dev/test için her şeyi
+            # tam kapasite kullanabilsin. Cooldown sadece öğrenci/öğretmen için.
             global _RENDER_LINK_HISTORY, _RENDER_LINK_TOPIC_LOCK
             try:
                 _RENDER_LINK_HISTORY
             except NameError:
-                _RENDER_LINK_HISTORY = {}  # phone → [(timestamp, title_hash), ...]
-                _RENDER_LINK_TOPIC_LOCK = {}  # (phone, title_hash) → timestamp
+                _RENDER_LINK_HISTORY = {}
+                _RENDER_LINK_TOPIC_LOCK = {}
 
             import time as _time, hashlib as _hashlib
             _phone_key = (caller_phone or "anon")[-6:]
@@ -3007,36 +3008,38 @@ async def run_tool(name: str, input_data: dict,
             _title = (input_data.get("title") or "untitled")[:80].lower().strip()
             _topic_hash = _hashlib.md5(_title.encode("utf-8")).hexdigest()[:10]
 
-            # Sliding window: son 1 saat
-            _hist = _RENDER_LINK_HISTORY.get(_phone_key, [])
-            _hist = [(t, h) for (t, h) in _hist if _now - t < 3600]
-            _RENDER_LINK_HISTORY[_phone_key] = _hist
-
-            # 1) Saatlik limit — 12/saat (kullanıcı uzun sohbette ~6 render yapabilir)
-            HOURLY_LIMIT = 12
-            if len(_hist) >= HOURLY_LIMIT:
-                _wait_min = int((3600 - (_now - _hist[0][0])) / 60) + 1
-                logger.warning(f"🚫 make_render_link hourly limit ({_phone_key}): {len(_hist)}/{HOURLY_LIMIT}")
-                result = {
-                    "success": False,
-                    "error": f"Saatlik render limiti ({HOURLY_LIMIT}/saat) doldu. {_wait_min} dk bekle veya text/22 renderer ile devam et."
-                }
+            # 25.40: Admin için cooldown bypass
+            if caller_role == "admin":
+                enriched = dict(input_data)
+                enriched["_caller_phone"] = caller_phone
+                result = await fn(enriched)
             else:
-                # 2) Per-konu cooldown — ayni baslik 60s icinde tekrar gelirse engelle
-                #    (Bu duplicate retry/halusinasyonu engeller ama farkli konularda OK)
-                _topic_key = (_phone_key, _topic_hash)
-                _last_topic_t = _RENDER_LINK_TOPIC_LOCK.get(_topic_key, 0)
-                if _now - _last_topic_t < 60:
-                    _wait_s = int(60 - (_now - _last_topic_t))
-                    logger.info(f"⏳ topic-cooldown ({_phone_key},{_title[:30]}): {_wait_s}s")
+                _hist = _RENDER_LINK_HISTORY.get(_phone_key, [])
+                _hist = [(t, h) for (t, h) in _hist if _now - t < 3600]
+                _RENDER_LINK_HISTORY[_phone_key] = _hist
+
+                HOURLY_LIMIT = 12
+                if len(_hist) >= HOURLY_LIMIT:
+                    _wait_min = int((3600 - (_now - _hist[0][0])) / 60) + 1
+                    logger.warning(f"🚫 make_render_link hourly limit ({_phone_key}): {len(_hist)}/{HOURLY_LIMIT}")
                     result = {
                         "success": False,
-                        "error": f"Ayni konu ({_title[:30]}) {_wait_s}s once render edildi. Cooldown — onceki linki sun veya farkli baslikla cagir."
+                        "error": f"Saatlik render limiti ({HOURLY_LIMIT}/saat) doldu. {_wait_min} dk bekle veya text/22 renderer ile devam et."
                     }
                 else:
-                    enriched = dict(input_data)
-                    enriched["_caller_phone"] = caller_phone
-                    result = await fn(enriched)
+                    _topic_key = (_phone_key, _topic_hash)
+                    _last_topic_t = _RENDER_LINK_TOPIC_LOCK.get(_topic_key, 0)
+                    if _now - _last_topic_t < 60:
+                        _wait_s = int(60 - (_now - _last_topic_t))
+                        logger.info(f"⏳ topic-cooldown ({_phone_key},{_title[:30]}): {_wait_s}s")
+                        result = {
+                            "success": False,
+                            "error": f"Ayni konu ({_title[:30]}) {_wait_s}s once render edildi. Cooldown — onceki linki sun veya farkli baslikla cagir."
+                        }
+                    else:
+                        enriched = dict(input_data)
+                        enriched["_caller_phone"] = caller_phone
+                        result = await fn(enriched)
                     if isinstance(result, dict) and result.get("success"):
                         _hist.append((_now, _topic_hash))
                         _RENDER_LINK_HISTORY[_phone_key] = _hist
@@ -4906,7 +4909,11 @@ class FermatCoreAgent:
             _claude_tools = get_tools(role=role)
             _selected_tier = "full"
 
-        MAX_TURNS = 10
+        # 25.40 (Neo direktif): Admin için MAX_TURNS sınırsız (yatırım yapılmış altyapı
+        # tam kapasitede kullanılsın). Diğer roller için 10 (token koruma).
+        # Neo: "benimle yaptığı her işlemlerde yazılımsal ve donanımsal limitimiz
+        # neyse onu kullanabiliyor olayım her açıdan"
+        MAX_TURNS = 50 if role == "admin" else 10
         for turn in range(MAX_TURNS):
             # KRITIK: Anthropic SDK sync — event loop'u bloke etmemesi icin
             # asyncio.to_thread ile arka plan thread'inde calistir.
