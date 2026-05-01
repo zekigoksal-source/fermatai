@@ -197,6 +197,46 @@ def calculate_quality_score(html: str, title: str = "") -> tuple[int, dict]:
     if all(k in h for k in ["<h", "<p"]) and any(k in h for k in ["açıklama", "formül", "formula", "info"]):
         score += 5; breakdown["pedagogical"] = True
 
+    # ─── 11. AKADEMİK SEVİYE — Neo 25.40 direktif (+10 max) ──────────────
+    # Lise son + üniversite hazırlık standardı: gerçek formül + sabit + paragraf
+    physics_constants_used = sum(1 for c in [
+        "6.67", "2.998", "1.989", "1.381", "1.055", "3.828",  # G, c, M☉, k_B, ℏ, L_☉
+    ] if c in h)
+    has_katex_formula = "katex.render" in h or "\\\\frac" in h or "$$" in h
+    has_paragraphs = h.count("<p") >= 3
+    advanced_terms = sum(1 for term in [
+        "schwarzschild", "tolman", "oppenheim", "eddington", "doppler",
+        "lensing", "akresyon", "accretion", "horizon", "ergosphere",
+        "magnetar", "pulsar", "quark", "neutrino", "redshift", "blueshift",
+        "kepler", "newton", "einstein", "planck", "compton",
+    ] if term in h)
+    academic_bonus = 0
+    if physics_constants_used >= 2: academic_bonus += 3
+    if has_katex_formula: academic_bonus += 4
+    if has_paragraphs: academic_bonus += 2
+    if advanced_terms >= 3: academic_bonus += 3
+    academic_bonus = min(academic_bonus, 12)  # max 12 bonus
+    if academic_bonus > 0:
+        score += academic_bonus
+        breakdown["academic_level"] = {
+            "physics_constants": physics_constants_used,
+            "katex_formula": has_katex_formula,
+            "paragraphs_3+": has_paragraphs,
+            "advanced_terms": advanced_terms,
+            "bonus_added": academic_bonus,
+        }
+
+    # ─── 12. RESPONSIVE LAYOUT — Neo bug 25.40 (max +5) ──────────────────
+    # Tam ekran butonlar sığmıyordu; layout zorunlulukları
+    layout_score = 0
+    if "viewport" in h and "device-width" in h: layout_score += 1
+    if "@media" in h: layout_score += 2
+    if "position: fixed" in h or "position:fixed" in h: layout_score += 1
+    if "z-index" in h: layout_score += 1
+    if layout_score > 0:
+        score += layout_score
+        breakdown["layout_responsive"] = layout_score
+
     # ─── KRITIK CEZALAR (Neo: simulasyon istendi ama yok) ───────────────────
     if is_3d_request and not is_real_3d:
         # Simulasyon istendi ama 3D scene yok — TAVAN 30
@@ -208,6 +248,8 @@ def calculate_quality_score(html: str, title: str = "") -> tuple[int, dict]:
         score = min(score, 15)
         breakdown["penalty"] = breakdown.get("penalty", "") + " | TOO_TINY"
 
+    # Cap to 100
+    score = min(score, 100)
     breakdown["total_score"] = score
     breakdown["size_kb"] = round(size_kb, 1)
     breakdown["is_3d_request"] = is_3d_request

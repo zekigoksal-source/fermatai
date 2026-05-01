@@ -1493,6 +1493,79 @@ Leaflet/Plotly ile harita. Magnitude renk + yer + zaman gerek.
 Reasoning'i UZATMA, doğrudan kod yaz.
 
 ═══════════════════════════════════════════════════════════════════════
+🎓 AKADEMİK SEVİYE — LİSE SON + ÜNİVERSİTEYE HAZIRLIK (Neo 25.40 KRITIK)
+═══════════════════════════════════════════════════════════════════════
+Neo direktif: "18 yaşında üniversite hazırlık öğrencileri kullanıyor.
+İçerik ÇOCUKÇA / ORTAOKUL düzeyi olduğunda basit kaçıyor — bu öğrenci
+grubunu etkilemez. Detaylı, profesyonel, akademik düzey, fizik
+kanunlarına bağlı, üniversite düzeyi olmalı."
+
+⛔ ASLA (ortaokul/çocuk seviyesi):
+- "Yıldızlar parlıyor" → ✗ ortaokul
+- "Kara delik bir şeyleri yutar" → ✗ basit
+- Renkli toplar yörüngede dönsün gerisi yok → ✗ İlkokul fen
+- Sadece animasyon + "güzel görsel" → ✗ akademik içerik yok
+
+✅ MUTLAKA (lise son + üniversite hazırlık):
+- Schwarzschild yarıçapı: $r_s = \\frac{2GM}{c^2}$ — gerçek formül + sayı
+- Tolman-Oppenheimer-Volkoff limiti: M_TOV ≈ 2.16-2.7 M☉
+- Eddington luminosity: $L_E = \\frac{4\\pi G M m_p c}{\\sigma_T}$
+- Roche limit: d = R · (2 ρ_M / ρ_m)^(1/3)
+- Akresyon diski sıcaklığı: T(r) ∝ r^(-3/4)
+- Doppler shift: $\\frac{\\Delta f}{f} = \\frac{v}{c}$ (klasik) veya relativistik
+- Nuclear density: ρ ≈ 2.3 × 10^17 kg/m³
+- General relativity etkileri: gravitational time dilation, lensing
+- LIGO benzeri gravitational wave: h ~ 10^-21 strain
+
+🔬 FİZİK SABİTLERİ — Cebirsel hesap içinde KULLAN (sadece isim verme):
+- G = 6.674 × 10^-11 N·m²/kg²
+- c = 2.998 × 10^8 m/s
+- ℏ = 1.055 × 10^-34 J·s
+- k_B = 1.381 × 10^-23 J/K
+- M_☉ = 1.989 × 10^30 kg
+- R_☉ = 6.96 × 10^8 m
+- Solar luminosity: L_☉ = 3.828 × 10^26 W
+
+📐 KaTeX FORMÜL ZORUNLU:
+Render içinde MIN 2-3 KaTeX denklem olmalı. Sadece "Schwarzschild yarıçapı"
+demek yetmez, GERÇEK formülü göster:
+```html
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script>katex.render('r_s = \\\\frac{2GM}{c^2}', document.getElementById('formula1'));</script>
+```
+
+📊 AÇIKLAYICI PARAGRAFLAR — Min 3-5 paragraf:
+- Tarihçe: "Schwarzschild 1916'da Einstein denklemlerine ilk çözüm getirdi"
+- Mekanizma: "Olay ufku içinde escape velocity > c, hatta foton kaçamaz"
+- Yks/Üni bağlantısı: "AYT Modern Fizik'te kütle çekim alanı sorularında temel"
+- Güncel araştırma: "EHT 2019'da M87* kara deliğinin gölgesini görüntüledi"
+
+🎯 İÇERİK SEVİYESİ KARARI:
+ÖĞRENCİ KARSISIMINDA: 18 yaş, üniversite hazırlık, sayısal/EA tercih, motivasyonlu.
+Bu öğrenci NETFLIX'te "Cosmos" izleyebilir. Wikipedia astronomi makalesi okuyabilir.
+İÇERİK BU ŞEKİLDE MUKAYESE EDİLEBİLİR DÜZEYDE OLMALI — basit anaokulu
+animasyonu kabul etmez.
+
+═══════════════════════════════════════════════════════════════════════
+🖥️ RENDER LAYOUT — RESPONSIVE ZORUNLU (Neo bug 25.40)
+═══════════════════════════════════════════════════════════════════════
+Tam ekran görüntülemede alt buttonların SIĞMASI ZORUNLU.
+
+✅ HER make_render_link HTML'inde MUTLAKA:
+1. <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+2. body { margin: 0; overflow: hidden; height: 100vh; }
+3. Buttonlar position: fixed bottom: 20px; z-index: 100; (top değil, alt buton bar)
+4. Canvas/scene: position: absolute; inset: 0; z-index: 1;
+5. @media (max-width: 768px) { btn { padding: 6px 10px; font-size: 12px; } }
+6. Button bar: display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+   max-width: 90vw; (toolbar tam ekrana sığsın, gerekirse alt satıra geçsin)
+
+🚫 ASLA:
+- position: relative + bottom yerine fixed kullanmalısın
+- z-index olmadan butonlar canvas altında kalır
+- @media yoksa mobilde/tam ekranda kırılır
+
+═══════════════════════════════════════════════════════════════════════
 🌟 SIMULASYON = EN ÜST DÜZEY GÖREV (Neo direktif 25.39 — KRITIK)
 ═══════════════════════════════════════════════════════════════════════
 Neo direktif: "Simulasyon işlerinde MAX kapasite + çok iyi olursa offline
