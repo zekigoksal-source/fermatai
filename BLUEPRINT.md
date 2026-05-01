@@ -1,7 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 1 Mayıs 2026 (gece 03:00) · **Oturum:** 25.37 final — **Pedagojik Sıçrama + Render Kalite Eşiği + WP Spam Fix**
-> **Önceki güncelleme:** 28 Nisan 2026, Oturum 25.29 (gece final) — Unified Context Engine + Service Layer
+> **Belge tarihi:** 1 Mayıs 2026 (öğlen 12:50) · **Oturum:** 25.37+ final — **Senior Dev Audit + Render Zenginlik + UI Redesign + WP Spam Fix**
+> **Önceki güncelleme:** 1 Mayıs 2026, Oturum 25.37 (gece 03:00) — Pedagojik Sıçrama + Render Kalite Eşiği
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)
 > **Hedef okuyucu:** Yeni bir LLM, geliştirici veya iş ortağı. Sistemin teknik yetkinlik tablosunu LLM'e attığında doyurucu bir mimari resim alır.
 > **Amaç:** Mimari + kapasite + sağlık + güvenlik + workflow tek dokümanda — proje teknik durumunu tam yansıtan referans.
@@ -51,13 +51,13 @@
 - **Vektör arama:** pgvector (rag_content tablosu, 1024-dim)
 - **Embedding:** Ollama nomic-embed-text:latest (VPS lokal)
 
-### Mevcut durum (1 Mayıs 2026 — Oturum 25.37 gece final)
+### Mevcut durum (1 Mayıs 2026 — Oturum 25.37+ öğlen final, MEGA SESSION 25 commit)
 
 **Production yetkinlik özeti:**
 
 | Kategori | Durum |
 |---|---|
-| Bridge availability | 99.5% (systemd watchdog) |
+| Bridge availability | 99.5% (systemd watchdog, PID 3105413) |
 | Aktif kullanıcı (7 gün) | 20 (admin hariç) |
 | Toplam mesaj (7 gün) | 347 (gerçek kullanıcı) |
 | Median latency | 2434 ms |
@@ -67,12 +67,18 @@
 | **Görsel renderer (web kanal)** | **28** (Oturum 25.37, eski 22 + 6 pedagojik) |
 | **External API tool** | 16 (NASA, Wolfram, Wiki, arXiv, DALL-E, PubChem, USGS, PDB, TTS, Suno, Code) |
 | **Toplam Claude tool dispatch** | **118** (Oturum 25.37, eski 112 + 6 yeni) |
-| **Davranış kuralı (canlı)** | **8** (yönetim_isim/data_priority/safety/render×5) |
-| **Render cache** | Aktif (topic_hash + 30g TTL, ~%40-60 maliyet düşüşü tahmini) |
+| **Davranış kuralı (canlı)** | **18** (Oturum 25.37+: 3 → 8 → 18, render zenginlik 8 yeni) |
+| **Render cache** | Aktif (topic_hash + 30g TTL + 7 template approved + 17 archived render kalıcı) |
 | **Render kalite eşiği** | 8-madde checklist + auto quality_score 60+ gate |
 | **ZORUNLU renderer kombinasyonu** | 13 intent → minimum renderer set (system_prompts) |
 | **/agent endpoint güvenlik** | WP spam koruması: channel='agent_api' default + whitelist |
 | **Bekleme UX** | Küçük pill → 5sn rich card upgrade + chunk-pause-card (botMsg child) |
+| **Knowledge Graph veritabanı** | 77 concept_nodes + 72 edges (D3.js force layout) |
+| **Tool perf tracking** | tool_usage_log decorator (admin/dev panel için) |
+| **GLightbox mobil viewer** | Tüm img'ler otomatik wrap (zoom/swipe/fullscreen) |
+| **Inline 📥 download emoji** | render-ready-card + markdown link'lerine otomatik inject |
+| **Action bar v3** | 4-katman buton kalabalığı → tek segment toolbar (👍 👎 ❤️ + 4 ikon) |
+| **Cerebras renderer hint** | INTENT_RENDERER_MAP 12 intent → Claude'a düşmeden Cerebras'tan render |
 
 **Veri sistemleri canlı:**
 
@@ -89,11 +95,37 @@
 | routing_stats | 691+ | Her mesaj canlı kayıt |
 | sync_run_log | 3 | Audit trail (sync_recent_exams) |
 | data_freshness | 11 modül | success/failure ayrı tracking |
-| **bot_behavior_rules** | **3** | Oturum 25.37 — admin kuralı yazar, prompt'a inject olur |
+| **bot_behavior_rules** | **18** | Oturum 25.37+ — context-aware filter, render rules sadece render context'te |
 | **active_recalls** | 1+ | Oturum 25.37 — Ebbinghaus spaced repetition (24/72/168h) |
-| **render_artifacts** | 37+ | Oturum 25.31+25.37 — make_render_link + topic_hash cache (1MB max) |
+| **render_artifacts** | 37+ archived 17 | Oturum 25.37+ — auto-archive + topic_hash cache + 7 template promoted |
+| **concept_nodes** | 77 | Oturum 25.37 — Knowledge Graph seed_curriculum |
+| **concept_edges** | 72 | Oturum 25.37 — D3 force layout edge'leri |
+| **tool_usage_log** | 8+ | Oturum 25.37+ — @track_tool_perf decorator (admin panel) |
+| **render_templates** | 7 approved | Oturum 25.37+ — `seed_render_templates.py` en iyi 7 archived render |
 
-**Oturum 25.37 — Pedagojik Sıçrama + Kalite Patch Tablosu (1 Mayıs 2026 gece 03:00, 4 saat):**
+**Oturum 25.37+ — Senior Dev Audit + UI Redesign + Render Zenginlik (1 Mayıs 2026 öğlen 12:50, sabah 09:00→öğlen 12:50 = 4 saat):**
+
+| Madde | Önce | Sonra | Etki |
+|---|---|---|---|
+| Behavior rules | 8 (sabit) | **18 (context-aware filter)** | Render kuralları sadece render context'te → ~500 token tasarruf/cevap |
+| Renderer kullanımı | 7/28 atil 21 | **18/28 (8 yeni rule ile)** | Bot artık quiz/recall/compare2/kgraph/steps/compound/rerender'ı aktif kullanıyor |
+| `/agent` endpoint channel | default WhatsApp → spam | **default 'agent_api' + whitelist** | KALICI #3 ihlal düzeltildi (Neo onayı) |
+| Cerebras renderer hint | Yok | **INTENT_RENDERER_MAP 12 intent** | get_renderer_hint(intent, channel) → Claude'a düşmeden render |
+| GLightbox mobil viewer | Yok | **Auto-wrap tüm img'ler** | Zoom/swipe/fullscreen mobile UX |
+| Inline 📥 download emoji | Buton ayrı | **Link içinde emoji + click→spinner→tik** | Sade UX, render-card + markdown link'lerine inject |
+| Action bar | 4 katman (8 buton) | **v3 single segment toolbar** | 👍 👎 ❤️ + 4 ikon (kopyala/oku/sil/...) |
+| Render persistence | 30g TTL → silinirdi | **Auto-archive on message archive** | 15 mevcut render backfill, kalıcı |
+| Reactions | 6 emoji + 2 thumbs (8) | **3 reaction (👍 👎 ❤️) mutex** | Kalabalık 8→3 |
+| Çalışmam Panel | ders/konu zorunlu | **opsiyonel + tarih telafi (-30g) + sonradan düzenle** | Veri sürekliliği (Neo: aylarca biriken) |
+| make_render_link guard | 5/session blok | **12/h sliding window + 60s per-konu cooldown** | Akış kırılmıyor |
+| HTML max | 200KB | **1024KB (1MB)**, ideal 200-400KB | Karmaşık fizik simleri geçer |
+| Render cache | Yok | **Topic_hash sha256 + Türkçe normalize, 30g TTL** | Aynı title reuse → ~%40-60 maliyet düşüşü |
+| Tool perf tracking | Yok | **@track_tool_perf decorator + tool_usage_log** | Slow tool tespit, admin paneli |
+| Routing stats views | Karışık (admin/selfdev/user) | **3 SQL view** | real_user / admin_dev / dashboard ayrı |
+| Render template seed | Yok | **7 best archived → render_templates approved** | Hızlı reuse |
+| markdown link 📥 yok | Bot direct /render/ link yazınca emoji yoktu | **`injectInlineDownloadOnRenderLinks`** | Tüm /render/ link'lerine otomatik 📥 inject |
+
+**Oturum 25.37 — Pedagojik Sıçrama + Kalite Patch Tablosu (1 Mayıs 2026 gece 03:00, önceki 4 saat):**
 
 | Madde | Önce | Sonra | Etki |
 |---|---|---|---|
@@ -111,7 +143,17 @@
 | make_render_link kapanış | Tool sonrası uzun text → SSE timeout | **Max 100 char + URL + BITIR** | URL artık kullanıcıya ulaşır |
 | Bekleme UX (kısa text + uzun pause) | Sadece thinking pill | **chunk-pause-card 5sn sonra rich kart** | botMsg altına 6 kademe evrim |
 
-**3 yeni modül (Oturum 25.37):**
+**Oturum 25.37+ ek modüller (1 Mayıs 2026 öğlen):**
+
+| Dosya | Satır | Rol |
+|---|---|---|
+| `tool_perf.py` | 120 | @track_tool_perf decorator + tool_usage_log + get_top_slow_tools/get_tool_detail |
+| `seed_render_templates.py` | 60 | En iyi 7 archived render → render_templates approved |
+| `migrations/015_routing_stats_views.sql` | 80 | 3 SQL view (real_user / admin_dev / dashboard) |
+| `cerebras_handler.py` (extended) | +60 | INTENT_RENDERER_MAP 12 intent + get_renderer_hint(intent, channel) |
+| `behavior_rules.py` (refactored) | +50 | Context-aware filter (regex pattern, render context detection) |
+
+**3 yeni modül (Oturum 25.37 gece, önceki):**
 
 | Dosya | Satır | Rol |
 |---|---|---|

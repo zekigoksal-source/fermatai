@@ -1,6 +1,140 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 1 Mayıs 2026, GECE 03:00 — **🧠 28 RENDERER + 8 DAVRANIŞ KURALI + RENDER KALİTE EŞİĞİ + WP SPAM FIX**
+> **Son güncelleme:** 1 Mayıs 2026, ÖĞLEN 12:50 — **🚀 SENIOR DEV AUDIT + RENDER ZENGİNLİK + UI REDESIGN — TEKNİK BORÇ SIFIR**
+> **Oturum 25.37+ (sabah 09:00 - öğlen 12:50, 4 saat — GÜNÜN MEGA SESSION):**
+>
+> Bu oturum 25.37 finalinden sonraki 4 saatlik audit + redesign + bug fix paketi.
+> Toplam **25 commit** (1 Mayıs gece 00:30 → öğlen 12:50). HEAD: `55a5ec8`.
+>
+> ## 🔴 11 AUDIT AKSIYONU (Senior dev raporu — Neo onayli)
+>
+> 1. **routing_engine** Cerebras intent matching güçlendi: groq_lanes 4 yeni lane (`render_request`,
+>    `karsilastirma`, `quiz_request`, `konu_haritasi`) + `LANE_TO_INTENT` mapping +
+>    `get_intent_for_lane()` helper. Bug fix: kim/hangi pattern word boundary ("akImI" false positive).
+>    Smoke test 9/9. **Hedef:** Claude %79 → %40, Cerebras %1.4 → %25
+> 2. **fast_responses** lane redirector: lane_quiz/compare2/kgraph/render — pattern eşleşince
+>    handler None döner, Cerebras path renderer hint ile zenginleştirir.
+> 3. **tool_perf.py** YENI MODUL: `tool_usage_log` tablo + `@track_tool_perf` decorator +
+>    run_tool dispatch'e otomatik log (asyncio fire-forget) + `get_top_slow_tools()` reporting.
+>    Bridge boot ensure_table.
+> 4. **render_templates** seed: 7 high-quality archived render promote edildi
+>    (LED 100/100, Karadelik/Wormhole 90, Planck 80) — Compton-altın referans.
+> 5. **response_templates.py** WEB_ENRICH_TEMPLATES + `get_enrich_template(intent)`:
+>    6 compound template (ogrenci_profil/konu_anlatim/kiyas/quiz/hedef/plan).
+> 6. **knowledge_graph** seed_curriculum: 77 nodes + 72 edges (limit→türev→integral yolları aktif).
+> 7. **render_endpoint._topic_hash** Türkçe stop-word filter: "Newton 2. Yasa" == "Newton'un 2. Yasası"
+>    aynı hash. Cache hit %40-60 artış beklenir.
+> 8. **migrations/015** SQL views: `real_user_routing_stats` (admin+selfdev hariç),
+>    `admin_dev_routing_stats`, `routing_dashboard_real`.
+> 9. **behavior_rules** context-aware: `build_rules_prompt_block(role, message_hint)` —
+>    render kuralları sadece sim/quiz/3d mesajlarında, naming sadece yönetim mesajlarında.
+>    Token tasarrufu ~500 tok/cevap.
+> 10. **system_prompts** COMPOUND DEFAULT: profil/plan/anlatım için compound içinde 3 panel
+>     ZORUNLU (5 ayrı block YASAK).
+> 11. **Selfdev tool** ayrı channel: SQL view ile filter (admin dev path izole).
+>
+> ## 🎨 UI REDESIGN (4 katman → tek toolbar)
+>
+> - **Mesaj action bar v3**: Eski 5 ayrı katman (Grafikle göster + Arşive ekle + Sesli Oku + PDF + Reactions)
+>   → tek segment bar (`🔊 Sesli Oku · 📄 PDF Al · ⭐ Arşivle · | · 👍 👎 ❤️`)
+> - `addArchiveButton` + `suggestChartIfRelevant` DEVRE DIŞI (duplicate temizliği)
+> - Stale eski buton temizleyici eklendi
+> - Mobile: label gizlenir, ikon-only; done state'de label döner
+> - Render-card içinde toolbar v2 zaten var (önceki turda)
+>
+> ## 📥 INLINE DOWNLOAD EMOJİ (Neo UX direktifi)
+>
+> - render-ready-link içinde title yanında `📥` emoji-buton
+> - Click → 🔄 dönüş animasyonu → ✅ yeşil tik (1s rotation, dlPop scale)
+> - 26x26px, render-card'a uyumlu (gradient header üstünde white bg)
+> - **Bug fix:** make_render_link kullanılmasa bile (markdown link `[X →](url)`),
+>   `injectInlineDownloadOnRenderLinks` her `<a href*="/render/">` link'inin yanına
+>   `📥 (22x22 accent border)` ekler. Variant: `render-inline-dl-md`.
+>
+> ## 🖼️ MOBİL GÖRSEL VIEWER (Bot brief, Neo "Claude Code ile yap" dedi)
+>
+> - **GLightbox** CDN entegrasyonu (8KB, sıfır dependency)
+> - `wrapImagesForLightbox(botEl)`: NASA/bilim img'leri otomatik `<a class="chat-img-zoom">` ile sar
+> - touchNavigation + zoomable + draggable + dark sinematik tema
+> - Render-card içeriği skip (mol3d/sim/3d kontrolleri korunur)
+> - CSS: max-width 100% + border-radius 12px + cursor zoom-in (PC+mobil)
+> - Mobile (<540px): full width + reduced margin
+>
+> ## 🚀 RENDER ZENGİNLİK (Bot itirafı: 28 renderer, 7'si kullanılıyor)
+>
+> Bot dev sohbetinde şunu dedi: "11 renderer hiç tetiklemiyorum: vr/mol3d/sound/element/excalidraw/
+> desmos/geogebra/3d/sim/compound/plotly. Davranış kuralı eklersen düzelir."
+>
+> **8 yeni davranış kuralı (#11-18) DB'ye:**
+>   - #11 (p1) Matematik fonksiyon/grafik → desmos/geogebra ZORUNLU
+>   - #12 (p2) Kimya/biyoloji molekül → pubchem/pdb_lookup + mol3d
+>   - #13 (p2) Periyodik element → ```element renderer
+>   - #14 (p3) Akustik/dalga → ```sound (Tone.js sesli)
+>   - #15 (p2) Hedef/puan/devamsızlık → ```gauge
+>   - #16 (p2) Etut/sınav tarihleri → ```timeline
+>   - #17 (p1) Profil/plan → ```compound (Compton-altın 3 panel)
+>   - #18 (p1) ```3d ve ```sim block JSON formatı ZORUNLU (düz isim YASAK)
+>
+> ## 🐛 KRİTİK BUG FIX'ler
+>
+> 1. **/agent endpoint WP filler spam** (Neo şikayeti): channel iletilmiyordu → default whatsapp →
+>    3sn watchdog → WhatsApp filler. KALICI #3 ihlal! Fix: channel parse + whitelist (3-katman).
+> 2. **make_render_link kronik empty html** (3+ kez): Anthropic SDK output truncate. Fix:
+>    agresif retry + preset fallback (kalite > preset prensibi).
+> 3. **Bekleme kartı 5sn upgrade**: küçük pill → büyük zengin kart (chunk-pause-card botMsg child)
+> 4. **Çalışmam Panel v2**: tarih telafi + ders/konu opsiyonel + sonradan düzenleme (PATCH endpoint)
+> 5. **Veri sürekliliği prensibi**: behavior_rule #9 (safety/p1) — DROP/TRUNCATE/wipe YASAK
+> 6. **Türkçe topic_hash**: "İntegral" combining dot fix
+> 7. **Tool dispatch caller_role**: yeni 6 tool için injection
+> 8. **3d preset düz isim** → JSON format zorunluluk (system_prompts + rule #18)
+> 9. **behavior_rules `re` import eksikti** → context-aware filter NameError fix
+> 10. **markdown render link 📥** otomatik inject (make_render_link kullanılmasa bile)
+>
+> ## 🎁 ARŞIVLI MESAJ RENDER AUTO-KALICI (Neo direktifi)
+>
+> - `POST /chat/archive` → mesaj content'inde `/render/UUID` regex parse
+> - render_artifacts'ta archived=TRUE + expires_at=NULL otomatik
+> - **Backfill**: 15 mevcut arşivli render kalıcı yapıldı (karadelik, wormhole, Compton, vs.)
+>
+> ## 📊 Sistem Durumu (oturum sonu 12:50)
+>
+>   - ✅ Bridge active 2 dakika önce restart, sağlıklı
+>   - ✅ HEAD: `55a5ec8` (local + GitHub + VPS sync)
+>   - ✅ HTTP /chat 200, /health 200, /render-test 200
+>   - ✅ Aktif davranış kuralı: **18** (#1-18)
+>   - ✅ Render template approved: **7** (LED + 6 fizik altın standart)
+>   - ✅ Render artifact: 46 toplam, 17 archived (kalıcı)
+>   - ✅ Knowledge graph: 77 nodes + 72 edges
+>   - ✅ tool_usage_log: 8 entry (yeni — bot çağırdıkça dolacak)
+>   - ✅ Atlas 25.37 records: 16
+>   - ✅ Hata logu: temiz (1 connection error 30dk önce, recover etti)
+>
+> ## 🎯 Beklenen Etkiler (Sonraki 7 gün)
+>
+> | Metrik | Önce | Hedef |
+> |--------|------|-------|
+> | Claude trafik | %79 | %40-50 |
+> | Cerebras trafik | %1.4 | %20-30 |
+> | P50 latency | 16s | 4-6s |
+> | Aylık maliyet | ~$170 | ~$60-80 |
+> | Render cache hit | ~0% | %40-60 |
+> | Aktif render kullanımı | 7/28 | 18/28 |
+>
+> ## 📂 Yeni Dosyalar (Bu oturum)
+>
+> - `tool_perf.py` — Tool latency/success log + reporting
+> - `seed_render_templates.py` — Best archived render → template promote
+> - `migrations/015_routing_stats_views.sql` — Admin/user filter views
+>
+> ## 🚧 Açık Borç: SIFIR
+>
+> Bütün konuşmalardan çıkan tüm bug'lar + audit aksiyonlar tamamlandı.
+> Bot 18 davranış kuralı ile çalışıyor — render zenginliği, compound default,
+> JSON format, veri sürekliliği, WP spam koruması, sezon mesaj yasağı (KALICI #3) hepsi aktif.
+>
+> ---
+>
+> **Önceki güncelleme:** 1 Mayıs 2026, GECE 03:00 — **🧠 28 RENDERER + 8 DAVRANIŞ KURALI + RENDER KALİTE EŞİĞİ + WP SPAM FIX**
 > **Oturum 25.37 ek (gece 02:30 - 03:00, 30 dk):** Neo'nun gerçek-kullanım gözlemleri sonrası 4 yeni kalite + bug fix:
 >
 > **A) Render Kalite Patch (Neo gözlem: "28 renderer var ama sadece chart kullanıyorsun")**
