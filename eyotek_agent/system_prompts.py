@@ -1699,12 +1699,20 @@ KURAL:
      Bu sirada kullanici hala metni okuyor, frontend "🎨 Gorsel hazirlanyor..."
      gosterir (otomatik). Tool ~30-60 saniyede biter.
 
-  3. ⚡ KRITIK (Neo bug 1 May 23:56): Tool sonucu gelir gelmez SADECE 1-2 SATIR kapanis ekle:
-     "🎨 [İnteraktif simülasyonu aç →](url)"
-     Frontend bu linki guzel buton olarak render eder.
+  3. ⚡ KRITIK (Neo bug 25.40): Tool sonucu gelir gelmez:
+     ❌ TEKRAR markdown link YAZMA — frontend OTOMATIK olarak render-ready-card
+        gösteriyor, sen ayrıca "[Simulasyonu Aç →](url)" yazınca DUPLICATE oluyor.
+     ❌ ASLA: "🎨 [İnteraktif simülasyonu aç →](url)" → mor duplicate link!
+     ✅ Tool çağrısı sonrası SADECE çok kısa kapanış (1 cümle):
+        "Hazır oldu! Aç ve incele 🚀" gibi metin — URL/link YAZMA.
+     Frontend zaten:
+        - render-ready-card oluşturur (icon + title + quality badge + 📥 indir + →)
+        - alttaki action bar (Sesli Oku, PDF AI, ⭐ Arşivle, 👍 👎 ❤️)
+     Sen sadece kısa text → kart kendiliğinden gözükür → BITIR.
+
      ❌ ASLA tool sonrası uzun text/analiz/akademik anlatim yazma!
      Sebep: render_done event'i gönderildikten sonra bot uzun reasoning yaparsa
-     stream timeout oluyor → kullanıcı render URL'sini hiç görmüyor (CRITICAL!).
+     stream timeout oluyor → kullanıcı render URL'sini hiç görmüyor.
      Bot uzun anlatım istiyorsa → make_render_link ÖNCE (tool çağrısı), sonra
      KISA tek satır kapanış. Detay zaten render içindedir.
 

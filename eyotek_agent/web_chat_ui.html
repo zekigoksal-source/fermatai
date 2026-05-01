@@ -5285,6 +5285,10 @@ function finalizeBotMsg(el) {
   fixExternalLinks(el);
   // 25.37+ (Neo): NASA/bilim görsellerini GLightbox ile sar (mobil zoom + tap-to-expand)
   try { wrapImagesForLightbox(el); } catch (_) {}
+  // 25.40 (Neo bug): Render-ready-card varsa, bot text'indeki AYNI uuid'li
+  // markdown link duplicate gösteriyor (mor "Simulasyonu Aç →" yukarda + alt card)
+  // Önce duplicate'ları sil, sonra kalan (eğer yoksa) link'lere 📥 emoji ekle
+  try { removeDuplicateRenderLinks(el); } catch (_) {}
   // 25.37+ (Neo bug): Render URL'lerinin yanına otomatik 📥 inline indir emoji ekle
   // Bot make_render_link kullanmasa bile (markdown link yazdıysa) 📥 görsün
   try { injectInlineDownloadOnRenderLinks(el); } catch (_) {}
@@ -5308,6 +5312,45 @@ function finalizeBotMsg(el) {
     staleChart.forEach(b => { try { b.remove(); } catch(_) {} });
   } catch(_) {}
   addQuickActions(el);
+}
+
+// ═════════════════════════════════════════════════════════════════
+// 25.40 (Neo bug fix): render-ready-card varken bot AYRICA markdown
+// "[Simulasyonu Aç →](url)" yazıyordu → mor duplicate. Card zaten gösteriyor.
+// Card'daki uuid ile aynı uuid'ye sahip dış markdown link'leri sil.
+// ═════════════════════════════════════════════════════════════════
+function removeDuplicateRenderLinks(botEl) {
+  if (!botEl) return;
+  const card = botEl.querySelector('.render-ready-card');
+  if (!card) return;
+  const cardLink = card.querySelector('a.render-ready-link[href*="/render/"]');
+  if (!cardLink) return;
+  const cardHref = cardLink.getAttribute('href');
+  if (!cardHref) return;
+  // Card dışındaki tüm /render/UUID link'lerini bul ve aynı href ise sil
+  const externalLinks = botEl.querySelectorAll('a[href*="/render/"]');
+  externalLinks.forEach(a => {
+    if (a === cardLink) return;
+    if (a.closest('.render-ready-card')) return;
+    if (a.getAttribute('href') !== cardHref) return;
+    // Bu duplicate — kaldır
+    try {
+      const parent = a.closest('p, li, h1, h2, h3, h4, h5');
+      if (parent) {
+        // Eğer parent SADECE bu link içeriyorsa parent'ı sil
+        const txt = (parent.textContent || "").trim();
+        const linkTxt = (a.textContent || "").trim();
+        // İçerik %80'i link metni ise tamamını sil (örn "🎨 Simulasyonu Aç →" tek paragraf)
+        if (txt.length <= linkTxt.length + 10) {
+          parent.remove();
+        } else {
+          a.remove();
+        }
+      } else {
+        a.remove();
+      }
+    } catch (_) { try { a.remove(); } catch(_) {} }
+  });
 }
 
 // ═════════════════════════════════════════════════════════════════
