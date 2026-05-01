@@ -35,7 +35,20 @@
 >   - Yeni fix: **chunk-pause-card** mekanizması — chunk'lar arası 5sn boşluk olunca botMsg ALTINA rich card eklenir (6 kademeli evrim: 0/8/20/35/55/90s)
 >   - Yeni chunk veya render_pending/render_done geldiğinde otomatik temizlenir
 >
-> **Toplam aktif davranış kuralı (DB):** 4 → **8** (#1-8)
+> **Toplam aktif davranış kuralı (DB):** 4 → **9** (#1-9)
+> *#9 [safety/p1]: VERİ SÜREKLİLİĞİ PRENSİBİ — Aylarca biriken öğrenci datası ASLA silinmez,
+>  arayüz güncellemelerinde mevcut kayıtlar yeni arayüze taşınır (Neo 1 May 25.37)*
+>
+> **Çalışmam Panel v2 (Brief manuel uygulandı):**
+>   - Tarih telafi girişi (max bugün, min 30g önce, frontend validasyon)
+>   - Ders dropdown (12 ders + Diğer, **opsiyonel** — Neo: "zorunluluk değil, teşvik")
+>   - Konu input (opsiyonel, sonradan eklenebilir)
+>   - PATCH /program/{id} endpoint (sonradan ders/konu/title/notes düzenleme)
+>   - Frontend: "+ ders/konu ekle" linki boş kayıtlarda + ✏️ ikon dolu olanlarda
+>   - update_program_fields() ACL: soz_no eşleşmeli (öğrenci sadece kendisi)
+>   - Mehmet Ali'nin (soz_no=163) 4 mevcut verisi korundu, yeni arayüzde düzenlenebilir
+>
+> **Toplam aktif davranış kuralı (DB önceki):** 4 → 8 (#1-8)
 >   - #1 naming/p2: Yönetim isim/unvan yasak
 >   - #2 data_priority/p1: Bugün/yarın → Eyotek, geçmiş → DB
 >   - #3 safety/p1: Yeni sezon (1 Eylül 2026) öncesi otomatik mesaj YASAK
