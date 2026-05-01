@@ -373,103 +373,96 @@
   transform: translateX(3px);
 }
 
-/* 25.36 — Arşive ekle butonu (render link altinda) */
-.msg.bot .render-archive-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.30);
-  color: #B45309;
-  font-size: 12px; font-weight: 600;
-  padding: 6px 14px; border-radius: 18px;
-  cursor: pointer; margin-top: 8px;
-  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
-}
-.msg.bot .render-archive-btn:hover {
-  background: rgba(245,158,11,0.20);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(245,158,11,0.20);
-}
-.msg.bot .render-archive-btn.loading {
-  opacity: 0.6; cursor: wait;
-  animation: actionLoading 1.4s ease-in-out infinite;
-}
-.msg.bot .render-archive-btn.done {
-  background: rgba(34,197,94,0.15);
-  border-color: rgba(34,197,94,0.40);
-  color: #15803D;
-  cursor: default;
-}
-.msg.bot .render-archive-btn .ico { font-size: 14px; }
-html[data-theme="dark"] .msg.bot .render-archive-btn { color: #FCD34D; }
-html[data-theme="dark"] .msg.bot .render-archive-btn.done { color: #86EFAC; }
-
-/* 25.36 — Render extra actions (Geliştir + Alternatif + Arşivle) */
+/* 25.37 (Neo) — Render Action Toolbar v2: tek satır kompakt segment bar */
 .msg.bot .render-extra-actions {
-  display: flex; gap: 8px; flex-wrap: wrap;
-  margin-top: 8px;
+  display: flex; gap: 4px;
+  margin-top: 10px;
+  padding: 4px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 14px;
+  flex-wrap: wrap;
+  align-items: stretch;
 }
-.msg.bot .render-improve-btn,
-.msg.bot .render-alternative-btn {
+html[data-theme="dark"] .msg.bot .render-extra-actions {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+.msg.bot .render-extra-actions > button {
   display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: 1px solid transparent;
   font-size: 12px; font-weight: 600;
-  padding: 6px 14px; border-radius: 18px;
+  padding: 7px 12px; border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
-}
-.msg.bot .render-improve-btn {
-  background: rgba(167,139,250,0.10);
-  border: 1px solid rgba(167,139,250,0.30);
-  color: #6D28D9;
-}
-.msg.bot .render-improve-btn:hover {
-  background: rgba(167,139,250,0.20);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(167,139,250,0.20);
-}
-.msg.bot .render-alternative-btn {
-  background: rgba(107,142,127,0.10);
-  border: 1px solid rgba(107,142,127,0.30);
-  color: #166534;
-}
-.msg.bot .render-alternative-btn:hover {
-  background: rgba(107,142,127,0.20);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(107,142,127,0.20);
-}
-.msg.bot .render-improve-btn .ico,
-.msg.bot .render-alternative-btn .ico { font-size: 14px; }
-html[data-theme="dark"] .msg.bot .render-improve-btn { color: #C4B5FD; }
-html[data-theme="dark"] .msg.bot .render-alternative-btn { color: #86EFAC; }
-
-/* 25.37 (Neo): İndir butonu — HTML self-contained download */
-.msg.bot .render-download-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px;
-  background: rgba(59,130,246,0.10);
-  border: 1px solid rgba(59,130,246,0.30);
-  color: #1D4ED8;
-  border-radius: 18px;
-  font-size: 12px; font-weight: 600;
-  cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.18s cubic-bezier(0.16,1,0.3,1);
+  color: var(--fg, #2F2F2F);
+  letter-spacing: 0.1px;
   white-space: nowrap;
 }
-.msg.bot .render-download-btn:hover {
-  background: rgba(59,130,246,0.20);
+.msg.bot .render-extra-actions > button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(59,130,246,0.22);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
-.msg.bot .render-download-btn.loading {
-  opacity: 0.6; cursor: wait;
-  background: rgba(59,130,246,0.05);
+html[data-theme="dark"] .msg.bot .render-extra-actions > button {
+  color: #e2e8f0;
 }
+html[data-theme="dark"] .msg.bot .render-extra-actions > button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.msg.bot .render-extra-actions > button .ico { font-size: 14px; }
+
+/* Buton renk tematik vurguları (sadece hover/active'de güçlü) */
+.msg.bot .render-archive-btn { color: #B45309; }
+.msg.bot .render-archive-btn:hover { background: rgba(245, 158, 11, 0.12) !important; }
+.msg.bot .render-archive-btn.done {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #15803D !important;
+  border-color: rgba(34, 197, 94, 0.30) !important;
+}
+.msg.bot .render-archive-btn.loading { opacity: 0.6; cursor: wait; animation: actionLoading 1.4s ease-in-out infinite; }
+html[data-theme="dark"] .msg.bot .render-archive-btn { color: #FCD34D; }
+html[data-theme="dark"] .msg.bot .render-archive-btn.done { color: #86EFAC !important; }
+
+.msg.bot .render-download-btn { color: #1D4ED8; }
+.msg.bot .render-download-btn:hover { background: rgba(59, 130, 246, 0.14) !important; }
+.msg.bot .render-download-btn.loading { opacity: 0.6; cursor: wait; }
 .msg.bot .render-download-btn.done {
-  background: rgba(34,197,94,0.12);
-  border-color: rgba(34,197,94,0.35);
-  color: #166534;
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #166534 !important;
+  border-color: rgba(34, 197, 94, 0.30) !important;
 }
-.msg.bot .render-download-btn .ico { font-size: 14px; }
 html[data-theme="dark"] .msg.bot .render-download-btn { color: #93C5FD; }
-html[data-theme="dark"] .msg.bot .render-download-btn.done { color: #86EFAC; }
+html[data-theme="dark"] .msg.bot .render-download-btn.done { color: #86EFAC !important; }
+
+.msg.bot .render-improve-btn { color: #6D28D9; }
+.msg.bot .render-improve-btn:hover { background: rgba(167, 139, 250, 0.14) !important; }
+html[data-theme="dark"] .msg.bot .render-improve-btn { color: #C4B5FD; }
+
+.msg.bot .render-alternative-btn { color: #166534; }
+.msg.bot .render-alternative-btn:hover { background: rgba(107, 142, 127, 0.14) !important; }
+html[data-theme="dark"] .msg.bot .render-alternative-btn { color: #86EFAC; }
+
+/* Mobile: 4 buton yan yana sığmazsa label saklı, ikon görünür */
+@media (max-width: 520px) {
+  .msg.bot .render-extra-actions > button .lbl { display: none; }
+  .msg.bot .render-extra-actions > button { padding: 8px 10px; }
+  .msg.bot .render-extra-actions > button.render-archive-btn.done .lbl,
+  .msg.bot .render-extra-actions > button.render-download-btn.done .lbl { display: inline; font-size: 11px; }
+}
+
+/* 25.37 (Neo) — Quality badge: link içinde göz alıcı */
+.msg.bot .render-ready-quality {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  padding: 3px 9px;
+  border-radius: 10px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+  width: fit-content;
+}
 
 /* ═══════════════════════════════════════════════════════════════
    Oturum 25.31 — 7 yeni eğitim odaklı renderer (Neo direktifi)
@@ -6427,13 +6420,20 @@ async function doSend() {
             // 25.36: uuid'i URL'den çıkar (arşiv için)
             const uuidMatch = url.match(/\/render\/([^?#]+)/);
             const uuid = uuidMatch ? uuidMatch[1] : "";
+            // 25.37 — Quality skoru rozetinden ve boyut bilgisinden link sub-text yapısı
+            const qScore = (d.render_done && typeof d.render_done === 'object') ? (d.render_done.quality_score || 0) : 0;
+            const sizeKb = (d.render_done && typeof d.render_done === 'object') ? (d.render_done.size_kb || 0) : 0;
+            const qBadge = qScore >= 80 ? `🌟 ${qScore}/100` : (qScore >= 60 ? `✓ ${qScore}/100` : (qScore > 0 ? `${qScore}/100` : ''));
+            const subText = qBadge
+              ? `<span class="render-ready-quality">${qBadge}${sizeKb ? ' · ' + sizeKb + ' KB' : ''}</span>`
+              : `<span class="render-ready-sub">Hazır — tıkla, yeni sekmede aç</span>`;
             card.className = 'render-ready-card';
             card.innerHTML = `
               <a href="${url}" target="_blank" rel="noopener" class="render-ready-link">
                 <span class="render-ready-icon">🎨</span>
                 <span class="render-ready-text">
                   <span class="render-ready-title">${title}</span>
-                  <span class="render-ready-sub">Hazır — tıkla, yeni sekmede aç</span>
+                  ${subText}
                 </span>
                 <span class="render-ready-arrow">→</span>
               </a>
@@ -6452,7 +6452,7 @@ async function doSend() {
                 </button>
                 <button class="render-alternative-btn" data-uuid="${uuid}" title="Aynı konuyu farklı bir yaklaşımla yeniden üret">
                   <span class="ico">🔄</span>
-                  <span class="lbl">Alternatif Versiyon</span>
+                  <span class="lbl">Alternatif</span>
                 </button>
               </div>` : ""}`;
             // 25.36 — Geliştir + Alternatif butonları

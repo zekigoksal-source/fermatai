@@ -2528,9 +2528,13 @@ async def stream_message(
                             _tool_nm, _tool_res = ev_data
                         # make_render_link bittiginde URL ile inline buton
                         if _tool_nm == "make_render_link" and _tool_res and _tool_res.get("success"):
+                            # 25.37 (Neo): quality_score + size_kb frontend'e ilet (badge için)
                             _payload = {
                                 "url": _tool_res.get("url", ""),
-                                "title": _tool_res.get("title") or "İnteraktif simülasyonu aç"
+                                "title": _tool_res.get("title") or "İnteraktif simülasyonu aç",
+                                "quality_score": _tool_res.get("quality_score", 0),
+                                "size_kb": _tool_res.get("size_kb", 0),
+                                "uuid": _tool_res.get("uuid", "")
                             }
                             yield f"data: {json.dumps({'render_done': _payload}, ensure_ascii=False)}\n\n"
                         else:

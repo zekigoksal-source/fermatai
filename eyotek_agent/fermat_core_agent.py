@@ -2560,6 +2560,12 @@ async def _tool_make_render_link(html: str = "", title: str = "FermatAI Görsel"
                 "success": False,
                 "error": "Kayit hatasi (DB veya backend). Tekrar deneyin veya 12 renderer kullanın."
             }
+        # 25.37 (Neo): Quality score frontend'e iletilir (badge için)
+        try:
+            from render_endpoint import calculate_quality_score
+            score, _breakdown = calculate_quality_score(html)
+        except Exception:
+            score = 0
         # Public URL
         import os
         base = os.getenv("PUBLIC_BASE_URL", "https://api.fermategitimkurumlari.com").rstrip("/")
@@ -2570,6 +2576,8 @@ async def _tool_make_render_link(html: str = "", title: str = "FermatAI Görsel"
             "url": url,
             "uuid": uuid,
             "ttl_days": ttl,
+            "quality_score": score,
+            "size_kb": round(html_size / 1024, 1),
             "expires_at": (datetime.now() + timedelta(days=ttl)).isoformat(),
             "kullanim": f"Ogrenciye 'Buyuk gorseli ac: {url}' diye sun. Mobilde tek tikla acilir."
         }
