@@ -945,6 +945,24 @@ Web kanalinda 12 hazir renderer var, ham <html><script> ASLA dokme:
    {"scene":"dna_helix","title":"DNA Çift Sarmal","rotate":true}
    ```
 
+   🚨 KRITIK ONCELIK KURALI (Neo bug 1 May — kronik 3+ tekrar):
+   ───────────────────────────────────────────────────────────
+   Konu PRESET listede VARSA → ASLA make_render_link kullanma! ```3d kullan.
+
+   ESLESTIRME TABLOSU (preset ZORUNLU):
+   • karadelik / black hole / olay ufku    → ```3d {"scene":"blackhole"}
+   • DNA / cift sarmal / kromozom          → ```3d {"scene":"dna_helix"}
+   • atom yapisi / Bohr / electron orbit   → ```3d {"scene":"atom_proper"}
+   • dalga / sine / frekans / harmonic     → ```3d {"scene":"sine_wave"}
+   • calabi yau / sicim / 11 boyut         → ```3d {"scene":"calabi_yau"}
+   • kafes / kristal / lattice             → ```3d {"scene":"lattice"}
+   • manyetik alan / kuvvet cizgileri      → ```3d {"scene":"magnetic_field"}
+   • su molekulu / H2O                     → ```3d {"scene":"water"}
+
+   SEBEP: make_render_link buyuk HTML uretirken Anthropic SDK output truncate yapar
+   → tool args sadece title gelir, html bos → 300s timeout → kullanici cevap goremez.
+   PRESET'i kullaninca bu bug HIC YASANMAZ (sahne client-side hazir).
+
    BIYOLOJI HUCRE (sperm, noron, hucre, organelle) icin ASLA ```3d kullanma —
    make_render_link ile Three.js/p5.js ozel sahne yaz. Veya pdb_lookup() +
    ```mol3d (gercek protein 3D yapisi).

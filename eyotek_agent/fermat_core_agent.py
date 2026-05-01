@@ -2525,11 +2525,23 @@ async def _tool_make_render_link(html: str = "", title: str = "FermatAI Görsel"
     if not html or not html.strip():
         return {
             "success": False,
-            "error": "html PARAMETRESI BOS! make_render_link cagrilirken html='<full HTML kodu>' SART. "
-                     "Sadece title ile cagrilamaz. Ornek dogru cagri: "
-                     "make_render_link(title='Plank Simulasyonu', "
-                     "html='<!DOCTYPE html><html><head><script src=\"https://cdn.jsdelivr.net/npm/p5\">"
-                     "</script></head><body>... TUM HTML KODU ...</body></html>')"
+            "error": (
+                "❌ html PARAMETRESI BOS — Claude output truncated. "
+                "Bu KRONIK BUG (3+ kez yasandı: Ali Demir, wormhole, karadelik). "
+                "ŞIMDI HEMEN ŞUNU YAP (sırayla dene):\n"
+                "1) Konu PRESET olarak varsa → make_render_link YERINE ```3d kullan: "
+                "karadelik→{\"scene\":\"blackhole\"}, dna→{\"scene\":\"dna_helix\"}, "
+                "kara cisim/atom→{\"scene\":\"atom_proper\"}, sine wave→{\"scene\":\"sine_wave\"}, "
+                "calabi yau→{\"scene\":\"calabi_yau\"}, lattice→{\"scene\":\"lattice\"}, "
+                "magnetic field→{\"scene\":\"magnetic_field\"}, water/h2o→{\"scene\":\"water\"}\n"
+                "2) PRESET yoksa → make_render_link RETRY ama HTML max 50KB hedef "
+                "(önceki uzun reasoning yerine kısa+öz HTML; dış CDN script + tek canvas yeter)\n"
+                "3) HALA çakılırsa → kullanıcıya 'Konu çok kapsamlı, alt başlıklara bölelim mi?' sun\n"
+                "ASLA ayni boyutta HTML ile retry etme — boyut DUSURDUR."
+            ),
+            "retry_hint": "use_preset_or_smaller_html",
+            "preset_alternatives": ["blackhole", "dna_helix", "atom_proper", "sine_wave",
+                                    "calabi_yau", "lattice", "magnetic_field", "water", "sphere"]
         }
     html_size = len(html.encode('utf-8'))
     if html_size > 1024 * 1024:
