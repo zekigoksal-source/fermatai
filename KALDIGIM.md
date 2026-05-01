@@ -1,6 +1,22 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, GECE 02:55 — **🛠 OTURUM 25.40b: 4 KRİTİK UI BUG FIX (Neo PWA mobile)**
+> **Son güncelleme:** 2 Mayıs 2026, GECE 03:00 — **🛠 OTURUM 25.40c: TEMA TOGGLE GERÇEKTEN DÜZELDİ + 25.40b 4 BUG FIX**
+>
+> ## 🆕 OTURUM 25.40c (gece 02:55 → 03:00, 5 dk — Neo "tema yine değişmiyor" tekrar fix)
+>
+> **Problem:** 25.40b'de B fix tam olmadı — Neo "menü düzeldi ama chat arka planı web/mobile lacivert kaldı, değişmiyor bile". Sebep: `<html style="background:#0A0E1A">` ve `<body style="background:#0A0E1A">` INLINE style → en yüksek specificity → stylesheet `[data-theme="light"]` rule override edemedi. Üstüne benim kritik CSS'imdeki hardcoded `#0A0E1A` rule'ları mevcut `--bg` CSS variable sistemini eziyordu.
+>
+> **Doğru fix (25.40c):**
+> 1. `<html lang="tr">` ve `<body>` — inline style attribute'ları KALDIRILDI
+> 2. Critical inline `<style>` block'undaki tüm hardcoded background rule'lar SİLİNDİ
+> 3. **No-FOUC pattern:** head'in EN BAŞINA küçük inline script — localStorage'dan tema oku → `html`'e `data-theme` set et → CSS yüklenince mevcut sistem (`:root { --bg: #F5F4ED }` light, `html[data-theme="dark"] { --bg: #1F1F1C }` dark) doğru rengi gösterir
+> 4. `service-worker.js` VERSION `v25.40b` → `v25.40c` (eski cache temizlenir, kullanıcı refresh'te yeni HTML'i alır)
+>
+> **Verify:** commit `2e0d69e` → push → VPS reset/restart → HTTP 200 ✅, no-FOUC script (`localStorage.getItem('fermat_theme')`) yayımlanmış HTML'de present ✅, body inline style yok ✅, SW v25.40c live ✅.
+>
+> **Neo aksiyon:** Telefonda Chrome'u tamamen kapat + tekrar aç (SW yeni VERSION'ı algılayıp eski cache'i siler). Ya da PWA'yı sil + tekrar yükle. Tema toggle "Açık" → bg gerçekten açık (#F5F4ED), "Koyu" → gerçekten koyu (#1F1F1C).
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40b (gece 02:30 → 02:55, 25 dk — UI bug fix loop + VPS deploy)
 >
 > ## 🆕 OTURUM 25.40b (gece 02:30 → 02:55, 25 dk — UI bug fix loop + VPS deploy)
 >
@@ -14,7 +30,7 @@
 >
 > **Deploy:** commit `fb70976` → push origin → VPS `git fetch + reset --hard` → `systemctl restart fermatai-bridge` → HTTP 200 ✅ (localhost:8001 + api.fermategitimkurumlari.com) → 4 grep verify ✅ (A=1, B=1, C=0, D=1). Served HTML diff confirmed light theme override + auto-login role save line aktif, pre-splash gone.
 >
-> **DİKKAT:** VPS reset --hard ile **uncommitted local edits silindi** (.analytics_cache.json, render_endpoint.py, role_access.py, system_prompts.py, web_chat.py, whatsapp_bridge.py — VPS'te modify olmuş ama push edilmemiş). Eğer bu dosyalarda VPS-side hot-fix vardıysa kayıp. Sonraki oturum bunu denetle.
+> **DİKKAT (güncellendi 03:05):** VPS reset --hard sonrasi forensic check yapildi → **KAYIP YOK**. Modify halinde olan tek dosyalar `.analytics_cache.json` + `.eyotek_status.json` (runtime cache, normal otomatik update). 5 Python dosyasi (render_endpoint, role_access, system_prompts, web_chat, whatsapp_bridge) modify halinde DEGIL — eski reset oncesi listede gozukmesi yaniltici, bunlar zaten commit'lerle senkron. Hot-fix kaybi YOK. Sistem stabil HEAD: 2e0d69e.
 >
 > **Bonus iş aynı oturumda (Wix MCP):** `/fermatai` redirect Custom Embed eklendi (ID `21155fe9-d770-45ed-8bad-75d34e33b68b`, position HEAD, enabled: true). Wix splash + header tamamen bypass — `fermategitimkurumlari.com/fermatai` açan herkes direkt `api.fermategitimkurumlari.com/chat`'e atılıyor. Eski 2 chrome-hide embed (BODY_END) artık redundant ama zararsız.
 >
