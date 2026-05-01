@@ -217,35 +217,76 @@
    Oturum 25.31 — Render Pending → Ready inline kart (Neo UX direktifi)
    "Önce text, sonra görsel butonu" akışı için pedagojik bekleme
    ═══════════════════════════════════════════════════════════════ */
-/* 25.37 (Neo): Renkli + dolu zengin bekleme kartı — eskiye dönüş + glow */
+/* 25.39 (Neo): Renkli + dolu zengin bekleme kartı — gradient opacity %3x daha güçlü
+   Eski: %14-18 opacity → dark mode'da görünmez
+   Yeni: %32-42 opacity + dark theme override → her durumda canlı gradient */
 .msg.bot .render-pending-card {
   margin-top: 14px;
   padding: 18px 20px;
   background: linear-gradient(135deg,
-    rgba(199,111,62,0.18) 0%,
-    rgba(167,139,250,0.16) 35%,
-    rgba(245,158,11,0.14) 70%,
-    rgba(199,111,62,0.18) 100%);
+    rgba(199,111,62,0.32) 0%,
+    rgba(167,139,250,0.36) 35%,
+    rgba(245,158,11,0.30) 70%,
+    rgba(199,111,62,0.34) 100%);
   background-size: 300% 100%;
   animation: renderPendingShimmer 3s ease-in-out infinite,
              renderPendingPulse 2.4s ease-in-out infinite;
-  border: 1.5px solid rgba(199,111,62,0.45);
+  border: 1.5px solid rgba(199,111,62,0.55);
   border-radius: 14px;
   display: flex; align-items: center; gap: 16px;
   box-shadow:
-    0 8px 24px rgba(199,111,62,0.15),
-    0 2px 8px rgba(167,139,250,0.10),
-    inset 0 1px 0 rgba(255,255,255,0.08);
+    0 8px 24px rgba(199,111,62,0.22),
+    0 2px 8px rgba(167,139,250,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.10);
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
+}
+/* Dark mode özel: daha güçlü gradient — koyu arka plana karşı belirgin */
+html[data-theme="dark"] .msg.bot .render-pending-card {
+  background: linear-gradient(135deg,
+    rgba(199,111,62,0.45) 0%,
+    rgba(167,139,250,0.42) 35%,
+    rgba(245,158,11,0.38) 70%,
+    rgba(199,111,62,0.46) 100%);
+  background-size: 300% 100%;
+  border-color: rgba(245,158,11,0.50);
+  box-shadow:
+    0 10px 32px rgba(199,111,62,0.32),
+    0 4px 12px rgba(167,139,250,0.22),
+    0 0 0 1px rgba(245,158,11,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.12);
 }
 .msg.bot .render-pending-card::before {
   content: "";
   position: absolute; inset: 0;
-  background: radial-gradient(circle at 20% 50%, rgba(245,158,11,0.18), transparent 60%);
+  background: radial-gradient(circle at 20% 50%, rgba(245,158,11,0.30), transparent 60%);
   pointer-events: none;
   animation: renderGlowDrift 4s ease-in-out infinite alternate;
+}
+html[data-theme="dark"] .msg.bot .render-pending-card::before {
+  background: radial-gradient(circle at 20% 50%, rgba(245,158,11,0.42), transparent 60%);
+}
+/* 25.39 (Neo): chunk-pause-card botMsg child iken streaming class'ından
+   inherit edilen shimmer'i sıfırla — kendi gradient'ı net gözüksün */
+.msg.bot.streaming .render-pending-card.chunk-pause-card,
+.msg.bot .render-pending-card.chunk-pause-card {
+  margin: 12px 0 0 0;
+  /* Gradient fully visible — parent stream override'ı yok */
+  background: linear-gradient(135deg,
+    rgba(199,111,62,0.38) 0%,
+    rgba(167,139,250,0.40) 35%,
+    rgba(245,158,11,0.34) 70%,
+    rgba(199,111,62,0.38) 100%);
+  background-size: 300% 100%;
+}
+html[data-theme="dark"] .msg.bot .render-pending-card.chunk-pause-card {
+  background: linear-gradient(135deg,
+    rgba(199,111,62,0.50) 0%,
+    rgba(167,139,250,0.46) 35%,
+    rgba(245,158,11,0.42) 70%,
+    rgba(199,111,62,0.50) 100%);
+  background-size: 300% 100%;
 }
 .msg.bot .render-pending-card::after {
   content: "";
