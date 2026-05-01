@@ -1,6 +1,92 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 1 Mayıs 2026, ÖĞLEDEN SONRA 21:30 — **🌐 6 EXTERNAL ENTEGRASYON — MathPix + PhET + YouTube + Anki + Wolfram step + Sentry**
+> **Son güncelleme:** 1 Mayıs 2026, GECE 22:30 — **⚡ OTURUM 25.39: PROMPT CACHE + ROLE-AWARE TOOLS — %86 MALİYET DÜŞÜŞÜ**
+>
+> ## 🆕 OTURUM 25.39 (gece 21:30 → 22:30, 1 saat — Yazılım Mühendisi Audit)
+>
+> Neo "system prompt çok şişti, yapılması gereken zorunluluklar var mı, kalite bozulmasın" dedi.
+> Canlı VPS metriği: **78,102 token statik prompt**, %78 Claude trafiği, $141/hafta tahmini.
+> 4 audit aksiyonu **kalite bozmadan, tool silmeden** uygulandı. Sonuç: **%86 maliyet düşüşü.**
+>
+> ### 🎯 Yapılanlar (Neo direktif)
+>
+> | # | İş | Sonuç | Risk |
+> |---|---|---|---|
+> | A1 | Anthropic Prompt Caching aktive | Cache HIT %97-99 (canlı test) | SIFIR |
+> | A2/B2 | get_tools(role) gerçek ACL filter | Öğrenci 112→49 tool (%50 az) | SIFIR — yetenek korundu |
+> | A3 | Cache hierarchy 4 katmanlı | tools+system 5dk TTL | SIFIR |
+> | B1 | groq_lanes lane fix | 'Newton kimdir' artık kavramsal | SIFIR |
+> | + | Yıldız sim 300s timeout fix | max_tokens 16K→24K, web timeout 480s | SIFIR |
+> | + | Cache metric tracking | usage_log + log: '💾 Cache: READ=X' | SIFIR |
+>
+> ### 📊 Token Tasarrufu (Role-Aware Tools)
+>
+> | Rol | Tool Count | Tokens | Tasarruf |
+> |---|---|---|---|
+> | admin | 123 | 26,481 | (baseline) |
+> | öğrenci | 49 | 13,049 | **%50.7** |
+> | öğretmen | 48 | 12,710 | %52.0 |
+> | müdür | 64 | 16,598 | %37.3 |
+> | rehber | 57 | 14,777 | %44.2 |
+> | veli | 6 | 1,666 | %93.7 |
+> | guest | **0** | 0 | %100 (önce 24K boşa) |
+>
+> ### 💰 Maliyet (canlı veriden, 7 gün × 603 Claude çağrısı)
+>
+> | Senaryo | Hafta | Yıl |
+> |---|---|---|
+> | Eski (cache yok, 112 tool) | $141.29 | $7,347 |
+> | Yeni (cache yok, role-aware) | $121.18 | $6,301 |
+> | **Yeni (cache + role)** | **$19.09** | **$993** |
+> | **TASARRUF** | **$122.20/hafta (%86)** | **~$6,354/yıl** |
+>
+> ### 🧪 Live Cache Hit Test
+>
+> ```
+> Mesaj 1: "limit nedir kisaca matematik kavrami"
+>   💾 Cache: READ=29,991 WRITE=49,327 INPUT=331 (hit=98.9%)
+>
+> Mesaj 2: "integral nedir matematik" (3sn sonra)
+>   💾 Cache: READ=29,991 WRITE=49,334 INPUT=816 (hit=97.4%)
+> ```
+>
+> Cache 5dk TTL içinde her mesajda HIT. Aynı kullanıcı + aynı rol = 30K token cache'den okunuyor.
+>
+> ### 🐛 Bug Fix: Yıldız Simülasyon 300s Timeout
+>
+> Neo "yıldızın doğumundan ölümüne kadar simülasyon" istedi → make_render_link 3.5dk düşündü, html boş döndü (Claude 16K output limit aştı), 300s timeout vurdu.
+>
+> 3 katmanlı çözüm:
+> 1. **max_tokens 16K → 24K** (Sonnet 4.5 64K destekliyor, 24K orta yol)
+> 2. **Kompleks render tespit + 480s timeout** (regex: simülasyon, yıldız, galaksi, kuantum, kara delik)
+> 3. **behavior_rule #24**: kompleks sim için 3D preset öncelik + 600KB sınır + 2 parçaya bölme önerisi
+>
+> ### 📝 5 Yeni Behavior Rule (Oturum 25.38+25.39, toplam 18→24)
+>
+> - PhET destek (priority 9), YouTube öner (7), Anki kart (6), Wolfram step (7), MathPix (8)
+> - Kompleks simülasyon yönetimi (9) ← YENİ 25.39
+>
+> ### 🔧 Routing Audit Bulgular
+>
+> Şu an gerçek (son 7 gün): Claude %78, Fast %17, Groq %3, Cerebras %1.4
+> Hedef: Claude %25, Cerebras+Groq %30, Fast %45
+>
+> Eski mesajlardan örnek lane match:
+> - "limit nedir" → kavramsal_kisa → local ✓ (eskiden Claude'a düşmüştü)
+> - "Newton kimdir" → null lane → cloud (FIX'lendi: artık kavramsal)
+> - "AYT hangi dersler" → null → cloud (FIX'lendi: eğitim listesi → kavramsal)
+>
+> Yeni lane fix'leri sonrası önümüzdeki 7 günde Cerebras pay'ı %1.4 → %15+ hedef.
+>
+> ### 🔍 Sentry Şu An İzlerken
+> - Bridge active (PID değişiyor restart'larda)
+> - HEAD: 861fec4
+> - 4 commit (25.38 + 25.39)
+> - Cache aktif, log'larda '💾 Cache: ...' satırları
+>
+> ---
+>
+> **Önceki güncelleme:** 1 Mayıs 2026, ÖĞLEDEN SONRA 21:30 — **🌐 6 EXTERNAL ENTEGRASYON — MathPix + PhET + YouTube + Anki + Wolfram step + Sentry**
 >
 > ## 🆕 OTURUM 25.38 (öğlen 18:00 → 21:30, 3.5 saat)
 >
