@@ -1,8 +1,26 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 1 Mayıs 2026, GECE 22:30 — **⚡ OTURUM 25.39: PROMPT CACHE + ROLE-AWARE TOOLS — %86 MALİYET DÜŞÜŞÜ**
+> **Son güncelleme:** 2 Mayıs 2026, GECE 02:55 — **🛠 OTURUM 25.40b: 4 KRİTİK UI BUG FIX (Neo PWA mobile)**
 >
-> ## 🆕 OTURUM 25.39 (gece 21:30 → 22:30, 1 saat — Yazılım Mühendisi Audit)
+> ## 🆕 OTURUM 25.40b (gece 02:30 → 02:55, 25 dk — UI bug fix loop + VPS deploy)
+>
+> Neo PWA mobile'da test ederken: "sadece yeni sohbet, renk, çıkış var, eski admin butonlarım yok, arka plan lacivert kaldı, F harfi splash basit, max tur olmaması lazım admin etkileşimi en yüksek kapasite gerektirir". 4 bug teşhisi + sıralı fix + VPS deploy.
+>
+> **Bug → Fix:**
+> - **A** auto-login `fermat_role` save: `web_chat_ui.html:9444` — PWA cookie session restore'da role localStorage'a yazılmıyordu, admin button koşulları (`role === "admin"`) false dönüyordu. `if (d.role) localStorage.setItem("fermat_role", d.role)` eklendi (login flow zaten yazıyordu, auto-login eksikti).
+> - **B** light/dark toggle bozuk: `web_chat_ui.html:11` — 23744d2 commit'inde `html,body{background:#0A0E1A !important}` light theme'i override ediyordu. `!important` kaldırıldı, default dark + `[data-theme="light"]` selector pattern.
+> - **C** pre-splash basit F: Neo "animasyonlu hali yeterli, statik F gereksiz". Pre-splash div + CSS + JS hide kodu silindi. Inline dark bg + cool splash CSS head'de hazır — ilk frame'den itibaren mesh gradient + neon logo + tagline.
+> - **D** MAX_TURNS admin sınırlı: `fermat_core_agent.py:4916` — 50 → 999 (effectively unlimited, infinite-loop guard).
+>
+> **Deploy:** commit `fb70976` → push origin → VPS `git fetch + reset --hard` → `systemctl restart fermatai-bridge` → HTTP 200 ✅ (localhost:8001 + api.fermategitimkurumlari.com) → 4 grep verify ✅ (A=1, B=1, C=0, D=1). Served HTML diff confirmed light theme override + auto-login role save line aktif, pre-splash gone.
+>
+> **DİKKAT:** VPS reset --hard ile **uncommitted local edits silindi** (.analytics_cache.json, render_endpoint.py, role_access.py, system_prompts.py, web_chat.py, whatsapp_bridge.py — VPS'te modify olmuş ama push edilmemiş). Eğer bu dosyalarda VPS-side hot-fix vardıysa kayıp. Sonraki oturum bunu denetle.
+>
+> **Bonus iş aynı oturumda (Wix MCP):** `/fermatai` redirect Custom Embed eklendi (ID `21155fe9-d770-45ed-8bad-75d34e33b68b`, position HEAD, enabled: true). Wix splash + header tamamen bypass — `fermategitimkurumlari.com/fermatai` açan herkes direkt `api.fermategitimkurumlari.com/chat`'e atılıyor. Eski 2 chrome-hide embed (BODY_END) artık redundant ama zararsız.
+>
+> **Neo aksiyon:** PWA cache eski olabilir → telefonda Chrome'u tamamen kapat + tekrar aç (SW yeni HTML çeker). Ya da PWA'yı sil + tekrar yükle. Bu temiz başlangıçla 5 admin butonu görünür + tema toggle çalışır + cool splash anında açılır.
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.39 (gece 21:30 → 22:30, 1 saat — Yazılım Mühendisi Audit)
 >
 > Neo "system prompt çok şişti, yapılması gereken zorunluluklar var mı, kalite bozulmasın" dedi.
 > Canlı VPS metriği: **78,102 token statik prompt**, %78 Claude trafiği, $141/hafta tahmini.
