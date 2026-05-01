@@ -479,9 +479,26 @@ html[data-theme="dark"] .msg.bot .render-archive-btn.done { color: #86EFAC !impo
   user-select: none;
   line-height: 1;
 }
+/* Markdown link (text-link) yanı için variant — gradient bg yok, accent border */
+.msg.bot .render-inline-dl-md {
+  width: 22px; height: 22px;
+  margin-left: 4px; margin-right: 2px;
+  font-size: 13px;
+  background: rgba(199, 111, 62, 0.10);
+  border: 1px solid rgba(199, 111, 62, 0.25);
+  border-radius: 5px;
+}
+html[data-theme="dark"] .msg.bot .render-inline-dl-md {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.30);
+}
 .msg.bot .render-inline-dl:hover {
   background: rgba(255, 255, 255, 0.32);
   transform: translateY(-1px) scale(1.08);
+}
+.msg.bot .render-inline-dl-md:hover {
+  background: rgba(199, 111, 62, 0.22);
+  border-color: rgba(199, 111, 62, 0.45);
 }
 .msg.bot .render-inline-dl:active { transform: scale(0.95); }
 .msg.bot .render-inline-dl.loading {
@@ -5092,6 +5109,9 @@ function finalizeBotMsg(el) {
   fixExternalLinks(el);
   // 25.37+ (Neo): NASA/bilim görsellerini GLightbox ile sar (mobil zoom + tap-to-expand)
   try { wrapImagesForLightbox(el); } catch (_) {}
+  // 25.37+ (Neo bug): Render URL'lerinin yanına otomatik 📥 inline indir emoji ekle
+  // Bot make_render_link kullanmasa bile (markdown link yazdıysa) 📥 görsün
+  try { injectInlineDownloadOnRenderLinks(el); } catch (_) {}
   // 25.37+ (Neo UI redesign): suggestChartIfRelevant DEVRE DISI — bot zaten Brief #11 ile
   // her uygun mesajda chart üretiyor, bu duplicate "Grafikle göster" butonu kalabalık yapıyordu.
   // suggestChartIfRelevant(el);  // KALDIRILDI
@@ -5112,6 +5132,88 @@ function finalizeBotMsg(el) {
     staleChart.forEach(b => { try { b.remove(); } catch(_) {} });
   } catch(_) {}
   addQuickActions(el);
+}
+
+// ═════════════════════════════════════════════════════════════════
+// 25.37+ (Neo bug fix): Render URL link'lerinin yanına 📥 inject et
+// Bot make_render_link kullanmasa bile markdown [text](url) yazsa,
+// her /render/UUID link'inin önünde küçük indir emoji görünsün.
+// ═════════════════════════════════════════════════════════════════
+function injectInlineDownloadOnRenderLinks(botEl) {
+  if (!botEl) return;
+  // Tüm <a> link'lerini tara, /render/UUID pattern'i bul
+  const links = botEl.querySelectorAll('a[href*="/render/"]');
+  links.forEach(link => {
+    if (link.dataset.dlInjected) return;  // zaten inject edildi
+    // Render-card içindeki render-ready-link zaten kendi 📥'sine sahip
+    if (link.classList.contains('render-ready-link')) return;
+    // Image link (chat-img-zoom) — bunlar görsel, render değil
+    if (link.classList.contains('chat-img-zoom')) return;
+    // URL'den UUID çıkar
+    const m = (link.href || "").match(/\/render\/([A-Za-z0-9_\-]{8,32})/);
+    if (!m) return;
+    const uuid = m[1];
+    // Title: link'in text'inden veya sayfa title'ından
+    const linkText = (link.textContent || "").trim();
+    const title = linkText.replace(/[→📊🌟✓⚛️🔬🧬🌌🪐🎨🚀]+/g, '').trim().slice(0, 80) || "Simulasyon";
+    // Inline 📥 emoji span (render-ready-link içindekiyle aynı stil)
+    const dl = document.createElement('span');
+    dl.className = 'render-inline-dl render-inline-dl-md';  // -md = markdown link variant
+    dl.setAttribute('role', 'button');
+    dl.setAttribute('tabindex', '0');
+    dl.dataset.uuid = uuid;
+    dl.dataset.title = title;
+    dl.textContent = '📥';
+    dl.title = "Bilgisayara indir — offline çalışır";
+    // Click handler — render-ready-link'tekiyle aynı mantık
+    const _doDl = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (dl.classList.contains("loading") || dl.classList.contains("done")) return;
+      dl.classList.add("loading");
+      dl.textContent = "🔄";
+      try {
+        const r = await fetch(API_BASE + "/render/" + uuid, {credentials: "include"});
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const html = await r.text();
+        const blob = new Blob([html], {type: "text/html;charset=utf-8"});
+        const blobUrl = URL.createObjectURL(blob);
+        const titleSafe = (dl.dataset.title || "fermatai-simulasyon")
+          .replace(/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ\s\-]/g, "")
+          .replace(/\s+/g, "_")
+          .slice(0, 80);
+        const fname = `FermatAI_${titleSafe}_${uuid.slice(0,6)}.html`;
+        const a = document.createElement("a");
+        a.href = blobUrl; a.download = fname;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(blobUrl);
+        }, 100);
+        dl.classList.remove("loading");
+        dl.classList.add("done");
+        dl.textContent = "✅";
+        dl.title = "İndirildi — tıkla tekrar indir";
+      } catch (err) {
+        dl.classList.remove("loading");
+        dl.textContent = "⚠️";
+        dl.title = "Hata: " + err.message;
+        setTimeout(() => {
+          dl.textContent = "📥";
+          dl.title = "Bilgisayara indir";
+        }, 2500);
+        console.warn("İndir hatası:", err);
+      }
+    };
+    dl.addEventListener("click", _doDl);
+    dl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") _doDl(e);
+    });
+    // Link'ten SONRA inject et (link'in yanında dursun, içinde değil)
+    link.parentNode.insertBefore(dl, link.nextSibling);
+    link.dataset.dlInjected = '1';
+  });
 }
 
 // ═════════════════════════════════════════════════════════════════
