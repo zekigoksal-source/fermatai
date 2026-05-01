@@ -2073,6 +2073,30 @@ async def _tool_get_atlas_trend(**kwargs):
         return {"error": f"Atlas trend hatasi: {e}"}
 
 
+# ─────────────────────────────────────────────────────────────────────
+# Oturum 25.39 (Neo direktif): Tools array cache_control helper
+# ─────────────────────────────────────────────────────────────────────
+def _add_tools_cache_control(tools: list[dict]) -> list[dict]:
+    """Tools listesinin SON tool'una cache_control: ephemeral ekler.
+
+    Anthropic API: tools array'ında son tool'un cache_control'ü tüm tools
+    listesini cache'ler (5 dakika TTL). Statik kısımdır, role değişmediği
+    sürece HER mesajda HIT olur.
+
+    Maliyet: ilk çağrıda ~24K token CACHE WRITE (1.25x = ~$0.09)
+             sonraki çağrılarda CACHE READ (0.10x = ~$0.0024)
+             → 2. mesajdan itibaren %92 tasarruf.
+    """
+    if not tools or not isinstance(tools, list):
+        return tools
+    # Son tool'a cache_control ekle (kopya üzerinde — orijinal TOOLS bozulmasın)
+    cached = list(tools[:-1])
+    last_tool = dict(tools[-1])  # shallow copy
+    last_tool["cache_control"] = {"type": "ephemeral"}
+    cached.append(last_tool)
+    return cached
+
+
 TOOL_DISPATCH = {
     "get_student_analytics":    lambda p: tool_get_student_analytics(**p),
     "get_ayt_analysis":         lambda p: tool_get_ayt_analysis(**p),
@@ -4894,21 +4918,30 @@ class FermatCoreAgent:
             # Tool kullanımında text stream + tool_use fragman gelir, final_message'dan topla.
             if self._stream_queue is not None and self.async_client:
                 # 25.15: tier'a gore prompt + tool subset (default FULL davranis)
+                # 25.39 (Neo): Tools'a cache_control eklendi — son tool'a ephemeral
+                # Anthropic API: tools listesinde son tool'un cache_control'ü
+                # tüm tools array'ını cache'ler. ~24K token tek bir cache breakpoint.
+                _cached_tools = _add_tools_cache_control(_claude_tools)
                 _stream_params = dict(
                     model     = MODEL,
-                    max_tokens= 16384,  # Oturum 23 (Neo timeout): "tüm karakter sınırı" için 16k output
+                    # Oturum 25.39 (Neo timeout fix): kompleks render (yıldız evrim, galaksi sim)
+                    # 16K output yetmiyordu → make_render_link html parametresi truncate.
+                    # Sonnet 4.5 max output 64K, biz 24K alıyoruz (orta yol — latency vs kapasite).
+                    max_tokens= 24576,  # 16K → 24K (kompleks HTML için yeterli)
                     system    = [
+                        # Cache 1: en uzun statik bölüm (50K+ token)
                         {"type": "text", "text": _claude_prompt,
                          "cache_control": {"type": "ephemeral"}},
+                        # Cache 2: dynamic_context (5dk TTL — aynı kullanıcı 5dk içinde HIT)
                         {"type": "text", "text": dynamic_context,
                          "cache_control": {"type": "ephemeral"}},  # C15
                     ],
-                    # 25.15 modular: LIGHT'ta tool YOK, NORMAL/FULL'de tam liste
-                    tools     = _claude_tools,
+                    # 25.39: role-filtered + cache_control'lü tools
+                    tools     = _cached_tools,
                     messages  = self.history,
                 )
                 # LIGHT tier'da tools=[] olunca Anthropic SDK boş listeyi reddeder
-                if not _claude_tools:
+                if not _cached_tools:
                     _stream_params.pop("tools", None)
                 try:
                     async with self.async_client.messages.stream(**_stream_params) as stream:
@@ -4930,9 +4963,12 @@ class FermatCoreAgent:
                 # Aynı rol+user 5dk içinde sorgu atarsa CACHE HIT → maliyet %50 düşer,
                 # latency 200-500ms tasarruf.
                 # 25.15: tier'a gore prompt + tool subset
+                # 25.39 (Neo): Tools'a cache_control eklendi — ~24K token cache'leniyor
+                _cached_tools = _add_tools_cache_control(_claude_tools)
                 _create_params = dict(
                     model     = MODEL,
-                    max_tokens= 16384,  # Oturum 23 (Neo): detaylı rapor için 16k output
+                    # Oturum 25.39: 16K → 24K (kompleks HTML render için yeterli)
+                    max_tokens= 24576,
                     system    = [
                         {
                             "type": "text",
@@ -4945,12 +4981,12 @@ class FermatCoreAgent:
                             "cache_control": {"type": "ephemeral"},  # C15 eklendi
                         },
                     ],
-                    # 25.15 modular: tier subset
-                    tools     = _claude_tools,
+                    # 25.39: role-filtered + cache_control'lü tools
+                    tools     = _cached_tools,
                     messages  = self.history,
                 )
                 # LIGHT tier'da tools=[] → SDK reddeder, parametreyi cikar
-                if not _claude_tools:
+                if not _cached_tools:
                     _create_params.pop("tools", None)
                 response = await asyncio.to_thread(
                     self.client.messages.create, **_create_params
@@ -4991,18 +5027,28 @@ class FermatCoreAgent:
                                       user_input, answer, "claude")
                 except Exception:
                     pass
-                # Usage log — Claude API
+                # Usage log — Claude API (Oturum 25.39: cache metric tracking)
                 try:
                     from usage_tracker import log_event
-                    t_in = getattr(response, 'usage', None)
-                    token_in = t_in.input_tokens if t_in else 0
-                    token_out = t_in.output_tokens if t_in else 0
+                    u = getattr(response, 'usage', None)
+                    token_in = u.input_tokens if u else 0
+                    token_out = u.output_tokens if u else 0
+                    # Anthropic Prompt Cache metrikleri (Oturum 25.39)
+                    cache_read = getattr(u, 'cache_read_input_tokens', 0) or 0
+                    cache_write = getattr(u, 'cache_creation_input_tokens', 0) or 0
+                    if cache_read or cache_write:
+                        logger.info(
+                            f"💾 Cache: READ={cache_read:,} WRITE={cache_write:,} "
+                            f"INPUT={token_in:,} (hit={cache_read*100/max(1,cache_read+token_in):.1f}%)"
+                        )
                     await log_event(phone=caller_phone, role=role, full_name=caller_name,
                                     event_type="message", response_source="claude",
                                     response_ms=int((turn+1)*3000),
-                                    token_input=token_in, token_output=token_out)
-                except Exception:
-                    pass
+                                    token_input=token_in, token_output=token_out,
+                                    cache_read_tokens=cache_read,
+                                    cache_write_tokens=cache_write)
+                except Exception as _ue:
+                    logger.debug(f"usage_log error: {_ue}")
                 # ── QUERY CACHE YAZ — no-tool Claude yaniti, cache'e ekle ──
                 # turn==0 → ilk turda tool kullanmadı → saf conceptual cevap
                 if turn == 0 and caller_phone and len(answer) >= 20:

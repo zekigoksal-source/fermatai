@@ -11,6 +11,20 @@ from typing import Optional
 from db_pool import get_pool as _get_pool
 
 
+async def _ensure_cache_columns():
+    """Oturum 25.39: cache_read + cache_write kolonları ekle (idempotent)."""
+    try:
+        pool = await _get_pool()
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                ALTER TABLE usage_log
+                ADD COLUMN IF NOT EXISTS cache_read_tokens INTEGER DEFAULT 0,
+                ADD COLUMN IF NOT EXISTS cache_write_tokens INTEGER DEFAULT 0
+            """)
+    except Exception:
+        pass
+
+
 async def log_event(
     phone: str,
     role: str = "",
@@ -20,17 +34,35 @@ async def log_event(
     response_ms: int = 0,
     token_input: int = 0,
     token_output: int = 0,
+    cache_read_tokens: int = 0,    # Oturum 25.39 — Anthropic prompt cache HIT
+    cache_write_tokens: int = 0,   # Oturum 25.39 — ilk cache WRITE
 ):
-    """Tek bir etkilesimi logla."""
+    """Tek bir etkilesimi logla.
+
+    Oturum 25.39 (Neo): cache_read_tokens ve cache_write_tokens eklendi.
+    Anthropic API response.usage: cache_read_input_tokens + cache_creation_input_tokens.
+    """
     try:
         pool = await _get_pool()
         async with pool.acquire() as conn:
-            await conn.execute("""
-                INSERT INTO usage_log (phone, role, full_name, event_type,
+            # Cache kolonları yoksa ekle (lazy migration)
+            try:
+                await conn.execute("""
+                    INSERT INTO usage_log (phone, role, full_name, event_type,
+                        response_source, response_ms, token_input, token_output,
+                        cache_read_tokens, cache_write_tokens)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                """, phone, role, full_name, event_type,
+                    response_source, response_ms, token_input, token_output,
+                    cache_read_tokens, cache_write_tokens)
+            except Exception:
+                # Migration henüz yapılmamış — eski schema ile fallback
+                await conn.execute("""
+                    INSERT INTO usage_log (phone, role, full_name, event_type,
+                        response_source, response_ms, token_input, token_output)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                """, phone, role, full_name, event_type,
                     response_source, response_ms, token_input, token_output)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            """, phone, role, full_name, event_type,
-                response_source, response_ms, token_input, token_output)
     except Exception:
         pass  # Log hatasi sistemi durdurmasin
 

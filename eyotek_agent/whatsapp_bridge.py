@@ -3881,7 +3881,20 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
             # WhatsApp'ta fazla bekleme bad UX → 90s (eski 75s yetmedi).
             # Oturum 25.31 — Neo timeout raporu: kompleks render + history birikimi 180s asildi
             # Web kanalinda Claude reasoning + tool-calling icin 300s makul
-            _agent_timeout = 300.0 if channel == "web" else 90.0
+            # Oturum 25.39 — Neo "yıldız doğumu/ölümü" 300s aşıldı; kompleks render
+            # tespit edilirse 480s (max_tokens 24K + retry için). Cache aktif olduğu
+            # için ortalama latency düşecek, sadece çok kompleks render bu süreyi kullanır.
+            _is_complex_render = bool(re.search(
+                r'\b(simülasyon|simulasyon|sim[üu]le|3d.*?(göster|olu[sş]tur)|'
+                r'animasyon|interaktif|olu[sş]tur.*?simul|y[ıi]ld[ıi]z.*?evrim|'
+                r'galak[sş]i|kuantum.*sim|kara.*delik|f[oö]toelektrik|'
+                r'compton|dalga.*g[iı]ri[sş]im)',
+                (text or "").lower(),
+            ))
+            if channel == "web":
+                _agent_timeout = 480.0 if _is_complex_render else 300.0
+            else:
+                _agent_timeout = 120.0 if _is_complex_render else 90.0
             response = await asyncio.wait_for(
                 agent.run(text, caller_phone=phone, channel=channel, _stream_queue=_stream_queue),
                 timeout=_agent_timeout

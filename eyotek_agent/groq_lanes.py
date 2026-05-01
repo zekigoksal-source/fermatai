@@ -220,12 +220,24 @@ def classify_lane(message: str, role: str = "", phone: str = "") -> Optional[str
 
     # Sayı + "kim/hangi" → veri sorgusu
     # 25.37+ fix: word boundary — "akImI" içindeki "kim" false positive olmasın
+    # 25.39 fix: "X kimdir" tek başına kavramsal (Newton kimdir, Atatürk kimdir)
+    #            "hangi dersler" kavramsal kategorize → liste tarzı (AYT hangi dersler)
     if re.search(r'\b(kim|kimler|hangi|kac|kaç)\b', text_lower):
-        # İstisna: kavramsal "X nedir" + "kim" geçebilir ("Newton kimdir")
+        # İstisna 1: kavramsal "X nedir" + "kim" geçebilir ("Newton kimdir")
         if not _KAVRAMSAL_PATTERN.search(text_lower):
-            # Ek istisna: meta_direktif veya genel sohbet
-            if not _META_DIREKTIF.search(text_lower) and not _GENEL_SOHBET.search(text_lower):
-                return None
+            # İstisna 2: "X kimdir" tek başına kavramsal (kişi tanıtımı)
+            #   Newton kimdir, Atatürk kimdir, Einstein kimdir
+            if re.search(r'^\s*\w+(\s+\w+){0,2}\s+kimdir\s*\??$', text_lower):
+                pass  # kavramsal, devam et
+            # İstisna 3: meta_direktif veya genel sohbet
+            elif not _META_DIREKTIF.search(text_lower) and not _GENEL_SOHBET.search(text_lower):
+                # İstisna 4: "hangi X" eğitim listesi (kişisel veri değil)
+                # "AYT sayısal hangi dersler", "TYT hangi konular gelir"
+                if re.search(r'\bhangi\s+(ders|konu|sınav|sinav|alan)', text_lower) and \
+                   not re.search(r'\b(benim|kendi|ben(de|im))', text_lower):
+                    pass  # eğitim soruları, kavramsal devam
+                else:
+                    return None
 
     # Multi-soru (5+ noktası, virgüllü uzun cümle) → complex
     if text.count(',') >= 4 or text.count('?') >= 3:

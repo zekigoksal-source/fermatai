@@ -2406,14 +2406,65 @@ TOOLS.extend([
 TOOLS_ACTIVE: list[dict] = [t for t in TOOLS if t.get("name") not in DEAD_TOOLS]
 
 
+# ─────────────────────────────────────────────────────────────────────
+# Oturum 25.39 (Neo direktif): GERÇEK role-aware tool filter
+# ─────────────────────────────────────────────────────────────────────
+# Önceki davranış: tüm rollere TOOLS_ACTIVE (112 tool, ~24K token) gönderiyordu.
+# Yeni: role_access._ACL_MATRIX'i kullanıp her rol için sadece YETKİSİ olan
+# tool'lar Claude'a gönderiliyor. Tool SİLİNMEZ — sadece role-bazlı filtreli
+# inject. Eylül 2026 sonrası gerçek kullanım datasıyla DEAD_TOOLS değerlendirmesi.
+#
+# Tahmini token tasarrufu (öğrenci):
+#   24,166 → ~12,000 token (yarı yarıya)
+#   Öğretmen: ~14,000 token
+#   Müdür: ~18,000 token
+#   Admin: tam liste (112 tool ~24K)
+# ─────────────────────────────────────────────────────────────────────
 def get_tools(role: str = "ogrenci", include_dead: bool = False) -> list[dict]:
-    """Role-aware tool listesi.
+    """Role-aware tool listesi (Oturum 25.39 — gerçek ACL filter).
 
-    role: 'admin' → tum tool'lar (finans dahil)
-          'ogrenci'/'mudur'/'rehber'/'ogretmen' → DEAD_TOOLS hariç
-          'veli' → cok kisitli (gelecek sezon)
-    include_dead=True → DEAD dahil (debug/admin tam liste icin)
+    role: 'admin'                   → DEAD dahil tüm 112 tool (sistem geliştirme için)
+          'mudur'/'rehber'/'yonetim'/'ogretmen' → ACL_MATRIX'te yetkili tool'lar
+          'ogrenci'                  → sadece öğrenci ACL'inde olan tool'lar
+          'veli'/'guest'/'unknown'   → minimal (genelde boş veya 1-2 tool)
+    include_dead=True → DEAD dahil (debug/admin tam liste için)
+
+    Önemli: get_tools rol bazlı tool LİSTESİ döndürür (Claude'a inject için).
+    Gerçek dispatch sırasında ayrı bir ACL kontrolü zaten var (run_tool).
     """
+    # Admin / debug modu — tüm tool'lar
     if include_dead or role == "admin":
         return TOOLS
-    return TOOLS_ACTIVE
+
+    # Role-aware ACL filter (Oturum 25.39)
+    try:
+        from role_access import _ACL_MATRIX
+        allowed_names = _ACL_MATRIX.get(role, set())
+        if not allowed_names:
+            # Guest/unknown rolü — tool gönderme (zaten dispatch ACL engellenir)
+            # Eski davranış TOOLS_ACTIVE (fallback) → guest için 24K token israfı
+            if role in ("guest", "unknown"):
+                return []
+            # Bilinmeyen rol için güvenli fallback (sadece DEAD hariç)
+            return TOOLS_ACTIVE
+        # ACL'de olan VE DEAD olmayan tool'lar
+        return [
+            t for t in TOOLS_ACTIVE
+            if t.get("name") in allowed_names
+        ]
+    except Exception:
+        # Import hatası vs. → güvenli fallback
+        return TOOLS_ACTIVE
+
+
+def get_tools_token_estimate(role: str = "ogrenci") -> dict:
+    """Rol bazlı tool token tahmini (debug/audit için)."""
+    import json
+    tools = get_tools(role)
+    chars = len(json.dumps(tools, ensure_ascii=False))
+    return {
+        "role": role,
+        "tool_count": len(tools),
+        "chars": chars,
+        "approx_tokens": chars // 4,  # rough cl100k_base estimate
+    }
