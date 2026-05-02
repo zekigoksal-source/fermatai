@@ -639,8 +639,8 @@ async def main():
         todo.append((sinif, ders, konu))
     print(f"[*] Skip (zaten var): {skipped_existing}, Yeni üretilecek: {len(todo)}\n")
 
-    # ── PARALLEL üretim — 5 konu eş zamanlı (rate limit + maliyet dengesi)
-    PARALLEL = 5
+    # ── PARALLEL üretim — Cerebras 3sn cevap → 10 konu paralel mantikli
+    PARALLEL = int(os.getenv("GENERATOR_PARALLEL", "10"))
 
     async def process_one(idx: int, sinif: str, ders: str, konu: str) -> tuple[bool, str]:
         """Tek konu üret + insert. Returns (success, log_line)."""
