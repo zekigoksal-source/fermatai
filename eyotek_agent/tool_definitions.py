@@ -193,21 +193,29 @@ TOOLS: list[dict] = [
     {
         "name": "search_curriculum",
         "description": (
-            "Müfredat bilgi bankasında konu araması yapar. "
+            "Müfredat bilgi bankasında konu araması yapar (TYT/AYT/YKS + LGS_HAZIRLIK_6/7/LGS). "
             "Öğrenci ders sorusu sorduğunda (kaldırma kuvveti nedir, paragrafta ana düşünce nasıl bulunur) "
             "veya konu anlatımı istediğinde kullan. Semantik arama ile en alakalı içerikleri döner. "
-            "İçerik: konu anlatımı, formüller, soru tipleri, çalışma yöntemi."
+            "İçerik: konu anlatımı, formüller, soru tipleri, çalışma yöntemi. "
+            "25.40n: 6/7/8. sınıf YENI NESIL örnek paketleri de bu tool'da. "
+            "ÖĞRETMEN 'yeni nesil soru / test / Maarif' istediğinde sinav_turu='LGS_HAZIRLIK_6/7/LGS' "
+            "ile filtreleyerek gerçek MEB Maarif yeni nesil örneklerini çek + adapte et."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "Arama sorgusu (ör: 'Newton yasaları', 'paragrafta ana düşünce')",
+                    "description": "Arama sorgusu (ör: 'Newton yasaları', 'çokgenler yeni nesil', 'paragrafta ana düşünce')",
                 },
                 "ders": {
                     "type": "string",
-                    "description": "Ders filtresi (ör: Fizik, Matematik). Boş bırakılabilir.",
+                    "description": "Ders filtresi (ör: Fizik, Matematik, Türkçe). Boş bırakılabilir.",
+                },
+                "sinav_turu": {
+                    "type": "string",
+                    "enum": ["TYT", "AYT", "YKS", "LGS", "LGS_HAZIRLIK_6", "LGS_HAZIRLIK_7"],
+                    "description": "Sınav türü filtresi. Lise: TYT/AYT/YKS. Ortaokul: LGS_HAZIRLIK_6 (6.sınıf), LGS_HAZIRLIK_7 (7.sınıf), LGS (8.sınıf). Boş ise tüm sınıflar.",
                 },
             },
             "required": ["query"],

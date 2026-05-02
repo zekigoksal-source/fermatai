@@ -729,8 +729,12 @@ async def _tool_ogm_yonlendir(ders: str = "", sinav_turu: str = "", tip: str = "
     }
 
 
-async def _tool_search_curriculum(query: str = "", ders: str = "") -> dict:
-    """Müfredat bilgi bankasında semantik + keyword arama."""
+async def _tool_search_curriculum(query: str = "", ders: str = "", sinav_turu: str = "") -> dict:
+    """Müfredat bilgi bankasında semantik + keyword arama.
+
+    25.40n: sinav_turu parametresi eklendi — LGS_HAZIRLIK_6/7/LGS için
+    yeni nesil örnek paketleri ayrıştırma.
+    """
     from rag_engine import search_curriculum
     if not query:
         return {"error": "query parametresi gerekli"}
@@ -738,10 +742,15 @@ async def _tool_search_curriculum(query: str = "", ders: str = "") -> dict:
     _DERS_NORM = {'türkçe':'Turkce', 'turkce':'Turkce', 'matematik':'Matematik',
                   'fizik':'Fizik', 'kimya':'Kimya', 'biyoloji':'Biyoloji',
                   'tarih':'Tarih', 'coğrafya':'Cografya', 'cografya':'Cografya',
-                  'felsefe':'Felsefe', 'geometri':'Geometri'}
+                  'felsefe':'Felsefe', 'geometri':'Geometri',
+                  'fen bilimleri':'Fen Bilimleri', 'sosyal bilgiler':'Sosyal Bilgiler',
+                  'ingilizce':'İngilizce', 'i̇ngilizce':'İngilizce', 'turkce':'Türkçe',
+                  't.c. inkılap tarihi':'T.C. İnkılap Tarihi'}
     if ders:
         ders = _DERS_NORM.get(ders.lower().strip(), ders)
-    results = await search_curriculum(query, ders=ders, limit=5)
+    # sinav_turu hint Claude'dan gelmeli — yoksa tum bankada ara
+    sinav_turu_clean = (sinav_turu or "").strip().upper() or None
+    results = await search_curriculum(query, ders=ders, limit=5, sinav_turu=sinav_turu_clean)
     # Ders filtresiyle yeterli sonuç bulunamazsa, filtre olmadan tekrar dene
     if len(results) < 2 or (results and results[0]["skor"] < 0.5):
         results_broad = await search_curriculum(query, ders="", limit=5)

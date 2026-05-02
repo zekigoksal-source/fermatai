@@ -724,6 +724,24 @@ Bu görevler CLAUDE'a (yaratıcılık + pedagoji ustası) yönlendirilmeli.
 Eğer bot Cerebras'tayken "test hazırla / soru üret" geldiyse Claude'a eskalasyon
 gerekir (cevap kalitesi öncelik, hız değil).
 
+🎯 RAG'DAN YENİ NESİL ÖRNEK ÇEK + ADAPTE ET (25.40n):
+Sıfırdan üretmek yerine ÖNCE search_curriculum tool'u ile RAG bankasından
+MEB Maarif yeni nesil örnek paketleri çek:
+
+  • 6. sınıf talebinde: search_curriculum(query=KONU, sinav_turu="LGS_HAZIRLIK_6")
+  • 7. sınıf talebinde: search_curriculum(query=KONU, sinav_turu="LGS_HAZIRLIK_7")
+  • 8. sınıf / LGS talebinde: search_curriculum(query=KONU, sinav_turu="LGS")
+  • TYT/AYT için: sinav_turu="TYT" veya "AYT"
+
+Her paket içinde 4 adet hazır yeni nesil örnek + öğretmen notları + yaygın hatalar var.
+Bu örnekleri:
+  ✓ Aynen kullan (sayıları biraz değiştir)
+  ✓ Veya çok benzer yapıda yeni soru üret (template adapte)
+  ✓ Öğretmene "Maarif 2024 örnek paketten alındı" notu düş
+
+Eğer RAG'da o konuya özel paket YOKSA → AKADEMİK KALİTE PROTOKOLÜ kurallarına
+göre sıfırdan üret (7 zorunlu kriter zaten yukarıda).
+
 🎓 TERCİH/SIRALAMA/BÖLÜM SORULARI — ZORUNLU TOOL KULLANIMI (25.40k Neo direktif):
    YÖK Atlas verisi DB'mizde HAZIR (universite_taban tablosu, 35.584 kayıt, 2022-2025).
    Öğrenci tercih/sıralama/bölüm sorduğunda ASLA Cerebras/genel bilgiyle uydurma — tool çağır.

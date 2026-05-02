@@ -255,10 +255,12 @@ async def generate_one_topic(client, sinif: str, ders: str, konu: str) -> Option
 
     try:
         # Sync Anthropic SDK — async wrap
+        # Mevcut sistemin model adi env'den (FERMAT_MODEL, default sonnet-4-6)
+        _model = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
         def _do():
             return client.messages.create(
-                model="claude-sonnet-4-5",  # Sonnet — kalite + hız + maliyet dengesi
-                max_tokens=8000,  # 4K JSON kesiyordu (4 ornek + cevap + neden uzun)
+                model=_model,
+                max_tokens=5500,  # 4 ornek + cevap + ogretmen notlari + yaygin hatalar = ~5K yeterli
                 temperature=0.5,
                 messages=[{"role": "user", "content": prompt}],
             )
@@ -430,33 +432,45 @@ async def main():
         "8_sinif_lgs": "LGS",
     }
 
-    for i, (sinif, ders, konu) in enumerate(targets, 1):
+    # Duplicate filtre
+    todo = []
+    for sinif, ders, konu in targets:
         st = sinav_turu_map.get(sinif, "LGS")
-        key = (st, ders, konu)
-        if key in existing_set:
+        if (st, ders, konu) in existing_set:
             skipped_existing += 1
-            print(f"  [{i}/{len(targets)}] SKIP (zaten var): {sinif} | {ders} | {konu[:40]}")
             continue
+        todo.append((sinif, ders, konu))
+    print(f"[*] Skip (zaten var): {skipped_existing}, Yeni üretilecek: {len(todo)}\n")
 
-        print(f"  [{i}/{len(targets)}] {sinif} | {ders} | {konu[:40]}... ", end="", flush=True)
-        parsed = await generate_one_topic(client, sinif, ders, konu)
-        if not parsed:
-            print("FAIL")
-            failed += 1
-            continue
+    # ── PARALLEL üretim — 5 konu eş zamanlı (rate limit + maliyet dengesi)
+    PARALLEL = 5
 
-        if args.dry_run:
-            print(f"OK (dry-run, {len(parsed.get('ornekler', []))} ornek)")
-            success += 1
-            continue
+    async def process_one(idx: int, sinif: str, ders: str, konu: str) -> tuple[bool, str]:
+        """Tek konu üret + insert. Returns (success, log_line)."""
+        try:
+            parsed = await generate_one_topic(client, sinif, ders, konu)
+            if not parsed:
+                return False, f"  [{idx}] FAIL gen | {sinif} | {ders} | {konu[:40]}"
+            if args.dry_run:
+                return True, f"  [{idx}] OK dry-run, {len(parsed.get('ornekler', []))} ornek | {sinif} | {ders} | {konu[:40]}"
+            ok = await insert_to_rag(parsed, sinif, ders, konu)
+            if ok:
+                return True, f"  [{idx}] OK insert + embedding | {sinif} | {ders} | {konu[:40]}"
+            return False, f"  [{idx}] FAIL insert | {sinif} | {ders} | {konu[:40]}"
+        except Exception as e:
+            return False, f"  [{idx}] EXCEPTION {e} | {sinif} | {ders} | {konu[:40]}"
 
-        ok = await insert_to_rag(parsed, sinif, ders, konu)
-        if ok:
-            print(f"OK ({len(parsed.get('ornekler', []))} ornek + embedding)")
-            success += 1
-        else:
-            print("INSERT FAIL")
-            failed += 1
+    # Batch'lerde işle (her batch içi paralel)
+    for batch_start in range(0, len(todo), PARALLEL):
+        batch = todo[batch_start:batch_start + PARALLEL]
+        tasks = [process_one(batch_start + i + 1, s, d, k) for i, (s, d, k) in enumerate(batch)]
+        results = await asyncio.gather(*tasks)
+        for ok, line in results:
+            print(line, flush=True)
+            if ok:
+                success += 1
+            else:
+                failed += 1
 
     print(f"\n[+] Bitti: {success} basarili, {failed} fail, {skipped_existing} skip")
     if not args.dry_run and success > 0:
