@@ -74,8 +74,28 @@ def _load_vapid_private_key() -> str:
     return ""
 
 VAPID_PRIVATE_KEY = _load_vapid_private_key()
+VAPID_PRIVATE_KEY_PATH = os.getenv("VAPID_PRIVATE_KEY_PATH", "/opt/fermatai/secrets/vapid_private.pem")
 VAPID_CLAIMS_EMAIL = os.getenv("VAPID_CLAIMS_EMAIL", "fermatvipegitim@gmail.com")
 PUSH_NOTIFICATIONS_ACTIVE = os.getenv("PUSH_NOTIFICATIONS_ACTIVE", "false").lower() == "true"
+
+# pywebpush vapid_private_key string PEM yerine FILE PATH bekler (from_string DER bekler).
+# Eger PEM dosyasi varsa path kullan (clean), yoksa Vapid.from_pem ile pre-parse + private_pem string ver.
+def _get_webpush_vapid_param() -> str | object:
+    """
+    pywebpush.webpush() vapid_private_key icin uygun deger don.
+    Oncelik: file path (en guvenilir) → Vapid object'ten yeni PEM uretimi.
+    """
+    if VAPID_PRIVATE_KEY_PATH and os.path.exists(VAPID_PRIVATE_KEY_PATH):
+        return VAPID_PRIVATE_KEY_PATH
+    if VAPID_PRIVATE_KEY:
+        # PEM string → Vapid.from_pem ile parse → tekrar PEM olarak yaz (temiz format)
+        try:
+            from py_vapid import Vapid
+            v = Vapid.from_pem(VAPID_PRIVATE_KEY.encode())
+            return v.private_pem().decode() if callable(v.private_pem) else str(v.private_pem)
+        except Exception as e:
+            logger.warning(f"[PUSH] Vapid.from_pem fail: {e}")
+    return VAPID_PRIVATE_KEY  # son çare
 
 # Default brand
 PUSH_DEFAULT_ICON = "https://api.fermategitimkurumlari.com/static/img/fermatai-192.png"
@@ -277,11 +297,12 @@ async def send_push(
     try:
         # Sync pywebpush — async wrap
         import asyncio
+        _vapid_param = _get_webpush_vapid_param()  # path (önerilen) veya PEM string
         def _do_send():
             return webpush(
                 subscription_info=sub_info,
                 data=payload_json,
-                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_private_key=_vapid_param,
                 vapid_claims={"sub": f"mailto:{VAPID_CLAIMS_EMAIL}"},
                 ttl=86400,  # 24 saat geçerli
             )
