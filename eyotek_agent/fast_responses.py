@@ -2339,11 +2339,30 @@ async def try_fast_response(
         role in ("admin", "mudur", "yonetim")
         or re.search(r'\b(not\s*et|kaydet|kayda\s*al|bildir|bildirim|kayit|raporla)\b', msg_lower)
     )
-    if not _frust_bypass and re.search(r'(yanlis|yanlış|anlamadin|anlamadın|istemedim|bunu demedim|beni anlam|hayir\s*bu\s*degil|hayır\s*bu\s*değil|sacmalama|saçmalama|hata\s*var|hatali|hatalı|duzgun\s*cevap|düzgün\s*cevap|yardimci\s*olam|yardımcı\s*olam|ise\s*yaram|işe\s*yaram|neden\s*cevap\s*ver|cevap\s*vermed)', msg_lower):
+    if not _frust_bypass and re.search(r'(yanlis|yanlış|anlamadin|anlamadın|istemedim|bunu demedim|beni anlam|hayir\s*bu\s*degil|hayır\s*bu\s*değil|sacmalama|saçmalama|hata\s*var|hatali|hatalı|duzgun\s*cevap|düzgün\s*cevap|yardimci\s*olam|yardımcı\s*olam|ise\s*yaram|işe\s*yaram|neden\s*cevap\s*ver|cevap\s*vermed|niye\s*hata\s*yap|olum\s*bende\s*niye)', msg_lower):
         _frust_key = f"frust_{caller_phone}"
         _frust_counts = getattr(try_fast_response, '_frustration_counter', {})
         _frust_counts[_frust_key] = _frust_counts.get(_frust_key, 0) + 1
         try_fast_response._frustration_counter = _frust_counts
+
+        # 25.40g (Neo bug fix): frustration_log DB INSERT - onceden in-memory counter ile
+        # sinirliydi, telafi mekanizmasi ve audit icin DB'ye persist sart.
+        # Yagiz'in 8 kez yanlis cevap sonrasi "olum bende niye hata yapiyon" dedigi
+        # halde frustration_log bostu — bu kayit eksikti.
+        try:
+            from db_pool import get_pool
+            _pool_frust = await get_pool()
+            async with _pool_frust.acquire() as _conn_frust:
+                await _conn_frust.execute(
+                    """INSERT INTO frustration_log (phone, trigger_msg, context_summary, created_at)
+                       VALUES ($1, $2, $3, NOW())""",
+                    caller_phone,
+                    message[:500],
+                    f"role={role} count={_frust_counts[_frust_key]} name={name[:50] if name else ''}",
+                )
+        except Exception as _fe:
+            import logging
+            logging.getLogger(__name__).warning(f"[FRUST_LOG] DB INSERT hata: {_fe}")
 
         # Frustration → HER ZAMAN Claude'a eskalasyon (context analizi gerek)
         # ESKISI: 1-2 kez generic ozur (kullaniciyi sinirlendiriyor), 3+ Claude

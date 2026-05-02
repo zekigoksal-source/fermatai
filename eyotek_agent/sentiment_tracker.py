@@ -38,10 +38,24 @@ SENTIMENT_PATTERNS = {
         r"berbat", r"kotu\s*gitti", r"kötü\s*gitti", r"düştü",
         r"istemiy", r"sikil", r"sıkıl", r"moral\w*\s*boz",
         r"motivasyon\w*\s*d[uü]s", r"motivasyon\w*\s*yok",
+        # 25.40g (Ada vakası 2 May): ilişki/anlaşılmama/ifade güçlüğü/vazgeçmişlik sinyalleri
+        r"anladigini\s*hissetmiyor", r"anladığını\s*hissetmiyor",
+        r"anla[sş]ilamiyo", r"anla[sş]ılamıyo",
+        r"kendimi\s*(anlatam|ifade\s*edem)", r"konu[sş]amiyor", r"konu[sş]amıyor",
+        r"kacinci\s*sans", r"kaçıncı\s*şans", r"sans\s*verdim", r"şans\s*verdim",
+        r"yoruldum", r"yorgunum", r"umudu(m)?\s*(yok|kalmad)",
+        r"degi[sş]miyor\s*ki", r"değişmiyor\s*ki",
+        r"i[sş]e\s*yaramaz", r"hicbir\s*[sş]ey\s*degi[sş]m",
+        r"ailem\w*\s*sorun", r"ili[sş]ki\w*\s*sorun",
+        # Yağız tarzı (öğrenci yardım istiyor + bot anlamıyor)
+        r"yardim\s*edem", r"yardım\s*edem", r"hicbir\s*[sş]ey\s*anlam",
     ],
     "angry": [
         r"sinir", r"kız", r"kiz", r"sacma", r"saçma",
         r"rezalet", r"yok\s*etmek", r"yok\s*edeceg",
+        # 25.40g (Ada+Yağız): argo/sinir patlamaları
+        r"dalga\s*(mi|mı)\s*ge[cç]", r"olum\s*bende\s*niye",
+        r"tassak\s*ge[cç]", r"taşak\s*ge[cç]", r"\bsalak\s*sin\b",
     ],
     "positive": [
         r"mutlu", r"harika", r"super", r"süper", r"basardim", r"başardım",
