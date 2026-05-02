@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 3 Mayıs 2026, GECE 01:30 — **🎯 OTURUM 25.40p: 5 BÜYÜK İŞ TAMAMLANDI (Eyotek tazelik + Proaktif feedback + Quality v2 + 3D library)**
+> **Son güncelleme:** 3 Mayıs 2026, GECE 02:00 — **🎯 OTURUM 25.40q: Wix mobile scroll lock fix (kurumsal site mobilde tüm sayfalarda kitleniyordu — obsolete embed silindi)**
 
 ---
 
@@ -32,6 +32,7 @@
 | 13 | **Proaktif haftalık delta** (context_engine weekly_delta, "geçen hafta vs bu hafta") | LIVE | 25.40p |
 | 14 | **Quality v2 yeni intent skorları** (RAG/renderer kullanım + 3 yeni alarm) | LIVE | 25.40p |
 | 15 | **Three.js 3D template library** (solar_system + atom + hücre + molekül + make_3d_template tool) | LIVE | 25.40p |
+| 16 | **Wix mobile scroll lock fix** (kurumsal site `fermategitimkurumlari.com` tüm mobil sayfalarda obsolete CSS embed kitliyordu) | LIVE | 25.40q |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -65,6 +66,40 @@
 - **3D library:** `make_3d_template` tool — Solar System / Atom / Hücre / Molekül anlık render link
 
 ---
+>
+> ## 🆕 OTURUM 25.40q (gece 01:45 → 02:00, 15 dk — Wix mobile scroll lock fix)
+>
+> Neo bildirimi (production issue): "Kurumun web sitesinde bir problem oldu, mobilden siteye girdigimde her sayfanın aşağıya kaymak fonksiyonunun yok olduğunu gördüm — kilitli kalıyor. Biz bunu sadece /fermatai segmesi için yapmıştık, Wix'te kod tüm sayfaları mobilde kitlemiş."
+>
+> ### ROOT CAUSE
+> Wix custom embed `bf03a19b-bf07-45d3-8f20-c05995218222` ("FermatAI iframe tablet fit (v2)") HEAD'e site-wide CSS yüklüyordu:
+> - `@media (any-pointer: coarse) and (max-width: 1366px)` — tüm dokunmatik cihazlar
+> - `body { position: fixed !important; overflow: hidden !important }` — TÜM sayfalarda
+> - **Page filter YOK** — `/fermatai` kısıtı yoktu, her mobil ziyaretçide aktifti
+> - Ana sayfa, blog, kurumsal sayfalar — hepsi scroll-locked
+>
+> Neden obsolete: 25.40n döneminde PWA henüz Wix iframe içindeyken eklenmişti. Direct Redirect (`21155fe9-...`) kurulduktan sonra `/fermatai` Wix'i bypass edip `api.fermategitimkurumlari.com/chat`'e gidiyor → bu CSS gereksiz kaldı.
+>
+> ### YAPILAN İŞ
+> - Wix REST API DELETE `/embeds/v1/custom-embeds/bf03a19b-bf07-45d3-8f20-c05995218222`
+> - Doğrulama GET — listede 4 embed kaldı, hepsinde `/fermatai` path check var (site-wide etki yok)
+>
+> ### Kalan 4 embed (hepsi güvenli)
+> | Embed | Kapsam | Güvenlik |
+> |-------|--------|---------|
+> | `50c58530` Özel (JSON-LD SEO) | HEAD, schema.org | DOM yok ✓ |
+> | `21155fe9` Direct Redirect | `if /fermatai → redirect` | Sadece /fermatai ✓ |
+> | `294e0cc9` Tam Ekran Mode | `if !/fermatai return` | Sadece /fermatai ✓ |
+> | `1c94beb5` Fullscreen v2 | `path.indexOf('/fermatai')===-1 return` | Sadece /fermatai ✓ |
+>
+> ### Verify
+> - Neo mobile test: "düzeldi tamamdır sıkıntı yok" ✅
+> - VPS HTTP 200, FermatAI service active (Wix değişikliği FermatAI backend'e dokunmaz) ✅
+>
+> ### Ders (KALICI)
+> Yeni embed/CSS eklerken **HER ZAMAN page filter koy** — `domain` field veya JS path check. Site-wide HEAD CSS dikkat. PWA fullscreen vs ana site UX birbirine zarar vermesin.
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40o (gece 00:00 → 00:30, 30 dk — Neo "Cerebras kullanımı yetersiz")
 >
 > ## 🆕 OTURUM 25.40o (gece 00:00 → 00:30, 30 dk — Neo "Cerebras kullanımı yetersiz")
 >
