@@ -1,6 +1,26 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, GECE 03:25 — **🎨 OTURUM 25.40e: PREMIUM PWA ICON + .ENV BOM TEMIZ**
+> **Son güncelleme:** 2 Mayıs 2026, GECE 03:35 — **🍎 OTURUM 25.40f: KURUMSAL LOGO PWA ENTEGRASYONU**
+>
+> ## 🆕 OTURUM 25.40f (gece 03:30 → 03:35, 5 dk — kurumsal logo PWA icon'larına entegre)
+>
+> **Neo:** "bazı kurumsal logomla alakalı örnekleri attım sana" — resmi Fermat Eğitim Kurumları logosu paylaşıldı (SVG + PNG + AI + EPS + PSD).
+>
+> **Logo:** Kırmızı düşen elma (Newton/yerçekimi → matematik/keşif teması) + 4 düşüş çizgisi + yeşil yaprak + "Fermat" siyah serif tipografi + "EĞİTİM KURUMLARI" kırmızı küçük tagline.
+>
+> **PWA icon entegrasyonu (commit `d560bec`):**
+> - Önceki (25.40e): generic italic serif F harfi (gecici, brand bağımsız)
+> - Yeni: RESMI KURUMSAL LOGO — apple sembolü + düşüş çizgileri + yaprak (kare format'a yazı sığmaz, atıldı)
+> - Crop bug debug: ilk denemede x_max=595 idi → "F" harfi sızdı (Fermat tipografisi apple'a çok yakın). Bul-test-iterate ile x_max=400 final (apple natural edge)
+> - Design: dark navy bg + 3 katmanlı warm mesh gradient + apple warm glow halo + rounded square (non-maskable) / full canvas (maskable %55 safe zone)
+> - 7 PNG variant: 192/512 normal + 192/512 maskable + 1024 (Apple touch) + 96 (shortcut) + 32 favicon
+> - Generator script (`generate_pwa_icons.py`) güncellendi — gelecek logo değişimi için re-run
+>
+> **Verify:** HTTP 200, tüm 7 icon dosyası live (25-180 KB), service active ✅
+>
+> **Neo aksiyon:** PWA'yı sil + tekrar ekle (Android icon cache agresif). Yeni splash → kurumsal kimlik (kırmızı elma + warm glow halo + dark navy).
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40e (gece 03:15 → 03:25, 10 dk — premium PWA icon + .env BOM)
 >
 > ## 🆕 OTURUM 25.40e (gece 03:15 → 03:25, 10 dk — yarın listesini gece bitirdik)
 >
