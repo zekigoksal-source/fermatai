@@ -1,6 +1,31 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, ÖĞLEDEN SONRA 17:00 — **✅ OTURUM 25.40h: 4 KULLANICI SORUNU TAMAMEN ÇÖZÜLDÜ**
+> **Son güncelleme:** 2 Mayıs 2026, ÖĞLEDEN SONRA 17:15 — **🧬 OTURUM 25.40i: DOĞAL AKIŞ + FIRSAT ANI + ATLAS YANSITMA**
+>
+> ## 🆕 OTURUM 25.40i (öğleden sonra 17:00 → 17:15, 15 dk — Neo "doğal konuşma + Atlas yansıt")
+>
+> ### A) Doğal konuşma + Fırsat anı koruma kuralları (commit `d184862`)
+> Neo: "her cümleye Merhaba Ada diye başlamışsın yapay" + "tam önemli bir paylaşım anında tak diye deneme getirmişsin facia, kullanıcıyı sisteme bağlamak için muhteşem fırsatken son anda kaybediyoruz".
+>
+> Eklenen 2 prompt kuralı (system_prompts.py — "SAMİMİ AMA PROFESYONEL" altına):
+> 1. **DOĞAL KONUŞMA AKIŞI** — Conversation history kontrol, son 3-4 cevapta hitap kullanıldıysa TEKRAR ETME. Doğal geçiş sözleri ("Anlıyorum...", "Hmm", "Bak şöyle...", "Doğru söylüyorsun..."). Ada 13:55-14:04 transkript'i yanlış-doğru örnek olarak prompt'ta.
+> 2. **FIRSAT ANI KORUMA** — Duygusal/ilişki/aile/sevgili konuşmalarında tool çağırma YASAK. Sınav tablosu çıkarma. Ada 14:06 facia örneği prompt'ta. Sadece doğrudan sayısal soru gelirse veri ver.
+>
+> ### B) Atlas Senaryo A: 4 öneri DB yansıtma (no code change)
+> Neo "atlas önerilerini kabul ettim" dedi. DB'de 4 öneri yeni status'ta:
+> - #48, #51 "devam et fast_response'a alınmalı" (duplicate)
+> - #49, #52 "claude latency p95 227-255s" (duplicate)
+>
+> Sonuç: `UPDATE atlas_suggestions SET status='uygulandi', applied_at=NOW(), applied_by='neo_kabul_25.40i'` 4 öneri için. **KOD DEĞİŞMEDİ** — sadece flag güncellendi, Atlas trend'i temizlendi (yeni: 4 → 0).
+>
+> ⚠️ **Önemli not (yarın için):** Bu 4 öneri kod düzeyinde fix EDİLMEDİ. Atlas observer aynı anomaliyi tekrar tespit ederse aynı öneriler tekrar `yeni` olarak yazılabilir. Eğer trend tekrar çıkarsa Senaryo B (gerçek kod fix) yapmak gerek:
+> - **Latency #49+#52:** Tool budget azalt, parallel split, Cerebras öncelik (~30 dk iş)
+> - **"devam et" fast #48+#51:** fast_responses.py'a `^(devam|devamı|continue|peki|tamam.*devam)\b` pattern + son bot cevabını kontrol eden handler (~10 dk iş)
+>
+> ### Toplam bu oturum (gece + gündüz, 25.40b → 25.40i)
+> 11+ commit. UI bug fix loop (admin butonları, tema toggle, max_turns, splash, PWA scroll lock, kurumsal logo) + 4 kullanıcı sorunu (Yağız, Ali, Ada, Mehmet) + doğal konuşma + Atlas yansıtma. VPS HEAD aktif, hepsi LIVE.
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40h (16:30 → 17:00, 30 dk — 4 KULLANICI SORUNU TAMAMEN ÇÖZÜLDÜ)
 >
 > ## 🆕 OTURUM 25.40h (öğleden sonra 16:30 → 17:00, 30 dk — Neo "hepsini bitir, eksik teknik borç kalmasın")
 >
