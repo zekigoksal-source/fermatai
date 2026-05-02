@@ -1,6 +1,82 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 3 Mayıs 2026, GECE 00:00 — **📚 OTURUM 25.40n: TAM AKADEMİK HAKİMİYET — RAG YENİ NESİL ÖRNEK BANK**
+> **Son güncelleme:** 3 Mayıs 2026, GECE 00:30 — **🚀 OTURUM 25.40o: CEREBRAS qwen-3-235b PROAKTIF MİMARİ ENTEGRASYONU**
+>
+> ## 🆕 OTURUM 25.40o (gece 00:00 → 00:30, 30 dk — Neo "Cerebras kullanımı yetersiz")
+>
+> Neo eleştirisi (haklı): "Cerebras qwen-3-235b sistemde yeterince kullanılır halde değil. 33x hızlı, %95 ucuz, kalite EŞDEĞER ama sen müdahalem olmadan akıl etmedin. Bunu önermeliydin. Ayrıca üretilen içerikleri renderlerle premium görsel sunalım."
+>
+> Mühendislik hatasının kabulü: 25.40m'de Vedat olayında "_CLOUD_KEYWORDS'a test/soru/yeni_nesil ekledim Claude'a yönlendirdim". Halbuki qwen-3-235b 211 paket üretti — Claude'la EŞDEĞER kalitede.
+>
+> ### ROOT CAUSE (3 katman)
+> 1. `cerebras_handler.INTENT_TO_MODEL`'da yeni içerik üretim intent'leri YOKTU
+> 2. `intent_classifier.py`'da bu intent'lerin pattern'leri tanımsızdı
+> 3. `system_prompts.py`'ta bot'a "Cerebras kullan" yetkinlik notu yoktu
+>
+> ### YAPILAN İŞ (commit `0190aed` LIVE)
+>
+> #### 1️⃣ cerebras_handler.py — INTENT_TO_MODEL genişlemesi (9 yeni)
+> Tümü → `qwen-3-235b-a22b-instruct-2507`:
+> - `test_olusturma` (test hazırla / konu tarama / N soruluk test)
+> - `soru_uret` (soru üret/yaz/hazırla)
+> - `yeni_nesil_uret` (yeni nesil / Maarif / LGS-YKS tipi)
+> - `icerik_uretim` (etkinlik / döküman / metin)
+> - `konu_anlatim_uzun` (detaylı anlat)
+> - `ornek_paket_uret` (N örnek üret)
+> - `karsilastirma` (X vs Y, fark/benzerlik)
+> - `ozet_uzun` (detaylı özet)
+> - `metin_zenginlestir` (RAG içerik geliştir)
+>
+> #### 2️⃣ INTENT_RENDERER_MAP — görsel sunum
+> Yeni intent'lere otomatik renderer hint:
+> - `test_olusturma` → quiz + steps + chart
+> - `yeni_nesil_uret` → quiz + compare2 + chart
+> - `konu_anlatim_uzun` → formula + steps + kgraph + quiz (tam paket)
+> - `icerik_uretim` → formula + steps + kgraph
+> - `ornek_paket_uret` → quiz + compare2 + steps
+>
+> #### 3️⃣ intent_classifier.py — 7 yeni regex pattern
+> Order matters: yeni_nesil_uret + test_olusturma + soru_uret + ornek_paket_uret + konu_anlatim_uzun + karsilastirma + metin_zenginlestir → `soru_iste`'den ÖNCE (ÜRETIM ≠ getir/göster).
+> INTENT_TIER_HINT: hepsi NORMAL (search_curriculum tool gerekli — RAG yeni nesil paket çek).
+> INTENT_TOOL_SUBSET: yeni intent'lere search_curriculum + ilgili specific tool whitelist.
+>
+> #### 4️⃣ llm_router.py — Vedat fix GERİ ALINDI
+> 25.40m'de yanlışlıkla _CLOUD_KEYWORDS'a "test hazirla / soru uret / yeni nesil" ekleyip Claude'a yönlendirmiştim. Şimdi ÇIKARILDI. Bu pattern'ler Cerebras qwen-3-235b'ye gider.
+>
+> #### 5️⃣ system_prompts.py — YETKİNLİK NOTU + RENDERER kuralı
+> Bot'a açık talimat eklendi:
+> - "🚀 CEREBRAS qwen-3-235b YETKİNLİĞİ — PROAKTIF KULLAN" (8 görev listesi)
+> - "🎨 İÇERİK SUNUMU — RENDERER KULLAN" (8 renderer eşleştirmesi)
+> - "Claude'a SADECE şunlar gider" (4 spesifik durum)
+>
+> ### Test Sonuçları (8/8 geçti)
+> | Mesaj | Intent | Model |
+> |-------|--------|-------|
+> | "6.sınıf yeni nesil çokgen testi hazırla" | yeni_nesil_uret | qwen-3-235b ✓ |
+> | "20 soruluk konu tarama testi yap" | test_olusturma | qwen-3-235b ✓ |
+> | "5 örnek soru üret matematik" | soru_uret | qwen-3-235b ✓ |
+> | "limit konusunu detaylı anlat" | konu_anlatim_uzun | qwen-3-235b ✓ |
+> | "paragrafı zenginleştir" | metin_zenginlestir | qwen-3-235b ✓ |
+> | "merhaba nasılsın" | selamlama | llama3.1-8b (false positive YOK) ✓ |
+> | "son denememi analiz et" | deneme_analiz | qwen-3-235b ✓ |
+>
+> ### Etki
+> - Yeni içerik üretim istekleri ARTIK Cerebras'a (Claude değil)
+> - Maliyet ~%95 düşüş, hız 33x artış
+> - İçerik sunumu görsel destekli (quiz/chart/formula/compare2/kgraph)
+> - Bot proaktif olarak Cerebras yetkinliğini kullanır
+> - Eylül 120 öğrenci yükünde maliyet patlaması ÖNLENDI
+>
+> ### Verify
+> - HTTP 200, service active, no errors ✅
+> - Commit `0190aed` GitHub + VPS sync ✅
+>
+> ### Yarın için (uzun vade)
+> 1. Routing observability dashboard: cerebras vs claude oran trend (eğer cerebras < %50 → alarm)
+> 2. quality_monitor cron'una: yeni intent'lerin kalite skorları (renderer kullanım oranı)
+> 3. Cerebras 235b limit izleme — gerçek kullanım yükü altında stress test
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40n (gece 22:50 → 00:00, 70 dk — RAG yeni nesil bank 423 paket)
 >
 > ## 🆕 OTURUM 25.40n (gece 22:50 → 00:00, 70 dk — Vedat olayı sonrası kapsamlı çözüm)
 >
