@@ -2195,6 +2195,40 @@ async def try_fast_response(
         staff_name = _tr_title(staff_name)
 
     # ══════════════════════════════════════════════════════════════════════
+    # 🔐 AUTH FAST PATH — EN YUKSEK ONCELIK (Yagiz bug fix 25.40g, 2 May)
+    #
+    # NEO BUG RAPORU:
+    # Yagiz (905523517686) sabah 08:53'te fizik (elektriksel kuvvet) sordu.
+    # 4 saat sonra 12:41'de "Web kodu" yazdi → bot OTP yerine HTML kod gonderdi
+    # (8 KEZ pes pese aynisi). Cunku conversation memory hala sicakti, fast_response
+    # BYPASS oldu (pattern_loop_guard/context_bridge/scenario'dan biri None dondurdu),
+    # Cerebras 70B context'ten "fizik icin web sayfasi" sandi → halusinasyon.
+    #
+    # COZUM: AUTH keyword'leri (web kodu/giris kodu/OTP) HIC BIR GUARD bypass
+    # edemez, msg_lower set edilir edilmez DIREKT web_kodu handler'ina dispatch.
+    # OGRENCI/OGRETMEN/REHBER hepsi (admin'in kendi bypass mekanizmasi var).
+    # Onlem maliyeti: bu pattern cok dar (SADECE auth), yanlis tetiklenme riski 0.
+    # ══════════════════════════════════════════════════════════════════════
+    _AUTH_FAST_PATTERNS = [
+        r'^(web\s*(kod\w*|giris|gir|bagla|bağla|link))\b',
+        r'^(whats?app)?\s*web\s*kod\w*\b',
+        r'^(otp|gir[iı][sş]\s*kod\w*|gir\s*kod)\b',
+        r'^fermat\s*ai\s*(kod\w*|gir[iı][sş]|baglan|ac|aç|link)?\b',
+        r'^(yeni|ba[sş]ka|tekrar|farkl[iı]|yenile|yollasana|gonder(sene)?|ver(sene)?)\s*(web\s*)?kod\w*',
+        r'^kod\s*(tekrar|yollasana|gonder|ver|yenile|yolla|lutfen)\b',
+        r'^(kod\s*gelmedi|kod\s*almad[iı]m|kod\s*bekliyor)\b',
+    ]
+    if role in ('ogrenci', 'ogretmen', 'rehber') and any(re.search(p, msg_lower) for p in _AUTH_FAST_PATTERNS):
+        try:
+            try: _fr_last_handler.set('web_kodu_auth_fast')
+            except: pass
+            return await web_kodu(name=name, phone=caller_phone)
+        except Exception as _ae:
+            import logging
+            logging.getLogger(__name__).warning(f"[AUTH_FAST] web_kodu hata: {_ae}")
+            # Hata olursa normal akisa devam et (alt patterns yine deneyecek)
+
+    # ══════════════════════════════════════════════════════════════════════
     # PATTERN LOOP GUARD (23 Nisan — Enes vakası)
     # Son 2 bot cevabı aynı handler ise + yeni mesaj itiraz/düzeltme içeriyorsa
     # Fast response SKIP → Claude devreye (spesifik intent analiz etsin).
