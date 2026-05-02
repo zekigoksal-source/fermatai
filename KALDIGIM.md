@@ -1,6 +1,58 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, GECE 21:15 — **🎯 OTURUM 25.40j: ENGAGEMENT METRİĞİ + MEMORY RECAP + TONAL FILTER**
+> **Son güncelleme:** 2 Mayıs 2026, GECE 22:00 — **🎓 OTURUM 25.40k: TERCİH ROBOTU AKTİVE + 2 YENİ YÖK ATLAS TOOL**
+>
+> ## 🆕 OTURUM 25.40k (gece 21:30 → 22:00, 30 dk — Neo "tercih robotu altyapısını kullan")
+>
+> **Neo:** "öğrenciler tercih ve bölüm soruları soruyor, tercih robotu altyapısı hazır YÖK Atlas ile entegre, kullan" + "tercih robotunu da aç eğer onunla alakalı talep gelirse öğrenci faydalansın"
+>
+> **DB analizi:** Son 30 günde 30+ tercih/sıralama/bölüm sorusu (gerçek vakalar):
+> - "Tıp'ın taban puanı kaç" (bugün 17:29 — Cerebras genel bilgi vermiş, gerçek veri YOK)
+> - "5K sıralama ile hangi bölümlere girerim" (5+ örnek)
+> - "Mevcut durumumla hangi üniversite" (3+ örnek)
+> - "İTÜ vs ODTÜ", "Hukuk istanbul", "Hedef bölüm rehberliği"
+>
+> Mevcut altyapı atıl: `tercih_robotu.py` (505 satır, 5 Claude tool) + `universite_taban` (35.584 YÖK Atlas kaydı, 2022-2025 SAY/EA/SOZ/DIL) — `TERCIH_DONEMI_ACTIVE=false` flag yüzünden kapalıydı.
+>
+> ### Yapılan iş (commit `00851b7` LIVE):
+>
+> **A) Sezon flag aktive:** `sistem_ayar.TERCIH_DONEMI_ACTIVE = true` → 5 mevcut tool aktif (tercih_profili_kaydet/_getir, tercih_listesi_uret, bolum_karsilastir, tercih_donemi_durum)
+>
+> **B) 2 yeni sezon-bağımsız tool:**
+> - **`universite_taban_sorgu(sorgu, puan_turu, yil, limit)`** — esnek arama: ünv/bölüm/şehir multi-field unaccent ILIKE. "İTÜ Bilgisayar", "Tıp", "Boğaziçi", "Ankara hukuk" sorularına gerçek veri.
+> - **`siralama_ile_bolumler(siralama, puan_turu, sehir, bolum_filter, limit, tolerans)`** — 3 bant: GARANTI (%20 alt) / UYGUN (±%20) / HEDEF (%20 üst). "5K sıralama ile" sorularına motive edici cevap.
+>
+> **C) Entegrasyon (6 dosya):**
+> - `tool_definitions.py`: 2 yeni rich tool tanımı (JSON schema)
+> - `tools/tercih.py`: 2 wrapper
+> - `fermat_core_agent.py`: import + dispatch (2 satır)
+> - `role_access.py`: **6 rol ACL** (admin/müdür/yönetim/rehber/öğretmen/öğrenci)
+> - `system_prompts.py`: "TERCİH/SIRALAMA/BÖLÜM SORULARI — ZORUNLU TOOL KULLANIMI" kuralı (Cerebras uydurma YASAK)
+>
+> ### LIVE Functional Test (VPS direkt çağrı):
+> ```
+> universite_taban_sorgu("Tip", "SAY", limit=5):
+>   → İSTANBUL MEDİPOL ÜNİVERSİTESİ Tip: 551.13218
+>   → KOÇ ÜNİVERSİTESİ Tip: 550.89027
+>   → ACIBADEM Tip: 545.26965
+> siralama_ile_bolumler(5000, "SAY"): garanti=5, uygun=5, hedef=5
+> ```
+> Gerçek 2024 verisi, gerçek üniversiteler, çalışıyor ✅
+>
+> ### Verify (canlı VPS, commit `00851b7`)
+> - HTTP 200, service active, no startup errors ✅
+> - 7 tercih tool ACL'de (5 mevcut + 2 yeni)
+> - DB flag `TERCIH_DONEMI_ACTIVE=true`
+> - 6 rol için tool erişimi açık
+>
+> ### Bonus kontrol — Öğretmen + sıcak konuşma (Neo'nun ek isteği)
+> - **Öğretmen tarafı:** Son 7 gün 1 öğretmen + 2 rehber, 28+76 mesaj. Frustration sinyali YOK (1 false positive: "Saniye sultan ve Osman Kağan" öğrenci ismi içinde "yanlis" trigger). Sorun yok.
+> - **Sıcak konuşma:** Son 2 saatte yarım kalan kullanıcı YOK. Son aktif Deniz 18:29 doğal selamlama → bot uygun cevap verdi → kullanıcı doğal kapanış. Müdahale gerekmiyor.
+>
+> ### Etkisi (yarın+ için)
+> Bugünden itibaren öğrenci "Tıp taban puanı kaç" derse → Cerebras uydurma yerine gerçek 2024 YÖK Atlas verisi gelir. "5K sıralama ile" → 3 bant motive edici öneri. ITU vs ODTU karşılaştırma → bolum_karsilastir tool. 35.584 atıl veri kayıt → aktif kullanıma geçti.
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40j (öğleden sonra 20:30 → gece 21:15, 45 dk — Engagement metriği + Memory recap + Tonal filter)
 >
 > ## 🆕 OTURUM 25.40j (öğleden sonra 20:30 → gece 21:15, 45 dk — 3 vizyon-uyumlu kalite katmanı)
 >
