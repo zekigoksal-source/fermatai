@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 3 Mayıs 2026, GECE 00:35 — **🚀 OTURUM 25.40o: CEREBRAS qwen-3-235b PROAKTIF MİMARİ ENTEGRASYONU**
+> **Son güncelleme:** 3 Mayıs 2026, GECE 01:30 — **🎯 OTURUM 25.40p: 5 BÜYÜK İŞ TAMAMLANDI (Eyotek tazelik + Proaktif feedback + Quality v2 + 3D library)**
 
 ---
 
@@ -9,7 +9,7 @@
 > **Bu blok her oturum başında okunur — sistemin anlık durumu, son tamamlananlar, bekleyen iş.**
 
 ### Sistem durumu (canlı)
-- **VPS HEAD:** `b681f8b` — service active, HTTP 200, no errors
+- **VPS HEAD:** `21be1fe` — service active, HTTP 200, no errors
 - **Aktif kullanıcı:** Mezun + 11/12. sınıf SAY+EA öğrencileri (~125 öğrenci)
 - **Bot rolleri canlı:** admin (Neo) / mudur (Mahsum, Duygu) / yonetim (Bilge) / rehber / ogretmen / ogrenci / veli (pasif)
 - **WhatsApp + Web Chat** her ikisi açık (api.fermategitimkurumlari.com/chat)
@@ -28,25 +28,21 @@
 | 9 | Akademik kalite protokolü (yeni nesil 7-kriter) | LIVE | 25.40m |
 | 10 | RAG yeni nesil bank — **423 paket** (6/7/8 LGS + 9-12 SAY+EA TYT/AYT) | LIVE | 25.40n |
 | 11 | Cerebras qwen-3-235b PROAKTIF mimari entegrasyon (9 yeni intent + renderer) | LIVE | 25.40o |
+| 12 | **Eyotek anlık veri tazeliği** (needs_refresh helper + prompt kuralı) | LIVE | 25.40p |
+| 13 | **Proaktif haftalık delta** (context_engine weekly_delta, "geçen hafta vs bu hafta") | LIVE | 25.40p |
+| 14 | **Quality v2 yeni intent skorları** (RAG/renderer kullanım + 3 yeni alarm) | LIVE | 25.40p |
+| 15 | **Three.js 3D template library** (solar_system + atom + hücre + molekül + make_3d_template tool) | LIVE | 25.40p |
 
-### Bekleyen iş listesi (yarın için, öncelik sırasıyla)
+### Bekleyen iş listesi (Neo onayladıktan sonra)
 
-🔴 **ACİL** (orta-büyük):
-1. **3D Solar System (great attractor)** — Neo 3 kez istedi, henüz yok (Three.js entegrasyonu gerek)
-2. **İnformatik 3D animasyonlar** — anlık üretim (Three.js + canlı render)
-3. **Eyotek anlık veri sync güvensizliği** — DB stale, audit gerek
+> **25.40p oturumunda 5 iş bitirildi:** #3 Eyotek tazelik + #5 Proaktif feedback + #10 Quality v2 + #1+#2 3D template library. Diğerleri Neo "anlamlı değil" deyip listeden çıkardı.
 
-🟡 **ORTA**:
-4. **Çalışmam paneli toggle butonu** — web_chat_ui'da var ama Çalışmam panelinde yok (Brief #13 yarı çözdü)
-5. **Proaktif feedback** — "geçen hafta çalıştın bu hafta hata" → otomatik takip
-6. **Eyotek Mezun + 12. sınıf TYT/AYT BİRLEŞİK 3 öğrenci veri/halüsinasyon** — audit
-7. **Diğer altyapı keşfi** — Eyotek dışı sistemleri benzer mimariyle ekleme (soru, yorumlanmalı)
-8. **Ada için manuel rehber bilgilendirmesi** — sentiment insights DB'de, rehber haberdar değil
+🟢 **UZUN VADE** (Eylül + sonrası):
+- **Cerebras 235b stress test** — Eylül 120 öğrenci yükü altında p50/p95/p99 + fallback policy
+- **Routing observability dashboard** — cerebras vs claude oran trend (canlı dashboard, alarm < %50 oran)
+- **Quality v2 cron real-data** — yeni intent skorları gerçek kullanıcı verisinden ölçülmeli (Pazartesi cron çalışıyor, Eylül'de meaningful sample)
 
-🟢 **UZUN VADE**:
-9. **Routing observability dashboard** — cerebras vs claude oran trend (alarm < %50)
-10. **quality_monitor cron** — yeni intent kalite skorları + renderer kullanım oranı
-11. **Cerebras 235b stress test** — Eylül 120 öğrenci yükü altında
+> **Yarın için ACİL/ORTA YOK** — 25.40 serisinin 15 işi tamamlandı, sistem hazır. Yeni iş Neo'nun yeni direktifiyle gelir.
 
 ### Neo'nun KESİN istemediği şeyler (KALICI kurallar)
 - ❌ Tool kalitesini düşürmeye yönelik latency optimization (kalite > hız)
@@ -63,6 +59,10 @@
 - **Renderer:** quiz/steps/formula/compare2/kgraph/chart Cerebras intent'lerine bağlı
 - **RAG:** 423 yeni nesil paket + 4500 OGM Vision + Claude-üretimi içerik = ~5500 kayıt
 - **PWA:** Wix splash bypass (custom embed redirect) + kurumsal icon + push altyapı KAPALI
+- **Eyotek tazelik:** `needs_refresh(module, max_age_hours=2)` — kritik akademik sorgu öncesi check
+- **Proaktif feedback:** `context_engine.weekly_delta` — bu hafta vs geçen hafta otomatik karşılaştırma → bot proaktif takip
+- **Quality v2:** Pazartesi cron yeni intent metriği — RAG/renderer/yeni nesil kriter alarm
+- **3D library:** `make_3d_template` tool — Solar System / Atom / Hücre / Molekül anlık render link
 
 ---
 >

@@ -1,7 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 3 Mayıs 2026 (gece 00:35) · **Oturum:** 25.40o — **Cerebras qwen-3-235b PROAKTIF mimari**
-> **Önceki güncelleme:** 2 Mayıs 2026, Oturum 25.40c (gece 03:10) — PWA UI Bug Fix
+> **Belge tarihi:** 3 Mayıs 2026 (gece 01:30) · **Oturum:** 25.40p — **5 yeni kabiliyet: Eyotek tazelik + Proaktif feedback + Quality v2 + 3D Three.js library**
+> **Önceki güncelleme:** 3 Mayıs 2026, Oturum 25.40o (gece 00:30) — Cerebras qwen-3-235b PROAKTIF mimari
 
 ---
 
@@ -196,8 +196,39 @@ DB tablo: `universite_taban` — 35.584 kayıt (2022-2025, SAY/EA/SOZ/DIL).
 | Service Worker | v25.40b | v25.40c | Eski cache otomatik temizlenir kullanıcı refresh'te |
 | Wix `/fermatai` | Wix splash + header + iframe içinde FermatAI yükleniyordu | Wix MCP ile Custom Embed (ID `21155fe9-d770-45ed-8bad-75d34e33b68b`, HEAD, enabled) → `fermategitimkurumlari.com/fermatai` direkt `api.fermategitimkurumlari.com/chat` redirect | Wix splash + header tamamen bypass; öğrenci direkt PWA'ya iner |
 
-### Bekleyen teknik borç (yarın)
-1. **VPS `.env` BOM bug:** `/opt/fermatai/.env` 1. satırda BOM (U+FEFF) → systemd `EYOTEK_URL=...` satırını ignore ediyor (journal'da düzenli warning). `sed -i '1s/^\xEF\xBB\xBF//' /opt/fermatai/.env && systemctl restart fermatai-bridge` ile temizlenir. Şu an muhtemelen `python-dotenv`'in kendi parser'ı BOM'u tolere ediyor (HTTP 200, sistem çalışıyor) ama systemd ENV'den okuyan başka servis varsa o etkilenir. Risk: orta — düzeltmek 30sn.
+---
+
+## 🚀 25.40p — YENİ KABİLİYETLER (manifest)
+
+### Eyotek Anlık Veri Tazeligi (data_freshness_helper)
+Bot kritik akademik sorgu öncesi `needs_refresh(module, max_age_hours=2)` çağırır → stale veri ile cevap vermez. Eyotek'ten anlık fetch + DB sync + cevap. Stale cevap → otomatik frustration_log + Neo bildirim. Modül başına TTL ayarlanabilir (students/student_exams/attendance/etut_history).
+
+### Proaktif Feedback — Haftalık Delta Engine
+`context_engine._get_weekly_delta(soz_no)` — bu hafta vs geçen hafta otomatik karşılaştırma:
+- `etut_history` → çalışılan konular delta
+- `student_exams` → deneme net delta
+- `student_topic_tracker` → tekrar hata yapılan konular (geçen hafta etüt + bu hafta yine zayıf)
+
+`build_unified_context` 8 paralel query döndürür (önceki 7 + weekly_delta). Bot şunu söyleyebilir: *"Geçen Pazartesi türev etüdün vardı, bu haftaki denemende türevde 3 hata var. Tekrar etüt mü, kendi başına 30 soru mu?"* — proaktif sosyal bağ + akademik takip.
+
+### Engagement Quality v2 — Yeni Intent Skorları
+`conversation_quality_analyzer` yeni intent'leri (test_olusturma, soru_uret, yeni_nesil_uret, konu_anlatim_uzun, karsilastirma, ornek_paket_uret) ölçer:
+- `rag_kullanim_orani` (RAG'dan örnek çekti mi?)
+- `renderer_kullanim_orani` (görsel destek var mı?)
+- `yeni_nesil_kriter_ortalama` (7-kriterden kaçı karşılandı?)
+
+3 yeni alarm eşiği: RAG < %50, Renderer < %60, Kriter < 5/7 → Pazartesi cron Neo'ya WP rapor.
+
+### Three.js 3D Template Library
+`three_templates.py` — anlık 3D animasyon üretimi (öğrenciye link):
+- **Solar System & Great Attractor** — 8 gezegen + galaksi merkezi spiral + GA vektörü, Kepler fizik
+- **Bohr Atom Modeli** — element parametreli (H, He, Li, C, O...), elektron katmanları otomatik (2/8/8/18)
+- **Hücre Modeli** — bitki/hayvan ayrımı, tüm temel organeller (çekirdek/mitokondri/ER/Golgi/lizozom + bitki: kloroplast/vakuol/duvar)
+- **Molekül 3D** — H2O/CO2/CH4/NH3, atom renk kodları, bağ açıları
+
+Tool: `make_3d_template(template, ...)` → Three.js HTML render endpoint'e kaydolur, kalıcı UUID link döner. OrbitControls (sürükle/zoom/dokun) + responsive info panel + premium koyu tema. CDN dependency 1 (Three.js 0.160). 6 rol ACL açık.
+
+
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)
 > **Hedef okuyucu:** Yeni bir LLM, geliştirici veya iş ortağı. Sistemin teknik yetkinlik tablosunu LLM'e attığında doyurucu bir mimari resim alır.
 > **Amaç:** Mimari + kapasite + sağlık + güvenlik + workflow tek dokümanda — proje teknik durumunu tam yansıtan referans.
