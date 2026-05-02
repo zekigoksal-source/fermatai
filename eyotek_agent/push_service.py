@@ -54,9 +54,26 @@ except ImportError:
 
 # .env'den oku
 VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
-# .env'de PEM key tek satır + literal '\n' olarak yazıldıysa multi-line'a çevir
-_raw_priv = os.getenv("VAPID_PRIVATE_KEY", "")
-VAPID_PRIVATE_KEY = _raw_priv.replace("\\n", "\n") if _raw_priv else ""
+
+# PEM private key — 2 mod desteği:
+#   1. VAPID_PRIVATE_KEY_PATH (önerilen, multi-line PEM güvenli) — secrets/vapid_private.pem
+#   2. VAPID_PRIVATE_KEY (.env raw, literal '\n' destekli — yedek)
+def _load_vapid_private_key() -> str:
+    pem_path = os.getenv("VAPID_PRIVATE_KEY_PATH", "/opt/fermatai/secrets/vapid_private.pem")
+    if pem_path and os.path.exists(pem_path):
+        try:
+            with open(pem_path, "r", encoding="utf-8") as f:
+                pem = f.read().strip()
+            if pem.startswith("-----BEGIN"):
+                return pem
+        except Exception as e:
+            logger.warning(f"[PUSH] PEM dosya okuma hatasi {pem_path}: {e}")
+    raw = os.getenv("VAPID_PRIVATE_KEY", "")
+    if raw:
+        return raw.replace("\\n", "\n")
+    return ""
+
+VAPID_PRIVATE_KEY = _load_vapid_private_key()
 VAPID_CLAIMS_EMAIL = os.getenv("VAPID_CLAIMS_EMAIL", "fermatvipegitim@gmail.com")
 PUSH_NOTIFICATIONS_ACTIVE = os.getenv("PUSH_NOTIFICATIONS_ACTIVE", "false").lower() == "true"
 
