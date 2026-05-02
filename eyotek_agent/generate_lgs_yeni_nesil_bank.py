@@ -261,7 +261,7 @@ async def generate_one_topic(client, sinif: str, ders: str, konu: str) -> Option
             chunks = []
             with client.messages.stream(
                 model=_model,
-                max_tokens=4000,  # 3 ornek paket + ogretmen notlari yeterli
+                max_tokens=6500,  # 3 ornek paket detayli + ogretmen notlari (4K kesiyordu)
                 temperature=0.5,
                 messages=[{"role": "user", "content": prompt}],
             ) as stream:
