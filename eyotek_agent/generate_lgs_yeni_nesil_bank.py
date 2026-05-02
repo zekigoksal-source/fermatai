@@ -258,8 +258,8 @@ async def generate_one_topic(client, sinif: str, ders: str, konu: str) -> Option
         def _do():
             return client.messages.create(
                 model="claude-sonnet-4-5",  # Sonnet — kalite + hız + maliyet dengesi
-                max_tokens=4000,
-                temperature=0.4,
+                max_tokens=8000,  # 4K JSON kesiyordu (4 ornek + cevap + neden uzun)
+                temperature=0.5,
                 messages=[{"role": "user", "content": prompt}],
             )
         response = await asyncio.to_thread(_do)
