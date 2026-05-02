@@ -2234,6 +2234,178 @@ async def logout_endpoint(
     return {"success": True}
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 25.40l (Neo direktif) — PWA PUSH NOTIFICATION ENDPOINTS
+# Strateji: Öğrenciyi WhatsApp'tan PWA app'e ÇEKMENIN ana metodu.
+# Flag KAPALI başlangıç — Yeni Sezon (1 Eyl) Neo aktive eder.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/push/vapid-public-key")
+async def get_vapid_public():
+    """Frontend subscribe için VAPID public key. Anonim erişim OK (zaten public)."""
+    try:
+        from push_service import get_vapid_public_key
+        key = get_vapid_public_key()
+        if not key:
+            return {"success": False, "error": "VAPID key yapılandırılmamış"}
+        return {"success": True, "vapid_public_key": key}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/push/subscribe")
+async def push_subscribe(
+    payload: dict,
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """
+    Kullanıcı bildirim izni verdi — subscription'ını backend'e gönder.
+
+    Body:
+      {
+        "endpoint": "https://fcm.googleapis.com/...",
+        "keys": {"p256dh": "...", "auth": "..."}
+      }
+
+    Auth: Cookie veya Bearer token gerek (anonim subscribe yasak — kim olduğunu bilmeliyiz).
+    """
+    token = _extract_token(request, fermat_session)
+    if not token:
+        raise HTTPException(status_code=401, detail="Oturum yok — önce giriş yap")
+    sess = await get_session(token)
+    if not sess:
+        raise HTTPException(status_code=401, detail="Oturum geçersiz")
+
+    sub = payload.get("subscription") or payload
+    endpoint = sub.get("endpoint")
+    keys = sub.get("keys") or {}
+    p256dh = keys.get("p256dh")
+    auth_key = keys.get("auth")
+
+    if not endpoint or not p256dh or not auth_key:
+        raise HTTPException(status_code=400, detail="endpoint+keys.p256dh+keys.auth zorunlu")
+
+    user_agent = request.headers.get("user-agent", "")[:500]
+
+    # soz_no çöz (öğrenci ise)
+    soz_no = None
+    try:
+        from db_pool import db_fetchval
+        phone_clean = (sess.get("phone") or "").replace("+", "")
+        if phone_clean:
+            soz_no = await db_fetchval(
+                "SELECT soz_no FROM students WHERE REPLACE(phone, '+', '') = $1 AND status='active' LIMIT 1",
+                phone_clean,
+            )
+    except Exception:
+        pass
+
+    try:
+        from push_service import save_subscription
+        result = await save_subscription(
+            soz_no=int(soz_no) if soz_no else None,
+            phone=sess.get("phone") or "",
+            role=sess.get("role") or "ogrenci",
+            endpoint=endpoint,
+            p256dh=p256dh,
+            auth=auth_key,
+            user_agent=user_agent,
+            user_name=sess.get("name") or "",
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Subscribe failed: {e}")
+
+
+@router.post("/push/unsubscribe")
+async def push_unsubscribe(
+    payload: dict,
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """Kullanıcı izni iptal etti — subscription'ı pasifleştir."""
+    token = _extract_token(request, fermat_session)
+    if not token:
+        raise HTTPException(status_code=401)
+    sess = await get_session(token)
+    if not sess:
+        raise HTTPException(status_code=401)
+
+    endpoint = (payload.get("endpoint") or "").strip()
+    if not endpoint:
+        raise HTTPException(status_code=400, detail="endpoint gerekli")
+
+    try:
+        from db_pool import db_execute
+        await db_execute(
+            "UPDATE push_subscriptions SET is_active=FALSE WHERE endpoint=$1 AND phone=$2",
+            endpoint, (sess.get("phone") or "").replace("+", ""),
+        )
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/push/test")
+async def push_test(
+    payload: dict,
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """
+    Admin/mudur self-test — kendine push gönder.
+
+    Body: {"title": "...", "body": "...", "click_url": "/chat"}  (hepsi opsiyonel)
+    """
+    token = _extract_token(request, fermat_session)
+    if not token:
+        raise HTTPException(status_code=401)
+    sess = await get_session(token)
+    if not sess or sess.get("role") not in ("admin", "mudur"):
+        raise HTTPException(status_code=403, detail="Sadece admin/mudur")
+
+    title = (payload.get("title") or "🎯 FermatAI Test").strip()[:80]
+    body = (payload.get("body") or "Push notification altyapısı aktif. Sistem hazır.").strip()[:200]
+    click_url = payload.get("click_url") or "/chat"
+
+    try:
+        from push_service import send_push_to_user
+        result = await send_push_to_user(
+            title=title,
+            body=body,
+            phone=sess.get("phone"),
+            click_url=click_url,
+            tag="fermatai_test",
+            trigger_source="admin_test",
+            force=True,  # Flag KAPALI olsa bile test geçsin
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/push/stats")
+async def push_stats_endpoint(
+    request: Request,
+    days: int = 7,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+):
+    """Admin/mudur push istatistik."""
+    token = _extract_token(request, fermat_session)
+    if not token:
+        raise HTTPException(status_code=401)
+    sess = await get_session(token)
+    if not sess or sess.get("role") not in ("admin", "mudur", "yonetim"):
+        raise HTTPException(status_code=403)
+
+    try:
+        from push_service import get_push_stats
+        return await get_push_stats(days=max(1, min(days, 90)))
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @router.get("/sessions")
 async def sessions_endpoint(
     request: Request,

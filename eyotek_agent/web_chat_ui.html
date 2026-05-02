@@ -9925,7 +9925,334 @@ async function outreachSubmit(action, ids) {
   }
 })();
 
+// ═══════════════════════════════════════════════════════════════════════
+// 25.40l (Neo direktif) — KURUMSAL PRO PUSH NOTIFICATION SUBSCRIBE FLOW
+// Strateji: PWA install + login sonrası NAZIK permission istegi.
+// Push = öğrenciyi platforma çekme metodu. Mesaj atmak gibi taciz değil.
+// Logo, ton, dil — her şey kurumsal pro.
+// ═══════════════════════════════════════════════════════════════════════
+(function setupPushNotifications() {
+  // Helper: VAPID public key base64-url-safe → Uint8Array (browser API gerek)
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
+  // Storage helpers
+  function pushIsDismissed(days = 14) {
+    try {
+      const ts = parseInt(localStorage.getItem('push_dismissed_at') || '0');
+      return Date.now() - ts < days * 24 * 3600 * 1000;
+    } catch (_) { return false; }
+  }
+  function pushIsSubscribed() {
+    try { return localStorage.getItem('push_subscribed') === '1'; } catch (_) { return false; }
+  }
+  function markDismissed() {
+    try { localStorage.setItem('push_dismissed_at', String(Date.now())); } catch (_) {}
+  }
+  function markSubscribed() {
+    try { localStorage.setItem('push_subscribed', '1'); } catch (_) {}
+  }
+
+  // VAPID public key fetch (cached)
+  let _vapidKey = null;
+  async function fetchVapidKey() {
+    if (_vapidKey) return _vapidKey;
+    try {
+      const r = await fetch(API_BASE + '/chat/push/vapid-public-key');
+      if (!r.ok) return null;
+      const d = await r.json();
+      if (d.success && d.vapid_public_key) {
+        _vapidKey = d.vapid_public_key;
+        return _vapidKey;
+      }
+    } catch (e) {
+      console.warn('[PUSH] VAPID key fetch fail:', e);
+    }
+    return null;
+  }
+
+  // Subscribe — browser API + backend POST
+  async function doSubscribe() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.warn('[PUSH] Browser desteklemiyor');
+      return false;
+    }
+
+    const vapidKey = await fetchVapidKey();
+    if (!vapidKey) {
+      console.warn('[PUSH] VAPID key yok, abort');
+      return false;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
+
+      // Backend'e gönder
+      const subJson = subscription.toJSON();
+      const body = {
+        endpoint: subJson.endpoint,
+        keys: subJson.keys,
+      };
+      const r = await fetch(API_BASE + '/chat/push/subscribe', {
+        method: 'POST',
+        credentials: 'include',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify(body),
+      });
+      if (r.ok) {
+        markSubscribed();
+        console.log('[PUSH] Subscribe basarili');
+        return true;
+      } else {
+        console.warn('[PUSH] Subscribe backend fail:', r.status);
+      }
+    } catch (e) {
+      console.warn('[PUSH] Subscribe exception:', e);
+    }
+    return false;
+  }
+
+  // Permission durumu kontrol
+  function permissionState() {
+    if (!('Notification' in window)) return 'unsupported';
+    return Notification.permission;  // 'default' | 'granted' | 'denied'
+  }
+
+  // ─── KURUMSAL PRO PERMISSION DIALOG ──────────────────────────────
+  function showPermissionDialog() {
+    if (document.getElementById('push-permission-dialog')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'push-permission-dialog';
+    overlay.innerHTML = `
+      <div class="ppd-backdrop"></div>
+      <div class="ppd-card">
+        <div class="ppd-icon-wrap">
+          <img src="/static/img/fermatai-192.png" alt="FermatAI" class="ppd-logo" />
+        </div>
+        <h3 class="ppd-title">Akademik Bildirimleri Aç</h3>
+        <p class="ppd-body">
+          FermatAI sana <b>özel akademik gelişmeleri</b> bildirim olarak iletebilir:<br>
+          ✓ Yeni denemenin analizi hazır olduğunda<br>
+          ✓ Etüdün başlamadan önce kısa hatırlatma<br>
+          ✓ Önemli akademik fırsat veya hedef geri dönüşü
+        </p>
+        <p class="ppd-trust">
+          🔒 Bildirimler Fermat Eğitim Kurumları akademik takip sistemine özeldir. Her zaman kapatabilirsin.
+        </p>
+        <div class="ppd-actions">
+          <button class="ppd-btn-skip" id="ppdBtnSkip">Sonra</button>
+          <button class="ppd-btn-allow" id="ppdBtnAllow">İzin ver</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('ppdBtnSkip').addEventListener('click', () => {
+      markDismissed();
+      overlay.remove();
+    });
+    document.getElementById('ppdBtnAllow').addEventListener('click', async () => {
+      // Browser native permission isteği
+      const permResult = await Notification.requestPermission();
+      if (permResult === 'granted') {
+        const success = await doSubscribe();
+        if (success) {
+          // Onay mesajı
+          overlay.querySelector('.ppd-card').innerHTML = `
+            <div class="ppd-icon-wrap">
+              <img src="/static/img/fermatai-192.png" alt="FermatAI" class="ppd-logo" />
+            </div>
+            <h3 class="ppd-title">Hazırsın 🎯</h3>
+            <p class="ppd-body">Bildirimler aktif. Akademik takibin için en önemli anlarda buradayız.</p>
+            <div class="ppd-actions">
+              <button class="ppd-btn-allow" id="ppdBtnClose">Tamam</button>
+            </div>
+          `;
+          document.getElementById('ppdBtnClose').addEventListener('click', () => overlay.remove());
+          setTimeout(() => { try { overlay.remove(); } catch (_) {} }, 4000);
+        } else {
+          markDismissed();
+          overlay.remove();
+        }
+      } else {
+        markDismissed();
+        overlay.remove();
+      }
+    });
+  }
+
+  // ─── TETIK MANTIGI ─────────────────────────────────────────────────
+  // Ne zaman dialog gosterilmeli?
+  //   • Browser destekliyor + Notification API var
+  //   • Permission 'default' (kullanici daha onay vermedi/reddetmedi)
+  //   • Daha önce kapatmamış (14 gün cooldown)
+  //   • Login olmuş (showChat sonrasi)
+  //   • Sayfa açıldıktan ~30 saniye sonra (kullanici sisteme alistiktan sonra)
+  //   • PWA standalone mode'da öncelik (zaten app'i kurmuş — yüksek bağ)
+  function maybeShowPermissionDialog() {
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (Notification.permission !== 'default') return;
+    if (pushIsDismissed(14)) return;
+    if (pushIsSubscribed()) return;
+    // Login kontrol — chatWrap aktif mi?
+    const cw = document.getElementById('chatWrap');
+    if (!cw || !cw.classList.contains('active')) return;
+    showPermissionDialog();
+  }
+
+  // showChat sonrası 30 sn sonra göster (kullanıcı sisteme alıştı)
+  // showChat function'ına direkt hook atamak zor (tanımlı olmayabilir bu noktada)
+  // → MutationObserver ile chatWrap.active class değişimini izle
+  if (typeof MutationObserver !== 'undefined') {
+    const obs = new MutationObserver(() => {
+      const cw = document.getElementById('chatWrap');
+      if (cw && cw.classList.contains('active') && Notification.permission === 'default') {
+        // 30 saniye gecikme — agresif olmasin
+        setTimeout(maybeShowPermissionDialog, 30000);
+        obs.disconnect();
+      }
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+      const cw = document.getElementById('chatWrap');
+      if (cw) {
+        if (cw.classList.contains('active')) {
+          setTimeout(maybeShowPermissionDialog, 30000);
+        } else {
+          obs.observe(cw, { attributes: true, attributeFilter: ['class'] });
+        }
+      }
+    });
+    if (document.readyState !== 'loading') {
+      const cw = document.getElementById('chatWrap');
+      if (cw && cw.classList.contains('active')) {
+        setTimeout(maybeShowPermissionDialog, 30000);
+      } else if (cw) {
+        obs.observe(cw, { attributes: true, attributeFilter: ['class'] });
+      }
+    }
+  }
+
+  // Public test API (admin web panel için ileride lazim olabilir)
+  window.fermatPushSubscribe = doSubscribe;
+  window.fermatPushPermState = permissionState;
+})();
+
 </script>
+
+<style>
+/* ═══ PUSH PERMISSION DIALOG (25.40l Neo direktif — kurumsal pro) ═══ */
+#push-permission-dialog {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; box-sizing: border-box;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif);
+}
+#push-permission-dialog .ppd-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+#push-permission-dialog .ppd-card {
+  position: relative; z-index: 1;
+  background: linear-gradient(135deg, #FAFAF7 0%, #F5F4ED 100%);
+  border: 1px solid rgba(199, 111, 62, 0.25);
+  border-radius: 18px;
+  padding: 32px 26px 22px;
+  max-width: 380px; width: 100%;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.30), 0 4px 12px rgba(15, 23, 42, 0.10);
+  animation: ppdFadeIn 0.4s ease-out;
+}
+html[data-theme="dark"] #push-permission-dialog .ppd-card {
+  background: linear-gradient(135deg, #262622 0%, #1F1F1C 100%);
+  border-color: rgba(199, 111, 62, 0.35);
+  color: #E8E6E0;
+}
+@keyframes ppdFadeIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+#push-permission-dialog .ppd-icon-wrap {
+  display: flex; justify-content: center; margin-bottom: 16px;
+}
+#push-permission-dialog .ppd-logo {
+  width: 76px; height: 76px;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(199, 111, 62, 0.35), 0 0 0 1px rgba(199, 111, 62, 0.12);
+}
+#push-permission-dialog .ppd-title {
+  text-align: center; font-size: 20px; font-weight: 700;
+  margin: 0 0 12px; color: #2F2F2F; letter-spacing: -0.2px;
+}
+html[data-theme="dark"] #push-permission-dialog .ppd-title { color: #F5F4ED; }
+#push-permission-dialog .ppd-body {
+  text-align: left; font-size: 14px; line-height: 1.55;
+  color: #4A4A4A; margin: 0 0 12px; padding: 0 4px;
+}
+html[data-theme="dark"] #push-permission-dialog .ppd-body { color: #BDBDB5; }
+#push-permission-dialog .ppd-body b { color: #C76F3E; }
+#push-permission-dialog .ppd-trust {
+  text-align: center; font-size: 12px; line-height: 1.4;
+  color: #6B6B6B; margin: 14px 0 18px; padding: 10px 12px;
+  background: rgba(199, 111, 62, 0.06); border-radius: 10px;
+  border: 1px solid rgba(199, 111, 62, 0.10);
+}
+html[data-theme="dark"] #push-permission-dialog .ppd-trust {
+  color: #A8A8A0; background: rgba(199, 111, 62, 0.10);
+}
+#push-permission-dialog .ppd-actions {
+  display: flex; gap: 10px; justify-content: stretch;
+}
+#push-permission-dialog .ppd-btn-skip,
+#push-permission-dialog .ppd-btn-allow {
+  flex: 1; padding: 12px 18px; border-radius: 12px; font-size: 14px;
+  font-weight: 600; cursor: pointer; transition: all 0.18s;
+  font-family: inherit; border: none;
+}
+#push-permission-dialog .ppd-btn-skip {
+  background: transparent;
+  border: 1.5px solid rgba(15, 23, 42, 0.18);
+  color: #6B6B6B;
+}
+#push-permission-dialog .ppd-btn-skip:hover {
+  background: rgba(15, 23, 42, 0.05); border-color: rgba(15, 23, 42, 0.30);
+}
+html[data-theme="dark"] #push-permission-dialog .ppd-btn-skip {
+  border-color: rgba(245, 244, 237, 0.20); color: #A8A8A0;
+}
+html[data-theme="dark"] #push-permission-dialog .ppd-btn-skip:hover {
+  background: rgba(245, 244, 237, 0.06);
+}
+#push-permission-dialog .ppd-btn-allow {
+  background: linear-gradient(135deg, #C76F3E 0%, #B05A2B 100%);
+  color: #FFF;
+  box-shadow: 0 4px 14px rgba(199, 111, 62, 0.35);
+}
+#push-permission-dialog .ppd-btn-allow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(199, 111, 62, 0.45);
+}
+#push-permission-dialog .ppd-btn-allow:active { transform: translateY(0); }
+
+@media (max-width: 420px) {
+  #push-permission-dialog .ppd-card { padding: 26px 20px 18px; }
+  #push-permission-dialog .ppd-title { font-size: 18px; }
+  #push-permission-dialog .ppd-body { font-size: 13px; }
+}
+</style>
+
+<style>
 
 <style>
 /* ═══ PWA Install Banner ═══ (Oturum 25.40 Neo) */

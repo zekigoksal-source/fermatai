@@ -26,3 +26,9 @@ nest_asyncio>=1.6.0       # Async re-entry Groq sync wrapper
 # ── Oturum 25.38 — Anki .apkg export + Sentry error tracking ────────────────
 genanki>=0.13.0           # Anki .apkg deck üretimi (öğrenci telefonuna kart)
 sentry-sdk[fastapi]>=2.0.0  # Production error tracking (DSN env varsa aktif)
+
+# ── Oturum 25.40l — PWA Web Push Notification (Neo: app'e cekme stratejisi) ─
+pywebpush>=2.0.0          # W3C Web Push Protocol — VAPID + payload encryption
+cryptography>=41.0.0      # pywebpush dependency (VAPID JWT signing)
+</content>
+</invoke>

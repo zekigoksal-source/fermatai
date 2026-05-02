@@ -10,7 +10,7 @@
  * 25.40 (Neo): /chat artık cache-first → PWA açılışı 1sn beyaz ekran ortadan kalktı
  * Versiyon değiştir → tüm cache temizlenir.
  */
-const VERSION = 'fermatai-v25.40d';
+const VERSION = 'fermatai-v25.40l';
 const STATIC_CACHE = `${VERSION}-static`;
 const RENDER_CACHE = `${VERSION}-render`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
@@ -141,38 +141,119 @@ async function networkFirst(request, cacheName) {
   }
 }
 
-// Push notification (gelecek için hazır — backend henüz göndermiyor)
+// ═══════════════════════════════════════════════════════════════════════
+// 25.40l (Neo direktif) — KURUMSAL PRO PUSH HANDLER
+//
+// Strateji: Öğrenciyi WhatsApp'tan PWA app'e ÇEKMEK.
+// Push = nazik tetikleyici, mesaj atmak gibi taciz değil.
+// Kurumsal kimlik: logo + başlık + ton — her bildirim PRO görünür.
+//
+// Backend payload schema (push_service.py _build_payload):
+//   {title, body, icon, badge, click_url, tag, image, actions, vibrate,
+//    requireInteraction, silent, timestamp, data}
+// ═══════════════════════════════════════════════════════════════════════
 self.addEventListener('push', (event) => {
-  let data = { title: 'FermatAI', body: 'Yeni bir mesaj var', icon: '/static/img/fermatai-192.png' };
+  // Default — backend payload göndermezse fallback
+  let data = {
+    title: 'FermatAI',
+    body: 'Yeni bir bildirimin var',
+    icon: '/static/img/fermatai-192.png',
+    badge: '/static/img/fermatai-192.png',
+    click_url: '/chat',
+    tag: 'fermatai_default',
+    vibrate: [120, 60, 120],
+    requireInteraction: false,
+    silent: false,
+  };
+
   try {
-    if (event.data) data = { ...data, ...event.data.json() };
-  } catch (e) {}
+    if (event.data) {
+      const incoming = event.data.json();
+      data = Object.assign({}, data, incoming);
+    }
+  } catch (e) {
+    console.warn('[SW] push payload parse fail:', e);
+  }
+
+  // Notification options — kurumsal pro
+  const options = {
+    body: data.body,
+    icon: data.icon || '/static/img/fermatai-192.png',
+    badge: data.badge || '/static/img/fermatai-192.png',
+    tag: data.tag || 'fermatai_default',
+    renotify: data.renotify === true,  // Aynı tag varsa normalde tekrar gösterme
+    vibrate: data.vibrate || [120, 60, 120],
+    requireInteraction: data.requireInteraction === true,
+    silent: data.silent === true,
+    timestamp: data.timestamp || Date.now(),
+    data: {
+      click_url: data.click_url || '/chat',
+      tag: data.tag,
+      ...(data.data || {}),
+    },
+  };
+
+  // Opsiyonel: hero image (Android büyük görsel)
+  if (data.image) options.image = data.image;
+  // Opsiyonel: action buttons (Aç / Sonra)
+  if (data.actions && Array.isArray(data.actions)) options.actions = data.actions;
+  // Opsiyonel: dir/lang
+  if (data.dir) options.dir = data.dir;
+  options.lang = data.lang || 'tr';
 
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon || '/static/img/fermatai-192.png',
-      badge: '/static/img/fermatai-192.png',
-      vibrate: [120, 60, 120],
-      data: { url: data.url || '/chat' },
+    self.registration.showNotification(data.title || 'FermatAI', options)
+  );
+});
+
+// Notification tıklanınca PWA aç + chat'e yönlendir
+self.addEventListener('notificationclick', (event) => {
+  // Action button tıklandıysa hangi action?
+  const action = event.action;  // "open" | "later" | "" (gövde)
+  event.notification.close();
+
+  if (action === 'later') {
+    // Kullanıcı "Sonra" dedi — sessizce kapat, log için backend'e bildirebiliriz
+    return;
+  }
+
+  const data = event.notification.data || {};
+  // Kurumsal: tam URL (PWA standalone bunu absolute olarak değerlendirir)
+  let targetUrl = data.click_url || '/chat';
+  // Eğer relative ise full URL'e çevir (PWA standalone için)
+  if (targetUrl.startsWith('/')) {
+    targetUrl = self.location.origin + targetUrl;
+  }
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      // 1) Açık client var mı? Varsa fokusla + URL navigate
+      for (const client of clients) {
+        // chat URL'i veya origin'le başlıyorsa fokuslama önceliği
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          // navigate gerekirse (deep link varsa)
+          if ('navigate' in client && targetUrl !== client.url) {
+            return client.navigate(targetUrl).then(() => client.focus()).catch(() => client.focus());
+          }
+          return client.focus();
+        }
+      }
+      // 2) Açık tab yoksa yeni window aç (PWA standalone'da app olarak)
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
     })
   );
 });
 
-// Notification tıklanınca ana sayfaya götür (veya özel URL)
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/chat';
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
-      // Açık tab varsa ona git
-      for (const client of clients) {
-        if (client.url.includes('/chat') && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      // Yoksa yeni tab aç
-      if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
-    })
-  );
+// notification kapatıldıysa (kullanıcı dismiss) — opsiyonel telemetry
+self.addEventListener('notificationclose', (event) => {
+  const tag = event.notification.tag;
+  console.log('[SW] notification closed (dismissed):', tag);
+});
+
+// pushsubscriptionchange — browser subscription rotated (re-subscribe gerek)
+self.addEventListener('pushsubscriptionchange', (event) => {
+  console.log('[SW] subscription change, re-subscribe gerek');
+  // Ana sayfa açıldığında postMessage ile bildirilebilir, şimdilik sessiz
 });
