@@ -2178,6 +2178,9 @@ TOOL_DISPATCH = {
     "tercih_listesi_uret":        lambda p: _tool_tercih_listesi_uret(**p),
     "bolum_karsilastir":          lambda p: _tool_bolum_karsilastir(**p),
     "tercih_donemi_durum":        lambda p: _tool_tercih_donemi_durum(**p),
+    # 25.40k (Neo) — sezon-bagimsiz YOK Atlas dispatch
+    "universite_taban_sorgu":     lambda p: _tool_universite_taban_sorgu(**p),
+    "siralama_ile_bolumler":      lambda p: _tool_siralama_ile_bolumler(**p),
     # ── Oturum 25.9 — ADAPTIVE INTELLIGENCE / PREDICTIVE / KG ──
     "predict_yks_score":          lambda p: _tool_predict_yks_score(**p),
     "get_adaptive_summary":       lambda p: _tool_get_adaptive_summary(**p),
@@ -2927,6 +2930,9 @@ from tools.tercih import (
     _tool_tercih_listesi_uret,
     _tool_bolum_karsilastir,
     _tool_tercih_donemi_durum,
+    # 25.40k (Neo) — sezon-bagimsiz YOK Atlas
+    _tool_universite_taban_sorgu,
+    _tool_siralama_ile_bolumler,
 )
 
 

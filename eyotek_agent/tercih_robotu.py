@@ -488,6 +488,228 @@ async def tercih_listesi_uret(
 # BÖLÜM KIYASLAMA
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# 25.40k (Neo direktif) — SEZON BAGIMSIZ BILGI FONKSIYONLARI
+#
+# Ogrencilerin son 30 gunde 30+ tercih/siralama sorusu attigi tespit edildi:
+#   - "Tip taban puani kac" / "ITU Bilgisayar"
+#   - "5K siralama ile hangi bolumler"
+#   - "Mevcut durumumla hangi universiteye girerim"
+# Tercih robotu sezon flag'i KAPALI ama YOK Atlas verisi (universite_taban,
+# 35.584 kayit) atil. Bilgi sorgulari sezon-bagimsiz acilir; sadece liste
+# uretme + profil kaydi sezon-ici (Tem-Agu).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+async def universite_taban_sorgu(
+    sorgu: str,
+    puan_turu: str = "SAY",
+    yil: int | None = None,
+    limit: int = 10,
+) -> dict:
+    """
+    Universite/bolum/sehir sorgusu — esnek SQL search.
+    Ornekler:
+      sorgu="ITU Bilgisayar Muhendisligi" → ITU'nun bilgisayar muh tabanini doner
+      sorgu="Tip" puan_turu="SAY" → Tum universiteler tip taban puan listesi
+      sorgu="Bogazici" → Bogazici tum bolumler
+    """
+    from db_pool import db_fetch, db_fetchrow
+
+    puan_turu = _normalize_puan_turu(puan_turu)
+
+    if not yil:
+        yr = await db_fetchrow(
+            "SELECT MAX(yil) AS y FROM fermat.universite_taban WHERE puan_turu=$1", puan_turu,
+        )
+        yil = int(yr["y"]) if yr and yr["y"] else 2024
+
+    # Sorgu cumlesini parcala — hem universite hem bolum hem sehir araniyor
+    sorgu_clean = (sorgu or "").strip().lower()
+    if not sorgu_clean:
+        return {"error": "Sorgu bos. Universite veya bolum adi yaz (ornek: 'ITU Bilgisayar Muh')."}
+
+    # ILIKE multi-field (unaccent ile Turkce karakter toleransi)
+    rows = await db_fetch(
+        """
+        SELECT universite, bolum, sehir, tur, taban_puan, siralama, kontenjan, yil
+        FROM fermat.universite_taban
+        WHERE puan_turu = $1
+          AND yil = $2
+          AND (
+            unaccent(lower(universite)) ILIKE unaccent(lower($3))
+            OR unaccent(lower(bolum)) ILIKE unaccent(lower($3))
+            OR unaccent(lower(sehir)) ILIKE unaccent(lower($3))
+          )
+        ORDER BY taban_puan DESC
+        LIMIT $4
+        """,
+        puan_turu, yil, f"%{sorgu_clean}%", limit,
+    )
+
+    if not rows:
+        return {
+            "sorgu": sorgu,
+            "puan_turu": puan_turu,
+            "yil": yil,
+            "bulundu": False,
+            "mesaj": f"'{sorgu}' icin {puan_turu} programlari bulunamadi (yil {yil}). Yazimi farkli dene.",
+        }
+
+    return {
+        "sorgu": sorgu,
+        "puan_turu": puan_turu,
+        "yil": yil,
+        "bulundu": True,
+        "kayit_sayisi": len(rows),
+        "programlar": [
+            {
+                "universite": r["universite"],
+                "bolum": r["bolum"],
+                "sehir": r["sehir"],
+                "tur": r["tur"],  # devlet/vakif
+                "taban_puan": float(r["taban_puan"]) if r["taban_puan"] else None,
+                "siralama": int(r["siralama"]) if r["siralama"] else None,
+                "kontenjan": int(r["kontenjan"]) if r["kontenjan"] else None,
+            }
+            for r in rows
+        ],
+    }
+
+
+async def siralama_ile_bolumler(
+    siralama: int,
+    puan_turu: str = "SAY",
+    sehir: str | None = None,
+    bolum_filter: str | None = None,
+    yil: int | None = None,
+    limit: int = 25,
+    tolerans: float = 0.20,
+) -> dict:
+    """
+    "5K siralama ile hangi bolumlere girerim" sorusu.
+
+    Args:
+      siralama: hedef siralama (ornek: 5000)
+      puan_turu: SAY / EA / SOZ / DIL
+      sehir: opsiyonel sehir filtresi (Istanbul, Ankara...)
+      bolum_filter: opsiyonel bolum filtresi (Muhendislik, Tip, Hukuk...)
+      tolerans: ±%20 (varsayilan) → siralama 4000-6000 arasi gosterir
+
+    Returns 3 bant:
+      garanti: kullanici siralamasinin %tolerans ALTINDA olan programlar
+      uygun: ±%tolerans araliginda
+      hedef: %tolerans UZERINDE (zorlama, motivasyon)
+    """
+    from db_pool import db_fetch, db_fetchrow
+
+    puan_turu = _normalize_puan_turu(puan_turu)
+
+    if not yil:
+        yr = await db_fetchrow(
+            "SELECT MAX(yil) AS y FROM fermat.universite_taban WHERE puan_turu=$1", puan_turu,
+        )
+        yil = int(yr["y"]) if yr and yr["y"] else 2024
+
+    if not siralama or siralama < 1:
+        return {"error": "Siralama gecerli sayi olmali (ornek: 5000)"}
+
+    band_dusuk = int(siralama * (1 + tolerans))   # daha yuksek sayi = daha kotu siralama → garanti
+    band_yuksek = int(siralama * (1 - tolerans))  # daha dusuk sayi = daha iyi siralama → hedef
+
+    extra_filters = ""
+    params = [puan_turu, yil]
+    pid = 3
+
+    if sehir:
+        extra_filters += f" AND unaccent(lower(sehir)) ILIKE unaccent(lower(${pid}))"
+        params.append(f"%{sehir.strip().lower()}%")
+        pid += 1
+    if bolum_filter:
+        extra_filters += f" AND unaccent(lower(bolum)) ILIKE unaccent(lower(${pid}))"
+        params.append(f"%{bolum_filter.strip().lower()}%")
+        pid += 1
+
+    # 3 bant ayri sorgu (limit/3)
+    per_band = max(5, limit // 3)
+    bands = {}
+
+    # GARANTI: siralama > kullanici_siralamasi (daha kotu siralama → kullanici girer)
+    bands["garanti"] = await db_fetch(
+        f"""
+        SELECT universite, bolum, sehir, tur, taban_puan, siralama, kontenjan
+        FROM fermat.universite_taban
+        WHERE puan_turu=$1 AND yil=$2 AND siralama IS NOT NULL
+          AND siralama > $3 AND siralama <= $4 {extra_filters}
+        ORDER BY siralama ASC
+        LIMIT {per_band}
+        """,
+        *params, siralama, band_dusuk,
+    )
+
+    # UYGUN: ± tolerans
+    bands["uygun"] = await db_fetch(
+        f"""
+        SELECT universite, bolum, sehir, tur, taban_puan, siralama, kontenjan
+        FROM fermat.universite_taban
+        WHERE puan_turu=$1 AND yil=$2 AND siralama IS NOT NULL
+          AND siralama BETWEEN $3 AND $4 {extra_filters}
+        ORDER BY siralama
+        LIMIT {per_band}
+        """,
+        *params, band_yuksek, siralama,
+    )
+
+    # HEDEF: kullanici_siralamasi'nin uzerine cikmasi gerek
+    bands["hedef"] = await db_fetch(
+        f"""
+        SELECT universite, bolum, sehir, tur, taban_puan, siralama, kontenjan
+        FROM fermat.universite_taban
+        WHERE puan_turu=$1 AND yil=$2 AND siralama IS NOT NULL
+          AND siralama < $3 AND siralama >= $4 {extra_filters}
+        ORDER BY siralama DESC
+        LIMIT {per_band}
+        """,
+        *params, band_yuksek, max(1, int(siralama * (1 - tolerans * 2))),
+    )
+
+    def _format_band(rows):
+        return [
+            {
+                "universite": r["universite"],
+                "bolum": r["bolum"],
+                "sehir": r["sehir"],
+                "tur": r["tur"],
+                "taban_puan": float(r["taban_puan"]) if r["taban_puan"] else None,
+                "siralama": int(r["siralama"]),
+                "kontenjan": int(r["kontenjan"]) if r["kontenjan"] else None,
+            }
+            for r in rows
+        ]
+
+    return {
+        "kullanici_siralama": siralama,
+        "puan_turu": puan_turu,
+        "yil": yil,
+        "filtre": {"sehir": sehir, "bolum": bolum_filter},
+        "tolerans_yuzdesi": int(tolerans * 100),
+        "bantlar": {
+            "garanti": _format_band(bands["garanti"]),  # daha kolay yerlesir
+            "uygun": _format_band(bands["uygun"]),       # senin seviyende
+            "hedef": _format_band(bands["hedef"]),       # zorlamak icin
+        },
+        "sayilar": {
+            "garanti": len(bands["garanti"]),
+            "uygun": len(bands["uygun"]),
+            "hedef": len(bands["hedef"]),
+        },
+        "tavsiye": (
+            f"Bu liste {yil} taban puanlarina gore. {puan_turu} alaninda "
+            f"~{siralama} siralamayi koruyabilirsen 'uygun' bandindaki bolumlere "
+            "yerlesirsin. 'Hedef' bandi senin icin %20'lik bir gelisim hedefi."
+        ),
+    }
+
+
 async def bolum_karsilastir(bolum_listesi: list, puan_turu: str = "SAY") -> dict:
     """Verilen bölümleri universite_taban'dan kıyaslar (taban puan, kontenjan, şehir)."""
     from db_pool import db_fetch, db_fetchrow

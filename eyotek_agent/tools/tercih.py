@@ -41,8 +41,32 @@ async def _tool_tercih_donemi_durum(**kwargs):
     return await tercih_donemi_durum()
 
 
+# 25.40k (Neo direktif) — sezon-bagimsiz YOK Atlas wrapper'lari
+async def _tool_universite_taban_sorgu(**kwargs):
+    from tercih_robotu import universite_taban_sorgu
+    return await universite_taban_sorgu(
+        sorgu=kwargs.get("sorgu") or "",
+        puan_turu=kwargs.get("puan_turu") or "SAY",
+        yil=kwargs.get("yil"),
+        limit=int(kwargs.get("limit") or 10),
+    )
+
+
+async def _tool_siralama_ile_bolumler(**kwargs):
+    from tercih_robotu import siralama_ile_bolumler
+    return await siralama_ile_bolumler(
+        siralama=int(kwargs.get("siralama") or 0),
+        puan_turu=kwargs.get("puan_turu") or "SAY",
+        sehir=kwargs.get("sehir"),
+        bolum_filter=kwargs.get("bolum_filter"),
+        yil=kwargs.get("yil"),
+        limit=int(kwargs.get("limit") or 25),
+    )
+
+
 __all__ = [
     "_tool_tercih_profili_kaydet", "_tool_tercih_profili_getir",
     "_tool_tercih_listesi_uret", "_tool_bolum_karsilastir",
     "_tool_tercih_donemi_durum",
+    "_tool_universite_taban_sorgu", "_tool_siralama_ile_bolumler",
 ]

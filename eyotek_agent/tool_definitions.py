@@ -1380,6 +1380,81 @@ TOOLS: list[dict] = [
         ),
         "input_schema": {"type": "object", "properties": {}},
     },
+    # 25.40k (Neo direktif) — YOK Atlas dogrudan sorgu — sezon-bagimsiz
+    {
+        "name": "universite_taban_sorgu",
+        "description": (
+            "YÖK Atlas taban puan sorgusu. 35.584 universite/bolum kaydindan ESNEK arama. "
+            "Ogrenci 'ITU Bilgisayar Muhendisligi taban puani', 'Tip taban puani kac', "
+            "'Bogazici hangi bolumler', 'Ankara'da hukuk' gibi sorular sordugunda KULLAN. "
+            "Sezon BAGIMSIZ — her zaman aktif. Yanlis cevap verme, ASLA UYDURMA — sadece "
+            "DB'den donen sonucu sun."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "sorgu": {
+                    "type": "string",
+                    "description": "Universite, bolum veya sehir adi (esnek metin: 'ITU Bilgisayar', 'Tip', 'Bogazici', 'Ankara')",
+                },
+                "puan_turu": {
+                    "type": "string",
+                    "enum": ["SAY", "EA", "SOZ", "DIL"],
+                    "description": "Puan turu (varsayilan SAY)",
+                    "default": "SAY",
+                },
+                "yil": {
+                    "type": "integer",
+                    "description": "Veri yili (varsayilan: en guncel — 2024 veya 2025)",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Maksimum sonuc sayisi (varsayilan 10)",
+                    "default": 10,
+                },
+            },
+            "required": ["sorgu"],
+        },
+    },
+    {
+        "name": "siralama_ile_bolumler",
+        "description": (
+            "TERCİH ROBOTU tool'u. 'X siralama ile hangi bolumlere girerim' sorusu icin. "
+            "3 bant doner: GARANTI (kullanicinin %20 altinda siralama), UYGUN (±%20), HEDEF "
+            "(%20 ustunde, motivasyon icin). 'Mevcut sıralamamla nereye girerim', '5K "
+            "siralamayla ne yapabilirim', 'Tip okumak icin hangi siralama gerek' sorularinda "
+            "KULLAN. Sehir veya bolum filtresi opsiyonel."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "siralama": {
+                    "type": "integer",
+                    "description": "Hedef veya mevcut siralama (ornek: 5000)",
+                },
+                "puan_turu": {
+                    "type": "string",
+                    "enum": ["SAY", "EA", "SOZ", "DIL"],
+                    "description": "Puan turu (varsayilan SAY)",
+                    "default": "SAY",
+                },
+                "sehir": {
+                    "type": "string",
+                    "description": "Opsiyonel sehir filtresi (Istanbul, Ankara, Izmir)",
+                },
+                "bolum_filter": {
+                    "type": "string",
+                    "description": "Opsiyonel bolum filtresi (Muhendislik, Tip, Hukuk, Bilgisayar)",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Toplam sonuc sayisi (varsayilan 25, 3 banda dagitilir)",
+                    "default": 25,
+                },
+            },
+            "required": ["siralama"],
+        },
+    },
     # 22 Nisan: Career Info — meslek/bolum tanitim (Fix 1 kalici cozumu)
     {
         "name": "get_career_info",

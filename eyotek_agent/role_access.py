@@ -59,6 +59,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # 23 Nisan — Tercih Robotu (YKS sonrası dönem)
         "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
         "bolum_karsilastir", "tercih_donemi_durum",
+        # 25.40k (Neo) — sezon-bagimsiz YOK Atlas
+        "universite_taban_sorgu", "siralama_ile_bolumler",
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
         # ── Oturum 25.29 — SELF-DEV PIPELINE (Evre 1: read + brief, ADMIN ONLY) ──
         # Bu araclar SADECE admin (Neo) icin. Diger rollere ASLA acmayin.
@@ -111,6 +113,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # 23 Nisan — Tercih Robotu (okuma)
         "tercih_profili_getir", "tercih_listesi_uret", "bolum_karsilastir",
         "tercih_donemi_durum",
+        # 25.40k — sezon-bagimsiz YOK Atlas
+        "universite_taban_sorgu", "siralama_ile_bolumler",
     },
     # Müdür (Mahsum, Duygu): TÜM kurum verisi (akademik + Eyotek + tercih + raporlar)
     # Oturum 25.40 (Neo direktif): SİSTEM AYARLARI ve ADMIN-ÖZEL TOOL'LAR ÇIKARILDI.
@@ -138,6 +142,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # Tercih Robotu
         "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
         "bolum_karsilastir", "tercih_donemi_durum",
+        # 25.40k — sezon-bagimsiz YOK Atlas
+        "universite_taban_sorgu", "siralama_ile_bolumler",
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
         # Konu kaynak paketi
         "konu_kaynak_paketi",
@@ -215,6 +221,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # ── 25.38 (Neo) — PhET + YouTube + Wolfram step ──
         "search_phet_simulation", "embed_phet_simulation",
         "find_youtube_lesson", "wolfram_step_by_step",
+        # 25.40k (Neo) — sezon-bagimsiz YOK Atlas (ogretmen ogrenciye yonlendirir)
+        "universite_taban_sorgu", "siralama_ile_bolumler",
+        "tercih_donemi_durum", "bolum_karsilastir",
     },
     # Rehber öğretmen: TÜM öğrenci + TÜM öğretmen programı + etüt yazma + rehberlik notu
     "rehber": {
@@ -238,6 +247,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # 23 Nisan — Tercih Robotu (rehber tum ogrencilerin tercihlerine bakabilir)
         "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
         "bolum_karsilastir", "tercih_donemi_durum",
+        # 25.40k — sezon-bagimsiz YOK Atlas
+        "universite_taban_sorgu", "siralama_ile_bolumler",
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
         # 25.14h: rehber tum ogrencilerin programina ekleyebilir (override)
         "add_to_student_program",
@@ -277,6 +288,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 # 23 Nisan — Tercih Robotu (sadece kendi profili)
                 "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
                 "bolum_karsilastir", "tercih_donemi_durum",
+                # 25.40k (Neo direktif) — sezon-bagimsiz YOK Atlas (ogrenci her zaman sorgulayabilir)
+                "universite_taban_sorgu", "siralama_ile_bolumler",
                 "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
                 # 25.14h: ogrenci kendi calismam paneline ekleyebilir
                 "add_to_student_program",
