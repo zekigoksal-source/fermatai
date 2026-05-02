@@ -2230,6 +2230,8 @@ TOOL_DISPATCH = {
     "selfdev_full_pipeline":       lambda p: _selfdev_full_pipeline_w(**p),
     # Oturum 25.31 (Neo) — Render endpoint: bot ozel HTML uretirse kalici link
     "make_render_link":            lambda p: _tool_make_render_link(**p),
+    # 25.40p (Neo direktif): 3D Three.js template tool
+    "make_3d_template":            lambda p: _tool_make_3d_template(**p),
     # Oturum 25.32 (Neo) — 5 yeni external API tool
     "nasa_apod":                   lambda p: _tool_nasa_apod(**p),
     "nasa_image_search":           lambda p: _tool_nasa_image_search(**p),
@@ -2631,6 +2633,34 @@ async def _tool_generate_image(prompt: str = "", style: str = "educational",
         return await generate_image(prompt=prompt, style=style, provider=provider)
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+# ── 25.40p (Neo direktif): 3D Three.js template tool ──
+async def _tool_make_3d_template(template: str = "solar_system",
+                                  title: str = "", _caller_phone: str = "",
+                                  **kwargs) -> dict:
+    """
+    Önyüklü Three.js template'inden 3D HTML üret + render endpoint'e kaydet.
+    Sıfırdan HTML üretmek yerine hazır template kullan (kalite garanti, hız).
+    """
+    try:
+        from three_templates import get_template
+        html = get_template(template, **kwargs)
+    except Exception as e:
+        return {"success": False, "error": f"Template uretme hatasi: {e}"}
+
+    if not title:
+        title_map = {
+            "solar_system": "Güneş Sistemi & Great Attractor",
+            "atom": f"{kwargs.get('element', 'H')} Atomu — Bohr Modeli",
+            "hucre": f"{kwargs.get('tip', 'Hayvan').title()} Hücresi — 3D",
+            "molekul": f"{kwargs.get('formula', 'H2O')} Molekülü — 3D",
+        }
+        title = title_map.get(template, "FermatAI 3D")
+
+    # make_render_link wrapper'ı kullan (DB persist + UUID link)
+    return await _tool_make_render_link(html=html, title=title, ttl_days=30,
+                                          _caller_phone=_caller_phone)
 
 
 # ── Oturum 25.31 — Render Endpoint Tool wrapper ──

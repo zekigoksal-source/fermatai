@@ -243,6 +243,86 @@ async def _get_attendance(soz_no: int) -> dict:
 
 # ─── ANA API ──────────────────────────────────────────────────────────────────
 
+async def _get_weekly_delta(soz_no: int) -> dict:
+    """
+    25.40p (Neo direktif): Proaktif feedback — bu hafta vs gecen hafta delta.
+
+    Bot 'gecen hafta turev calistın bu hafta turevde 3 hata var, tekrar gerek mi?'
+    diyebilsin diye haftalik calisma + sinav delta'si.
+
+    Returns:
+      {
+        'gecen_hafta_konular': [...],         # etut_history
+        'bu_hafta_konular': [...],
+        'gecen_hafta_deneme_net': ...,
+        'bu_hafta_deneme_net': ...,
+        'net_delta': float,
+        'tekrar_hata_konular': [...]   # gecen hafta calisilan + bu hafta yine hata
+      }
+    """
+    from db_pool import db_fetch, db_fetchrow
+    try:
+        # Gecen hafta etut_history (8-14 gun once)
+        gh_rows = await db_fetch(
+            """SELECT DISTINCT ders, konu FROM etut_history
+               WHERE student_id = $1::text
+                 AND tarih BETWEEN NOW() - INTERVAL '14 days' AND NOW() - INTERVAL '7 days'""",
+            soz_no,
+        )
+        # Bu hafta etut_history (0-7 gun once)
+        bh_rows = await db_fetch(
+            """SELECT DISTINCT ders, konu FROM etut_history
+               WHERE student_id = $1::text
+                 AND tarih > NOW() - INTERVAL '7 days'""",
+            soz_no,
+        )
+        gecen_konular = [{"ders": r["ders"], "konu": r["konu"]} for r in (gh_rows or [])]
+        bu_konular = [{"ders": r["ders"], "konu": r["konu"]} for r in (bh_rows or [])]
+
+        # Gecen hafta deneme net ortalama
+        gh_net = await db_fetchrow(
+            """SELECT AVG(toplam_net) AS ort FROM student_exams
+               WHERE student_id = $1
+                 AND tarih BETWEEN NOW() - INTERVAL '14 days' AND NOW() - INTERVAL '7 days'""",
+            soz_no,
+        )
+        bh_net = await db_fetchrow(
+            """SELECT AVG(toplam_net) AS ort FROM student_exams
+               WHERE student_id = $1
+                 AND tarih > NOW() - INTERVAL '7 days'""",
+            soz_no,
+        )
+        g_net = float(gh_net["ort"]) if gh_net and gh_net["ort"] else 0.0
+        b_net = float(bh_net["ort"]) if bh_net and bh_net["ort"] else 0.0
+
+        # Tekrar hata: gecen hafta etut yapilmis + bu hafta yine zayif konu (topic_tracker)
+        # Sadece gecen hafta etut yapilan konularin listesi
+        gh_konu_set = {(r["ders"], r["konu"]) for r in (gh_rows or [])}
+        # Bu hafta zayif (hata > 50%) topic_tracker
+        zayif_rows = await db_fetch(
+            """SELECT ders, konu FROM student_topic_tracker
+               WHERE soz_no=$1 AND hata_yuzdesi > 50
+                 AND son_calisma > NOW() - INTERVAL '7 days'""",
+            soz_no,
+        )
+        tekrar_hata = []
+        for r in (zayif_rows or []):
+            if (r["ders"], r["konu"]) in gh_konu_set:
+                tekrar_hata.append({"ders": r["ders"], "konu": r["konu"]})
+
+        return {
+            "gecen_hafta_konular": gecen_konular[:10],
+            "bu_hafta_konular": bu_konular[:10],
+            "gecen_hafta_deneme_net": round(g_net, 2),
+            "bu_hafta_deneme_net": round(b_net, 2),
+            "net_delta": round(b_net - g_net, 2),
+            "tekrar_hata_konular": tekrar_hata[:5],
+        }
+    except Exception as e:
+        logger.debug(f"[WEEKLY_DELTA] hata: {e}")
+        return {}
+
+
 async def build_unified_context(
     soz_no: int,
     channel: str = "whatsapp",
@@ -304,8 +384,9 @@ async def build_unified_context(
         except Exception:
             phone = ""
 
-    # 7 paralel query — tek beyin, her servisi ayrı çağır
-    profile, exams, weak, activity, sentiment, plan, attend = await asyncio.gather(
+    # 8 paralel query — tek beyin, her servisi ayrı çağır
+    # 25.40p: weekly_delta eklendi (proaktif feedback için)
+    profile, exams, weak, activity, sentiment, plan, attend, weekly = await asyncio.gather(
         _safe_call(_get_student_profile(soz_no), {}),
         _safe_call(_get_exam_summary(soz_no), {}),
         _safe_call(_get_weak_topics(soz_no, top_k=5), []),
@@ -313,6 +394,7 @@ async def build_unified_context(
         _safe_call(_get_sentiment(phone or "", soz_no, days=14), {}),
         _safe_call(_get_daily_plan(soz_no), {}),
         _safe_call(_get_attendance(soz_no), {}),
+        _safe_call(_get_weekly_delta(soz_no), {}),
     )
 
     result = {
@@ -330,6 +412,7 @@ async def build_unified_context(
         "sentiment": sentiment,
         "daily_plan": plan,
         "attendance": attend,
+        "weekly_delta": weekly,  # 25.40p — proaktif feedback
     }
 
     # Cache'e yaz

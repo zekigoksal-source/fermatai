@@ -46,6 +46,7 @@ ANALYSIS_PROMPT = """Asagida FermatAI (YKS/LGS bot) ile bir kullanici arasinda g
 Konusma uzunlugu: {turn_count} mesaj. Kullanici rolu: {role}.
 
 Gorevin: Bu konusmayi pedagojik ve teknik kalite acisindan INCELE.
+25.40p Neo direktif: yeni intent kalite skorlari (test/soru/yeni_nesil) + renderer kullanim.
 Cikti JSON olmali (markdown kod blogu DEGIL, sadece JSON):
 
 {{
@@ -55,6 +56,16 @@ Cikti JSON olmali (markdown kod blogu DEGIL, sadece JSON):
   ],
   "bot_hatasi": [
     {{"tip": "halusinasyon|yanlis_data|baglam_kaybi|dil|ton", "mesaj_idx": 5, "aciklama": "..."}}
+  ],
+  "yeni_intent_kalite": [
+    {{"intent": "test_olusturma|soru_uret|yeni_nesil_uret|konu_anlatim_uzun|karsilastirma|ornek_paket_uret",
+      "mesaj_idx": 7,
+      "skor": 1-10,
+      "yeni_nesil_kriter_sayisi": 0-7,
+      "rag_kullanildi_mi": true,
+      "renderer_var_mi": true,
+      "renderer_tipleri": ["quiz", "steps", "chart"],
+      "aciklama": "iceriğe gore kalite degerlendirmesi"}}
   ],
   "eksik_pattern": [
     {{"kullanici_mesaji": "...", "oneri": "fast_responses'a eklenecek pattern"}}
@@ -198,6 +209,14 @@ def aggregate(results: list[dict]) -> dict:
     all_missing_patterns = []
     scores = []
     kritik_bulgular = []
+    # 25.40p — yeni intent kalite metrikleri
+    new_intent_scores = []  # tum yeni intent kayitlari
+    rag_kullanilan = 0
+    rag_toplam = 0
+    renderer_kullanilan = 0
+    renderer_toplam = 0
+    yeni_nesil_kriter_toplam = 0
+    yeni_nesil_kriter_sayisi = 0
 
     for r in results:
         phone = r.get("_phone")
@@ -211,6 +230,18 @@ def aggregate(results: list[dict]) -> dict:
             scores.append(r["pedagojik_puan"])
         if r.get("onemli_bulgu"):
             kritik_bulgular.append({"phone": phone, "bulgu": r["onemli_bulgu"]})
+        # 25.40p — yeni intent kalite
+        for it in (r.get("yeni_intent_kalite") or []):
+            new_intent_scores.append({**it, "phone": phone})
+            rag_toplam += 1
+            renderer_toplam += 1
+            if it.get("rag_kullanildi_mi"):
+                rag_kullanilan += 1
+            if it.get("renderer_var_mi"):
+                renderer_kullanilan += 1
+            if isinstance(it.get("yeni_nesil_kriter_sayisi"), (int, float)):
+                yeni_nesil_kriter_toplam += it["yeni_nesil_kriter_sayisi"]
+                yeni_nesil_kriter_sayisi += 1
 
     # Bot hata tipi dagilimi
     err_types = defaultdict(int)
@@ -228,6 +259,14 @@ def aggregate(results: list[dict]) -> dict:
         "top_bot_hatalari": all_bot_errors[:10],
         "top_eksik_patternler": all_missing_patterns[:15],
         "kritik_bulgular": kritik_bulgular[:10],
+        # 25.40p (Neo direktif): yeni intent kalite ozeti
+        "yeni_intent_metrikleri": {
+            "toplam_yeni_intent": len(new_intent_scores),
+            "rag_kullanim_orani": round(rag_kullanilan / rag_toplam * 100, 1) if rag_toplam else 0,
+            "renderer_kullanim_orani": round(renderer_kullanilan / renderer_toplam * 100, 1) if renderer_toplam else 0,
+            "yeni_nesil_kriter_ortalama": round(yeni_nesil_kriter_toplam / yeni_nesil_kriter_sayisi, 1) if yeni_nesil_kriter_sayisi else 0,
+        },
+        "yeni_intent_detay": new_intent_scores[:15],
     }
 
 
@@ -309,6 +348,16 @@ async def check_alarm_and_notify(report: dict, run_id: int | None) -> bool:
         triggers.append(f"⚠ Bot hatasi: *{err}* (esik 8)")
     if len(kritik) > 0:
         triggers.append(f"🚨 Kritik bulgu: *{len(kritik)}*")
+
+    # 25.40p — yeni intent kalite alarmlari
+    yim = report.get("yeni_intent_metrikleri", {})
+    if yim.get("toplam_yeni_intent", 0) > 5:  # Yeterli sample varsa
+        if yim.get("rag_kullanim_orani", 100) < 50:
+            triggers.append(f"📚 RAG kullanim dustu: *{yim['rag_kullanim_orani']}%* (esik 50%)")
+        if yim.get("renderer_kullanim_orani", 100) < 60:
+            triggers.append(f"🎨 Renderer kullanim dustu: *{yim['renderer_kullanim_orani']}%* (esik 60%)")
+        if yim.get("yeni_nesil_kriter_ortalama", 7) < 5:
+            triggers.append(f"📋 Yeni nesil kriter ortalama: *{yim['yeni_nesil_kriter_ortalama']}/7* (esik 5)")
 
     if not triggers:
         logger.info(f"[QUALITY] Esik altinda kalan yok, alarm yok (avg={avg}, frust={frust}, err={err})")

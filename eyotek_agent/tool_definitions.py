@@ -1379,6 +1379,37 @@ TOOLS: list[dict] = [
             "required": ["ders"],
         },
     },
+    # 25.40p (Neo direktif): 3D Three.js template tool
+    {
+        "name": "make_3d_template",
+        "description": (
+            "Önyüklü Three.js 3D animasyon template'i üret + render endpoint'e kaydet. "
+            "Kullanıcı 3D görsel istediğinde KULLAN. Template'ler: "
+            "solar_system (güneş sistemi + galaksi + great attractor), "
+            "atom (Bohr atom modeli — element, proton, neutron parametreleri), "
+            "hucre (bitki veya hayvan hücresi organel), "
+            "molekul (H2O, CO2, CH4, NH3 — 3D molekül). "
+            "Çıktı: kalıcı render link (öğrenci telefonda da açabilir). "
+            "Three.js + WebGL + OrbitControls (sürükle/zoom desteği)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "template": {
+                    "type": "string",
+                    "enum": ["solar_system", "atom", "hucre", "molekul"],
+                    "description": "Template tipi",
+                },
+                "element": {"type": "string", "description": "Atom için (H, He, Li, C, O...)"},
+                "proton": {"type": "integer", "description": "Atom proton sayısı"},
+                "neutron": {"type": "integer", "description": "Atom nötron sayısı"},
+                "tip": {"type": "string", "enum": ["bitki", "hayvan"], "description": "Hücre tipi"},
+                "formula": {"type": "string", "description": "Molekül formülü (H2O/CO2/CH4/NH3)"},
+                "title": {"type": "string", "description": "Render link başlığı (opsiyonel)"},
+            },
+            "required": ["template"],
+        },
+    },
     {
         "name": "tercih_donemi_durum",
         "description": (

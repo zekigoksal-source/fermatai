@@ -81,7 +81,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "selfdev_pr_comment", "selfdev_close_pr",
         "selfdev_full_pipeline",
         # ── Oturum 25.31 — Render endpoint (kompleks HTML kalici link) ──
-        "make_render_link",
+        "make_render_link", "make_3d_template",
         # ── Oturum 25.32 — External APIs (NASA + Wolfram + Wiki + arXiv + AI image) ──
         "nasa_apod", "nasa_image_search", "wolfram_query", "wolfram_full",
         "wiki_lookup", "arxiv_search", "generate_image",
@@ -150,7 +150,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # 25.14h: müdür tüm öğrencilerin programına ekleyebilir
         "add_to_student_program",
         # ── 25.31 — Render endpoint ──
-        "make_render_link",
+        "make_render_link", "make_3d_template",
         # ── 25.32 — External APIs ──
         "nasa_apod", "nasa_image_search", "wolfram_query", "wolfram_full",
         "wiki_lookup", "arxiv_search", "generate_image",
@@ -208,7 +208,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "ogrenci_drilldown",     # Tek ogrenci → onceden ogrenci kontrol gerek (sonra)
         "eyotek_read",           # Eyotek sayfa okuma → filtre uygulanir
         # ── 25.31 — Render endpoint ──
-        "make_render_link",
+        "make_render_link", "make_3d_template",
         # ── 25.32 — External APIs (egitim destekli) ──
         "nasa_apod", "nasa_image_search", "wolfram_query", "wolfram_full",
         "wiki_lookup", "arxiv_search", "generate_image",
@@ -253,7 +253,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # 25.14h: rehber tum ogrencilerin programina ekleyebilir (override)
         "add_to_student_program",
         # ── 25.31 — Render endpoint ──
-        "make_render_link",
+        "make_render_link", "make_3d_template",
         # ── 25.32 — External APIs ──
         "nasa_apod", "nasa_image_search", "wolfram_query", "wolfram_full",
         "wiki_lookup", "arxiv_search", "generate_image",
@@ -294,7 +294,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 # 25.14h: ogrenci kendi calismam paneline ekleyebilir
                 "add_to_student_program",
                 # ── 25.31 — Render endpoint (bot ozel HTML gorseli kalici link) ──
-                "make_render_link",
+                "make_render_link", "make_3d_template",
                 # ── 25.32 — External APIs (egitim destekli) ──
                 "nasa_apod", "nasa_image_search", "wolfram_query", "wolfram_full",
                 "wiki_lookup", "arxiv_search", "generate_image",

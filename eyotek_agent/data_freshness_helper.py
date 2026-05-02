@@ -82,6 +82,39 @@ async def get_status(module: str) -> dict:
         return {}
 
 
+async def needs_refresh(module: str, max_age_hours: float = 2.0) -> bool:
+    """
+    25.40p (Neo direktif): Eyotek anlik veri sync gvensizligi cozumu.
+
+    Bot kritik akademik sorulara cevaplamadan once cagrilir:
+      - get_student_analytics, get_ayt_analysis, sinav_sonuclari
+      - hedef_puan_analiz, puan_tahmin
+      - deneme_analiz konuları
+
+    True doonerse: bot eyotek_query/sinav_sonuclari ile anlik fetch + DB update
+    yapip sonra cevap vermeli (stale veri ile guvensizlik onlenir).
+
+    Args:
+      module: 'students', 'student_exams', 'attendance', 'etut_history' vb.
+      max_age_hours: bu yas asilirsa True (default 2 saat — Neo: 'kritik soru icin')
+    """
+    from db_pool import db_fetchval
+    try:
+        last_success = await db_fetchval(
+            "SELECT last_success FROM data_freshness WHERE module=$1",
+            module,
+        )
+        if not last_success:
+            return True  # Hic sync olmadi → refresh
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc) if last_success.tzinfo else datetime.now()
+        age_hours = (now - last_success).total_seconds() / 3600.0
+        return age_hours > max_age_hours
+    except Exception as e:
+        logger.debug(f"[FRESHNESS] needs_refresh fail ({module}): {e}")
+        return False  # DB hatasi olursa stale degil say (akisi bozma)
+
+
 async def list_stale_modules(threshold_hours: float = 25) -> list[dict]:
     """N saatten eski sync'leri listele (admin alarm için)."""
     from db_pool import db_fetch
