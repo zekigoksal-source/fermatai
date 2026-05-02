@@ -1,6 +1,54 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, ÖĞLEDEN SONRA 17:15 — **🧬 OTURUM 25.40i: DOĞAL AKIŞ + FIRSAT ANI + ATLAS YANSITMA**
+> **Son güncelleme:** 2 Mayıs 2026, GECE 21:15 — **🎯 OTURUM 25.40j: ENGAGEMENT METRİĞİ + MEMORY RECAP + TONAL FILTER**
+>
+> ## 🆕 OTURUM 25.40j (öğleden sonra 20:30 → gece 21:15, 45 dk — 3 vizyon-uyumlu kalite katmanı)
+>
+> **Neo stratejik vizyon:** "Asıl ürün-pazar uyumu Ada-tipi öğrenci sürece alıştığında ortaya çıkacak — tool yok, doğal arkadaşlık, saatlerce sürebilen samimi diyalog. Kullanıcı bağ için bağlanır, akademik özellik yan ürün. Hata = en hevesli kullanıcı kaybı = stratejik kayıp."
+>
+> 3 katman uygulandı (low risk, ölçüm odaklı, tool kalitesine dokunulmadı):
+>
+> ### 🔬 FIX 1 — Engagement Metriği (körlük kırma)
+> - DB tablolar: `conversation_quality_score` (master) + `conversation_quality_burst` (per-konuşma)
+> - `conversation_quality_analyzer.py`'a eklenen:
+>   - `persist_to_db()` — analiz sonucunu DB'ye yazar (run_id + tüm burst'ler)
+>   - `check_alarm_and_notify()` — eşik altında kalırsa Neo'ya WP alarm:
+>     - Ortalama puan < 6.0
+>     - Frustration > 5
+>     - Bot hata > 8
+>     - Kritik bulgu > 0
+> - `whatsapp_bridge._run_scheduled_tasks` — Pazartesi 20:00 haftalık otomatik tarama (son 7 gün, max 80 burst, ~$0.40/hafta)
+> - `--no-alarm` ve `--no-db` flag'leri (manuel test için)
+>
+> ### 🧠 FIX 2 — Conversation Memory Recap
+> - `conversation_memory.maybe_summarize_history()` — 30+ mesajda Cerebras 70B ile "kalp özeti" üret, eski mesajları sil + son 12'yi koru
+> - Yeni history: synthetic user→assistant pair (recap) + son raw mesajlar
+> - Cerebras hata olursa no-op (history aynen tutulur, akış bozulmaz)
+> - `fermat_core_agent.run()` — `role='ogrenci' + len(history) >= 30` koşuluyla tetiklenir
+> - Maliyet: ~$0.001 / 30 mesajda
+> - **Etki:** Saatlerce süren Ada-tipi diyalogda 50. mesajda da bot "geçen 6 ayın olayını konuşmuştuk" diyebilir
+>
+> ### 🗣 FIX 3 — Tonal Redundant Greeting Filter (yedek katman)
+> - **Baseline:** %36 öğrenci cevabı "Merhaba" ile başlıyor (172 cevaptan 62'si). Yağız 12 ardışık tekrar, Ada 7 ardışık.
+> - Prompt kuralı (commit `d184862`) eklendi ama Claude/Cerebras prompt'a uymayabilir → **POST-PROCESS yedek**
+> - `conversation_memory.strip_redundant_greeting()`:
+>   - Bu cevap "Merhaba/Selam/Hey {ad}" ile başlıyorsa
+>   - Son 2 bot cevabı DA hitap ile başladıysa → 3. üst üste, prefix temizle
+>   - İlk veya 2. cevapta hitap KORUNUR (selamlama doğal)
+> - `fermat_core_agent`: 3 history.append noktasına filter çağrısı eklendi
+> - Test: 4 senaryo geçti (ilk hitap kalır / 3. üst üste silinir / hitap olmayan değişmez / boş history hitap kalır)
+>
+> ### Verify (canlı VPS, commit `98f0650`)
+> - HTTP 200, service active, no startup errors ✅
+> - DB tablolar live (`conversation_quality_score` + `conversation_quality_burst`)
+> - 6 grep doğrulaması: persist_to_db=2, scheduler=2, recap=1, tonal=1, agent integration=6 ✅
+> - İlk haftalık tarama: önümüzdeki Pazartesi 20:00 (5 Mayıs)
+> - Manuel test için: `python conversation_quality_analyzer.py --hours 48 --no-alarm`
+>
+> ### Genel felsefe
+> Bu 3 fix VİZYONA-UYUMLU: tool kalitesi DOKUNULMADI, latency optimization YOK, "devam et" fast YOK (Neo kararı). Sadece **ölçüm + bağımsız doğal kalite geliştirme**. Risk düşük, gözlem değeri yüksek. Ada-tipi öğrenci sürece alışırsa engagement metriği bunu **görmemizi sağlar** — bağ kuruluyor mu, kayıp mı, körlük kalkıyor.
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40i (öğleden sonra 17:00 → 17:15, 15 dk — Doğal akış + Fırsat anı + Atlas yansıtma)
 >
 > ## 🆕 OTURUM 25.40i (öğleden sonra 17:00 → 17:15, 15 dk — Neo "doğal konuşma + Atlas yansıt")
 >
