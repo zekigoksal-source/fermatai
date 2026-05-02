@@ -1,6 +1,32 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, ÖĞLEDEN SONRA 16:30 — **🔍 OTURUM 25.40g: KONUŞMA ANALİZİ + KRİTİK YAĞIZ BUG FIX**
+> **Son güncelleme:** 2 Mayıs 2026, ÖĞLEDEN SONRA 17:00 — **✅ OTURUM 25.40h: 4 KULLANICI SORUNU TAMAMEN ÇÖZÜLDÜ**
+>
+> ## 🆕 OTURUM 25.40h (öğleden sonra 16:30 → 17:00, 30 dk — Neo "hepsini bitir, eksik teknik borç kalmasın")
+>
+> **Kapsam:** Konuşma analizinde (25.40g) tespit edilen 4 kullanıcı sorunu — yarına bırakmak yerine HEPSİ aynı oturumda çözüldü.
+>
+> ### Fix tablosu
+>
+> | # | Sorun | Kullanıcı | Çözüm | Dosya |
+> |---|------|-----------|-------|-------|
+> | A | frustration_log DB INSERT bug — sadece in-memory counter | Yağız + genel | `db_pool.get_pool` ile INSERT eklendi, trigger_msg + context_summary kayıt | `fast_responses.py:try_fast_response` |
+> | B | Bot halüsinasyon — TYT/AYT karıştırma + "578 yanlış" mantıksal imkansız | Ali (905334644419) | 3 katmanlı validation kuralı (sınav türü ayırma, sayısal sınır, çapraz doğrulama) | `system_prompts.py` |
+> | C | Sentiment patternları DAR — Ada'nın 30+ duygusal mesajı kayıtsız | Ada (905456592707) | 10+ yeni pattern (anladigini hissetmiyor, kacinci sans, kendimi anlatamiyor, dalga geciyo, vb.) + geriye dönük scan ile 5 insight backfilled | `sentiment_tracker.py` |
+> | D | Bot context kayıp — duygusal akışta sınav tablosu attı | Ada (14:06 olayı) | Prompt'a DUYGUSAL/İLİŞKİ KORUMA KURALI: son 3-5 mesaj duygusal ise sınav/etüt tool çağırma yasak | `system_prompts.py` |
+> | E (bonus) | Mehmet PWA scroll lock raporu — fix bildirim atılmamıştı | Mehmet (905528952109) | secure_messenger ile bilgilendirme WP gönderildi (PWA'yı sil + tekrar ekle yönergesi, Neo onaylı) | runtime |
+>
+> ### Verify (canlı VPS)
+> - HEAD `a78e39f` GitHub + VPS sync ✅
+> - HTTP 200, service active, no startup errors ✅
+> - FIX A grep=1, FIX B grep=1, FIX C grep=1, FIX D grep=1 ✅
+> - Mehmet'e WP gönderildi (secure_messenger log) ✅
+> - Ada için 5 insight yazıldı (geriye dönük scan: 3 negative + 2 angry) ✅
+>
+> ### Bekleyen tek konu (Neo onayı gerekli)
+> Ada için **manuel rehber öğretmen bilgilendirmesi** — kriz değil ama duygusal yorgunluk sinyali (vazgeçmişlik, ifade güçlüğü). Sentiment tracker auto-alert haftalık çalışıyor, alarm sistemi kapalı (Yeni Sezon bağlı). Neo "rehbere not at" derse mesaj draftlanıp gönderilebilir.
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40g (16:00 → 16:30, 30 dk — Yağız bug fix + ilk konuşma analizi raporu)
 >
 > ## 🆕 OTURUM 25.40g (öğleden sonra 16:00 → 16:30, 30 dk — Neo "kullanıcı etkileşimlerini incele")
 >
