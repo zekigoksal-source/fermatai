@@ -718,11 +718,52 @@ d) Eğer Mert grubu 8 kişi olursa eş paylaşım için her kişiye düşen alan
 Bu format: bağlam ✓ + 4 alt soru ✓ + sentez "doğru mudur" ✓ + günlük hayat ✓
 + ondalık ölçüm ✓ — her kriter karşılanır.
 
-📌 KRİTİK ROUTING:
-Soru/test üretme görevleri Cerebras 70B'YE BIRAKILMASIN — kalite yetersiz.
-Bu görevler CLAUDE'a (yaratıcılık + pedagoji ustası) yönlendirilmeli.
-Eğer bot Cerebras'tayken "test hazırla / soru üret" geldiyse Claude'a eskalasyon
-gerekir (cevap kalitesi öncelik, hız değil).
+📌 KRİTİK ROUTING (25.40o GÜNCELLENDİ — Neo direktif):
+Önceki yönerge YANLIŞTI. Doğru bilgi:
+
+🚀 CEREBRAS qwen-3-235b YETKİNLİĞİ (PROAKTIF KULLAN):
+Bu model akademik içerik üretiminde MÜTHIS güçlü:
+  • Hız: 3 saniye (Claude 100sn, 33x hızlı)
+  • Maliyet: ~$0.001/konu (Claude $0.04, %95 ucuz)
+  • Kalite: Claude Sonnet'a EŞDEĞER (test edildi 211 paket üretildi)
+
+ŞU GÖREVLER CEREBRAS qwen-3-235b'ye GIDER (NOT Claude):
+  ✓ Test üretme / Soru hazırlama / Konu tarama testi
+  ✓ Yeni nesil soru / Maarif uyumlu / LGS-YKS örnek
+  ✓ Konu anlatımı (uzun, detaylı)
+  ✓ Örnek paket / Alıştırma / Etkinlik
+  ✓ Karşılaştırma (X vs Y kavram)
+  ✓ Detaylı özet / RAG içerik zenginleştirme
+  ✓ Açıklama (uzun, sentezli)
+
+CLAUDE'A ANCAK ŞUNLAR GIDER (gerçekten gerekli):
+  • Tool zinciri 3+ (get_student_analytics + search + üret + plan_kaydet)
+  • Çok karmaşık çapraz kontrol (finans + akademik + tercih)
+  • Hassas konular (KVKK ihlali şüphesi, kriz/intihar)
+  • Bot'un kendisini değerlendirme/öz-farkındalık (admin-spesifik)
+  • Empati derinleştirme (uzun psikolojik konuşma)
+
+Vedat hoca vakası (2 May 18:24): Cerebras "yeni nesil 6.sınıf matematik"
+istendiğinde 20 klasik formül sorusu üretti. SEBEP: muhtemelen gpt-oss-120b
+(küçük model) tetiklendi VE/VEYA prompt'ta yeni nesil checklist yoktu.
+Şimdi: qwen-3-235b + 7-kriter prompt → 211 paket Maarif standardı çıktı.
+
+🎨 İÇERİK SUNUMU — RENDERER KULLAN (Neo direktif):
+Üretilen içerikleri ÖĞRENCIYE/ÖĞRETMENE düz yazı olarak değil GÖRSEL DESTEKLE sun.
+Web kanalında (channel='web') şu renderer'lar otomatik tetiklenmeli:
+
+  • Test/Quiz üretiminde     → ```quiz``` (interaktif kart)
+  • Adım adım çözüm          → ```steps``` (numerik adım listesi)
+  • Matematik formülü        → ```formula``` (LaTeX render)
+  • Karşılaştırma            → ```compare2``` (yan yana 2 kolon)
+  • Kavram haritası          → ```kgraph``` (node-edge görsel)
+  • Veri yorumu/grafik       → ```chart``` (bar/line/radar)
+  • Plan/zaman çizelgesi     → ```timeline```
+  • Karne/yetkinlik          → ```karne``` veya ```radar```
+
+ÖRNEK: Yeni nesil 4 örnek soru sunarken sadece markdown listesi YETERSİZ.
+Quiz card + her örnek için steps + matematik varsa formula = PREMIUM kalite.
+Cerebras INTENT_RENDERER_MAP'te bu eşleştirmeler tanımlı, sistem otomatik uygular.
 
 🎯 RAG'DAN YENİ NESİL ÖRNEK ÇEK + ADAPTE ET (25.40n):
 Sıfırdan üretmek yerine ÖNCE search_curriculum tool'u ile RAG bankasından

@@ -68,6 +68,18 @@ INTENT_TO_MODEL = {
     "analiz_iste":       "qwen-3-235b-a22b-instruct-2507",
     "deneme_analiz":     "qwen-3-235b-a22b-instruct-2507",
     "hedef_analiz":      "qwen-3-235b-a22b-instruct-2507",
+    # 25.40o (Neo direktif): qwen-3-235b içerik üretim BÜYÜK potansiyel
+    # 95 konu Claude $4/100sn → 211 konu qwen $0.20/3sn (33x hız, %95 ucuz, EŞDEĞER kalite)
+    # Bu intent'ler Claude yerine qwen'e gitmeli — proaktif yetkinlik kullanımı
+    "test_olusturma":    "qwen-3-235b-a22b-instruct-2507",  # "test hazırla", "konu tarama"
+    "soru_uret":         "qwen-3-235b-a22b-instruct-2507",  # "soru üret/yaz", "X soru hazırla"
+    "yeni_nesil_uret":   "qwen-3-235b-a22b-instruct-2507",  # "yeni nesil/maarif sorusu"
+    "icerik_uretim":     "qwen-3-235b-a22b-instruct-2507",  # "metni hazırla", "döküman", "etkinlik"
+    "konu_anlatim_uzun": "qwen-3-235b-a22b-instruct-2507",  # "X konusunu detaylı anlat"
+    "ornek_paket_uret":  "qwen-3-235b-a22b-instruct-2507",  # "5 örnek üret", "alıştırma"
+    "karsilastirma":     "qwen-3-235b-a22b-instruct-2507",  # "X vs Y" iki kavram/konu kıyas
+    "ozet_uzun":         "qwen-3-235b-a22b-instruct-2507",  # detaylı özet (kısa özet → ozet_iste/120b)
+    "metin_zenginlestir":"qwen-3-235b-a22b-instruct-2507",  # RAG'den gelen ham içeriği güzel sun
     # Hassas — buralara HİÇ gelmemeli (Claude'a giderler)
     # injection_suspect, hassas_veri, finans, role_change, baska_ogrenci
 }
@@ -89,6 +101,16 @@ INTENT_RENDERER_MAP: dict[str, list[str]] = {
     "hedef_analiz":      ["gauge", "progress", "timeline"],
     "plan_yap":          ["timeline", "kgraph", "progress"],
     "mufredat_bilgi":    ["progress", "karne"],
+    # 25.40o (Neo direktif) — yeni icerik uretim renderer eslestirmeleri
+    # "Goresel anlamda premium kalitede icerik aktariyor olalim, sadece duz yazi degil"
+    "test_olusturma":    ["quiz", "steps", "chart"],         # interaktif quiz + adim adim
+    "soru_uret":         ["quiz", "steps"],                   # quiz card + cozum adimlari
+    "yeni_nesil_uret":   ["quiz", "compare2", "chart"],       # quiz + karsi-ornek + grafik
+    "icerik_uretim":     ["formula", "steps", "kgraph"],      # formul + adim + kavram haritasi
+    "konu_anlatim_uzun": ["formula", "steps", "kgraph", "quiz"], # tam paket
+    "ornek_paket_uret":  ["quiz", "compare2", "steps"],       # 5 ornek paket
+    "ozet_uzun":         ["steps", "kgraph", "timeline"],     # zenginlestirilmis ozet
+    "metin_zenginlestir":["formula", "steps"],                # RAG icerik + gorsel
     # Renderer YOK — bu intent'lerde sadece sıcak metin
     "motivasyon_destek": [],
     "duygu_paylasim":    [],

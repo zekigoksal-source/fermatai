@@ -118,6 +118,53 @@ _INTENT_PATTERNS = [
     )),
 
     # ── C) SORU/KAYNAK/PROGRAMA EKLE (NORMAL tier) ──
+    # 25.40o (Neo direktif): yeni içerik üretim intent'leri qwen-3-235b'ye gider
+    # Order matters — bunlar soru_iste'den ÖNCE (üretim ≠ getir/göster)
+    ("yeni_nesil_uret", re.compile(
+        r'(yeni\s+nesil|maarif\s+(uyumlu|stil|m[uü]fredat)|lgs\s+tipi|yks\s+tipi|'
+        r'\b\d{4}\s+(maarif|m[uü]fredat))',
+        re.I,
+    )),
+    ("test_olusturma", re.compile(
+        r'(test\s+(hazirla|hazırla|olu[sş]tur|yap|yaz)|konu\s+tarama|tarama\s+test|'
+        r'de[gğ]erlendirme\s+(yazılı|yazili)|yazılı\s+(hazirla|hazırla|olu[sş]tur)|'
+        r'\d{1,3}\s+soru(luk)?\s+(test|sinav|sınav)|'
+        r'(haftalık|aylık|ünite)\s+(test|de[gğ]erlendirme))',
+        re.I,
+    )),
+    ("soru_uret", re.compile(
+        r'((soru|sorular)\s+(üret|uret|hazırla|hazirla|yaz|olu[sş]tur)|'
+        r'\d{1,3}\s+(soru|alı[sş]tırma|al[iı]stirma)\s+(üret|uret|yaz|hazırla|hazirla)|'
+        r'çalı[sş]tırma\s+(üret|uret|hazırla|hazirla)|'
+        r'al[iı]ş?t[iı]rma\s+(soru|hazırla|hazirla|yaz))',
+        re.I,
+    )),
+    ("ornek_paket_uret", re.compile(
+        r'(\d{1,3}\s+örnek\s+(üret|uret|yaz|hazırla|hazirla)|'
+        r'(birka[cç]|bir\s+ka[cç])\s+örnek\s+(üret|uret|yaz)|'
+        r'etkinlik\s+(hazırla|hazirla|olu[sş]tur))',
+        re.I,
+    )),
+    ("konu_anlatim_uzun", re.compile(
+        r'(detayl[iı]\s+(anlat|aç[iı]kla)|'
+        r'(uzun|kapsamlı|kapsamli)\s+(anlatım|anlatim|aç[iı]klama)|'
+        r'(tüm|tum|bütün|butun)\s+konuyu\s+anlat|'
+        r'(konuyu|konu)\s+detayl[iı]\s+anlat)',
+        re.I,
+    )),
+    ("karsilastirma", re.compile(
+        r'((kar[sş][iı]la[sş]t[iı]r)|kıyasla|kiyasla|'
+        r'(arasındaki|arasindaki)\s+(fark|benzer)|'
+        r'\b\w+\s+vs\.?\s+\w+|'
+        r'\b\w+\s+ile\s+\w+\s+(fark|benzer|kıyas|kiyas))',
+        re.I,
+    )),
+    ("metin_zenginlestir", re.compile(
+        r'(zenginle[sş]tir|geni[sş]let|aç[iı]l[iı]ml[iı]\s+yaz|'
+        r'(daha|biraz)\s+(detayl[iı]|kapsamlı|kapsamli)\s+yaz|'
+        r'aç[iı]klamayı\s+(genişlet|genislet|büyüt|buyut))',
+        re.I,
+    )),
     ("soru_iste", re.compile(
         r'(çıkmış\s+soru|cikmis\s+soru|soru\s+(göster|goster|at|paylaş|paylas)|'
         r'\d{4}\s+(tyt|ayt)\s+sor|sorular\s+(getir|göster|goster))',
@@ -302,6 +349,16 @@ INTENT_TIER_HINT = {
     "yontem_iste": "normal",
     "programa_ekle": "normal",
     "foto_soru": "normal",
+    # 25.40o (Neo direktif): Yeni içerik üretim intent'leri NORMAL tier
+    # search_curriculum tool gerekir (RAG'dan yeni nesil paket çek + adapte)
+    # qwen-3-235b modeline cerebras_handler INTENT_TO_MODEL üzerinden yönlendirilir
+    "test_olusturma": "normal",
+    "soru_uret": "normal",
+    "yeni_nesil_uret": "normal",
+    "ornek_paket_uret": "normal",
+    "konu_anlatim_uzun": "normal",
+    "karsilastirma": "normal",
+    "metin_zenginlestir": "light",  # tool yok, sadece RAG context
     # LIGHT-uyumlu (sadece prompt yeterli, tool yok)
     "kavram_aciklama": "light",
     "ornek_iste": "light",
@@ -372,6 +429,26 @@ INTENT_TOOL_SUBSET = {
     # Foto soru — Vision (programatik, ama tool olarak)
     "foto_soru": {
         "search_curriculum",  # destek
+    },
+    # 25.40o (Neo direktif): Yeni icerik uretim → search_curriculum (RAG yeni nesil paket)
+    # Bot RAG'dan ornek paket ceker, qwen-3-235b ile zenginlestirir/adapte eder
+    "test_olusturma": {
+        "search_curriculum", "list_exam_questions", "send_exam_image",
+    },
+    "soru_uret": {
+        "search_curriculum", "list_exam_questions",
+    },
+    "yeni_nesil_uret": {
+        "search_curriculum",  # ana tool — RAG yeni nesil paket cek
+    },
+    "ornek_paket_uret": {
+        "search_curriculum",
+    },
+    "konu_anlatim_uzun": {
+        "search_curriculum",
+    },
+    "karsilastirma": {
+        "search_curriculum", "bolum_karsilastir",  # konu kıyası + bölüm kıyası
     },
     # LIGHT — hiç tool yok (sadece prompt cevaplar)
     "kavram_aciklama": set(),

@@ -120,18 +120,18 @@ _CLOUD_KEYWORDS = [
     "performans", "istatistik", "istatisti",
     # Kurum bilgisi — Ollama yanlış bilgi verebilir
     "fermat", "kurum", "dershane",
-    # 25.40m (Neo Vedat hoca vakası) — soru/test üretme YARATICI iş, Cerebras yetersiz
-    # Cerebras 2 May'da 20 klasik 1-adımlı soru üretip "yeni nesil" dedi (rezalet)
-    # Bu pattern'lerde Claude'a yönlendir — pedagojik kalite öncelik
-    "test hazirla", "test hazırla", "test olustur", "test oluştur", "test yap",
-    "soru uret", "soru üret", "soru hazirla", "soru hazırla", "soru yaz",
-    "konu tarama", "tarama testi", "deneme hazirla", "deneme hazırla",
-    "yeni nesil", "yeni stil", "maarif", "yks tipi", "lgs tipi",
-    "ornek soru", "örnek soru", "calistirma sorusu", "çalıştırma sorusu",
-    "alistirma", "alıştırma", "etkinlik hazirla", "etkinlik hazırla",
-    "sinav hazirla", "sınav hazırla", "yazili hazirla", "yazılı hazırla",
-    "10 soru", "15 soru", "20 soru", "soruluk test",
-    "pdf yap", "pdf olustur", "pdf oluştur", "pdf hazirla",
+    # 25.40o (Neo direktif DÜZELTİLDİ): Cerebras qwen-3-235b içerik üretiminde
+    # mükemmel. 25.40m'de yanlışlıkla bunları Claude'a yönlendirmiştim — Vedat
+    # vakası gpt-oss-120b'den geliyor olabilir (qwen değildi). qwen ile 211 paket
+    # 0.20$/3sn üretti, kalite Claude'a EŞDEĞER. Dolayısıyla bu pattern'ler
+    # Cerebras'a (qwen) gitmeli — _CLOUD_KEYWORDS'den ÇIKARILDI.
+    #
+    # Routing: "test hazırla / soru üret / yeni nesil" → cerebras_handler.py
+    # INTENT_TO_MODEL içinde "test_olusturma/soru_uret/yeni_nesil_uret" → qwen-3-235b
+    #
+    # Sadece KOMPLEX TOOL ZINCIRI gerektiren testler Claude'a:
+    # "Bu öğrenci için kişiye özel TYT denemesi" → tool: get_student_analytics
+    #   + search_curriculum + üret → bu gerçekten Claude (multi-tool reasoning)
     # Hassas konular — Claude daha güvenli
     "kufur", "küfür", "sacma", "saçma", "berbat", "rezalet",
     "intihar", "olum", "ölüm",
