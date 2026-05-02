@@ -1,6 +1,98 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, GECE 22:50 — **🎓 OTURUM 25.40m: AKADEMİK İÇERİK KALİTE — YENİ NESİL SORU PROTOKOLÜ**
+> **Son güncelleme:** 3 Mayıs 2026, GECE 00:00 — **📚 OTURUM 25.40n: TAM AKADEMİK HAKİMİYET — RAG YENİ NESİL ÖRNEK BANK**
+>
+> ## 🆕 OTURUM 25.40n (gece 22:50 → 00:00, 70 dk — Vedat olayı sonrası kapsamlı çözüm)
+>
+> Neo direktif: "Vedat olayını tekrarlatma. Tam akademik hakimiyet — 6/7/8 sınıf LGS + 9-12 SAY+EA TYT/AYT. SOZ atla. Tüm sınav gruplarını kapsa, sistemi boğma katog kümeler ile."
+>
+> ### 1️⃣ Cerebras qwen-3-235b BENCHMARK (game changer)
+>
+> Claude Sonnet 4-6 vs Cerebras qwen-3-235b kıyas:
+>
+> | Metrik | Claude Sonnet 4-6 | Cerebras qwen-3-235b |
+> |--------|-------------------|----------------------|
+> | Cevap süresi | ~100 sn (3 dk timeout) | **3 sn** |
+> | Hız | 1x | **33x** |
+> | Maliyet (95 konu) | ~$4 | **~$0.10** |
+> | Kalite | A+ | **A+ EŞDEĞER** (park yürüyüşü, mimarlık+arı peteği biomimikri, açık uçlu sentez) |
+>
+> **Karar:** Cerebras qwen-3-235b kullan. `GENERATOR_PROVIDER=cerebras` env (default cerebras, claude fallback).
+>
+> ### 2️⃣ Konu haritası — TAM SAY+EA kapsam
+>
+> | Sınıf | sinav_turu | Kapsam |
+> |-------|-----------|--------|
+> | 6. sınıf | LGS_HAZIRLIK_6 | Mat (14) + Fen (8) + Türkçe (5) + Sosyal (5) + İngilizce (4) |
+> | 7. sınıf | LGS_HAZIRLIK_7 | Mat (11) + Fen (8) + Türkçe (5) + Sosyal (5) + İngilizce (4) |
+> | 8. sınıf LGS | LGS | Mat (11) + Fen (8) + Türkçe (5) + T.C.İnkılap (6) + İngilizce (5) |
+> | 9. sınıf | TYT | Mat (6) + Fizik (6) + Kimya (5) + Bio (3) |
+> | 10. sınıf | TYT | Mat (8) + Fizik (4) + Kimya (4) + Bio (3) |
+> | 11. sınıf | AYT | Mat (7) + Fizik (9) + Kimya (8) + Bio (10) + TDE (4) + Tarih (4) + Coğrafya (3) |
+> | 12. sınıf | AYT | Mat (6) + Fizik (6) + Kimya (5) + Bio (4) + TDE (3) + Tarih (2) + Coğrafya (2) |
+>
+> **Toplam: 216 konu**. SOZ atlandı (öğrenci yok). Felsefe/Din Kültürü atlandı.
+>
+> ### 3️⃣ Üretim Pipeline
+> - `generate_lgs_yeni_nesil_bank.py` (467 satır) — Cerebras streaming + paralel 10 + DB upsert + duplicate skip
+> - 7 zorunlu yeni nesil kriter prompt: bağlamlı + çok adımlı + görsel ipucu + akıl yürütme + disiplinler arası + veri yorumu + açık uçlu sentez
+> - JSON çıktı parse + nomic-embed-text local embedding + pgvector
+> - Production: VPS background, ~5-7 dakika, ~$0.20 maliyet
+>
+> ### 4️⃣ Tool Entegrasyonu
+> - `search_curriculum` tool'a `sinav_turu` parametresi (zaten rag_engine destekliyor)
+> - Description güncellendi: "öğretmen yeni nesil isterse sinav_turu='LGS_HAZIRLIK_6/7/LGS' filtre"
+> - system_prompts.py: "RAG'DAN YENİ NESİL ÖRNEK ÇEK + ADAPTE ET" kuralı (sıfırdan üretmek yerine örnek bul + adapte)
+>
+> ### 5️⃣ Kalite Doğrulama (örnek 7. sınıf Çokgenler)
+> ```
+> PARKTAKI OYUN ALANLARINDA GEOMETRI
+> Ahmet, ailesiyle gittiği şehir parkında dört farklı çocuk oyun alanını incelemeye başladı.
+> Bu alanlar farklı çokgenler şeklinde yapılmıştı: bir kare, bir düzgün altıgen, bir
+> eşkenar dörtgen ve bir dikdörtgen. Park görevlisi, oyun alanlarının bazılarının benzer,
+> bazılarının ise tamamen aynı boyutta olduğunu söyledi.
+>
+> Aşağıda her oyun alanının bir köşesindeki iç açı ölçüsü verilmiştir:
+> - Kare: 90° / Altıgen: 120° / Eşkenar dörtgen: 70° ve 110°
+> ```
+> 7/7 kriter karşılandı. Vedat hocaya verilen "Beşgenin iç açı toplamı" sorusundan EVRENSEL FARKLI.
+>
+> ### 6️⃣ Konuşma Analizi — Brief'siz Tespitler (Neo direktif)
+>
+> Bot dev konuşmaları (son 7 gün) tarandı. **Brief yazılmamış 7 tespit** bulundu:
+>
+> | # | Tespit | Durum |
+> |---|--------|-------|
+> | 1 | Çalışmam paneli toggle butonu yok (web_chat_ui'da var, panel'de yok) | Brief #13 yarı çözdü |
+> | 2 | Proaktif feedback "geçen hafta çalıştın bu hafta hata yaptın → programa ekle" | Genişletme bekler |
+> | 3 | 3D solar system (great attractor) interaktif animasyon — 3 kez istendi, üretilmedi | YARIN için (büyük iş) |
+> | 4 | Diğer altyapıları (Eyotek dışı) keşfedip kullanım havuzuna ekleme | Soru, eylem değil |
+> | 5 | "informatik konuyla ilgili 3D animasyonlar anlık üretsen" | Three.js entegrasyonu, büyük iş |
+> | 6 | Eyotek anlık veri sync güvensizliği (DB stale) | YARIN için |
+> | 7 | "Mezun + 12. sınıflarda TYT/AYT BİRLEŞİK 3 öğrenci" — veri/halüsinasyon | Eyotek check + audit |
+>
+> Bu gece bitirilemeyenler yarın için raporlandı. Hiçbiri minor değil — hepsi orta-büyük iş.
+>
+> ### 7️⃣ Final Durum (production COMPLETED)
+>
+> | sinav_turu | RAG paket sayısı |
+> |------------|-----------------|
+> | LGS_HAZIRLIK_6 (6. sınıf) | **70** |
+> | LGS_HAZIRLIK_7 (7. sınıf) | **64** |
+> | LGS (8. sınıf) | **68** |
+> | TYT (9-10 lise) | **76** |
+> | AYT (11-12 lise SAY+EA) | **145** |
+> | **TOPLAM yeni_nesil_ornek_paket** | **423** |
+>
+> Ders dağılım (top 10): Matematik (69), Fen Bilimleri (46), Fizik AYT SAY (30), Türkçe (30), Biyoloji AYT (28), İngilizce (26), Kimya AYT (26), Matematik AYT (25), Sosyal Bilgiler (20), Fizik TYT (20).
+>
+> **211 başarılı yeni paket bu oturumda eklendi** (3 JSON parse fail, 2 dry-run skip). Maliyet: ~$0.20 (Cerebras), Süre: ~7 dakika.
+>
+> Her paket içinde: 3 yeni nesil örnek soru + cevap anahtarı + neden yeni nesil açıklaması + öğretmen notları + yaygın hatalar. Akademik hakimiyet **6. sınıftan 12. sınıfa, LGS'den AYT'ye SAY+EA tam kapsam.**
+>
+> Service active, HTTP 200, no errors. 8 commit bu oturumda.
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40m (gece 22:30 → 22:50, 20 dk — Vedat hoca akademik kalite vakası)
 >
 > ## 🆕 OTURUM 25.40m (gece 22:30 → 22:50, 20 dk — Vedat hoca akademik kalite vakası)
 >
