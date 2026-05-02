@@ -189,6 +189,174 @@ CURRICULUM = {
             "Adventure and Tourism",
         ],
     },
+    # ─── 25.40n Neo direktif: 9-12 LISE TYT/AYT (SAY+EA odakli, SOZ atlandi) ───
+    # YKS = TYT (tum lise) + AYT (sayisal/eA dersleri).
+    # Ozel kapsam: Matematik (TYT+AYT) + Fizik+Kimya+Biyoloji (AYT SAY) + TDE+Tarih+Cografya (AYT EA)
+    # SOZ ogrencimiz YOK — felsefe/cografya2/din kultur YOK
+    "9_sinif_tyt": {  # 9. sınıf konuları → TYT + AYT temel
+        "Matematik (TYT temel)": [
+            "Mantık (Önerme, Bileşik Önermeler, Doğruluk Tablosu)",
+            "Kümeler (İşlemler, Venn Şemaları, Doğal/Tam/Rasyonel Sayılar)",
+            "Denklem ve Eşitsizlikler (Birinci Dereceden, Mutlak Değer)",
+            "Üçgenler (Açılar, Kenar Bağıntıları, Eşlik ve Benzerlik)",
+            "Veri Analizi ve Olasılık (Merkezi Eğilim, Yayılım Ölçüleri)",
+            "Fonksiyonlar (Tanım, Görüntü, Bire-bir, Örten)",
+        ],
+        "Fizik (TYT temel)": [
+            "Fizik Bilimine Giriş (Büyüklükler, Birim Sistemleri, Hata Hesabı)",
+            "Madde ve Özellikleri (Yoğunluk, Genleşme, Hal Değişimi)",
+            "Hareket ve Kuvvet (Konum, Hız, İvme, Newton Yasaları)",
+            "Enerji (İş, Güç, Mekanik Enerji, Korunum)",
+            "Isı ve Sıcaklık (Hal Değişimi, Genleşme, Kalorimetre)",
+            "Elektrostatik (Yükler, Coulomb Yasası, Elektrik Alan)",
+        ],
+        "Kimya (TYT temel)": [
+            "Kimya Bilimi (Atom Modelleri, Periyodik Sistem)",
+            "Atom ve Periyodik Sistem (Elektron Dizilimi, Periyodik Özellikler)",
+            "Kimyasal Türler Arası Etkileşimler (İyonik, Kovalent, Metalik Bağlar)",
+            "Maddenin Halleri (Katı/Sıvı/Gaz Özellikleri, Hal Değişimi)",
+            "Doğa ve Kimya (Su, Çözünürlük, Asit-Baz)",
+        ],
+        "Biyoloji (TYT temel)": [
+            "Yaşam Bilimi Biyoloji (Canlıların Ortak Özellikleri)",
+            "Hücre ve Canlı Organizasyonu (Prokaryot/Ökaryot, Organeller)",
+            "Canlılar Dünyası (Sınıflandırma, 6 Alem)",
+        ],
+    },
+    "10_sinif_tyt": {
+        "Matematik (TYT/AYT temel)": [
+            "Sayma ve Olasılık (Permütasyon, Kombinasyon, Olasılık)",
+            "Fonksiyonlar (Bileşke, Ters Fonksiyon, Grafik)",
+            "Polinomlar (Çarpanlara Ayırma, Özdeşlikler, Bölme)",
+            "İkinci Dereceden Denklemler (Diskriminant, Köklerin Çarpımı/Toplamı, Vieta)",
+            "Üçgenler (Açıortay, Kenarortay, Yükseklik, Sinüs/Kosinüs Teoremleri)",
+            "Dörtgenler ve Çokgenler (Paralelkenar, Dikdörtgen, Yamuk — alan, çevre)",
+            "Çember ve Daire (Yay, Kiriş, Teğet, Çevre Açı, Merkez Açı)",
+            "Veri Analizi (Korelasyon, Regresyon Giriş)",
+        ],
+        "Fizik (TYT temel)": [
+            "Elektrik ve Manyetizma (Akım, Gerilim, Direnç, Ohm Yasası, Manyetik Alan)",
+            "Basınç ve Kaldırma Kuvveti (Katı/Sıvı/Gaz Basıncı, Arşimet)",
+            "Dalgalar (Yay, Su, Ses Dalgaları, Periyodik Hareket)",
+            "Optik (Yansıma, Kırılma, Mercekler, Ayna)",
+        ],
+        "Kimya (TYT temel)": [
+            "Kimyanın Temel Kanunları (Kütlenin Korunumu, Sabit Oranlar)",
+            "Mol Kavramı ve Hesaplamaları (Avogadro, Molarite)",
+            "Kimyasal Tepkimeler (Denkleştirme, Sentez, Analiz, Yer Değiştirme)",
+            "Karışımlar (Çözeltiler, Derişim Hesaplamaları)",
+        ],
+        "Biyoloji (TYT temel)": [
+            "Hücre Bölünmeleri (Mitoz, Mayoz — karşılaştırma, kromozom davranışı)",
+            "Kalıtım (Mendel Yasaları, Genetik Çapraz, Kan Grupları, Cinsiyet)",
+            "Ekosistem Ekolojisi (Beslenme Zinciri, Madde Döngüleri, Popülasyon)",
+        ],
+    },
+    "11_sinif_ayt": {  # 11. sınıf konuları → AYT SAY ve AYT EA için
+        "Matematik (AYT)": [
+            "Trigonometri (Birim Çember, Trigonometrik Fonksiyonlar, Kimlikler)",
+            "Karmaşık Sayılar (Modül, Argüman, Kutupsal Form, De Moivre)",
+            "Logaritma (Logaritma Özellikleri, Logaritmik Fonksiyon, Üstel-Log)",
+            "Diziler (Aritmetik/Geometrik Dizi, Toplam, Limit)",
+            "Limit ve Süreklilik (Tanımsızlık, Sonsuz Limit, Süreklilik)",
+            "Türev (Tanım, Kurallar, Zincir, Yüksek Mertebe, Uygulama)",
+            "Analitik Geometri (Doğru Denklemi, Açı, Uzaklık, Çember)",
+        ],
+        "Fizik (AYT SAY)": [
+            "Vektörler (Toplama/Çıkarma, Bileşke, İz Düşüm, Skalar/Vektörel Çarpım)",
+            "Bağıl Hareket (Görelilik, Bileşke Hız)",
+            "Newton Yasaları Uygulamaları (Sürtünme, Eğik Düzlem, Asansör)",
+            "Atışlar (Yatay/Eğik/Düşey Atış, Mermi Hareketi)",
+            "Tork ve Denge (Kuvvet Çifti, Statik Denge)",
+            "İtme-Momentum (Korunum, Çarpışmalar — Esnek/Esnek Olmayan)",
+            "Düzgün Çembersel Hareket (Merkez Çekim Kuvveti, Dönme)",
+            "Elektrik Akımı (Direnç, Joule, Kirchhoff Yasaları)",
+            "Manyetizma (Manyetik Alan, Lorentz Kuvveti, İndüksiyon)",
+        ],
+        "Kimya (AYT SAY)": [
+            "Modern Atom Teorisi (Bohr, Kuantum Sayıları, Orbital, Pauli)",
+            "Gazlar (İdeal Gaz, Boyle, Charles, Difüzyon)",
+            "Sıvı Çözeltiler ve Çözünürlük (Doygun, Süpersature, Çözünürlük Etkenleri)",
+            "Kimyasal Tepkimelerde Enerji (Endotermik, Egzotermik, Entalpi)",
+            "Tepkime Hızı ve Denge (Hız Sabiti, Le Chatelier)",
+            "Asit-Baz Dengesi (pH, pOH, Tampon Çözeltiler, Titrasyon)",
+            "Çözünürlük Dengesi (Kçç, Ortak İyon Etkisi)",
+            "Elektrokimya (Redoks, Pil, Elektroliz)",
+        ],
+        "Biyoloji (AYT SAY)": [
+            "Sinir Sistemi (Nöron, Sinaps, Refleks, MSS-ÇSS)",
+            "Endokrin Sistem (Hipofiz, Tiroid, Pankreas, Hormonlar)",
+            "Duyu Organları (Göz, Kulak, Deri, Tat, Koku)",
+            "Destek ve Hareket Sistemi (Kemik, Eklem, Kas)",
+            "Sindirim Sistemi (Mekanik/Kimyasal Sindirim, Enzimler)",
+            "Dolaşım Sistemi (Kalp, Damarlar, Kan, Lenf)",
+            "Solunum Sistemi (Akciğer, Gaz Alışverişi)",
+            "Boşaltım Sistemi (Böbrek, Nefron, Idrar Oluşumu)",
+            "İnsanda Üreme (Erkek/Dişi Üreme Sistemi, Hormonal Kontrol)",
+            "Komünite ve Popülasyon Ekolojisi (Türler Arası İlişkiler)",
+        ],
+        "Türk Dili ve Edebiyatı (AYT EA)": [
+            "Edebi Akımlar (Klasisizm, Romantizm, Realizm, Natüralizm)",
+            "Cumhuriyet Dönemi Türk Şiiri (Beş Hececiler, Garip, İkinci Yeni)",
+            "Cumhuriyet Dönemi Türk Romanı (Köy, Bireyselci, Toplumsal Roman)",
+            "Cumhuriyet Dönemi Hikaye ve Tiyatro",
+        ],
+        "Tarih (AYT EA)": [
+            "İlk Türk-İslam Devletleri (Karahanlılar, Gazneliler, Selçuklular)",
+            "Osmanlı Devleti Kuruluş ve Yükselme (1299-1600)",
+            "Osmanlı Devleti Duraklama, Gerileme, Dağılma (1600-1922)",
+            "20. Yüzyıl Başlarında Dünya (1. Dünya Savaşı, Sömürgecilik)",
+        ],
+        "Coğrafya (AYT EA)": [
+            "Doğal Sistemler (İç ve Dış Kuvvetler, Yer Şekilleri)",
+            "Ekonomik Faaliyetler (Tarım, Sanayi, Hizmet — Türkiye ve Dünya)",
+            "Türkiye'nin Coğrafi Bölgeleri ve Ekonomik Özellikleri",
+        ],
+    },
+    "12_sinif_ayt": {  # 12. sınıf — son tekrar + ileri konular
+        "Matematik (AYT)": [
+            "İntegral (Belirsiz İntegral, Belirli İntegral, Alan Hesabı)",
+            "İntegral Uygulamaları (Hacim, Yay Uzunluğu, Ortalama Değer)",
+            "Türev Uygulamaları (Maksimum-Minimum, Değişim Hızı, Optimizasyon)",
+            "Limit ve Süreklilik İleri (L'Hospital, Belirsizlik Şekilleri)",
+            "Analitik Geometri (Çember, Elips, Hiperbol, Parabol — koni kesitleri)",
+            "Olasılık ve İstatistik İleri (Koşullu Olasılık, Bayes, Dağılımlar)",
+        ],
+        "Fizik (AYT SAY)": [
+            "Elektromanyetik İndüksiyon (Faraday, Lenz, Transformatör)",
+            "Alternatif Akım (RMS, Empedans, Rezonans Devresi)",
+            "Modern Fizik Giriş (Fotoelektrik, Compton, De Broglie)",
+            "Atom Fiziği (Bohr Atom Modeli, Spektrum, Geçiş)",
+            "Çekirdek Fiziği (Radyoaktivite, Yarı Ömür, Füzyon/Fisyon)",
+            "Dalga ve Parçacık (Çift Yarık Deneyi, Belirsizlik İlkesi)",
+        ],
+        "Kimya (AYT SAY)": [
+            "Organik Kimyaya Giriş (Hibritleşme, Organik Bileşik Adlandırma)",
+            "Hidrokarbonlar (Alkan, Alken, Alkin, Aromatik)",
+            "Fonksiyonel Gruplar (Alkol, Aldehit, Keton, Asit, Ester, Amin)",
+            "Karbohidrat-Protein-Yağ (Biyomoleküller)",
+            "Polimerler (Sentetik ve Doğal Polimerler)",
+        ],
+        "Biyoloji (AYT SAY)": [
+            "Canlılarda Enerji Dönüşümleri (Fotosentez, Solunum İleri)",
+            "Genetik Mühendisliği ve Biyoteknoloji (DNA Klonlama, GDO, CRISPR)",
+            "Bitki Biyolojisi (Yapı, Doku, Üreme — Kapalı/Açık Tohumlu)",
+            "Komünite Ekolojisi (Süksesyon, Biyom, Madde Döngüleri)",
+        ],
+        "Türk Dili ve Edebiyatı (AYT EA)": [
+            "Türk Edebiyatı Dönemleri Toplam (İslamiyet Öncesi → Tanzimat → Servet-i Fünun → Cumhuriyet)",
+            "Roman ve Hikaye Tahlili (Karakter, Tema, Anlatıcı)",
+            "Şiir Tahlili (Söz Sanatları, Ölçü, Yapı)",
+        ],
+        "Tarih (AYT EA)": [
+            "Türk İnkılap Tarihi ve Atatürkçülük (Cumhuriyet'in Kuruluşu, İlkeler)",
+            "Soğuk Savaş ve Sonrası Dünya (Bloklar, Avrupa Birliği, Türkiye Dış Politika)",
+        ],
+        "Coğrafya (AYT EA)": [
+            "Çevre ve Toplum (Çevre Sorunları, Sürdürülebilirlik)",
+            "Türkiye ve Dünyadan Bölgesel Çalışmalar",
+        ],
+    },
 }
 
 
@@ -254,21 +422,37 @@ async def generate_one_topic(client, sinif: str, ders: str, konu: str) -> Option
     )
 
     try:
-        # Sync Anthropic SDK — async wrap + STREAMING (timeout problemi cozumu)
-        # Mevcut sistemin model adi env'den (FERMAT_MODEL, default sonnet-4-6)
-        _model = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
-        def _do_stream():
-            chunks = []
-            with client.messages.stream(
-                model=_model,
-                max_tokens=6500,  # 3 ornek paket detayli + ogretmen notlari (4K kesiyordu)
-                temperature=0.5,
+        # 25.40n (Neo direktif): Cerebras qwen-3-235b benchmark — 3sn vs Claude 100sn
+        # Kalite EŞDEĞER (park/mimarlık/biyoloji disiplinler arası, açık uçlu sentez).
+        # Maliyet: ~%2.5 Claude'un. Tercih: Cerebras (env: GENERATOR_PROVIDER=cerebras|claude)
+        provider = os.getenv("GENERATOR_PROVIDER", "cerebras").lower()
+
+        if provider == "cerebras":
+            from cerebras_handler import CerebrasClient
+            cclient = CerebrasClient()
+            r = await cclient.complete_async(
                 messages=[{"role": "user", "content": prompt}],
-            ) as stream:
-                for text in stream.text_stream:
-                    chunks.append(text)
-            return "".join(chunks)
-        text = (await asyncio.to_thread(_do_stream)).strip()
+                system="Sen MEB Maarif uzmanı bir akademik içerik üreticisisin. Sadece geçerli JSON döndür.",
+                model="qwen-3-235b-a22b-instruct-2507",
+                max_tokens=6000,
+                temperature=0.5,
+            )
+            text = (r.get("text") or "").strip()
+        else:
+            # Claude Sonnet streaming fallback
+            _model = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
+            def _do_stream():
+                chunks = []
+                with client.messages.stream(
+                    model=_model,
+                    max_tokens=6500,
+                    temperature=0.5,
+                    messages=[{"role": "user", "content": prompt}],
+                ) as stream:
+                    for text_chunk in stream.text_stream:
+                        chunks.append(text_chunk)
+                return "".join(chunks)
+            text = (await asyncio.to_thread(_do_stream)).strip()
 
         # Markdown JSON kod bloğu varsa temizle
         if text.startswith("```"):
@@ -320,6 +504,11 @@ async def insert_to_rag(parsed: dict, sinif: str, ders: str, konu: str) -> bool:
         "6_sinif": "LGS_HAZIRLIK_6",
         "7_sinif": "LGS_HAZIRLIK_7",
         "8_sinif_lgs": "LGS",
+        # 25.40n Neo direktif: Lise (SAY+EA odakli, SOZ atlandi)
+        "9_sinif_tyt": "TYT",   # 9. sinif TYT temel konular
+        "10_sinif_tyt": "TYT",  # 10. sinif TYT/AYT temel
+        "11_sinif_ayt": "AYT",  # 11. sinif AYT
+        "12_sinif_ayt": "AYT",  # 12. sinif AYT son tekrar
     }
     sinav_turu = sinav_turu_map.get(sinif, "LGS")
 
@@ -433,6 +622,11 @@ async def main():
         "6_sinif": "LGS_HAZIRLIK_6",
         "7_sinif": "LGS_HAZIRLIK_7",
         "8_sinif_lgs": "LGS",
+        # 25.40n Neo direktif: Lise (SAY+EA odakli, SOZ atlandi)
+        "9_sinif_tyt": "TYT",   # 9. sinif TYT temel konular
+        "10_sinif_tyt": "TYT",  # 10. sinif TYT/AYT temel
+        "11_sinif_ayt": "AYT",  # 11. sinif AYT
+        "12_sinif_ayt": "AYT",  # 12. sinif AYT son tekrar
     }
 
     # Duplicate filtre
