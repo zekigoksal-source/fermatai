@@ -1,6 +1,70 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 3 Mayıs 2026, GECE 00:30 — **🚀 OTURUM 25.40o: CEREBRAS qwen-3-235b PROAKTIF MİMARİ ENTEGRASYONU**
+> **Son güncelleme:** 3 Mayıs 2026, GECE 00:35 — **🚀 OTURUM 25.40o: CEREBRAS qwen-3-235b PROAKTIF MİMARİ ENTEGRASYONU**
+
+---
+
+## 🎯 YENİ SESSION ORIENTATION (yeni Claude buradan başlar)
+
+> **Bu blok her oturum başında okunur — sistemin anlık durumu, son tamamlananlar, bekleyen iş.**
+
+### Sistem durumu (canlı)
+- **VPS HEAD:** `b681f8b` — service active, HTTP 200, no errors
+- **Aktif kullanıcı:** Mezun + 11/12. sınıf SAY+EA öğrencileri (~125 öğrenci)
+- **Bot rolleri canlı:** admin (Neo) / mudur (Mahsum, Duygu) / yonetim (Bilge) / rehber / ogretmen / ogrenci / veli (pasif)
+- **WhatsApp + Web Chat** her ikisi açık (api.fermategitimkurumlari.com/chat)
+
+### Son 24 saat tamamlanan KRİTİK işler (sıralı)
+| # | İş | Status | Detay |
+|---|-----|--------|-------|
+| 1 | UI bug fix loop (admin butonları + tema toggle + max_turns + splash + PWA scroll lock) | LIVE | 25.40b → 25.40d |
+| 2 | Kurumsal logo PWA icon redesign (Fermat elma, mesh gradient) | LIVE | 25.40e/f |
+| 3 | 5 kullanıcı sorunu fix (Yağız AUTH FAST PATH, Ali halüsinasyon, Ada sentiment, Mehmet PWA bildirim, frustration_log INSERT) | LIVE | 25.40g/h |
+| 4 | Doğal konuşma akışı + Fırsat anı koruma kuralları | LIVE | 25.40i |
+| 5 | Atlas yansıtma (4 öneri "uygulandi") | LIVE | 25.40i |
+| 6 | Engagement metric + Memory recap + Tonal filter | LIVE | 25.40j |
+| 7 | Tercih robotu aktive + 2 YÖK Atlas tool (universite_taban_sorgu, siralama_ile_bolumler) | LIVE | 25.40k |
+| 8 | PWA Push Notification altyapısı (KAPALI flag, EYLÜL aktive) | LIVE | 25.40l |
+| 9 | Akademik kalite protokolü (yeni nesil 7-kriter) | LIVE | 25.40m |
+| 10 | RAG yeni nesil bank — **423 paket** (6/7/8 LGS + 9-12 SAY+EA TYT/AYT) | LIVE | 25.40n |
+| 11 | Cerebras qwen-3-235b PROAKTIF mimari entegrasyon (9 yeni intent + renderer) | LIVE | 25.40o |
+
+### Bekleyen iş listesi (yarın için, öncelik sırasıyla)
+
+🔴 **ACİL** (orta-büyük):
+1. **3D Solar System (great attractor)** — Neo 3 kez istedi, henüz yok (Three.js entegrasyonu gerek)
+2. **İnformatik 3D animasyonlar** — anlık üretim (Three.js + canlı render)
+3. **Eyotek anlık veri sync güvensizliği** — DB stale, audit gerek
+
+🟡 **ORTA**:
+4. **Çalışmam paneli toggle butonu** — web_chat_ui'da var ama Çalışmam panelinde yok (Brief #13 yarı çözdü)
+5. **Proaktif feedback** — "geçen hafta çalıştın bu hafta hata" → otomatik takip
+6. **Eyotek Mezun + 12. sınıf TYT/AYT BİRLEŞİK 3 öğrenci veri/halüsinasyon** — audit
+7. **Diğer altyapı keşfi** — Eyotek dışı sistemleri benzer mimariyle ekleme (soru, yorumlanmalı)
+8. **Ada için manuel rehber bilgilendirmesi** — sentiment insights DB'de, rehber haberdar değil
+
+🟢 **UZUN VADE**:
+9. **Routing observability dashboard** — cerebras vs claude oran trend (alarm < %50)
+10. **quality_monitor cron** — yeni intent kalite skorları + renderer kullanım oranı
+11. **Cerebras 235b stress test** — Eylül 120 öğrenci yükü altında
+
+### Neo'nun KESİN istemediği şeyler (KALICI kurallar)
+- ❌ Tool kalitesini düşürmeye yönelik latency optimization (kalite > hız)
+- ❌ "Devam et" fast_response (bağlam kaybı korkusu)
+- ❌ SaaS multi-tenant değişiklikleri (kurum-içi mükemmellik)
+- ❌ Onaysız WP/SMS/email gönderme (özellikle gece)
+- ❌ Veli + finans modüllerine dokunma (Yeni Sezon bağlı, KAPALI)
+- ❌ Sözel/SOZ öğrenci içerik üretimi (öğrenci yok)
+- ❌ system_prompts'u "monolith" diye bölme (kalite düşüyor)
+
+### Mimari özetler (kısa hatırlatma)
+- **LLM Routing:** Fast Response %45 → Cerebras qwen-3-235b %30 → Claude %25 (Eylül hedefi)
+- **Cerebras qwen-3-235b proaktif:** test/soru/yeni nesil/karşılaştırma/uzun anlatım Cerebras'a (Claude değil)
+- **Renderer:** quiz/steps/formula/compare2/kgraph/chart Cerebras intent'lerine bağlı
+- **RAG:** 423 yeni nesil paket + 4500 OGM Vision + Claude-üretimi içerik = ~5500 kayıt
+- **PWA:** Wix splash bypass (custom embed redirect) + kurumsal icon + push altyapı KAPALI
+
+---
 >
 > ## 🆕 OTURUM 25.40o (gece 00:00 → 00:30, 30 dk — Neo "Cerebras kullanımı yetersiz")
 >

@@ -1,7 +1,189 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 2 Mayıs 2026 (gece 03:10) · **Oturum:** 25.40c — **PWA UI Bug Fix + No-FOUC Tema + Wix Redirect**
-> **Önceki güncelleme:** 1 Mayıs 2026, Oturum 25.38 (öğleden sonra 21:30) — 6 External Entegrasyon
+> **Belge tarihi:** 3 Mayıs 2026 (gece 00:35) · **Oturum:** 25.40o — **Cerebras qwen-3-235b PROAKTIF mimari**
+> **Önceki güncelleme:** 2 Mayıs 2026, Oturum 25.40c (gece 03:10) — PWA UI Bug Fix
+
+---
+
+## 🆕 25.40 SERİSİ TAMAMI (b → o, 13 oturum / ~12 saat / ~35+ commit)
+
+### Sistem genel görünüm
+| Alan | Önce (25.40 öncesi) | Sonra (25.40o sonrası) |
+|------|---------------------|--------------------------|
+| **PWA** | Wix iframe içinde, splash flash, mobile scroll lock | Custom Embed redirect, kurumsal logo, no-FOUC tema, push altyapı |
+| **Cerebras kullanımı** | 14 intent (plan/analiz odaklı) | **23 intent** (+ tüm içerik üretim, görsel sunum) |
+| **RAG bank** | 4080 kayıt (TYT/AYT OGM Vision + Claude konu anlatım) | **+423 yeni nesil paket** = 4500+ kayıt |
+| **Tercih robotu** | KAPALI flag (TERCIH_DONEMI_ACTIVE=false) | AKTİF + 2 yeni YÖK Atlas tool (sezon-bağımsız) |
+| **Engagement metric** | Manuel JSON file analiz | Haftalık Pazartesi 20:00 cron + DB persist + WP alarm |
+| **Memory recap** | Yok (50 mesajlık konuşma token şişiyordu) | 30+ mesajda Cerebras 70B kalp özet + history kısalt |
+| **Tonal filter** | Robotik tekrar (Yağız 12 ardışık "Merhaba") | 3+ üst üste hitap → otomatik prefix sil |
+| **Kullanıcı sorunları** | 5+ açık (Yağız OTP, Ali halüsinasyon, Ada sentiment, frustration_log INSERT yok) | Hepsi çözüldü, 5 ayrı fix LIVE |
+| **Akademik kalite** | Vedat olayında "yeni nesil" → 20 klasik 1-adımlı soru | 7-kriter prompt + RAG bank + Cerebras qwen-3-235b → Maarif standardı |
+
+### 25.40 detay tablosu
+| Oturum | Konu | Commit | Etki |
+|--------|------|--------|------|
+| 25.40b | Admin butonları geri (auto-login fermat_role) + light/dark + max_turns 999 + pre-splash kaldır | `fb70976` | PWA admin tools tekrar görünür |
+| 25.40c | Tema toggle gerçek fix (no-FOUC pattern) | `2e0d69e` | Inline style kaldırıldı, var(--bg) sistem doğru |
+| 25.40d | PWA scroll lock fix (viewport-fit=cover + safe-area) | `6580122` | Tablet/mobile PWA sorunsuz |
+| 25.40e | Premium PWA icon (mesh gradient + italic F) | `5b06a96` | İlk premium tasarım |
+| 25.40f | Kurumsal logo PWA icon (Fermat elma) | `d560bec` | Marka kimliği |
+| 25.40g | Yağız AUTH FAST PATH bug fix | `c40bbb7` | "web kodu" hiçbir guard bypass edemez |
+| 25.40h | Ali halüsinasyon + Ada sentiment + Mehmet PWA + frustration_log INSERT | `a78e39f` | 4 kullanıcı sorunu |
+| 25.40i | Doğal akış + Fırsat anı koruma + Atlas yansıtma | `d184862` | Kullanıcı bağ kuruluyor |
+| 25.40j | Engagement metric + Memory recap + Tonal filter | `98f0650` | 3 kalite katmanı |
+| 25.40k | Tercih robotu aktive + 2 YÖK Atlas tool | `00851b7` | 35.584 atıl veri kullanımda |
+| 25.40l | PWA Push Notification altyapısı | `92e0b46` | Eylül engagement mekanizması |
+| 25.40m | Akademik kalite protokolü (yeni nesil 7-kriter) | `c85f8e7` | Vedat tipi facia engelle |
+| 25.40n | RAG yeni nesil bank — 211 paket Cerebras üretim | `3eef6ac` | Tam akademik hakimiyet |
+| 25.40o | Cerebras qwen-3-235b PROAKTIF mimari | `b681f8b` | Bot Cerebras yetkinliğini bilir |
+
+---
+
+## 🚀 CEREBRAS qwen-3-235b TAM ENTEGRASYON (25.40o)
+
+### INTENT_TO_MODEL haritası (cerebras_handler.py)
+| Intent | Model | Kullanım |
+|--------|-------|----------|
+| classify (sadece) | llama3.1-8b | basit niyet ayırma |
+| selamlama/veda/teşekkür/yks_takvim | llama3.1-8b | hızlı statik |
+| kavram_aciklama/ornek_iste/cozum_iste/ozet_iste/yontem_iste | gpt-oss-120b | kavramsal sweet spot |
+| motivasyon_destek/duygu_paylasim/yetenek_sorgu/meta_direktif | gpt-oss-120b | empati + kurum |
+| plan_yap/analiz_iste/deneme_analiz/hedef_analiz | **qwen-3-235b** | karmaşık plan/analiz |
+| **test_olusturma/soru_uret/yeni_nesil_uret** (25.40o yeni) | **qwen-3-235b** | test/soru üretim |
+| **icerik_uretim/konu_anlatim_uzun/ornek_paket_uret** (yeni) | **qwen-3-235b** | uzun içerik üretim |
+| **karsilastirma/ozet_uzun/metin_zenginlestir** (yeni) | **qwen-3-235b** | yaratıcı sentez |
+
+### INTENT_RENDERER_MAP (web kanalında otomatik tetiklenen görsel)
+| Intent | Renderer'lar |
+|--------|--------------|
+| test_olusturma | quiz + steps + chart |
+| yeni_nesil_uret | quiz + compare2 + chart |
+| konu_anlatim_uzun | formula + steps + kgraph + quiz (TAM PAKET) |
+| ornek_paket_uret | quiz + compare2 + steps |
+| icerik_uretim | formula + steps + kgraph |
+| karsilastirma | compare2 |
+| deneme_analiz | chart + radar + karne |
+| hedef_analiz | gauge + progress + timeline |
+| plan_yap | timeline + kgraph + progress |
+
+### Maliyet/hız karşılaştırma (gerçek ölçüm)
+| Metrik | Claude Sonnet 4-6 | **Cerebras qwen-3-235b** |
+|--------|-------------------|---------------------------|
+| Cevap süresi | ~100sn (sık 3dk timeout) | **3sn** |
+| Hız | 1x | **33x** |
+| Maliyet/konu | ~$0.04 | **~$0.001** |
+| 211 paket toplam | ~$8 + 1+ saat | **$0.20 + 7 dakika** |
+| Kalite (akademik) | A+ | **A+ EŞDEĞER** (test edildi) |
+
+---
+
+## 📚 RAG YENİ NESİL ÖRNEK BANK (25.40n)
+
+### sinav_turu dağılım
+| sinav_turu | Paket | Kapsam |
+|------------|-------|--------|
+| LGS_HAZIRLIK_6 | 70 | 6. sınıf 5 ders Maarif 2024 |
+| LGS_HAZIRLIK_7 | 64 | 7. sınıf 5 ders |
+| LGS | 68 | 8. sınıf 5 ders |
+| TYT | 76 | 9-10 lise SAY+EA |
+| AYT | 145 | 11-12 lise SAY+EA |
+| **TOPLAM** | **423** | 6.→12. sınıf SAY+EA tam kapsam |
+
+### Ders dağılım (top 10)
+Matematik 69 / Fen Bilimleri 46 / Fizik AYT 30 / Türkçe 30 / Biyoloji AYT 28 / İngilizce 26 / Kimya AYT 26 / Matematik AYT 25 / Sosyal Bilgiler 20 / Fizik TYT 20
+
+### İçerik formatı (her paket)
+- 3 yeni nesil örnek soru (bağlamlı + çok adımlı + görsel ipucu + akıl yürütme + disiplinler arası + veri yorumu + açık uçlu sentez)
+- Cevap anahtarı (her alt soru için adım adım)
+- "Neden yeni nesil" açıklama (öğretmenler için pedagojik gerekçe)
+- Öğretmen notları
+- Yaygın hatalar
+
+### Tool entegrasyonu
+- `search_curriculum(query, ders, sinav_turu)` — `sinav_turu` filtresi destekliyor (LGS_HAZIRLIK_6/7, LGS, TYT, AYT)
+- 6 rol ACL açık: admin, mudur, yonetim, rehber, ogretmen, ogrenci
+- system_prompt: "yeni nesil isterse RAG'dan çek + adapte et" kuralı (sıfırdan üretmek yerine)
+
+---
+
+## 🔔 PWA PUSH NOTIFICATION (25.40l, KAPALI flag)
+
+| Bileşen | Detay |
+|---------|-------|
+| DB | `push_subscriptions` (14 col, UNIQUE endpoint) + `push_log` (12 col) |
+| Backend | `push_service.py` — pywebpush + VAPID + 410 auto-deactivate |
+| VAPID | `secrets/vapid_private.pem` (mode 600) + `.env` path |
+| Service Worker | v25.40l, kurumsal push handler (logo + actions + click PWA standalone) |
+| Endpoints | `/chat/push/{vapid-public-key, subscribe, unsubscribe, test, stats}` |
+| UI | Kurumsal pro permission dialog (login + 30sn sonra, 14g cooldown) |
+| Flag | `PUSH_NOTIFICATIONS_ACTIVE=false` (Eylül'de Neo true yapacak) |
+
+### Eylül aktive prosedürü (1 satır)
+```bash
+sudo sed -i 's|^PUSH_NOTIFICATIONS_ACTIVE=.*|PUSH_NOTIFICATIONS_ACTIVE=true|' /opt/fermatai/.env
+sudo systemctl restart fermatai-bridge
+```
+
+Sonra trigger fonksiyonları event'lere bağlanır:
+- Yeni deneme sonucu → push
+- Etüt 24h/1h hatırlat → cron
+- Sentiment alarm (3+ gün sessiz) → push
+- Haftalık motivasyon (Pazartesi)
+
+---
+
+## 🎓 TERCİH ROBOTU + YÖK ATLAS (25.40k, AKTİF)
+
+| Tool | Durum | Kullanım |
+|------|-------|----------|
+| `tercih_donemi_durum` | AKTİF | Sezon kontrolü, YKS tarihleri |
+| `bolum_karsilastir` | AKTİF | 2-5 bölüm yan yana karşılaştırma |
+| `tercih_profili_kaydet/_getir` | AKTİF | Öğrenci puan/sıralama/şehir tercihleri |
+| `tercih_listesi_uret` | AKTİF (Tem-Ağu) | 18-24 satırlık 4 bantlı taslak liste |
+| **`universite_taban_sorgu`** (25.40o yeni) | AKTİF (sezon bağımsız) | "İTÜ Bilgisayar Mat", "Tıp", "Boğaziçi" |
+| **`siralama_ile_bolumler`** (yeni) | AKTİF (sezon bağımsız) | "5K sıralama ile" → 3 bant garanti/uygun/hedef |
+
+DB tablo: `universite_taban` — 35.584 kayıt (2022-2025, SAY/EA/SOZ/DIL).
+
+---
+
+## 🩺 KULLANICI SORUNLARI (25.40g/h, hepsi çözüldü)
+
+| # | Kullanıcı | Sorun | Fix |
+|---|-----------|-------|-----|
+| A | Yağız (905523517686) | "Web kodu" 8 kez yanlış HTML (memory bypass) | AUTH FAST PATH — try_fast_response BAŞINDA, hiçbir guard bypass etmez |
+| B | Ali (905334644419) | Bot halüsinasyon TYT/AYT karıştırdı, "578 yanlış" mantıksal imkansız | system_prompts 3-katmanlı validation kuralı (sınav türü, sayısal sınır, çapraz doğrulama) |
+| C | Ada (905456592707) | 30+ duygusal mesaj, sentiment_tracker yakalamadı | Pattern genişletme (10+ yeni keyword) + 5 insight backfilled |
+| D | Ada 14:06 facia | Bot duygusal akışta sınav tablosu attı | DUYGUSAL/İLİŞKİ KORUMA KURALI prompt'a |
+| E | Mehmet (905528952109) | "tabletten giremiyorum" PWA scroll lock | 25.40d fix + secure_messenger ile WP bildirim |
+| F | frustration_log | Boş tablo (in-memory counter sadece) | DB INSERT eklendi, audit + telafi mekanizması çalışır |
+| G | Vedat (905448240803) | "Yeni nesil" → 20 klasik 1-adımlı soru | RAG yeni nesil bank + Cerebras qwen-3-235b + system_prompts 7-kriter protokolü |
+
+---
+
+## 🎯 DOĞAL KONUŞMA AKIŞI (25.40i)
+
+| Önce | Sonra |
+|------|-------|
+| Her cevap "Merhaba *Ada*!" → Yağız 12 ardışık tekrar | Conversation history kontrol → son 3-4 hitap varsa TEKRAR ETME, doğal geçiş sözleri |
+| Bot duygusal akışta sınav tablosu attı (Ada 14:06 facia) | FIRSAT ANI KORUMA — duygusal/ilişki/aile konuşmalarda tool çağrı YASAK |
+| Robotik, samimiyet kayıp | Doğal akış, kullanıcı bağı korunur (sisteme bağlanma fırsatı kaçırılmaz) |
+
+---
+
+## 📊 ENGAGEMENT METRIK (25.40j)
+
+| Bileşen | Detay |
+|---------|-------|
+| DB | `conversation_quality_score` (master) + `conversation_quality_burst` (per-konuşma) |
+| Analyzer | `conversation_quality_analyzer.py` — Cerebras 70B son 7 gün taraması |
+| Cron | Pazartesi 20:00 otomatik, max 80 burst, ~$0.40/hafta |
+| Alarm eşikleri | Ortalama < 6.0 / Frustration > 5 / Bot hata > 8 / Kritik bulgu > 0 |
+| Memory recap | 30+ mesajda Cerebras "kalp özet" + history kısalt |
+| Tonal filter | 3+ üst üste hitap → prefix sil (test 4/4 geçti) |
+
+---
 
 ### 25.40b/c değişiklikleri (UI / PWA katmanı)
 
