@@ -1,6 +1,59 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, GECE 22:30 — **🔔 OTURUM 25.40l: PWA WEB PUSH NOTIFICATION ALTYAPISI (KAPALI flag, EYLÜL aktive)**
+> **Son güncelleme:** 2 Mayıs 2026, GECE 22:50 — **🎓 OTURUM 25.40m: AKADEMİK İÇERİK KALİTE — YENİ NESİL SORU PROTOKOLÜ**
+>
+> ## 🆕 OTURUM 25.40m (gece 22:30 → 22:50, 20 dk — Vedat hoca akademik kalite vakası)
+>
+> Neo: "Vedat hocaya verdiğin cevaba baktım, akademik olarak çok zayıf buldum. 'Yeni nesil soru' demiş ama verdiğin örnekler basit düz klasik cebir. İçerik kalite değerlendirmesi yap."
+>
+> ### 🩺 Vakası — 2 May 18:24 (Vedat hoca, 905448240803)
+>
+> Talep: "Sorular yeni nesil olsun ve çokgenler den de soru olsun" (6. sınıf, Maarif).
+>
+> Bot 20 soru üretti — örnekler:
+> - "24 sayısının asal çarpanları nelerdir?" (1 adım)
+> - "Beşgenin iç açı toplamı?" (formül)
+> - "45 sayısının %30'u?" (1 işlem)
+> - "Dikdörtgen alanı 84, kısa kenar 7, uzun?" (A=a×b)
+>
+> **Akademik kalite değerlendirmesi: 0/7 yeni nesil kriter, SKOR 2/10**
+>
+> | Kriter | Sonuç |
+> |--------|-------|
+> | Bağlamlı/gerçek hayat | ❌ |
+> | Görsel ipucu (şekil/grafik/tablo) | ❌ |
+> | Çok adımlı (a/b/c) | ❌ |
+> | Veri yorumu | ❌ |
+> | Açık uçlu sentez | ❌ |
+> | Akıl yürütme ("neden", "açıkla") | ❌ |
+> | Disiplinler arası | ❌ |
+>
+> Ekstra formülasyon hataları: Soru #10 (oran 2:3 + dik üçgen kenar belirsiz), Soru #20 (dörtgen tipi belirsiz: kare/dikdörtgen/paralelkenar?). **Eğitsel hata.**
+>
+> ### Root cause (3 katman)
+> 1. system_prompts'ta "soru üretme protokolü" YOK → Cerebras 70B kendi kendine generic ezber soru
+> 2. Cerebras 70B yaratıcı + pedagoji yetersiz bu iş için
+> 3. RAG'da MEB Maarif yeni nesil örnek bank yok
+>
+> ### Yapılan iş (commit `c85f8e7`)
+>
+> #### FIX 1: system_prompts.py — YENİ NESİL CHECKLIST + örnek format
+> SORU/TEST/SINAV HAZIRLAMA AKADEMİK KALİTE PROTOKOLÜ eklendi. 7 zorunlu kriter + ASLA listesi + DOĞRU FORMAT şablonu (BAŞLIK + 2-4 cümle bağlam + a/b/c alt sorular + sentez "açıklayın"). Vedat vakası karşı-örnek + doğru örnek (altıgen oyun alanı, 4 alt soru, sentez "Mert'in mantığı doğru mu?") prompt'ta yer aldı.
+>
+> #### FIX 2: llm_router.py — _CLOUD_KEYWORDS genişleme (14 yeni)
+> `test hazirla / soru uret / yeni nesil / maarif / konu tarama / tarama testi / deneme hazirla / sinav hazirla / yazili hazirla / N soru / soruluk test / pdf hazirla / örnek soru / etkinlik hazirla / calistirma`
+>
+> Test: 5/5 hedef pattern match, false positive YOK.
+>
+> ### Verify
+> - HTTP 200, service active ✅
+> - system_prompts "YENI NESIL" 3 occurrence
+> - llm_router "yeni nesil" 2 occurrence
+>
+> ### YARIN için (uzun vade)
+> RAG'a MEB Maarif 6/7/8 sınıf yeni nesil örnek bank (TYT/AYT için zaten 4.482 kayıt var). Bot örnek alıp adapte eder (sıfırdan üretmek yerine). Büyük iş — ayrı oturum.
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40l (gece 22:00 → 22:30, 30 dk — PWA Push Notification altyapısı)
 >
 > ## 🆕 OTURUM 25.40l (gece 22:00 → 22:30, 30 dk — PWA push: app'e çekme stratejisi)
 >
