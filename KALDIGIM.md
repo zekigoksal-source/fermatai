@@ -1,6 +1,94 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, GECE 22:00 — **🎓 OTURUM 25.40k: TERCİH ROBOTU AKTİVE + 2 YENİ YÖK ATLAS TOOL**
+> **Son güncelleme:** 2 Mayıs 2026, GECE 22:30 — **🔔 OTURUM 25.40l: PWA WEB PUSH NOTIFICATION ALTYAPISI (KAPALI flag, EYLÜL aktive)**
+>
+> ## 🆕 OTURUM 25.40l (gece 22:00 → 22:30, 30 dk — PWA push: app'e çekme stratejisi)
+>
+> **Neo stratejik vizyon:** "Bildirim üzerinden öğrenciyi platforma çekmek ana metod. WhatsApp = hızlı işlemler. PWA app = uzun streaming + zengin format. Mesaj atmak taciz, push nazik tetikleyici. Logo, başlık, ton — her şey kurumsal pro olmalı."
+>
+> **GCal kontrol:** ZATEN VAR (`plani_takvime_ekle`, `etut_takvime_ekle`, `ogretmen_etut_takvimim` quick-add link). ICS dosya gerek yok. WhatsApp template stratejisi: GEREKSİZ (push çözer).
+>
+> ### Yapılan iş (commit `92e0b46` final, 5 commit toplam)
+>
+> #### 1. DB tablolar
+> - `push_subscriptions` (14 col): soz_no, phone, role, endpoint UNIQUE, p256dh, auth, user_agent, fail_count, is_active
+> - `push_log` (12 col): sent_at, soz_no, title, body, click_url, tag, trigger_source, success, error_msg, subscription_id FK
+>
+> #### 2. Backend `push_service.py` (10 fonksiyon)
+> - `save_subscription` (UPSERT) / `get_subscriptions` / `deactivate_subscription`
+> - `send_push` (tek sub) / `send_push_to_user` (tüm cihazlar)
+> - `_build_payload` — kurumsal pro: title/body/icon/badge/image/tag/actions/vibrate/click_url/extra_data
+> - `_get_webpush_vapid_param` — file path (önerilen) veya PEM string
+> - `_load_vapid_private_key` — VAPID_PRIVATE_KEY_PATH (önerilen) veya .env raw
+> - `get_push_stats` — admin dashboard
+> - 410 Gone → otomatik pasifleştir
+> - `force=True` → admin self-test (flag bypass)
+>
+> #### 3. Service Worker (`v25.40d` → `v25.40l`)
+> - Push handler — kurumsal pro tasarım: logo/badge/tag/actions/click_url
+> - notificationclick: PWA standalone fokus + navigate (deep link)
+> - `notificationclose` telemetry, `pushsubscriptionchange` handler
+>
+> #### 4. Endpoint'ler (`web_chat.py`)
+> - `GET /chat/push/vapid-public-key` — frontend için
+> - `POST /chat/push/subscribe` — auth gerek + soz_no resolve + DB UPSERT
+> - `POST /chat/push/unsubscribe` — kullanıcı izin iptal
+> - `POST /chat/push/test` — admin/mudur self-test (force=True)
+> - `GET /chat/push/stats` — admin dashboard
+>
+> #### 5. Frontend UI (`web_chat_ui.html`)
+> - Kurumsal pro permission dialog: backdrop blur + animated card + 76px logo
+> - Başlık "Akademik Bildirimleri Aç" + 3 madde body + KVKK trust footer
+> - "Sonra" / "İzin ver" (Fermat brand orange gradient)
+> - Dark mode tam destek + mobile responsive
+> - Trigger: login + 30sn sonra (agresif değil), 14 gün dismissed cooldown
+> - VAPID fetch + Web Push API subscribe + backend POST
+> - `window.fermatPushSubscribe` API exposed
+>
+> #### 6. VAPID + .env
+> - VAPID key generate (py_vapid): public 87 char base64-url-safe + 5-line PEM
+> - PEM dosya: `/opt/fermatai/secrets/vapid_private.pem` (mode 600, owner neo)
+> - `.env`:
+>   - `VAPID_PUBLIC_KEY=BFBxah3z...M4w57E`
+>   - `VAPID_PRIVATE_KEY_PATH=/opt/fermatai/secrets/vapid_private.pem`
+>   - `VAPID_CLAIMS_EMAIL=fermatvipegitim@gmail.com`
+>   - `PUSH_NOTIFICATIONS_ACTIVE=false` ← **Eylül'de Neo true yapacak**
+>
+> #### 7. Dependency
+> - `pywebpush>=2.0.0` + `cryptography>=41.0.0` (requirements.txt + VPS .venv pip install)
+>
+> ### LIVE Functional Test (VPS)
+> ```
+> VAPID public endpoint: success=true, key=BFBxah3z...
+> Backend send_push (sahte sub): status=404 (Mozilla Push Service yanıtı)
+> → VAPID JWT signing OK, payload encryption OK, HTTPS request OK
+> → 404 = subscription endpoint sahte (beklenen, gerçek sub'da 201 Created döner)
+> ```
+>
+> ### Verify
+> - HTTP 200, service active, no startup errors ✅
+> - VAPID public endpoint cevap dönüyor ✅
+> - PEM file path mode çalışıyor (PEM string from_string DER bekliyordu — fix)
+> - `_PYWEBPUSH_AVAIL=True`, `PUSH_NOTIFICATIONS_ACTIVE=False`
+>
+> ### YENI SEZON (1 Eylül 2026) AKTIVASYON RECETESI
+>
+> Tek satır flag: `.env` → `PUSH_NOTIFICATIONS_ACTIVE=true` + restart
+>
+> Sonra trigger'lar bağlanır:
+> - Yeni deneme sonucu sync → `send_push_to_user(soz_no=X, title='Denemen analiz edildi 📊', body='Son deneme: 92 net (+8 yükseldin!)', click_url='/chat?soru=deneme-detay')`
+> - Etüt 24h hatırlat → cron her gün 14:00'de yarınki etütleri tarar
+> - Etüt 1h hatırlat → cron her saat çalışır
+> - Sentiment alarm (3 gün sessiz) → push: "Naber {ad}, fark ettim sessizleştin"
+> - Haftalık motivasyon (Pazartesi) → "Bu hafta {x} net ilerledin 💪"
+> - Veli haftalık özet (Pazar 20:00)
+>
+> ### Toplam bu oturum (gece + gündüz)
+> 18+ commit. Tercih robotu + 2 YÖK Atlas tool + 5 kullanıcı sorunu fix + doğal konuşma kuralları + Atlas yansıtma + 3 kalite katmanı (engagement metric + memory recap + tonal filter) + **PWA Push altyapısı**.
+>
+> VPS HEAD `92e0b46`, service active, HTTP 200, hepsi LIVE (push KAPALI flag, Eylül'de aktive).
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40k (gece 21:30 → 22:00, 30 dk — Tercih robotu aktive + 2 YÖK Atlas tool)
 >
 > ## 🆕 OTURUM 25.40k (gece 21:30 → 22:00, 30 dk — Neo "tercih robotu altyapısını kullan")
 >
