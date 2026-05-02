@@ -1,6 +1,32 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, GECE 03:15 — **🛠 OTURUM 25.40d: PWA SCROLL LOCK FIX + SAĞLIK CHECK + YARIN PLANI**
+> **Son güncelleme:** 2 Mayıs 2026, GECE 03:25 — **🎨 OTURUM 25.40e: PREMIUM PWA ICON + .ENV BOM TEMIZ**
+>
+> ## 🆕 OTURUM 25.40e (gece 03:15 → 03:25, 10 dk — yarın listesini gece bitirdik)
+>
+> Neo "yarına bırakma, ikisini de şimdi bitir" dedi. .env BOM + PWA icon redesign yapıldı.
+>
+> **1) `.env` BOM bug temizlendi (VPS):**
+> - `xxd` ile doğrulama: `efbbbf45...` (BOM + E) → `4559 4f54...` (clean E) ✅
+> - `sed -i '1s/^\xEF\xBB\xBF//' /opt/fermatai/.env` + `systemctl restart`
+> - Service active, HTTP 200, journal warning sıfır ✅
+>
+> **2) PWA icon redesign (commit `5b06a96`):**
+> - Eski: `fermatai-512.png` 3.6KB — turuncu kare + düz beyaz F (Neo "itici sacma")
+> - Yeni: 70KB — dark navy + 3 katmanlı mesh gradient (turuncu merkez glow + mor üst-sağ accent + kahve alt-sol warmth) + italic serif F (Cambria Italic, matematik fonksiyon hissi) + 3 katmanlı letter (outer gold glow + inner orange glow + warm white main) + vignette
+> - 5 PNG variant üretildi: 192/512 normal + 192/512 maskable + 1024 (Apple touch) + 32 favicon
+> - `generate_pwa_icons.py` script — tasarım değişirse re-run
+> - Verify: HTTP 200, tüm icon dosyaları live, boyutlar 15-20x büyüdü (kalite artışı)
+>
+> **VPS sync:** HEAD `5b06a96` GitHub + VPS aynı, service active, HTTP 200/32ms ✅
+>
+> **Neo aksiyon (sabah test):**
+> - PWA'yı sil + tekrar ekle (Android icon cache çok agresif, yeni icon için reset gerek)
+> - Ya da PWA'yı uzun bas → "Kaldır" → tarayıcıdan `api.fermategitimkurumlari.com/chat` aç → "Ana ekrana ekle"
+> - Yeni splash: dark navy + mesh gradient + italic gold-glow F → Premium "AI başlıyor" hissi
+> - Icon beğenilmezse: `generate_pwa_icons.py` parametrelerini ayarla, re-run, redeploy
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40d (gece 03:00 → 03:15, 15 dk — PWA scroll lock + yarın planı)
 >
 > ## 🆕 OTURUM 25.40d (gece 03:00 → 03:15, 15 dk — PWA scroll lock + yarın planı)
 >
