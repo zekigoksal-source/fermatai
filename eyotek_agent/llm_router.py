@@ -120,6 +120,18 @@ _CLOUD_KEYWORDS = [
     "performans", "istatistik", "istatisti",
     # Kurum bilgisi — Ollama yanlış bilgi verebilir
     "fermat", "kurum", "dershane",
+    # 25.40m (Neo Vedat hoca vakası) — soru/test üretme YARATICI iş, Cerebras yetersiz
+    # Cerebras 2 May'da 20 klasik 1-adımlı soru üretip "yeni nesil" dedi (rezalet)
+    # Bu pattern'lerde Claude'a yönlendir — pedagojik kalite öncelik
+    "test hazirla", "test hazırla", "test olustur", "test oluştur", "test yap",
+    "soru uret", "soru üret", "soru hazirla", "soru hazırla", "soru yaz",
+    "konu tarama", "tarama testi", "deneme hazirla", "deneme hazırla",
+    "yeni nesil", "yeni stil", "maarif", "yks tipi", "lgs tipi",
+    "ornek soru", "örnek soru", "calistirma sorusu", "çalıştırma sorusu",
+    "alistirma", "alıştırma", "etkinlik hazirla", "etkinlik hazırla",
+    "sinav hazirla", "sınav hazırla", "yazili hazirla", "yazılı hazırla",
+    "10 soru", "15 soru", "20 soru", "soruluk test",
+    "pdf yap", "pdf olustur", "pdf oluştur", "pdf hazirla",
     # Hassas konular — Claude daha güvenli
     "kufur", "küfür", "sacma", "saçma", "berbat", "rezalet",
     "intihar", "olum", "ölüm",
