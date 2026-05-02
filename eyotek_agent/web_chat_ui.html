@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>FermatAI</title>
 <!-- 25.40c (Neo bug fix): Tema toggle bozulmus durumdaydi cunku inline style ve
      hardcoded background rule'lari mevcut --bg CSS variable sistemini override
@@ -10129,6 +10129,22 @@ html[data-theme="dark"] #pwa-manual-guide .pwa-guide-footer {
 @media (display-mode: standalone) {
   body::before { content: ""; display: none; }
   #pwa-install-banner, #pwa-manual-guide { display: none !important; }
+
+  /* 25.40d (Neo bug fix): PWA standalone'da scroll lock — ust butonlar veya alt
+     input kayboluyordu. Sebep: viewport-fit=cover yoktu (iOS notch zone) +
+     safe-area-inset padding yoktu (status bar/home indicator overlap).
+     viewport meta'ya viewport-fit=cover eklendi (head'de) + bu padding'ler PWA
+     standalone'da chat header'i status bar'in altina, input'u home indicator'in
+     ustune iter. Web Chrome (display-mode: browser) ETKILENMEZ. */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    box-sizing: border-box;
+  }
+  /* visualViewport-driven --vvh kullanan chat-wrap dvh hesabini koruyabilsin */
+  html, body { min-height: 100dvh; }
 }
 </style>
 

@@ -1,7 +1,21 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 1 Mayıs 2026 (öğleden sonra 21:30) · **Oturum:** 25.38 — **6 External Entegrasyon: MathPix + PhET + YouTube + Anki + Wolfram step + Sentry**
-> **Önceki güncelleme:** 1 Mayıs 2026, Oturum 25.37+ (öğlen 12:50) — Senior Dev Audit + Render Zenginlik + UI Redesign
+> **Belge tarihi:** 2 Mayıs 2026 (gece 03:10) · **Oturum:** 25.40c — **PWA UI Bug Fix + No-FOUC Tema + Wix Redirect**
+> **Önceki güncelleme:** 1 Mayıs 2026, Oturum 25.38 (öğleden sonra 21:30) — 6 External Entegrasyon
+
+### 25.40b/c değişiklikleri (UI / PWA katmanı)
+
+| Bileşen | Önce | Sonra | Etki |
+|---------|------|-------|------|
+| PWA tema toggle | Inline `<body style="background:#0A0E1A">` + `!important` → light mode bozuk, bg hep koyu | No-FOUC pattern: head'in en başında inline script localStorage'dan tema okur → `data-theme` set eder → mevcut `--bg` CSS variable sistemi (`:root` light default + `[data-theme="dark"]` override) doğru çalışır | Tema toggle gerçekten bg değiştirir; beyaz flash yok |
+| Auto-login `fermat_role` | `showChat()` çağrılır ama localStorage'a yazılmaz → admin button koşulları false | `if (d.role) localStorage.setItem("fermat_role", d.role)` checkSession içine eklendi | PWA cookie restore'da admin butonları (📚📊⚙️) görünür |
+| MAX_TURNS admin | 50 (yine sınırlı) | 999 (effectively unlimited, infinite-loop guard) | Admin tool zinciri uzun karmaşık iş yapabilir |
+| Splash | Pre-splash statik düz F harfi (Neo "anlamsız" dedi) | Pre-splash kaldırıldı, direkt cool splash (mesh gradient + neon ring + cyclical tagline) ilk frame'den itibaren | İlk açılış premium hissi |
+| Service Worker | v25.40b | v25.40c | Eski cache otomatik temizlenir kullanıcı refresh'te |
+| Wix `/fermatai` | Wix splash + header + iframe içinde FermatAI yükleniyordu | Wix MCP ile Custom Embed (ID `21155fe9-d770-45ed-8bad-75d34e33b68b`, HEAD, enabled) → `fermategitimkurumlari.com/fermatai` direkt `api.fermategitimkurumlari.com/chat` redirect | Wix splash + header tamamen bypass; öğrenci direkt PWA'ya iner |
+
+### Bekleyen teknik borç (yarın)
+1. **VPS `.env` BOM bug:** `/opt/fermatai/.env` 1. satırda BOM (U+FEFF) → systemd `EYOTEK_URL=...` satırını ignore ediyor (journal'da düzenli warning). `sed -i '1s/^\xEF\xBB\xBF//' /opt/fermatai/.env && systemctl restart fermatai-bridge` ile temizlenir. Şu an muhtemelen `python-dotenv`'in kendi parser'ı BOM'u tolere ediyor (HTTP 200, sistem çalışıyor) ama systemd ENV'den okuyan başka servis varsa o etkilenir. Risk: orta — düzeltmek 30sn.
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)
 > **Hedef okuyucu:** Yeni bir LLM, geliştirici veya iş ortağı. Sistemin teknik yetkinlik tablosunu LLM'e attığında doyurucu bir mimari resim alır.
 > **Amaç:** Mimari + kapasite + sağlık + güvenlik + workflow tek dokümanda — proje teknik durumunu tam yansıtan referans.
