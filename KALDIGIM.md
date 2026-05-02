@@ -1,6 +1,48 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, GECE 03:35 — **🍎 OTURUM 25.40f: KURUMSAL LOGO PWA ENTEGRASYONU**
+> **Son güncelleme:** 2 Mayıs 2026, ÖĞLEDEN SONRA 16:30 — **🔍 OTURUM 25.40g: KONUŞMA ANALİZİ + KRİTİK YAĞIZ BUG FIX**
+>
+> ## 🆕 OTURUM 25.40g (öğleden sonra 16:00 → 16:30, 30 dk — Neo "kullanıcı etkileşimlerini incele")
+>
+> Neo: "bir öğrenci web kodu yazıp girmekte sıkıntı yaşadı, bota yazdım not düşmüş olmalı, genel kullanıcı etkileşimlerini topluca incele problemleri tespit et ve düzelt"
+>
+> **Veri:** Son 24h → 606 mesaj, 25 kullanıcı, 198 user / 320 bot.
+>
+> ### 🚨 KRİTİK BUG TESPİTİ — YAĞIZ (905523517686)
+>
+> **Olay:** Yağız sabah 08:53'te fizik (elektriksel kuvvet, sağ el kuralı) sordu. 4 saat sonra 12:41'de "Web kodu" dedi. Bot OTP yerine **8 KEZ peş peşe** "Elektiriksel Kuvvet ve Sağ El Kuralı – Basit Web Sayfası" HTML kodu gönderdi. Yağız frustrated:
+> - 12:51 "Hatayı admine bildir"
+> - 12:55 "Knk yok web kodu istiyo"
+> - 12:57 "Olum bende niye hata yapiyon"
+>
+> **routing_stats kanıtı:** "Web kodu" → cerebras_120b 1.5s (fast bypass), sonra hep claude 10-20ms (instant fail). Fast_response OGRENCI_PATTERNS'a ULAŞMADI bile.
+>
+> **Root cause:** Yağız'ın conversation memory'si fizik içerik ile sıcak. `try_fast_response` içinde pattern matching satırına ulaşmadan önce çalışan guard'lardan biri (`pattern_loop_guard` / `context_bridge` / `scenario`) None döndürdü → Cerebras'a düştü → context'ten "fizik için web sayfası" sandı.
+>
+> **Fix (commit `c40bbb7` — LIVE):** `try_fast_response` BAŞINA (msg_lower set'ten hemen sonra, 7 guard'ın hepsinden ÖNCE) AUTH FAST PATH eklendi. 7 pattern kapsama: `web kodu / WhatsApp web kodu / OTP / fermat ai kodu / yeni kod / kod gelmedi / kod tekrar`. ogrenci/ogretmen/rehber rollerinde aktif. Test: tüm "Web kodu" varyantları match ✓, "fizik nedir" false positive yok ✓. Verify: VPS HTTP 200, fix grep=1, no startup errors.
+>
+> ### 🟡 DİĞER SORUNLAR (yarın için)
+>
+> 1. **Ali (905334644419) — Bot HALÜSİNASYON:** "Bu veri hatalı benim verilerime göre yorum yap" → bot TYT/AYT karıştırdı, "578 yanlış" gibi mantıksız sayılar verdi. 4 kez Ali'ye düzeltme yaptırdı. **Çözüm:** prompt'a sınav türü sıkı validation kural + ders normalizasyonu (`student_exam_analysis` kayıtları 90% temiz ama edge case'ler var).
+>
+> 2. **Mehmet (905528952109) — Tablet PWA:** "web sitesine tabletten giremiyorum admine bildir" / "giriş yapamıyorum tabletimden". Bu raporu 12:51'de geldi — 25.40d PWA scroll lock fix henüz deploy değildi. Şimdi fix'li, Mehmet'e bildirim atılabilir veya yarın test mesaj atar.
+>
+> 3. **frustration_log BOŞ:** Yağız 8 kez yanlış cevap aldı, "olum bende niye hata yapiyon" yazdı, ama `frustration_log` tablosunda son 24h kayıt YOK. fast_response içinde frustration tetikleniyor (return None) ama DB'ye INSERT yapılmıyor olabilir. Yarın audit gerekli.
+>
+> 4. **Ada (905456592707) — Duygusal sıkıntı:** "iki dakika boyunca kendimi anlatacak kadar doğru konuşamıyorum yani" — sentiment tracker yakaladı mı? `student_insights` kontrol edilmeli. Eğer yakaladıysa rehber bildirimi atılmış olmalı (alarm sistemi kapalı, yapılmadı). Yeni Sezon'da bu kategori öncelik olur.
+>
+> ### 📅 YARIN İÇİN ÖNCELİK
+>
+> 🔴 **ACİL** (1-2 saat iş):
+> - Yağız fix'i gerçek kullanıcı testi (sabah Yağız "web kodu" yazdığında OTP gelmeli, gelmezse log incele)
+> - frustration_log INSERT bug audit
+> - Ali halüsinasyon prompt fix (sınav türü validation kuralı)
+>
+> 🟡 **ORTA**:
+> - Mehmet'e PWA scroll lock fix bildirimi (PWA'yı sil + tekrar ekle yönergesi)
+> - Ada için sentiment tracker check + manuel rehber yönlendirme
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40f (gece 03:30 → 03:35, 5 dk — kurumsal logo PWA icon'larına entegre)
 >
 > ## 🆕 OTURUM 25.40f (gece 03:30 → 03:35, 5 dk — kurumsal logo PWA icon'larına entegre)
 >
