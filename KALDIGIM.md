@@ -1,6 +1,51 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Mayıs 2026, GECE 03:00 — **🛠 OTURUM 25.40c: TEMA TOGGLE GERÇEKTEN DÜZELDİ + 25.40b 4 BUG FIX**
+> **Son güncelleme:** 2 Mayıs 2026, GECE 03:15 — **🛠 OTURUM 25.40d: PWA SCROLL LOCK FIX + SAĞLIK CHECK + YARIN PLANI**
+>
+> ## 🆕 OTURUM 25.40d (gece 03:00 → 03:15, 15 dk — PWA scroll lock + yarın planı)
+>
+> **Neo bug raporu (gece 03:00, telefondan):** "mobilde uygulama gibi girdiğimde tutukluk yapıyor, üst butonları veya alt mesaj yazma yerini göremiyorum, lag yapıyor". Chrome web'te yok, sadece PWA standalone'da.
+>
+> **Root cause + fix (commit `6580122`):**
+> - `<meta viewport>` content'ine `viewport-fit=cover` eklendi → iOS notch zone hesaplanır
+> - `@media (display-mode: standalone)` body'ye `env(safe-area-inset-*)` 4 yön padding → status bar (top) + home indicator (bottom) zone'ları HTML alanını ezmez
+> - `min-height: 100dvh` (visualViewport ile uyumlu)
+> - SW v25.40c → v25.40d (cache temizlik)
+> - Web Chrome (display-mode: browser) ETKİLENMEZ — media query gate
+> - Verify: HTTP 200, viewport-fit=3 occurrences, env(safe-area-inset)=4 occurrences ✅
+>
+> **🩺 Sistem sağlık raporu (gece 03:15):**
+> - Service: active (uptime 8 gün, restart 5dk önce — yeni fix sonrası) ✅
+> - HTTP: tüm endpointler 200 (chat: 104ms, sw: 46ms, manifest: 94ms, png: 62ms) ✅
+> - Disk: %5 dolu (15G/301G) — bol yer ✅
+> - Memory: 8.9G/15G available — sağlıklı ✅
+> - Git: HEAD `6580122` GitHub + VPS sync ✅
+> - Wix Custom Embed (redirect): live ✅
+>
+> **⚠️ Bilinen 1 minor warning (RUNTIME ETKİSİ YOK):** `/opt/fermatai/.env` 1. satırda BOM (U+FEFF) — systemd `EnvironmentFile=` parser ignore ediyor (`EYOTEK_URL` satırı). `python-dotenv` BOM'u tolere ediyor (HTTP 200, çalışıyor). Risk düşük, fix 30sn: `sed -i '1s/^\xEF\xBB\xBF//' /opt/fermatai/.env`. Yarın listesinde.
+>
+> ## 📅 YARIN İÇİN ÖNCELİK LİSTESİ (sabah ilk iş sırasıyla)
+>
+> ### 🔴 ACİL — UI/UX
+> 1. **PWA splash icon redesign:** Android OS-level PWA splash şu an `fermatai-512.png` (turuncu kare içinde beyaz F) gösteriyor. Neo "itici, sacma" dedi. Manifest `background_color: #0F172A` (lacivert) + bu icon = OS otomatik splash. Tasarım gerekir:
+>    - Mesh gradient (turuncu→mor→lacivert) background
+>    - Stylized "F" → matematik formülü elementi (∫, ƒ, ∂, π) veya geometric pattern
+>    - Glow / neon effect
+>    - 192px + 512px hem `purpose:any` hem `purpose:maskable`
+>    - Yeni PNG'ler `static/img/`'e koy + manifest revalidate
+>    - Test: telefondan PWA aç → OS splash kontrol
+>
+> ### 🟡 ORTA — Operasyonel
+> 2. **`.env` BOM bug:** Yukarıda detay. Tek komut, restart, journal temizlenir.
+> 3. **PWA scroll lock test verify:** Bugün deploy edildi (25.40d), yarın Neo telefondan PWA standalone'da test → çalışıyor mu?
+>
+> ### 🟢 BEKLEYEN (önceki oturumlardan)
+> 4. **Alarm sistemi aktif etme** — `ALERTS_ACTIVE=False`, Yeni Sezon (1 Eyl 2026) bağlı. Test ortamında 1 hafta dry-run önerilir.
+> 5. **Eyotek session drop ~20-30dk timeout** — `session_keeper.py` CDP fix iyi ama hala manuel "eyotek tamam" gerekebilir. Daha agresif keep-alive lazım.
+> 6. **PDF kaynak import pipeline** (RAG genişlemesi)
+> 7. **Vision PDF iptal edildi** (memory: SAY+EA odaklı, sözel öğrenci yok) ✅ artık iş listesinde değil
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40c (gece 02:55 → 03:00, 5 dk — Neo "tema yine değişmiyor" tekrar fix)
 >
 > ## 🆕 OTURUM 25.40c (gece 02:55 → 03:00, 5 dk — Neo "tema yine değişmiyor" tekrar fix)
 >
