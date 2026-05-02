@@ -231,12 +231,134 @@ def aggregate(results: list[dict]) -> dict:
     }
 
 
+async def persist_to_db(report: dict, raw_path: str, period_hours: int, alarm_triggered: bool, results: list[dict]) -> int | None:
+    """
+    Quality run sonucunu DB'ye persist et (25.40j Neo direktif).
+    Returns: run_id (next time için trend hesaplama).
+    """
+    from db_pool import get_pool
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        # 1) Master run kayit
+        run_id = await conn.fetchval(
+            """INSERT INTO conversation_quality_score
+               (period_hours, bursts_analyzed, avg_pedagogical_score,
+                frustration_count, bot_error_count, missing_pattern_count,
+                bot_error_types, critical_findings, raw_report_path, alarm_triggered)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+               RETURNING id""",
+            period_hours,
+            report.get("toplam_konusma", 0),
+            report.get("ortalama_pedagojik_puan"),
+            report.get("frustration_sayisi", 0),
+            report.get("bot_hata_sayisi", 0),
+            report.get("eksik_pattern_sayisi", 0),
+            json.dumps(report.get("bot_hata_tipleri", {}), ensure_ascii=False),
+            json.dumps(report.get("kritik_bulgular", []), ensure_ascii=False, default=str),
+            raw_path,
+            alarm_triggered,
+        )
+
+        # 2) Burst-level kayitlar
+        for r in results:
+            try:
+                await conn.execute(
+                    """INSERT INTO conversation_quality_burst
+                       (run_id, phone, burst_idx, role, msg_count, started_at,
+                        pedagogical_score, frustration_count, bot_error_count,
+                        summary, important_finding, raw_json)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)""",
+                    run_id,
+                    r.get("_phone") or "",
+                    r.get("_burst_idx", 0),
+                    r.get("_role") or "ogrenci",
+                    r.get("_msg_count", 0),
+                    datetime.fromisoformat(r["_started_at"]) if r.get("_started_at") else None,
+                    int(r["pedagojik_puan"]) if isinstance(r.get("pedagojik_puan"), (int, float)) else None,
+                    len(r.get("frustration", [])),
+                    len(r.get("bot_hatasi", [])),
+                    (r.get("ozet") or "")[:500],
+                    (r.get("onemli_bulgu") or "")[:500],
+                    json.dumps(r, ensure_ascii=False, default=str),
+                )
+            except Exception as _be:
+                logger.warning(f"Burst persist hatasi ({r.get('_phone')}): {_be}")
+        return run_id
+
+
+async def check_alarm_and_notify(report: dict, run_id: int | None) -> bool:
+    """
+    Kalite eşik altına düştüyse Neo'ya WP rapor gönder (25.40j).
+    Eşikler:
+      - Ortalama puan < 6.0 → ALARM
+      - Frustration > 5 → ALARM
+      - Bot hata > 8 → ALARM
+      - Bir burst score < 4 → ALARM (kritik tek konusma)
+    """
+    avg = report.get("ortalama_pedagojik_puan") or 10.0
+    frust = report.get("frustration_sayisi", 0)
+    err = report.get("bot_hata_sayisi", 0)
+    kritik = report.get("kritik_bulgular", [])
+
+    triggers = []
+    if avg < 6.0:
+        triggers.append(f"📉 Ortalama puan dustu: *{avg}/10* (esik 6.0)")
+    if frust > 5:
+        triggers.append(f"😤 Frustration: *{frust}* (esik 5)")
+    if err > 8:
+        triggers.append(f"⚠ Bot hatasi: *{err}* (esik 8)")
+    if len(kritik) > 0:
+        triggers.append(f"🚨 Kritik bulgu: *{len(kritik)}*")
+
+    if not triggers:
+        logger.info(f"[QUALITY] Esik altinda kalan yok, alarm yok (avg={avg}, frust={frust}, err={err})")
+        return False
+
+    # Alarm tetiklendi → Neo'ya WP rapor
+    msg = "🩺 *FermatAI Konusma Kalite Alarmi*\n\n"
+    for t in triggers:
+        msg += f"  {t}\n"
+    msg += f"\n📊 *Donem:* son {report.get('_meta', {}).get('hours', 48)}h | *Konusma:* {report['toplam_konusma']}\n"
+    if report.get("bot_hata_tipleri"):
+        msg += f"📋 *Hata tipleri:* {dict(report['bot_hata_tipleri'])}\n"
+    if kritik:
+        msg += "\n🔍 *Kritik Bulgular:*\n"
+        for k in kritik[:3]:
+            phone_tail = (k.get('phone') or '')[-4:]
+            msg += f"  • ...{phone_tail}: {k.get('bulgu', '')[:120]}\n"
+    msg += f"\n_Detay: logs/kalite_raporu_*.json (run_id={run_id})_"
+
+    try:
+        # Neo'ya direkt WP gonder (admin)
+        import os, httpx
+        token = os.getenv("WA_ACCESS_TOKEN")
+        phone_id = os.getenv("WA_PHONE_NUMBER_ID")
+        if not token or not phone_id:
+            logger.warning("[QUALITY ALARM] WA token/phone_id yok, mesaj atilamadi")
+            return True
+        url = f"https://graph.facebook.com/v18.0/{phone_id}/messages"
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            await client.post(
+                url,
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json={"messaging_product": "whatsapp", "to": "905051256802",
+                      "type": "text", "text": {"body": msg, "preview_url": False}},
+            )
+        logger.info(f"[QUALITY ALARM] Neo'ya WP gonderildi: {len(triggers)} tetikleyici")
+        return True
+    except Exception as e:
+        logger.warning(f"[QUALITY ALARM] WP gonderim hatasi: {e}")
+        return True  # Yine de alarm tetiklendi sayilir
+
+
 async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--hours", type=int, default=48)
     parser.add_argument("--min-turns", type=int, default=3)
     parser.add_argument("--max-bursts", type=int, default=50,
                        help="Analiz edilecek maksimum konusma sayisi (maliyet kontrolu)")
+    parser.add_argument("--no-alarm", action="store_true", help="Neo'ya WP alarm gonderme")
+    parser.add_argument("--no-db", action="store_true", help="DB'ye persist etme (sadece JSON)")
     args = parser.parse_args()
 
     print(f"[*] Son {args.hours} saatin konusmalari cekiliyor...")
@@ -285,6 +407,22 @@ async def main():
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     print(f"\n[+] Rapor kaydedildi: {out}")
 
+    # 25.40j: DB'ye persist + alarm kontrolu
+    run_id = None
+    alarm = False
+    if not args.no_db:
+        try:
+            # Alarm kontrolunu once yap (alarm flag'i DB'ye yazilir)
+            if not args.no_alarm:
+                alarm = await check_alarm_and_notify(report, run_id=None)  # run_id sonra yazilir
+            run_id = await persist_to_db(report, str(out), args.hours, alarm, results)
+            print(f"[+] DB'ye persist: run_id={run_id}, alarm={alarm}")
+        except Exception as e:
+            print(f"[!] DB persist hatasi: {e}")
+    elif not args.no_alarm:
+        alarm = await check_alarm_and_notify(report, run_id=None)
+        print(f"[+] Alarm kontrolu: {alarm}")
+
     # Ozet konsola
     print("\n" + "=" * 60)
     print(f"ANALIZ OZETI — {report['toplam_konusma']} konusma")
@@ -298,6 +436,9 @@ async def main():
         print("\nKRITIK BULGULAR:")
         for k in report["kritik_bulgular"][:5]:
             print(f"  - {k['phone'][-4:]}: {k['bulgu'][:120]}")
+
+    if alarm:
+        print("\n🚨 ALARM TETIKLENDI — Neo'ya WP gonderildi")
 
 
 if __name__ == "__main__":

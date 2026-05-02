@@ -788,3 +788,194 @@ def is_short_ambiguous(message: str) -> bool:
         if re.match(pat, msg):
             return True
     return False
+
+
+# ════════════════════════════════════════════════════════════════════════
+# 25.40j (Neo direktif) — UZUN KONUŞMA RECAP
+#
+# Ada (905456592707) 30+ mesaj attı, her cevapta history büyüdü, prompt
+# token'ı şişti, ileride memory truncation yapılırsa kalp özet kaybolurdu.
+# Çözüm: 30+ mesaj olunca Cerebras 70B ile "kalp özeti" üret, eski mesajları
+# sil + recap'i system prompt'a inject et. Maliyet: ~$0.001 / her 30 mesajda.
+# ════════════════════════════════════════════════════════════════════════
+
+# Mesaj sayısı eşikleri
+RECAP_THRESHOLD = 30      # Bu sayıda VEYA üstünde mesaj varsa recap üret
+RECAP_KEEP_RECENT = 12    # Recap sonrası raw tutulacak son N mesaj
+RECAP_PROMPT = """Asagidaki ogrenci-bot konusmasinin "kalp ozetini" 3-4 kisa cumlede yaz.
+Hedef: Ileride bot bu ozeti okuyunca KIM ile NE konustugumu, hangi DUYGU/PROBLEM/HEDEF paylasildi, hangi ONEMLI ISIMLER/OLAYLAR gecti hatirlamali.
+ASLA sayisal veri uydurma; sadece konusmada GECEN seyleri yaz.
+
+KONUSMA ({turn_count} mesaj):
+{transcript}
+
+OZET (sadece duz metin, 3-4 cumle):"""
+
+
+async def maybe_summarize_history(history: list, threshold: int = RECAP_THRESHOLD,
+                                   keep_recent: int = RECAP_KEEP_RECENT) -> tuple[str, list]:
+    """
+    History uzunsa Cerebras ile özet üret + son N mesajı koru.
+    Eşik altındaysa (recap, history) = ("", history) — değişiklik yok.
+
+    Returns:
+        (recap_text: str, new_history: list)
+        recap_text boş ise işlem yapılmadı, history aynen kalır.
+    """
+    if not history or len(history) < threshold:
+        return "", history
+
+    # Eski mesajlar (özetlenecek) + yeni (raw)
+    old_msgs = history[:-keep_recent] if len(history) > keep_recent else history
+    recent_msgs = history[-keep_recent:] if len(history) > keep_recent else []
+
+    # Transcript hazırla — content çok uzun olabilir, kırp
+    lines = []
+    for i, m in enumerate(old_msgs):
+        role = "Ogr" if m.get("role") == "user" else "Bot"
+        c = m.get("content", "")
+        # content sadece string olmalı (Anthropic block listesi olabilir)
+        if isinstance(c, list):
+            # tool_use/tool_result blokları — atla
+            text_parts = [b.get("text", "") for b in c if isinstance(b, dict) and b.get("type") == "text"]
+            c = " ".join(text_parts)
+        if not isinstance(c, str):
+            c = str(c)
+        c = c[:300]  # Her mesaj max 300 char (bütün özet 8k içinde kalsın)
+        lines.append(f"[{i}] {role}: {c}")
+    transcript = "\n".join(lines)
+    if len(transcript) > 8000:
+        transcript = transcript[:8000] + "\n[...truncated]"
+
+    prompt = RECAP_PROMPT.format(turn_count=len(old_msgs), transcript=transcript)
+
+    try:
+        # Cerebras-first (ucuz + hızlı), Groq fallback
+        try:
+            from cerebras_handler import CerebrasClient
+            client = CerebrasClient()
+            result = await client.complete_async(
+                messages=[{"role": "user", "content": prompt}],
+                system="Sen FermatAI hafiza ozetleyicisisin. Kisa ve net Turkce yaz.",
+                model="gpt-oss-120b",
+                max_tokens=300,
+                temperature=0.2,
+            )
+        except Exception:
+            from groq_handler import GroqClient
+            client = GroqClient()
+            result = await client.complete(
+                messages=[{"role": "user", "content": prompt}],
+                system="Sen FermatAI hafiza ozetleyicisisin. Kisa ve net Turkce yaz.",
+                max_tokens=300,
+                temperature=0.2,
+            )
+        recap = (result.get("text") or "").strip()
+    except Exception as e:
+        logger.warning(f"[RECAP] Hata: {e} — history aynen tutuldu")
+        return "", history
+
+    if not recap or len(recap) < 30:
+        logger.warning(f"[RECAP] Cerebras bos/cok kisa cevap dondu, history aynen tutuldu")
+        return "", history
+
+    # Yeni history: synthetic user→assistant pair (recap as injected memory) + son raw
+    # Anthropic API role-alternation gerektiriyor: user → assistant → user → assistant
+    new_history = [
+        {"role": "user", "content": f"[OTURUM OZETI — onceki {len(old_msgs)} mesaj kalp ozeti]\n{recap}"},
+        {"role": "assistant", "content": "Anladim, ozeti kaydettim. Devam ediyorum."},
+    ] + recent_msgs
+
+    logger.info(f"[RECAP] {len(old_msgs)} mesaj ozetlendi → {len(recap)} char recap, "
+                f"history {len(history)}→{len(new_history)} mesaj")
+    return recap, new_history
+
+
+# ════════════════════════════════════════════════════════════════════════
+# 25.40j (Neo direktif) — TONAL TEKRAR FILTER
+#
+# Ada vakasi: bot 5 ust uste "Merhaba *Ada*!" ile basladi (robotik).
+# Yagiz vakasi: 12 ust uste "Merhaba *Yagiz*!" tekrari.
+# Prompt kuralı (DOGAL KONUSMA AKISI) eklendi (commit d184862) ama
+# Claude/Cerebras prompt'a uymayabilir → POST-PROCESS yedek katman.
+#
+# Mantik:
+#   - Bu cevap "Merhaba/Selam/Hey {ad}" ile basliyor MU?
+#   - Son 2-3 bot cevabi DA hitap ile basladi MI?
+#   - Evet+evet → prefix'i temizle, dogal akisa don
+# ════════════════════════════════════════════════════════════════════════
+
+import re as _re_filter
+
+_GREETING_PREFIX_RE = _re_filter.compile(
+    r'^(Merhaba|Selam|Selamlar|Hey|Ho[sş]geldin|Ho[sş]\s*geldin|Naber|Nas[iı]ls[iı]n)'
+    r'(\s+[\*_]*[A-ZÇĞİÖŞÜa-zçğıöşü\.]{2,30}[\*_]*)?'
+    r'[!?.,\s]*',
+    _re_filter.IGNORECASE
+)
+
+
+def strip_redundant_greeting(response: str, history: list, max_lookback: int = 6) -> str:
+    """
+    Bot cevabi 'Merhaba {name}' ile basliyor + son 2 bot cevabi DA boyleyse
+    prefix'i sil, dogal akisa donder.
+
+    Args:
+        response: Yeni bot cevabi (henuz history'ye eklenmemis)
+        history: agent.history (son N mesaj)
+        max_lookback: Son kac mesaja bakilir (default 6 = son 3 turn)
+
+    Returns:
+        Temizlenmis cevap (veya degismeden orijinal)
+    """
+    if not response or len(response) < 10:
+        return response
+
+    response_strip = response.lstrip()
+
+    # Bu cevap hitap ile basliyor mu?
+    m = _GREETING_PREFIX_RE.match(response_strip)
+    if not m:
+        return response
+
+    # History'den son bot cevaplarini al (max_lookback mesaj icinde)
+    bot_msgs = []
+    for msg in reversed(history[-max_lookback:] if history else []):
+        if msg.get("role") == "assistant":
+            c = msg.get("content", "")
+            if isinstance(c, list):
+                # tool_use bloklari skip
+                text_parts = [b.get("text", "") for b in c if isinstance(b, dict) and b.get("type") == "text"]
+                c = " ".join(text_parts)
+            if isinstance(c, str) and c.strip():
+                bot_msgs.append(c.strip())
+            if len(bot_msgs) >= 3:
+                break
+
+    if len(bot_msgs) < 2:
+        # Cok az gecmis var — bu ilk veya 2. cevap olabilir, hitap KORUNUR
+        return response
+
+    # Son 2 bot cevabi da hitap ile basliyor mu?
+    has_greeting_count = sum(
+        1 for c in bot_msgs[:2]
+        if _GREETING_PREFIX_RE.match(c)
+    )
+
+    if has_greeting_count < 2:
+        # En az son 2'si hitapla baslamadi — bu cevap da OK kalsin
+        return response
+
+    # 3 ust uste hitap → bu cevabin prefix'i silinecek
+    # Match end konum:
+    end = m.end()
+    cleaned = response_strip[end:].lstrip()
+    if not cleaned or len(cleaned) < 5:
+        return response  # Cleanlemek cok az text birakir, sakın
+
+    # Ilk karakter kucuk harf ise buyut (turkce destekli)
+    if cleaned[0].islower():
+        cleaned = cleaned[0].upper() + cleaned[1:]
+
+    logger.debug(f"[TONAL_FILTER] Hitap prefix temizlendi (son 2 cevap zaten hitap ile basliyordu)")
+    return cleaned

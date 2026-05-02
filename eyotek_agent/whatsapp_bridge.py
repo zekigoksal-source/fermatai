@@ -214,6 +214,40 @@ async def _run_scheduled_tasks():
                             logger.info("⏰ Haftalık time analytics Neo'ya gönderildi")
                 except Exception as e:
                     logger.warning(f"Time analytics rapor hatası: {e}")
+                # 25.40j (Neo direktif) — Haftalık konuşma kalite taraması (Pazartesi 20:00)
+                # Cerebras 70B son 7 gun konuşmaları skorlar, alarm tetiklenirse Neo'ya WP rapor
+                try:
+                    if now.weekday() == 0:  # Pazartesi
+                        from conversation_quality_analyzer import (
+                            fetch_conversations as _qa_fetch,
+                            analyze_burst as _qa_analyze,
+                            aggregate as _qa_agg,
+                            persist_to_db as _qa_persist,
+                            check_alarm_and_notify as _qa_alarm,
+                        )
+                        try:
+                            from cerebras_handler import CerebrasClient as _QClient
+                            _qclient = _QClient()
+                        except Exception:
+                            from groq_handler import GroqClient as _QClient
+                            _qclient = _QClient()
+                        _qbursts = await _qa_fetch(hours=168, min_turns=3)  # 7 gun
+                        _qbursts = _qbursts[:80]  # max 80 konusma (~$0.40)
+                        _qresults = []
+                        for _qb in _qbursts:
+                            _qr = await _qa_analyze(_qclient, _qb)
+                            if _qr:
+                                _qresults.append(_qr)
+                        _qreport = _qa_agg(_qresults)
+                        _qreport["_meta"] = {"hours": 168, "auto": True}
+                        # Alarm + persist
+                        _qalarm = await _qa_alarm(_qreport, run_id=None)
+                        await _qa_persist(_qreport, "scheduled_weekly", 168, _qalarm, _qresults)
+                        logger.info(f"📊 Haftalik kalite tarama: {len(_qresults)} konusma, "
+                                    f"avg={_qreport.get('ortalama_pedagojik_puan')}, alarm={_qalarm}")
+                except Exception as e:
+                    logger.warning(f"Haftalik kalite tarama hatasi: {e}")
+
                 # Haftalık Jarvis insight (Pazartesi 20:00)
                 try:
                     if now.weekday() == 0:

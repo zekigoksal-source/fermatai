@@ -3211,6 +3211,8 @@ class FermatCoreAgent:
         # Async client — native streaming için (web chat Faz 4)
         self.async_client   = AsyncAnthropic(api_key=ANTHROPIC_KEY, max_retries=4, timeout=60.0) if ANTHROPIC_KEY else None
         self.history:       list[dict] = []
+        # 25.40j (Neo direktif) — recap ozeti (uzun konusmalarda kalp ozeti)
+        self.recap_summary: Optional[str] = None
         self._caller_phone: str = ""
         self._channel:      str = "whatsapp"
         self.session_id:    str = str(uuid.uuid4())[:12]
@@ -4491,6 +4493,21 @@ class FermatCoreAgent:
         self.history.append({"role": "user", "content": user_input})
         logger.info(f"Kullanici [{role}]: {user_input[:80]}")
 
+        # 25.40j (Neo direktif) — UZUN KONUSMA RECAP
+        # Ada gibi 30+ mesajlik diyaloglarda eski mesajlar token sisirir +
+        # ileride truncation yapilirsa "kalp" kaybolur. Cerebras ile kisa
+        # ozet uret + history'yi kisalt. Maliyet: ~$0.001 / 30 mesajda.
+        # Sadece role=ogrenci icin (admin/teacher kisa diyaloglar).
+        if role == "ogrenci" and len(self.history) >= 30:
+            try:
+                from conversation_memory import maybe_summarize_history
+                _recap, _new_hist = await maybe_summarize_history(self.history)
+                if _recap and len(_new_hist) < len(self.history):
+                    self.history = _new_hist
+                    logger.info(f"[RECAP] Ozet uretildi, history {len(self.history)} mesaja kisaltildi")
+            except Exception as _re:
+                logger.warning(f"[RECAP] Hata (akis bozulmasin): {_re}")
+
         # Kullanici mesajini DB'ye kaydet
         await _log_conversation(self.session_id, caller_phone, role, "user", user_input)
 
@@ -4769,6 +4786,11 @@ class FermatCoreAgent:
                         _local_provider = "ollama"
                     else:
                         _local_provider = "local"  # bilinmeyen ama yerel-benzeri
+                    # 25.40j: Tonal redundant greeting filter (Yagiz/Ada vakası)
+                    try:
+                        from conversation_memory import strip_redundant_greeting
+                        answer = strip_redundant_greeting(answer, self.history)
+                    except Exception: pass
                     self.history.append({"role": "assistant", "content": answer})
                     await _log_conversation(
                         self.session_id, caller_phone, role,
@@ -4846,6 +4868,11 @@ class FermatCoreAgent:
                     if _groq_r and _groq_r.get("text") and len(_groq_r["text"].strip()) >= 20:
                         answer = _groq_r["text"].strip()
                         logger.info(f"  [GROQ-TOOLS] Basarili {_gt_ms}ms, {len(answer)} char")
+                        # 25.40j: Tonal filter
+                        try:
+                            from conversation_memory import strip_redundant_greeting
+                            answer = strip_redundant_greeting(answer, self.history)
+                        except Exception: pass
                         self.history.append({"role": "assistant", "content": answer})
                         try:
                             await _log_conversation(
@@ -5020,6 +5047,11 @@ class FermatCoreAgent:
                     answer = answer.strip()
                 else:
                     answer = _clean_response(answer)
+                # 25.40j: Tonal redundant greeting filter
+                try:
+                    from conversation_memory import strip_redundant_greeting
+                    answer = strip_redundant_greeting(answer, self.history)
+                except Exception: pass
                 # History'ye response.content (TextBlock list) yerine duz string ekle
                 # Boylece Ollama'ya geciste format sorunu olmaz
                 self.history.append({"role": "assistant", "content": answer})
