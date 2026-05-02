@@ -237,7 +237,7 @@ Konu: {konu}
 }}
 
 KRITIK: Sadece geçerli JSON döndür, kod bloğu yok, markdown yok.
-4 örnek soru üret, hepsi 7 kriteri karşılasın. Türkçe yaz, akademik dil kullan.
+3 örnek soru üret, hepsi 7 kriteri karşılasın. Türkçe yaz, akademik dil kullan.
 Soru senaryoları çocuk/ortaokul yaşına UYGUN olsun (çok kompleks değil)."""
 
 
@@ -254,18 +254,21 @@ async def generate_one_topic(client, sinif: str, ders: str, konu: str) -> Option
     )
 
     try:
-        # Sync Anthropic SDK — async wrap
+        # Sync Anthropic SDK — async wrap + STREAMING (timeout problemi cozumu)
         # Mevcut sistemin model adi env'den (FERMAT_MODEL, default sonnet-4-6)
         _model = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
-        def _do():
-            return client.messages.create(
+        def _do_stream():
+            chunks = []
+            with client.messages.stream(
                 model=_model,
-                max_tokens=5500,  # 4 ornek + cevap + ogretmen notlari + yaygin hatalar = ~5K yeterli
+                max_tokens=4000,  # 3 ornek paket + ogretmen notlari yeterli
                 temperature=0.5,
                 messages=[{"role": "user", "content": prompt}],
-            )
-        response = await asyncio.to_thread(_do)
-        text = response.content[0].text.strip()
+            ) as stream:
+                for text in stream.text_stream:
+                    chunks.append(text)
+            return "".join(chunks)
+        text = (await asyncio.to_thread(_do_stream)).strip()
 
         # Markdown JSON kod bloğu varsa temizle
         if text.startswith("```"):
