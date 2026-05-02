@@ -54,7 +54,9 @@ except ImportError:
 
 # .env'den oku
 VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
-VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
+# .env'de PEM key tek satır + literal '\n' olarak yazıldıysa multi-line'a çevir
+_raw_priv = os.getenv("VAPID_PRIVATE_KEY", "")
+VAPID_PRIVATE_KEY = _raw_priv.replace("\\n", "\n") if _raw_priv else ""
 VAPID_CLAIMS_EMAIL = os.getenv("VAPID_CLAIMS_EMAIL", "fermatvipegitim@gmail.com")
 PUSH_NOTIFICATIONS_ACTIVE = os.getenv("PUSH_NOTIFICATIONS_ACTIVE", "false").lower() == "true"
 
