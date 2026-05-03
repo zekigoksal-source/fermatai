@@ -2255,6 +2255,36 @@ async def try_fast_response(
             # Hata olursa normal akisa devam et (alt patterns yine deneyecek)
 
     # ══════════════════════════════════════════════════════════════════════
+    # 🌟 ENRICHMENT FAST PATH (25.40y — Neo "max kalite cevap" direktifi)
+    #
+    # Cerebras footer'da "💡 deney/3d/cozum/video yaz" diye yonlendirir.
+    # Kullanici trigger keyword yazinca:
+    #   1. Bu PATH yakalar (Claude'a GITMEZ — 30K token tasarruf)
+    #   2. enrichment_dispatcher → ilgili bedava API/render direkt cagrilir
+    #   3. Sonuc kullaniciya doner
+    #
+    # SARTLAR:
+    # - Sadece OGRENCI rolu (admin/personel kendi tartismasinda istemez)
+    # - Kisa mesaj (1-3 kelime)
+    # - Cerebras son 5dk icinde cevap vermis olmali (konu var)
+    # ══════════════════════════════════════════════════════════════════════
+    if role == 'ogrenci' and len(msg_lower.split()) <= 4:
+        try:
+            from enrichment_dispatcher import detect_enrichment_intent, dispatch_enrichment
+            intent_info = detect_enrichment_intent(message)
+            if intent_info:
+                try: _fr_last_handler.set(f'enrich_{intent_info["intent"]}')
+                except: pass
+                result = await dispatch_enrichment(intent_info, caller_phone)
+                if result:
+                    return result
+                # Result None ise (konu bulunamadi vb.) — alt akisa birak
+        except Exception as _ee:
+            import logging
+            logging.getLogger(__name__).debug(f"[ENRICH_FAST] dispatch fail: {_ee}")
+            # Sessiz fail, alt akis devam etsin
+
+    # ══════════════════════════════════════════════════════════════════════
     # PATTERN LOOP GUARD (23 Nisan — Enes vakası)
     # Son 2 bot cevabı aynı handler ise + yeni mesaj itiraz/düzeltme içeriyorsa
     # Fast response SKIP → Claude devreye (spesifik intent analiz etsin).

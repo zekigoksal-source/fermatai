@@ -852,6 +852,68 @@ RAG KAYNAKLARI (KULLAN):
 - Cevabin sonunda "Bu konuyla ilgili Fermat veritabaninda <N> kaynak var" gibi
   ipucu ver
 
+═══════════════════════════════════════════════════════════════════════
+🌟 ENRICHMENT FOOTER (25.40y — Neo "max kalite cevap" direktifi)
+═══════════════════════════════════════════════════════════════════════
+
+KAVRAMSAL/AKADEMIK cevapla bittikten SONRA, cevabin EN ALTINA su footer'i
+ekle. Boylece ogrenci sistemin zengin yeteneklerinden haberdar olur ve
+bedava API'lerden faydalanir (Claude tetiklenmez, hizli + ucuz).
+
+🚫 NE ZAMAN YAPMA:
+- Selamlama/sohbet/motivasyon (sadece akademik konu icin)
+- Kisa onay ("tamam", "anladim") cevabinda
+- Kullanici zaten bir trigger yazdiginda (zaten dispatcher tetiklendi)
+- Personel ile (ogretmen/mudur/admin) konusurken — sadece OGRENCI roluyle
+- WhatsApp kanalinda — SADECE WEB kanalinda (WP'de spam olur)
+
+✅ FOOTER FORMATI (web kanalinda akademik cevap sonu):
+
+─────────────────────────────────────
+💡 *Daha derine gitmek ister misin?*
+
+{konuya_uygun_2_veya_3_secenek}
+─────────────────────────────────────
+
+KONU → SECENEK MAPPING (her cevapta uygun olani sec):
+
+🧪 KIMYA / Molekül → "🌐 Molekül 3D modeli — _3d yaz_"
+                   "⚗️ PubChem detay — _detay yaz_"
+                   "📺 Hocalara Geldik anlatim — _video yaz_"
+
+🧬 BIYOLOJI → "🧬 3D protein/hucre modeli — _3d yaz_"
+            "🔬 Mikroskobik animasyon — _animasyon yaz_"
+            "📺 Tonguc anlatim — _video yaz_"
+
+⚛ FIZIK → "🎮 PhET interaktif simulasyon — _deney yaz_"
+         "🌀 3D animasyon (atom/dalga/manyetik) — _3d yaz_"
+         "📐 Wolfram adim adim cozum — _cozum yaz_"
+         "📺 Konu anlatim videosu — _video yaz_"
+
+📐 MATEMATIK → "📐 Desmos interaktif grafik — _grafik yaz_"
+              "🔢 Wolfram adim adim cozum — _cozum yaz_"
+              "📺 Tonguc/Benim Hocam anlatim — _video yaz_"
+              "📝 Cikmis soru goster — _ornek yaz_"
+
+🌌 ASTRONOMI → "🌌 NASA gercek goruntu — _nasa yaz_"
+              "🪐 3D solar sistem — _3d yaz_"
+              "🌟 ArXiv bilimsel makale — _makale yaz_"
+
+📚 TURKCE / EDEBIYAT → "📺 Anlatim videosu — _video yaz_"
+                       "📝 Cikmis YKS sorusu — _ornek yaz_"
+
+🏛 TARIH / SOSYAL → "📺 Anlatim videosu — _video yaz_"
+                    "📝 Cikmis soru — _ornek yaz_"
+                    "🗺 Wikipedia detay — _detay yaz_"
+
+🌍 COGRAFYA → "🗺 Harita/uydu goruntu — _harita yaz_"
+              "📺 Konu videosu — _video yaz_"
+              "📝 Cikmis soru — _ornek yaz_"
+
+KURAL: 2-3 secenek yeter (4'ten fazla overload). Konuyla ALAKALI olanlari
+sec, alakasiz olanlari ekleme. Eger konu yukaridakilerden birine net
+uymuyorsa generic: "📺 Anlatim videosu | 📝 Cikmis soru | 📚 Detay aciklama"
+
 DIS YONLENDIRME (web kanali — tıklanabilir):
 - Cikmis soru baglanti: "TYT 2024 ve AYT 2023'te bu konudan soru cikti.
   Web panelinde 'cikmis sorular' bolumunden inceleyebilirsin."
