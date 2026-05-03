@@ -2233,7 +2233,8 @@ TOOL_DISPATCH = {
     "deep_research_paket":        lambda p: _tool_deep_research_paket(**p),
     "odev_ekle":                  lambda p: _tool_odev_ekle(**p),
     "ogretmen_brief":             lambda p: _tool_ogretmen_brief(**p),
-    "youtube_oner":               lambda p: _tool_youtube_oner(**p),
+    # 25.40z-Neo: youtube_oner alias → find_youtube_lesson (tool listesinden kaldirildi)
+    "youtube_oner":               lambda p: _tool_find_youtube(**p),
     "konu_kaynak_paketi":         lambda p: _tool_konu_kaynak_paketi(**p),
     "plani_takvime_ekle":         lambda p: _tool_plani_takvime_ekle(**p),
     "etut_takvime_ekle":          lambda p: _tool_etut_takvime_ekle(**p),
@@ -2645,10 +2646,15 @@ async def _tool_embed_phet(sim_id: str = "", title: str = "", **_extra) -> dict:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-async def _tool_find_youtube(konu: str = "", ders: str = "", limit: int = 3, **_extra) -> dict:
+async def _tool_find_youtube(konu: str = "", ders: str = "", limit: int = 3,
+                              _caller_phone: str = "", **_extra) -> dict:
+    """25.40z-Neo: _caller_phone history filtresi (cesitlilik)."""
     try:
         from youtube_client import search_videos
-        return await search_videos(konu=konu, ders=ders, limit=int(limit or 3))
+        return await search_videos(
+            konu=konu, ders=ders, limit=int(limit or 3),
+            exclude_phone=_caller_phone or "",
+        )
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -4729,6 +4735,51 @@ class FermatCoreAgent:
                         messages=self.history,
                         system=_lane_system,
                     )
+
+                # 25.40z — CLAUDE_HANDOFF intercept (Cerebras supervisor sinyali)
+                # Cerebras cevabin sonuna [CLAUDE_HANDOFF: tool=X reason=Y] ekledi mi?
+                # Eklediyse Claude'a yonlendir, tool zinciri ile zenginlestir.
+                _handoff = getattr(self.router, "_last_claude_handoff", None)
+                if _handoff and _handoff.get("tool"):
+                    try:
+                        from loguru import logger as _lg
+                        _lg.info(f"  [HANDOFF→CLAUDE] tool={_handoff['tool']} reason={_handoff['reason'][:60]}")
+                        # Cerebras cevabini context olarak ekle, Claude'a tetikle
+                        # Claude bu konuda Cerebras'in soyledigine ek deger versin
+                        handoff_user_msg = (
+                            f"[CEREBRAS SUPERVISOR HANDOFF — Bu mesajı kullanıcı GÖRMÜYOR]\n\n"
+                            f"Cerebras öğrenciye şu cevabı verdi (yukarıdaki):\n"
+                            f"---\n{_handoff['cerebras_response'][:1500]}\n---\n\n"
+                            f"Cerebras şunu önerdi: {_handoff['tool']} kullan ({_handoff['reason']}).\n\n"
+                            f"GÖREVİN: Bu önerilen tool'u çağır, sonucu Cerebras cevabına ek katkı olarak "
+                            f"sun. KISA olsun (3-5 cümle + tool sonucu). Tekrar etme — sadece EK DEGER. "
+                            f"'Cerebras dedi ki' YAZMA — direkt zenginleştir."
+                        )
+                        # Sonsuz dongu engeli: handoff'u sifirla
+                        self.router._last_claude_handoff = None
+                        # History'e supervisor mesaji ekle (gecici)
+                        self.history.append({"role": "user", "content": handoff_user_msg})
+                        try:
+                            claude_supplement = await self.router.chat_cloud_async(
+                                messages=self.history,
+                                system=_lane_system,
+                            )
+                            if claude_supplement:
+                                supp_text = ""
+                                for b in claude_supplement.content:
+                                    if hasattr(b, "text"):
+                                        supp_text += b.text
+                                if supp_text and len(supp_text.strip()) > 30:
+                                    answer = answer + "\n\n" + supp_text.strip()
+                                    _lg.info(f"  [HANDOFF→CLAUDE] +{len(supp_text)} char eklendi")
+                        finally:
+                            # Handoff user mesajini history'den cikar (kullaniciya yansimasin)
+                            if self.history and self.history[-1].get("content", "").startswith("[CEREBRAS SUPERVISOR"):
+                                self.history.pop()
+                    except Exception as _he:
+                        from loguru import logger as _lg
+                        _lg.warning(f"  [HANDOFF→CLAUDE] fail (silent): {_he}")
+
                 # ── Kalite kontrolu — Ollama yaniti yetersizse Claude'a eskale et ──
                 # Oturum 25.14k+rev (Neo elestirisi): lane-bazli esik daha mantikli
                 # Sayisal esik kalite olcemez ama spam/yetersiz cevaplari yakalar.

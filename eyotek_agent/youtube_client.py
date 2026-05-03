@@ -146,10 +146,41 @@ def make_embed_block(video_id: str, title: str = "") -> str:
     )
 
 
+async def _get_recent_video_ids(phone: str, days: int = 30) -> set[str]:
+    """25.40z-Neo: Kullanicinin son N gunde aldigi video_id'leri DB'den cek.
+    Ayni video tekrar onerilmesin (cesitlilik garantisi).
+    """
+    if not phone:
+        return set()
+    try:
+        from db_pool import db_fetch
+        rows = await db_fetch(
+            """SELECT content FROM agent_conversations
+               WHERE phone=$1 AND message_role='assistant'
+                 AND created_at > NOW() - ($2::int || ' days')::interval
+                 AND (content ILIKE '%youtube.com%' OR content ILIKE '%/embed/%')""",
+            phone, int(days),
+        )
+        ids = set()
+        for r in rows:
+            content = r.get("content") or ""
+            for m in re.finditer(r"(?:youtu\.be/|youtube\.com/(?:watch\?v=|embed/))([A-Za-z0-9_-]{11})", content):
+                ids.add(m.group(1))
+        return ids
+    except Exception as e:
+        logger.debug(f"_get_recent_video_ids fail: {e}")
+        return set()
+
+
 async def search_videos(konu: str, ders: str = "", limit: int = 3,
-                        max_duration_min: int = 35) -> dict:
+                        max_duration_min: int = 35,
+                        exclude_phone: str = "") -> dict:
     """
     YouTube'da Türkçe YKS videosu ara, kalite skoruna göre sırala.
+
+    25.40z-Neo: exclude_phone verilirse kullanicinin son 30 gunde aldigi
+    video_id'leri SONUCDAN ÇIKARILIR. Ayni konuya tekrar sorulursa farkli
+    kanaldan video gelir (cesitlilik).
 
     Returns: {success, videos: [...]}
     """
@@ -193,8 +224,19 @@ async def search_videos(konu: str, ders: str = "", limit: int = 3,
 
         # 3. Skorla, filtrele, sırala
         prefer = [konu] + ([ders] if ders else [])
+
+        # 25.40z-Neo: exclude_phone ile kullanicinin tekrar gelen videolarini at
+        excluded_ids: set[str] = set()
+        if exclude_phone:
+            excluded_ids = await _get_recent_video_ids(exclude_phone, days=30)
+            if excluded_ids:
+                logger.debug(f"  [YT_HISTORY] {len(excluded_ids)} video exclude (phone={exclude_phone[-4:]})")
+
         scored = []
         for item in video_data.get("items", []):
+            vid_id = item.get("id")
+            if vid_id in excluded_ids:
+                continue  # zaten gosterilmis, atla
             content_details = item.get("contentDetails", {})
             dur_sec = _parse_iso8601_duration(content_details.get("duration", ""))
             dur_min = dur_sec // 60

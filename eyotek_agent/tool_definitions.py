@@ -1061,20 +1061,9 @@ TOOLS: list[dict] = [
             "required": ["ogretmen_ad"],
         },
     },
-    {
-        "name": "youtube_oner",
-        "description": (
-            "[DEPRECATED önerisi: konu_kaynak_paketi tercih et — daha zengin]. "
-            "Sadece tek bir konuda YouTube video listesi istendiğinde. "
-            "Whitelist kanallardan (Tonguç, Hocalara Geldik, MEB, OGM, Khan Academy...) "
-            "sonuç döner. Whitelist dışı ASLA. Uygun video bulunmazsa boş döner."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {"konu": {"type": "string"}},
-            "required": ["konu"],
-        },
-    },
+    # 25.40z-Neo birlestirme: youtube_oner KALDIRILDI tool listesinden.
+    # find_youtube_lesson (line 2481+) zaten daha gelismis (limit, ders, embed_block).
+    # Dispatch'te alias kaldi (backwards compat — eski Claude call'lari fail etmesin).
     {
         "name": "konu_kaynak_paketi",
         "description": (

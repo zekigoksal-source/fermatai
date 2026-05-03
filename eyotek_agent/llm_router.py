@@ -391,6 +391,8 @@ class LLMRouter:
         self._last_tokens_in = 0
         self._last_tokens_out = 0
         self._last_response_ms = 0
+        # 25.40z: Cerebras CLAUDE_HANDOFF sinyali (supervisor pattern)
+        self._last_claude_handoff = None
         self._check_ollama()
         # Cerebras öncelikli — daha iyi kalite, paid tier, queue yok
         if self._cerebras_available:
@@ -875,6 +877,63 @@ bedava API'lerden faydalanir (Claude tetiklenmez, hizli + ucuz).
 {konuya_uygun_2_veya_3_secenek}
 ─────────────────────────────────────
 
+═══════════════════════════════════════════════════════════════════════
+🤝 CLAUDE SUPERVISOR HANDOFF (25.40z — Neo "supervizyon" mimarisi)
+═══════════════════════════════════════════════════════════════════════
+
+Sen (Cerebras 235b) cok guclu bir akademik asistansin AMA bazi
+durumlarda Claude'un ek yetenekleri (tool zinciri, RAG search, render
+link uretimi, tarih-bazli akademik veri) CIDDI EK DEGER yaratir.
+Bu durumlarda, cevabinin SONUNA (footer'dan ONCE) handoff sinyali ekle:
+
+[CLAUDE_HANDOFF: tool=<X> reason=<Y>]
+
+Sistem bu sinyali yakalar, Claude'u devreye sokar, cevabini zenginlestirir.
+Kullaniciya supervisor cagrisi GORUNMEZ — sadece sonuc daha derin olur.
+
+NE ZAMAN HANDOFF EKLE:
+✅ Ogrenci 4-5+ ardisik mesajla AYNI konuyu deseliyor (anlamis degil)
+   → reason=anlatım derinligi yetersiz, RAG'dan gercek soru gerek
+   → tool=search_curriculum
+
+✅ Ogrenci karmasik bir TURETME / ISPAT istiyor (matematik/fizik)
+   → reason=adim adim cozum gerek, hesaplama dogrulamasi
+   → tool=wolfram_step_by_step
+
+✅ Ogrenci "tam goster" / "interaktif istiyorum" / "deneyle anlamak"
+   → reason=3D animasyon veya simulasyon link gerek
+   → tool=make_3d_template VEYA make_render_link
+
+✅ Ogrenci OZGUN bir konu acti (ornek: "Hawking radyasyonu")
+   ve sen genel bilgi verdin ama RAG'da bu konuda cok detay olabilir
+   → reason=RAG'da daha derin icerik aranabilir
+   → tool=search_curriculum
+
+✅ Ogrenci "cikmis sorusu var mi" / "ornek YKS" istiyor
+   → reason=RAG'dan cikmis soru cek + send_exam_image
+   → tool=list_exam_questions
+
+❌ NE ZAMAN HANDOFF EKLEME:
+- Selamlama/sohbet/motivasyon
+- Sen tek basina yeterli cevabi verebildiysen (tool YA DEGERSIZ ya GEREKSIZ)
+- Kisa onay/teyit cevaplarinda
+- Aynitamen NET bir tool ihtiyaci yokken (zorla cagirma)
+
+ORNEK KULLANIM:
+"""
+Hawking radyasyonu, kuantum mekanigi ile genel gorelilik teorisinin
+kesistigi ilginc bir fenomendir...
+[3 paragraf detayli aciklama]
+
+[CLAUDE_HANDOFF: tool=search_curriculum reason=Hawking radyasyonu uzerine RAG'da daha detayli ders var, ogrenciye sun]
+"""
+
+SUPERVISOR DEGERLENDIRMESI:
+- Bot olarak "ben yetersizim" demiyorsun, tam tersi: "Cevabima Claude
+  ekstra deger katabilir" diyorsun.
+- Handoff eklenirse Claude tool zinciri arka planda calisir, sonuc
+  cevabin zenginlestirilmis hali olur (kullanici ek mesaj almaz).
+
 KONU → SECENEK MAPPING (her cevapta uygun olani sec):
 
 🧪 KIMYA / Molekül → "🌐 Molekül 3D modeli — _3d yaz_"
@@ -1172,7 +1231,54 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
                     self._last_response_ms = result.get('ms', 0)
                     logger.info(f"  [CEREBRAS] {cerebras_model} | {result['ms']}ms | "
                                 f"in={result['tokens_in']} out={result['tokens_out']}")
-                    return result["text"]
+
+                    enriched_text = result["text"]
+
+                    # 25.40z — CLAUDE_HANDOFF Sinyal Tespiti (Neo "supervisor" mimarisi)
+                    # Cerebras cevabin sonuna [CLAUDE_HANDOFF: tool=X reason=Y]
+                    # ekleyebilir. Bu sinyali yakalarsak Claude'a yonlendir.
+                    import re as _re_handoff
+                    handoff_match = _re_handoff.search(
+                        r"\[CLAUDE_HANDOFF:\s*tool=([^\s\]]+)(?:\s+reason=([^\]]+))?\]",
+                        enriched_text,
+                    )
+                    if handoff_match:
+                        tool_name = handoff_match.group(1).strip()
+                        reason = (handoff_match.group(2) or "").strip()
+                        # Sinyali cevaptan TEMIZLE — kullaniciya gorunmesin
+                        enriched_text = _re_handoff.sub(
+                            r"\[CLAUDE_HANDOFF:[^\]]+\]", "", enriched_text,
+                        ).strip()
+                        # Trace icin kaydet — caller (fermat_core_agent) Claude'u tetikleyecek
+                        self._last_claude_handoff = {
+                            "tool": tool_name,
+                            "reason": reason,
+                            "cerebras_response": enriched_text,
+                        }
+                        logger.info(f"  [CLAUDE_HANDOFF] tool={tool_name} reason={reason[:80]}")
+                    else:
+                        self._last_claude_handoff = None
+
+                    # 25.40z — Wikipedia direct enrichment (Neo direktif)
+                    # Web kanalında akademik kavram cevabına otomatik wiki ekle.
+                    if channel == "web" and len(enriched_text) > 200:
+                        try:
+                            from enrichment_dispatcher import inject_wiki_block
+                            last_user = ""
+                            for m in reversed(messages):
+                                if m.get("role") == "user":
+                                    c = m.get("content", "")
+                                    if isinstance(c, list):
+                                        c = " ".join(p.get("text","") for p in c if isinstance(p,dict))
+                                    last_user = c
+                                    break
+                            wiki_block = await inject_wiki_block(last_user, enriched_text)
+                            if wiki_block:
+                                enriched_text = enriched_text + wiki_block
+                                logger.debug(f"  [WIKI_INJECT] {len(wiki_block)} char eklendi")
+                        except Exception as _we:
+                            logger.debug(f"  [WIKI_INJECT] skip: {_we}")
+                    return enriched_text
                 else:
                     logger.warning(f"  [CEREBRAS] basarisiz: {result.get('error', 'unknown')}, Groq'a dusuyor")
             except RuntimeError as _skip:

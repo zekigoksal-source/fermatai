@@ -201,7 +201,7 @@ async def dispatch_enrichment(intent_info: dict, phone: str) -> Optional[str]:
         elif intent == "wolfram":
             return await _wolfram_enrichment(konu)
         elif intent == "youtube":
-            return await _youtube_enrichment(konu)
+            return await _youtube_enrichment(konu, phone=phone)
         elif intent == "exam":
             return await _exam_enrichment(ders, konu)
         elif intent == "nasa":
@@ -266,17 +266,20 @@ async def _wolfram_enrichment(konu: str) -> str:
     return f"🔢 Wolfram çözümü için bir alt başlık dene (örn. *{konu} örneği*)."
 
 
-async def _youtube_enrichment(konu: str) -> str:
-    """YouTube whitelist kanalları (Tonguç, Hocalara Geldik, vs.)."""
+async def _youtube_enrichment(konu: str, phone: str = "") -> str:
+    """YouTube whitelist kanalları (Tonguç, Hocalara Geldik, vs.).
+    25.40z-Neo: phone ile history exclude — ayni video tekrar gelmesin."""
     try:
-        from external_apis_v2 import find_youtube_lesson
-        result = await find_youtube_lesson(konu)
+        from youtube_client import search_videos
+        result = await search_videos(konu=konu, limit=2, exclude_phone=phone)
         if result.get("success") and result.get("videos"):
             vids = result["videos"][:2]
             lines = [f"📺 *Konu Anlatımı — {konu}*\n"]
             for v in vids:
                 lines.append(f"• [{v.get('channel', 'Eğitim')}] {v.get('title', '')[:80]}")
                 lines.append(f"  🔗 {v.get('url', '')}")
+            if result.get("total_candidates", 0) > 2:
+                lines.append(f"\n_({result['total_candidates']} aday içinden ilk 2 — tekrar 'video' yazarsan farklı önereceğim)_")
             return "\n".join(lines)
     except Exception:
         pass
@@ -411,3 +414,111 @@ def _map_enrichment(konu: str) -> str:
         f"🔗 https://www.google.com/maps/search/{konu.replace(' ', '+')}\n\n"
         f"_Daha detaylı harita/uydu görüntü için 'detay [bölge]' yaz._"
     )
+
+
+# ─── 25.40z — Wikipedia Direct Enrichment ───────────────────────────────────
+
+# Cerebras kavramsal cevabı verdiğinde arka planda Wikipedia extract
+# enjekte et. Kullanıcı ek tıklama yapmadan kaynak görür.
+
+# Hangi konularda otomatik ekle (akademik kavram tespiti)
+_WIKI_ENRICH_TOPICS = [
+    # Bilim — fizik
+    "atom", "elektron", "proton", "neutron", "kuantum", "newton", "einstein",
+    "yerçekim", "yercekim", "kara delik", "fotoelektrik", "elektromanyetik",
+    "termodinami", "entropi", "rölativ", "relativ",
+    # Bilim — kimya
+    "periyodik", "molekül", "element", "asit", "baz", "tepkime", "katalizör",
+    "organik", "inorganik", "polimer",
+    # Bilim — biyoloji
+    "hücre", "dna", "rna", "protein", "enzim", "fotosentez", "mitoz", "mayoz",
+    "evrim", "darwin", "ekosistem",
+    # Matematik
+    "türev", "integral", "limit", "fourier", "vektör", "matris",
+    "logaritma", "trigonom", "geometri", "öklid",
+    # Tarih (bilimsel/edebi figür)
+    "atatürk", "osmanlı", "kurtuluş", "cumhuriyet", "tarih",
+    # Edebiyat
+    "reşat nuri", "yaşar kemal", "orhan pamuk", "nazım hikmet",
+    "tanzimat", "servet-i fünun", "milli edebiyat",
+    # Astronomi
+    "galaksi", "yıldız", "gezegen", "güneş sistemi", "samanyolu", "andromeda",
+    "kepler", "hubble",
+]
+
+
+def _detect_wiki_topic(user_msg: str, bot_response: str) -> str | None:
+    """User mesajı + bot cevabından Wikipedia için sorgu çıkar.
+
+    Strateji:
+    1. User mesajında akademik kavram var mı?
+    2. Bot cevabında geçen büyük harfle başlayan terim (özel ad)?
+    3. Hiçbiri yoksa None — ekleme yapma.
+    """
+    if not user_msg or not bot_response:
+        return None
+    msg_l = user_msg.lower().strip()
+
+    # 1. User mesajında ne soruldu — keyword tespit
+    for kw in _WIKI_ENRICH_TOPICS:
+        if kw in msg_l:
+            # User mesajından konu cümlesini çıkar (ilk 6 kelime)
+            words = user_msg.split()[:6]
+            return " ".join(words).rstrip("?.!,").strip()
+
+    # 2. Bot cevabında öne çıkan özel isim (Resat Nuri Guntekin, Newton, vs.)
+    import re
+    # 2-4 kelimelik Title Case özel isim ara (Türkçe karakter dahil)
+    matches = re.findall(
+        r"\b([A-ZÇĞİÖŞÜ][a-zçğıöşü]+(?:\s+[A-ZÇĞİÖŞÜ][a-zçğıöşü]+){1,3})\b",
+        bot_response[:1500],  # ilk 1500 char
+    )
+    if matches:
+        # En sık geçeni al
+        from collections import Counter
+        most_common = Counter(matches).most_common(1)
+        if most_common and most_common[0][1] >= 1:
+            candidate = most_common[0][0]
+            # Çok yaygın kelimeleri filtrele
+            if candidate.lower() not in ("merhaba", "evet", "tamam", "fermat",
+                                          "neo", "yks", "tyt", "ayt", "lgs"):
+                return candidate
+    return None
+
+
+async def inject_wiki_block(user_msg: str, bot_response: str) -> str:
+    """Cerebras cevabına Wikipedia bloğu ekle (uygunsa).
+
+    Returns: "" (eklemeyecekse) veya "\n\n📚 Wikipedia: ..." bloğu.
+    """
+    # Whitelist: sadece akademik konularda
+    topic = _detect_wiki_topic(user_msg, bot_response)
+    if not topic:
+        return ""
+
+    # Cerebras cevabında zaten Wikipedia bahsi varsa duplicate önle
+    if "wikipedia" in bot_response.lower():
+        return ""
+
+    try:
+        from external_apis_v2 import wiki_lookup
+        result = await wiki_lookup(topic)
+        if not result.get("success"):
+            return ""
+
+        extract = (result.get("extract") or "").strip()
+        if not extract or len(extract) < 80:
+            return ""  # Çok kısa extract — değer yok
+
+        # 250 char ile kes (cevap uzamasın)
+        if len(extract) > 250:
+            extract = extract[:250].rsplit(" ", 1)[0] + "..."
+
+        url = result.get("url", "")
+        block = f"\n\n📚 *Wikipedia — {result.get('title', topic)}:*\n_{extract}_"
+        if url:
+            block += f"\n🔗 {url}"
+        return block
+    except Exception as e:
+        logger.debug(f"[WIKI_INJECT] fail: {e}")
+        return ""
