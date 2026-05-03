@@ -167,17 +167,26 @@ class HybridDict:
 
 
 class HybridPhoneLocks:
-    """Per-phone asyncio.Lock wrapper.
+    """Per-phone asyncio.Lock + opsiyonel Redis distributed lock.
 
-    Memory mode: normal asyncio.Lock (aynen mevcut davranis).
-    Redis mode: Redis distributed lock DENER, ama fallback asyncio.Lock (cross-worker
-    koordinasyon icin ayrica Redis SETNX kullanilir — karmasiklik, Ağustos migration'da).
+    Memory mode (REDIS_URL bos): sadece asyncio.Lock — tek worker'da yeterli.
+    Redis mode (REDIS_URL set): asyncio.Lock (worker-ici serialize) + Redis SETNX
+    (cross-worker serialize). 25.40r — Neo "workers=3 hazir olsun" direktifi.
 
-    NOT: Su an sadece memory asyncio.Lock dondurur. Redis distributed lock ayri bir
-    implementasyon gerektirir (redis.asyncio SETNX + TTL refresh). Neo "eksik is
-    kalmasin" dedi ama _PHONE_LOCKS critical section → Redis mode devreye girince
-    ayri bir patch gerekir.
+    KULLANIM (workers >= 2 icin):
+        await _PHONE_LOCKS.acquire_distributed(phone, timeout=30, ttl=180)
+        try:
+            async with _PHONE_LOCKS.get(phone):  # mevcut memory lock pattern
+                await process_message(...)
+        finally:
+            await _PHONE_LOCKS.release_distributed(phone)
+
+    Memory mode'da acquire_distributed/release_distributed no-op (her zaman True).
+    Redis hatasinda degraded mode: memory lock tek basina devam eder (kullanici
+    bekletilmez, sadece cross-worker serialize garantisi yok).
     """
+
+    REDIS_LOCK_PREFIX = "plock:"
 
     def __init__(self):
         self._locks: dict[str, asyncio.Lock] = {}
@@ -195,11 +204,87 @@ class HybridPhoneLocks:
     def __contains__(self, phone):
         return phone in self._locks
 
+    def __setitem__(self, phone, value):
+        """Bridge stale lock recovery icin: _PHONE_LOCKS[phone] = asyncio.Lock()"""
+        self._locks[phone] = value
+
+    def __getitem__(self, phone):
+        return self._locks[phone]
+
     def __len__(self):
         return len(self._locks)
 
     def keys(self):
         return self._locks.keys()
+
+    # ─── Distributed Lock (25.40r — Workers=3 hazirligi) ───
+
+    async def acquire_distributed(self, phone: str, timeout: float = 30.0, ttl: int = 180) -> bool:
+        """Redis SETNX ile cross-worker serialize. Memory mode'da no-op (True).
+
+        Args:
+            phone: lock anahtari
+            timeout: kac saniye SETNX dene (saniye)
+            ttl: lock auto-expire (saniye, crash safety — worker dustugunde lock asili kalmasin)
+
+        Returns:
+            True: lock alindi (veya memory mode)
+            False: SETNX timeout (baska worker hala tutuyor)
+        """
+        if not _REDIS_ACTIVE:
+            return True
+        try:
+            from session_store import get_store
+            store = get_store()
+            client = await store._get_client()
+            full_key = store._k(f"{self.REDIS_LOCK_PREFIX}{phone}")
+            deadline = asyncio.get_event_loop().time() + timeout
+            while asyncio.get_event_loop().time() < deadline:
+                # SET key val NX EX ttl — atomic SETNX with auto-expire
+                ok = await client.set(full_key, b"1", nx=True, ex=ttl)
+                if ok:
+                    return True
+                await asyncio.sleep(0.1)
+            logger.warning(f"  ⏳ Distributed lock timeout {phone[-4:]} ({timeout}s)")
+            return False
+        except Exception as e:
+            # Redis hata → degraded mode, memory lock yeter (fail-open)
+            logger.warning(f"Redis distributed lock err: {e} — memory-only mode")
+            return True
+
+    async def release_distributed(self, phone: str):
+        """Redis lock'u sil. Memory mode'da no-op."""
+        if not _REDIS_ACTIVE:
+            return
+        try:
+            from session_store import get_store
+            store = get_store()
+            client = await store._get_client()
+            full_key = store._k(f"{self.REDIS_LOCK_PREFIX}{phone}")
+            await client.delete(full_key)
+        except Exception as e:
+            logger.debug(f"Redis lock release err: {e}")
+
+    async def is_locked_distributed(self, phone: str) -> bool:
+        """Cross-worker aware locked check (memory + Redis).
+
+        Returns True if EITHER memory or Redis lock is held.
+        """
+        # Memory check
+        lock = self._locks.get(phone)
+        if lock and lock.locked():
+            return True
+        # Redis check
+        if not _REDIS_ACTIVE:
+            return False
+        try:
+            from session_store import get_store
+            store = get_store()
+            client = await store._get_client()
+            full_key = store._k(f"{self.REDIS_LOCK_PREFIX}{phone}")
+            return bool(await client.exists(full_key))
+        except Exception:
+            return False
 
     def __getitem__(self, phone):
         return self.get(phone)

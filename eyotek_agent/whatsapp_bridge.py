@@ -4736,33 +4736,53 @@ async def _enqueue_and_process(phone: str, text: str, audio_bytes: bytes | None)
         return
 
     # Lock bos — hemen isle
-    async with lock:
-        _LOCK_ACQUIRED_AT[phone] = _t.time()  # 22.1n-queuefix: stale detect icin
-        try:
-            await _process_one_message(phone, text, audio_bytes)
-        finally:
-            _LOCK_ACQUIRED_AT.pop(phone, None)
+    # 25.40r: Distributed lock wrapper (workers>=2 icin Redis SETNX cross-worker
+    # serialize. Memory mode'da no-op, davranis aynen korunur)
+    redis_acquired = await _PHONE_LOCKS.acquire_distributed(phone, timeout=30.0, ttl=180)
+    if not redis_acquired:
+        # Cross-worker'da baska worker bu kullanici icin islem yapiyor
+        # Memory'de gorulmedigi icin queue'ya da konmadi → sessizce drop
+        # (kullanici tekrar yazsin; gercek production'da nadir gerceklesir)
+        logger.warning(f"  ⏳ Cross-worker lock timeout {phone[-4:]}, mesaj drop (kullanici tekrar yazabilir)")
+        return
+    try:
+        async with lock:
+            _LOCK_ACQUIRED_AT[phone] = _t.time()  # 22.1n-queuefix: stale detect icin
+            try:
+                await _process_one_message(phone, text, audio_bytes)
+            finally:
+                _LOCK_ACQUIRED_AT.pop(phone, None)
+    finally:
+        await _PHONE_LOCKS.release_distributed(phone)
 
     # Lock release sonrasi queue'da birikenler varsa, SIRAYLA TEK TEK isle
     # (eskiden merge ediyordu, Claude sadece sonuncuyu cevapliyordu — kullanici bag kaybediyor)
     while _PHONE_QUEUES.get(phone):
-        async with lock:
-            _LOCK_ACQUIRED_AT[phone] = _t.time()
-            try:
-                pending = _PHONE_QUEUES.get(phone, [])
-                if not pending:
-                    break
-                # Kuyruktan SADECE ilkini al, digerleri kalir (sirayla islenir)
-                # 22.1n-queuefix: 3-tuple (text, audio, enqueued_at) destegi
-                entry = pending.pop(0)
-                p_text = entry[0]
-                p_audio = entry[1] if len(entry) >= 2 else None
-                if not pending:
-                    _PHONE_QUEUES.pop(phone, None)
-                logger.info(f"  📬 Queue'dan isleniyor (phone={phone[-4:]}, kalan={len(pending)})")
-                await _process_one_message(phone, p_text, p_audio)
-            finally:
-                _LOCK_ACQUIRED_AT.pop(phone, None)
+        # 25.40r: Her queue iterasyonu icin de distributed lock al (worker degisebilir)
+        redis_acquired_q = await _PHONE_LOCKS.acquire_distributed(phone, timeout=30.0, ttl=180)
+        if not redis_acquired_q:
+            logger.warning(f"  ⏳ Queue cross-worker lock timeout {phone[-4:]}, kuyruk birakiliyor")
+            break
+        try:
+            async with lock:
+                _LOCK_ACQUIRED_AT[phone] = _t.time()
+                try:
+                    pending = _PHONE_QUEUES.get(phone, [])
+                    if not pending:
+                        break
+                    # Kuyruktan SADECE ilkini al, digerleri kalir (sirayla islenir)
+                    # 22.1n-queuefix: 3-tuple (text, audio, enqueued_at) destegi
+                    entry = pending.pop(0)
+                    p_text = entry[0]
+                    p_audio = entry[1] if len(entry) >= 2 else None
+                    if not pending:
+                        _PHONE_QUEUES.pop(phone, None)
+                    logger.info(f"  📬 Queue'dan isleniyor (phone={phone[-4:]}, kalan={len(pending)})")
+                    await _process_one_message(phone, p_text, p_audio)
+                finally:
+                    _LOCK_ACQUIRED_AT.pop(phone, None)
+        finally:
+            await _PHONE_LOCKS.release_distributed(phone)
 
 
 async def _process_one_message(phone: str, text: str, audio_bytes: bytes | None):

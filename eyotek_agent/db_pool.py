@@ -32,13 +32,16 @@ if not DB_URL:
 _pool: asyncpg.Pool | None = None
 
 
-async def get_pool(min_size: int = 5, max_size: int = 30) -> asyncpg.Pool:
+async def get_pool(min_size: int = 3, max_size: int = 20) -> asyncpg.Pool:
     """Paylaşımlı connection pool döner. Lazy init — ilk çağrıda oluşturulur.
 
+    25.40r — Workers=3 hazirligi:
+    Her worker kendi pool'unu olusturur (process izolasyonu, paylasilmaz).
+    3 worker × max=20 = 60 max conn (Postgres default max_connections=100, guvenli).
+    3 worker × min=3 = 9 idle (warmup).
+    Bellek: 60 conn × ~10MB = 600MB (VPS 13GB serbest).
+
     25.23-final: 120 ogrenci pikta 50+ concurrent query olabilir
-    Eski max=10 → 'no available connection' riski (Eylul senaryosunda)
-    Yeni max=30 + min=5 (warmup) — Postgres default max_connections=100, rahat.
-    Bellek: 30 connection × ~10MB = 300MB (VPS 13GB serbest).
     """
     global _pool
     if _pool is None or _pool._closed:
