@@ -1025,13 +1025,29 @@ async def _tool_build_study_plan(student_id="") -> dict:
         pass
 
     # 3) Isim string — students tablosunda lookup
+    # Türkçe karakter zorlugu: PG ILIKE Turkish locale yoksa İ vs i ayrı görür.
+    # Çözüm: 2 katmanlı arama — (a) tam isim ILIKE (b) ilk kelime ILIKE (c) unaccent
     try:
         from db_pool import db_fetchval
-        # Türkçe karakter normalize ile arama
+        # (a) Tam isim ILIKE
         soz = await db_fetchval(
             "SELECT soz_no FROM students WHERE full_name ILIKE $1 LIMIT 1",
             f"%{s}%"
         )
+        # (b) Türkçe büyük harf normalize: küçük harfe çevir + İ→i, I→ı
+        if not soz:
+            tr_lower = s.translate(str.maketrans("İIĞŞÜÖÇ", "iığşüöç")).lower()
+            soz = await db_fetchval(
+                "SELECT soz_no FROM students WHERE LOWER(full_name) LIKE $1 LIMIT 1",
+                f"%{tr_lower}%"
+            )
+        # (c) İlk kelime fallback (ad yeterli olabilir)
+        if not soz and " " in s:
+            first_word = s.split()[0].translate(str.maketrans("İIĞŞÜÖÇ", "iığşüöç")).lower()
+            soz = await db_fetchval(
+                "SELECT soz_no FROM students WHERE LOWER(full_name) LIKE $1 LIMIT 1",
+                f"%{first_word}%"
+            )
         if soz:
             return await build_study_plan_context(int(soz))
         return {"error": f"'{s}' isminde ogrenci bulunamadi. Once query_analytics ile soz_no'yu bul."}
