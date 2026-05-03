@@ -1,7 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 3 Mayıs 2026 (gece 01:30) · **Oturum:** 25.40p — **5 yeni kabiliyet: Eyotek tazelik + Proaktif feedback + Quality v2 + 3D Three.js library**
-> **Önceki güncelleme:** 3 Mayıs 2026, Oturum 25.40o (gece 00:30) — Cerebras qwen-3-235b PROAKTIF mimari
+> **Belge tarihi:** 3 Mayıs 2026 (öğle 13:55) · **Oturum:** 25.40r — **Production scale-out: Workers=3 + Distributed Lock + Leader Election + Semantic Cache aktif + 34/34 integration test PASS**
+> **Önceki güncelleme:** 3 Mayıs 2026, Oturum 25.40p — Eyotek tazelik + Proaktif feedback + Quality v2 + 3D Three.js library
 
 ---
 
@@ -37,6 +37,9 @@
 | 25.40m | Akademik kalite protokolü (yeni nesil 7-kriter) | `c85f8e7` | Vedat tipi facia engelle |
 | 25.40n | RAG yeni nesil bank — 211 paket Cerebras üretim | `3eef6ac` | Tam akademik hakimiyet |
 | 25.40o | Cerebras qwen-3-235b PROAKTIF mimari | `b681f8b` | Bot Cerebras yetkinliğini bilir |
+| 25.40p | Eyotek tazelik + Proaktif feedback + Quality v2 + 3D Three.js | `21be1fe` | 5 yeni kabiliyet, render altyapı |
+| 25.40q | Wix mobile scroll lock fix (obsolete embed sil) | `337bbf1` | Kurumsal site mobil ana sayfa düzeldi |
+| **25.40r** | **Production scale-out: Workers=3 + Distributed Lock + Leader Election + Semantic Cache + Yağız OTP + 34/34 test** | `147adab` | **Multi-worker hazır, sınav dönemi kapasite ×3** |
 
 ---
 
@@ -227,6 +230,57 @@ Bot kritik akademik sorgu öncesi `needs_refresh(module, max_age_hours=2)` çağ
 - **Molekül 3D** — H2O/CO2/CH4/NH3, atom renk kodları, bağ açıları
 
 Tool: `make_3d_template(template, ...)` → Three.js HTML render endpoint'e kaydolur, kalıcı UUID link döner. OrbitControls (sürükle/zoom/dokun) + responsive info panel + premium koyu tema. CDN dependency 1 (Three.js 0.160). 6 rol ACL açık.
+
+
+## 🚀 25.40r — PRODUCTION SCALE-OUT (manifest)
+
+### Multi-Worker Bridge — Workers=3 + Per-Worker DB Pool
+Uvicorn `--workers 3` ile bridge artık 3 process: 1 master + 3 worker. Her worker bağımsız asyncpg pool (per-worker `min=3, max=20`) tutar — toplam 60 max connection (Postgres limit 100, güvenli marj). Sınav döneminde 60+ öğrenci eş zamanlı yük geldiğinde queue patlaması artık yok.
+
+### Distributed Lock — `HybridPhoneLocks.acquire_distributed/release_distributed`
+Per-phone Redis SETNX lock (`fermat:plock:{phone}`, TTL 180sn auto-expire crash safety):
+- **Memory mode** (REDIS_URL boş): no-op, eski tek-worker davranış aynen korunur
+- **Redis mode**: cross-worker serialize garantisi — aynı kullanıcının iki mesajı 2 farklı worker'a düşse bile sadece biri aynı anda işler, diğeri 30sn timeout bekler
+- **Fail-open**: Redis hatası olursa memory lock devam, kullanıcı bekletilmez
+- Bridge `_enqueue_and_process` 2 callsite (ilk işlem + queue iterasyon) sarmalandı
+
+### Singleton Leader Election — `singleton_leader.py`
+Multi-worker'da background task'lerin paralel çalışmasını engeller. Redis SETNX `leader:bridge_singleton` (TTL 60sn, refresh 30sn):
+- **Leader-only task'ler:** session_keeper (Eyotek CDP — kritik!), scheduled_tasks, html_updater, telafi, briefing, todo, nightly_precompute
+- **Her worker'da çalışan:** webhook handler, schema bootstrap (idempotent), Ollama keepalive, HybridDict hydrate
+- **Takeover:** Leader crash sonrası 60sn TTL expire → diğer worker'lar 30sn'de SETNX dener, kazanan otomatik takeover
+- **Idempotent:** aynı worker tekrarlı `is_leader()` çağrılarında cache döner
+
+### Semantic Cache Aktif — bge-m3 Ollama (1024 dim)
+`query_cache.py` artık gerçek semantic match yapar:
+- **Sorun:** EMBED_MODEL=bge-m3 ama VPS Ollama'da yoktu → `_embed()` None dönüyor → semantic kısım sessizce devre dışı, sadece exact hash match çalışıyordu
+- **Fix:** `ollama pull bge-m3` (1024 dim Türkçe-güçlü) + 3 init_db bug fix (pgvector boyut tespiti `format_type` ile, regclass cast try/except, `CREATE_TABLE_SQL` f-string EMBED_DIM)
+- **Test:** "TYT de kac soru var" vs "TYT toplam soru sayisi nedir" → semantic HIT 0.726 ✓
+- **İki embedding modeli:** rag_content → `nomic-embed-text` (768 dim, mevcut), query_cache → `bge-m3` (1024 dim, paraphrase yakalama daha iyi)
+
+### Redis Dual-Write Doğrulama
+`HybridDict` 6 yerde kullanılıyor (`_TEMP_BANS, _CAPACITY_COUNTS, _PHOTO_COUNTS, _CLAUDE_CALLS, _QUEUE_NOTIFIED, _LOCK_ACQUIRED_AT`). Test: dual-write çalışıyor (`fermat:ban:testphone` Redis'e yazılıp okunabiliyor). Production'da DBSIZE genelde düşük çünkü flood ban / foto rate-limit nadir tetiklenen olaylar — bu **bug değil**, sistem sakinliğinin göstergesi.
+
+### Yağız OTP Bug Fix — Duplicate Guard 30sn
+DB analizinde tespit: Yağız Alptekin (197) 18 Nisan 21:22'de **5ms aralıklarla 5 OTP** üretildi (frontend race condition / fetch retry). 3 farklı WP mesajı → kullanıcı karıştı → 8x yanlış kod denemesi.
+
+**Fix (`web_chat_auth.py::request_otp`):** Son 30sn içinde geçerli OTP varsa yenisini ÜRETME, mevcut olanı dön. WP'ye tek mesaj gider. Burst koruma (60sn/3) hâlâ aktif (savunma katmanı).
+
+### Bug Fix #1 — Stale Lock Recovery + Redis Orphan
+Bridge `_enqueue_and_process` satır 4711'de stale lock recovery memory lock'u zorla yeniliyor AMA Redis distributed lock'u (TTL 180sn) silmiyordu → 180sn boyunca o kullanıcının mesajları `acquire_distributed` FAIL ile drop. **Fix:** `release_distributed` eklendi.
+
+### Integration Test Paketi — 34/34 PASS
+`tests/test_25_40r_integration.py` (417 satır):
+| Grup | Asserts | Sonuç |
+|------|---------|-------|
+| A1 Semantic Cache | 7 | ✅ |
+| A3 Redis Dual-Write | 4 | ✅ |
+| B1 Distributed Lock | 7 | ✅ |
+| B1.2 Leader Election | 5 | ✅ |
+| B2 OTP Duplicate Guard | 6 | ✅ |
+| CONFLICT Stale + Redis Cleanup | 3 | ✅ |
+| REAL-WORLD Concurrent Same-Phone | 2 | ✅ |
+| **TOPLAM** | **34** | **34/34** |
 
 
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)

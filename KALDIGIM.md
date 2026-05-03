@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 3 Mayıs 2026, ÖĞLE 12:50 — **🎯 OTURUM 25.40r: 4 BÜYÜK İŞ TAMAM (Semantic cache aktif + Redis dual-write doğru + Workers=3 + Leader election + Yağız OTP bug fix)**
+> **Son güncelleme:** 3 Mayıs 2026, ÖĞLE 13:55 — **🎯 OTURUM 25.40r FINAL: 34/34 INTEGRATION TEST GEÇTİ + BUG #1 FIX (stale lock Redis orphan)**
 
 ---
 
@@ -37,6 +37,8 @@
 | 18 | **Redis dual-write doğrulama** (HybridDict gerçekten yazıyor, DBSIZE=0 sistem sakin demek — bug yok) | VERIFY | 25.40r-A3 |
 | 19 | **Workers=3 deploy + Leader Election** (3 worker spawn, 1 leader cron task, 2 follower webhook handler, Eyotek CDP çakışması engellendi) | LIVE | 25.40r-B1 |
 | 20 | **Yağız Alp OTP bug fix** (5ms aralıklarla 5 OTP üretiliyordu → 30sn duplicate guard, frontend race condition koruma) | LIVE | 25.40r-B2 |
+| 21 | **BUG #1 fix:** Stale lock recovery'de Redis distributed lock orphan kalıyordu — `release_distributed` eklendi | LIVE | 25.40r-FIX1 |
+| 22 | **34/34 integration test PASS** — A1 cache + A3 Redis dual-write + B1 distributed lock + B1.2 leader + B2 OTP + CONFLICT stale + REAL-WORLD race | LIVE | 25.40r-TEST |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -117,10 +119,38 @@
 > | Fast | %35 | %38 | +3 |
 >
 > ### Verify
-> - Tüm commit'ler GitHub: `5091b49, 67b4d97, 0a5dc73, 8756e57, 9c8ff12, fbefa9a, 107ea8e, 0160653`
-> - VPS sync OK, service active, 3 worker, leader=3843484
+> - Tüm commit'ler GitHub: `5091b49, 67b4d97, 0a5dc73, 8756e57, 9c8ff12, fbefa9a, 107ea8e, 0160653, 4d9dcad, d2fd44d, 619f1be, 147adab`
+> - VPS sync OK, service active, 3 worker, leader claim çalışıyor
 > - HTTP /health 200, /chat 200
 > - Eyotek session keeper ONLINE (sadece leader'da)
+>
+> ### 🧪 Bug/Conflict Test Paketi (Neo "tüm güncellemeleri test sok" direktifi)
+>
+> **Kod analizinde tespit:**
+> - 🔴 **BUG #1:** Stale lock recovery (`whatsapp_bridge.py:4711-4714`) memory lock'u zorla yeniliyor AMA Redis distributed lock'u (TTL 180sn) silmiyor → 180sn boyunca o kullanıcının mesajları `acquire_distributed` FAIL nedeniyle drop. **FIX:** `release_distributed` eklendi (try/except).
+> - 🟡 Worker crash sırasında orphan lock max 180sn TTL — kabul edilebilir, rare event
+> - 🟡 Queue loop break exit path doğru (try/finally release_distributed çağrılıyor)
+>
+> **`tests/test_25_40r_integration.py` (417 satır, 34 assertion) — VPS canlı çalıştırıldı:**
+>
+> | Test Grubu | Test Sayısı | Sonuç |
+> |------------|------------|-------|
+> | A1 Semantic Cache (bge-m3) | 7 | ✅ PASS |
+> | A3 Redis Dual-Write | 4 | ✅ PASS |
+> | B1 Distributed Lock | 7 | ✅ PASS |
+> | B1.2 Leader Election | 5 | ✅ PASS |
+> | B2 OTP Duplicate Guard | 6 | ✅ PASS |
+> | CONFLICT Stale + Redis Cleanup | 3 | ✅ PASS |
+> | REAL-WORLD Concurrent same-phone | 2 | ✅ PASS |
+> | **TOPLAM** | **34** | **34/34 ✅** |
+>
+> **Doğrulanan davranışlar:**
+> - Semantic cache: exact hash + paraphrase (skor 0.726) HIT, unrelated MISS, per-phone isolation
+> - Redis dual-write: write/read/delete propagation OK
+> - Distributed lock: race condition'da sadece 1 worker acquire eder, TTL expire sonrası takeover
+> - Leader election: idempotent, follower-leader takeover otomatik
+> - OTP guard: 30sn içinde 3 ardışık çağrı → tek OTP DB'de (eskiden 5 yaratırdı)
+> - Stale recovery: BUG #1 fix sonrası Redis orphan kalmıyor
 >
 > ## 🔙 ÖNCEKİ OTURUM 25.40q (gece 01:45 → 02:00, 15 dk — Wix mobile scroll lock fix)
 >
