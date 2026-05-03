@@ -1360,6 +1360,22 @@ async def _tool_eyotek_query(question: str, max_rows: float = 0,
             "plan": result.get("plan"),
             "page": page,
         }
+
+    # 25.40t (Neo direktif 3 May 20:42): LAZY SYNC — eyotek query sonucu
+    # mapped page ise DB'ye upsert + data_freshness güncelle.
+    # Bot Brief #16 yetersizdi (yeni dosya önerdi), SEN doğru implement:
+    # mevcut data_freshness_helper + yeni eyotek_lazy_sync ile.
+    try:
+        from eyotek_lazy_sync import lazy_sync_after_query
+        sync_info = await lazy_sync_after_query(result)
+        if sync_info.get("synced"):
+            # Result'a sync flag ekle — bot cevapta "DB güncellendi" diyebilir
+            result["_lazy_synced"] = sync_info
+    except Exception as _ls_err:
+        # Lazy sync sessiz fail — query result yine döner
+        from loguru import logger as _lg
+        _lg.debug(f"  [LAZY_SYNC] hook fail (silent): {_ls_err}")
+
     return result
 
 

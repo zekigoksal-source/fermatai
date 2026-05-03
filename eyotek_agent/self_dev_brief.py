@@ -141,31 +141,53 @@ async def write_brief(
 
     sys_prompt = """Sen FermatAI sistemi icin self-dev brief writer'sin.
 
-GORE V:
-Konusmadan KOD DEGISIKLIGI ONERISI cikar. Output sadece JSON formatinda.
+GOREV:
+Konusmadan KOD DEGISIKLIGI ONERISI cikar. Output SADECE JSON formatinda.
+
+🎯 NEO KALITE STANDARDI (25.40t — "%100 guvenmem icin"):
+Brief'in dogrudan uygulanabilir olmasi sart. Sen bot'un brief yazdigin
+gibi degil, KIDEMLI BIR YAZILIMCI gibi yaz. Asagidaki kalite kriterleri
+ZORUNLU — eksik kalan brief'ler reddedilir.
 
 JSON SCHEMA:
 {
   "title": "kisa baslik (max 60 char) — ne yapilacak",
   "problem_summary": "1-2 cumle: sorun nedir, kok neden ne",
+  "evidence": "Konusmadaki vakaya/log'a referans (zorunlu — 'Yagiz 16:04:50 \\\"sistemden alacagim\\\" dedi tool yoktu')",
+  "existing_infrastructure_check": "Yeni dosya/modul onermeden once mevcut benzerlerini ara. Hangi mevcut dosyalar/fonksiyonlar var? (zorunlu — ornek: 'data_freshness_helper.py mevcut, mark_success/needs_refresh hazir, kullanilabilir')",
   "files_touched": ["eyotek_agent/dosya1.py", "eyotek_agent/dosya2.py"],
   "proposed_changes": [
     {
       "file": "eyotek_agent/dosya.py",
-      "where": "fonksiyon X / satir Y / class Z",
+      "where": "fonksiyon X / satir Y / class Z (mumkun oldugunca SPESIFIK)",
       "change_type": "add|modify|remove",
       "description": "ne degisecek (1-2 cumle)",
       "pseudo_diff": "ESKI: ... \\nYENI: ... (kisa, anlasilir)"
     }
   ],
-  "test_plan": "nasil test edilecek (1-3 cumle)",
-  "rollback_note": "geri almak gerekirse ne yapilir"
+  "test_plan": "ZORUNLU — nasil test edilecek (komut + beklenen cikti). 'Manuel test' YETMEZ. Ornek: 'python -c \"...\" -> \"OK dim=1024\" beklenir' veya 'curl /endpoint -> 200'",
+  "rollback_note": "ZORUNLU — geri almak gerekirse net adim. 'git revert' YETMEZ. Ornek: 'EMBED_MODEL=nomic-embed-text geri al + DROP TABLE query_cache; bridge restart'",
+  "risk_factors": ["uretim'a etki", "veri kaybi riski", "performance regresyon", ...],
+  "quality_self_score": 0-100  // kendi puanlamani yap (asagidaki kriterler)
 }
 
-KURALLAR:
+📊 QUALITY KRITERLERI (kendi puanini hesapla, 100 uzerinden):
++15 problem_summary somut (sayilar, isimler var)
++15 evidence dolu (vaka referansi var)
++15 existing_infrastructure_check yapildi (mevcut modul kontrol edildi)
++15 proposed_changes 'where' alani spesifik (satir/fonksiyon)
++15 test_plan calistirilabilir komut iceriyor
++15 rollback_note net adim iceriyor (sadece 'geri al' degil)
++10 risk_factors duşunulmus
+
+QUALITY_SELF_SCORE 70'in altinda → brief reddedilir, regenerated.
+
+🚫 ZORUNLU KURALLAR:
 - Files SADECE tahmin et, UYDURMA. Bilmediginsen bos liste don.
-- Proposed_diff PSÖDO format, gercek unified diff degil — Neo Claude Code ile uygulayacak.
-- Eger konusmada NET bir kod degisikligi yoksa → {"title": "Brief üretilemedi", "files_touched": [], "proposed_changes": []}
+- Proposed_diff PSÖDO format, gercek unified diff degil — Claude Code uygulayacak.
+- "Yeni dosya yarat" demeden once existing_infrastructure_check ZORUNLU.
+- test_plan VE rollback_note BOS olamaz (her ikisi de zorunlu, 70'in altinda puan = reject).
+- Eger konusmada NET bir kod degisikligi yoksa → {"title": "Brief üretilemedi", "quality_self_score": 0, "files_touched": [], "proposed_changes": []}
 """
 
     user_prompt = f"""KONUSMA TRANSKRIPTI (son {len(msgs)} mesaj):
@@ -203,10 +225,73 @@ Yukaridaki konusmadan brief üret. SADECE JSON yaz, baska hicbir sey yazma."""
 
     title = (data.get("title") or "Untitled brief")[:200]
     summary = (data.get("problem_summary") or "")[:1000]
+    evidence = (data.get("evidence") or "")[:500]
+    infra_check = (data.get("existing_infrastructure_check") or "")[:1000]
     files_proposed = data.get("files_touched") or []
     changes = data.get("proposed_changes") or []
     test_plan = data.get("test_plan") or ""
     rollback = data.get("rollback_note") or ""
+    risk_factors = data.get("risk_factors") or []
+    self_score = int(data.get("quality_self_score") or 0)
+
+    # 25.40t — Neo kalite standardi: zorunlu alanlari hesapla (gercek puan)
+    real_score = 0
+    quality_issues = []
+    if summary and len(summary) > 30:
+        if any(c.isdigit() for c in summary) or any(k in summary.lower() for k in ["vaka", "case", "bug"]):
+            real_score += 15
+        else:
+            real_score += 5
+            quality_issues.append("problem_summary genel — somut sayi/vaka eksik")
+    else:
+        quality_issues.append("problem_summary cok kisa veya yok")
+
+    if evidence and len(evidence) > 20:
+        real_score += 15
+    else:
+        quality_issues.append("evidence (vaka referansi) eksik")
+
+    if infra_check and len(infra_check) > 30:
+        real_score += 15
+    else:
+        quality_issues.append("existing_infrastructure_check yapilmadi (yeni dosya onermeden once mevcut tarama)")
+
+    if changes:
+        spec_count = sum(1 for c in changes if (c.get("where") or "").strip()
+                         and any(k in (c.get("where") or "").lower()
+                                 for k in ["satir", "line", "fonksiyon", "function", "class", "def "]))
+        if spec_count >= len(changes) * 0.5:
+            real_score += 15
+        else:
+            real_score += 5
+            quality_issues.append("proposed_changes 'where' alani spesifik degil (satir/fonksiyon belirt)")
+    else:
+        quality_issues.append("proposed_changes bos")
+
+    if test_plan and len(test_plan) > 30:
+        if any(k in test_plan.lower() for k in ["python", "curl", "pytest", "psql", "ssh", "echo", "->", "beklenir"]):
+            real_score += 15
+        else:
+            real_score += 5
+            quality_issues.append("test_plan calistirilabilir komut icermiyor")
+    else:
+        quality_issues.append("test_plan eksik veya yetersiz")
+
+    if rollback and len(rollback) > 20:
+        if rollback.lower().strip() not in ("git revert", "geri al", "rollback"):
+            real_score += 15
+        else:
+            real_score += 5
+            quality_issues.append("rollback_note cok genel — net adim belirt")
+    else:
+        quality_issues.append("rollback_note eksik")
+
+    if risk_factors and len(risk_factors) >= 1:
+        real_score += 10
+
+    # Brief kalitesi yetersizse warning ekle (drafted ama dikkat işareti)
+    if real_score < 70:
+        quality_issues.insert(0, f"⚠ KALITE DUSUK: {real_score}/100 (Neo standardi: 70+) — bu brief direkt uygulanmamali, gozden gecir")
 
     # Files dogrulama
     existing, missing = await _verify_files_exist(files_proposed)
@@ -216,6 +301,20 @@ Yukaridaki konusmadan brief üret. SADECE JSON yaz, baska hicbir sey yazma."""
 
     # Diff metni — psödo-diff'leri birleştir
     diff_parts = []
+
+    # 25.40t: Quality skoru ve issues UST KISIMA — Neo direkt görsün
+    diff_parts.append(
+        f"## 📊 BRIEF KALITESI: {real_score}/100 (Neo std: 70+)\n"
+        f"## LLM self-score: {self_score}/100\n"
+        f"{'✅ Direkt uygulanabilir' if real_score >= 70 else '⚠ Eksikleri var, gözden geçir'}"
+    )
+    if quality_issues:
+        diff_parts.append("## 🔍 KALITE NOTLARI:\n  - " + "\n  - ".join(quality_issues[:10]))
+    if evidence:
+        diff_parts.append(f"## 🔬 EVIDENCE (vaka):\n{evidence}")
+    if infra_check:
+        diff_parts.append(f"## 🏗️ MEVCUT ALTYAPI KONTROLÜ:\n{infra_check}")
+
     for ch in changes:
         diff_parts.append(
             f"--- {ch.get('file', '?')}\n"
@@ -227,6 +326,8 @@ Yukaridaki konusmadan brief üret. SADECE JSON yaz, baska hicbir sey yazma."""
         diff_parts.append(f"\n## TEST PLAN\n{test_plan}")
     if rollback:
         diff_parts.append(f"\n## ROLLBACK\n{rollback}")
+    if risk_factors:
+        diff_parts.append(f"\n## ⚠️ RISK FACTORS\n  - " + "\n  - ".join(risk_factors[:5]))
     if missing:
         diff_parts.append(f"\n## ⚠️ DOĞRULANMAYAN dosyalar (hayal olabilir):\n  - " + "\n  - ".join(missing))
     diff_text = "\n\n".join(diff_parts)[:30000]
@@ -261,6 +362,11 @@ Yukaridaki konusmadan brief üret. SADECE JSON yaz, baska hicbir sey yazma."""
         "summary": summary,
         "diff_preview": diff_text[:1500],
         "full_diff_length": len(diff_text),
+        # 25.40t Neo kalite standardi
+        "quality_score": real_score,
+        "llm_self_score": self_score,
+        "quality_issues": quality_issues,
+        "directly_applicable": real_score >= 70,
     }
 
 
