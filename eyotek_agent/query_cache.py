@@ -192,14 +192,14 @@ _TR_FOLD = str.maketrans({
 
 # ── Tablo Olusturma ─────────────────────────────────────────────────
 
-CREATE_TABLE_SQL = """
+CREATE_TABLE_SQL = f"""
 CREATE TABLE IF NOT EXISTS query_cache (
     id SERIAL PRIMARY KEY,
     phone TEXT NOT NULL,
     role TEXT,
     prompt TEXT NOT NULL,
     prompt_hash TEXT NOT NULL,
-    embedding vector(1024),
+    embedding vector({EMBED_DIM}),
     response TEXT NOT NULL,
     source TEXT DEFAULT 'claude',
     hit_count INT DEFAULT 0,
