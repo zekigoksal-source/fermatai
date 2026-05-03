@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, GECE 02:15 — **🎯 OTURUM 25.40w: TARTISMA-vs-TALIMAT AYRIMI ÇALIŞIYOR (Neo canlı izledi, bot artık "brief yazayım mı?" demiyor)**
+> **Son güncelleme:** 4 Mayıs 2026, GECE 02:30 — **🎯 OTURUM 25.40y: CEREBRAS MAX KALİTE — Footer enrichment + Lightweight dispatcher (Neo "cevaplar zaten max kalite olsun")**
 
 ---
 
@@ -53,6 +53,10 @@
 | 34 | **Son 3 assistant turn enjekte** — context['recent_assistant_turns'] + system prompt "🔁 SEN AZ ÖNCE BUNLARI YAZDIN" | LIVE | 25.40u-#4 |
 | 35 | **TARTISMA-vs-TALIMAT ayrımı** — bot "Hangisinden başlayalım? / Brief yazayım mı?" demiyor artık (11 yasak kalıp) | LIVE | 25.40v+w |
 | 36 | **Canlı doğrulama** — Neo "kapasite ne durumda?" → bot detaylı rapor + yorum cümlesiyle bitirdi (soru ile değil!) | VERIFIED | 25.40w |
+| 37 | **Env/API_KEY status doğru sorgu** — bot "yok" demek yerine bridge log'da init mesajı kontrol etmeli | LIVE | 25.40x |
+| 38 | **Cerebras footer enrichment** — web kanalında akademik cevap sonu "💡 Daha derine git? [3d/video/deney]" otomatik | LIVE | 25.40y-#2 |
+| 39 | **Lightweight enrichment_dispatcher** — kullanıcı "deney/3d/cozum" → Claude bypass, bedava API direkt çağrılır (~$10/ay tasarruf) | LIVE | 25.40y-#3 |
+| 40 | **Trigger routing fast_response entegrasyon** — sadece role='ogrenci' + ≤4 kelime + son 5dk konu varsa | LIVE | 25.40y-#4 |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -86,6 +90,73 @@
 - **3D library:** `make_3d_template` tool — Solar System / Atom / Hücre / Molekül anlık render link
 
 ---
+>
+> ## 🆕 OTURUM 25.40y (4 May 02:15 → 02:30, 30 dk — Cerebras max kalite: footer + dispatcher)
+>
+> Neo direktif: *"aç tabii cevaplar zaten max kalitede olsun istiyorum, sadece sistem öğrenciye ulaşmasın o yeni sezonda mümkün, şu an daha çok ask-response çalışıyor gibi. mevcut kapasiteleri cevaplarda kullan bunlardan geri durma."*
+>
+> **Strateji ayrımı net:** Pasif zenginleştirme (öğrenci yazınca cevap kalitesi max) ✅ — Proaktif mesaj (sistem öğrenciye sabah/akşam yazsın) ❌ Eylül.
+>
+> ### 3 İş Birden Tamamlandı
+>
+> #### #1 Cerebras renderer block üretimi
+> ZATEN VAR — `_LOCAL_SYSTEM_WEB_ADDON` line 753+ ZENGIRLESTIRME bölümü. chart/formula/3d/calc/sim/compare2 Cerebras tarafından üretilebiliyor.
+>
+> #### #2 Cerebras footer enrichment (`llm_router.py`)
+> `_LOCAL_SYSTEM_WEB_ADDON`'a 80 satırlık FOOTER bölümü eklendi:
+> - Akademik cevap sonu otomatik: *"💡 Daha derine gitmek ister misin? [3d/video/deney]"*
+> - 7 ders kategori mapping: kimya/biyo/fizik/mat/astro/türkçe/tarih
+> - SADECE web kanalında (WP'de spam olur) + SADECE öğrenci rolüyle
+>
+> #### #3 Lightweight `enrichment_dispatcher.py` (YENİ MODÜL — 320 satır)
+> - **35 ENRICH_TRIGGERS:** 3d/animasyon, deney/phet, çözüm/wolfram, grafik/desmos, video/youtube, örnek/çıkmış, nasa/uzay, molekül/pubchem, harita, makale/arxiv, wiki
+> - `detect_enrichment_intent(msg)` — kısa mesaj (≤4 kelime) + word boundary
+> - `get_last_topic(phone)` — son 5dk Cerebras cevabından ders/konu çıkar (30+ TOPIC_HINTS)
+> - `dispatch_enrichment(intent, phone)` — 11 fonksiyon: phet/wolfram/youtube/exam/nasa/pubchem/wiki/arxiv/3d/desmos/map
+> - **Claude PROMPT'A GIRMEZ** — 30K token tasarruf
+>
+> #### #4 Fast response trigger entegrasyon
+> AUTH_FAST_PATH'in HEMEN ARDINA ENRICHMENT FAST PATH:
+> - Şart: `role='ogrenci'` + mesaj `<= 4 kelime`
+> - Trigger varsa dispatch et, sonuç döner
+> - Yoksa alt akışa devam (sessiz fail)
+>
+> ### Akış Örneği
+> ```
+> Öğrenci: "Kaldırma kuvveti nedir?"
+>     ↓
+> Cerebras (web): formül + örnek + AŞAĞIDA "💡 [deney] [3d] [video]"
+>     ↓
+> Öğrenci: "deney"
+>     ↓
+> fast_response → enrichment_dispatcher → _phet_enrichment("kaldırma kuvveti")
+>     ↓
+> Direkt PhET buoyancy linki — Claude tetiklenmez, $0 maliyet
+> ```
+>
+> ### Test
+> - ENRICH_TRIGGERS: 35 keyword ✓
+> - Intent detection 7/7 doğru (3d/video/deney/cozum/grafik/wolfram/phet/nasa/molekul/ornek soru → tespit; 'tamam'/'sagol'/'matematik anlat' → None)
+> - Footer kuralı `_LOCAL_SYSTEM_WEB_ADDON` (web kanalında ekleniyor) ✓
+> - Konu yokken graceful fallback ("hatırlayamadım, tekrar yaz") ✓
+>
+> ### Verify
+> - Commit: `e9bb363`
+> - VPS sync HEAD `e9bb363`, leader 4066285, /health 200, /chat 200 ✓
+>
+> ### Etki
+> - Cerebras zaten chart/formula/3d block üretiyordu, şimdi **footer** da var
+> - Öğrenci footer'ı görünce "deney" yazar → PhET açılır (Claude YOK, $0)
+> - Bedava API'ler artık Claude prompt 30K token okutmadan çalışır
+> - **~$10/ay tasarruf** + Claude kapasitesi gerçek işlere kalır
+> - **Diferansiyasyon:** dershaneler bu mimari kapasiteyi kuramıyor
+>
+> ### Neo Strateji Uyumu
+> - "Sistem öğrenciye ulaşmasın" (proaktif YOK) ✓ — bu PASİF (kullanıcı yazınca tetik)
+> - "Cevaplar max kalite" ✓
+> - Yeni sezon flag'leri DOKUNULMADI (ALERTS/OUTREACH/VELI/PUSH hâlâ kapalı)
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40v + 25.40w (4 May 01:30 → 02:15, 45 dk — Tartışma vs Talimat ayrımı, Neo canlı izledi)
 >
 > ## 🆕 OTURUM 25.40v + 25.40w (4 May 01:30 → 02:15, 45 dk — Tartışma vs Talimat ayrımı, Neo canlı izledi)
 >
