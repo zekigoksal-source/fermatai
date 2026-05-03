@@ -33,19 +33,17 @@ try:
 except ImportError:
     _ollama = None
 
-# bge-m3 — BAAI multilingual, Turkce'de nomic'ten cok daha iyi
-# Test sonuclari (Oturum 22.1):
-#   identik: 0.988 / word-order: 0.888 / synonym (selam/merhaba): 0.703
-#   rephrase (YKS tarihi ne): 0.843 / fact rephrase: 0.867
-#   YAPI AYNI KONU FARKLI (Integral vs Turev nedir): 0.304-0.392 — guvenli uzak
-#   TOTALLY DIFFERENT: 0.162
-# Gap 0.40+ → threshold 0.80 guvenli (same-intent yakalar, farkli konu reddet)
-EMBED_MODEL = "bge-m3"
-EMBED_DIM = 1024
+# nomic-embed-text — Ollama yerel, VPS'te kurulu (768 dim).
+# Oturum 25.40r (3 May 2026): bge-m3 (1024 dim) VPS'te yoktu →
+# semantic cache sessizce devre disiydi. nomic-embed-text'e gecildi.
+# Test bekleniyor: identik ~0.95 / synonym ~0.65 / different ~0.20
+# Threshold 0.82 → bge'den biraz daha siki (nomic Turkce'de daha gevsek)
+EMBED_MODEL = "nomic-embed-text"
+EMBED_DIM = 768
 
 # Ayarlar
 SEMANTIC_ENABLED = True
-DEFAULT_SIMILARITY_THRESHOLD = 0.80
+DEFAULT_SIMILARITY_THRESHOLD = 0.82
 DEFAULT_TTL_HOURS = 24
 MIN_RESPONSE_LENGTH = 20  # cok kisa cevaplar cache'lenmesin
 
@@ -217,7 +215,7 @@ CREATE INDEX IF NOT EXISTS idx_qc_hash ON query_cache (prompt_hash);
 
 
 async def init_db():
-    """Tabloyu olustur + boyut migrate (768 -> 1024 bge-m3 gecisi)."""
+    """Tabloyu olustur + boyut migrate (1024 bge-m3 -> 768 nomic gecisi 25.40r)."""
     from db_pool import get_pool
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -236,7 +234,7 @@ async def init_db():
 # ── Embedding ────────────────────────────────────────────────────────
 
 def _embed(text: str) -> Optional[list[float]]:
-    """Ollama bge-m3 ile 1024-boyutlu vektor — hata olursa None."""
+    """Ollama nomic-embed-text ile 768-boyutlu vektor — hata olursa None."""
     if _ollama is None:
         return None
     try:
