@@ -82,6 +82,43 @@ async def request_otp(phone: str) -> dict:
             "message": f"Günde en fazla {limit} kez web kodu alabilirsin. Yarın tekrar dene.",
         }
 
+    # 25.40r-B2 (Yagiz fix): DUPLICATE OTP GUARD
+    # Yagiz Alptekin (197) 18 Nis 21:22'de 5ms araliklarla 3 OTP urettigi icin
+    # 3 farkli WP mesaji aldi, hangisini yazacagi karisti. Frontend double-click
+    # / browser fetch retry / race condition bunu tetikleyebilir.
+    # COZUM: son 30sn icinde gecerli OTP varsa, yenisini URETME, mevcut olani
+    # tekrar dondur. Boylece kullanici 3 farkli kod almaz, hep tek geçerli kod.
+    recent_otp = await db_fetchrow(
+        """
+        SELECT otp_code, otp_expires_at
+        FROM web_sessions
+        WHERE phone=$1
+          AND otp_used_at IS NULL
+          AND otp_created_at > NOW() - INTERVAL '30 seconds'
+          AND otp_expires_at > NOW()
+        ORDER BY otp_created_at DESC
+        LIMIT 1
+        """,
+        phone_clean,
+    )
+    if recent_otp:
+        # Var olan OTP'yi tekrar dondur — yenisini uretme (duplicate guard)
+        code = recent_otp["otp_code"]
+        return {
+            "success": True,
+            "code": code,
+            "name": profile["full_name"] or "",
+            "role": profile["role"] or "ogrenci",
+            "expires_min": OTP_VALIDITY_MIN,
+            "message": (
+                f"🔐 *Web Kodun: {code}*\n\n"
+                f"🌐 *https://www.fermategitimkurumlari.com/fermatai* adresinde "
+                f"telefonun + bu kod ile giriş yap.\n\n"
+                f"_Kod {OTP_VALIDITY_MIN} dakika geçerli._"
+            ),
+            "_dup_guard": True,  # debug — duplicate request, yeni OTP uretilmedi
+        }
+
     # 19 Nisan — OTP burst koruma: son 60 saniyede max 3 istek (brute force + spam onler)
     burst_count = await db_fetchval(
         "SELECT COUNT(*) FROM web_sessions WHERE phone=$1 AND otp_created_at > NOW() - INTERVAL '60 seconds'",
