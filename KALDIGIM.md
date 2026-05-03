@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, GECE 02:30 — **🎯 OTURUM 25.40y: CEREBRAS MAX KALİTE — Footer enrichment + Lightweight dispatcher (Neo "cevaplar zaten max kalite olsun")**
+> **Son güncelleme:** 4 Mayıs 2026, GECE 03:30 — **🎯 OTURUM 25.40z: WIKI INJECT + YT BIRLEŞTIRME + YT HISTORY + CLAUDE SUPERVISOR (Neo 4 direktif tamamlandı)**
 
 ---
 
@@ -57,6 +57,10 @@
 | 38 | **Cerebras footer enrichment** — web kanalında akademik cevap sonu "💡 Daha derine git? [3d/video/deney]" otomatik | LIVE | 25.40y-#2 |
 | 39 | **Lightweight enrichment_dispatcher** — kullanıcı "deney/3d/cozum" → Claude bypass, bedava API direkt çağrılır (~$10/ay tasarruf) | LIVE | 25.40y-#3 |
 | 40 | **Trigger routing fast_response entegrasyon** — sadece role='ogrenci' + ≤4 kelime + son 5dk konu varsa | LIVE | 25.40y-#4 |
+| 41 | **Wikipedia direct enrichment** — Cerebras kavramsal cevap sonu otomatik wiki extract inject (250 char) | LIVE | 25.40z-#1 |
+| 42 | **YouTube tool birleştirme** — `youtube_oner` deprecated → `find_youtube_lesson` tek kanal (alias backwards compat) | LIVE | 25.40z-#3 |
+| 43 | **YouTube history filtresi** — aynı kullanıcıya 30 gün içinde aynı video tekrar önerilmez (çeşitlilik) | LIVE | 25.40z-#2 |
+| 44 | **Claude Supervisor Pattern** — Cerebras gerektiğinde `[CLAUDE_HANDOFF: tool=X reason=Y]` sinyali → Claude tool zinciriyle ek katkı (kullanıcı görmez) | LIVE | 25.40z-#4 |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -90,6 +94,72 @@
 - **3D library:** `make_3d_template` tool — Solar System / Atom / Hücre / Molekül anlık render link
 
 ---
+>
+> ## 🆕 OTURUM 25.40z (4 May 02:30 → 03:30, 60 dk — Wiki inject + YT birleştirme + YT history + Claude Supervisor)
+>
+> Neo 4 direktif (önceki dev konuşmasından):
+> - "Öneri 1: Wikipedia direct enrichment ⚠️ DEĞER YÜKSEK"
+> - "Öneri 3: youtube_oner ve find_youtube_lesson birleştir"
+> - "Öneri 2: YouTube çeşitlilik (history filtresi)"
+> - "Yeni mimari: Claude'u supervisor olarak — diyalog kritik noktada Cerebras Claude'u çağırsın, tool ile ek değer alıp bağlamı koruyarak devam"
+>
+> ### #1 Wikipedia Direct Enrichment ✅
+> - **`enrichment_dispatcher.py`** — `_detect_wiki_topic()` + `inject_wiki_block()`:
+>   - 50+ akademik konu whitelist (atom/dna/türev/Reşat Nuri/galaksi vb.)
+>   - Bot cevabında geçen Title Case özel isim tespit (Newton, Einstein vb.)
+>   - Yaygın kelime filtresi (Merhaba, Fermat, YKS atlama)
+>   - Wiki extract 250 char ile kes (cevap uzamasın), duplicate önle
+> - **`llm_router.py`** — Cerebras success path'inde web kanalında auto-inject
+> - **Test:** atom/türev/fotosentez wiki_lookup ✓ başarılı
+>
+> ### #2 YouTube History Filtresi ✅
+> - **`youtube_client.py`** — `_get_recent_video_ids(phone, days=30)` regex ile bot cevaplarından video_id çıkar
+> - `search_videos(... exclude_phone="")` → skor sıralamadan ÖNCE filtre
+> - **`fermat_core_agent.py::_tool_find_youtube`** → `_caller_phone` parametre
+> - **`enrichment_dispatcher.py::_youtube_enrichment`** → phone iletir
+> - Çıktı: *"(N aday içinden ilk 2 — tekrar 'video' yazarsan farklı önereceğim)"*
+>
+> ### #3 YouTube Tool Birleştirme ✅
+> - **`tool_definitions.py`** — `youtube_oner` KALDIRILDI (DEPRECATED idi)
+> - `find_youtube_lesson` tek kanal (limit, ders, embed_block destekli)
+> - **`fermat_core_agent.py`** dispatch — `"youtube_oner"` → `_tool_find_youtube` alias (backwards compat)
+>
+> ### #4 Claude Supervisor Pattern ✅ (YENİ MİMARİ)
+> Cerebras 235b cevabın sonuna **`[CLAUDE_HANDOFF: tool=X reason=Y]`** ekleyebilir.
+> Bu sinyali sistem yakalar → Claude'u tool zinciri ile devreye sokar → ek katkı cevap altına eklenir → kullanıcı **iki LLM'in birlikte çalıştığını görmez, sadece daha derin sonuç**.
+>
+> **Cerebras prompt'undaki 5 trigger durumu:**
+> - 4-5+ ardışık aynı konu (anlamış değil) → `search_curriculum`
+> - Karmaşık türetme/ispat → `wolfram_step_by_step`
+> - "tam göster"/"interaktif" → `make_3d_template`/`make_render_link`
+> - Özgün/derin konu (Hawking radyasyonu) → `search_curriculum`
+> - "çıkmış soru" istek → `list_exam_questions`
+>
+> **Akış:**
+> ```
+> Cerebras: [3 paragraf cevap] [CLAUDE_HANDOFF: tool=search_curriculum reason=...]
+>     ↓ llm_router regex tespit, sinyali temizle, _last_claude_handoff'a kaydet
+> fermat_core_agent: handoff intercept
+>     ↓ history'e supervisor user msg ekle (geçici)
+> Claude: tool çağır + 3-5 cümle EK katkı
+>     ↓ history'den supervisor msg temizle
+> Final: cerebras_text + "\n\n" + claude_supplement
+> ```
+>
+> ### Verify
+> - Commit: `7f9868e`
+> - VPS sync HEAD `7f9868e`, leader 4071800, /health 200, /chat 200 ✅
+> - Wiki test: atom/türev/fotosentez ✓
+> - YT history detect: 0 (Ezgi henüz video almamış, normal)
+> - Handoff regex: `tool=search_curriculum reason=...` doğru parse ✓
+>
+> ### Etki
+> - Cerebras kavramsal cevaplara Wikipedia auto-eklenir (kullanıcı tıklamaz, gelir)
+> - Aynı öğrenci aynı konu 2. sorgu → farklı kanaldan video (çeşitlilik)
+> - Tool karışıklık bitti (`youtube_oner` artık alias)
+> - **YENİ MİMARİ:** Cerebras kendi sınırını biliyor, gerektiğinde Claude tool zincirini "supervisor" gibi çağırabiliyor — kullanıcı tek koherent cevap görür ama arkasında 2 LLM birlikte çalışmış
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40y (4 May 02:15 → 02:30, 30 dk — Cerebras max kalite: footer + dispatcher)
 >
 > ## 🆕 OTURUM 25.40y (4 May 02:15 → 02:30, 30 dk — Cerebras max kalite: footer + dispatcher)
 >
