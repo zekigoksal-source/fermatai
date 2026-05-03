@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 3 Mayıs 2026, ÖĞLE 13:55 — **🎯 OTURUM 25.40r FINAL: 34/34 INTEGRATION TEST GEÇTİ + BUG #1 FIX (stale lock Redis orphan)**
+> **Son güncelleme:** 3 Mayıs 2026, AKŞAM 19:05 — **🎯 OTURUM 25.40s: BUGÜNKÜ KULLANICI ETKİLEŞİMİ — 6 BUG FIX (Cerebras tarih halüsinasyon + 'Kod' pattern + sınav türü filtresi + tool error + bağlam kaybı + sahte söz)**
 
 ---
 
@@ -39,6 +39,12 @@
 | 20 | **Yağız Alp OTP bug fix** (5ms aralıklarla 5 OTP üretiliyordu → 30sn duplicate guard, frontend race condition koruma) | LIVE | 25.40r-B2 |
 | 21 | **BUG #1 fix:** Stale lock recovery'de Redis distributed lock orphan kalıyordu — `release_distributed` eklendi | LIVE | 25.40r-FIX1 |
 | 22 | **34/34 integration test PASS** — A1 cache + A3 Redis dual-write + B1 distributed lock + B1.2 leader + B2 OTP + CONFLICT stale + REAL-WORLD race | LIVE | 25.40r-TEST |
+| 23 | **Cerebras tarih halüsinasyon fix** — `_get_dynamic_system_header()` + 5 callsite update (Ezgi vakası "10 May 2025" demişti) | LIVE | 25.40s-#1 |
+| 24 | **"Kod"/"Kodu" pattern eksik fix** — fast_response web_kodu Ali'nin "Kod" mesajı artık programlama kodu açıklamıyor | LIVE | 25.40s-#2 |
+| 25 | **Fast_response sınav türü filtresi** — "TYT denemelerimi incele" → exam_filter='tyt' SQL'de ILIKE '%TYT%' (Ali vakası) | LIVE | 25.40s-#3 |
+| 26 | **build_study_plan_context tool error fix** — type integer + isim fallback (3-katmanlı TR karakter ILIKE) | LIVE | 25.40s-#4 |
+| 27 | **Cerebras BAĞLAM HASSASIYETI + SAHTE SÖZ kuralı** — Özüm "Yazari kim" / Yağız "sistemden alacağım" vakaları | LIVE | 25.40s-#5,#6 |
+| 28 | **Sahte söz eskalasyon pattern** — "sistemden alıp", "akademik takip sisteminden kontrol" → otomatik Claude transfer | LIVE | 25.40s-#6 |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -72,6 +78,58 @@
 - **3D library:** `make_3d_template` tool — Solar System / Atom / Hücre / Molekül anlık render link
 
 ---
+>
+> ## 🆕 OTURUM 25.40s (akşam 17:30 → 19:05, 95 dk — bugünkü 5 öğrenci konuşması analizi + 6 BUG fix)
+>
+> Neo direktif: "bugun kullanıcı etkileşimi olduysa incele varsa bir problem veya geliştirme düzelt"
+>
+> ### Tespit (5 öğrenci, 36 user msg, 46 bot cevap)
+> | Öğrenci | Mesaj | Saat | Sorun |
+> |---------|-------|------|-------|
+> | Ali Küçükuysal (167) | 8 | 08:09-13 | "Kod"/"Kodu ver" → programlama kodu açıklandı (3. denemede yakalandı) + "TYT denemelerimi" → 11.SINIF verisi döndü |
+> | Ezgi Sıla Korkmaz (155) | 12 | 11:58-12:08 | build_study_plan_context tool error (3 ekstra round-trip) + Cerebras "10 May 2025 Cuma" tarih halüsinasyon |
+> | Özüm Göl | 6 | 07:38-13:33 | "Yazari kim" → bot "eserin adını söyle" (bağlam kaybı) — kitap önceki mesajda söylenmişti |
+> | Yağız Alptekin (197) | 9 | 16:03-15 | "Tahmini puanım?" → bot "sistemden alacağım, bekle" dedi ama tool çağırmadı (Cerebras) |
+> | Berf Deniz Peker | 1 | 13:52 | Sadece web kodu istedi — sorun yok |
+>
+> ### Düzeltmeler (6 BUG)
+>
+> #### 🔴 BUG #1 KRİTİK — Cerebras tarih halüsinasyonu
+> - **Sebep:** `_LOCAL_SYSTEM` (Cerebras prompt) tarih bilgisi içermiyordu → model uyduruyor
+> - **Fix:** `LLMRouter._get_dynamic_system_header()` static metodu + `_local_system_with_date()` wrapper. 5 callsite (line 893/971/1062/1117/1183) `self._LOCAL_SYSTEM` → `self._local_system_with_date()`
+> - **Format:** `[BUGUNUN TARIHI: 3 Mayis 2026 — Pazar]\n[YKS GERI SAYIM: TYT 41 gun, AYT 42 gun, LGS 35 gun]\n⚠ TARIH/GUN sorulursa SADECE bu bilgiyi kullan`
+> - **Test:** PASS — `3 Mayis 2026 — Pazar`, `TYT 41`, `AYT 42`, `LGS 35`
+>
+> #### 🟡 BUG #2 — "Kod" pattern eksik
+> - **Vaka:** Ali "Kod" / "Kodu ver" → bot programlama kodu açıkladı (Cerebras 120b)
+> - **Fix:** OGRENCI_PATTERNS'a 3 yeni pattern: `^kodu?\s*(...)`, `^kodu?[\s.?!]*$` (tek başına)
+> - **Test:** PASS 8/8 — Kod, kodu, Kod ver, Kodu ver, kod yolla, kod istiyorum, kod almadım, kod tekrar
+>
+> #### 🟡 BUG #3 — Fast_response sınav türü filtresi
+> - **Vaka:** Ali "TYT denemelerimi incele" → bot 11.SINIF Çap 2 verisi döndü (son tarih)
+> - **Fix:** `ogrenci_son_deneme(soz_no, name, exam_filter="")` parametre eklendi. Dispatcher'da `msg_lower` içinde "tyt"/"ayt"/"sinif/sınıf/11."/"branş" tespit, exam_filter geçer. SQL: `WHERE soz_no=$1 AND exam_name ILIKE '%TYT%'`
+>
+> #### 🟡 BUG #4 — build_study_plan_context tool error
+> - **Vaka:** Ezgi "Bana haftalık program oluştur" → bot string verdi → "student_id sayı olmalı" → 3 ekstra tool çağrısı (query_analytics → soz_no=155 → tekrar build_study_plan_context int)
+> - **Fix 1:** `tool_definitions.py`: type "string" → "integer", description "ÖNEMLİ: INTEGER, ASLA isim string verme. İsim biliyorsan ÖNCE query_analytics ile soz_no bul"
+> - **Fix 2:** `_tool_build_study_plan` fallback — int + isim 3-katmanlı ILIKE arama (Türkçe karakter normalize)
+>
+> #### 🟡 BUG #5 — Cerebras bağlam kaybı (Özüm)
+> - **Vaka:** Özüm "Sönmüş Yıldızlar kitabını okudun mu" → bot özet verdi. Sonra "Yazari kim" → bot "eserin adını söyle..." (BAĞLAM KAYIBI!)
+> - **Fix:** `_LOCAL_SYSTEM`'e BAGLAM HASSASIYETI kuralı: "Önceki mesajda bahsedilen kitap/kavram/kişi/sayı varsa, kullanıcıya 'hangisini kastediyorsun' DEMA. Direkt önceki bağlamdan kullan."
+>
+> #### 🟡 BUG #6 — Cerebras sahte söz (Yağız)
+> - **Vaka:** Yağız "şu an tahmini puanım ne olacak" → bot "akademik takip sistemimizden kontrol ediyorum, bir an bekle, sonuç çıktığında hemen paylaşacağım" (Cerebras tool-calling YAPAMAZ! Sahte söz)
+> - **Fix 1:** `_LOCAL_SYSTEM` SAHTE SÖZ YASAK kuralı: "Sistemden alıp döneceğim", "bekle, sonra dönerim" YASAK
+> - **Fix 2:** `fermat_core_agent` eskalasyon pattern: `["sistemden alıp", "sonra paylaşacağım", "akademik takip sistemimizden kontrol", "birazdan dönerim", ...]` → otomatik Claude transfer
+>
+> ### Verify
+> - Commits: `69a7a97` (6 fix) + `f4c0d72` (B4.1 TR karakter)
+> - VPS sync OK, service active, 3 worker, leader 3994174
+> - HTTP /health 200, /chat 200
+> - Cerebras dinamik tarih header PASS, kod pattern 8/8 PASS, build_study_plan int/str/isim PASS
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40r (öğle 11:00 → 12:50, 110 dk — 4 büyük iş: Semantic cache + Redis verify + Workers=3 + Yağız OTP)
 >
 > ## 🆕 OTURUM 25.40r (öğle 11:00 → 12:50, 110 dk — 4 büyük iş: Semantic cache + Redis verify + Workers=3 + Yağız OTP)
 >
