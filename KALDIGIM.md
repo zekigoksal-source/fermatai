@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 3 Mayıs 2026, AKŞAM 19:05 — **🎯 OTURUM 25.40s: BUGÜNKÜ KULLANICI ETKİLEŞİMİ — 6 BUG FIX (Cerebras tarih halüsinasyon + 'Kod' pattern + sınav türü filtresi + tool error + bağlam kaybı + sahte söz)**
+> **Son güncelleme:** 4 Mayıs 2026, GECE 00:30 — **🎯 OTURUM 25.40t: LAZY SYNC + BRIEF KALİTE GARANTİSİ (Neo "%100 güvenmem lazım" direktifi)**
 
 ---
 
@@ -45,6 +45,8 @@
 | 26 | **build_study_plan_context tool error fix** — type integer + isim fallback (3-katmanlı TR karakter ILIKE) | LIVE | 25.40s-#4 |
 | 27 | **Cerebras BAĞLAM HASSASIYETI + SAHTE SÖZ kuralı** — Özüm "Yazari kim" / Yağız "sistemden alacağım" vakaları | LIVE | 25.40s-#5,#6 |
 | 28 | **Sahte söz eskalasyon pattern** — "sistemden alıp", "akademik takip sisteminden kontrol" → otomatik Claude transfer | LIVE | 25.40s-#6 |
+| 29 | **LAZY SYNC** — eyotek_query sonrası DB upsert otomatik (Neo "DB güncel tutulmalı" direktifi) | LIVE | 25.40t |
+| 30 | **Brief kalite garantisi** — self_dev_brief'e quality_score (0-100) + 7 zorunlu alan + Neo std 70+ | LIVE | 25.40t |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -78,6 +80,83 @@
 - **3D library:** `make_3d_template` tool — Solar System / Atom / Hücre / Molekül anlık render link
 
 ---
+>
+> ## 🆕 OTURUM 25.40t (3 May 23:30 → 4 May 00:30, 60 dk — Bot brief'lerinin kalite süzgeci + Lazy sync uygulama)
+>
+> Neo direktif: *"botla dev konuşmaları yaptık bazı briefler hazırladı ama bunları hangi kalitede yapıyor bilmiyorum ondan dogrudan uygulamadan önce konuşmaya bak ve briefide incele eger %100 dogruysa buna da artık güvenebilirim fonksiyon olarak. sende bu geliştirmeyi uygula veya konuşmadan anlayarak düzelt sen geliştir uygula sonra sistemide senin geliştirdigin kalitede brief vermesi yönünde güclendir."*
+>
+> ### 1️⃣ Bot'un Brief #16 Analizi
+> Bot 3 May 20:46'da `selfdev_write_brief` ile Brief #16 üretti: "Eyotek sorgusu sonrası anlık DB sync ekle"
+>
+> | Kalite kriterim | Brief #16 | Verdict |
+> |-----------------|-----------|---------|
+> | Genel fikir | ✅ Lazy sync mantıklı | OK |
+> | Mevcut altyapı kontrolü | ❌ "Yeni dosya yarat" demiş | `data_freshness_helper.py` ZATEN VAR! |
+> | Spesifik kod konumu | ❌ "Hook ekle" genel | Hangi fonksiyon hangi satır yok |
+> | Test plan | ⚠️ Yetersiz | Çalıştırılabilir komut yok |
+> | Rollback | ⚠️ Yetersiz | Net adım yok |
+> | Eyotek navigator detayı | ❌ Parser hiç yok | Gerçek dönüş formatı bilinmiyor |
+>
+> **Karar: Brief direkt uygulanabilir DEĞİL.** Ben implement edip + bot'un brief sistemini güçlendireceğim.
+>
+> ### 2️⃣ SEN doğru implement (Lazy Sync)
+> - **Yeni:** `eyotek_lazy_sync.py` — mevcut `data_freshness_helper`'ı sarmalayan ince katman
+>   - `PAGE_TO_MODULE` mapping (individual-lesson → etut_history, exam-result → student_exams, attendance-report → attendance, student-exam-detail → student_exam_analysis)
+>   - `lazy_sync_after_query(result)` async — page tespit, upsert, mark_success/mark_failure
+>   - `_upsert_etut_history()` — gerçek INSERT (dedupe ile, kaydeden='lazy_sync')
+>   - Diğer tablolar şimdilik conservative (sadece freshness işareti, full upsert ayrı script'lerde var)
+> - **Hook:** `fermat_core_agent.py::_tool_eyotek_query` return ÖNCE `lazy_sync_after_query(result)` çağrılır. Sessiz fail (caller etkilenmez), `result["_lazy_synced"]` flag ile döner
+> - **Test (canlı):** mappings 4/4 doğru, empty rows skip, unmapped page (reports/balance) skip — PASS
+>
+> ### 3️⃣ Bot Brief Sistemi Güçlendirme — Neo standardı 70+
+>
+> **Önceki problem:** LLM brief üretiyor ama kalite skoru yok, eksik alanlar görünmez. Brief #15 ilk denemede boş geldi.
+>
+> **Yapılan (`self_dev_brief.py`):**
+>
+> A) Sys prompt'a 7 zorunlu alan:
+> ```
+> evidence — vaka referansı (Yagiz 16:04:50 ...)
+> existing_infrastructure_check — yeni dosya önermeden önce mevcut tarama
+> proposed_changes.where — satır/fonksiyon spesifik
+> test_plan — çalıştırılabilir komut
+> rollback_note — net adım (sadece "git revert" YETMEZ)
+> risk_factors — düşünülmüş risk listesi
+> quality_self_score — LLM kendi puanı (0-100)
+> ```
+>
+> B) Backend gerçek `quality_score` hesaplama (max 100):
+> - +15 problem_summary somut (sayı/vaka)
+> - +15 evidence dolu
+> - +15 existing_infrastructure_check yapıldı
+> - +15 proposed_changes 'where' spesifik
+> - +15 test_plan çalıştırılabilir komut
+> - +15 rollback_note net adım
+> - +10 risk_factors mevcut
+>
+> C) `quality_issues` listesi — hangi kriter eksik
+>
+> D) `directly_applicable: bool` — 70+ ise True, altında "gözden geçir"
+>
+> E) Diff text üst kısma `📊 BRIEF KALITESI: 78/100 (Neo std: 70+) ✅ Direkt uygulanabilir` header
+>
+> ### Test
+> - Lazy sync mappings: 4/4 ✓
+> - Empty rows handle: ✓
+> - Unmapped page handle: ✓
+> - write_brief import: ✓
+>
+> ### Verify
+> - Commit: `4651b4f`
+> - VPS sync: HEAD `4651b4f` ✓
+> - Bridge restart: leader 4027865, 3 worker, /health 200, /chat 200 ✓
+>
+> ### Açık Bırakılan (sonraki oturum)
+> - **response_grade pipeline aktivasyonu** — bot olgunlukta "kalite ölçümü 55/100" dedi (kör nokta), bu kapsamlı bir iş, ayrı oturumda
+> - **Cerebras proaktif bug detection** — tarih/sahte söz/bağlam reaktif yakalanıyor, pre-check ekleyebiliriz
+> - **Claude trafiği %39 → %25** — fast/Cerebras'a daha çok yük
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40s (akşam 17:30 → 19:05, 95 dk — bugünkü 5 öğrenci konuşması analizi + 6 BUG fix)
 >
 > ## 🆕 OTURUM 25.40s (akşam 17:30 → 19:05, 95 dk — bugünkü 5 öğrenci konuşması analizi + 6 BUG fix)
 >
