@@ -77,6 +77,7 @@
 - ❌ Tool kalitesini düşürmeye yönelik latency optimization (kalite > hız)
 - ❌ "Devam et" fast_response (bağlam kaybı korkusu)
 - ❌ SaaS multi-tenant değişiklikleri (kurum-içi mükemmellik)
+- ❌ **Meta Marketing API entegrasyonu** (4 May 25.40z sonu RAFA): "reklamları Google üzerinden veriyorum, Meta yok, gereksiz yük olur" — Neo onaylamadan bu fikri tekrar önerme
 - ❌ Onaysız WP/SMS/email gönderme (özellikle gece)
 - ❌ Veli + finans modüllerine dokunma (Yeni Sezon bağlı, KAPALI)
 - ❌ Sözel/SOZ öğrenci içerik üretimi (öğrenci yok)
