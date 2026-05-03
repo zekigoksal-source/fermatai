@@ -894,10 +894,21 @@ async def lifespan(app: FastAPI):
         pass
 
     # 22.1n-neo Fikir 2: Gece 03:00 precompute scheduler
+    # 25.40r: Bu nokta lifespan basinda — leader election henuz yapilmadi.
+    # Inline kontrol: REDIS yoksa zaten tek worker, calistir. REDIS varsa
+    # daha sonra leader_only re-evaluate (asagida _is_singleton_leader = await is_leader())
+    # Ama precompute_nightly'nin kendi schedule'inda 24 saat sleep var, bir restart'ta
+    # tetiklenmez — kabul edilebilir cifte calisma riski cok dusuk. Yine de gate ekle.
     try:
         from precompute_nightly import nightly_scheduler_loop
-        _nightly_task = asyncio.create_task(nightly_scheduler_loop())
-        logger.info("  🌙  Nightly precompute scheduler aktif (03:00)")
+        from singleton_leader import is_leader as _il
+        # Hizli bir leader claim dene — eger lider degilsek nightly'i atla
+        _early_leader = await _il()
+        if _early_leader:
+            _nightly_task = asyncio.create_task(nightly_scheduler_loop())
+            logger.info("  🌙  Nightly precompute scheduler aktif (03:00, leader)")
+        else:
+            logger.info("  🌙  Nightly precompute SKIP (follower worker)")
     except Exception as _ne:
         logger.debug(f"nightly scheduler atlandi: {_ne}")
 
@@ -921,62 +932,86 @@ async def lifespan(app: FastAPI):
     except Exception as _he:
         logger.debug(f"hydrate atlandi: {_he}")
 
-    # ── Zamanlanmış Görevler ───────────────────────────────────────────────────
+    # ── 25.40r: Singleton Leader Election (workers>=2 hazirligi) ───────────
+    # Bu worker leader mi? Sadece leader cron-like task'leri calistirir
+    # (session_keeper, scheduled_tasks, html_updater, telafi, briefing, todo).
+    # Memory mode'da her zaman True (tek worker = leader).
+    _is_singleton_leader = True
+    _leader_refresh_task = None
+    try:
+        from singleton_leader import is_leader, start_leader_refresh
+        _is_singleton_leader = await is_leader()
+        if _is_singleton_leader:
+            _leader_refresh_task = asyncio.create_task(start_leader_refresh())
+    except Exception as _le:
+        logger.warning(f"  Leader election atlandi (fail-open): {_le}")
+        _is_singleton_leader = True  # fail-open
+
+    # ── Zamanlanmış Görevler (LEADER ONLY) ─────────────────────────────────
     _scheduler_task = None
     _html_task = None
     _session_keeper_task = None
-    try:
-        _scheduler_task = asyncio.create_task(_run_scheduled_tasks())
-        _html_task = asyncio.create_task(_run_conversation_html_updater())
-        logger.info("  ⏰  Zamanlanmış görevler aktif (günlük rapor 20:00, duygu takibi 6 saatte 1)")
-        logger.info("  📄  Konuşma HTML otomatik güncelleniyor (2dk, logs/conversations.html)")
-    except Exception as e:
-        logger.warning(f"  Scheduler başlatılamadı: {e}")
+    if _is_singleton_leader:
+        try:
+            _scheduler_task = asyncio.create_task(_run_scheduled_tasks())
+            _html_task = asyncio.create_task(_run_conversation_html_updater())
+            logger.info("  ⏰  Zamanlanmış görevler aktif (günlük rapor 20:00, duygu takibi 6 saatte 1)")
+            logger.info("  📄  Konuşma HTML otomatik güncelleniyor (2dk, logs/conversations.html)")
+        except Exception as e:
+            logger.warning(f"  Scheduler başlatılamadı: {e}")
+    else:
+        logger.info("  ⏰  Scheduler/HTML updater SKIP (follower worker)")
 
-    # ── Session Keeper (Oturum 18) — Eyotek session 3dk periyodla kontrol ──
-    try:
-        from session_keeper import session_keeper_loop as _sk_loop
-        _session_keeper_task = asyncio.create_task(_sk_loop())
-        logger.info("  🔐  Session Keeper aktif (Eyotek 3dk periyod, drop'ta WP admin bildirim)")
-    except Exception as e:
-        logger.warning(f"  Session Keeper baslatilamadi: {e}")
+    # ── Session Keeper (Oturum 18, LEADER ONLY) — Eyotek CDP cakismasin ───
+    if _is_singleton_leader:
+        try:
+            from session_keeper import session_keeper_loop as _sk_loop
+            _session_keeper_task = asyncio.create_task(_sk_loop())
+            logger.info("  🔐  Session Keeper aktif (Eyotek 3dk periyod, drop'ta WP admin bildirim)")
+        except Exception as e:
+            logger.warning(f"  Session Keeper baslatilamadi: {e}")
+    else:
+        logger.info("  🔐  Session Keeper SKIP (follower worker — Eyotek CDP cakismasi onlendi)")
 
-    # ── İletişim Telafi Scheduler (B4, Neo 18 Nisan 23:57 ONAY) ──
+    # ── İletişim Telafi Scheduler (B4, LEADER ONLY) ────────────────────────
     # 30dk periyod — bekleyen frustration_log kayıtlarını 10-21 saat arasında telafi eder
     _telafi_task = None
-    try:
-        async def _telafi_loop():
-            from frustration_telafi import check_and_send_telafi
-            while True:
-                await asyncio.sleep(1800)  # 30dk
-                try:
-                    result = await check_and_send_telafi(send_wa_func=send_wa_message)
-                    if result.get("sent", 0) > 0:
-                        logger.info(f"✨ Telafi döngüsü: {result['sent']} mesaj gönderildi")
-                except Exception as _te:
-                    logger.debug(f"Telafi döngü hatası: {_te}")
-        _telafi_task = asyncio.create_task(_telafi_loop())
-        logger.info("  ✨  İletişim Telafi aktif (30dk periyod, 10-21 saat, 30dk-24h pencere)")
-    except Exception as e:
-        logger.warning(f"  Telafi scheduler baslatilamadi: {e}")
+    if _is_singleton_leader:
+        try:
+            async def _telafi_loop():
+                from frustration_telafi import check_and_send_telafi
+                while True:
+                    await asyncio.sleep(1800)  # 30dk
+                    try:
+                        result = await check_and_send_telafi(send_wa_func=send_wa_message)
+                        if result.get("sent", 0) > 0:
+                            logger.info(f"✨ Telafi döngüsü: {result['sent']} mesaj gönderildi")
+                    except Exception as _te:
+                        logger.debug(f"Telafi döngü hatası: {_te}")
+            _telafi_task = asyncio.create_task(_telafi_loop())
+            logger.info("  ✨  İletişim Telafi aktif (30dk periyod, 10-21 saat, 30dk-24h pencere)")
+        except Exception as e:
+            logger.warning(f"  Telafi scheduler baslatilamadi: {e}")
 
-    # ── 25.28: F1 Teacher Briefing scheduler (15dk periyod) ────────────────
+    # ── 25.28: F1 Teacher Briefing scheduler (15dk periyod, LEADER ONLY) ───
     _briefing_task = None
-    try:
-        from teacher_briefing import briefing_scheduler_loop
-        _briefing_task = asyncio.create_task(briefing_scheduler_loop())
-        logger.info("  📋  Teacher Briefing scheduler aktif (15dk periyod, WP gönderim FLAG-GATED)")
-    except Exception as e:
-        logger.warning(f"  Briefing scheduler baslatilamadi: {e}")
+    if _is_singleton_leader:
+        try:
+            from teacher_briefing import briefing_scheduler_loop
+            _briefing_task = asyncio.create_task(briefing_scheduler_loop())
+            logger.info("  📋  Teacher Briefing scheduler aktif (15dk periyod, WP gönderim FLAG-GATED)")
+        except Exception as e:
+            logger.warning(f"  Briefing scheduler baslatilamadi: {e}")
 
-    # ── 25.28: F4 Todo Assignment scheduler (30dk periyod) ─────────────────
+    # ── 25.28: F4 Todo Assignment scheduler (30dk periyod, LEADER ONLY) ────
     _todo_task = None
-    try:
-        from todo_assignment import todo_scheduler_loop
-        _todo_task = asyncio.create_task(todo_scheduler_loop())
-        logger.info("  📌  Todo Assignment scheduler aktif (30dk periyod, eskalasyon FLAG-GATED)")
-    except Exception as e:
-        logger.warning(f"  Todo scheduler baslatilamadi: {e}")
+    if _is_singleton_leader:
+        try:
+            from todo_assignment import todo_scheduler_loop
+            _todo_task = asyncio.create_task(todo_scheduler_loop())
+            logger.info("  📌  Todo Assignment scheduler aktif (30dk periyod, eskalasyon FLAG-GATED)")
+        except Exception as e:
+            logger.warning(f"  Todo scheduler baslatilamadi: {e}")
 
     yield  # Uygulama çalışıyor
 
