@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 3 Mayıs 2026, GECE 02:00 — **🎯 OTURUM 25.40q: Wix mobile scroll lock fix (kurumsal site mobilde tüm sayfalarda kitleniyordu — obsolete embed silindi)**
+> **Son güncelleme:** 3 Mayıs 2026, ÖĞLE 12:50 — **🎯 OTURUM 25.40r: 4 BÜYÜK İŞ TAMAM (Semantic cache aktif + Redis dual-write doğru + Workers=3 + Leader election + Yağız OTP bug fix)**
 
 ---
 
@@ -33,6 +33,10 @@
 | 14 | **Quality v2 yeni intent skorları** (RAG/renderer kullanım + 3 yeni alarm) | LIVE | 25.40p |
 | 15 | **Three.js 3D template library** (solar_system + atom + hücre + molekül + make_3d_template tool) | LIVE | 25.40p |
 | 16 | **Wix mobile scroll lock fix** (kurumsal site `fermategitimkurumlari.com` tüm mobil sayfalarda obsolete CSS embed kitliyordu) | LIVE | 25.40q |
+| 17 | **Semantic cache aktif** (bge-m3 model VPS Ollama'ya pull, init_db pgvector boyut tespit fix, paraphrase yakalanır oldu) | LIVE | 25.40r-A1 |
+| 18 | **Redis dual-write doğrulama** (HybridDict gerçekten yazıyor, DBSIZE=0 sistem sakin demek — bug yok) | VERIFY | 25.40r-A3 |
+| 19 | **Workers=3 deploy + Leader Election** (3 worker spawn, 1 leader cron task, 2 follower webhook handler, Eyotek CDP çakışması engellendi) | LIVE | 25.40r-B1 |
+| 20 | **Yağız Alp OTP bug fix** (5ms aralıklarla 5 OTP üretiliyordu → 30sn duplicate guard, frontend race condition koruma) | LIVE | 25.40r-B2 |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -66,6 +70,58 @@
 - **3D library:** `make_3d_template` tool — Solar System / Atom / Hücre / Molekül anlık render link
 
 ---
+>
+> ## 🆕 OTURUM 25.40r (öğle 11:00 → 12:50, 110 dk — 4 büyük iş: Semantic cache + Redis verify + Workers=3 + Yağız OTP)
+>
+> Neo direktif: "bge-m3 → nomic semantic cache fix + Redis dual-write doğrulama + Yağız bug + Workers=3 sistemi stabil hazır olsun, eksik kalmasın. precompute cron iptal (gereksiz token)."
+>
+> ### 🔍 Önce Süzgeçten — Brief İddiaları Doğrulama
+> Dünkü bot brief'inin 5 noktasından **4'ü zaten yapılmıştı** (müdür yetki fix `e50d649`, EYOTEK_SESSION zaten true, Redis kurulu, .env REDIS_URL var, Cerebras 25.40o etkisi 24h sonra zaten görüldü). Bu süzgeç sayesinde gerçek kalan iş net oldu.
+>
+> ### A1 — Semantic cache (bge-m3) aktif
+> - Önce `nomic-embed-text`'e geçtim (768 dim) — VPS'te bge-m3 yoktu
+> - Test: paraphrase MISS at 0.70 (nomic Türkçe çok zayıf)
+> - **Düzeltme:** `ollama pull bge-m3` → model VPS'e indirildi, kod orijinal config'e döndü (1024 dim, threshold 0.80)
+> - 3 ek bug fix yolda: `init_db()` pgvector boyut tespiti `format_type` ile (`atttypmod` doğru bilgi vermiyordu), tablo yokken regclass cast try/except, `CREATE_TABLE_SQL`'de `vector(1024)` HARDCODED → f-string EMBED_DIM
+> - Test sonuç: dim 1024 ✓, exact match ✓, semantic paraphrase 0.726 HIT ✓, unrelated reject ✓
+>
+> ### A3 — Redis dual-write doğrulama
+> - **Bulgu:** Redis container ÇALIŞIYOR, REDIS_URL .env'de var, `session_store.get_store()` REDIS dönüyor, ama DBSIZE=0 idi
+> - Şüphe: dual-write sessiz fail mi?
+> - Test (.env yükleyerek): `HybridDict('ban:').['testphone'] = X` → `fermat:ban:testphone` Redis'te belirdi, read-back OK
+> - **Sonuç:** Mekanizma sağlam, DBSIZE=0 = sistem sakin (flood ban yok, foto kullanılmamış, queue notification kısa TTL). Bug yok.
+>
+> ### B1 — Workers=3 + Leader Election
+> - **Distributed lock:** `HybridPhoneLocks.acquire_distributed/release_distributed/is_locked_distributed` eklendi (Redis SETNX + TTL 180sn, fail-open)
+> - Bridge `_enqueue_and_process`'da 2 `async with lock:` block'u distributed wrapper ile sarmalandı
+> - DB pool: per-worker max=20, min=3 (3 worker × 20 = 60 max conn, Postgres 100 limit içinde)
+> - **İlk workers=3 deneme: KAYBETME** — 3 worker session_keeper paralel çalıştı, Eyotek CDP çakıştı (`Target page has been closed` hataları)
+> - **Çözüm:** `singleton_leader.py` — Redis SETNX leader election (60sn TTL, 30sn refresh)
+> - Bridge lifespan'de leader-only task'ler: session_keeper, _run_scheduled_tasks, _run_conversation_html_updater, _telafi_loop, briefing_scheduler, todo_scheduler, nightly_scheduler
+> - **Sonuç (canlı):** 3 worker spawn, PID 3843484 leader (cron), 3843485+3843486 follower (webhook only), Redis'te `fermat:leader:bridge_singleton = 3843484`
+> - Endpoint /health 200, /chat 200
+>
+> ### B2 — Yağız Alp Tekin OTP bug
+> - **Root cause (DB analizi):** Yağız Alptekin (197, 905523517686) 18 Nisan 21:22'de **5ms aralıklarla 3 OTP**, 21:25'te **5ms aralıklarla 2 OTP** daha üretildi (toplam 5). Frontend double-click veya browser fetch retry tetikledi. Yağız WP'de 3 farklı kod gördü → karıştı → 8x yanlış kod denemesi
+> - Mevcut burst koruma var (60sn'de 3) ama duplicate karmaşayı çözmüyordu
+> - **Fix:** `request_otp()` başında **30sn duplicate guard** — son 30sn'de geçerli OTP varsa yenisini ÜRETME, mevcut olanı tekrar dön. WP tek mesaj alır
+> - Test (3 ardışık çağrı): hepsinde aynı kod (478873), `_dup_guard=True` flag son 2'de
+>
+> ### Routing trendi (25.40o etkisinin 24h doğrulaması)
+> Dün gece bot "1 hafta sonra ölç" demişti. **24 saat sonra zaten görünüyor:**
+> | Kaynak | 7-gün öncesi | Son 24h | Değişim |
+> |--------|--------------|---------|---------|
+> | Cerebras toplam | %16 | **%32** | +16 ✅ |
+> | Claude | %41 | **%29** | -12 ✅ |
+> | Fast | %35 | %38 | +3 |
+>
+> ### Verify
+> - Tüm commit'ler GitHub: `5091b49, 67b4d97, 0a5dc73, 8756e57, 9c8ff12, fbefa9a, 107ea8e, 0160653`
+> - VPS sync OK, service active, 3 worker, leader=3843484
+> - HTTP /health 200, /chat 200
+> - Eyotek session keeper ONLINE (sadece leader'da)
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40q (gece 01:45 → 02:00, 15 dk — Wix mobile scroll lock fix)
 >
 > ## 🆕 OTURUM 25.40q (gece 01:45 → 02:00, 15 dk — Wix mobile scroll lock fix)
 >
