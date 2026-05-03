@@ -4712,6 +4712,13 @@ async def _enqueue_and_process(phone: str, text: str, audio_bytes: bytes | None)
                 _PHONE_LOCKS[phone] = asyncio.Lock()
                 lock = _PHONE_LOCKS[phone]
                 _LOCK_ACQUIRED_AT.pop(phone, None)
+                # 25.40r-BUGFIX: Redis distributed lock'u da temizle (orphan onleme).
+                # Memory lock reset edilince Redis SETNX TTL=180sn boyunca asili kalmasin —
+                # yoksa o kullanicinin sonraki mesajlari acquire_distributed FAIL ile drop olur.
+                try:
+                    await _PHONE_LOCKS.release_distributed(phone)
+                except Exception:
+                    pass
                 # Kullanicini bilgilendir
                 try:
                     await send_wa_message(phone, "⚠️ Önceki işlemim çok uzadı, yeniden başlatıyorum. Lütfen sorunu tekrar yaz 🙏")
