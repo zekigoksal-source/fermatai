@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, GECE 00:30 — **🎯 OTURUM 25.40t: LAZY SYNC + BRIEF KALİTE GARANTİSİ (Neo "%100 güvenmem lazım" direktifi)**
+> **Son güncelleme:** 4 Mayıs 2026, GECE 01:30 — **🎯 OTURUM 25.40u: BAĞLAM KAYBI 4 VAKASI FIX (Neo "amatör hisle koptu" eleştirisi)**
 
 ---
 
@@ -47,6 +47,10 @@
 | 28 | **Sahte söz eskalasyon pattern** — "sistemden alıp", "akademik takip sisteminden kontrol" → otomatik Claude transfer | LIVE | 25.40s-#6 |
 | 29 | **LAZY SYNC** — eyotek_query sonrası DB upsert otomatik (Neo "DB güncel tutulmalı" direktifi) | LIVE | 25.40t |
 | 30 | **Brief kalite garantisi** — self_dev_brief'e quality_score (0-100) + 7 zorunlu alan + Neo std 70+ | LIVE | 25.40t |
+| 31 | **Atlas suggestion auto-fetch** — selfdev_write_brief "öneri #N" tespit edip içeriği otomatik çekiyor (Brief #17 vakası önlendi) | LIVE | 25.40u-#1 |
+| 32 | **Tool karışıklık fix** — selfdev_get_brief description "atlas_suggestion vs brief" netleştirildi | LIVE | 25.40u-#2 |
+| 33 | **Self-doubt YASAK** — bot kendi önceki doğru cevabını sorgulamıyor (web kodu OTP vakası) | LIVE | 25.40u-#3 |
+| 34 | **Son 3 assistant turn enjekte** — context['recent_assistant_turns'] + system prompt "🔁 SEN AZ ÖNCE BUNLARI YAZDIN" | LIVE | 25.40u-#4 |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -80,6 +84,56 @@
 - **3D library:** `make_3d_template` tool — Solar System / Atom / Hücre / Molekül anlık render link
 
 ---
+>
+> ## 🆕 OTURUM 25.40u (4 May 00:30 → 01:30, 60 dk — Bağlam kaybı 4 vakası fix)
+>
+> Neo eleştirisi: *"botla konuşmalar yaptım bağlam kaybına uğradı belirgin bir şekilde, bazı öneriler verdi ama konudan çabuk koptu, amatör bir histi. Bana Claude konuşuyor, diğer kullanıcılar daha zayıfsa basit bir GPT deneyiminden bile zayıf olur"*
+>
+> ### Tespit (3 May 21:55-22:00, 5 dk içinde 4 ciddi bağlam kaybı)
+>
+> | # | Saat | Vaka | Sorun |
+> |---|------|------|-------|
+> | 1 | 21:58 | Neo "53 için brief yaz" → bot "Eyotek lazy sync" yazdı (Brief #17) | Atlas öneri #53 yerine geçen oturumdan tema |
+> | 2 | 21:59 | Neo "yanlış brief" → bot "Hangi öneriler? Liste paylaşmadın..." | 4 dk önce kendisi 3 öneri açıklamıştı! |
+> | 3 | 21:59 | Neo "53 nolu önerin" → bot `selfdev_get_brief(53)` → "yok" | atlas_suggestion vs brief karışık |
+> | 4 | 22:00 | Neo öneriyi hatırlattı → bot "Yanlış yorumladım" diyerek kendi doğru cevabını reddetti | Self-doubt halüsinasyon |
+>
+> ### 4 Önleyici Fix
+>
+> #### #1 — `selfdev_write_brief` Atlas auto-fetch
+> - `_detect_atlas_suggestion_in_recent_msgs()` — son 6 mesaj + 20 dk pencerede `#N`, `öneri #N`, `🔵 #N` ara
+> - `atlas_suggestions` tablosundan içerik çek (title, severity, rationale, suggested_change, target_files)
+> - `extra_hint` başına ODAK bloğu enjekte: "⚠ BU ÖNERIYI brief'le, eski konuya KAYMA"
+> - **Test:** `id=53 title="'web kodu' fast_response'a alınabilir"` ✅
+>
+> #### #2 — Tool description netleştirme (`selfdev_get_brief`)
+> - "DİKKAT: 'öneri #N' farklı şeydir — `atlas_suggestions` tablosunda. ID range: brief <30, atlas suggestion 50+"
+> - Bot tool seçmeden önce ID range'ine bakıp doğru tablo seçecek
+>
+> #### #3 — Self-doubt YASAK kuralı (`_LOCAL_SYSTEM`)
+> - "Kullanıcı 'yanlış' derse, KENDİ ÖNCEKİ doğru cevaplarını sorgulama"
+> - Spesifik vaka ile örnek (web kodu olayı): bot 21:55'te doğru söyledi, 22:00'da kendini reddetti — YASAK
+> - "TARTIŞILANI HATIRLA: son 3 assistant turn'i unutma"
+>
+> #### #4 — Son 3 assistant turn enjekte (`conversation_memory`)
+> - `context['recent_assistant_turns']` = `[{age, title, preview}, ...]`
+> - `build_context_prompt`'a inject: "🔁 SEN AZ ÖNCE BUNLARI YAZDIN (kendini hatırla, sorgulama):"
+> - Cerebras/Claude sistem prompt'unda görüyor → "Hangi öneri?" demiyor artık
+> - **Test:** Ezgi context'inde 3 son assistant turn doğru çekildi, prompt'ta "SEN AZ ÖNCE BUNLARI" bloğu var ✅
+>
+> ### Verify
+> - Commit: `7c71df8`
+> - VPS sync: HEAD `7c71df8`, leader 4045793, /health 200, /chat 200 ✓
+> - Atlas auto-detect canlı test PASS (suggestion #53 doğru çekildi)
+> - Recent assistant turns canlı test PASS (3 turn enjekte edildi)
+>
+> ### Etki
+> - Bot bağlam kaybı vakaları azalmalı
+> - "Hangi konuştuğumuz X?" cevabı artık verilmemeli (recent_assistant_turns var)
+> - Bot kendi yanıtlarını sorgulayarak amatörce görünmemeli
+> - Brief üretirken Atlas suggestion bağlamı net (lazy sync vs web kodu pattern karışmıyor)
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40t (3 May 23:30 → 4 May 00:30, 60 dk — Bot brief'lerinin kalite süzgeci + Lazy sync uygulama)
 >
 > ## 🆕 OTURUM 25.40t (3 May 23:30 → 4 May 00:30, 60 dk — Bot brief'lerinin kalite süzgeci + Lazy sync uygulama)
 >
