@@ -936,13 +936,15 @@ async def lifespan(app: FastAPI):
     # Bu worker leader mi? Sadece leader cron-like task'leri calistirir
     # (session_keeper, scheduled_tasks, html_updater, telafi, briefing, todo).
     # Memory mode'da her zaman True (tek worker = leader).
+    # 25.40r-B1.3: start_leader_refresh HER WORKER'da calisir (leader-only DEGIL),
+    # cunku eski leader oldugunde follower'lar takeover SETNX dener.
     _is_singleton_leader = True
     _leader_refresh_task = None
     try:
         from singleton_leader import is_leader, start_leader_refresh
         _is_singleton_leader = await is_leader()
-        if _is_singleton_leader:
-            _leader_refresh_task = asyncio.create_task(start_leader_refresh())
+        # Refresh+takeover monitor — her worker'da (leader=TTL refresh, follower=takeover dene)
+        _leader_refresh_task = asyncio.create_task(start_leader_refresh())
     except Exception as _le:
         logger.warning(f"  Leader election atlandi (fail-open): {_le}")
         _is_singleton_leader = True  # fail-open

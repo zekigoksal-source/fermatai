@@ -95,9 +95,15 @@ async def is_leader() -> bool:
 
 
 async def start_leader_refresh():
-    """Loop: 30sn'de bir TTL'i 60'a uzat. Leader degil olduysak yeni claim dene.
+    """Loop: 30sn'de bir leader durumunu denetle.
 
-    Bu coroutine sonsuza kadar calisir (asyncio.create_task ile baslatilir).
+    HER WORKER bu loop'u calistirir — leader-only DEGIL. Cunku:
+    - Leader: TTL refresh (60'a uzat)
+    - Follower: leader hala hayatta mi kontrol et, oldiyse takeover SETNX dene
+
+    Bu sayede leader crash'inde diger worker'lar otomatik devralir.
+    25.40r-B1.3 fix: leaderless durum (eski leader oldu, kimse takeover almadi)
+    onlendi.
     """
     global _is_leader_cache
     if not _REDIS_ACTIVE:
@@ -112,22 +118,30 @@ async def start_leader_refresh():
             current = await client.get(full_key)
             current_pid = current.decode() if current else None
             if current_pid == str(_my_pid):
-                # Hala bizim, refresh
+                # Hala bizim, TTL refresh
                 await client.expire(full_key, LEADER_TTL)
                 logger.debug(f"  👑  Leader TTL refreshed (PID={_my_pid})")
+                _is_leader_cache = True
             elif current_pid is None:
-                # Lock free olmus (eski leader crash) — yeni claim dene
+                # Lock free olmus (eski leader crash veya TTL expired) → takeover dene
                 ok = await client.set(full_key, str(_my_pid).encode(), nx=True, ex=LEADER_TTL)
                 if ok:
-                    logger.warning(f"  👑  Leader takeover: PID={_my_pid} (eski leader olmus)")
+                    was_follower = (_is_leader_cache is False)
+                    logger.warning(f"  👑  Leader takeover: PID={_my_pid} (eski leader olmus, follower={was_follower})")
                     _is_leader_cache = True
+                    # Singleton task'leri yeniden baslat — bridge restart'tan sonra
+                    # cunku eski leader oldugunda follower'da SKIP edilmislerdi.
+                    # NOT: Bu otomatik degil — manual restart gerekecek (uyari atalim)
+                    logger.warning(f"  ⚠️  Leadership takeover sonrasi singleton task'ler bu worker'da BASLATILMADI. "
+                                   f"Manual restart gerekir: sudo systemctl restart fermatai-bridge")
                 else:
+                    # Yarista kaybettik (baska follower hizli davrandi) — sessizce follower kal
                     _is_leader_cache = False
             else:
-                # Baska worker leader oldu (race condition'da nadir) — biz follower
+                # Baska worker leader (cached'imizden farkli olabilir)
                 if _is_leader_cache:
                     logger.warning(f"  🤝  Lost leadership: yeni leader PID={current_pid}")
-                    _is_leader_cache = False
+                _is_leader_cache = False
         except asyncio.CancelledError:
             raise
         except Exception as e:
