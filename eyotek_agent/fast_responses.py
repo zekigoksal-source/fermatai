@@ -278,12 +278,34 @@ async def sinav_bilgi(name: str, message: str) -> str:
     )
 
 
-async def ogrenci_son_deneme(soz_no: int, name: str) -> str:
-    """'Son denemem nasil?', 'son sinav sonucum' — Claude kalitesinde gorsel"""
-    # Son 2 deneme — trend icin
-    rows = await _q(
+async def ogrenci_son_deneme(soz_no: int, name: str, exam_filter: str = "") -> str:
+    """'Son denemem nasil?', 'son sinav sonucum' — Claude kalitesinde gorsel.
+
+    25.40s — Ali vakasi (3 May): "TYT denemelerimi incele" deyince son deneme
+    11. SINIF Cap 2 idi -> bot ona 11. SINIF verisi verdi (yanlis). Fix:
+    exam_filter=tyt/ayt/sinif → exam_name LIKE filtresi.
+
+    exam_filter:
+        "tyt"   → exam_name ILIKE '%TYT%' (sadece TYT denemeleri)
+        "ayt"   → exam_name ILIKE '%AYT%'
+        "sinif" → exam_name ILIKE '%sınıf%' OR ILIKE '%11.%' (branş denemeleri)
+        ""      → filtre yok (default — son herhangi deneme)
+    """
+    # 25.40s: Sinav turu filtresi
+    where_extra = ""
+    if exam_filter == "tyt":
+        where_extra = " AND exam_name ILIKE '%TYT%'"
+    elif exam_filter == "ayt":
+        where_extra = " AND exam_name ILIKE '%AYT%'"
+    elif exam_filter == "sinif":
+        where_extra = " AND (exam_name ILIKE '%sınıf%' OR exam_name ILIKE '%sinif%' OR exam_name ~* '\\m1[0-2][^0-9]')"
+
+    sql = (
         "SELECT exam_name, exam_date, turkce, matematik, geometri, fizik, kimya, biyoloji, toplam "
-        "FROM student_exams WHERE soz_no=$1 ORDER BY exam_date DESC NULLS LAST LIMIT 2", soz_no)
+        f"FROM student_exams WHERE soz_no=$1{where_extra} "
+        "ORDER BY exam_date DESC NULLS LAST LIMIT 2"
+    )
+    rows = await _q(sql, soz_no)
     if not rows:
         first = name.split()[0] if name else ""
         return (
@@ -1653,9 +1675,13 @@ OGRENCI_PATTERNS = [
     (r"^(chat|sohbet)\s+(kodu?|gir[iı][sş]|baglan|ac|aç|link|giri[sş]i)\b", "web_kodu", "Chat/sohbet OTP"),
     # Bug fix 22 Nisan: "yeni kod", "baska kod", "kod tekrar", "kod yolla" → web OTP
     # Suleyman bugun "yeni kod ver" dedi, Ollama "Kod Nedir?" diye programlama cevabi verdi
-    (r"^(yeni|ba[sş]ka|tekrar|farkl[iı]|yenile|yollasana|gonder(sene)?|ver(sene)?)\s*(web\s*)?kod", "web_kodu", "Yeni/baska kod"),
-    (r"^kod\s*(tekrar|yollasana|gonder|ver|yenile|yolla|lutfen)", "web_kodu", "Kod tekrar yolla"),
-    (r"^(kod\s*gelmedi|kod\s*almad[iı]m|kod\s*bekliyor)", "web_kodu", "Kod gelmedi"),
+    (r"^(yeni|ba[sş]ka|tekrar|farkl[iı]|yenile|yollasana|gonder(sene)?|ver(sene)?)\s*(web\s*)?kodu?", "web_kodu", "Yeni/baska kod"),
+    (r"^kodu?\s*(tekrar|yollasana|gonder|ver|yenile|yolla|lutfen|istiyorum|al)", "web_kodu", "Kod tekrar yolla"),
+    (r"^(kodu?\s*gelmedi|kodu?\s*almad[iı]m|kodu?\s*bekliyor)", "web_kodu", "Kod gelmedi"),
+    # 25.40s — Ali vakasi (3 May): "Kod" / "Kodu" tek basina → web kodu
+    # Eskiden bu mesajlar Cerebras'a gidip programlama kodu acikliyordu (yanlis intent).
+    # Tek basina "kod" akademik baglamda nadir → web OTP guvenli varsayim.
+    (r"^kodu?[\s\.\?!]*$", "web_kodu", "Kod tek basina"),
 
     # ACL GÜVENLİK — başka öğrenci / öğretmen bilgi sorguları Claude'a (öncelikli)
     # Sınıf sıralama/birincisi → Claude ACL kuralıyla reddeder + "kendi gelişimine odaklan"
@@ -2596,7 +2622,16 @@ async def try_fast_response(
                     elif handler == "sinav_bilgi":
                         return await sinav_bilgi(name, message)
                     elif handler == "son_deneme":
-                        return await ogrenci_son_deneme(soz_no, name)
+                        # 25.40s — Ali vakasi: TYT/11.SINIF filtresi
+                        # "TYT denemelerimi" → exam_filter="tyt"; "11. sınıf" → "sinif"
+                        _exam_filter = ""
+                        if "tyt" in msg_lower:
+                            _exam_filter = "tyt"
+                        elif "ayt" in msg_lower:
+                            _exam_filter = "ayt"
+                        elif any(k in msg_lower for k in ["sinif", "sınıf", "11.", "10.", "12.", "9.", "branş", "brans"]):
+                            _exam_filter = "sinif"
+                        return await ogrenci_son_deneme(soz_no, name, exam_filter=_exam_filter)
                     elif handler == "ayt_deneme":
                         return await ogrenci_ayt_deneme(soz_no, name)
                     elif handler == "ayt_zayif":

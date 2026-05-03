@@ -998,14 +998,45 @@ async def _tool_list_exam_questions(konu: str = "", ders: str = "") -> dict:
         }
 
 
-async def _tool_build_study_plan(student_id: str = "") -> dict:
-    """Çalışma planı için öğrencinin tüm akademik verilerini toplar."""
+async def _tool_build_study_plan(student_id="") -> dict:
+    """Çalışma planı için öğrencinin tüm akademik verilerini toplar.
+
+    25.40s — Ezgi vakasi: Bot string ile cagiriyordu (isim/soz_no string),
+    cast hatasi -> 3 ekstra tool round-trip. Fix: int CAST + isim fallback.
+
+    student_id: int (soz_no) VEYA string (isim/soz_no string).
+    Eger isim verilirse, students tablosunda lookup yapar.
+    """
     from study_plan_builder import build_study_plan_context
+
+    # 1) Direkt int veya int'e cast olabilen string
+    if isinstance(student_id, int):
+        return await build_study_plan_context(student_id)
+
+    s = str(student_id).strip()
+    if not s:
+        return {"error": "student_id bos. soz_no (int) veya isim string ver."}
+
+    # 2) Sayisal string mi?
     try:
-        soz = int(student_id)
-    except (ValueError, TypeError):
-        return {"error": "student_id sayı olmalı"}
-    return await build_study_plan_context(soz)
+        soz = int(s)
+        return await build_study_plan_context(soz)
+    except ValueError:
+        pass
+
+    # 3) Isim string — students tablosunda lookup
+    try:
+        from db_pool import db_fetchval
+        # Türkçe karakter normalize ile arama
+        soz = await db_fetchval(
+            "SELECT soz_no FROM students WHERE full_name ILIKE $1 LIMIT 1",
+            f"%{s}%"
+        )
+        if soz:
+            return await build_study_plan_context(int(soz))
+        return {"error": f"'{s}' isminde ogrenci bulunamadi. Once query_analytics ile soz_no'yu bul."}
+    except Exception as e:
+        return {"error": f"Lookup hata: {e}"}
 
 
 async def tool_get_class_plan(student_id: str = "", date: str = "") -> dict:
@@ -4765,6 +4796,21 @@ class FermatCoreAgent:
                         if len(user_input) > 20:  # kısa selamlama değilse
                             _needs_escalation = True
                             logger.info("  [ESKALASYON] Ollama jenerik yanit verdi, Claude'a geciliyor")
+
+                    # 25.40s — Yagiz vakasi: Cerebras "sistemden alıp donecegim" dedi ama
+                    # tool cagiramaz (Cerebras tool-calling yok). Sahte soz — kullanici bekledi
+                    # ama bot hicbir sey yapmadi. Pattern yakalanirsa Claude'a transfer.
+                    if not _needs_escalation and any(bad in answer.lower() for bad in [
+                        "sistemden alıp", "sistemden alip", "sistemden cekip", "sistemden çekip",
+                        "bir an için bekle", "bir an icin bekle",
+                        "sonuç çıktığında", "sonuc ciktiginda",
+                        "sonra paylaşacağım", "sonra paylasacagim",
+                        "hemen paylaşacağım", "hemen paylasacagim",
+                        "birazdan dönerim", "birazdan donerim", "biraz sonra dönerim",
+                        "akademik takip sistemimizden kontrol",
+                    ]):
+                        _needs_escalation = True
+                        logger.info("  [ESKALASYON] Cerebras sahte soz verdi (sistemden alacagim), Claude'a geciliyor")
 
                 if _needs_escalation:
                     # Claude akışına düş (aşağıdaki for loop)

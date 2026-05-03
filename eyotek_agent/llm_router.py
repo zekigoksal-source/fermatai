@@ -437,6 +437,18 @@ KALITELI. Claude tarzi "etkileyici cevap" hissi ver:
 - Selamlama, motivasyon, sohbet → samimi tonla yaz
 - Veri/rapor/analiz/personalize plan → YAPMA, "detay icin tool gerekli" de ve Claude'a yonlendir
 - ASLA halusinasyon: net rakami, ogrenci adi, sayi UYDURMA — bilmiyorsan "kontrol ediyorum" de
+- ⚠ BAGLAM HASSASIYETI (25.40s — Ozum vakasi): Onceki mesajda bahsedilen
+  kitap/kavram/kisi/sayi varsa, kullaniciya "hangisini kastediyorsun" DEMA.
+  Direkt onceki baglamdan kullan. Ornek:
+  User: "Sonmus Yildizlar kitabini okudun mu" → bot: ozet ver
+  User: "Yazari kim" → bot: "Resat Nuri Guntekin" (DOGRU)
+  YANLIS: "Yazari tespit edebilmek icin eserin adini soyle..." (Ozum'u kizdirir)
+- ⚠ SAHTE SOZ YASAK (25.40s — Yagiz vakasi): Eger "Sistemden alip donecegim",
+  "Bir an bekle, sonuc gelince paylasacagim" gibi seyler diyorsan, bilmedigini
+  iticilik. Bunu DEMA. Bunun yerine net konus:
+  - Kisisel veri istenmis: "Akademik veriyi cekmem lazim, simdi inceliyorum"
+    de — agent otomatik Claude'a tool-calling icin yonlendirir
+  - "Daha sonra donecegim" / "yarim saat sonra" gibi gelecek vaadi YASAK
 
 ROLUM NET: Kavramsal bilgi asistani + dogal akis tamamlayici.
 - YAPABILIRIM: ders konu aciklamasi (fizik, matematik, biyoloji, kimya, tarih, edebiyat)
@@ -843,6 +855,39 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
 ═══════════════════════════════════════════════════════════════════════
 """
 
+    @staticmethod
+    def _get_dynamic_system_header() -> str:
+        """Bugunun tarihi + gun + YKS geri sayim. Cerebras prompt'una inject edilir.
+
+        25.40s — Ezgi vakasi (3 May 2026): Cerebras "10 May 2025 — Cuma" demisti.
+        Halusinasyon engellemek icin dinamik tarih header zorunlu.
+        """
+        from datetime import date
+        TR_GUNLER = ["Pazartesi", "Sali", "Carsamba", "Persembe", "Cuma", "Cumartesi", "Pazar"]
+        TR_AYLAR = ["", "Ocak", "Subat", "Mart", "Nisan", "Mayis", "Haziran",
+                    "Temmuz", "Agustos", "Eylul", "Ekim", "Kasim", "Aralik"]
+        today = date.today()
+        gun_adi = TR_GUNLER[today.weekday()]
+        ay_adi = TR_AYLAR[today.month]
+        # YKS 2026: TYT 13 Haziran, AYT 14 Haziran
+        tyt = date(2026, 6, 13)
+        ayt = date(2026, 6, 14)
+        tyt_kalan = (tyt - today).days
+        ayt_kalan = (ayt - today).days
+        # LGS 2026: 7 Haziran
+        lgs = date(2026, 6, 7)
+        lgs_kalan = (lgs - today).days
+        return (
+            f"[BUGUNUN TARIHI: {today.day} {ay_adi} {today.year} — {gun_adi}]\n"
+            f"[YKS GERI SAYIM: TYT {tyt_kalan} gun, AYT {ayt_kalan} gun, LGS {lgs_kalan} gun]\n"
+            f"⚠ TARIH/GUN sorulursa SADECE bu bilgiyi kullan. ASLA farkli tarih uydurma.\n"
+            f"⚠ 'Bugun cuma/cumartesi/etc' yazarken yukaridaki gun adina bak.\n\n"
+        )
+
+    def _local_system_with_date(self) -> str:
+        """LOCAL_SYSTEM + dinamik tarih header (her cagriya guncel tarih)."""
+        return self._get_dynamic_system_header() + self._LOCAL_SYSTEM
+
     def chat_groq(
         self,
         messages: list[dict],
@@ -857,7 +902,7 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
         import asyncio
 
         # System prompt hazırla (Ollama ile aynı sadelestirilmis)
-        local_system = self._LOCAL_SYSTEM
+        local_system = self._local_system_with_date()
         if "ARAYAN ADI:" in system:
             import re
             name_match = re.search(r"ARAYAN ADI:\s*(.+)", system)
@@ -935,7 +980,7 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
                     raise RuntimeError("hassas_intent_skip")
 
                 # Local prompt + ARAYAN bilgisi
-                local_system = self._LOCAL_SYSTEM
+                local_system = self._local_system_with_date()
                 if "ARAYAN ADI:" in system:
                     import re as _re
                     name_match = _re.search(r"ARAYAN ADI:\s*(.+)", system)
@@ -1026,7 +1071,7 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
         if self._groq_available and self._groq_client:
             try:
                 # System prompt + messages hazirligi (chat_groq ile ayni)
-                local_system = self._LOCAL_SYSTEM
+                local_system = self._local_system_with_date()
                 if "ARAYAN ADI:" in system:
                     import re as _re
                     name_match = _re.search(r"ARAYAN ADI:\s*(.+)", system)
@@ -1081,7 +1126,7 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
         import ollama as _ollama
         model = model or OLLAMA_MODEL
 
-        local_system = self._LOCAL_SYSTEM
+        local_system = self._local_system_with_date()
         if "ARAYAN ADI:" in system:
             import re as _re
             name_match = _re.search(r"ARAYAN ADI:\s*(.+)", system)
@@ -1147,7 +1192,7 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
         start = time.time()
 
         # Ollama icin sadelesilmis system prompt kullan (uzun Claude promptu yerine)
-        local_system = self._LOCAL_SYSTEM
+        local_system = self._local_system_with_date()
         # Eger system prompt'ta ARAYAN bilgisi varsa ekle
         if "ARAYAN ADI:" in system:
             import re

@@ -177,14 +177,18 @@ TOOLS: list[dict] = [
             "Öğrencinin çalışma planı oluşturmak için TÜM akademik verilerini toplar. "
             "Zayıf konular (hata % sıralı), deneme trendi (5 sınav), ders bazlı artış/düşüş, "
             "hedef üniversite, devamsızlık, ders programı, net kazanım potansiyeli döner. "
-            "SADECE çalışma planı/programı oluşturma isteğinde kullan."
+            "SADECE çalışma planı/programı oluşturma isteğinde kullan.\n\n"
+            "ÖNEMLİ: student_id INTEGER (sayı) olmalı — soz_no. Örn: 197, 155. "
+            "Eğer sadece öğrenci ismini biliyorsan, ÖNCE query_analytics ile soz_no'yu bul: "
+            "SELECT soz_no FROM students WHERE full_name ILIKE '%isim%'. "
+            "Bulduğun INTEGER soz_no'yu bu tool'a geç. ASLA isim string olarak geçme."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "student_id": {
-                    "type": "string",
-                    "description": "Öğrenci soz_no (sayı olarak)",
+                    "type": "integer",
+                    "description": "Öğrenci soz_no — INTEGER. Örnek: 197 (string DEĞİL).",
                 },
             },
             "required": ["student_id"],
