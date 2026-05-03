@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, GECE 01:30 — **🎯 OTURUM 25.40u: BAĞLAM KAYBI 4 VAKASI FIX (Neo "amatör hisle koptu" eleştirisi)**
+> **Son güncelleme:** 4 Mayıs 2026, GECE 02:15 — **🎯 OTURUM 25.40w: TARTISMA-vs-TALIMAT AYRIMI ÇALIŞIYOR (Neo canlı izledi, bot artık "brief yazayım mı?" demiyor)**
 
 ---
 
@@ -51,6 +51,8 @@
 | 32 | **Tool karışıklık fix** — selfdev_get_brief description "atlas_suggestion vs brief" netleştirildi | LIVE | 25.40u-#2 |
 | 33 | **Self-doubt YASAK** — bot kendi önceki doğru cevabını sorgulamıyor (web kodu OTP vakası) | LIVE | 25.40u-#3 |
 | 34 | **Son 3 assistant turn enjekte** — context['recent_assistant_turns'] + system prompt "🔁 SEN AZ ÖNCE BUNLARI YAZDIN" | LIVE | 25.40u-#4 |
+| 35 | **TARTISMA-vs-TALIMAT ayrımı** — bot "Hangisinden başlayalım? / Brief yazayım mı?" demiyor artık (11 yasak kalıp) | LIVE | 25.40v+w |
+| 36 | **Canlı doğrulama** — Neo "kapasite ne durumda?" → bot detaylı rapor + yorum cümlesiyle bitirdi (soru ile değil!) | VERIFIED | 25.40w |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -84,6 +86,55 @@
 - **3D library:** `make_3d_template` tool — Solar System / Atom / Hücre / Molekül anlık render link
 
 ---
+>
+> ## 🆕 OTURUM 25.40v + 25.40w (4 May 01:30 → 02:15, 45 dk — Tartışma vs Talimat ayrımı, Neo canlı izledi)
+>
+> Neo eleştirisi: *"hemen birşeyden tetiklenip talimat olarak kaydediyor, hızlı tetiklenme var, boş yere ben dev tartışması yapıyordum"* + *"bot saçmalıyor"*
+>
+> ### Vaka — Bot her TARTIŞMA sorusuna iş teklifi yapıyordu
+>
+> | Saat | Neo (TARTIŞMA) | Bot YANLIŞ |
+> |------|----------------|------------|
+> | 22:05 | "Claude Code gibi sohbetin yolu var mı?" | "3 yol: ~1gün/2-3gün/1hafta. **Hangisinden başlayalım? #1 bu hafta hallederim**" |
+> | 22:12 | "Araya girme hissi olabilir mi?" | "Stop butonu 1-2 günde. **Brief yazayım mı?**" |
+>
+> Neo dev tartışması yapıyor, bot her soruyu "iş teslim aldım, planlama yapayım" tonunda yorumluyor.
+>
+> ### Fix — `_LOCAL_SYSTEM`'e güçlendirilmiş ayrım kuralı
+>
+> **🚫 11 YASAK CÜMLE KALIBI** (TARTIŞMA sırasında):
+> - "Hangisinden başlayalım?" / "X yapayım mı?" / "Brief yazayım mı?"
+> - "Pipeline'a alayım mı?" / "Bu hafta hallederim" / "X dakikada çıkartırım"
+> - "1 gün / 2 gün / 1 hafta sürer" / "Şimdi mi yoksa sonra mı?"
+> - "Devam edelim mi?" / "Tam olarak hangisi?" / "Hangi noktadan başlayım?"
+>
+> **✅ TARTIŞMA SONU:** Yorum cümlesi ile bitir — *"Karmaşıklığa değmez bence"*, *"Asıl kazanç #1'de"*, *"Bu yaklaşım ilginç."*
+>
+> **✅ TALIMAT (kod yazabilirsin):** Açık emir kelimesi gerekli — *"yap"*, *"uygula"*, *"brief yaz"*, *"kur"*, *"kod yaz"*
+>
+> ### Canlı Doğrulama (4 May 22:14-22:15)
+>
+> 22:14:40 Neo: *"peki şu an mevcut kapasiten ne durumda?"*
+> 22:15:08 Bot: Detaylı kapasite raporu (altyapı, routing, tools, tablolar, açık sorunlar, Atlas durumu) → **kapatış: *"Kısaca: altyapı sağlıklı, tool ekosistemi olgun..."*** ← YORUM CÜMLESİYLE BİTTİ! Soru yok, brief teklif yok ✅
+>
+> Üstelik bot **kendi son commit'ini hatırladı** (recent_assistant_turns aktif): *"Son commit: 25.40u (4 Mayıs 01:30) — Bağlam kaybı 4 vakası fix..."*
+>
+> ### Etki Tablosu (canlı izleme)
+>
+> | Davranış | Önce (22:05-22:12) | Sonra (22:14+) |
+> |----------|-------------------|----------------|
+> | "Brief yazayım mı?" | 2 vaka | 0 ✅ |
+> | "Hangisinden başlayalım?" | 2 vaka | 0 ✅ |
+> | "Bu hafta sona erdiririz" | 1 vaka | 0 ✅ |
+> | Önceki yanıtını hatırlama | "göremiyorum bu oturumda" 🔴 | "son commit 25.40u..." ✅ |
+> | Yorum cümlesi ile bitirme | Yok | "altyapı sağlıklı..." ✅ |
+>
+> ### Verify
+> - Commit: `e0b27eb` (25.40w)
+> - VPS sync HEAD `e0b27eb`, leader 4047266, /health 200 ✅
+> - **Neo CANLI doğruladı** — "kapasite ne durumda" sorusuna mükemmel cevap geldi
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40u (4 May 00:30 → 01:30, 60 dk — Bağlam kaybı 4 vakası fix)
 >
 > ## 🆕 OTURUM 25.40u (4 May 00:30 → 01:30, 60 dk — Bağlam kaybı 4 vakası fix)
 >
