@@ -94,6 +94,63 @@ async def _verify_files_exist(files: list[str]) -> tuple[list[str], list[str]]:
     return existing, missing
 
 
+async def _detect_atlas_suggestion_in_recent_msgs(
+    triggered_by: str, last_n_for_detect: int = 6,
+) -> dict:
+    """25.40u — Bağlam kaybı fix: son N mesajda 'öneri #N', 'Atlas #N',
+    '#N' (3 haneye kadar) referansı varsa atlas_suggestion'ı çek.
+
+    Brief #17 vakasında (3 May 21:58): Neo "53 için brief yaz" dedi,
+    bot 4 dk önceki Atlas önerisi #53'ü görmedi, geçen oturumdan lazy
+    sync yazdı. Bu fonksiyon bunu engeller — son 6 mesajda spesifik
+    suggestion ID varsa otomatik içeriği çekip extra_hint'e enjekte eder.
+    """
+    import re as _re
+    from db_pool import db_fetch, db_fetchrow
+    rows = await db_fetch(
+        """SELECT content FROM agent_conversations
+           WHERE phone=$1 AND created_at > NOW() - INTERVAL '20 minutes'
+           ORDER BY created_at DESC LIMIT $2""",
+        triggered_by, int(last_n_for_detect),
+    )
+    if not rows:
+        return {}
+
+    # Son 6 mesajda #N (atlas suggestion ID) ara — Neo veya bot mention etmis olabilir
+    recent_text = " ".join((r["content"] or "")[:1500] for r in rows)
+    # Pattern: "öneri/oneri/suggestion/atlas #N" veya "#N — başlık" (atlas listing format)
+    candidates = set()
+    for m in _re.finditer(r"(?:[ÖöOo]neri|[Ss]uggestion|[Aa]tlas|🔴|🟡|🔵|🟢)\s*#?(\d{1,4})", recent_text):
+        candidates.add(int(m.group(1)))
+    # Daha gevsek: '#53' tek basina (prev msg'de atlas listesi varsa)
+    for m in _re.finditer(r"#(\d{2,4})\b", recent_text):
+        candidates.add(int(m.group(1)))
+
+    if not candidates:
+        return {}
+
+    # En son mention edileni dene (genelde Neo yeni soruyor)
+    for sug_id in sorted(candidates, reverse=True):
+        row = await db_fetchrow(
+            """SELECT id, title, severity, rationale, estimated_impact,
+                      suggested_change, target_files, status, category
+               FROM atlas_suggestions WHERE id=$1""",
+            sug_id,
+        )
+        if row:
+            return {
+                "id": row["id"],
+                "title": row["title"],
+                "severity": row["severity"],
+                "category": row["category"],
+                "rationale": row["rationale"][:1500],
+                "suggested_change": (row["suggested_change"] or "")[:1000],
+                "target_files": row["target_files"] or [],
+                "status": row["status"],
+            }
+    return {}
+
+
 async def write_brief(
     triggered_by: str,
     last_n: int = 30,
@@ -113,6 +170,22 @@ async def write_brief(
     from self_dev_tools import _is_pipeline_active, _audit
     if not await _is_pipeline_active():
         return {"error": "Self-dev pipeline kapali. Neo 'self dev ac' yazabilir."}
+
+    # 25.40u — Atlas suggestion auto-fetch (Bağlam kaybı fix)
+    # Son 20 dk konuşmada 'öneri #N' varsa atlas_suggestions'tan içerik çek,
+    # extra_hint'e enjekte et — bot eski oturumdaki temaya kaymasın.
+    atlas_sug = await _detect_atlas_suggestion_in_recent_msgs(triggered_by)
+    if atlas_sug:
+        atlas_block = (
+            f"\n\n🎯 ODAK — ATLAS SUGGESTION #{atlas_sug['id']}: {atlas_sug['title']}\n"
+            f"Severity: {atlas_sug['severity']} | Status: {atlas_sug['status']} | "
+            f"Category: {atlas_sug['category']}\n"
+            f"Rationale: {atlas_sug['rationale']}\n"
+            f"Suggested change: {atlas_sug['suggested_change'] or '(yok)'}\n"
+            f"Target files: {', '.join(atlas_sug['target_files']) or '(belirtilmemis)'}\n"
+            f"⚠ BU ÖNERIYI brief'le, eski konuya KAYMA.\n"
+        )
+        extra_hint = (extra_hint + atlas_block) if extra_hint else atlas_block
 
     # Son N admin konusmasi
     from db_pool import db_fetch

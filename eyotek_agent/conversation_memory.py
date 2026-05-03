@@ -376,6 +376,34 @@ async def get_student_context(phone: str) -> Optional[dict]:
         except Exception:
             last_msg_age_h = None
 
+        # 25.40u — Bağlam kaybı fix: Son 3 ASSISTANT cevabının başlığı/özeti
+        # Bot kendi yanıtlarını "az önce ne demiştim" diye unutuyordu (Neo 21:59
+        # vakası — bot 4 dk önce listelediği 3 öneriyi tamamen unuttu).
+        # Bu özet system prompt'a inject edilir → bot self-doubt yapmaz.
+        recent_assistant_turns = []
+        for msg in recent_msgs:
+            if msg['message_role'] != 'assistant':
+                continue
+            cnt = (msg['content'] or "").strip()
+            if not cnt or cnt.startswith('[tool_calls'):
+                continue
+            # İlk satır + ilk 200 char özet
+            first_line = cnt.split('\n', 1)[0][:120]
+            preview = cnt[:300].replace('\n', ' ')
+            try:
+                ts = msg['created_at']
+                age_min = (datetime.now(ts.tzinfo) - ts).total_seconds() / 60
+                age_str = f"{int(age_min)}dk önce" if age_min < 60 else f"{int(age_min/60)}sa önce"
+            except Exception:
+                age_str = ""
+            recent_assistant_turns.append({
+                "age": age_str,
+                "title": first_line,
+                "preview": preview,
+            })
+            if len(recent_assistant_turns) >= 3:
+                break
+
         context = {
             "name": name,
             "class": profile.get('class_name', '?'),
@@ -398,6 +426,8 @@ async def get_student_context(phone: str) -> Optional[dict]:
             "identity_reason": identity_reason,
             # 22.1n-neo: Foto context (Fatma bug fix) — varsa prompt'a eklenir
             "photo_ctx": get_photo_context(phone),
+            # 25.40u — Bağlam kaybı fix: bot kendi son 3 cevabını hatırlasın
+            "recent_assistant_turns": recent_assistant_turns,
             "_ts": time.time(),
         }
 
@@ -499,6 +529,23 @@ def build_context_prompt(context: dict) -> str:
 
     if context.get("recent_summary"):
         parts.append(f"Durum: {context['recent_summary']}")
+
+    # 25.40u — Bağlam kaybı fix: Bot kendi son cevaplarını hatırlasın
+    # Cerebras/Claude self-doubt yapmasın, "az önce ne demiştim" sorusuna
+    # tekrar tool çağırmasın, kendi yanıtlarını sorgulamasın.
+    rat = context.get("recent_assistant_turns") or []
+    if rat:
+        lines = ["\n🔁 SEN AZ ÖNCE BUNLARI YAZDIN (kendini hatırla, sorgulama):"]
+        for i, t in enumerate(rat, 1):
+            age = f"({t['age']}) " if t.get('age') else ""
+            lines.append(f"  {i}. {age}{t['title']}")
+        lines.append(
+            "⚠ Kullanıcı 'az önce konuştuğumuz X' veya 'şu öneriyi açıkla' derse, "
+            "yukarıdaki SENİN cevaplarına BAK. 'Hangi X?' deme, 'paylaşmadın' deme. "
+            "Kullanıcı 'yanlış' derse SADECE şu an söylediğine bak — eski doğru "
+            "cevaplarını da kendinden reddetme."
+        )
+        parts.append("\n".join(lines))
 
     # Zayıf konular — Claude bunu bilince "zayıf konularım ne" sorusuna direkt cevap verir
     weak = context.get("weak_topics", [])

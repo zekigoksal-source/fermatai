@@ -1875,7 +1875,14 @@ TOOLS: list[dict] = [
     },
     {
         "name": "selfdev_get_brief",
-        "description": "[SELF-DEV / ADMIN] Tek brief detayı (ID ile). Diff icerigi tam goster.",
+        "description": (
+            "[SELF-DEV / ADMIN] Tek brief detayı (ID ile). Diff icerigi tam goster.\n"
+            "⚠ DİKKAT (25.40u): 'öneri #N' veya 'suggestion #N' farklı şeydir — "
+            "bunlar `atlas_suggestions` tablosundadır (query_analytics ile çek: "
+            "SELECT * FROM atlas_suggestions WHERE id=N). self_dev_briefs ID'si "
+            "küçük (genellikle <30), atlas_suggestions ID'si daha yüksek (50+). "
+            "Önce ID range'ine bak: küçükse brief, büyükse atlas suggestion."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {"brief_id": {"type": "integer"}},
