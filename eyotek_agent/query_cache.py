@@ -218,21 +218,27 @@ async def init_db():
     """Tabloyu olustur + boyut migrate (1024 bge-m3 -> 768 nomic gecisi 25.40r).
 
     pgvector boyutu pg_attribute.atttypmod'da DEGIL — format_type ile string olarak
-    'vector(N)' formatinda gelir. Regex ile parse edip karsilastir."""
+    'vector(N)' formatinda gelir. Regex ile parse edip karsilastir.
+    Tablo yoksa regclass cast UndefinedTableError firlatir — sessizce yutulur."""
     import re
     from db_pool import get_pool
     pool = await get_pool()
     async with pool.acquire() as conn:
         # Mevcut tablo varsa boyutu kontrol et — yanlissa DROP+recreate
-        type_str = await conn.fetchval("""
-            SELECT format_type(atttypid, atttypmod) FROM pg_attribute
-            WHERE attrelid = 'query_cache'::regclass AND attname = 'embedding'
-        """)
         existing_dim = None
-        if type_str:
-            m = re.search(r'vector\((\d+)\)', type_str)
-            if m:
-                existing_dim = int(m.group(1))
+        try:
+            type_str = await conn.fetchval("""
+                SELECT format_type(atttypid, atttypmod) FROM pg_attribute
+                WHERE attrelid = 'query_cache'::regclass AND attname = 'embedding'
+            """)
+            if type_str:
+                m = re.search(r'vector\((\d+)\)', type_str)
+                if m:
+                    existing_dim = int(m.group(1))
+        except Exception:
+            # Tablo yok — direkt CREATE'e gec
+            pass
+
         if existing_dim is not None and existing_dim != EMBED_DIM:
             logger.warning(f"Query cache boyut mismatch ({existing_dim} != {EMBED_DIM}) — tablo recreate")
             await conn.execute("DROP TABLE IF EXISTS query_cache CASCADE")
