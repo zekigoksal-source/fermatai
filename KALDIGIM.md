@@ -98,7 +98,8 @@
 > - **İlk workers=3 deneme: KAYBETME** — 3 worker session_keeper paralel çalıştı, Eyotek CDP çakıştı (`Target page has been closed` hataları)
 > - **Çözüm:** `singleton_leader.py` — Redis SETNX leader election (60sn TTL, 30sn refresh)
 > - Bridge lifespan'de leader-only task'ler: session_keeper, _run_scheduled_tasks, _run_conversation_html_updater, _telafi_loop, briefing_scheduler, todo_scheduler, nightly_scheduler
-> - **Sonuç (canlı):** 3 worker spawn, PID 3843484 leader (cron), 3843485+3843486 follower (webhook only), Redis'te `fermat:leader:bridge_singleton = 3843484`
+> - **Sonuç (canlı):** 3 worker spawn, leader (cron) + 2 follower (webhook only), Redis'te `fermat:leader:bridge_singleton`
+> - **B1.3 KRITIK fix (restart sonrası tespit):** İlk implementasyonda `start_leader_refresh` SADECE leader'da çalışıyordu. Bridge restart edildiğinde eski leader öldü ama Redis'te lock kalmıştı (TTL 60sn) → 3 yeni worker da follower oldu → TTL expire → **leaderless durum**. Fix: refresh loop HER WORKER'da çalışır, follower'lar her 30sn'de takeover SETNX dener. Artık leader crash sonrası 60sn'de otomatik takeover.
 > - Endpoint /health 200, /chat 200
 >
 > ### B2 — Yağız Alp Tekin OTP bug
