@@ -27,7 +27,7 @@ import time  # Oturum 25.11: Groq-tools pre-check ve duration timing
 import uuid
 from datetime import date as _date, timedelta as _td
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import asyncpg
 from anthropic import Anthropic, AsyncAnthropic
@@ -2167,6 +2167,73 @@ def _add_tools_cache_control(tools: list[dict]) -> list[dict]:
     last_tool["cache_control"] = {"type": "ephemeral"}
     cached.append(last_tool)
     return cached
+
+
+def _build_system_blocks(
+    v3_blocks: Optional[list],
+    fallback_prompt: str,
+    dynamic_context: str,
+) -> list[dict]:
+    """Anthropic API system parametresini hierarchical cache_control bloklarıyla inşa eder.
+
+    25.40z3 Cache: V3 enabled iken composer_v3 BASE+modüller şeklinde 1-4 blok döner.
+    Buna dynamic_context'i ekleyerek toplam 2-5 blok elde ederiz. Anthropic max 4
+    cache_control breakpoint izin verir (tools 4. breakpoint'i alır), bu yüzden
+    system tarafında MAX 3 cache_control izin var.
+
+    Strateji:
+      - V3 yok (None/[]): legacy 2-block (prompt + dynamic_context) → 2 cache breakpoint
+      - V3 var, 1 blok (sadece BASE): [BASE_cached, dynamic_cached] → 2 breakpoint
+      - V3 var, 2 blok (BASE + 1 extra): [BASE_cached, extra_cached, dynamic_cached] → 3 breakpoint
+      - V3 var, 3+ blok (BASE + 2-3 extra): BASE_cached + extras_combined_cached + dynamic_cached → 3 breakpoint
+
+    Garantiler:
+      - Toplam ≤3 system breakpoint (tools için 1 yer kalsın)
+      - BASE her zaman ayrı blok (en uzun, en stabil — 5dk TTL'in en büyük getiri kaynağı)
+      - dynamic_context her zaman SON blok (per-user değişken, en kısa TTL hedefi)
+      - V3 fallback olduysa legacy davranışı bozmadan devam eder
+    """
+    if not v3_blocks or not isinstance(v3_blocks, list):
+        # Legacy 2-block (V2 veya V3 fallback)
+        return [
+            {"type": "text", "text": fallback_prompt,
+             "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": dynamic_context,
+             "cache_control": {"type": "ephemeral"}},
+        ]
+
+    # V3 hierarchical
+    if len(v3_blocks) == 1:
+        # Sadece BASE → BASE + dynamic_context (2 breakpoint)
+        return [
+            {"type": "text", "text": v3_blocks[0]["text"],
+             "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": dynamic_context,
+             "cache_control": {"type": "ephemeral"}},
+        ]
+
+    if len(v3_blocks) == 2:
+        # BASE + 1 extra → 3 breakpoint (BASE, extra, dynamic)
+        return [
+            {"type": "text", "text": v3_blocks[0]["text"],
+             "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": v3_blocks[1]["text"],
+             "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": dynamic_context,
+             "cache_control": {"type": "ephemeral"}},
+        ]
+
+    # 3+ blok → BASE ayrı, extras concat, dynamic ayrı = 3 breakpoint
+    base_text = v3_blocks[0]["text"]
+    extras_text = "".join(b["text"] for b in v3_blocks[1:])
+    return [
+        {"type": "text", "text": base_text,
+         "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": extras_text,
+         "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": dynamic_context,
+         "cache_control": {"type": "ephemeral"}},
+    ]
 
 
 TOOL_DISPATCH = {
@@ -4324,6 +4391,12 @@ class FermatCoreAgent:
         # role_prompt cikti basina BUYUK render bloklari da silinir (WhatsApp'ta)
         # Faz 2: intent biliniyorsa (örn 'selamlama') intent-spesifik bloklar da silinir
         # Feature flag PROMPT_V2_ENABLED kontrol — default OFF (no-op).
+        #
+        # 25.40z3 Faz 3 + Cache: V3 enabled iken hierarchical cache_control blocks
+        # toplanir. Sonra Claude API call'u BASE+extras_combined+dynamic_context = 3
+        # cache breakpoint kullanir (tools 4. breakpoint). Boylece BASE 5dk TTL'de
+        # statik kalir, dynamic_context degisse bile BASE cache HIT yapar.
+        self._v3_system_blocks = None  # default: V2 yolu (legacy 2-block cache)
         try:
             from prompt_router import build_prompt_v2 as _bv2, _is_v3_enabled_for_phone
             _channel = getattr(self, "_channel", "whatsapp")
@@ -4331,16 +4404,24 @@ class FermatCoreAgent:
 
             # 25.40z3 Faz 3: V3 modüler prompt aktif mi?
             if _is_v3_enabled_for_phone(caller_phone):
-                # V3 yolu — modüler compose, cache_control hazırlıklı
+                # V3 yolu — modüler compose + hierarchical blocks (cache breakpoints)
                 from prompt_router import build_prompt_v3 as _bv3
+                # Önce string al (concat) — _role_aware_prompt downstream icin gerekli
                 _v3_prompt, _v3_info = _bv3(
                     role=role, intent=_intent_for_v2, channel=_channel,
                     phone=caller_phone, force_v3=True,
                 )
                 if _v3_info.get("v3_active"):
                     _role_aware_prompt = _v3_prompt
+                    # Sonra blocks al — Anthropic API hierarchical cache_control formatı
+                    _v3_blocks, _ = _bv3(
+                        role=role, intent=_intent_for_v2, channel=_channel,
+                        phone=caller_phone, force_v3=True, return_blocks=True,
+                    )
+                    self._v3_system_blocks = _v3_blocks
                     logger.info(f"  [PROMPT_V3] base+{'+'.join(_v3_info['modules_loaded'][1:])} "
-                                f"= {_v3_info['total_size']:,} char")
+                                f"= {_v3_info['total_size']:,} char "
+                                f"({len(_v3_blocks)} cache blocks)")
             else:
                 # V2 yolu (mevcut, kademe 1)
                 _v2_prompt, _v2_info = _bv2(
@@ -5167,20 +5248,19 @@ class FermatCoreAgent:
                 # Anthropic API: tools listesinde son tool'un cache_control'ü
                 # tüm tools array'ını cache'ler. ~24K token tek bir cache breakpoint.
                 _cached_tools = _add_tools_cache_control(_claude_tools)
+                # 25.40z3 Cache: V3 hierarchical blocks aktifse onu kullan,
+                # degilse legacy 2-block (V2). Anthropic max 4 cache breakpoint
+                # (3 system + 1 tools); _build_system_blocks bunu garanti eder.
+                _system_blocks = _build_system_blocks(
+                    self._v3_system_blocks, _claude_prompt, dynamic_context,
+                )
                 _stream_params = dict(
                     model     = MODEL,
                     # Oturum 25.39 (Neo timeout fix): kompleks render (yıldız evrim, galaksi sim)
                     # 16K output yetmiyordu → make_render_link html parametresi truncate.
                     # Sonnet 4.5 max output 64K, biz 24K alıyoruz (orta yol — latency vs kapasite).
                     max_tokens= 24576,  # 16K → 24K (kompleks HTML için yeterli)
-                    system    = [
-                        # Cache 1: en uzun statik bölüm (50K+ token)
-                        {"type": "text", "text": _claude_prompt,
-                         "cache_control": {"type": "ephemeral"}},
-                        # Cache 2: dynamic_context (5dk TTL — aynı kullanıcı 5dk içinde HIT)
-                        {"type": "text", "text": dynamic_context,
-                         "cache_control": {"type": "ephemeral"}},  # C15
-                    ],
+                    system    = _system_blocks,
                     # 25.39: role-filtered + cache_control'lü tools
                     tools     = _cached_tools,
                     messages  = self.history,
@@ -5210,22 +5290,15 @@ class FermatCoreAgent:
                 # 25.15: tier'a gore prompt + tool subset
                 # 25.39 (Neo): Tools'a cache_control eklendi — ~24K token cache'leniyor
                 _cached_tools = _add_tools_cache_control(_claude_tools)
+                # 25.40z3 Cache: V3 hierarchical blocks (varsa) — sync path
+                _system_blocks = _build_system_blocks(
+                    self._v3_system_blocks, _claude_prompt, dynamic_context,
+                )
                 _create_params = dict(
                     model     = MODEL,
                     # Oturum 25.39: 16K → 24K (kompleks HTML render için yeterli)
                     max_tokens= 24576,
-                    system    = [
-                        {
-                            "type": "text",
-                            "text": _claude_prompt,  # 25.15 tier-aware
-                            "cache_control": {"type": "ephemeral"},
-                        },
-                        {
-                            "type": "text",
-                            "text": dynamic_context,
-                            "cache_control": {"type": "ephemeral"},  # C15 eklendi
-                        },
-                    ],
+                    system    = _system_blocks,
                     # 25.39: role-filtered + cache_control'lü tools
                     tools     = _cached_tools,
                     messages  = self.history,

@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, GECE 05:00 — **🎯 OTURUM 25.40z2 FAZ 2: INTENT BAZLI FILTRE — %28.4 token kazanım, 135/135 safety, canlı end-to-end OK**
+> **Son güncelleme:** 4 Mayıs 2026, SABAH 06:30 — **🎯 OTURUM 25.40z3 FAZ 3 + CACHE: MODÜLER PROMPT + HIERARCHICAL CACHE_CONTROL — 70/70 + 41/41 test, %51 cache tasarruf simülasyonu**
 
 ---
 
@@ -65,6 +65,10 @@
 | 46 | **Safety test paketi** — 10 test, 68 assertion (persona/KVKK/halüsinasyon/ACL/finans/flag/zincir) — **68/68 PASS** | LIVE | 25.40z2 |
 | 47 | **PROMPT V2 FAZ 2 — Intent Bazlı Filtre** — INTENT_REMOVE_PROFILES (16 intent), INTENT_BLOCK_PATTERNS (6 blok kategori), 3-katmanlı kanal+rol+intent | LIVE | 25.40z2-Faz2 |
 | 48 | **30 Senaryo A/B Test** — 135/135 PASS, %28.4 ortalama token kazanım, canlı end-to-end Cerebras kalite intact | LIVE | 25.40z2-Faz2 |
+| 49 | **PROMPT V3 FAZ 3 — Modüler Parsing** — `prompt_modules/` (pedagoji 38K + render 25K + db_schema 12K), `composer_v3.py` BASE+modül compose, koşullu yükleme rol/intent/kanal bazlı | LIVE | 25.40z3 |
+| 50 | **V3 token kazanımı** — ogretmen/selamlama −%41.4, mudur/analiz −%33.6, admin/meta −%33.6 (V1'e göre); 70/70 PASS (BASE intact, ACL, persona+KVKK 30 senaryo, fallback) | LIVE | 25.40z3 |
+| 51 | **CACHE — Hierarchical cache_control entegrasyon** — `_build_system_blocks` helper, V3 BASE+extras_concat+dynamic = 3 system breakpoint (+ tools = 4 max), Anthropic API contract uyumu | LIVE | 25.40z3-Cache |
+| 52 | **41/41 cache_control unit test + 5-mesaj A/B simülasyonu %51 tasarruf** — V2 single-block (intent değişimi tüm cache invalide) vs V3 (BASE her zaman HIT, extras intent-bağlı) | LIVE | 25.40z3-Cache |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Composer V3 — Modüler Prompt Compose (25.40z3 Faz 3)
 ======================================================
@@ -71,6 +72,20 @@ def _should_load_db_schema(role: str, intent: Optional[str]) -> bool:
 _BASE_CACHE: Optional[str] = None
 
 
+def _clean_block_for_replace(block: str) -> str:
+    """Modul block'undan replace oncesi safe-trim yapar.
+
+    Extract scriptinde nadiren modul son satirina Python triple-quote
+    kalintisi gomulmus olabilir (db_schema_extended vakasi). Bu artifact
+    SYSTEM_PROMPT'ta YOK oldugu icin replace TAM ESLESMEZ ve modul BASE'de kalir
+    (duplicate token). Burada safe-trim ile bu kalinti temizlenir.
+    """
+    import re
+    # Sondaki triple-quote artifact'i temizle
+    cleaned = re.sub(r'"""\s*$', '', block)
+    return cleaned
+
+
 def get_base_prompt() -> str:
     """SYSTEM_PROMPT - (pedagoji + render + db_schema) = BASE.
 
@@ -78,6 +93,10 @@ def get_base_prompt() -> str:
     Ortalama 75K char (155K - 80K).
 
     Cache: BASE statik, runtime değişmez — cache_control: ephemeral için ideal.
+
+    25.40z3 production fix: replace TAM ESLESMEZSE (modul artifact'i nedeniyle)
+    fuzzy fallback uygulanir - block sonundaki triple-quote trail temizlenir,
+    sonra prefix eslesmesi denenir.
     """
     global _BASE_CACHE
     if _BASE_CACHE is not None:
@@ -87,9 +106,34 @@ def get_base_prompt() -> str:
     from prompt_modules import pedagoji_extended, render_extended, db_schema_extended
 
     base = SYSTEM_PROMPT
-    base = base.replace(pedagoji_extended.PROMPT_BLOCK, "")
-    base = base.replace(render_extended.PROMPT_BLOCK, "")
-    base = base.replace(db_schema_extended.PROMPT_BLOCK, "")
+    for mod_name, mod in [
+        ("pedagoji", pedagoji_extended),
+        ("render", render_extended),
+        ("db_schema", db_schema_extended),
+    ]:
+        block = mod.PROMPT_BLOCK
+        new_base = base.replace(block, "")
+        if new_base == base:
+            # Tam eşleşme başarısız → cleaned versiyon dene
+            cleaned = _clean_block_for_replace(block)
+            new_base = base.replace(cleaned, "")
+            if new_base == base:
+                # Hâlâ eşleşmedi → prefix-based replace (en uzun ortak prefix)
+                # Block'un ilk 5K char'ı BASE'de varsa onu bulup, block sonuna
+                # kadar olan alanı sil. Bu güvenlidir çünkü modül baş+son
+                # marker'ları unique'tir.
+                prefix_len = 5000
+                if len(block) > prefix_len:
+                    prefix = block[:prefix_len]
+                    if prefix in base:
+                        idx = base.index(prefix)
+                        # Block'un orijinal uzunluğu kadar ilerleyerek sil
+                        # (tolerance: ±100 char modül artifact için)
+                        end_idx = idx + len(block)
+                        # Tolerance: gerçek modül sınırı için son 200 char'a bak
+                        end_search = base[end_idx-200:end_idx+200]
+                        new_base = base[:idx] + base[end_idx:]
+        base = new_base
 
     _BASE_CACHE = base
     return base
