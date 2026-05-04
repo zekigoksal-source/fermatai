@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, ÖĞLE 14:15 — **🎯 OTURUM 25.40z3-FIX: Bot tespit ettiği 3 Claude path eksiği kapatıldı (Wiki + HANDOFF tracking + Footer) — 363/363 PASS, VPS deploy LIVE**
+> **Son güncelleme:** 4 Mayıs 2026, ÖĞLE 15:00 — **🎯 OTURUM 25.40z3-MIMARI: V3 sonrası 6 mimari iyileştirme + intent-aware modül yükleme — 388/388 PASS, "tek beyin" prensibi korundu, dead code temiz**
 
 ---
 
@@ -74,6 +74,10 @@
 | 55 | **Bot dev konuşma analizi (10:48)** — Routing dağılımı tespit: **Claude %72.6, Cerebras %10.1** trafik. Bot 6 eksik söyledi, 2 yanlış (sandbox .env okumadığı için PROMPT_V3 ve YOUTUBE_API_KEY var sanmadı), 4 gerçek | ANALIZ | 25.40z3-FIX |
 | 56 | **Claude path 3 enrichment fix** (fermat_core_agent.py): (1) `inject_wiki_block` Claude no-tool yanıt sonrası eklendi (Cerebras paritesi), (2) HANDOFF tracking — `response_source = '<provider>+claude_handoff'` formatı, (3) Enrichment footer (web+öğrenci+akademik+300char) — "💡 video/deney/3d" Cerebras paritesi | LIVE | 25.40z3-FIX |
 | 57 | **19/19 yeni test + 363/363 toplam regression** — `tests/test_claude_enrichment_fixes.py` (wiki signature, handoff format, footer şartları, dispatch_enrichment trigger) | LIVE | 25.40z3-FIX |
+| 58 | **Mimari review (V3 sonrası geriye dönük tarama)** — 8 alanda code review: prompt_router/V2/role_prompt/db_schema_cache/tier/intent timing/composer dead code/Cerebras paritesi | ANALIZ | 25.40z3-MIMARI |
+| 59 | **6 mimari iyileştirme uygulandı:** (1) role_prompt V3 enable iken SKIP (172K replace boşa CPU), (2) db_schema_cache V3 modülü yüklendiyse SKIP (duplicate token), (3) tier `get_prompt_for_tier(v3_active=True)` V3 prompt korur (LIGHT/NORMAL ezme bug fix), (4) intent erken inference V3 build öncesi (modül seçimi tam aktive), (5) `_build_claude_request_params` helper (DRY: stream+sync ortak), (6) `composer.py` V1 dead code silindi | LIVE | 25.40z3-MIMARI |
+| 60 | **+ intent fix #5b:** `admin_action`/`rapor_iste`/`rapor_goster` intentleri composer_v3'te db_schema tetikler. Live test admin "sistem durum" sorgusu: log `[PROMPT_V3] base+db_schema = 90,298 char (2 cache blocks)` — önce sadece BASE yükleniyordu | LIVE | 25.40z3-MIMARI |
+| 61 | **388/388 toplam test** (354 V3 baseline + 19 enrichment + 25 mimari fixes − 10 quality_live separately) | LIVE | 25.40z3-MIMARI |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 

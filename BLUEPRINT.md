@@ -1,6 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 4 Mayıs 2026 (öğle 14:15) · **Oturum:** 25.40z3-FIX — **V3 PRODUCTION + Claude path 3 enrichment eksigi kapatildi (Wiki + HANDOFF tracking + Footer)** · 363/363 test PASS
+> **Belge tarihi:** 4 Mayıs 2026 (öğle 15:00) · **Oturum:** 25.40z3-MIMARI — **V3 sonrası 6 mimari iyileştirme: role_prompt+db_schema+tier+intent erken inference+stream/sync helper+dead code temiz** · 388/388 test PASS · "tek beyin" prensibi korundu
+> **Öğle 14:15 güncellemesi:** 25.40z3-FIX — V3 PRODUCTION + Claude path 3 enrichment eksigi kapatildi (Wiki + HANDOFF tracking + Footer) · 363/363 test PASS
 > **Sabah 07:30 güncellemesi:** 25.40z3 PRODUCTION DEPLOY — V3 Modüler Prompt + Hierarchical Cache_Control TÜM KULLANICILARDA CANLI · 354/354 production gate test PASS · Cache HIT %100 ölçüldü
 > **Önceki güncelleme:** 3 Mayıs 2026, Oturum 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
 
@@ -54,6 +55,7 @@
 | **25.40z2** | **PROMPT V2 — Conditional Context Routing** (eksiltici filtre, kanal+rol+intent 3-katman, 16 intent profil, 30 senaryo A/B test) | `5607e41` öncesi | **-%28.4 token, 135/135 PASS** |
 | **25.40z3** | **PROMPT V3 — Modüler parsing + Hierarchical cache_control** (3 modül extract: pedagoji+render+db_schema, composer_v3, koşullu yükleme, BASE+extras+dynamic = 3 cache breakpoint) | `5607e41` | **354/354 PASS, V3 production CANLI tüm kullanıcılarda, Cache HIT %100 ölçüldü** |
 | **25.40z3-FIX** | **Claude path 3 enrichment eksigi kapatildi** (Bot 4 May 10:48 tespit) — Wiki injection + HANDOFF tracking + Enrichment footer (Cerebras paritesi, Claude %72.6 trafik) | `3bd4eb3` | **19 yeni test + 363/363 regression PASS** |
+| **25.40z3-MIMARI** | **6 mimari iyileştirme** (Neo "yazılım mühendisi gibi sistemi bütün incele" direktifi) — role_prompt V3 enable iken SKIP + db_schema_cache duplicate önleme + tier sistemi V3-aware (LIGHT/NORMAL ezme bug) + intent erken inference (admin_action db_schema tetikler) + stream/sync helper consolidation + composer.py V1 dead code sil | `4c08488` | **25 yeni test + 388/388 toplam PASS, "tek beyin" mimari** |
 
 ---
 
@@ -370,9 +372,46 @@ Anthropic API max 4 cache breakpoint kuralına göre stratejik bölme:
 - Otomatik fallback: V3 fail → legacy SYSTEM_PROMPT (mevcut güvenli davranış)
 
 #### Notlar (ileride iyileştirme)
-- Intent inference şu an V3 build'den sonra yapılıyor → V3 modül seçimi sadece role-based aktif
-- Intent erken inference yapılırsa pedagoji/render/db_schema modülleri full devreye girer
-- Bu V3 entegrasyon bug'ı değil — pre-existing intent timing
+- ~~Intent inference şu an V3 build'den sonra yapılıyor~~ → **25.40z3-MIMARI fix #5: çözüldü** (intent erken inference)
+- ~~Intent erken inference yapılırsa pedagoji/render/db_schema modülleri full devreye girer~~ → **LIVE: admin "sistem durum" → `[PROMPT_V3] base+db_schema = 90,298 char (2 cache blocks)`**
+
+### 🔧 25.40z3-MIMARI — V3 Sonrası 6 İyileştirme (4 May 2026, öğle)
+
+**Neo direktifi:** "Yeni bir mimariye geçtik. Yazılım mühendisi gibi sistemi bütün olarak incele — eski yapıya ait kod artıkları, çakışmalar, V3'ün açtığı yeni kabiliyetler."
+
+| # | Sorun | Çözüm | Dosya | Kazanım |
+|---|-------|-------|-------|---------|
+| 1 | `role_prompt.py` (22.1) V3 enable iken çalışıyor → V3 zaten override ediyor → boşa 172K SYSTEM_PROMPT replace | V3 enable kontrolü ÖNCE, V3 aktifse role_prompt SKIP | `fermat_core_agent.py:4380` | CPU + bellek tasarruf |
+| 2 | `db_schema_cache` (1.4K) + `db_schema_extended` modül (12K) DUPLICATE token | V3'te db_schema yüklendiyse cache SKIP | `fermat_core_agent.py:4470` | -1.4K token (admin/mudur) |
+| 3 | `prompt_tiers.get_prompt_for_tier(light/normal)` SABİT prompt döner → V3 prompt OVERWRITE bug | `v3_active=True` parametresi: V3 prompt korunur | `prompt_tiers.py:370` | V3 cache_control yıkılma riski sıfır |
+| 4 | Intent inference V3 build'den ~380 satır SONRA → V3 hep `intent=None` ile çalışıyor | `classify_intent` çağrısı V3 build ÖNCESİ | `fermat_core_agent.py:4392` | admin/mudur'a db_schema doğru yüklenir |
+| 5 | Stream + sync path 2 ayrı `_stream_params` + `_create_params` (40 satır duplicate) | `_build_claude_request_params(...)` helper | `fermat_core_agent.py:2200` | DRY, gelecek değişiklik tek yerde |
+| 6 | `prompt_modules/composer.py` (V1 iskelet, hiç implement edilmedi) dead code | Silindi, `__init__.py` V3 odaklı | `prompt_modules/` | Net repo, tek API |
+
+**Bonus #5b:** `intent_classifier` admin "sistem durum" → `admin_action`. Composer_v3 listesinde yoktu → `admin_action`/`rapor_iste`/`rapor_goster` eklendi → admin için db_schema tetikleniyor.
+
+**Live doğrulama:**
+- Önce: `[PROMPT_V3] base+ = 78,310 char (1 cache blocks)` (intent=None)
+- Sonra: `[PROMPT_V3] base+db_schema = 90,298 char (2 cache blocks)` (intent=admin_action)
+
+**Cerebras parite kararı (Neo):**
+- Cerebras 18K _LOCAL_SYSTEM_BASE kullanıyor, V3 (78K BASE) ile boyut farkı 4.3x
+- Cerebras Anthropic değil → cache_control yok → modüler yapının ROI'si yok
+- "Tek beyin" prensibi korunur ama hantal/anlamsız güncelleme YAPILMAYACAK
+- İleride Cerebras'ın da Anthropic-uyumlu cache mekanizmasına geçmesi durumunda tekrar değerlendirilir
+
+**Test paketi (388/388 PASS):**
+| Test | Asserts | Durum |
+|------|---------|-------|
+| `test_v3_mimari_fixes.py` (yeni) | 25 | ✅ |
+| `test_claude_enrichment_fixes.py` | 19 | ✅ |
+| `test_v3_security_full.py` | 135 | ✅ |
+| `test_v3_stability_full.py` | 26 | ✅ |
+| `test_v3_conflict_full.py` | 25 | ✅ |
+| `test_v3_user_simulation.py` | 47 | ✅ |
+| `test_cache_control_v3.py` | 41 | ✅ |
+| `test_prompt_v3_full.py` | 70 | ✅ |
+| **TOPLAM** | **388** | **388/388** |
 
 
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)
