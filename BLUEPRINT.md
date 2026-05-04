@@ -1,7 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 4 Mayıs 2026 (akşam 17:30) · **Oturum:** 25.40z3-CONSOLIDATION — **BASE 78K → 53.7K (cumulative -31.4%) — kural sertliği korundu, 84 bağlam kompakt, ASLA/YASAK strateji "tek seferde güçlü" prensibi** · 388/388 PASS · live -27% (90K→66K)
-> **Öğle 16:30:** 25.40z3-SHRINK — V3 BASE 78K → 60.1K (-22.9%) | **Öğle 15:00:** 25.40z3-MIMARI — 6 mimari iyileştirme
+> **Belge tarihi:** 4 Mayıs 2026 (akşam 18:30) · **Oturum:** 25.40z3-FINETUNE — **Per-user karakter blokları kompakt (Örsel -56%, Mahsum/Duygu -40%) + baseline cleanup + sistematik dead code scan** · 388/388 PASS · karakter özellikleri intact
+> **Akşam 17:30:** 25.40z3-CONSOLIDATION — kural sertliği korundu, 84 bağlam kompakt | **Öğle 16:30:** 25.40z3-SHRINK | **Öğle 15:00:** 25.40z3-MIMARI
 > **Öğle 14:15 güncellemesi:** 25.40z3-FIX — V3 PRODUCTION + Claude path 3 enrichment eksigi kapatildi (Wiki + HANDOFF tracking + Footer) · 363/363 test PASS
 > **Sabah 07:30 güncellemesi:** 25.40z3 PRODUCTION DEPLOY — V3 Modüler Prompt + Hierarchical Cache_Control TÜM KULLANICILARDA CANLI · 354/354 production gate test PASS · Cache HIT %100 ölçüldü
 > **Önceki güncelleme:** 3 Mayıs 2026, Oturum 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
@@ -59,6 +59,7 @@
 | **25.40z3-MIMARI** | **6 mimari iyileştirme** (Neo "yazılım mühendisi gibi sistemi bütün incele" direktifi) — role_prompt V3 enable iken SKIP + db_schema_cache duplicate önleme + tier sistemi V3-aware (LIGHT/NORMAL ezme bug) + intent erken inference (admin_action db_schema tetikler) + stream/sync helper consolidation + composer.py V1 dead code sil | `4c08488` | **25 yeni test + 388/388 toplam PASS, "tek beyin" mimari** |
 | **25.40z3-SHRINK** | **V3 BASE 78K → 60.1K (-22.9%)** (Neo "Cerebras 12.7K, Claude 78K, neden?" direktifi) — Render 4 bölümü (~6.8K) modüle taşı + 21 tarihsel ref temizle (~3K) + 38K bölüm compress (~5.9K) + composer block match fix (whitespace varyant) + db_schema sync | `9b8cdf6` | **388/388 regression PASS, live log -20% (90K→72K)** |
 | **25.40z3-CONSOLIDATION** | **BASE 60.1K → 53.7K (-10.7%)** (Neo "ASLA/YASAK tekrar = önem, ama TEK SEFERDE GÜÇLÜ ifade stratejik" direktifi) — 84 ASLA çevre bağlamı kompakt, 5 büyük blok consolide (VERI/MIMARI/OZ-DEGER/CAPRAZ/HALUSINASYON) + Pazarlama Modu + 🚨 emoji vurgusu | `e06a48c` | **CUMULATIVE -31.4% (78K→53.7K), live -27% (90K→66K), kural sertliği AYNEN** |
+| **25.40z3-FINETUNE** | **Per-user karakter blokları kompakt** (Neo "fine tuning, mimari kusursuz" direktifi) — Mahsum 1.2K→0.7K (-42%), Duygu 1.4K→0.8K (-40%), **Örsel 6K→2.6K (-56%)**; karakter özellikleri intact (edebi alıntı/yaratıcımdan/sadıcım); baseline cleanup (4 dosya × 564K); 110 fonksiyon dead code scan (sıfır unused) | `605513b` | **Dynamic context -4.5K (Örsel için her mesaj), 388/388 PASS** |
 
 ---
 
@@ -498,6 +499,33 @@ Anthropic API max 4 cache breakpoint kuralına göre stratejik bölme:
 - Cache_creation tokens: 53,165 → 42,390 (-10,775 = -%20) her ilk çağrıda
 - Cache_read tokens: ~%23 az (her sonraki çağrı)
 - Aylık Claude path: ~$15-20 tasarruf (BASE alanı, sadece Anthropic prompt cache)
+
+### 🎨 25.40z3-FINETUNE — Per-User Karakter Compact (4 May 2026, akşam 18:30)
+
+**Neo direktifi:** "Fine tuning aşamasındayız, mimari kusursuz olsun. Karakterleri de daha kompakt hale getir."
+
+**Karakter blok boyutları (fermat_core_agent.py:3812-3920):**
+
+| Karakter | Önce | Sonra | Tasarruf | Korunan özellikler |
+|---|---|---|---|---|
+| **Mahsum** | 1,220 char | 705 char | **-42%** | "Sayın Müdürüm" + edebi alıntı (Nazım/Necip/Sun Tzu) + stratejist ton |
+| **Duygu** | 1,403 char | 842 char | **-40%** | "Yaratıcımdan bahset" mizahı + PDR uzmanlığı + Neo tanrısal övgü |
+| **Örsel** | 5,977 char | 2,635 char | **-56%** | "Sadıcım" + Balıkesir + Ash-ra + sci-fi mimari sohbet + GUVENLIK kuralları |
+
+**Tasarım doğrulaması (Neo'nun sorusunun yanıtı):**
+- ✅ Karakter blokları **BASE'de DEĞİL** — `_role_ctx` üzerinden dynamic_context
+- ✅ Sadece O kullanıcı bot'a yazınca enjekte edilir
+- ✅ Mahsum yazınca → BASE cache HIT, sadece Mahsum bloğu (-700 char) yeniden işlenir
+- ✅ Per-user verimlilik maksimum — başka kullanıcının karakteri gereksiz yüklenmez
+
+**Cleanup operations:**
+- 4 baseline dosyası silindi (564K disk + git repo bloat azaldı)
+- 110 fonksiyon dead code scan: hepsi ≥2 referans ✅
+- tool_definitions.py (125 tool, ortalama 963 char) kompakt zaten ✅
+- response_templates.py 15K string + 27K kod (normal) ✅
+- prompt_router V2/role_prompt/prompt_tiers: aktif değil ama gelecek için korundu (V2 Neo phone backup, V3 fallback)
+
+**Live verify:** Mahsum'a "Sayın Müdürüm" hitabı doğru, ton intact ✅
 
 
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)

@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, AKŞAM 17:30 — **🎯 OTURUM 25.40z3-CONSOLIDATION: BASE 78K → 53.7K (cumulative -31.4%) — kural tekrarlari kompakt, sertlik korundu, 388/388 PASS, live -27% (90K→66K)**
+> **Son güncelleme:** 4 Mayıs 2026, AKŞAM 18:30 — **🎯 OTURUM 25.40z3-FINETUNE: Per-user karakter blokları kompakt (-4.5K dynamic context, Örsel -56%, Mahsum -42%, Duygu -40%) + baseline cleanup + sistematik dead code scan, 388/388 PASS, karakter özellikleri intact**
 
 ---
 
@@ -94,6 +94,11 @@
 | 75 | **BASE 60,145 → 53,720 char** (-6,425 = -10.7%); **CUMULATIVE: 78,310 → 53,720 (-24,590 = -31.4%)**; cache_creation tokens 53,165 → 42,390 (-10,775 = -%20) | LIVE | 25.40z3-CONSOLIDATION |
 | 76 | **Live production log**: `[PROMPT_V3] base+db_schema = 65,853 char` (admin sorgu, önceki 90,298 → **-24K, -27%**); 388/388 regression PASS + cache HIT %100 + persona/pedagoji intact | VERIFIED | 25.40z3-CONSOLIDATION |
 | 77 | **Cerebras farkı 6.1x → 4.2x** (1.5x iyileşme, "tek beyin" mimari korundu) — kalan fark tool-related zorunlu | METRIK | 25.40z3-CONSOLIDATION |
+| 78 | **Per-user karakter blokları kompakt** (fermat_core_agent.py:3812-3920): Mahsum 1,220→705 (-42%), Duygu 1,403→842 (-40%), **Örsel 5,977→2,635 (-56%)** | LIVE | 25.40z3-FINETUNE |
+| 79 | Karakter özellikleri intact: Mahsum edebi alıntı + strateji, Duygu yaratıcımdan bahset + PDR + Neo övgü, Örsel sadıcım + Balıkesir + Ash-ra + sci-fi mimari sohbet — hiçbir özellik esnetilmedi | VERIFIED | 25.40z3-FINETUNE |
+| 80 | **Baseline dosyaları cleanup** (4 dosya × ~140K = 564K): fermat_core_agent.py.baseline_v1 + llm_router.py.baseline_v1 + system_prompts.py.baseline_v1 + .baseline_v2 silindi (sadece v3_full korundu) | LIVE | 25.40z3-FINETUNE |
+| 81 | **Sistematik dead code scan** (110 fonksiyon) — hepsi ≥2 referans (kullanılmayan fonksiyon yok); tool_definitions/response_templates kompakt; prompt_router V2/role_prompt/prompt_tiers fallback için korundu | ANALIZ | 25.40z3-FINETUNE |
+| 82 | **Live verify** — Mahsum "Sayın Müdürüm" hitabı doğru, ton intact; HTTP 200, service active | VERIFIED | 25.40z3-FINETUNE |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
