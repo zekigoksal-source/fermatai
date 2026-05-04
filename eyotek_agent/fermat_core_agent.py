@@ -5093,8 +5093,17 @@ class FermatCoreAgent:
                         _ti = getattr(self.router, "_last_tokens_in", 0)
                         _to = getattr(self.router, "_last_tokens_out", 0)
                         _rms = getattr(self.router, "_last_response_ms", 2000) or 2000
+                        # 25.40z3-FIX: HANDOFF tracking - cerebras+claude_handoff varsa
+                        # response_source'a yaz (observability: Cerebras handoff frekansi olculur)
+                        _resp_src = _local_provider
+                        try:
+                            _hf = locals().get('_handoff')
+                            if _hf and _hf.get('tool'):
+                                _resp_src = f"{_local_provider}+claude_handoff"
+                        except Exception:
+                            pass
                         await log_event(phone=caller_phone, role=role, full_name=caller_name,
-                                        event_type="message", response_source=_local_provider,
+                                        event_type="message", response_source=_resp_src,
                                         response_ms=_rms,
                                         token_input=_ti, token_output=_to)
                     except Exception:
@@ -5335,6 +5344,51 @@ class FermatCoreAgent:
                     from conversation_memory import strip_redundant_greeting
                     answer = strip_redundant_greeting(answer, self.history)
                 except Exception: pass
+
+                # 25.40z3-FIX: Wiki enrichment Claude path (Cerebras esitligi)
+                # Cerebras'ta llm_router.py:1263 zaten yapiliyor, Claude'da eksikti.
+                # Claude %72.6 trafik aldigi halde wiki enrichment'tan yararlanmiyordu.
+                # Web kanali + 200+ char + akademik konu -> Wikipedia bloku eklenir.
+                if getattr(self, "_channel", "whatsapp") == "web" and len(answer) > 200:
+                    try:
+                        from enrichment_dispatcher import inject_wiki_block
+                        wiki_block = await inject_wiki_block(user_input, answer)
+                        if wiki_block:
+                            answer = answer + wiki_block
+                            logger.info(f"  [WIKI_INJECT] Claude path +{len(wiki_block)} char")
+                    except Exception as _we:
+                        logger.debug(f"  [WIKI_INJECT] Claude skip: {_we}")
+
+                # 25.40z3-FIX: Enrichment footer Claude path (Cerebras esitligi)
+                # Cerebras system prompt'unda zaten otomatik ekliyor (llm_router.py:861).
+                # Claude'da Yoktu - %72.6 trafik enrichment footer'sizdi.
+                # Footer ogrenciye "deney/3d/video" yazma cesareti veriyor →
+                # dispatch_enrichment tetiklenir → ucuz API'lerden zenginlestirme.
+                _ch = getattr(self, "_channel", "whatsapp")
+                if (_ch == "web" and role == "ogrenci" and len(answer) > 300):
+                    # Footer zaten ekli mi? (Cerebras handoff durumunda olabilir)
+                    if not any(m in answer for m in [
+                        "Daha derine gitmek", "💡 *Daha derine",
+                        "deneyimle", "anlatim videosu",
+                    ]):
+                        # Akademik kavramsal soru tespiti
+                        _is_academic = any(kw in (user_input or "").lower() for kw in [
+                            "nedir", "acikla", "açıkla", "anlat", "nasil", "nasıl",
+                            "neden", "formul", "formül", "kural", "yasa",
+                            "teorem", "kavram", "tanim", "tanım", "ornek", "örnek",
+                        ])
+                        if _is_academic:
+                            footer = (
+                                "\n\n─────────────────────────────────────\n"
+                                "💡 *Daha derine gitmek ister misin?*\n\n"
+                                "🎬 _video_ yaz — konu anlatim videosu\n"
+                                "🧪 _deney_ yaz — sanal simulasyon\n"
+                                "📐 _3d_ yaz — 3 boyutlu gorsel\n"
+                                "─────────────────────────────────────"
+                            )
+                            answer = answer + footer
+                            logger.info(f"  [ENRICH_FOOTER] Claude path +{len(footer)} char")
+
                 # History'ye response.content (TextBlock list) yerine duz string ekle
                 # Boylece Ollama'ya geciste format sorunu olmaz
                 self.history.append({"role": "assistant", "content": answer})
