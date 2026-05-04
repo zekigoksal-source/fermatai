@@ -134,9 +134,83 @@ def clear_history(phone: str = "") -> None:
         _HISTORY.clear()
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# RAPID-TYPING DETECTOR (25.41 — Neo bug, GÖKTÜRK 5 May)
+# ═══════════════════════════════════════════════════════════════════════
+# GÖKTÜRK 10:09:45-52 arası 5 tek kelime mesaj gönderdi: "Çabuk", "Bekletme",
+# "Beni", "Hızlı", "Ol" → Cerebras her birine ayrı saçma cevap üretti.
+# Çözüm: Phone başına son 30sn kısa mesaj (5 char altı tek kelime) sayısını
+# tut. 3+ olursa → fast_response "tek mesajda yaz" yanıtı verir, Cerebras tetiklenmez.
+
+_RAPID_BURSTS: "OrderedDict[str, list]" = OrderedDict()
+_RAPID_WINDOW_SEC = 30
+_RAPID_THRESHOLD = 3  # 30sn'de 3+ kısa mesaj → "birleştir" uyarısı
+
+
+def _is_short_word(message: str) -> bool:
+    """Mesaj 'kısa tek kelime' mi? (Çabuk, Beni, Hızlı, Ol gibi)"""
+    if not message:
+        return False
+    msg = message.strip()
+    # Tek kelime, 8 char altı, sayı değil, noktalama yok
+    if " " in msg or len(msg) > 8:
+        return False
+    # Anlamlı kelime mi (alfabetik karakter ağırlıklı)
+    if not msg.isalpha():
+        return False
+    return True
+
+
+def detect_rapid_burst(phone: str, message: str) -> bool:
+    """Bu phone son 30sn içinde 3+ kısa kelime mesajı attı mı?
+
+    Returns True → bridge "Mesajını birleştir" uyarısı versin (fast cevap).
+    """
+    if not phone or not _is_short_word(message):
+        # Kısa mesaj değilse burst sayacını reset et (uzun cümle yazıldı)
+        _RAPID_BURSTS.pop(phone, None)
+        return False
+
+    now = time.time()
+    if phone not in _RAPID_BURSTS:
+        _RAPID_BURSTS[phone] = []
+        if len(_RAPID_BURSTS) > _MAX_PHONES:
+            _RAPID_BURSTS.popitem(last=False)
+
+    # Eski kayıtları temizle (window dışındaki)
+    burst = _RAPID_BURSTS[phone]
+    burst = [t for t in burst if (now - t) <= _RAPID_WINDOW_SEC]
+    burst.append(now)
+    _RAPID_BURSTS[phone] = burst
+
+    return len(burst) >= _RAPID_THRESHOLD
+
+
+def get_burst_message(name: str = "") -> str:
+    """Burst tespit edildiğinde gönderilecek mesaj."""
+    fname = name.split()[0] if name else ""
+    hitap = f"*{fname}*" if fname else ""
+    return (
+        f"Hızlı yazıyorsun {hitap} 😊\n\n"
+        f"Mesajlarını *tek bir cümlede* gönderirsen sana çok daha iyi yardımcı olabilirim.\n\n"
+        f"_Örnek:_\n"
+        f"  ❌ \"Çabuk\" + \"Bekletme\" + \"Beni\" + \"Hızlı\" + \"Ol\"\n"
+        f"  ✅ \"Çabuk anlat, beni bekletme, hızlı ol\"\n\n"
+        f"_Tam cümleyi yaz, hemen başlayalım!_ 🎯"
+    )
+
+
+def reset_burst(phone: str) -> None:
+    """Burst sayacını manuel temizle (test/debug)."""
+    _RAPID_BURSTS.pop(phone, None)
+
+
 __all__ = [
     "should_skip_repeat",
     "record_handler",
     "get_recent_handlers",
     "clear_history",
+    "detect_rapid_burst",
+    "get_burst_message",
+    "reset_burst",
 ]

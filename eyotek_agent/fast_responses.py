@@ -2675,7 +2675,16 @@ OGRENCI_PATTERNS = [
     (r"son\s*(sinav|sınav|deneme|sonuc|sonuç)", "son_deneme", "Son sinav"),
     (r"(sinav|sınav)\s*(sonuc|sonuç|nasil|nasıl|ne\s+oldu)", "son_deneme", "Sinav sonucu"),
     (r"denem\w*\s*nas[iı]l", "son_deneme", "Deneme nasil"),
-    (r"(kacinci|kaçıncı|kac[iı]nc[iı]|sira|siralama|sıralama)", "son_deneme", "Siralama"),
+    # 25.41 (Neo bug 5 May): Damla "sence yks de kac sıralama yaparım" sorusu
+    # son_deneme'ye düştü → bot deneme tablosu verdi (yanlış intent).
+    # "siralama" kelimesi tahmin/analiz isteyebilir → "yks/yerlesme/tahmin"
+    # iceriyorsa Claude'a yönlendir, sadece "kacinci sirada" dedimse son_deneme.
+    (r"^kac[iı]nc[iı]\s*(sirada|sıram|olduyum|geld[iı]m)", "son_deneme", "Kacinci sirada (siralamada konum)"),
+    (r"^son\s*sira(lama|m)", "son_deneme", "Son siralama"),
+    # Tahmin/analiz isteği → Claude (kişisel veri analiz)
+    (r"(yks|tyt|ayt).{0,15}(siralama|sıralama|sira|sıra)\s*(yapar|olur|girer|alabilir|tahmin)", "claude_kisisel_hedef", "YKS sıralama tahmini"),
+    (r"(siralama|sıralama|sira|sıra).{0,15}(yapar|olur|alabilir|girer|tahmin|yaparım|olurum)", "claude_kisisel_hedef", "Siralama tahmin"),
+    (r"(sence|sanırım|sanirim|tahmin\s*et).{0,30}(siralama|sıralama|sira|sıra|yks|tyt|ayt)", "claude_kisisel_hedef", "Sence sıralama tahmin"),
     (r"(sonuc|sonuç)\w*\s*(ac[iı]kland|ne\s+oldu|bak)", "son_deneme", "Sonuc sorma"),
     # deneme analizi / karsilastirma → kiyaslama (Claude-seviye analiz)
     (r"deneme\s*(analiz|karsilastir|kıyasla)", "deneme_kiyasla", "Deneme analizi"),
@@ -3157,6 +3166,20 @@ async def try_fast_response(
         staff_name = _tr_title(staff_name)
 
     # ══════════════════════════════════════════════════════════════════════
+    # ⚡ RAPID-TYPING DETECTOR (25.41 Neo bug, GÖKTÜRK 5 May)
+    # Phone son 30sn'de 3+ kısa kelime → "tek mesajda yaz" uyarısı
+    # Cerebras tetiklenmez, $0 maliyet, kullanıcı eğitilir
+    # ══════════════════════════════════════════════════════════════════════
+    try:
+        from fast_response_loop_guard import detect_rapid_burst, get_burst_message
+        if detect_rapid_burst(caller_phone, message):
+            try: _fr_last_handler.set('rapid_burst')
+            except: pass
+            return get_burst_message(name)
+    except Exception:
+        pass  # rapid burst hata akışı bozmasın
+
+    # ══════════════════════════════════════════════════════════════════════
     # 🔐 AUTH FAST PATH — EN YUKSEK ONCELIK (Yagiz bug fix 25.40g, 2 May)
     #
     # NEO BUG RAPORU:
@@ -3179,6 +3202,11 @@ async def try_fast_response(
         r'^(yeni|ba[sş]ka|tekrar|farkl[iı]|yenile|yollasana|gonder(sene)?|ver(sene)?)\s*(web\s*)?kod\w*',
         r'^kod\s*(tekrar|yollasana|gonder|ver|yenile|yolla|lutfen)\b',
         r'^(kod\s*gelmedi|kod\s*almad[iı]m|kod\s*bekliyor)\b',
+        # 25.41 (Neo bug 5 May): Yağız "Web" + "Kodu" ayrı mesaj yazdı,
+        # fast_response yakalamadı, Cerebras "Web içeriği" diye saçma cevap verdi.
+        # Tek kelime "web" / "kodu" → muhtemelen OTP istiyor (öğrenci kayıtlı,
+        # akademik bağlamda "web" tek kelime nadir → güvenli varsayım).
+        r'^(web|kodu?|kod)[\s\.\?!]*$',  # tek kelime web/kod/kodu
     ]
     if role in ('ogrenci', 'ogretmen', 'rehber') and any(re.search(p, msg_lower) for p in _AUTH_FAST_PATTERNS):
         try:
