@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, GECE 21:00 — **🎯 OTURUM 25.40z3-ATLAS-UNIFIED: Atlas-1 + Atlas-2 BIRLEŞIK MIMARI (tek tablo + tek API + Cerebras qwen-3-235b + signature dedup), 89 öneri tek yerde, 0 pending, dashboard temiz**
+> **Son güncelleme:** 4 Mayıs 2026, GECE 22:00 — **🎯 OTURUM 25.40z3-ARSIV-MERGE: Neo bug raporu (simülasyon arşivlendi ama görünmüyor) → 2 ayrı arşiv (chat + render) tek listede birleştirildi, 38 mesaj + 21 render = 59 birleşik**
 
 ---
 
@@ -113,6 +113,10 @@
 | 94 | **Data migration** — 35/35 prompt_suggestions → atlas_suggestions (status mapping: pending→yeni, approved→uygulandi, rejected→rejected, superseded→archived); prompt_suggestions tablosu → prompt_suggestions_legacy_backup (rename, silinmedi) | LIVE | 25.40z3-UNIFIED |
 | 95 | **TEK TABLO TEK API:** atlas_suggestions toplam 89 öneri (54 source=observer + 35 source=prompt_optimizer); dashboard `/admin/api/atlas-suggestions` aynı endpoint, içeride source filtrele; bridge HTTP 200 + admin live test "Zeki Bey 👋 Hazırım" | VERIFIED | 25.40z3-UNIFIED |
 | 96 | **Live durum** — 0 pending öneri Neo dashboard'da; gelecek nightly cron: Cerebras 235b ile sadece YENİ öneriler üretilecek, dedup tüm 89 başlığı kontrol edecek | LIVE | 25.40z3-UNIFIED |
+| 97 | **ARSIV BUG raporu** (Neo 4 May 13:08): "Simülasyon ürettim, indirdim, arşivledim ama arşivde gözükmüyor"; analiz: 2 farklı sistem (`/chat/archive` mesaj arşivi vs `/render/archived/list` render artifact arşivi); UI sadece chat çekiyordu, render simülasyon ayrı yerdeydi | ANALIZ | 25.40z3-ARSIV |
+| 98 | **Backend FIX**: `/chat/archive` endpoint user_archive + render_artifacts MERGE, type='message'/'render' field, render için render_url/quality_score; tarihe göre sıralı tek liste | LIVE | 25.40z3-ARSIV |
+| 99 | **UI FIX** (web_chat_ui.html `renderArchiveItems`): görsel/simülasyon ikonları (🎨 🌟 🎯), isRender flag ile özel davranış (🔗 link butonu + ⭐ skor badge + tıklayınca yeni sekme), PDF/rename/delete render için gizlendi | LIVE | 25.40z3-ARSIV |
+| 100 | **Live verify**: Neo arşiv: 38 mesaj + 21 render = **59 birleşik**, "Fermat ai selfsim" simülasyonu (uG27pFRugmaD) artık 🎨 ikonu + 🔗 link ile listede görünür | VERIFIED | 25.40z3-ARSIV |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
