@@ -1,15 +1,48 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 5 Mayıs 2026, GECE 00:45 — **🎯 OTURUM 25.40z3-ROUTING: Karar katmanı 3 katmanlı fix (text_only Cerebras + decision trace + 5 yeni lane) + L0c security guard, 388/388 PASS, Cerebras pay hedefi %5→%25**
+> **Son güncelleme:** 5 Mayıs 2026, GECE 02:00 — **🎯 OTURUM 25.41-FAST-A+++: Faz 1 (15 fast response A+++ rewrite) + Faz 2 (3 render template + augmentation pattern) + Neo Kural #1 (anti-repeat 90sn guard) + Neo Kural #2 (memory entegrasyon doğrulama)**
 
 ---
 
-## 🎯 YENİ SESSION ORIENTATION (yeni Claude buradan başlar)
+## 🎯 OTURUM 25.41 — FAST RESPONSE A+++ + RENDER + KURAL #1+#2 (5 May 02:00)
 
-> **Bu blok her oturum başında okunur — sistemin anlık durumu, son tamamlananlar, bekleyen iş.**
+### Yeni dosyalar
+| Dosya | Rol | Test |
+|---|---|---|
+| `fast_response_visuals.py` | 21 reusable primitive (sep/dot/gauge/sparkline/medal/header/action_block) | 11/11 ✅ |
+| `fast_response_render.py` | 3 pilot render template (trend_chart/dashboard/heatmap) + helpers | HTML build 0ms, VPS create_artifact OK |
+| `fast_response_loop_guard.py` | Anti-repeat in-memory cache (phone→handler+ts), 90sn window, safe list | 5/5 ✅ |
+| `test_fast_response_v2.py` | 11 senaryo mock test (Faz 1 görsel kalite) | 11/11 ✅ |
+| `test_oturum_25_41_full.py` | Tam senaryo + loop guard + render + cost analiz | All ✅ |
+
+### 15 cevap A+++ rewrite (B+ → A+++)
+**Level 1 (öğrenci):** ogrenci_devamsizlik (gauge+breakdown), ogrenci_etutlerim (katılım+son etütler), ogrenci_hedef (bant+puan gauge), ogrenci_ders_programi (bugün vurgulu), ogrenci_rehberlik (card+istatistik), ogrenci_guclu_konular (medal+strateji)
+**Level 2 (öğretmen):** ogretmen_bugun_ders (özet kartı), ogretmen_ders_programi (yoğunluk indicator), ogretmen_etut_istatistik (dashboard+sparkline)
+**Level 3 (admin):** admin_devamsizlik_top (risk bantları), admin_ogrenci_sayisi (kapasite/aktivite), admin_en_cok_etut_alan_ogrenci (leaderboard), admin_ogretmen_kiyasla (bar chart+insight)
+**Level 4 (inline):** foto_hakki (gauge+kalan), kurum_reddet (constructive yönlendirme)
+
+### Faz 2 — Render Augmentation
+Wire edildi:
+- `ogrenci_son_deneme` → weekly_dashboard link (toplam ≥30 net)
+- `ogrenci_deneme_kiyasla` → trend_chart link (≥3 deneme)
+- `ogrenci_zayif_konular` → topic_heatmap link (≥5 konu)
+
+**Maliyet:** $0 (LLM yok). **Latency:** ~150-200ms ek (HTML+DB INSERT). **vs Claude:** 80% maliyet, 5x hız tasarrufu.
+
+### Neo Kural #1 — Anti-Repeat Guard
+- Aynı handler 90sn arda tetiklenirse `should_skip_repeat()` → True → `return None` → LLM devreye
+- Safe handlers (selamlama, web_kodu, foto_hakki, yetenekler, neo_menu, kurum_reddet) her zaman tetiklenir
+- Wire: ogrenci/ogretmen/admin dispatcher öncesi check + bridge fast başarısı sonrası `record_handler()`
+
+### Neo Kural #2 — Memory Entegrasyon (mevcut altyapı doğrulandı)
+- bridge.py 3703-3704: `agent.history.append(user)` + `agent.history.append(assistant_fast)`
+- get_agent() phone başına singleton, DB'den son 10 mesaj yükler (24h)
+- chat_local_async(messages=self.history): Cerebras tam bağlamı görür
+- chat_cloud_async(messages=self.history): Claude da görür
+- → Fast → Cerebras → Claude geçişlerinde bağlam korunuyor
 
 ### Sistem durumu (canlı)
-- **VPS HEAD:** `21be1fe` — service active, HTTP 200, no errors
+- **VPS HEAD:** `c750c5d` — service active, HTTP 200, no errors
 - **Aktif kullanıcı:** Mezun + 11/12. sınıf SAY+EA öğrencileri (~125 öğrenci)
 - **Bot rolleri canlı:** admin (Neo) / mudur (Mahsum, Duygu) / yonetim (Bilge) / rehber / ogretmen / ogrenci / veli (pasif)
 - **WhatsApp + Web Chat** her ikisi açık (api.fermategitimkurumlari.com/chat)
