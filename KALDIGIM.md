@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, AKŞAM 18:30 — **🎯 OTURUM 25.40z3-FINETUNE: Per-user karakter blokları kompakt (-4.5K dynamic context, Örsel -56%, Mahsum -42%, Duygu -40%) + baseline cleanup + sistematik dead code scan, 388/388 PASS, karakter özellikleri intact**
+> **Son güncelleme:** 4 Mayıs 2026, AKŞAM 19:30 — **🎯 OTURUM 25.40z3-ATLAS: 4 kritik bug fix (status uyumsuzluk + signature dedup + kod-içerik check + auto-archive aging) — 3 tekrar öneri → 1 anlamlı, ekran temiz**
 
 ---
 
@@ -99,6 +99,13 @@
 | 80 | **Baseline dosyaları cleanup** (4 dosya × ~140K = 564K): fermat_core_agent.py.baseline_v1 + llm_router.py.baseline_v1 + system_prompts.py.baseline_v1 + .baseline_v2 silindi (sadece v3_full korundu) | LIVE | 25.40z3-FINETUNE |
 | 81 | **Sistematik dead code scan** (110 fonksiyon) — hepsi ≥2 referans (kullanılmayan fonksiyon yok); tool_definitions/response_templates kompakt; prompt_router V2/role_prompt/prompt_tiers fallback için korundu | ANALIZ | 25.40z3-FINETUNE |
 | 82 | **Live verify** — Mahsum "Sayın Müdürüm" hitabı doğru, ton intact; HTTP 200, service active | VERIFIED | 25.40z3-FINETUNE |
+| 83 | **Atlas analizi** — Neo şikayeti: 3-4 kez aynı öneri (claude latency, fast_response). DB'de 50 uygulandi + 3 yeni; advisor her gece (02:30 UTC systemd timer) yeni öneri üretiyor; **completion_awareness BUG: status='yapildi' arıyor ama DB 'uygulandi' kullanıyor** → her zaman 0 sonuç → tekrar | ANALIZ | 25.40z3-ATLAS |
+| 84 | **Atlas BUG #1 fix:** completion_awareness status listesi → `['uygulandi', 'yapildi', 'incelendi', 'archived', 'applied', 'resolved', 'rejected']` (7 varyant); `status = ANY($)` query | LIVE | 25.40z3-ATLAS |
+| 85 | **Atlas BUG #2 fix:** advisor.py INSERT'te signature kolonu YOKTU — her gece yeni kayıt; **inline signature compute** + sayısal varyant normalize (`re.sub(r'\d+', 'N')`); mevcut sig varsa occurrence++ (insert YAPMA), eski 'uygulandi' sig varsa 'regresyon' işaretle | LIVE | 25.40z3-ATLAS |
+| 86 | **Atlas BUG #3 fix:** Observer pattern_miss kod-içerik kontrolü yoktu — 'web kodu' fast_responses.py:1672'de var ama Atlas tekrar önerdi; **`_check_pattern_in_fast_responses()` helper** eklendi — pattern VAR → category='routing_bug' (auth/route problemi), YOK → klasik 'pattern_miss' | LIVE | 25.40z3-ATLAS |
+| 87 | **Atlas BUG #4 fix:** Aging mekanizması yoktu, eski 'yeni' öneriler ekranda kalıyor — **`auto_archive_stale()`** atlas_lifecycle.py'a eklendi: info 7gün+ stale → archived, warning 21gün+ → archived, critical NEVER (Neo manuel); atlas_nightly.sh'a cron çağrısı eklendi | LIVE | 25.40z3-ATLAS |
+| 88 | **DB cleanup live:** 16 eski 'uygulandi' (7gün+) → 'archived' + 17 kayda signature backfill + 3 aktif öneri analiz: #53 web kodu → uygulandi (kod zaten var), #55 latency → ertelendi (Neo karar), #54 frustrated → KALDI | LIVE | 25.40z3-ATLAS |
+| 89 | **SONUÇ: Atlas ekranı temiz** — 50+ uygulandi → 16 archived + 35 uygulandi; **3 tekrar öneri → 1 gerçekten anlamlı (#54 öğrenci 4419)**; auto_archive nightly aktif, gelecekte stale önerile otomatik temizlenecek | VERIFIED | 25.40z3-ATLAS |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
