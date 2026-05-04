@@ -1,6 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 4 Mayıs 2026 (sabah 07:30) · **Oturum:** 25.40z3 PRODUCTION — **V3 Modüler Prompt + Hierarchical Cache_Control TÜM KULLANICILARDA CANLI · 354/354 production gate test PASS · Cache HIT %100 ölçüldü**
+> **Belge tarihi:** 4 Mayıs 2026 (öğle 14:15) · **Oturum:** 25.40z3-FIX — **V3 PRODUCTION + Claude path 3 enrichment eksigi kapatildi (Wiki + HANDOFF tracking + Footer)** · 363/363 test PASS
+> **Sabah 07:30 güncellemesi:** 25.40z3 PRODUCTION DEPLOY — V3 Modüler Prompt + Hierarchical Cache_Control TÜM KULLANICILARDA CANLI · 354/354 production gate test PASS · Cache HIT %100 ölçüldü
 > **Önceki güncelleme:** 3 Mayıs 2026, Oturum 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
 
 ---
@@ -52,6 +53,7 @@
 | 25.40z | Wikipedia direct + YouTube history filtresi + Claude Supervisor pattern (CLAUDE_HANDOFF) | LIVE | Cerebras + Claude işbirliği akışı |
 | **25.40z2** | **PROMPT V2 — Conditional Context Routing** (eksiltici filtre, kanal+rol+intent 3-katman, 16 intent profil, 30 senaryo A/B test) | `5607e41` öncesi | **-%28.4 token, 135/135 PASS** |
 | **25.40z3** | **PROMPT V3 — Modüler parsing + Hierarchical cache_control** (3 modül extract: pedagoji+render+db_schema, composer_v3, koşullu yükleme, BASE+extras+dynamic = 3 cache breakpoint) | `5607e41` | **354/354 PASS, V3 production CANLI tüm kullanıcılarda, Cache HIT %100 ölçüldü** |
+| **25.40z3-FIX** | **Claude path 3 enrichment eksigi kapatildi** (Bot 4 May 10:48 tespit) — Wiki injection + HANDOFF tracking + Enrichment footer (Cerebras paritesi, Claude %72.6 trafik) | `3bd4eb3` | **19 yeni test + 363/363 regression PASS** |
 
 ---
 

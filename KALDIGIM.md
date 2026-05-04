@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, SABAH 07:30 — **🎯 OTURUM 25.40z3 PRODUCTION DEPLOY: V3 modular prompt + hierarchical cache_control TÜM KULLANICILARDA CANLI — 354/354 test PASS, cache HIT %100 ölçüldü**
+> **Son güncelleme:** 4 Mayıs 2026, ÖĞLE 14:15 — **🎯 OTURUM 25.40z3-FIX: Bot tespit ettiği 3 Claude path eksiği kapatıldı (Wiki + HANDOFF tracking + Footer) — 363/363 PASS, VPS deploy LIVE**
 
 ---
 
@@ -71,6 +71,9 @@
 | 52 | **41/41 cache_control unit test + 5-mesaj A/B simülasyonu %51 tasarruf** — V2 single-block (intent değişimi tüm cache invalide) vs V3 (BASE her zaman HIT, extras intent-bağlı) | LIVE | 25.40z3-Cache |
 | 53 | **354/354 PRODUCTION GATE TEST PASS** — security 135/135 + stability 26/26 + conflict 25/25 + user_simulation 47/47 + cache_control 41/41 + v3_full 70/70 + quality_live 10/10 (Claude API, **cache HIT %100**) | LIVE | 25.40z3-FINAL |
 | 54 | **V3 PRODUCTION CANLI** — VPS `PROMPT_V3_ENABLED=true` tüm kullanıcılara, bridge restart, log doğrulandı `[PROMPT_V3] base+ = 78,310 char (1 cache blocks)` | LIVE | 25.40z3-DEPLOY |
+| 55 | **Bot dev konuşma analizi (10:48)** — Routing dağılımı tespit: **Claude %72.6, Cerebras %10.1** trafik. Bot 6 eksik söyledi, 2 yanlış (sandbox .env okumadığı için PROMPT_V3 ve YOUTUBE_API_KEY var sanmadı), 4 gerçek | ANALIZ | 25.40z3-FIX |
+| 56 | **Claude path 3 enrichment fix** (fermat_core_agent.py): (1) `inject_wiki_block` Claude no-tool yanıt sonrası eklendi (Cerebras paritesi), (2) HANDOFF tracking — `response_source = '<provider>+claude_handoff'` formatı, (3) Enrichment footer (web+öğrenci+akademik+300char) — "💡 video/deney/3d" Cerebras paritesi | LIVE | 25.40z3-FIX |
+| 57 | **19/19 yeni test + 363/363 toplam regression** — `tests/test_claude_enrichment_fixes.py` (wiki signature, handoff format, footer şartları, dispatch_enrichment trigger) | LIVE | 25.40z3-FIX |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
