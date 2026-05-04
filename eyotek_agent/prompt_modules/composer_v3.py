@@ -57,12 +57,17 @@ def _should_load_render(channel: str, intent: Optional[str]) -> bool:
 
 
 def _should_load_db_schema(role: str, intent: Optional[str]) -> bool:
-    """DB schema bloğu (~12K char): sadece admin/mudur ve SQL gerektirenlerde."""
+    """DB schema bloğu (~12K char): sadece admin/mudur/rehber ve SQL gerektirenlerde.
+
+    25.40z3-MIMARI: intent_classifier 'admin_action' etiketi de tetiklemeli
+    (sistem durum/rapor/devamsiz sorgulari icin).
+    """
     role_l = (role or "").lower()
     if role_l not in ("admin", "mudur", "rehber"):
         return False
     # Sadece DB sorgusu gerektiren intent'lerde
-    if intent in ("analiz_iste", "deneme_analiz", "plan_yap", "meta_direktif"):
+    if intent in ("analiz_iste", "deneme_analiz", "plan_yap", "meta_direktif",
+                  "admin_action", "rapor_iste", "rapor_goster"):
         return True
     return False
 
