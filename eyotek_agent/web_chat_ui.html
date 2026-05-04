@@ -6186,14 +6186,19 @@ function addQuickActions(botEl) {
     b.className = "reaction-btn" + (saved[emoji] ? " active" : "");
     b.innerHTML = emoji + (saved[emoji] ? `<span class="reaction-count">${saved[emoji]}</span>` : "");
     b.title = titleMap[emoji] || "Tepki ver";
-    b.addEventListener("click", () => {
+    b.addEventListener("click", async (ev) => {
+      ev.stopPropagation();
       const wasActive = !!saved[emoji];
-      // Tek seçim: 👍 ile 👎 mutex (biri aktifse digerini sıfırla)
+
+      // 25.40z3-ARSIV-FIX: Görsel feedback ANINDA (kullanıcı tıkladığını anlasın)
+      b.style.transform = 'scale(1.4)';
+      setTimeout(() => { b.style.transform = ''; }, 200);
+
+      // Tek seçim: 👍 ile 👎 mutex
       if (!wasActive && _FEEDBACK_REACTIONS.has(emoji)) {
         const opposite = (emoji === "👍") ? "👎" : "👍";
         if (saved[opposite]) {
           delete saved[opposite];
-          // diğer butonu DOM'da güncelle
           reactBox.querySelectorAll(".reaction-btn").forEach(ob => {
             if (ob.textContent.startsWith(opposite)) {
               ob.classList.remove("active");
@@ -6205,13 +6210,30 @@ function addQuickActions(botEl) {
       saved[emoji] = wasActive ? 0 : 1;
       if (!saved[emoji]) delete saved[emoji];
       try { localStorage.setItem(msgKey, JSON.stringify(saved)); } catch {}
-      b.classList.toggle("active");
+
+      // Active class toggle
+      if (saved[emoji]) {
+        b.classList.add("active");
+      } else {
+        b.classList.remove("active");
+      }
       b.innerHTML = emoji + (saved[emoji] ? `<span class="reaction-count">${saved[emoji]}</span>` : "");
+
+      // 25.40z3-ARSIV-FIX: Toast bildirimi (kullanıcı tepkisinin alındığını görsün)
+      const toastMap = {
+        "👍": wasActive ? "👍 Beğeni geri çekildi" : "👍 Beğeni gönderildi! Teşekkürler 🙏",
+        "👎": wasActive ? "👎 Geri çekildi" : "👎 Geri bildirim alındı, daha iyisi için çalışıyorum",
+        "❤️": wasActive ? "❤️ Geri çekildi" : "❤️ Bu cevabı sevdin — kaydettim!",
+      };
+      if (typeof showToast === 'function') {
+        showToast(toastMap[emoji] || "Tepki kaydedildi", saved[emoji] ? "success" : "info");
+      }
+
       // 25.37: 👍/👎 → /chat/feedback API
       if (!wasActive && _FEEDBACK_REACTIONS.has(emoji)) {
         const fbValue = (emoji === "👍") ? "up" : "down";
         try {
-          fetch(API_BASE + "/chat/feedback", {
+          const r = await fetch(API_BASE + "/chat/feedback", {
             method: "POST", credentials: "include",
             headers: authHeaders({"Content-Type": "application/json"}),
             body: JSON.stringify({
@@ -6221,8 +6243,16 @@ function addQuickActions(botEl) {
               feedback: fbValue,
               category: (typeof detectCategory === "function") ? detectCategory(_botText, _userPrompt) : "genel",
             }),
-          }).catch(() => {});
-        } catch {}
+          });
+          if (!r.ok && typeof showToast === 'function') {
+            showToast(`Geri bildirim sunucuya ulaşamadı (${r.status})`, "error");
+          }
+        } catch (err) {
+          console.warn('[reaction] feedback API fail:', err);
+          if (typeof showToast === 'function') {
+            showToast("Geri bildirim ağ hatası", "error");
+          }
+        }
       }
     });
     reactBox.appendChild(b);
@@ -8959,11 +8989,25 @@ function renderArchiveItems(items) {
     const qualityBadge = (isRender && a.quality_score)
       ? `<span style="background:rgba(96,165,250,0.15);color:#3b82f6;padding:2px 6px;border-radius:8px;font-size:10px;margin-left:4px;">⭐${a.quality_score}</span>`
       : "";
-    const renderActions = isRender
-      ? `<button style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:2px 6px;"
-                  onclick="event.stopPropagation();window.open('${a.render_url}','_blank','noopener')" title="Görseli aç">🔗</button>`
-      : `<button class="arch-pdf-btn" style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:2px 6px;"
-                  onclick="event.stopPropagation();downloadSingleArchivePdf(${a.id}, ${JSON.stringify(a.title || '').replace(/"/g, '&quot;')}, this)" title="Bu kaydı PDF indir">📄</button>`;
+
+    // Render için: aç + indir + sil. Mesaj için: PDF + rename + sil.
+    const actions = isRender
+      ? `
+        <button style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:2px 6px;"
+                onclick="event.stopPropagation();window.open('${a.render_url}','_blank','noopener')" title="Görseli aç">🔗</button>
+        <button style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:2px 6px;"
+                onclick="event.stopPropagation();downloadRenderHtml('${a.render_url}', ${JSON.stringify(a.title || 'gorsel').replace(/"/g, '&quot;')})" title="HTML olarak indir">📥</button>
+        <button style="background:transparent;border:none;color:var(--error);cursor:pointer;font-size:15px;padding:2px 6px;"
+                onclick="event.stopPropagation();deleteRenderArchive('${a.render_uuid}', ${JSON.stringify(a.title || '').replace(/"/g, '&quot;')}, this)" title="Arşivden kalıcı sil">🗑</button>
+      `
+      : `
+        <button class="arch-pdf-btn" style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:2px 6px;"
+                onclick="event.stopPropagation();downloadSingleArchivePdf(${a.id}, ${JSON.stringify(a.title || '').replace(/"/g, '&quot;')}, this)" title="Bu kaydı PDF indir">📄</button>
+        <button style="background:transparent;border:none;color:var(--fg-muted);cursor:pointer;font-size:14px;padding:2px 6px;"
+                onclick="event.stopPropagation();renameArchive(${a.id})" title="İsim/kategori değiştir">✏️</button>
+        <button style="background:transparent;border:none;color:var(--error);cursor:pointer;font-size:15px;padding:2px 6px;"
+                onclick="event.stopPropagation();deleteArchive(${a.id}, this)" title="Kaldır">🗑</button>
+      `;
 
     div.innerHTML = `
       <div class="date">${icon} ${escapeHtml(a.title)}${qualityBadge}</div>
@@ -8971,13 +9015,7 @@ function renderArchiveItems(items) {
       ${tagsHtml}
       <div class="meta" style="display:flex;justify-content:space-between;align-items:center;">
         <span>${escapeHtml(dateStr)}</span>
-        <div style="display:flex;gap:6px;">
-          ${renderActions}
-          ${isRender ? "" : `<button style="background:transparent;border:none;color:var(--fg-muted);cursor:pointer;font-size:14px;padding:2px 6px;"
-                  onclick="event.stopPropagation();renameArchive(${a.id})" title="İsim/kategori değiştir">✏️</button>`}
-          ${isRender ? "" : `<button style="background:transparent;border:none;color:var(--error);cursor:pointer;font-size:15px;padding:2px 6px;"
-                  onclick="event.stopPropagation();deleteArchive(${a.id}, this)" title="Kaldır">🗑</button>`}
-        </div>
+        <div style="display:flex;gap:6px;">${actions}</div>
       </div>
     `;
     // Render type → tıklayınca yeni sekme aç (modal yerine)
@@ -8986,6 +9024,53 @@ function renderArchiveItems(items) {
       : () => showArchiveItem(a);
     wrap.appendChild(div);
   }
+}
+
+// 25.40z3-ARSIV: Render artifact KALICI silme (sadece sahibi)
+// Phone session cookie'den otomatik alınır (backend tarafında)
+async function deleteRenderArchive(uuid, title, btnEl) {
+  if (!confirm(`"${title}" simülasyonunu KALICI olarak silmek istiyor musun?\n\nBu işlem geri alınamaz.`)) return;
+  try {
+    const r = await fetch("/render/delete/" + encodeURIComponent(uuid), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      credentials: "include",
+      body: JSON.stringify({}),  // Phone session cookie'den alınacak
+    });
+    const d = await r.json();
+    if (d.success) {
+      // UI'dan animasyonla kaldır
+      const item = btnEl.closest('.history-item');
+      if (item) {
+        item.style.transition = 'opacity 0.3s';
+        item.style.opacity = '0';
+      }
+      setTimeout(() => {
+        if (item) item.remove();
+        // Cache'den de düş
+        if (Array.isArray(_archiveItems)) {
+          _archiveItems = _archiveItems.filter(x => x.render_uuid !== uuid);
+        }
+        const badge = document.getElementById("archiveCountBadge");
+        if (badge && _archiveItems) badge.textContent = `${_archiveItems.length} kayıt`;
+      }, 300);
+    } else {
+      alert("Silme başarısız: " + (d.error || "bilinmeyen hata"));
+    }
+  } catch (e) {
+    alert("Hata: " + e.message);
+  }
+}
+
+// 25.40z3-ARSIV: Render HTML indir (sınıf ortamında offline kullanım için)
+function downloadRenderHtml(url, title) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (title || 'gorsel').replace(/[^a-z0-9_-]/gi, '_') + '.html';
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 // Oturum 23 (Neo öneri 1): Rename — eski kayıtları da yeniden isimlendir

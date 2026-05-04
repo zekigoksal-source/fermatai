@@ -593,6 +593,79 @@ async def unarchive_artifact(uuid: str, request: Request):
         )
         return JSONResponse({"success": True, "uuid": uuid, "archived": False})
     except Exception as e:
+        logger.warning(f"unarchive_artifact hata: {e}")
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 25.40z3-ARSIV: Render artifact KALICI silme (sadece sahibi)
+# ═══════════════════════════════════════════════════════════════════════
+@router.post("/delete/{uuid}")
+async def delete_artifact(uuid: str, request: Request):
+    """Render artifact'ı KALICI sil — sadece sahibi (creator_phone) silebilir.
+
+    25.40z3-ARSIV: Neo direktifi: "Arşivlediğim simülasyonlar kalıcı olsun,
+    ne zaman silersem o zaman silinsin."
+
+    Phone kaynağı (öncelik sırası):
+    1. Body {"phone": "..."} (mobile/script çağrısı)
+    2. Session cookie 'fermat_session' → web_chat session lookup (web UI çağrısı)
+
+    Güvenlik: phone NORMALIZE edilip creator_phone VEYA archived_by_phone
+    ile eşleşmeli, yoksa 403 Forbidden.
+    """
+    if not uuid or len(uuid) > 64:
+        raise HTTPException(404, "Geçersiz")
+    try:
+        # Phone tespit (body veya session)
+        phone = ""
+        try:
+            body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+            phone = (body.get("phone") or "").strip()[:20]
+        except Exception:
+            body = {}
+
+        if not phone:
+            # Session cookie'den dene
+            try:
+                from web_chat import COOKIE_NAME, get_session, _extract_token
+                token = _extract_token(request, request.cookies.get(COOKIE_NAME))
+                if token:
+                    sess = await get_session(token)
+                    if sess:
+                        phone = (sess.get("phone") or "")[:20]
+            except Exception:
+                pass
+
+        if not phone:
+            raise HTTPException(401, "phone gerekli (body veya session)")
+
+        # Sahip kontrolü
+        phone_clean = phone.replace("+", "").replace(" ", "")[-20:]
+        existing = await db_fetchrow(
+            """SELECT uuid, creator_phone, archived_by_phone, archived, title
+               FROM render_artifacts WHERE uuid = $1""",
+            uuid,
+        )
+        if not existing:
+            raise HTTPException(404, "Artifact bulunamadı")
+
+        creator_clean = (existing["creator_phone"] or "").replace("+", "").replace(" ", "")[-20:]
+        archiver_clean = (existing["archived_by_phone"] or "").replace("+", "").replace(" ", "")[-20:]
+        if phone_clean not in (creator_clean, archiver_clean):
+            raise HTTPException(403, "Sadece sahip silebilir")
+
+        # KALICI sil
+        await db_execute("DELETE FROM render_artifacts WHERE uuid = $1", uuid)
+        logger.info(f"render: 🗑 DELETE uuid={uuid} by={phone[-4:]} title='{(existing['title'] or '')[:40]}'")
+        return JSONResponse({
+            "success": True, "uuid": uuid, "deleted": True,
+            "title": existing["title"],
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"delete_artifact hata: {e}")
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
