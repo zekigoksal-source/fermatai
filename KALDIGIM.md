@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, ÖĞLE 15:00 — **🎯 OTURUM 25.40z3-MIMARI: V3 sonrası 6 mimari iyileştirme + intent-aware modül yükleme — 388/388 PASS, "tek beyin" prensibi korundu, dead code temiz**
+> **Son güncelleme:** 4 Mayıs 2026, ÖĞLE 16:30 — **🎯 OTURUM 25.40z3-SHRINK: V3 BASE 78K → 60.1K (-22.9%) sıkıştırma — 4 şişme noktası temizlendi, 388/388 PASS, production CANLI (live log -%20)**
 
 ---
 
@@ -78,6 +78,15 @@
 | 59 | **6 mimari iyileştirme uygulandı:** (1) role_prompt V3 enable iken SKIP (172K replace boşa CPU), (2) db_schema_cache V3 modülü yüklendiyse SKIP (duplicate token), (3) tier `get_prompt_for_tier(v3_active=True)` V3 prompt korur (LIGHT/NORMAL ezme bug fix), (4) intent erken inference V3 build öncesi (modül seçimi tam aktive), (5) `_build_claude_request_params` helper (DRY: stream+sync ortak), (6) `composer.py` V1 dead code silindi | LIVE | 25.40z3-MIMARI |
 | 60 | **+ intent fix #5b:** `admin_action`/`rapor_iste`/`rapor_goster` intentleri composer_v3'te db_schema tetikler. Live test admin "sistem durum" sorgusu: log `[PROMPT_V3] base+db_schema = 90,298 char (2 cache blocks)` — önce sadece BASE yükleniyordu | LIVE | 25.40z3-MIMARI |
 | 61 | **388/388 toplam test** (354 V3 baseline + 19 enrichment + 25 mimari fixes − 10 quality_live separately) | LIVE | 25.40z3-MIMARI |
+| 62 | **V3 BASE şişme analizi (Cerebras 12.7K vs Claude 78K = 6.1x)** — 5 ana şişme noktası: 38K tool bölümü, 13K pazarlama, render BASE'de kalmış (5K), 21 tarihsel ref, ASLA/YASAK 100x tekrar | ANALIZ | 25.40z3-SHRINK |
+| 63 | **FIX #1: Render 4 bölümü (~6.8K) BASE → render_extended modüle taşındı** (MAKE_RENDER_LINK + RENDER LAYOUT + SIMULASYON + COMPTON) - WhatsApp tasarrufu, web'de modül yine yüklenir | LIVE | 25.40z3-SHRINK |
+| 64 | **FIX #2: Tarihsel referans temizlendi (~3K)** - 21 "Neo direktif/bug 25.X", "Oturum 25.X" ref silindi, system_prompts.py + 3 modül tutarlı | LIVE | 25.40z3-SHRINK |
+| 65 | **FIX #5: 38K bölüm sıkıştırma (~5.9K)** - "ÖNCE TEXT SONRA TOOL" verbose maddeler kompakt + YKS konu dağılımı yıl yıl detay → ortalama tek satır | LIVE | 25.40z3-SHRINK |
+| 66 | **Composer V3 güçlendirme (composer_v3.py)** - Block replace whitespace tutarsızlığı için 4 varyant fallback (tam/rstrip/strip/lstrip) | LIVE | 25.40z3-SHRINK |
+| 67 | **db_schema_extended SYSTEM_PROMPT ile SYNC** - artifact `"""` silindi, replace tam çalışıyor | LIVE | 25.40z3-SHRINK |
+| 68 | **BASE 78,310 → 60,145 char (-22.9%)** - Token: ~19,577 → ~15,036 (-4,541 ~%23) - Cerebras farkı 6.1x → 4.7x (tool-related zorunlu fark) | LIVE | 25.40z3-SHRINK |
+| 69 | **Live production log: `[PROMPT_V3] base+db_schema = 72,278 char`** (önce 90,298, **-18K = -20%**) - admin sorgu + db_schema modülü dahil | VERIFIED | 25.40z3-SHRINK |
+| 70 | **388/388 regression PASS + 9/10 quality LIVE** (Claude API gerçek yanıt, cache HIT %100, persona+pedagoji intact) | LIVE | 25.40z3-SHRINK |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 

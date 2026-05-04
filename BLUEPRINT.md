@@ -1,6 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 4 Mayıs 2026 (öğle 15:00) · **Oturum:** 25.40z3-MIMARI — **V3 sonrası 6 mimari iyileştirme: role_prompt+db_schema+tier+intent erken inference+stream/sync helper+dead code temiz** · 388/388 test PASS · "tek beyin" prensibi korundu
+> **Belge tarihi:** 4 Mayıs 2026 (öğle 16:30) · **Oturum:** 25.40z3-SHRINK — **V3 BASE 78K → 60.1K (-22.9%) sıkıştırma: render taşıma + tarihsel ref temizlik + 38K compress + composer match fix** · 388/388 PASS · production CANLI (live log -%20)
+> **Öğle 15:00 güncellemesi:** 25.40z3-MIMARI — V3 sonrası 6 mimari iyileştirme · "tek beyin" prensibi korundu
 > **Öğle 14:15 güncellemesi:** 25.40z3-FIX — V3 PRODUCTION + Claude path 3 enrichment eksigi kapatildi (Wiki + HANDOFF tracking + Footer) · 363/363 test PASS
 > **Sabah 07:30 güncellemesi:** 25.40z3 PRODUCTION DEPLOY — V3 Modüler Prompt + Hierarchical Cache_Control TÜM KULLANICILARDA CANLI · 354/354 production gate test PASS · Cache HIT %100 ölçüldü
 > **Önceki güncelleme:** 3 Mayıs 2026, Oturum 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
@@ -56,6 +57,7 @@
 | **25.40z3** | **PROMPT V3 — Modüler parsing + Hierarchical cache_control** (3 modül extract: pedagoji+render+db_schema, composer_v3, koşullu yükleme, BASE+extras+dynamic = 3 cache breakpoint) | `5607e41` | **354/354 PASS, V3 production CANLI tüm kullanıcılarda, Cache HIT %100 ölçüldü** |
 | **25.40z3-FIX** | **Claude path 3 enrichment eksigi kapatildi** (Bot 4 May 10:48 tespit) — Wiki injection + HANDOFF tracking + Enrichment footer (Cerebras paritesi, Claude %72.6 trafik) | `3bd4eb3` | **19 yeni test + 363/363 regression PASS** |
 | **25.40z3-MIMARI** | **6 mimari iyileştirme** (Neo "yazılım mühendisi gibi sistemi bütün incele" direktifi) — role_prompt V3 enable iken SKIP + db_schema_cache duplicate önleme + tier sistemi V3-aware (LIGHT/NORMAL ezme bug) + intent erken inference (admin_action db_schema tetikler) + stream/sync helper consolidation + composer.py V1 dead code sil | `4c08488` | **25 yeni test + 388/388 toplam PASS, "tek beyin" mimari** |
+| **25.40z3-SHRINK** | **V3 BASE 78K → 60.1K (-22.9%)** (Neo "Cerebras 12.7K, Claude 78K, neden?" direktifi) — Render 4 bölümü (~6.8K) modüle taşı + 21 tarihsel ref temizle (~3K) + 38K bölüm compress (~5.9K) + composer block match fix (whitespace varyant) + db_schema sync | `9b8cdf6` | **388/388 regression PASS, live log -20% (90K→72K)** |
 
 ---
 
@@ -412,6 +414,45 @@ Anthropic API max 4 cache breakpoint kuralına göre stratejik bölme:
 | `test_cache_control_v3.py` | 41 | ✅ |
 | `test_prompt_v3_full.py` | 70 | ✅ |
 | **TOPLAM** | **388** | **388/388** |
+
+### 🗜️ 25.40z3-SHRINK — BASE Şişme Temizliği (4 May 2026, öğle 16:30)
+
+**Neo direktifi:** "Cerebras 18K iken Claude 78K ihtiyaç duyuyor — kendini tekrarlayan veya gereksiz işlevsiz yer tutan kısımlar var mı? Tool kullanımı ayrı ama ana prompt neden bu kadar farklı?"
+
+**Cerebras-Claude karşılaştırma:**
+| Metric | Claude V3 BASE (önce) | Cerebras | Shrink sonrası | Hedef |
+|---|---|---|---|---|
+| Boyut | 78,310 char (19.5K tok) | 12,735 char | **60,145 char (15K tok)** | 4.7x fark (önce 6.1x) |
+| ASLA yasak | 55 kez | 14 kez | ~45 kez | (kompakt) |
+| Tarihsel ref | 21 kez | 0 kez | **0 kez** | ✅ |
+| Render kuralları | BASE içinde 5K | Yok | **Modüle taşındı** | ✅ |
+
+**5 ŞİŞME NOKTASI tespit + 4 fix:**
+
+| # | Sorun | Etki | Fix | Tasarruf |
+|---|-------|------|-----|----------|
+| 1 | Render 4 bölümü BASE'de kalmış (V3 extract bug) | WhatsApp'ta gereksiz yükleniyor | render_extended modüle taşındı | -6.8K |
+| 2 | 21 tarihsel referans ("Neo bug 25.X", "Oturum 25.Y") | Bot için anlamsız debug izi | Regex ile silindi (3 modül + system) | -3K |
+| 3 | 38K "ÖNCE TEXT SONRA TOOL" bölümü verbose | Aynı kural 4-5 yere yayılmış | Kompakt 4 satır + sadelik | -2.9K |
+| 4 | YKS konu dağılımı yıl yıl (2018-2025) | 8 yıl × 11 konu × birey madde | Ortalama tek satır + trend vurgu | -3K |
+| 5 | ASLA/YASAK 100x tekrar (ATLA - risk yüksek) | Aynı kural pek çok yer | Kontrol için bırakıldı | 0 |
+
+**Composer V3 güçlendirme:** Block replace whitespace tutarsızlığı için 4 varyant fallback (tam/rstrip/strip/lstrip) → tüm 3 modül %100 başarılı eşleşme.
+
+**Live production doğrulama:**
+- Önce: `[PROMPT_V3] base+db_schema = 90,298 char (2 cache blocks)`
+- Sonra: `[PROMPT_V3] base+db_schema = 72,278 char (2 cache blocks)` ← **-18K, -20%**
+
+**Cache/maliyet etki:**
+- BASE her cağride 5dk Anthropic ephemeral cache HIT
+- Cache write maliyeti: 1.25x → ~%23 az
+- Cache read maliyeti: 0.10x → ~%23 az
+- 100 mesaj/gün ≈ ~$0.50/gün tasarruf (sadece BASE alanı)
+
+**Cerebras farkı (4.7x) neden hala büyük?**
+- Claude tool kullanıyor → Cerebras kullanmıyor → tool akışı zorunlu (~25K)
+- Claude render kuralları (web kanalında modülde) → Cerebras render yok
+- Bu fark "tool zorunlu", optimize edilemez. Cerebras 18K → Claude min ~45K matematiği.
 
 
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)
