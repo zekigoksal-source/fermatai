@@ -113,6 +113,91 @@ ROLE_KEEP_OTHERS = {
 
 # ─── Ana Compose Fonksiyonu ─────────────────────────────────────────────────
 
+"""
+═══════════════════════════════════════════════════════════════════════
+FAZ 2 — Intent Bazlı Filtre (Kanal + Rol + Intent 3-katmanli)
+═══════════════════════════════════════════════════════════════════════
+
+INTENT_REMOVE_BLOCKS: belirli intent'lerde GEREKSIZ olan blokları sil.
+Örnek: 'selamlama' intent'inde renderer/SQL/MEB-detay gereksiz.
+
+Bu intent listesi cerebras_handler.py'daki INTENT_TO_MODEL ile uyumlu.
+"""
+
+# Intent → Hangi büyük blokların SILINEBILECEGI
+# 'always_keep' = bu intent'te bile silinmez (default)
+# 'safe_to_remove' = bu intent'te güvenle silinir
+INTENT_REMOVE_PROFILES = {
+    # KISA SOHBETLER — minimal prompt yeter
+    "selamlama":      ["renderer_detay", "sql_pattern", "meb_detay", "simulasyon", "compound", "pazarlama_kayitsiz"],
+    "veda":           ["renderer_detay", "sql_pattern", "meb_detay", "simulasyon", "compound", "pazarlama_kayitsiz"],
+    "tesekkur":       ["renderer_detay", "sql_pattern", "meb_detay", "simulasyon", "compound", "pazarlama_kayitsiz"],
+    "onay":           ["renderer_detay", "sql_pattern", "meb_detay", "simulasyon", "compound", "pazarlama_kayitsiz"],
+
+    # MOTIVASYON / DUYGU — pedagoji + duygu kalsın, render gereksiz
+    "motivasyon_destek":  ["renderer_detay", "sql_pattern", "meb_detay", "simulasyon", "compound"],
+    "duygu_paylasim":     ["renderer_detay", "sql_pattern", "meb_detay", "simulasyon", "compound"],
+
+    # KAVRAMSAL — render kalsın (chart/formula faydalı), SQL/finans gereksiz
+    "kavram_aciklama":    ["sql_pattern", "finans_detay", "pazarlama_kayitsiz"],
+    "ornek_iste":         ["sql_pattern", "finans_detay", "pazarlama_kayitsiz"],
+    "cozum_iste":         ["sql_pattern", "finans_detay", "pazarlama_kayitsiz"],
+    "ozet_iste":          ["sql_pattern", "finans_detay", "pazarlama_kayitsiz"],
+    "yontem_iste":        ["sql_pattern", "finans_detay", "pazarlama_kayitsiz"],
+
+    # ANALIZ — SQL pattern KALSIN (gerekli), render kalsın, MEB detay gereksiz
+    "analiz_iste":        ["meb_detay", "simulasyon", "pazarlama_kayitsiz"],
+    "deneme_analiz":      ["meb_detay", "simulasyon", "pazarlama_kayitsiz"],
+    "hedef_analiz":       ["meb_detay", "simulasyon", "pazarlama_kayitsiz"],
+    "plan_yap":           ["meb_detay", "simulasyon", "pazarlama_kayitsiz"],
+
+    # YENI NESIL ÜRETIM — MEB detay GEREKLI, SQL gereksiz
+    "yeni_nesil_uret":    ["sql_pattern", "finans_detay", "pazarlama_kayitsiz"],
+    "test_olusturma":     ["sql_pattern", "finans_detay", "pazarlama_kayitsiz"],
+    "soru_uret":          ["sql_pattern", "finans_detay", "pazarlama_kayitsiz"],
+
+    # YETENEK / META — minimal
+    "yetenek_sorgu":      ["renderer_detay", "sql_pattern", "meb_detay", "simulasyon", "compound", "pazarlama_kayitsiz"],
+    "meta_direktif":      ["renderer_detay", "sql_pattern", "meb_detay", "simulasyon", "compound", "pazarlama_kayitsiz"],
+
+    # YKS TAKVIM / SORU — minimal + veri
+    "yks_takvim":         ["renderer_detay", "sql_pattern", "meb_detay", "simulasyon", "compound", "pazarlama_kayitsiz"],
+    "soru_iste":          ["sql_pattern", "meb_detay", "simulasyon", "compound", "pazarlama_kayitsiz"],
+}
+
+# Blok ID → Pattern (mevcut SYSTEM_PROMPT'taki büyük blokları match eden regex)
+INTENT_BLOCK_PATTERNS = {
+    "renderer_detay": [
+        r"SORUN: 28 renderer mevcut.*?(?=\n═══|═════)",
+        r"Tetikleyici örnek: \"Ali Demir.*?(?=\n═══|═════)",
+    ],
+    "compound": [
+        r"Öğrenci profil \+ çalışma planı \+ analiz cevapları için ```compound ZORUNLU.*?(?=\n═══|═════)",
+    ],
+    "simulasyon": [
+        r"Compton sacılması simülasyonu.*?(?=\n═══|═════)",
+        r"Neo direktif: \"Simulasyon işlerinde MAX kapasite.*?(?=\n═══|═════)",
+    ],
+    "sql_pattern": [
+        # SQL şema ve pattern bölümü (sadece admin/müdür/rehber kullanır)
+        r"### students \(\d+ satır\) — ÖĞRENCİ MASTER.*?(?=\n### 📐|\n### 🚫|\n## )",
+        r"### 📐 SIKCA KULLANILAN SQL PATTERN.*?(?=\n### 🚫|\n## )",
+    ],
+    "meb_detay": [
+        # MEB Maarif uzun detay - sadece soru/test üretimi intent'inde gerekli
+        r"MEB Maarif yeni nesil örnek paketleri çek:.*?(?=\n═══|═════)",
+    ],
+    "finans_detay": [
+        # Finans red kuralı KISA korunur, ama uzun açıklama opsiyonel
+        # Şimdilik dokunmayalım — finans güvenlik kritik
+    ],
+    "pazarlama_kayitsiz": [
+        # Kayıtsız modu — sadece kayıtsız kullanıcı için
+        r"KAYITSIZ NUMARA \(DIS DUNYA — PAZARLAMA MODU\):.*?(?=\nYETKİ VE ROL|\n═══)",
+    ],
+}
+
+
 def build_prompt_v2(
     role: str = "ogrenci",
     intent: Optional[str] = None,
@@ -206,12 +291,30 @@ def build_prompt_v2(
             except Exception as e:
                 logger.debug(f"[PROMPT_V2] channel filter skip {label}: {e}")
 
+    # Adım 3 (FAZ 2): Intent bazlı filtre
+    # Intent biliniyorsa o intent için GEREKSIZ büyük blokları sil
+    if intent and intent in INTENT_REMOVE_PROFILES:
+        removable_block_ids = INTENT_REMOVE_PROFILES[intent]
+        for block_id in removable_block_ids:
+            patterns = INTENT_BLOCK_PATTERNS.get(block_id, [])
+            for pattern in patterns:
+                try:
+                    match = re.search(pattern, prompt_v2, re.MULTILINE | re.DOTALL)
+                    if match:
+                        block_text = match.group(0)
+                        if _is_safe_to_remove(block_text):
+                            prompt_v2 = prompt_v2.replace(block_text, "")
+                            removed_blocks.append(f"intent-{intent}:{block_id}({len(block_text)})")
+                except Exception as e:
+                    logger.debug(f"[PROMPT_V2] intent filter skip {block_id}: {e}")
+
     info["v2_active"] = True
     info["new_size"] = len(prompt_v2)
     info["removed_blocks"] = removed_blocks
     info["reduction_pct"] = round(
         (info["original_size"] - info["new_size"]) / info["original_size"] * 100, 1
     )
+    info["intent"] = intent
 
     return prompt_v2, info
 

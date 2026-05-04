@@ -4320,19 +4320,23 @@ class FermatCoreAgent:
             logger.debug(f"role_prompt fallback: {_rp_e}")
             _role_aware_prompt = SYSTEM_PROMPT
 
-        # 25.40z2 — V2 zincir: kanal bazli ek filtre (Neo Mind Road direktif)
+        # 25.40z2 — V2 zincir: kanal + rol + intent 3-katmanli filtre
         # role_prompt cikti basina BUYUK render bloklari da silinir (WhatsApp'ta)
+        # Faz 2: intent biliniyorsa (örn 'selamlama') intent-spesifik bloklar da silinir
         # Feature flag PROMPT_V2_ENABLED kontrol — default OFF (no-op).
         try:
             from prompt_router import build_prompt_v2 as _bv2
             _channel = getattr(self, "_channel", "whatsapp")
+            _intent_for_v2 = locals().get("_intent") or None
             _v2_prompt, _v2_info = _bv2(
-                role=role, phone=caller_phone, channel=_channel,
+                role=role, intent=_intent_for_v2,
+                phone=caller_phone, channel=_channel,
                 base_prompt=_role_aware_prompt,
             )
             if _v2_info.get("v2_active"):
                 logger.info(f"  [PROMPT_V2] {_v2_info['original_size']}→{_v2_info['new_size']} char "
-                            f"(-{_v2_info.get('reduction_pct', 0)}%) blocks={_v2_info['removed_blocks']}")
+                            f"(-{_v2_info.get('reduction_pct', 0)}%) intent={_intent_for_v2} "
+                            f"blocks={len(_v2_info['removed_blocks'])}")
                 _role_aware_prompt = _v2_prompt
         except Exception as _v2e:
             logger.debug(f"prompt_router v2 fallback: {_v2e}")
