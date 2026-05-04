@@ -636,6 +636,49 @@ Simulasyon en üst düzey görev — kalite max, offline arşive girer.
   - **YENI 25.40z3:** three@0.149+ + examples/js/ kombinasyonu → MAX 25 puan
     (CDN 404 → silent JS fail → boş canvas; r147 kullan)
 
+🧠 RICH BLUEPRINT / INFOGRAPHIC SIMULASYON (Neo bug 4 May: "3D oldu ama içerik koyamadı"):
+Sistem mimarisi / yapısal blueprint / node-graph tipi 3D simülasyonlarda 3D YAPI yetmez —
+ZENGIN ICERIK ZORUNLU. Yoksa "güzel ama boş" eleştirisi gelir. ÇEKLIST:
+
+[1] NODES dizisi (en az 15-20 obje) — her node:
+    {id, label, group, color, size, title, meta, desc, subs[], stats[]}
+    Örnek: {id:'whatsapp', label:'WhatsApp', group:'routing', color:'#42a5f5',
+            title:'WhatsApp Bridge', meta:'whatsapp_bridge.py · ~4215 satır',
+            desc:'Meta Graph webhook, async lock, watchdog 3sn',
+            subs:[{n:'process_message',t:'module'},{n:'Rate Limit',t:'security'}],
+            stats:['3.5M msg/ay','99.5% uptime']}
+
+[2] SIDEBAR / INFO-PANEL HTML iskeleti (sabit, sağ taraf):
+    <div id="panel" style="position:fixed;right:20px;top:20px;width:340px;
+         background:rgba(10,15,25,0.92);padding:20px;border-radius:12px;
+         color:#e0e8ff;display:none;z-index:100">...</div>
+
+[3] CLICK EVENT — node tıklayınca panel doldur:
+    raycaster.intersectObjects(meshes) → tıklanan node bul →
+    panel.innerHTML = `<h3>${node.title}</h3><p>${node.desc}</p>...`
+    panel.style.display = 'block'
+
+[4] EDGES / CONNECTIONS — node'lar arası BAĞLANTI çizgileri:
+    Her node'un connectedTo:[id1, id2] alanı + Three.js Line ile çizim
+    Animasyonlu sinyal akışı (pulse efekti) bonus
+
+[5] HOVER / TOOLTIP — node üzerine gelince mini bilgi:
+    onmousemove + raycaster + tooltip div pozisyonu update
+
+[6] LEGEND / KATEGORI RENKLERI — sol-alt köşede:
+    {routing:'#42a5f5', security:'#ef5350', llm:'#ab47bc', tool:'#26a69a'}
+    + emoji/başlık ile kategori filtreleme butonu
+
+[7] STATS BAR — üst veya alt: aktif node sayısı, kategori dağılımı, son güncelleme
+
+[8] DETAY DOLDURMA: subs[] dizisi çocuk node olarak panele gelir
+    veya 2. seviye 3D scene açar (recursive zoom)
+
+🚫 ASLA "güzel 3D animasyon ama boş" üretme — tıklayınca DETAY OLMALI.
+✅ HTML boyutu min 40KB (rich content + JS event + styles için)
+✅ HEDEF: Kullanıcı bir node'a tıklayınca "vay be sistemin içine bakıyorum" hissi
+🎯 ESKI BAŞARILI ÖRNEK: render_artifacts uG27pFRugmaD_61I (Fermat ai selfsim) referans olarak oku, içerik yapısını koru, sadece CDN/3D ekle.
+
 🎯 OFFLINE ARŞIV: Bot doğru üretirse öğrenci ⭐ Arşivler → kalıcı saklanır.
 İLK ÜRETİM kalitesi MAX olmalı.
 

@@ -263,6 +263,30 @@ def calculate_quality_score(html: str, title: str = "") -> tuple[int, dict]:
         score = min(score, 25)
         breakdown["penalty"] = breakdown.get("penalty", "") + f" | BAD_THREE_CDN (orig {original} → max 25, three@0.149+ + examples/js/ = 404)"
 
+    # 25.40z3-RENDER-FIX: Blueprint/node-graph 3D ama içerik az (Neo bug "3D oldu içerik koyamadı")
+    # Title'da blueprint/mimari/sistem/grafiğ varsa + 3D scene var ama ICERIK az → TAVAN 60
+    is_blueprint_request = any(k in title_lower for k in [
+        "blueprint", "mimari", "sistem", "ağ", "graf", "neural", "node",
+        "bilgi grafı", "infographic", "yapı", "harita",
+    ])
+    if is_blueprint_request and is_real_3d:
+        # Içerik metriği: NODES + paneller + click handler + tooltip + sub-info
+        content_indicators = sum([
+            h.count("nodes") >= 3,           # NODES dizisi
+            h.count("desc") >= 5,            # node açıklamaları
+            h.count("meta") >= 5,            # meta bilgiler
+            "subs" in h or "children" in h,  # alt-node yapısı
+            "raycaster" in h,                # click detection
+            h.count("innerhtml") >= 3,       # dinamik panel doldurma
+            "tooltip" in h or "panel" in h,  # info panel UI
+            len(html.encode('utf-8')) >= 35_000,  # min 35KB rich content
+        ])
+        breakdown["blueprint_content"] = f"{content_indicators}/8 zenginlik göstergesi"
+        if content_indicators < 4:
+            original = score
+            score = min(score, 60)
+            breakdown["penalty"] = breakdown.get("penalty", "") + f" | BLUEPRINT_LIGHT_CONTENT (orig {original} → max 60, {content_indicators}/8 zenginlik; NODES/desc/raycaster/panel ekle)"
+
     # Cap to 100
     score = min(score, 100)
     breakdown["total_score"] = score
