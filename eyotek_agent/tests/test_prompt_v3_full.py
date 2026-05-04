@@ -81,12 +81,13 @@ def test_modul_yukleme_strateji():
 
     cases = [
         # (role, intent, channel, expected_modules_subset)
+        # 25.40z3 LOOP2: admin/mudur/ogretmen pedagoji SADECE pedagoji-intent'lerinde
         ("ogrenci", "selamlama", "whatsapp", ["base", "pedagoji"]),
         ("ogrenci", "kavram_aciklama", "web", ["base", "pedagoji", "render"]),
         ("ogretmen", "selamlama", "whatsapp", ["base"]),  # öğretmen sadece BASE
-        ("mudur", "analiz_iste", "whatsapp", ["base", "pedagoji", "db_schema"]),
+        ("mudur", "analiz_iste", "whatsapp", ["base", "db_schema"]),  # analiz pedagoji-intent değil
         ("admin", "kavram_aciklama", "web", ["base", "pedagoji", "render"]),
-        ("admin", "selamlama", "whatsapp", ["base", "pedagoji"]),
+        ("admin", "selamlama", "whatsapp", ["base"]),  # selamlama pedagoji-intent değil
     ]
     for role, intent, channel, expected in cases:
         text, info = build_prompt_v3(role, intent, channel)
