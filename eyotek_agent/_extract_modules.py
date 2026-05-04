@@ -10,7 +10,9 @@ with open('system_prompts.py', 'r', encoding='utf-8') as f:
     lines = f.readlines()
 
 modules = {
-    'pedagoji_extended':  (298, 1234, 'PEDAGOJI EXTENDED — calisma plani, pazarlama, yeni nesil, veri tutarlilik'),
+    # FIX 25.40z3 LOOP1: pedagoji daraltildi (298-528 ARASI BASE'de kalmali — yetki+KVKK+rol)
+    # Sadece pedagojik ton + plan protokolu + yeni nesil + tutarlilik kalsin (530-1234)
+    'pedagoji_extended':  (530, 1234, 'PEDAGOJI — calisma plani, pedagojik ton, yeni nesil, veri tutarlilik (yetki+KVKK BASE\'de)'),
     'render_extended':    (1236, 1790, 'RENDER EXTENDED — chart/3d/sim/compound/compton/renderer'),
     'db_schema_extended': (2696, 2945, 'DB SCHEMA EXTENDED — students/exams pattern + SQL'),
 }
