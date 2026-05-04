@@ -816,24 +816,43 @@ def is_short_ambiguous(message: str) -> bool:
     """Mesaj kısa ve bağlam gerektiren belirsiz bir takip sorusu mu?
 
     Örnek: "yazar mısın", "evet", "olur", "tamam", "peki", "ya", "bak", "öyle mi"
+
+    25.41 (Neo bug 5 May 23:40): "bu/şu/o" referans zamiri ile başlayan kısa
+    mesajlar EKLENDİ (Neo "bu problemi düzeltmiştik" → bot "yeni konuşma
+    başladı" dedi). 50 char threshold + referans zamiri pattern'ı.
     """
     if not message:
         return False
     msg = message.strip().lower()
-    if len(msg) > 25:  # uzun mesaj bağlam gerektirse bile kendi başına anlamlı
-        return False
     import re
-    _short_ambiguous_patterns = [
-        r"^(evet|olur|tamam|ok|peki|hadi|anladım|anladim|öyle|oyle|tabii|elbette)[.!?\s]*$",
-        r"^yazar\s*m[iı]s[iı]n[.!?\s]*$",
-        r"^(ne|nasıl|nası|nasıl\s*olur|neyi|nereyi)[.!?\s]*$",
-        r"^(ya|bak|hmm|yani|o\s*zaman)[.!?\s]*$",
-        r"^(devam|continue|go)[.!?\s]*$",
-        r"^(daha|başka|baska|farklı)[.!?\s]*$",
-    ]
-    for pat in _short_ambiguous_patterns:
-        if re.match(pat, msg):
-            return True
+
+    # Kısa belirsiz mesajlar (25 char altı)
+    if len(msg) <= 25:
+        _short_ambiguous_patterns = [
+            r"^(evet|olur|tamam|ok|peki|hadi|anladım|anladim|öyle|oyle|tabii|elbette)[.!?\s]*$",
+            r"^yazar\s*m[iı]s[iı]n[.!?\s]*$",
+            r"^(ne|nasıl|nası|nasıl\s*olur|neyi|nereyi)[.!?\s]*$",
+            r"^(ya|bak|hmm|yani|o\s*zaman)[.!?\s]*$",
+            r"^(devam|continue|go)[.!?\s]*$",
+            r"^(daha|başka|baska|farklı)[.!?\s]*$",
+        ]
+        for pat in _short_ambiguous_patterns:
+            if re.match(pat, msg):
+                return True
+
+    # 25.41 Neo bug fix: "bu/şu/o + dediğin/önerin/sıkıntı..." referans mesajı
+    # 50 char altında ise muhtemelen son cevaba refer ediyor → Claude bağlam okusun
+    if len(msg) <= 50:
+        _reference_patterns = [
+            r"^(bu|şu|o|onu|bunu|şunu)\s+(dediğin|dedigin|söylediğin|soyledigin|"
+            r"önerdiğin|onerdigin|bahsettiğin|bahsettigin|gösterdiğin|gosterdigin|"
+            r"problem|sorun|sıkıntı|sikinti|öneri|oneri|durum|konu|şey|sey|cevap)",
+            r"^(bunu|şunu|onu)\s+(yap|söyle|soyle|göster|goster|aç|ac|kapat|sil|ekle)",
+        ]
+        for pat in _reference_patterns:
+            if re.search(pat, msg):
+                return True
+
     return False
 
 

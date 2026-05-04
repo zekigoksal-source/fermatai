@@ -3274,19 +3274,31 @@ async def try_fast_response(
 
     # ══════════════════════════════════════════════════════════════════════
     # CONTEXT BRIDGE (23 Nisan — Enes "yazar mısın" vakası)
-    # Kısa/belirsiz follow-up ("yazar mısın", "evet", "devam") geldiğinde
-    # ve son bot cevabı REDDETMIŞ/SORMUŞ/TEKLİF ETMİŞ ise → Claude'a bırak.
-    # fast_response onboarding menüsü açmasın (context kaybı önle).
+    # 25.41 (Neo bug 5 May): TÜM ROLLER + referans zamiri pattern'i eklendi
+    # Kısa/belirsiz follow-up ("yazar mısın", "evet", "bu problemi", "şu öneri")
+    # geldiğinde fast response yerine Claude'a bırak (bağlamı çözsün).
     # ══════════════════════════════════════════════════════════════════════
-    if role == "ogrenci" and caller_phone:
+    if caller_phone and role in ("ogrenci", "admin", "mudur", "rehber", "ogretmen", "yonetim"):
         try:
             from conversation_memory import is_short_ambiguous, get_last_bot_response
             if is_short_ambiguous(message):
                 last_bot = await get_last_bot_response(caller_phone, max_age_minutes=10)
-                if last_bot and (last_bot["is_reject"] or last_bot["is_question"] or last_bot["is_offer"]):
+                # 25.41: referans zamiri varsa (bu/şu/o + dediğin/öneri/sorun)
+                # son bot cevabı varsa MUTLAKA Claude'a yönlendir (reject/question/offer
+                # şartı kaldırıldı — bağlam-bağımlı her mesaj Claude'da çözülmeli)
+                import re as _re_ctx
+                _has_ref = bool(_re_ctx.search(
+                    r"^(bu|şu|o|onu|bunu|şunu)\s+(dediğin|dedigin|söylediğin|"
+                    r"soyledigin|önerdiğin|onerdigin|bahsettiğin|bahsettigin|"
+                    r"problem|sorun|sıkıntı|sikinti|öneri|oneri|durum|konu|şey|sey|cevap)",
+                    message.strip().lower()
+                ))
+                if last_bot and (_has_ref or last_bot["is_reject"]
+                                 or last_bot["is_question"] or last_bot["is_offer"]):
                     import logging
                     logging.getLogger(__name__).info(
-                        f"[CONTEXT_BRIDGE] phone={caller_phone[-4:]} short+follow-up — Claude'a"
+                        f"[CONTEXT_BRIDGE] phone={caller_phone[-4:]} role={role} "
+                        f"short+follow-up{'(REF)' if _has_ref else ''} — Claude'a"
                     )
                     return None
         except Exception:

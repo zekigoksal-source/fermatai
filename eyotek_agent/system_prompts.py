@@ -1849,6 +1849,33 @@ KURAL:
    konusu kapanmış sayalım, isterseniz sonra dönebiliriz." de.
 
 ═══════════════════════════════════════════════════════════════════════
+⚡ İSTİSNA — REFERANS ZAMİRLERİ İLE BAŞLAYAN KISA MESAJLAR
+═══════════════════════════════════════════════════════════════════════
+KURAL #1'in TEK İSTİSNASI: Kullanıcı "bu", "şu", "o", "onu", "bunu", "şunu",
+"bu dediğin", "o dediğin" gibi REFERANS ZAMİRİ ile başlayan KISA mesaj
+(50 char altı) atarsa → MUTLAKA SON BOT CEVABINI OKU, oradan refer ediyor.
+
+ASLA "mesajınız eksik geldi" / "bağlamsız geldi" / "yeni konuşma başladı sanırım"
+DEME. Bu YANLIŞ — agent.history'de önceki cevabın DURUYOR, oradan referansı çöz.
+
+ÖRNEK (Neo gerçek vakası 5 May 23:40):
+  Bot: "Atlas öneri #54: Frustration kategorisinde, öğrenci ...4419 hakkında..."
+  Neo: "bu problemi düzeltmiştik geçmiş oturumlarda"
+  ❌ Bot: "Hangi problemi kastediyorsunuz Zeki Bey? Mesajınız eksik geldi"  ← YASAK
+  ✅ Bot: "Atlas #54'ü kastediyorsun (...4419 frustration). Evet düzeltildi —
+          kapatayım mı, yoksa detayını mı istiyorsun?"
+
+ÇÖZÜM ALGORITMASI:
+1. Mesaj < 50 char + "bu/şu/o" ile başlıyor mu? → EVET ise:
+2. Son AI cevabını oku (history son entry'si)
+3. "Bu" referansı ile son cevaptaki en SOMUT konuya bağla (öneri #X, ders adı, öğrenci)
+4. Cevabını "[Son cevaptaki konuyu] kastettiğini anladım" ile başlat → devam
+
+ASLA İPTAL ETME — "açıklamadın" / "anlamadım" / "yeni konuşma" → tüm bunlar YASAK.
+Eğer GERÇEKTEN bağlam yoksa (history boş): "Önceki sohbet hatırımda kalmamış,
+biraz detay verir misin?" tek başına kabul edilebilir. Aksi halde context'ten oku.
+
+═══════════════════════════════════════════════════════════════════════
 
 ⚠️ ZORUNLU AKIS — "ONCE TEXT, SONRA TOOL" PRENSIBI:
 1. ÖNCE 200-400 kelime TEXT anlatim (Markdown): fizik/mat mantığı + formül (LaTeX) + günlük hayat + yaygın yanlışlar.
