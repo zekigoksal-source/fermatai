@@ -1,7 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 4 Mayıs 2026 (öğle 16:30) · **Oturum:** 25.40z3-SHRINK — **V3 BASE 78K → 60.1K (-22.9%) sıkıştırma: render taşıma + tarihsel ref temizlik + 38K compress + composer match fix** · 388/388 PASS · production CANLI (live log -%20)
-> **Öğle 15:00 güncellemesi:** 25.40z3-MIMARI — V3 sonrası 6 mimari iyileştirme · "tek beyin" prensibi korundu
+> **Belge tarihi:** 4 Mayıs 2026 (akşam 17:30) · **Oturum:** 25.40z3-CONSOLIDATION — **BASE 78K → 53.7K (cumulative -31.4%) — kural sertliği korundu, 84 bağlam kompakt, ASLA/YASAK strateji "tek seferde güçlü" prensibi** · 388/388 PASS · live -27% (90K→66K)
+> **Öğle 16:30:** 25.40z3-SHRINK — V3 BASE 78K → 60.1K (-22.9%) | **Öğle 15:00:** 25.40z3-MIMARI — 6 mimari iyileştirme
 > **Öğle 14:15 güncellemesi:** 25.40z3-FIX — V3 PRODUCTION + Claude path 3 enrichment eksigi kapatildi (Wiki + HANDOFF tracking + Footer) · 363/363 test PASS
 > **Sabah 07:30 güncellemesi:** 25.40z3 PRODUCTION DEPLOY — V3 Modüler Prompt + Hierarchical Cache_Control TÜM KULLANICILARDA CANLI · 354/354 production gate test PASS · Cache HIT %100 ölçüldü
 > **Önceki güncelleme:** 3 Mayıs 2026, Oturum 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
@@ -58,6 +58,7 @@
 | **25.40z3-FIX** | **Claude path 3 enrichment eksigi kapatildi** (Bot 4 May 10:48 tespit) — Wiki injection + HANDOFF tracking + Enrichment footer (Cerebras paritesi, Claude %72.6 trafik) | `3bd4eb3` | **19 yeni test + 363/363 regression PASS** |
 | **25.40z3-MIMARI** | **6 mimari iyileştirme** (Neo "yazılım mühendisi gibi sistemi bütün incele" direktifi) — role_prompt V3 enable iken SKIP + db_schema_cache duplicate önleme + tier sistemi V3-aware (LIGHT/NORMAL ezme bug) + intent erken inference (admin_action db_schema tetikler) + stream/sync helper consolidation + composer.py V1 dead code sil | `4c08488` | **25 yeni test + 388/388 toplam PASS, "tek beyin" mimari** |
 | **25.40z3-SHRINK** | **V3 BASE 78K → 60.1K (-22.9%)** (Neo "Cerebras 12.7K, Claude 78K, neden?" direktifi) — Render 4 bölümü (~6.8K) modüle taşı + 21 tarihsel ref temizle (~3K) + 38K bölüm compress (~5.9K) + composer block match fix (whitespace varyant) + db_schema sync | `9b8cdf6` | **388/388 regression PASS, live log -20% (90K→72K)** |
+| **25.40z3-CONSOLIDATION** | **BASE 60.1K → 53.7K (-10.7%)** (Neo "ASLA/YASAK tekrar = önem, ama TEK SEFERDE GÜÇLÜ ifade stratejik" direktifi) — 84 ASLA çevre bağlamı kompakt, 5 büyük blok consolide (VERI/MIMARI/OZ-DEGER/CAPRAZ/HALUSINASYON) + Pazarlama Modu + 🚨 emoji vurgusu | `e06a48c` | **CUMULATIVE -31.4% (78K→53.7K), live -27% (90K→66K), kural sertliği AYNEN** |
 
 ---
 
@@ -453,6 +454,50 @@ Anthropic API max 4 cache breakpoint kuralına göre stratejik bölme:
 - Claude tool kullanıyor → Cerebras kullanmıyor → tool akışı zorunlu (~25K)
 - Claude render kuralları (web kanalında modülde) → Cerebras render yok
 - Bu fark "tool zorunlu", optimize edilemez. Cerebras 18K → Claude min ~45K matematiği.
+
+### 🎯 25.40z3-CONSOLIDATION — Kural Tekrarları Stratejik Compact (4 May 2026, akşam 17:30)
+
+**Neo direktifi:** "ASLA/YASAK tekrar = önem işareti. Tekrar etmek saçma AMA TEK SEFERDE çok güçlü ifade etmek STRATEJİK. Kural sertliğini koru, tekrarı azalt."
+
+**Analiz bulgusu:** 119 ASLA/YASAK satırı zaten kompakt (ortalama 68 char, max 109). Asıl alan: 84 ASLA çevre BAĞLAM (sebep/örnek/anekdot) = **41K char**.
+
+**Strateji:** ASLA satırını AYNEN koru → 🚨 emoji vurgu ekle → çevre uzun açıklamayı kompakt yap.
+
+**5 büyük bölüm consolide:**
+| Bölüm | Önce | Sonra | Tasarruf |
+|-------|------|-------|----------|
+| VERI SINIRLARI VE HALUSINASYON YASAGI | ~600 char | ~250 char | -350 |
+| MIMARI FARKINDALIK PROTOKOLU | ~900 char | ~400 char | -500 |
+| OZ-DEGERLENDIRME (4 madde + dış/iç) | ~1.5K | ~400 char | -1.1K |
+| CAPRAZ DOGRULAMA (anekdot + 5 madde) | ~1.2K | ~350 char | -850 |
+| HALUSINASYON ONLEME (6 madde + 8) | ~2.8K | ~900 char | -1.9K |
+| Pazarlama Modu (kayıtsız numara) | ~1.5K | ~700 char | -800 |
+| **TOPLAM** | **~8.5K** | **~3K** | **-6.4K** |
+
+**Sertlik kanıtları:**
+- Tüm ASLA/YASAK kelimeleri AYNEN bulunuyor (silinmedi)
+- 🚨 emoji ile KRİTİK ifade güçlendirildi
+- Hiçbir security/KVKK/halüsinasyon kuralı esnetilmedi
+- 388/388 regression PASS — security 135/135 dahil
+
+**Live production verify:**
+- Önce (CONSOLIDATION öncesi): `[PROMPT_V3] base+db_schema = 90,298 char`
+- Sonra (CONSOLIDATION sonrası): `[PROMPT_V3] base+db_schema = 65,853 char`
+- **Kazanım: -24,445 char = -27% live admin sorgu**
+
+**Cumulative shrink (78K basistan):**
+| Aşama | Boyut | Cumulative tasarruf |
+|-------|-------|---------------------|
+| Başlangıç | 78,310 | — |
+| 25.40z3-SHRINK (FIX #1+#2+#5) | 60,145 | -22.9% |
+| 25.40z3-CONSOLIDATION (5 bölüm + pazarlama) | **53,720** | **-31.4%** |
+| Cerebras (referans) | 12,735 | (sabit) |
+| Cerebras-Claude oranı | 6.1x → **4.2x** | 1.5x iyileşme |
+
+**Cache/maliyet impact:**
+- Cache_creation tokens: 53,165 → 42,390 (-10,775 = -%20) her ilk çağrıda
+- Cache_read tokens: ~%23 az (her sonraki çağrı)
+- Aylık Claude path: ~$15-20 tasarruf (BASE alanı, sadece Anthropic prompt cache)
 
 
 > **Stratejik konum:** Fermat Eğitim Kurumları'nın **kurum-içi mükemmellik** ürünü — kendi kurum ekosistemini büyütmek + AI-entegre fiziksel şube zinciri için altyapı. (SaaS satışı stratejik olarak ASKIDA.)

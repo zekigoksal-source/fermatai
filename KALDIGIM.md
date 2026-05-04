@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, ÖĞLE 16:30 — **🎯 OTURUM 25.40z3-SHRINK: V3 BASE 78K → 60.1K (-22.9%) sıkıştırma — 4 şişme noktası temizlendi, 388/388 PASS, production CANLI (live log -%20)**
+> **Son güncelleme:** 4 Mayıs 2026, AKŞAM 17:30 — **🎯 OTURUM 25.40z3-CONSOLIDATION: BASE 78K → 53.7K (cumulative -31.4%) — kural tekrarlari kompakt, sertlik korundu, 388/388 PASS, live -27% (90K→66K)**
 
 ---
 
@@ -87,6 +87,13 @@
 | 68 | **BASE 78,310 → 60,145 char (-22.9%)** - Token: ~19,577 → ~15,036 (-4,541 ~%23) - Cerebras farkı 6.1x → 4.7x (tool-related zorunlu fark) | LIVE | 25.40z3-SHRINK |
 | 69 | **Live production log: `[PROMPT_V3] base+db_schema = 72,278 char`** (önce 90,298, **-18K = -20%**) - admin sorgu + db_schema modülü dahil | VERIFIED | 25.40z3-SHRINK |
 | 70 | **388/388 regression PASS + 9/10 quality LIVE** (Claude API gerçek yanıt, cache HIT %100, persona+pedagoji intact) | LIVE | 25.40z3-SHRINK |
+| 71 | **ASLA/YASAK consolidation analizi** — 119 satır × ortalama 68 char = 8K (kompakt zaten); ASIL alan: 84 ASLA çevre BAĞLAM = 41K (sebep/örnek/anekdot detay) | ANALIZ | 25.40z3-CONSOLIDATION |
+| 72 | **Neo direktifi: "Tekrar = önem işareti, ama TEK SEFERDE GÜÇLÜ ifade stratejik"** — ASLA satırları AYNEN korundu, 🚨 emoji vurgulandı, çevre uzun açıklamalar/anekdotlar kompakt yapıldı | UYGULANDI | 25.40z3-CONSOLIDATION |
+| 73 | **5 büyük bölüm kompakt** (sertlik korundu): VERI SINIRLARI + MIMARI FARKINDALIK + OZ-DEGERLENDIRME + CAPRAZ DOGRULAMA + HALUSINASYON ONLEME (6 madde) — toplam -6.4K char | LIVE | 25.40z3-CONSOLIDATION |
+| 74 | **Pazarlama Modu kompakt** (KAYITSIZ NUMARA bölümü) — 8 satır kural → 5 satır + tek paragraf TON — kuralın özü ve sertliği korundu | LIVE | 25.40z3-CONSOLIDATION |
+| 75 | **BASE 60,145 → 53,720 char** (-6,425 = -10.7%); **CUMULATIVE: 78,310 → 53,720 (-24,590 = -31.4%)**; cache_creation tokens 53,165 → 42,390 (-10,775 = -%20) | LIVE | 25.40z3-CONSOLIDATION |
+| 76 | **Live production log**: `[PROMPT_V3] base+db_schema = 65,853 char` (admin sorgu, önceki 90,298 → **-24K, -27%**); 388/388 regression PASS + cache HIT %100 + persona/pedagoji intact | VERIFIED | 25.40z3-CONSOLIDATION |
+| 77 | **Cerebras farkı 6.1x → 4.2x** (1.5x iyileşme, "tek beyin" mimari korundu) — kalan fark tool-related zorunlu | METRIK | 25.40z3-CONSOLIDATION |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
