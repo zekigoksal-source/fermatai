@@ -55,6 +55,77 @@ def _is_v2_enabled_for_phone(phone: str = "") -> bool:
     return False
 
 
+def _is_v3_enabled_for_phone(phone: str = "") -> bool:
+    """V3 modüler prompt + hierarchical cache aktif mi?
+
+    PROMPT_V3_ENABLED env değerleri (V2 ile aynı semantik):
+        "false" / "" → V3 KAPALI
+        "true"       → V3 herkes
+        "phones:..." → sadece listedeki
+    """
+    flag = (os.getenv("PROMPT_V3_ENABLED", "false") or "").strip().lower()
+    if not flag or flag in ("false", "0", "no"):
+        return False
+    if flag in ("true", "1", "yes", "all"):
+        return True
+    if flag.startswith("phones:"):
+        allowed = [p.strip() for p in flag[7:].split(",") if p.strip()]
+        return bool(phone and phone.strip() in allowed)
+    return False
+
+
+def build_prompt_v3(
+    role: str = "ogrenci",
+    intent: Optional[str] = None,
+    channel: str = "whatsapp",
+    phone: str = "",
+    force_v3: bool = False,
+    return_blocks: bool = False,
+) -> tuple:
+    """V3 modüler prompt + cache_control hierarchical.
+
+    Kullanım:
+        # String (V2 uyumlu):
+        text, info = build_prompt_v3(role='ogrenci', intent='kavram_aciklama')
+
+        # Anthropic API hierarchical (cache_control destekli):
+        blocks, info = build_prompt_v3(role='ogrenci', return_blocks=True)
+        # blocks → messages.create(system=blocks)
+    """
+    if not force_v3 and not _is_v3_enabled_for_phone(phone):
+        # V3 kapalı — V2'ye düş
+        text, info = build_prompt_v2(
+            role=role, intent=intent, channel=channel, phone=phone,
+        )
+        info["v3_active"] = False
+        if return_blocks:
+            # V2 string → tek blok cache_control YOK formatı
+            return [{"type": "text", "text": text}], info
+        return text, info
+
+    # V3 aktif — composer_v3 kullan
+    try:
+        from prompt_modules.composer_v3 import build_prompt_v3 as _bv3
+        result, v3_info = _bv3(role=role, intent=intent, channel=channel, return_blocks=return_blocks)
+        info = {
+            "v2_active": False,
+            "v3_active": True,
+            "modules_loaded": v3_info.get("modules_loaded"),
+            "base_size": v3_info.get("base_size"),
+            "total_size": v3_info.get("total_size"),
+            "role": role, "intent": intent, "channel": channel,
+        }
+        return result, info
+    except Exception as e:
+        logger.warning(f"[PROMPT_V3] composer fail, V2'ye dönülüyor: {e}")
+        text, info = build_prompt_v2(role=role, intent=intent, channel=channel, phone=phone)
+        info["v3_active"] = False
+        info["v3_fallback_reason"] = str(e)[:200]
+        if return_blocks:
+            return [{"type": "text", "text": text}], info
+        return text, info
+
+
 # ─── Rol Blok Marker'ları (mevcut SYSTEM_PROMPT yapısına göre) ───────────────
 
 # Her rolün kendine ait yetki/yasak bloğunun BAŞ ve SON çapaları.

@@ -4325,21 +4325,36 @@ class FermatCoreAgent:
         # Faz 2: intent biliniyorsa (örn 'selamlama') intent-spesifik bloklar da silinir
         # Feature flag PROMPT_V2_ENABLED kontrol — default OFF (no-op).
         try:
-            from prompt_router import build_prompt_v2 as _bv2
+            from prompt_router import build_prompt_v2 as _bv2, _is_v3_enabled_for_phone
             _channel = getattr(self, "_channel", "whatsapp")
             _intent_for_v2 = locals().get("_intent") or None
-            _v2_prompt, _v2_info = _bv2(
-                role=role, intent=_intent_for_v2,
-                phone=caller_phone, channel=_channel,
-                base_prompt=_role_aware_prompt,
-            )
-            if _v2_info.get("v2_active"):
-                logger.info(f"  [PROMPT_V2] {_v2_info['original_size']}→{_v2_info['new_size']} char "
-                            f"(-{_v2_info.get('reduction_pct', 0)}%) intent={_intent_for_v2} "
-                            f"blocks={len(_v2_info['removed_blocks'])}")
-                _role_aware_prompt = _v2_prompt
+
+            # 25.40z3 Faz 3: V3 modüler prompt aktif mi?
+            if _is_v3_enabled_for_phone(caller_phone):
+                # V3 yolu — modüler compose, cache_control hazırlıklı
+                from prompt_router import build_prompt_v3 as _bv3
+                _v3_prompt, _v3_info = _bv3(
+                    role=role, intent=_intent_for_v2, channel=_channel,
+                    phone=caller_phone, force_v3=True,
+                )
+                if _v3_info.get("v3_active"):
+                    _role_aware_prompt = _v3_prompt
+                    logger.info(f"  [PROMPT_V3] base+{'+'.join(_v3_info['modules_loaded'][1:])} "
+                                f"= {_v3_info['total_size']:,} char")
+            else:
+                # V2 yolu (mevcut, kademe 1)
+                _v2_prompt, _v2_info = _bv2(
+                    role=role, intent=_intent_for_v2,
+                    phone=caller_phone, channel=_channel,
+                    base_prompt=_role_aware_prompt,
+                )
+                if _v2_info.get("v2_active"):
+                    logger.info(f"  [PROMPT_V2] {_v2_info['original_size']}→{_v2_info['new_size']} char "
+                                f"(-{_v2_info.get('reduction_pct', 0)}%) intent={_intent_for_v2} "
+                                f"blocks={len(_v2_info['removed_blocks'])}")
+                    _role_aware_prompt = _v2_prompt
         except Exception as _v2e:
-            logger.debug(f"prompt_router v2 fallback: {_v2e}")
+            logger.debug(f"prompt_router fallback: {_v2e}")
 
         # 22.1n-neo iş4: DB Schema cache — schema kesfi yapmasin
         # 1 saat TTL, ~1.4K token ekler ama 4-6 gereksiz query_analytics kaldirir
