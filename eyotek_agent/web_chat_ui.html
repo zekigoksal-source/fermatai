@@ -8928,7 +8928,9 @@ function renderArchiveItems(items) {
   wrap.innerHTML = "";
   const categoryLabels = {
     genel: "🔹", calisma_plani: "📅", deneme: "📊", konu_anlatimi: "📚",
-    analiz: "🔍", soru_cozum: "✏️", kaynak: "🔗", not: "📝"
+    analiz: "🔍", soru_cozum: "✏️", kaynak: "🔗", not: "📝",
+    // 25.40z3-ARSIV-MERGE: render arşivi için özel ikon
+    gorsel_simulasyon: "🎨", gorsel: "🎨", simulasyon: "🌟", "3d": "🎯"
   };
   if (!items.length) {
     wrap.innerHTML = '<div style="padding:30px 20px;text-align:center;color:var(--fg-muted);font-size:13px;">🔍 Eşleşme yok.</div>';
@@ -8952,23 +8954,36 @@ function renderArchiveItems(items) {
           ).join("") + '</div>';
       }
     }
+    // 25.40z3-ARSIV-MERGE: Render artifact (görsel/simülasyon) için özel render
+    const isRender = (a.type === "render" && a.render_url);
+    const qualityBadge = (isRender && a.quality_score)
+      ? `<span style="background:rgba(96,165,250,0.15);color:#3b82f6;padding:2px 6px;border-radius:8px;font-size:10px;margin-left:4px;">⭐${a.quality_score}</span>`
+      : "";
+    const renderActions = isRender
+      ? `<button style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:2px 6px;"
+                  onclick="event.stopPropagation();window.open('${a.render_url}','_blank','noopener')" title="Görseli aç">🔗</button>`
+      : `<button class="arch-pdf-btn" style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:2px 6px;"
+                  onclick="event.stopPropagation();downloadSingleArchivePdf(${a.id}, ${JSON.stringify(a.title || '').replace(/"/g, '&quot;')}, this)" title="Bu kaydı PDF indir">📄</button>`;
+
     div.innerHTML = `
-      <div class="date">${icon} ${escapeHtml(a.title)}</div>
+      <div class="date">${icon} ${escapeHtml(a.title)}${qualityBadge}</div>
       <div class="preview">${escapeHtml(a.preview.substring(0, 120))}...</div>
       ${tagsHtml}
       <div class="meta" style="display:flex;justify-content:space-between;align-items:center;">
         <span>${escapeHtml(dateStr)}</span>
         <div style="display:flex;gap:6px;">
-          <button class="arch-pdf-btn" style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:14px;padding:2px 6px;"
-                  onclick="event.stopPropagation();downloadSingleArchivePdf(${a.id}, ${JSON.stringify(a.title || '').replace(/"/g, '&quot;')}, this)" title="Bu kaydı PDF indir">📄</button>
-          <button style="background:transparent;border:none;color:var(--fg-muted);cursor:pointer;font-size:14px;padding:2px 6px;"
-                  onclick="event.stopPropagation();renameArchive(${a.id})" title="İsim/kategori değiştir">✏️</button>
-          <button style="background:transparent;border:none;color:var(--error);cursor:pointer;font-size:15px;padding:2px 6px;"
-                  onclick="event.stopPropagation();deleteArchive(${a.id}, this)" title="Kaldır">🗑</button>
+          ${renderActions}
+          ${isRender ? "" : `<button style="background:transparent;border:none;color:var(--fg-muted);cursor:pointer;font-size:14px;padding:2px 6px;"
+                  onclick="event.stopPropagation();renameArchive(${a.id})" title="İsim/kategori değiştir">✏️</button>`}
+          ${isRender ? "" : `<button style="background:transparent;border:none;color:var(--error);cursor:pointer;font-size:15px;padding:2px 6px;"
+                  onclick="event.stopPropagation();deleteArchive(${a.id}, this)" title="Kaldır">🗑</button>`}
         </div>
       </div>
     `;
-    div.onclick = () => showArchiveItem(a);
+    // Render type → tıklayınca yeni sekme aç (modal yerine)
+    div.onclick = isRender
+      ? () => window.open(a.render_url, "_blank", "noopener")
+      : () => showArchiveItem(a);
     wrap.appendChild(div);
   }
 }

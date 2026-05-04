@@ -601,7 +601,15 @@ async def list_archive(
     request: Request,
     fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
 ):
-    """Kullanıcının arşivlenmiş mesajlarını listele."""
+    """Kullanıcının arşivlenmiş mesajlarını listele.
+
+    25.40z3-ARSIV-MERGE: 2 ayrı arşiv kaynağını TEK liste olarak döndürür:
+    1. user_archive (mesaj arşivi: ⭐ ile arşivlenen bot cevapları)
+    2. render_artifacts (render arşivi: ⭐ ile arşivlenen HTML simülasyon/grafik)
+
+    Neo bug raporu (4 May 2026): Simülasyon arşivledi ama UI'da görünmedi
+    çünkü UI sadece user_archive (chat) çekiyordu, render artifacts ayrı yerdeydi.
+    """
     token = _extract_token(request, fermat_session)
     if not token:
         raise HTTPException(status_code=401, detail="Oturum yok")
@@ -611,23 +619,91 @@ async def list_archive(
 
     try:
         from db_pool import db_fetch
-        rows = await db_fetch(
+        phone = sess["phone"]
+        items = []
+
+        # 1. Mesaj arşivi (user_archive)
+        msg_rows = await db_fetch(
             "SELECT id, title, content, category, context_prompt, tags, created_at "
             "FROM user_archive WHERE phone=$1 ORDER BY created_at DESC LIMIT 100",
-            sess["phone"]
+            phone,
         )
-        items = []
-        for r in rows:
+        for r in msg_rows:
             items.append({
                 "id": r["id"],
+                "type": "message",  # 25.40z3-MERGE: hangi arşiv kaynağı
                 "title": r["title"],
                 "content": r["content"],
                 "category": r["category"],
                 "context_prompt": r["context_prompt"],
-                "tags": r.get("tags") or "",  # Oturum 23 Neo
+                "tags": r.get("tags") or "",
                 "created_at": r["created_at"].isoformat() if r["created_at"] else "",
                 "preview": (r["content"] or "")[:200],
             })
+
+        # 2. Render artifact arşivi (render_artifacts)
+        # Phone normalize: render_artifacts'da '+' olabilir, user_archive'de yok
+        phone_clean = phone.replace("+", "").replace(" ", "")[-20:]
+        try:
+            import os, json as _j
+            base = os.getenv("PUBLIC_BASE_URL", "https://api.fermategitimkurumlari.com").rstrip("/")
+            render_rows = await db_fetch(
+                """SELECT uuid, title, archived_at, archive_note, view_count,
+                          quality_score, creator_phone, archived_by_phone
+                   FROM render_artifacts
+                   WHERE archived = TRUE AND (
+                       archived_by_phone = $1 OR creator_phone = $1
+                       OR REPLACE(archived_by_phone, '+', '') = $1
+                       OR REPLACE(creator_phone, '+', '') = $1
+                   )
+                   ORDER BY archived_at DESC LIMIT 50""",
+                phone_clean,
+            )
+            for r in render_rows:
+                # archive_note JSON ise parse et (yeni format), değilse plain text
+                note_raw = r["archive_note"] or ""
+                category = ""
+                user_note = note_raw
+                tags = ""
+                if note_raw.startswith("{"):
+                    try:
+                        meta = _j.loads(note_raw)
+                        category = meta.get("category", "")
+                        user_note = meta.get("note", "") or ""
+                        if meta.get("name"):
+                            r_title = meta["name"]
+                        else:
+                            r_title = r["title"] or "Görsel"
+                    except Exception:
+                        r_title = r["title"] or "Görsel"
+                else:
+                    r_title = r["title"] or "Görsel"
+                # Görsel kategori default
+                if not category:
+                    category = "gorsel_simulasyon"
+
+                items.append({
+                    "id": f"render_{r['uuid']}",  # benzersiz prefix
+                    "type": "render",  # 25.40z3-MERGE
+                    "title": r_title,
+                    "content": user_note or f"Görsel: {r_title}",
+                    "category": category,
+                    "context_prompt": "",
+                    "tags": tags,
+                    "created_at": r["archived_at"].isoformat() if r["archived_at"] else "",
+                    "preview": user_note[:200] if user_note else f"Görsel: {r_title}",
+                    # Render-spesifik field'lar (UI bunları kullanabilir)
+                    "render_url": f"{base}/render/{r['uuid']}",
+                    "render_uuid": r["uuid"],
+                    "quality_score": r["quality_score"] or 0,
+                    "view_count": r["view_count"] or 0,
+                })
+        except Exception as _re:
+            logger.warning(f"Render archive merge fail (mesaj arşivi yine döner): {_re}")
+
+        # Tarihe göre sırala (en yeni üstte) — iki kaynak birleşince karışmasın
+        items.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+
         return {"success": True, "count": len(items), "items": items}
     except Exception as e:
         logger.error(f"Arşiv listeleme hatası: {e}")
