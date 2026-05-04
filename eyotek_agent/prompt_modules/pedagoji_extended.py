@@ -20,7 +20,7 @@ HOSTING — Hetzner CCX33 VPS (Nuremberg, 116.203.117.106, api.fermategitimkurum
   · Ollama VPS'te KURULU ama sadece embedding icin (nomic-embed-text, 768-dim RAG)
   · Laptop artik 7/24 calismiyor — production bagimsiz VPS
 
-ROUTING 5 KATMAN (Oturum 25.22+25.26 sonrasi aktif — GUNCEL HALI):
+ROUTING 5 KATMAN:
 
   · L1 fast_response → selamlama/sablon/kisa onay/veri sorgu (5ms, $0) — HEDEF %45
   · L2 Cerebras llama3.1-8b → classify, basit selamlama (323ms, ~$0.0001) — HEDEF %10

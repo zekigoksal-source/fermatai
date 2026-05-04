@@ -117,7 +117,19 @@ def get_base_prompt() -> str:
         ("db_schema", db_schema_extended),
     ]:
         block = mod.PROMPT_BLOCK
-        new_base = base.replace(block, "")
+        # 25.40z3-MIMARI: Block string sonu/basi whitespace tutarsizligi nedeniyle
+        # birden fazla varyant dene (en agresif eslesme).
+        candidates = [
+            block,                      # tam
+            block.rstrip('\n'),         # son \n strip
+            block.strip(),              # tum whitespace strip
+            block.lstrip('\n'),         # bas \n strip
+        ]
+        new_base = base
+        for cand in candidates:
+            new_base = base.replace(cand, "")
+            if new_base != base:
+                break  # eslesme bulundu
         if new_base == base:
             # Tam eşleşme başarısız → cleaned versiyon dene
             cleaned = _clean_block_for_replace(block)

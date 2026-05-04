@@ -1,11 +1,14 @@
+# -*- coding: utf-8 -*-
 """
 DB SCHEMA EXTENDED — students/exams pattern + SQL
 
-Extract: system_prompts.py satir 2696-2945
-Boyut: 11987 char
+Extract: system_prompts.py satir 2549-2799 (sync with SYSTEM_PROMPT)
+Boyut: 12132 char
 """
 
 PROMPT_BLOCK = '''
+🗂️ DB SCHEMA — query_analytics ÖNCESİ BİLMEN GEREKEN (28 Nisan Neo bulgu: bot 4 SQL fail, sonra "tür cast düzeltildi" diye self-correct ediyor):
+
 ### students (125 satır) — ÖĞRENCİ MASTER
 - **PK:** `soz_no` **TEXT** (önemli — INTEGER değil!)
 - Kolonlar: `eyotek_id, full_name, first_name, last_name, class_name, sezon, phone, sube, status`
@@ -118,7 +121,6 @@ GROUP BY ct.teacher, ct.lesson ORDER BY toplam DESC
         → "Veri yok" yanlış cevap
   ✓ Doğru: `WHERE class_name ~* '12.?SAY' AND fizik IS NOT NULL`
         → 309 row, ort 2.48 net
-
 
 ÖNEMLİ:
 - execute_eyotek_action kullanmadan ÖNCE mutlaka gerekçeni belirt (reason parametresi)
