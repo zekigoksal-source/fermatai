@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, GECE 03:30 — **🎯 OTURUM 25.40z: WIKI INJECT + YT BIRLEŞTIRME + YT HISTORY + CLAUDE SUPERVISOR (Neo 4 direktif tamamlandı)**
+> **Son güncelleme:** 4 Mayıs 2026, GECE 04:30 — **🎯 OTURUM 25.40z2: PROMPT V2 — Conditional Context Routing (Neo "Mind Road") FAZ 1 LIVE — A/B test Neo telefonunda aktif**
 
 ---
 
@@ -61,6 +61,8 @@
 | 42 | **YouTube tool birleştirme** — `youtube_oner` deprecated → `find_youtube_lesson` tek kanal (alias backwards compat) | LIVE | 25.40z-#3 |
 | 43 | **YouTube history filtresi** — aynı kullanıcıya 30 gün içinde aynı video tekrar önerilmez (çeşitlilik) | LIVE | 25.40z-#2 |
 | 44 | **Claude Supervisor Pattern** — Cerebras gerektiğinde `[CLAUDE_HANDOFF: tool=X reason=Y]` sinyali → Claude tool zinciriyle ek katkı (kullanıcı görmez) | LIVE | 25.40z-#4 |
+| 45 | **PROMPT V2 — Conditional Context Routing** (Faz 1) — `prompt_router.py`, eksiltici filtre + kanal bazlı, **%18.6 token tasarruf** zincirde | LIVE (A/B Neo phone) | 25.40z2 |
+| 46 | **Safety test paketi** — 10 test, 68 assertion (persona/KVKK/halüsinasyon/ACL/finans/flag/zincir) — **68/68 PASS** | LIVE | 25.40z2 |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -96,6 +98,84 @@
 - **3D library:** `make_3d_template` tool — Solar System / Atom / Hücre / Molekül anlık render link
 
 ---
+>
+> ## 🆕 OTURUM 25.40z2 (4 May 03:30 → 04:30, 60 dk — Prompt V2 Conditional Context Routing, Mind Road)
+>
+> Neo direktif: *"Conditional prompt mimariyi kullanalım, sürece başlamadan sistemi yedekleyerek başla. Güvenlik sızıntısına ASLA sebep olmadan bu güncellemeyi yapalım, fix loop ile testlere sok. Mevcut durumla ve yeni durumla kıyasla iki ayrı prompt sistemi cevaplar arasındaki farkı tespit et."*
+>
+> ### Tespit (Neo'nun haklı endişesi)
+> | Metrik | Değer | Yorum |
+> |--------|-------|-------|
+> | `system_prompts.py` | **61,471 token** | Endüstri ortalaması 5K-15K — **4-12x büyük** |
+> | Claude cache hit | **%22.1** (gerçek) | Hedef %70+ — yetersiz |
+> | Maliyet | $171/ay = ~5,500 TL | Cerebras $2/ay'a karşılık |
+> | `fermat_core_agent.py` | 5,667 satır | God Class eşiği geçildi |
+>
+> ### Yapılanlar (Faz 1)
+>
+> #### 0️⃣ YEDEK
+> - Git tag: `before-prompt-v2-25.40z2` (GitHub'da)
+> - 3 baseline kopya: `system_prompts.py.baseline_v1`, `llm_router.py.baseline_v1`, `fermat_core_agent.py.baseline_v1`
+> - Geri dönüş: `git reset --hard before-prompt-v2-25.40z2`
+>
+> #### 1️⃣ `prompt_router.py` — Eksiltici Filtre Yaklaşımı
+> Mevcut SYSTEM_PROMPT'u parçalamak yerine **alakasız rol bloklarını sil**:
+> - `ROLE_BLOCK_MARKERS`: 6 rol için regex pattern
+> - `ROLE_KEEP_OTHERS`: hiyerarşi (admin > yönetim > müdür > rehber > öğretmen > öğrenci)
+> - `_is_safe_to_remove()`: NEVER_REMOVE_KEYWORDS guard (KVKK, halüsinasyon, kimlik manipülasyon ASLA silinmez)
+> - **Kanal bazlı filtre:** WhatsApp'ta render bloklarını sil (web'de gerekli, WP'de gereksiz)
+>
+> #### 2️⃣ Feature Flag (kademeli rollout)
+> `PROMPT_V2_ENABLED` env değişkeni:
+> - `false` (default) → V2 KAPALI, no-op (statu quo)
+> - `true` → V2 herkes için açık
+> - `phones:905...,905...` → SADECE listedeki telefonlarda V2 (A/B test)
+>
+> #### 3️⃣ `fermat_core_agent.py` Entegrasyon
+> Mevcut `role_prompt.build_prompt_for_role()` çıktısı `build_prompt_v2()`'ye **zincir**lenir:
+> - Adım 1: role_prompt → role bazlı blokları çıkarır (mevcut, %5 tasarruf)
+> - Adım 2: prompt_router → kanal bazlı render bloklarını çıkarır (yeni, +%13)
+> - Toplam: **%18.6 token tasarruf**
+>
+> #### 4️⃣ Safety Test Paketi (`test_prompt_v2_safety.py`)
+> 10 test grubu, 68 assertion:
+> | # | Test | Sonuç |
+> |---|------|-------|
+> | 1 | Persona intact (her rol/kanal) | ✅ 30/30 |
+> | 2 | KVKK/Kimlik Manipülasyon korunmuş | ✅ 20/20 |
+> | 3 | Halüsinasyon yasak korunmuş | ✅ 2/2 |
+> | 4 | Rol ACL — doğru bloklar siliniyor | ✅ 4/4 |
+> | 5 | Kanal filtre WP/web doğru | ✅ 2/2 |
+> | 6 | NEGASYON DIREKTIFLER korunmuş | ✅ 2/2 |
+> | 7 | FINANS RED kuralı korunmuş | ✅ 3/3 |
+> | 8 | Flag OFF → no-op | ✅ 1/1 |
+> | 9 | Whitelist phone (A/B test) | ✅ 2/2 |
+> | 10 | Zincir (role_prompt + router) | ✅ 2/2 |
+> **TOPLAM: 68/68 PASS — sıfır güvenlik açığı.**
+>
+> ### Verify
+> - Commits: `b8f2195` (router), `cd11de5` (kanal), `8051bcf` (entegre+test), `9b3a11d` (safety fix)
+> - VPS sync HEAD `9b3a11d`
+> - `.env` güncellendi: `PROMPT_V2_ENABLED=phones:905051256802` (sadece Neo)
+> - Bridge restart, leader aktif, V2 sadece Neo telefonunda
+>
+> ### Etki Tablosu
+> | Senaryo | V1 (eski) | V2 (yeni) | Tasarruf |
+> |---------|-----------|-----------|----------|
+> | Çağıran kullanıcı (WhatsApp) | 61K token | ~50K token | **-%18** |
+> | Cache hit ile birleşince | $171/ay | ~$140/ay | **~$30/ay tasarruf** |
+> | Yıllık | 66K TL | 54K TL | **~12K TL tasarruf** |
+>
+> Faz 2 (modüler parçalama) yapılırsa hedef: -%35-40 token (24K TL/yıl tasarruf)
+>
+> ### A/B Test Akışı (canlı)
+> 1. Şu an V2 SADECE Neo'nun telefonu (905051256802) için aktif
+> 2. Neo bot'a soru sorduğunda log'a `[PROMPT_V2]` prefix gelir
+> 3. Cevap kalitesi karşılaştırma — eski (diğer kullanıcılar) vs yeni (Neo)
+> 4. 1-2 hafta gözlem, sorun yoksa flag genişlet
+> 5. Sorun çıkarsa `.env`'den `PROMPT_V2_ENABLED=false` → anlık geri dön
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40z (4 May 02:30 → 03:30, 60 dk — Wiki inject + YT birleştirme + YT history + Claude Supervisor)
 >
 > ## 🆕 OTURUM 25.40z (4 May 02:30 → 03:30, 60 dk — Wiki inject + YT birleştirme + YT history + Claude Supervisor)
 >
