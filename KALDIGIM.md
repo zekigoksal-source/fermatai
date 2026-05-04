@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, GECE 04:30 — **🎯 OTURUM 25.40z2: PROMPT V2 — Conditional Context Routing (Neo "Mind Road") FAZ 1 LIVE — A/B test Neo telefonunda aktif**
+> **Son güncelleme:** 4 Mayıs 2026, GECE 05:00 — **🎯 OTURUM 25.40z2 FAZ 2: INTENT BAZLI FILTRE — %28.4 token kazanım, 135/135 safety, canlı end-to-end OK**
 
 ---
 
@@ -63,6 +63,8 @@
 | 44 | **Claude Supervisor Pattern** — Cerebras gerektiğinde `[CLAUDE_HANDOFF: tool=X reason=Y]` sinyali → Claude tool zinciriyle ek katkı (kullanıcı görmez) | LIVE | 25.40z-#4 |
 | 45 | **PROMPT V2 — Conditional Context Routing** (Faz 1) — `prompt_router.py`, eksiltici filtre + kanal bazlı, **%18.6 token tasarruf** zincirde | LIVE (A/B Neo phone) | 25.40z2 |
 | 46 | **Safety test paketi** — 10 test, 68 assertion (persona/KVKK/halüsinasyon/ACL/finans/flag/zincir) — **68/68 PASS** | LIVE | 25.40z2 |
+| 47 | **PROMPT V2 FAZ 2 — Intent Bazlı Filtre** — INTENT_REMOVE_PROFILES (16 intent), INTENT_BLOCK_PATTERNS (6 blok kategori), 3-katmanlı kanal+rol+intent | LIVE | 25.40z2-Faz2 |
+| 48 | **30 Senaryo A/B Test** — 135/135 PASS, %28.4 ortalama token kazanım, canlı end-to-end Cerebras kalite intact | LIVE | 25.40z2-Faz2 |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
@@ -99,7 +101,85 @@
 
 ---
 >
-> ## 🆕 OTURUM 25.40z2 (4 May 03:30 → 04:30, 60 dk — Prompt V2 Conditional Context Routing, Mind Road)
+> ## 🆕 OTURUM 25.40z2 FAZ 2 (4 May 04:30 → 05:00, 30 dk — Intent bazlı filtre + 30 senaryo A/B paralel test)
+>
+> Neo direktif: *"Faz 2'yi sen benim adıma testler yaparak tamamla, paralel bir sürü konuşma başlatıp testleri tek tek yap, kusursuza kadar fix loop."*
+>
+> ### Yapılanlar
+>
+> #### 1. Intent Bazlı 3. Katman Filtre
+> `prompt_router.py`'a eklendi:
+> - **INTENT_REMOVE_PROFILES** — 16 intent için silinebilen blok ID'leri:
+>   - selamlama/veda/teşekkür → renderer/SQL/MEB/sim/compound/pazarlama hepsi sil
+>   - kavram_aciklama → SQL/finans sil (render KORU)
+>   - analiz_iste/deneme_analiz → MEB/sim sil (SQL KORU)
+>   - yeni_nesil_uret → SQL sil (MEB KORU — gerek)
+> - **INTENT_BLOCK_PATTERNS** — 6 büyük blok kategori için regex:
+>   - renderer_detay, compound, simulasyon, sql_pattern, meb_detay, pazarlama_kayitsiz
+>
+> #### 2. fermat_core_agent Entegrasyon
+> `_intent` parametresi `build_prompt_v2`'ye iletildi → 3-katmanlı zincir:
+> ```
+> SYSTEM_PROMPT (61K)
+>   ↓ role_prompt (rol filtre, ~%5)
+>   ↓ build_prompt_v2 kanal filtre (WP'de render sil, ~%13)
+>   ↓ build_prompt_v2 intent filtre (intent'e göre, ~%10 ek)
+>   ↓ TOPLAM: ~%28 kazanım
+> ```
+>
+> #### 3. A/B Test Paketi — 30 Senaryo
+> `tests/test_prompt_v2_ab.py`:
+> - 30 gerçek kullanıcı pattern (5 öğrenci selamlama + 5 kavram + 5 analiz + 5 öğretmen + 5 müdür + 5 admin)
+> - 7 test grubu: token kazanım / persona / ACL sızıntı / KVKK / intent block / safe_to_remove / no-op
+>
+> ### Sonuçlar (Canlı VPS)
+> | Test | Sonuç |
+> |------|-------|
+> | Total assertions | **135** |
+> | PASS | **135** ✅ |
+> | FAIL | **0** ✅ |
+> | Warnings (kritik değil) | 8 (pattern eşleşme detayı) |
+> | Ortalama token kazanım (30 senaryo) | **%28.4** |
+> | V1 toplam | 1,840,740 token |
+> | V2 toplam | 1,318,609 token |
+> | **Maliyet etkisi** | $171/ay → **$122/ay** (tasarruf $49/ay = ~1,500 TL) |
+> | **Yıllık tasarruf** | **~18,000 TL** |
+>
+> ### Canlı End-to-End Test
+> Cerebras gpt-oss-120b ile gerçek cevap testi (Neo telefonu, intent=kavram_aciklama):
+> - **V1 prompt:** 99,336 char (admin role-filtreli)
+> - **V2 prompt:** 96,951 char (admin role+intent-filtreli)
+> - Cevap süresi: **1192ms**
+> - Token: in=4885, out=695
+> - Cevap kalitesi: **A+** — KaTeX formül, sınav bağlantısı, pedagojik ton
+> - Persona: ✅ FermatAI tanımı korunmuş
+> - Halüsinasyon: ❌ Yok
+> - **Sonuç: kalite kaybı YOK**
+>
+> ### Verify
+> - Commits: `5c384e4` (faz 2 build), `ae84101` (test bug fix)
+> - VPS sync HEAD `ae84101`
+> - V2 sadece Neo telefonunda aktif (PROMPT_V2_ENABLED=phones:905051256802)
+> - Bridge active, /health 200, /chat 200
+>
+> ### Production Rollout Yol Haritası (Neo onayı ile)
+> Şu an: **SADECE Neo telefonu** (905051256802) V2 aktif.
+> 1. **1. hafta** (mevcut): Neo'nun günlük kullanımı = canlı kalite ölçümü
+> 2. **2. hafta** (sorun yoksa): Mahsum + Duygu (müdürler) eklenir → `phones:905051256802,905462605446,905051256801`
+> 3. **3. hafta** (sorun yoksa): Tüm öğrenciler → `phones:` listesinden `true`'ya geç
+> 4. **Sorun çıkarsa** anlık geri dön: `.env` `PROMPT_V2_ENABLED=false` → bridge restart
+>
+> ### Etki Karşılaştırması
+> | Faz | Token tasarruf | Cumulative |
+> |-----|----------------|------------|
+> | Faz 0 (statu quo) | 0% | 61K |
+> | Faz 1 (rol+kanal) | %18.6 | ~50K |
+> | **Faz 2 (+ intent)** | **%28.4** | **~44K** |
+> | Faz 3 (modüler bölme — ileride) | hedef %35-40 | ~38K |
+>
+> ## 🔙 ÖNCEKİ OTURUM 25.40z2 FAZ 1 (4 May 03:30 → 04:30, 60 dk — Prompt V2 Conditional Context Routing, Mind Road)
+>
+> ## 🆕 OTURUM 25.40z2 FAZ 1 (4 May 03:30 → 04:30, 60 dk — Prompt V2 Conditional Context Routing, Mind Road)
 >
 > Neo direktif: *"Conditional prompt mimariyi kullanalım, sürece başlamadan sistemi yedekleyerek başla. Güvenlik sızıntısına ASLA sebep olmadan bu güncellemeyi yapalım, fix loop ile testlere sok. Mevcut durumla ve yeni durumla kıyasla iki ayrı prompt sistemi cevaplar arasındaki farkı tespit et."*
 >
