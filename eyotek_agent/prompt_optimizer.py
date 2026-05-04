@@ -224,45 +224,65 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
         "- Türkçe karakterler doğru kullan (ç, ş, ğ, ü, ö, ı)."
     )
 
-    try:
-        sys_prompt = (
-            "Sen FermatAI'nin LLM prompt mühendisisin. Türkçe konuşan bir botun "
-            "konuşma loglarını analiz ederek, sistem promptunda yapılacak somut "
-            "iyileştirme önerilerini TÜRKÇE olarak üretirsin. JSON formatında "
-            "yanıt verirsin, açıklama metni eklemezsin."
-        )
-        if use_cerebras:
-            # Cerebras gpt-oss-120b — 436ms, sinirsiz paid tier
+    sys_prompt = (
+        "Sen FermatAI'nin LLM prompt mühendisisin. Türkçe konuşan bir botun "
+        "konuşma loglarını analiz ederek, sistem promptunda yapılacak somut "
+        "iyileştirme önerilerini TÜRKÇE olarak üretirsin. JSON formatında "
+        "yanıt verirsin, açıklama metni eklemezsin."
+    )
+    text = ""
+    used_model = None
+    # 25.40z3-ATLAS2 MIMARI: Cerebras qwen-3-235b ASIL, Groq YEDEK (Neo prensibi)
+    # Önce Cerebras dene (sınırsız paid tier, üst kalite), runtime hata olursa Groq'a düş.
+    if use_cerebras:
+        try:
             r = cerebras.complete(
                 messages=[{"role": "user", "content": user_prompt}],
                 system=sys_prompt,
-                model="gpt-oss-120b",
+                model="qwen-3-235b-a22b-instruct-2507",
                 max_tokens=2000,
                 temperature=0.3,
             )
-            if not r.get("ok"):
-                raise RuntimeError(r.get("error", "cerebras fail"))
-            text = r["text"]
-            logger.info(f"[ATLAS-2] Cerebras gpt-oss-120b yaniti: {r['ms']}ms, in={r['tokens_in']} out={r['tokens_out']}")
-        else:
-            # Groq fallback
+            if r.get("ok"):
+                text = r["text"]
+                used_model = "cerebras_qwen-3-235b"
+                logger.info(f"[ATLAS-2] Cerebras qwen-3-235b yaniti: {r['ms']}ms, in={r['tokens_in']} out={r['tokens_out']}")
+            else:
+                logger.warning(f"[ATLAS-2] Cerebras fail ({r.get('error', 'unknown')}), Groq'a duşuyor")
+        except Exception as _ce:
+            logger.warning(f"[ATLAS-2] Cerebras exception ({_ce}), Groq'a duşuyor")
+
+    # Groq fallback (Cerebras yok VEYA Cerebras runtime fail)
+    if not text and client:
+        try:
             response = client.chat(
                 messages=[{"role": "user", "content": user_prompt}],
                 system=sys_prompt,
                 max_tokens=2000,
             )
             text = response if isinstance(response, str) else (response.get('text', '') if isinstance(response, dict) else '')
+            used_model = "groq_llama-3.3-70b"
+            logger.info(f"[ATLAS-2] Groq Llama 70B fallback yaniti")
+        except Exception as _ge:
+            logger.warning(f"[ATLAS-2] Groq fallback exception: {_ge}")
 
-        # JSON parse
-        # Markdown code block kaldır
+    if not text:
+        logger.warning("[ATLAS-2] Hicbir LLM yanit veremedi (Cerebras + Groq fail)")
+        return []
+
+    try:
+        # JSON parse — Markdown code block kaldır
         text = re.sub(r'^```json\s*', '', text.strip())
         text = re.sub(r'\s*```$', '', text)
         suggestions = json.loads(text)
         if isinstance(suggestions, list):
+            # Her oneriye hangi model uretti bilgisi ekle (debug için)
+            for s in suggestions:
+                s['_generator_model'] = used_model
             return suggestions[:5]
         return []
     except Exception as e:
-        logger.warning(f"Suggestion LLM fail: {e}")
+        logger.warning(f"[ATLAS-2] JSON parse fail ({used_model}): {e}")
         return []
 
 
@@ -282,14 +302,38 @@ async def analyze_and_suggest(hours: int = 24) -> dict:
     suggestions = await _ask_groq_for_suggestion(problems)
     logger.info(f"[ATLAS-2] Groq {len(suggestions)} oneri uretti")
 
+    # 25.40z3-ATLAS2 FIX: Mevcut DB'deki tum approved/rejected basliklari yukle
+    # Aynı normalize başlık varsa ÜRETME (her gece 5 aynı öneri sorununun çözümü)
+    existing_norms = set()
+    try:
+        existing_rows = await _fetch(
+            """SELECT lower(regexp_replace(title, '\\d+', 'N', 'g')) as norm
+               FROM prompt_suggestions
+               WHERE status IN ('approved', 'rejected', 'superseded', 'applied', 'pending')
+                 AND created_at > NOW() - INTERVAL '90 days'"""
+        )
+        existing_norms = {r['norm'] for r in existing_rows}
+        logger.info(f"[ATLAS-2] {len(existing_norms)} mevcut başlık dedup için yüklendi")
+    except Exception as _de:
+        logger.warning(f"[ATLAS-2] dedup load fail: {_de}")
+
+    import hashlib
     saved = 0
+    skipped_dup = 0
     for s in suggestions:
         # Critical pattern guard — koruma kurallari etkilenir mi
         change_text = (s.get('suggested_change') or '').lower()
         is_dangerous = any(re.search(p, change_text, re.IGNORECASE) for p in PROTECTED_PATTERNS)
         if is_dangerous:
-            # Yine de kaydet ama 'critical_review' ile mark et
             s['_safety_flag'] = 'protected_pattern_touched'
+
+        # 25.40z3-ATLAS2 FIX: Title normalize + dedup
+        title = s.get('title', '')[:200]
+        norm_title = re.sub(r'\d+', 'N', title.lower())
+        if norm_title in existing_norms:
+            skipped_dup += 1
+            logger.info(f"[ATLAS-2] DUP SKIP: '{title[:60]}' (90 gun icinde mevcut)")
+            continue
 
         try:
             await _exec(
@@ -300,18 +344,19 @@ async def analyze_and_suggest(hours: int = 24) -> dict:
                    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending')""",
                 s.get('category', 'improvement')[:30],
                 s.get('severity', 'medium')[:20],
-                s.get('title', '')[:200],
+                title,
                 s.get('description', '')[:1000],
                 s.get('affected_pattern', '')[:300],
                 s.get('suggested_change', '')[:2000],
                 s.get('expected_impact', '')[:300],
                 json.dumps(problems[:5]),
             )
+            existing_norms.add(norm_title)  # Bu run'da da yeni dup olmasin
             saved += 1
         except Exception as e:
             logger.warning(f"[ATLAS-2] suggestion save fail: {e}")
 
-    logger.info(f"[ATLAS-2] {saved} oneri DB'ye kaydedildi (status=pending)")
+    logger.info(f"[ATLAS-2] {saved} oneri DB'ye kaydedildi, {skipped_dup} duplicate atlandi")
 
     # Bildirime de ekle (Neo dashboard'da görsün)
     if saved > 0:
