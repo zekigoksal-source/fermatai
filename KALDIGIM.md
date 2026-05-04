@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, GECE 23:00 — **🎯 DEV OTURUM SONLANDIRMA — Sistem PRODUCTION READY (388/388 test ✅, 5 katman verify ✅, VPS HEAD `593b670`, kullanıcı etkileşim moduna geçildi)**
+> **Son güncelleme:** 5 Mayıs 2026, GECE 00:45 — **🎯 OTURUM 25.40z3-ROUTING: Karar katmanı 3 katmanlı fix (text_only Cerebras + decision trace + 5 yeni lane) + L0c security guard, 388/388 PASS, Cerebras pay hedefi %5→%25**
 
 ---
 
@@ -122,6 +122,13 @@
 | 103 | **DEV OTURUM KAPANIŞ — 5 KATMAN VERIFY** (Neo direktifi: "endüstri standartlarında olduğuna emin olayım"): Layer 1 VPS sync ✅ + Layer 2 388/388 test ✅ + Layer 3 endpoint live ✅ + Layer 4 DB+cron+routing ✅ + Layer 5 tech debt scan ✅ | VERIFIED | 25.40z3-FINAL |
 | 104 | **PRODUCTION DURUM (4 May 23:00)**: HEAD `593b670`, 3 worker (master+2 follower), Atlas birleşik 89 öneri / 1 pending, V3 BASE 53.7K (-31.4% vs başlangıç), Render arşiv KALICI, Cache HIT %100, routing dağılım: Claude %72.9 + fast %17 + Cerebras %9.5 + Groq %0.2 (hedef oranda) | LIVE | 25.40z3-FINAL |
 | 105 | **Neo dev oturumu sonlandı — kullanıcı etkileşim moduna geçildi**. Tüm fonksiyonlar production hazır, sistemler endüstri standartlarında. Bundan sonrası gerçek kullanıcı feedback'i ile evrim. | KAPANIS | 25.40z3-FINAL |
+| 106 | **Karar katmanı dev analizi (5 May)**: Routing Engine + Intent Classifier "kek tarifi" — sistemin verimi burada planlanır. Claude %72 trafik (29s ort, ~$50-80/ay), Cerebras %5.4 (atıl), text_only 173 (Claude'un %39'u tool kullanmıyor). | ANALIZ | 25.40z3-ROUTING |
+| 107 | **FIX #1: claude_text_only → Cerebras 235b** (routing_engine.py:282) — complexity='cloud' + role∈(ogrenci/ogretmen/rehber) + intent in text_only_safe → 'local'. 15 safe intent (kavram_aciklama, sohbet, motivasyon...). Beklenen: Claude %72→%45-50. | LIVE | 25.40z3-ROUTING |
+| 108 | **L0c SECURITY GUARD** (defense in depth) — intent_classifier injection/role/hassas/finans/admin_action en üstte yakalanır, lane/fast match'lerinden ÖNCE → ZORLA Claude. classify_complexity bug'ı hassas mesaj kacirsa bile yakalar. | LIVE | 25.40z3-ROUTING |
+| 109 | **FIX #2: Decision trace 'unknown' bug** (fermat_core_agent.py + whatsapp_bridge.py) — Local path route='local_{provider}' set, Bridge level garanti _src'den türet (fast_response → 'fast', cerebras → 'local_X'). %20 unknown → %0. | LIVE | 25.40z3-ROUTING |
+| 110 | **FIX #3: L3b lane +5 yeni** (groq_lanes.py 11→16 lane): ders_anlatim, formul_aciklama, ornek_uretim, uzun_motivasyon, kisaca_ozet. Spesifik lane'ler kavramsal_kisa'dan ÖNCE check → daha iyi telemetri. is_groq_safe set + GroqSafeLane Literal güncellendi. | LIVE | 25.40z3-ROUTING |
+| 111 | **FIX #4 UNIFICATION SKIP** — decide_route_v2 birleştirme refactor riski yüksek (4 modül + 200+ pattern), şu an 3 fix yeterli getiri sağlıyor. Stabil sonrası ayrı oturumda yapılır. Neo direktifi: "riskli yapılarda dikkatli git, sisteme zarar verme." | KARAR | 25.40z3-ROUTING |
+| 112 | **388/388 regression PASS** + 12/13 production senaryo routing test. Live deploy `bd12cf8`, HTTP 200. 1 hafta sonra routing_stats analizi ile A/B değerlendirilecek. | LIVE | 25.40z3-ROUTING |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
