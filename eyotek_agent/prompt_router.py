@@ -116,14 +116,16 @@ def build_prompt_v2(
     role: str = "ogrenci",
     intent: Optional[str] = None,
     phone: str = "",
+    channel: str = "whatsapp",
     force_v2: bool = False,
 ) -> tuple[str, dict]:
-    """V2 prompt compose — eksiltici filtre.
+    """V2 prompt compose — eksiltici filtre + kanal bazlı.
 
     Args:
         role: çağıranın rolü (admin/yonetim/mudur/rehber/ogretmen/ogrenci/veli)
         intent: opsiyonel (gelecek için)
         phone: feature flag kontrolü için
+        channel: 'whatsapp' (default) veya 'web' — kanal-spesifik blok filtresi
         force_v2: True ise feature flag bypass
 
     Returns:
@@ -138,6 +140,7 @@ def build_prompt_v2(
         "new_size": len(SYSTEM_PROMPT),
         "removed_blocks": [],
         "role": role,
+        "channel": channel,
     }
 
     # Feature flag kontrolü
@@ -153,21 +156,48 @@ def build_prompt_v2(
     prompt_v2 = SYSTEM_PROMPT
     removed_blocks = []
 
+    # Adım 1: Rol bloklarını filtrele
     for rrole in remove_roles:
         markers = ROLE_BLOCK_MARKERS[rrole]
         for pattern in markers["patterns"]:
             try:
-                # MULTILINE + DOTALL ile çoklu satır blok yakalar
                 match = re.search(pattern, prompt_v2, re.MULTILINE | re.DOTALL)
                 if match:
                     block_text = match.group(0)
-                    # Güvenlik: ASLA persona/KVKK/halüsinasyon korunan içeriği silme
                     if _is_safe_to_remove(block_text):
                         prompt_v2 = prompt_v2.replace(block_text, "")
-                        removed_blocks.append(f"{rrole}({len(block_text)})")
+                        removed_blocks.append(f"role:{rrole}({len(block_text)})")
             except Exception as e:
                 logger.debug(f"[PROMPT_V2] regex skip {rrole}: {e}")
                 continue
+
+    # Adım 2: Kanal bazlı filtre (asıl büyük kazanım burada)
+    # WhatsApp'ta web-render kuralları gereksiz, web'de WP-YASAK gereksiz
+    channel_clean = (channel or "whatsapp").strip().lower()
+
+    if channel_clean == "whatsapp":
+        # WhatsApp'ta KULLANILMAYAN bölümler:
+        # 1. ZENGİNLEŞTİRME ELEMANLARI (web addon zaten LOCAL_SYSTEM_WEB_ADDON'da, ayrıca büyük render
+        #    bölümleri SYSTEM_PROMPT'ta da var ama WP'de bot zaten render üretmiyor)
+        # 2. compound renderer ZORUNLU bloğu (web özel)
+        # 3. simulasyon detay (web özel)
+        whatsapp_remove_patterns = [
+            (r"WhatsApp kanalinda BU BLOKLARI ASLA YAZMA.*?(?=\n═══|═════)", "wp_yasak_block"),
+            (r"Öğrenci profil \+ çalışma planı \+ analiz cevapları için ```compound ZORUNLU.*?(?=\n═══|═════)", "compound_web"),
+            (r"Compton sacılması simülasyonu Neo onayli ALTIN STANDART.*?(?=\n═══|═════)", "compton_sim"),
+            (r"SORUN: 28 renderer mevcut ama bot %80 oranında SADECE chart \+ tablo.*?(?=\n═══|═════)", "renderer_kullanim"),
+            (r"Tetikleyici örnek: \"Ali Demir'in akademik gelişim.*?(?=\n═══|═════)", "tetikleyici_ornek"),
+        ]
+        for pattern, label in whatsapp_remove_patterns:
+            try:
+                match = re.search(pattern, prompt_v2, re.MULTILINE | re.DOTALL)
+                if match:
+                    block_text = match.group(0)
+                    if _is_safe_to_remove(block_text):
+                        prompt_v2 = prompt_v2.replace(block_text, "")
+                        removed_blocks.append(f"channel-wp:{label}({len(block_text)})")
+            except Exception as e:
+                logger.debug(f"[PROMPT_V2] channel filter skip {label}: {e}")
 
     info["v2_active"] = True
     info["new_size"] = len(prompt_v2)
@@ -199,13 +229,13 @@ def _is_safe_to_remove(block_text: str) -> bool:
 
 # ─── Diagnostic / A/B Test Yardımcı ─────────────────────────────────────────
 
-def compare_v1_v2(role: str = "ogrenci") -> dict:
+def compare_v1_v2(role: str = "ogrenci", channel: str = "whatsapp") -> dict:
     """V1 (orijinal) vs V2 (filtreli) karşılaştırma.
 
     Test/diagnostic için. Token sayısını da hesaplar (tiktoken).
     """
     from system_prompts import SYSTEM_PROMPT
-    v2_text, info = build_prompt_v2(role=role, force_v2=True)
+    v2_text, info = build_prompt_v2(role=role, channel=channel, force_v2=True)
 
     result = {
         "role": role,
@@ -230,9 +260,12 @@ def compare_v1_v2(role: str = "ogrenci") -> dict:
 
 
 if __name__ == "__main__":
-    """CLI test: her rol için kazanım göster."""
-    print("Prompt V2 — Rol Bazlı Kazanım Tablosu\n")
-    for role in ["admin", "mudur", "rehber", "ogretmen", "ogrenci"]:
-        r = compare_v1_v2(role)
-        print(f"  {role:10} → {r.get('v1_tokens', '?'):>6}tok → {r.get('v2_tokens', '?'):>6}tok "
-              f"(-{r.get('token_reduction_pct', '?')}%, blocks removed: {r['removed_blocks']})")
+    """CLI test: her rol + her kanal için kazanım göster."""
+    print("Prompt V2 — Rol + Kanal Bazlı Kazanım Tablosu\n")
+    for channel in ["whatsapp", "web"]:
+        print(f"\n=== Kanal: {channel.upper()} ===")
+        for role in ["admin", "mudur", "rehber", "ogretmen", "ogrenci"]:
+            r = compare_v1_v2(role, channel=channel)
+            print(f"  {role:10} → {r.get('v1_tokens', '?'):>6}tok → {r.get('v2_tokens', '?'):>6}tok "
+                  f"(-{r.get('token_reduction_pct', '?')}%) "
+                  f"removed:{len(r['removed_blocks'])}")
