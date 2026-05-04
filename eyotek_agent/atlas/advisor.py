@@ -247,17 +247,58 @@ async def run_advise(hours: int = 24) -> int:
                 except Exception as _ca_err:
                     print(f"  ⚠ completion_awareness hatası ({cat}): {_ca_err}")
 
+                # 25.40z3-ATLAS FIX: Semantic dedup — sayısal varyantları normalize et
+                # ("p95 70676ms" / "p95 255149ms" / "(14x agent)" → AYNI signature)
+                import hashlib, re as _re
+                norm_title = _re.sub(r'\d+', 'N', sug['title'].lower().strip())
+                norm_title = _re.sub(r'\s+', ' ', norm_title)
+                sig_raw = f"{sug['category']}::{norm_title}"
+                signature = hashlib.md5(sig_raw.encode('utf-8')).hexdigest()[:16]
+
+                # Signature ile mevcut kontrol — son 30 gün içinde aynı sorun var mı?
+                existing = await conn.fetchrow(
+                    """SELECT id, status, occurrence_count, last_seen_at
+                       FROM atlas_suggestions
+                       WHERE signature = $1
+                         AND last_seen_at > NOW() - INTERVAL '30 days'
+                       ORDER BY last_seen_at DESC LIMIT 1""",
+                    signature,
+                )
+                if existing:
+                    if existing['status'] in ('uygulandi', 'archived', 'rejected'):
+                        # Tekrar gelen ama önceden çözülmüş → REGRESSION
+                        await conn.execute(
+                            """UPDATE atlas_suggestions
+                               SET status='regresyon', regressed_count=regressed_count+1,
+                                   occurrence_count=occurrence_count+1, last_seen_at=NOW()
+                               WHERE id=$1""",
+                            existing['id'],
+                        )
+                        print(f"  ⚠ REGRESSION: '{sug['title'][:60]}' (eski #{existing['id']})")
+                    else:
+                        # Açık öneri → occurrence++ (yeni kayıt YARATMA!)
+                        await conn.execute(
+                            """UPDATE atlas_suggestions
+                               SET occurrence_count=occurrence_count+1, last_seen_at=NOW()
+                               WHERE id=$1""",
+                            existing['id'],
+                        )
+                        print(f"  ↻ DEDUP: '{sug['title'][:60]}' (mevcut #{existing['id']}, occ++)")
+                    continue  # YENİ insert YAPMA
+
                 new_id = await conn.fetchval(
                     """
                     INSERT INTO atlas_suggestions (
                       observation_ids, category, severity, title, rationale,
-                      estimated_impact, suggested_change, target_files, status
-                    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'yeni')
+                      estimated_impact, suggested_change, target_files, status,
+                      signature, first_seen_at, last_seen_at, occurrence_count
+                    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'yeni',$9,NOW(),NOW(),1)
                     RETURNING id
                     """,
                     [o['id']], sug['category'], sug['severity'], sug['title'],
                     sug['rationale'], sug.get('estimated_impact', ''),
                     sug.get('suggested_change', ''), sug.get('target_files', []),
+                    signature,
                 )
                 inserted += 1
 

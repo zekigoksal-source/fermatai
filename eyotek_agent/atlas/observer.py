@@ -107,10 +107,41 @@ async def detect_latency_anomalies(conn, hours: int) -> List[Dict[str, Any]]:
     return obs
 
 
+def _check_pattern_in_fast_responses(message: str) -> bool:
+    """fast_responses.py'da bu mesaj kalıbı için pattern var mı?
+
+    25.40z3-ATLAS FIX: Atlas önceden "web kodu fast_response'a alınabilir" önerdi
+    AMA pattern zaten vardı (line 1672) - tetiklenmiyordu farklı sebepten.
+    Bu kontrol artık Atlas'ı doğru yönlendirir: pattern var ama tetiklenmiyor →
+    farklı problem (auth gate, route override, vb.)
+    """
+    try:
+        import re
+        from pathlib import Path
+        fr_path = Path(__file__).resolve().parent.parent / "fast_responses.py"
+        if not fr_path.exists():
+            return False
+        content = fr_path.read_text(encoding='utf-8', errors='replace').lower()
+        # Mesajın ilk kelimesi pattern'da geçiyor mu?
+        first_word = re.split(r'\s+', message.strip().lower())[0] if message else ''
+        if not first_word or len(first_word) < 2:
+            return False
+        # Hem regex pattern hem keyword arama
+        return (first_word in content or
+                f"'{first_word}'" in content or
+                f'"{first_word}"' in content)
+    except Exception:
+        return False
+
+
 async def detect_pattern_miss(conn, hours: int) -> List[Dict[str, Any]]:
-    """Claude/Ollama'ya giden basit mesaj kalıpları — fast_response'a alınabilir."""
+    """Claude/Ollama'ya giden basit mesaj kalıpları — fast_response'a alınabilir.
+
+    25.40z3-ATLAS FIX: Önce fast_responses.py'da pattern var mı KOD KONTROLÜ yap.
+    - Pattern YOK → klasik "fast_response'a alınabilir" önerisi (info/warning)
+    - Pattern VAR → "tetiklenmiyor, route/auth bug ihtimali" (warning, farklı kategori)
+    """
     obs = []
-    # Claude'a giden 30 char altı mesajlar (basit/sık tekrarlayan)
     rows = await conn.fetch("""
         SELECT LOWER(TRIM(message)) as norm_msg,
                COUNT(*) as cnt,
@@ -127,23 +158,48 @@ async def detect_pattern_miss(conn, hours: int) -> List[Dict[str, Any]]:
         LIMIT 10
     """, str(hours))
     for r in rows:
-        sev = "warning" if r['cnt'] >= 5 else "info"
-        obs.append({
-            "category": "pattern_miss",
-            "severity": sev,
-            "metric_name": "fast_response_candidate",
-            "metric_value": float(r['cnt']),
-            "metric_unit": "count",
-            "affected_phone": None,
-            "affected_role": None,
-            "context_jsonb": json.dumps({
-                "message": r['norm_msg'],
-                "occurrence": r['cnt'],
-                "unique_users": len(r['phones'] or []),
-                "avg_response_ms": int(float(r['avg_ms'] or 0)),
-            }),
-            "rationale": f"'{r['norm_msg']}' mesajı {r['cnt']}x agent'a düştü ({int(float(r['avg_ms'] or 0))}ms ort.) — fast_response'a alınabilir",
-        })
+        msg = r['norm_msg'] or ''
+        pattern_exists = _check_pattern_in_fast_responses(msg)
+
+        if pattern_exists:
+            # Pattern VAR ama tetiklenmiyor — farklı bir problem
+            obs.append({
+                "category": "routing_bug",  # pattern_miss değil — routing problemi
+                "severity": "warning",
+                "metric_name": "pattern_exists_but_misses",
+                "metric_value": float(r['cnt']),
+                "metric_unit": "count",
+                "affected_phone": None,
+                "affected_role": None,
+                "context_jsonb": json.dumps({
+                    "message": msg,
+                    "occurrence": r['cnt'],
+                    "unique_users": len(r['phones'] or []),
+                    "avg_response_ms": int(float(r['avg_ms'] or 0)),
+                    "fast_pattern_exists": True,
+                }),
+                "rationale": f"'{msg}' mesajı {r['cnt']}x agent'a düştü AMA fast_responses.py'da pattern ZATEN VAR — auth gate / route override / öncelik bug ihtimali. Pattern yazma değil, tetikleme problemini ara.",
+            })
+        else:
+            # Klasik öneri: pattern yok, ekleme adayı
+            sev = "warning" if r['cnt'] >= 5 else "info"
+            obs.append({
+                "category": "pattern_miss",
+                "severity": sev,
+                "metric_name": "fast_response_candidate",
+                "metric_value": float(r['cnt']),
+                "metric_unit": "count",
+                "affected_phone": None,
+                "affected_role": None,
+                "context_jsonb": json.dumps({
+                    "message": msg,
+                    "occurrence": r['cnt'],
+                    "unique_users": len(r['phones'] or []),
+                    "avg_response_ms": int(float(r['avg_ms'] or 0)),
+                    "fast_pattern_exists": False,
+                }),
+                "rationale": f"'{msg}' mesajı {r['cnt']}x agent'a düştü ({int(float(r['avg_ms'] or 0))}ms ort.) — fast_response'a alınabilir",
+            })
     return obs
 
 

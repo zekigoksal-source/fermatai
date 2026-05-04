@@ -41,30 +41,37 @@ async def find_completed_suggestions(
     target_files: list[str] | None = None,
     days: int = 90,
 ) -> list[dict]:
-    """Atlas'ta status='yapildi' veya 'incelendi' olan benzer öneriler."""
+    """Atlas'ta status='uygulandi'/'yapildi'/'incelendi'/'archived' olan benzer öneriler.
+
+    25.40z3-ATLAS FIX: DB'de status='uygulandi' kullanılıyor (Türkçe), eski kod
+    'yapildi'/'incelendi' arıyordu → her zaman 0 sonuç → Atlas tekrar tekrar aynı
+    önerileri üretiyordu. Tüm tamamlanmış status değerleri eklendi.
+    """
     from db_pool import db_fetch
     target_files = target_files or []
+    DONE_STATUSES = ['uygulandi', 'yapildi', 'incelendi', 'archived',
+                     'applied', 'resolved', 'rejected']
     try:
         if target_files:
             rows = await db_fetch(
                 """SELECT id, title, rationale, status, target_files, created_at
                    FROM atlas_suggestions
                    WHERE category = $1
-                     AND status IN ('yapildi', 'incelendi')
-                     AND created_at > NOW() - ($2 || ' days')::interval
-                     AND target_files && $3::text[]
+                     AND status = ANY($2::text[])
+                     AND created_at > NOW() - ($3 || ' days')::interval
+                     AND target_files && $4::text[]
                    ORDER BY created_at DESC LIMIT 5""",
-                category, str(days), target_files,
+                category, DONE_STATUSES, str(days), target_files,
             )
         else:
             rows = await db_fetch(
                 """SELECT id, title, rationale, status, target_files, created_at
                    FROM atlas_suggestions
                    WHERE category = $1
-                     AND status IN ('yapildi', 'incelendi')
-                     AND created_at > NOW() - ($2 || ' days')::interval
+                     AND status = ANY($2::text[])
+                     AND created_at > NOW() - ($3 || ' days')::interval
                    ORDER BY created_at DESC LIMIT 5""",
-                category, str(days),
+                category, DONE_STATUSES, str(days),
             )
         return [dict(r) for r in rows]
     except Exception:
@@ -232,16 +239,20 @@ async def get_recent_work(days: int = 14) -> dict:
     """Son N gündeki tamamlanan işler — bot tool için.
 
     Bot bir öneri verirken "geçmişte ne yaptık?" sorusunda kullanır.
+
+    25.40z3-ATLAS FIX: status listesi tüm tamamlanmış varyantları içerir.
     """
     from db_pool import db_fetch
+    DONE_STATUSES = ['uygulandi', 'yapildi', 'incelendi', 'archived',
+                     'applied', 'resolved']
     try:
         completed = await db_fetch(
             """SELECT category, title, status, created_at
                FROM atlas_suggestions
-               WHERE status IN ('yapildi', 'incelendi')
-                 AND created_at > NOW() - ($1 || ' days')::interval
+               WHERE status = ANY($1::text[])
+                 AND created_at > NOW() - ($2 || ' days')::interval
                ORDER BY created_at DESC LIMIT 30""",
-            str(days),
+            DONE_STATUSES, str(days),
         )
         deploys = await db_fetch(
             """SELECT version, deployed_at, LEFT(notes, 200) AS notes
