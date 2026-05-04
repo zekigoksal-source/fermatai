@@ -159,14 +159,16 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
 
     # 25.24 (Neo): Geçmiş 30 gün reddedilen öneriler ve sebepleri — bot bunlardan öğrensin
     # Sezgisellik için: aynı false positive pattern'leri tekrarlama
+    # 25.40z3-ATLAS2 BIRLEŞIK: atlas_suggestions tablosu (source='prompt_optimizer')
     past_rejections_block = ""
     try:
         past_rejected = await _fetch(
-            """SELECT title, description, reviewer_note
-               FROM prompt_suggestions
-               WHERE status='rejected' AND reviewer_note IS NOT NULL AND reviewer_note != ''
-                 AND reviewed_at >= NOW() - INTERVAL '30 days'
-               ORDER BY reviewed_at DESC LIMIT 10"""
+            """SELECT title, rationale, neo_note
+               FROM atlas_suggestions
+               WHERE status='rejected' AND source='prompt_optimizer'
+                 AND neo_note IS NOT NULL AND neo_note != ''
+                 AND created_at >= NOW() - INTERVAL '30 days'
+               ORDER BY created_at DESC LIMIT 10"""
         )
         if past_rejected:
             past_rejections_block = (
@@ -176,7 +178,7 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
             for i, r in enumerate(past_rejected[:10], 1):
                 past_rejections_block += (
                     f"{i}. ❌ '{r['title']}'\n"
-                    f"   Neden reddedildi: {(r['reviewer_note'] or '')[:300]}\n\n"
+                    f"   Neden reddedildi: {(r['neo_note'] or '')[:300]}\n\n"
                 )
     except Exception:
         pass
@@ -185,9 +187,10 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
     past_approvals_block = ""
     try:
         past_approved = await _fetch(
-            """SELECT title FROM prompt_suggestions
-               WHERE status='approved' AND reviewed_at >= NOW() - INTERVAL '30 days'
-               ORDER BY reviewed_at DESC LIMIT 10"""
+            """SELECT title FROM atlas_suggestions
+               WHERE status IN ('uygulandi','applied') AND source='prompt_optimizer'
+                 AND created_at >= NOW() - INTERVAL '30 days'
+               ORDER BY created_at DESC LIMIT 10"""
         )
         if past_approved:
             past_approvals_block = (
@@ -302,14 +305,17 @@ async def analyze_and_suggest(hours: int = 24) -> dict:
     suggestions = await _ask_groq_for_suggestion(problems)
     logger.info(f"[ATLAS-2] Groq {len(suggestions)} oneri uretti")
 
-    # 25.40z3-ATLAS2 FIX: Mevcut DB'deki tum approved/rejected basliklari yukle
-    # Aynı normalize başlık varsa ÜRETME (her gece 5 aynı öneri sorununun çözümü)
+    # 25.40z3-ATLAS2 BIRLEŞIK MIMARI:
+    # Atlas-1 ve Atlas-2 artık AYNI tabloyu (atlas_suggestions) kullanır.
+    # source='prompt_optimizer' field ile ayrı kategorize edilir.
+    # Tek dashboard tek listeden okur. Tek API tek deduplication.
     existing_norms = set()
     try:
         existing_rows = await _fetch(
             """SELECT lower(regexp_replace(title, '\\d+', 'N', 'g')) as norm
-               FROM prompt_suggestions
-               WHERE status IN ('approved', 'rejected', 'superseded', 'applied', 'pending')
+               FROM atlas_suggestions
+               WHERE status IN ('uygulandi','yapildi','rejected','archived',
+                                'applied','superseded','yeni','pending','ertelendi')
                  AND created_at > NOW() - INTERVAL '90 days'"""
         )
         existing_norms = {r['norm'] for r in existing_rows}
@@ -327,7 +333,7 @@ async def analyze_and_suggest(hours: int = 24) -> dict:
         if is_dangerous:
             s['_safety_flag'] = 'protected_pattern_touched'
 
-        # 25.40z3-ATLAS2 FIX: Title normalize + dedup
+        # Title normalize + dedup
         title = s.get('title', '')[:200]
         norm_title = re.sub(r'\d+', 'N', title.lower())
         if norm_title in existing_norms:
@@ -335,28 +341,36 @@ async def analyze_and_suggest(hours: int = 24) -> dict:
             logger.info(f"[ATLAS-2] DUP SKIP: '{title[:60]}' (90 gun icinde mevcut)")
             continue
 
+        # Signature compute (Atlas-1 ile uyumlu)
+        sig_raw = f"prompt_optimizer::{norm_title}"
+        signature = hashlib.md5(sig_raw.encode('utf-8')).hexdigest()[:16]
+
         try:
             await _exec(
-                """INSERT INTO prompt_suggestions
-                   (category, severity, title, description, affected_pattern,
-                    suggested_prompt_change, expected_impact, sample_conversations,
-                    status)
-                   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending')""",
+                """INSERT INTO atlas_suggestions
+                   (category, severity, title, rationale, suggested_change,
+                    description, affected_pattern, expected_impact,
+                    sample_conversations, status, source, signature,
+                    first_seen_at, last_seen_at, occurrence_count)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'yeni','prompt_optimizer',
+                           $10, NOW(), NOW(), 1)""",
                 s.get('category', 'improvement')[:30],
                 s.get('severity', 'medium')[:20],
                 title,
+                s.get('description', '')[:1000],  # rationale = description
+                s.get('suggested_change', '')[:2000],
                 s.get('description', '')[:1000],
                 s.get('affected_pattern', '')[:300],
-                s.get('suggested_change', '')[:2000],
                 s.get('expected_impact', '')[:300],
                 json.dumps(problems[:5]),
+                signature,
             )
-            existing_norms.add(norm_title)  # Bu run'da da yeni dup olmasin
+            existing_norms.add(norm_title)
             saved += 1
         except Exception as e:
             logger.warning(f"[ATLAS-2] suggestion save fail: {e}")
 
-    logger.info(f"[ATLAS-2] {saved} oneri DB'ye kaydedildi, {skipped_dup} duplicate atlandi")
+    logger.info(f"[ATLAS-2] {saved} oneri atlas_suggestions'a kaydedildi (source=prompt_optimizer), {skipped_dup} duplicate atlandi")
 
     # Bildirime de ekle (Neo dashboard'da görsün)
     if saved > 0:
@@ -376,13 +390,19 @@ async def analyze_and_suggest(hours: int = 24) -> dict:
 
 
 async def get_pending_suggestions(limit: int = 20) -> list[dict]:
-    """Onayi bekleyen oneriler (dashboard listing)."""
+    """Onayi bekleyen prompt_optimizer onerileri (dashboard listing).
+
+    25.40z3-ATLAS2 BIRLEŞIK: atlas_suggestions tablosundan source='prompt_optimizer'
+    filtresi ile çekilir (eski prompt_suggestions tablosu deprecated).
+    """
     rows = await _fetch(
-        """SELECT id, suggestion_date, category, severity, title, description,
-                  affected_pattern, suggested_prompt_change, expected_impact,
-                  sample_conversations, created_at
-           FROM prompt_suggestions
-           WHERE status='pending'
+        """SELECT id, category, severity, title,
+                  description, affected_pattern,
+                  suggested_change AS suggested_prompt_change,
+                  expected_impact, sample_conversations, created_at,
+                  occurrence_count, signature
+           FROM atlas_suggestions
+           WHERE status='yeni' AND source='prompt_optimizer'
            ORDER BY created_at DESC LIMIT $1""",
         limit,
     )
@@ -392,22 +412,23 @@ async def get_pending_suggestions(limit: int = 20) -> list[dict]:
 async def approve_suggestion(suggestion_id: int, reviewer: str = "neo") -> dict:
     """Bir oneriyi onayla → manual apply icin status guncelle.
 
-    Dikkat: Bu fonksiyon SADECE status'u 'approved' yapar.
-    Auto-apply icin apply_suggestion() ayrı çağrılmalı.
+    25.40z3-ATLAS2 BIRLEŞIK: status='uygulandi' (Atlas-1 ile uyumlu, eski 'approved' deprecated).
     """
     await _exec(
-        """UPDATE prompt_suggestions SET status='approved', reviewed_at=NOW(),
-                 applied_by=$2 WHERE id=$1""",
+        """UPDATE atlas_suggestions
+           SET status='uygulandi', approved_at=NOW(), applied_by=$2
+           WHERE id=$1""",
         suggestion_id, reviewer,
     )
-    return {"id": suggestion_id, "status": "approved"}
+    return {"id": suggestion_id, "status": "uygulandi"}
 
 
 async def reject_suggestion(suggestion_id: int, reviewer: str = "neo", note: str = "") -> dict:
     """Bir oneriyi reddet."""
     await _exec(
-        """UPDATE prompt_suggestions SET status='rejected', reviewed_at=NOW(),
-                 applied_by=$2, reviewer_note=$3 WHERE id=$1""",
+        """UPDATE atlas_suggestions
+           SET status='rejected', approved_at=NOW(), applied_by=$2, neo_note=$3
+           WHERE id=$1""",
         suggestion_id, reviewer, note[:500],
     )
     return {"id": suggestion_id, "status": "rejected"}
@@ -425,11 +446,14 @@ async def apply_suggestion(suggestion_id: int, dry_run: bool = True) -> dict:
     dry_run=True: gerçekten uygulamaz, sadece ne yapacağını döner.
     """
     sug = await _fetchrow(
-        "SELECT * FROM prompt_suggestions WHERE id=$1 AND status='approved'",
+        """SELECT id, title, suggested_change AS suggested_prompt_change,
+                  description, affected_pattern, source
+           FROM atlas_suggestions
+           WHERE id=$1 AND status='uygulandi' AND source='prompt_optimizer'""",
         suggestion_id,
     )
     if not sug:
-        return {"error": "suggestion not found or not approved"}
+        return {"error": "suggestion not found or not uygulandi"}
 
     change_text = sug['suggested_prompt_change']
     if not change_text:
@@ -480,8 +504,9 @@ async def apply_suggestion(suggestion_id: int, dry_run: bool = True) -> dict:
         sha = ""
 
     await _exec(
-        """UPDATE prompt_suggestions SET status='applied', applied_at=NOW(),
-                 rollback_sha=$2 WHERE id=$1""",
+        """UPDATE atlas_suggestions SET status='applied', applied_at=NOW(),
+                 neo_note=COALESCE(neo_note,'')||' rollback_sha='||$2
+           WHERE id=$1""",
         suggestion_id, sha,
     )
 
