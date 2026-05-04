@@ -2236,6 +2236,38 @@ def _build_system_blocks(
     ]
 
 
+def _build_claude_request_params(
+    v3_blocks: Optional[list],
+    claude_prompt: str,
+    dynamic_context: str,
+    claude_tools: list,
+    model: str,
+    messages: list,
+    max_tokens: int = 24576,
+) -> dict:
+    """Claude API request params (stream + sync ortak) — DRY consolidation.
+
+    25.40z3-MIMARI #6: Stream ve sync path aynı params'i üretiyordu, 2 yerde
+    duplicate logic vardı. Bu helper iki path'in tek kaynaktan params almasını
+    sağlar — gelecek değişikliklerde sadece BURASI güncellenir.
+
+    Returns: messages.create / messages.stream'e direkt verilebilir dict.
+    """
+    cached_tools = _add_tools_cache_control(claude_tools)
+    system_blocks = _build_system_blocks(v3_blocks, claude_prompt, dynamic_context)
+    params = dict(
+        model=model,
+        max_tokens=max_tokens,  # Sonnet 4.5 max 64K, biz 24K (latency vs kapasite)
+        system=system_blocks,
+        tools=cached_tools,
+        messages=messages,
+    )
+    # LIGHT tier'da tools=[] → SDK reddeder, parametreyi cikar
+    if not cached_tools:
+        params.pop("tools", None)
+    return params
+
+
 TOOL_DISPATCH = {
     "get_student_analytics":    lambda p: tool_get_student_analytics(**p),
     "get_ayt_analysis":         lambda p: tool_get_ayt_analysis(**p),
@@ -4377,15 +4409,39 @@ class FermatCoreAgent:
                 "- Öğrenci 'zaten web'deyim' derse veya web kanalında ise bu kuralı UYGULAMA.\n"
             )
 
-        # C15 — Rol-aware prompt: gereksiz bloklari kes (Oturum 22.1)
-        # admin/mudur/ogretmen icin ogrenci pedagoji blogu cikar → ~%41 tasarruf
-        # Kalan bloklar (herkese) + rol-spesifik eklemeler saglanir
+        # 25.40z3-MIMARI: V3 enable durumunu ÖNCE kontrol et — sonra koşullu pipeline
+        # V3 aktifse role_prompt (22.1) ve db_schema_cache çağrıları ATLA — duplicate iş.
+        # V3 zaten BASE'i sıfırdan inşa ediyor, role+modül ayrımı yapıyor, db_schema modülü içeriyor.
         try:
-            from role_prompt import build_prompt_for_role
-            _role_aware_prompt = build_prompt_for_role(SYSTEM_PROMPT, role, caller_phone)
-        except Exception as _rp_e:
-            logger.debug(f"role_prompt fallback: {_rp_e}")
-            _role_aware_prompt = SYSTEM_PROMPT
+            from prompt_router import _is_v3_enabled_for_phone
+            _v3_enabled = _is_v3_enabled_for_phone(caller_phone)
+        except Exception:
+            _v3_enabled = False
+
+        # 25.40z3-MIMARI #5: Intent erken inference (V3 modül seçimi tam aktive)
+        # Önceden _intent line 4789'da hesaplanıyordu — V3 build'den ~380 satır SONRA.
+        # Bu yüzden V3 modül yükleme intent=None ile yapılıyor (sadece role-based).
+        # Şimdi: V3 build'den ÖNCE intent classify → V3 koşullu modülleri tam çalışır.
+        # Örnek: ogrenci/selamlama → 'pedagoji' SKIP (~%33 ek tasarruf, intent=None'da yüklenir).
+        _intent = None
+        try:
+            from intent_classifier import classify_intent
+            _intent = classify_intent(user_input or "")
+        except Exception:
+            _intent = None
+
+        # C15 — Rol-aware prompt: gereksiz bloklari kes (Oturum 22.1)
+        # 25.40z3-MIMARI: V3 enable iken role_prompt SKIP — boşa CPU+bellek (172K replace).
+        # V3 modüler yapı zaten role-spesifik filtreleme yapıyor (BASE'den 3 modül çıkarılmış).
+        if _v3_enabled:
+            _role_aware_prompt = SYSTEM_PROMPT  # V3 zaten override edecek, placeholder
+        else:
+            try:
+                from role_prompt import build_prompt_for_role
+                _role_aware_prompt = build_prompt_for_role(SYSTEM_PROMPT, role, caller_phone)
+            except Exception as _rp_e:
+                logger.debug(f"role_prompt fallback: {_rp_e}")
+                _role_aware_prompt = SYSTEM_PROMPT
 
         # 25.40z2 — V2 zincir: kanal + rol + intent 3-katmanli filtre
         # role_prompt cikti basina BUYUK render bloklari da silinir (WhatsApp'ta)
@@ -4397,13 +4453,15 @@ class FermatCoreAgent:
         # cache breakpoint kullanir (tools 4. breakpoint). Boylece BASE 5dk TTL'de
         # statik kalir, dynamic_context degisse bile BASE cache HIT yapar.
         self._v3_system_blocks = None  # default: V2 yolu (legacy 2-block cache)
+        # 25.40z3-MIMARI: Loaded modules info — db_schema_cache atlatma karari icin
+        _v3_loaded_modules = []
         try:
-            from prompt_router import build_prompt_v2 as _bv2, _is_v3_enabled_for_phone
+            from prompt_router import build_prompt_v2 as _bv2
             _channel = getattr(self, "_channel", "whatsapp")
             _intent_for_v2 = locals().get("_intent") or None
 
             # 25.40z3 Faz 3: V3 modüler prompt aktif mi?
-            if _is_v3_enabled_for_phone(caller_phone):
+            if _v3_enabled:
                 # V3 yolu — modüler compose + hierarchical blocks (cache breakpoints)
                 from prompt_router import build_prompt_v3 as _bv3
                 # Önce string al (concat) — _role_aware_prompt downstream icin gerekli
@@ -4413,13 +4471,14 @@ class FermatCoreAgent:
                 )
                 if _v3_info.get("v3_active"):
                     _role_aware_prompt = _v3_prompt
+                    _v3_loaded_modules = _v3_info.get("modules_loaded", [])
                     # Sonra blocks al — Anthropic API hierarchical cache_control formatı
                     _v3_blocks, _ = _bv3(
                         role=role, intent=_intent_for_v2, channel=_channel,
                         phone=caller_phone, force_v3=True, return_blocks=True,
                     )
                     self._v3_system_blocks = _v3_blocks
-                    logger.info(f"  [PROMPT_V3] base+{'+'.join(_v3_info['modules_loaded'][1:])} "
+                    logger.info(f"  [PROMPT_V3] base+{'+'.join(_v3_loaded_modules[1:])} "
                                 f"= {_v3_info['total_size']:,} char "
                                 f"({len(_v3_blocks)} cache blocks)")
             else:
@@ -4439,13 +4498,16 @@ class FermatCoreAgent:
 
         # 22.1n-neo iş4: DB Schema cache — schema kesfi yapmasin
         # 1 saat TTL, ~1.4K token ekler ama 4-6 gereksiz query_analytics kaldirir
-        try:
-            from db_schema_cache import get_schema_summary_sync
-            _schema_str = get_schema_summary_sync()
-            if _schema_str:
-                _role_aware_prompt += "\n\n" + _schema_str
-        except Exception:
-            pass
+        # 25.40z3-MIMARI: V3 db_schema modulü zaten yüklendiyse SKIP — duplicate token önle.
+        # V3 db_schema_extended (12K char) > db_schema_cache (1.4K) — modül daha kapsamlı.
+        if "db_schema" not in _v3_loaded_modules:
+            try:
+                from db_schema_cache import get_schema_summary_sync
+                _schema_str = get_schema_summary_sync()
+                if _schema_str:
+                    _role_aware_prompt += "\n\n" + _schema_str
+            except Exception:
+                pass
 
         # 22.1n-neo FAZ 2.3: Kisisellestirme context injection (ogrenci icin)
         if role == "ogrenci" and caller_phone:
@@ -4758,19 +4820,15 @@ class FermatCoreAgent:
         # ── 25.18 FAZ 4: Lane + intent erken hesaplama (zenginleştirilmiş) ─
         # Lane: local LLM path için (groq_lanes.classify_lane — modül adı eski,
         # gerçekte 25.22+ Cerebras-first çalışıyor; classify hala doğru)
-        # Intent: tier seçimi + tool subset için (intent_classifier — 30+ etiket)
+        # 25.40z3-MIMARI #5: _intent ARTIK V3 build oncesi hesaplaniyor (line 4400+).
+        # Burada sadece lane hesaplanir; _intent yukarida zaten set edildi.
         _lane = None
-        _intent = None
         try:
             from groq_lanes import classify_lane
             _lane = classify_lane(user_input, role=role, phone=caller_phone)
         except Exception:
             _lane = None
-        try:
-            from intent_classifier import classify_intent
-            _intent = classify_intent(user_input or "")
-        except Exception:
-            _intent = None
+        # _intent zaten yukarida (V3 build oncesi) classify_intent ile hesaplandi
 
         # ── HİBRİT LLM ROUTING (Oturum 22.1e — tek kaynak: routing_engine) ──
         # Onceki: 3 yerde routing (fast_responses, llm_router, fermat_core) → karmaşik
@@ -5223,7 +5281,10 @@ class FermatCoreAgent:
                     intent=_intent_for_tier,
                     has_personal_data_query=_has_pers,
                 )
-                _claude_prompt = get_prompt_for_tier(_selected_tier, _role_aware_prompt)
+                # 25.40z3-MIMARI: V3 aktif iken tier ezme YOK - V3 prompt korunur
+                _claude_prompt = get_prompt_for_tier(
+                    _selected_tier, _role_aware_prompt, v3_active=_v3_enabled,
+                )
                 # 25.18 Faz 4: intent ile gerçek intent-based tool subset routing
                 _claude_tools = get_tools_for_tier(_selected_tier, get_tools(role=role), intent=_intent_for_tier)
                 log_tier_decision(_selected_tier, user_input or "", role or "ogrenci",
@@ -5251,72 +5312,33 @@ class FermatCoreAgent:
             # STREAMING YOLU — eğer _stream_queue varsa AsyncAnthropic ile
             # native streaming: Claude her token ürettiğinde hemen queue'ya yaz.
             # Tool kullanımında text stream + tool_use fragman gelir, final_message'dan topla.
+            # 25.40z3-MIMARI #6: Stream + sync ortak params helper'dan
+            # (DRY consolidation - tek kaynak, gelecek değişiklikler buraya)
+            _request_params = _build_claude_request_params(
+                v3_blocks=self._v3_system_blocks,
+                claude_prompt=_claude_prompt,
+                dynamic_context=dynamic_context,
+                claude_tools=_claude_tools,
+                model=MODEL,
+                messages=self.history,
+            )
             if self._stream_queue is not None and self.async_client:
-                # 25.15: tier'a gore prompt + tool subset (default FULL davranis)
-                # 25.39 (Neo): Tools'a cache_control eklendi — son tool'a ephemeral
-                # Anthropic API: tools listesinde son tool'un cache_control'ü
-                # tüm tools array'ını cache'ler. ~24K token tek bir cache breakpoint.
-                _cached_tools = _add_tools_cache_control(_claude_tools)
-                # 25.40z3 Cache: V3 hierarchical blocks aktifse onu kullan,
-                # degilse legacy 2-block (V2). Anthropic max 4 cache breakpoint
-                # (3 system + 1 tools); _build_system_blocks bunu garanti eder.
-                _system_blocks = _build_system_blocks(
-                    self._v3_system_blocks, _claude_prompt, dynamic_context,
-                )
-                _stream_params = dict(
-                    model     = MODEL,
-                    # Oturum 25.39 (Neo timeout fix): kompleks render (yıldız evrim, galaksi sim)
-                    # 16K output yetmiyordu → make_render_link html parametresi truncate.
-                    # Sonnet 4.5 max output 64K, biz 24K alıyoruz (orta yol — latency vs kapasite).
-                    max_tokens= 24576,  # 16K → 24K (kompleks HTML için yeterli)
-                    system    = _system_blocks,
-                    # 25.39: role-filtered + cache_control'lü tools
-                    tools     = _cached_tools,
-                    messages  = self.history,
-                )
-                # LIGHT tier'da tools=[] olunca Anthropic SDK boş listeyi reddeder
-                if not _cached_tools:
-                    _stream_params.pop("tools", None)
+                # STREAMING YOLU — AsyncAnthropic native streaming
                 try:
-                    async with self.async_client.messages.stream(**_stream_params) as stream:
+                    async with self.async_client.messages.stream(**_request_params) as stream:
                         async for text_chunk in stream.text_stream:
-                            # Native streaming — her token anında kullanıcıya
                             await self._stream_queue.put(("chunk", text_chunk))
                         response = await stream.get_final_message()
                 except Exception as _stream_err:
                     # Stream başarısızsa sync fallback
                     logger.warning(f"Native stream hatası, sync'e düştü: {_stream_err}")
                     response = await asyncio.to_thread(
-                        self.client.messages.create, **_stream_params
+                        self.client.messages.create, **_request_params
                     )
             else:
-                # C15 — Prompt cache agresifleştirme (Oturum 22)
-                # Önce: 1 block cache + 1 block uncached → dynamic_context her call'da
-                #   reprocess
-                # Şimdi: 2 block cache'e al → dynamic_context de ephemeral TTL (5dk)
-                # Aynı rol+user 5dk içinde sorgu atarsa CACHE HIT → maliyet %50 düşer,
-                # latency 200-500ms tasarruf.
-                # 25.15: tier'a gore prompt + tool subset
-                # 25.39 (Neo): Tools'a cache_control eklendi — ~24K token cache'leniyor
-                _cached_tools = _add_tools_cache_control(_claude_tools)
-                # 25.40z3 Cache: V3 hierarchical blocks (varsa) — sync path
-                _system_blocks = _build_system_blocks(
-                    self._v3_system_blocks, _claude_prompt, dynamic_context,
-                )
-                _create_params = dict(
-                    model     = MODEL,
-                    # Oturum 25.39: 16K → 24K (kompleks HTML render için yeterli)
-                    max_tokens= 24576,
-                    system    = _system_blocks,
-                    # 25.39: role-filtered + cache_control'lü tools
-                    tools     = _cached_tools,
-                    messages  = self.history,
-                )
-                # LIGHT tier'da tools=[] → SDK reddeder, parametreyi cikar
-                if not _cached_tools:
-                    _create_params.pop("tools", None)
+                # SYNC YOLU — asyncio.to_thread ile bloke etmez
                 response = await asyncio.to_thread(
-                    self.client.messages.create, **_create_params
+                    self.client.messages.create, **_request_params
                 )
 
             # Araç çağrıları varsa çalıştır

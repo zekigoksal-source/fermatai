@@ -1,30 +1,28 @@
+# -*- coding: utf-8 -*-
 """
-Modüler prompt sistemi (Oturum 25.18 — Faz 5 iskelet)
-========================================================
+Modüler prompt sistemi (Oturum 25.40z3 — V3 modular parsing)
+==============================================================
 
-Asıl extract işi: SYSTEM_PROMPT'taki blokları ayrı dosyalara taşımak.
-Şu an iskelet hazır, gerçek extract bir sonraki oturumda yapılacak
-(hassas iş — test ile birlikte).
+V3 mimarisi: SYSTEM_PROMPT'tan 3 büyük modül EXTRACT edildi.
+BASE = SYSTEM_PROMPT - (3 modül) ≈ persona + güvenlik + roller + KVKK + tools
 
-GELECEK MODÜL LİSTESİ:
-- karakter.py — Karakter ruhu + üslup (~2k tok)
-- kurumsal.py — Fermat kurum bilgileri (~1k tok)
-- kvkk_acl.py — Yetki, KVKK, ACL kuralları (~3k tok)
-- finans.py — Finans red kuralları (~1.5k tok)
-- pedagoji.py — Pedagojik destek + şablon (~3k tok)
-- scenario.py — Öğrenci/öğretmen senaryoları (~3k tok)
-- atlas.py — Admin self-awareness (~2k tok)
-- easter.py — Easter egg referansları (~2k tok)
+Modüller:
+- pedagoji_extended.py (~38K char) — pedagojik ton + plan + yeni nesil + tutarlılık
+- render_extended.py (~25K char) — chart/3d/sim/compound/compton/renderer
+- db_schema_extended.py (~12K char) — students/student_exams + SQL pattern
 
-ŞİMDİLİK:
-- LIGHT_PROMPT (prompt_tiers.LIGHT_PROMPT) — KVKK + finans yasak entegre
-- NORMAL_PROMPT (prompt_tiers.NORMAL_PROMPT) — + plan/analiz protokolü
-- FULL_PROMPT (system_prompts.SYSTEM_PROMPT) — mevcut monolitik
+Kullanım:
+    from prompt_modules.composer_v3 import build_prompt_v3, get_base_prompt
 
-Composer kullanımı (gelecek):
-    from prompt_modules.composer import build_prompt
-    prompt = build_prompt(["karakter", "kvkk_acl", "finans"])
+    # String compose (V2 uyumlu)
+    text, info = build_prompt_v3('ogrenci', 'kavram_aciklama', 'web')
+
+    # Anthropic API hierarchical block (cache_control destekli)
+    blocks, info = build_prompt_v3('ogrenci', 'kavram', 'web', return_blocks=True)
+
+NOT (25.40z3-MIMARI #8): Eski V1 composer.py (iskelet, hiç implement edilmedi)
+4 May 2026'da silindi — tek modüler kaynak: composer_v3.
 """
-from .composer import build_prompt, list_available_modules
+from .composer_v3 import build_prompt_v3, get_base_prompt
 
-__all__ = ["build_prompt", "list_available_modules"]
+__all__ = ["build_prompt_v3", "get_base_prompt"]

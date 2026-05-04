@@ -367,16 +367,27 @@ def select_tier(
         return "full"
 
 
-def get_prompt_for_tier(tier: str, full_prompt: str) -> str:
+def get_prompt_for_tier(tier: str, full_prompt: str, v3_active: bool = False) -> str:
     """Tier'a göre prompt dön.
 
     Args:
         tier: 'light' / 'normal' / 'full'
-        full_prompt: mevcut FERMATAI 28k SYSTEM_PROMPT
+        full_prompt: mevcut FERMATAI 28k SYSTEM_PROMPT (V3 enable iken V3 prompt geçer)
+        v3_active: 25.40z3-MIMARI - V3 modüler prompt aktif mi?
+                   True ise tier override edilmez, full_prompt (V3) korunur.
 
     Returns:
         Tier'a uygun prompt string
+
+    NOT (25.40z3-MIMARI): V3 enable iken sabit LIGHT_PROMPT/NORMAL_PROMPT V3'ün
+    inşa ettiği modüler prompt'u OVERWRITE etmemeli. V3 zaten kendi tier'ını
+    yapıyor (rol+intent+kanal'a göre koşullu modül). Bu yüzden v3_active=True
+    iken her tier full_prompt döner.
     """
+    # 25.40z3-MIMARI: V3 aktif iken tier ezme YOK — V3 prompt korunur
+    if v3_active:
+        return full_prompt
+
     if tier == "light":
         return LIGHT_PROMPT
     if tier == "normal":
