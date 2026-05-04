@@ -100,7 +100,8 @@ ROLE_BLOCK_MARKERS = {
 # Default: çağıranın rolü dışındaki TÜM rolleri sil (en güvenli)
 # İstisnalar: bazı rollere ek izin (örneğin müdür → öğretmen blokunu da görsün)
 ROLE_KEEP_OTHERS = {
-    "admin":    set(),  # admin her şeyi görür → hiçbir blok silinmez (tam güç)
+    # admin: TÜM rolleri görür (kontrol/audit için tam görüş)
+    "admin":    {"yonetim", "mudur", "rehber", "ogretmen", "ogrenci", "veli"},
     "yonetim":  {"mudur", "rehber", "ogretmen", "ogrenci"},  # yönetim alt rollerini bilmeli
     "mudur":    {"rehber", "ogretmen", "ogrenci"},  # müdür alt rolleri bilmeli
     "rehber":   {"ogrenci"},  # rehber öğrenci kurallarını bilmeli
@@ -118,6 +119,7 @@ def build_prompt_v2(
     phone: str = "",
     channel: str = "whatsapp",
     force_v2: bool = False,
+    base_prompt: Optional[str] = None,
 ) -> tuple[str, dict]:
     """V2 prompt compose — eksiltici filtre + kanal bazlı.
 
@@ -127,17 +129,22 @@ def build_prompt_v2(
         phone: feature flag kontrolü için
         channel: 'whatsapp' (default) veya 'web' — kanal-spesifik blok filtresi
         force_v2: True ise feature flag bypass
+        base_prompt: opsiyonel — None ise SYSTEM_PROMPT'tan alır.
+                     role_prompt.build_prompt_for_role() çıktısını verirsen
+                     ZINCIR halinde çift kazanım (role + channel) sağlanır.
 
     Returns:
         (prompt_text, info_dict)
         info_dict: {v2_active, original_size, new_size, removed_blocks, role}
     """
-    from system_prompts import SYSTEM_PROMPT
+    if base_prompt is None:
+        from system_prompts import SYSTEM_PROMPT
+        base_prompt = SYSTEM_PROMPT
 
     info = {
         "v2_active": False,
-        "original_size": len(SYSTEM_PROMPT),
-        "new_size": len(SYSTEM_PROMPT),
+        "original_size": len(base_prompt),
+        "new_size": len(base_prompt),
         "removed_blocks": [],
         "role": role,
         "channel": channel,
@@ -145,7 +152,7 @@ def build_prompt_v2(
 
     # Feature flag kontrolü
     if not force_v2 and not _is_v2_enabled_for_phone(phone):
-        return SYSTEM_PROMPT, info
+        return base_prompt, info
 
     # V2 aktif — eksiltici filtre uygula
     role_clean = (role or "ogrenci").strip().lower()
@@ -153,7 +160,7 @@ def build_prompt_v2(
     keep_set = {role_clean} | keep_others
     remove_roles = set(ROLE_BLOCK_MARKERS.keys()) - keep_set
 
-    prompt_v2 = SYSTEM_PROMPT
+    prompt_v2 = base_prompt
     removed_blocks = []
 
     # Adım 1: Rol bloklarını filtrele

@@ -85,14 +85,15 @@ def test_halusinasyon_yasak_intact():
     print("\n[3] HALUSINASYON YASAK (kritik)")
     from prompt_router import build_prompt_v2
 
+    # Gerçek prompt'ta geçen halüsinasyon yasak kalıpları
     HALUSINASYON_KEYWORDS = [
-        "ASLA uydurma",
-        "ASLA halusinasyon",
+        "uydurma",       # "uydurma sayı YASAK" / "ASLA tahmini sayı uydurma"
+        "HALUSINASYON",  # "SAYISAL HALUSINASYON YASAĞI"
     ]
     # En az 1 halüsinasyon kuralı kalmalı
     for role in ["admin", "ogrenci"]:
         prompt, _ = build_prompt_v2(role=role, channel="whatsapp", force_v2=True)
-        found = sum(1 for kw in HALUSINASYON_KEYWORDS if kw.lower() in prompt.lower())
+        found = sum(1 for kw in HALUSINASYON_KEYWORDS if kw in prompt or kw.lower() in prompt.lower())
         check(
             f"halusinasyon yasak in {role} (>=1)",
             found >= 1,
