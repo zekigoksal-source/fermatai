@@ -179,9 +179,10 @@ def test_token_kazanim():
         )
 
     if enc and total_v1 > 0:
-        avg_reduction = (total_v1 - total_v2) / total_v1 * 100 / len(SENARYOLAR)
+        avg_reduction = (total_v1 - total_v2) / total_v1 * 100
         print(f"\n  📊 Ortalama token kazanım (30 senaryo): %{avg_reduction:.1f}")
         print(f"  📊 V1 toplam: {total_v1:,} tok | V2 toplam: {total_v2:,} tok")
+        print(f"  📊 Maliyet etkisi: $171/ay × {(100-avg_reduction)/100:.2f} ≈ ${171*(100-avg_reduction)/100:.0f}/ay (tasarruf ~${171*avg_reduction/100:.0f}/ay)")
 
 
 def test_persona_intact_30_scenario():
