@@ -925,7 +925,7 @@ Hawking radyasyonu, kuantum mekanigi ile genel gorelilik teorisinin
 kesistigi ilginc bir fenomendir...
 [3 paragraf detayli aciklama]
 
-[CLAUDE_HANDOFF: tool=search_curriculum reason=Hawking radyasyonu uzerine RAG'da daha detayli ders var, ogrenciye sun]
+[CLAUDE_HANDOFF: tool=search_curriculum reason=Hawking radyasyonu uzerine RAGda daha detayli ders var, ogrenciye sun]
 """
 
 SUPERVISOR DEGERLENDIRMESI:
