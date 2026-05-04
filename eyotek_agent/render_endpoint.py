@@ -84,10 +84,10 @@ async def ensure_table():
 def calculate_quality_score(html: str, title: str = "") -> tuple[int, dict]:
     """25.39 — HTML kalite puanı (100) + breakdown (Neo: max kalite zorunlu).
 
-    KRITIK FIX:
-    - Önceki versiyon "three." string varsa 25 puan veriyordu — gerçek scene yok olsa da.
-    - Şimdi: gerçek 3D scene yapısı (Scene + Camera + Renderer + scene.add) ZORUNLU
-    - Simulasyon/3D istendiyse 3D scene yoksa MAX 25 puan (UI iskeleti yetmez)
+    25.40z3-RENDER-FIX (Neo bug 4 May 18:32 "gene bomboş çıktı"):
+    - three@0.149+ /examples/js/ DEPRECATED → 404 → silent JS fail → BOŞ canvas
+    - Doğru: three@0.147 (UMD destekli son versiyon) → /examples/js/ HTTP 200
+    - Eğer HTML 0.149+ + /examples/js/ kombinasyonu içeriyor → -40 puan + uyarı
     """
     if not html:
         return 0, {"reason": "empty"}
@@ -95,6 +95,15 @@ def calculate_quality_score(html: str, title: str = "") -> tuple[int, dict]:
     title_lower = (title or "").lower()
     breakdown = {}
     score = 0
+
+    # 25.40z3-RENDER-FIX: CDN URL guard (Neo "gene bomboş" bug)
+    # Three.js 0.149+ ESM-only, examples/js/ kalktı. Bot bu kombinasyonu kullanırsa
+    # OrbitControls 404 → silent fail → boş canvas. Otomatik puan kesimi:
+    import re as _re_check
+    bad_three_combo = bool(_re_check.search(r'three@0\.(149|15\d|16\d|17\d|18\d|19\d|2\d{2})/examples/js/', h))
+    if bad_three_combo:
+        breakdown["cdn_warning"] = "three@0.149+/examples/js/ DEPRECATED — silent fail riski (-40 puan)"
+        breakdown["cdn_fix"] = "three@0.147 kullan (UMD destekli son versiyon, examples/js/ çalışır)"
 
     # Title'dan render tipi tahmini
     is_3d_request = any(k in title_lower for k in [
@@ -247,6 +256,12 @@ def calculate_quality_score(html: str, title: str = "") -> tuple[int, dict]:
     if size_kb < 5:
         score = min(score, 15)
         breakdown["penalty"] = breakdown.get("penalty", "") + " | TOO_TINY"
+
+    # 25.40z3-RENDER-FIX: CDN bozuk → silent fail → TAVAN 25 (Neo "gene bomboş")
+    if bad_three_combo:
+        original = score
+        score = min(score, 25)
+        breakdown["penalty"] = breakdown.get("penalty", "") + f" | BAD_THREE_CDN (orig {original} → max 25, three@0.149+ + examples/js/ = 404)"
 
     # Cap to 100
     score = min(score, 100)

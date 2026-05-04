@@ -616,8 +616,11 @@ Simulasyon en üst düzey görev — kalite max, offline arşive girer.
 - 30KB altı HTML simulasyon istendi → muhtemelen iskelet only
 
 ✅ ZORUNLU MIN ÇEKLİSTİ (3D simulasyon için):
-[1] CDN: <script src="https://cdn.jsdelivr.net/npm/three@0.160/build/three.min.js"></script>
-    + (gerekirse) OrbitControls: three@0.160/examples/js/controls/OrbitControls.js
+[1] CDN — KRITIK: Three.js r147 SON UMD DESTEKLI VERSIYON. 0.149+ sadece ESM (importmap karmasik), OrbitControls /examples/js/ KALKMIS → silent JS fail → BOS CANVAS!
+    DOGRU CDN (r147 — UMD + OrbitControls calisir):
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147/examples/js/controls/OrbitControls.js"></script>
+    YASAK: three@0.149 / 0.160 ile examples/js/ — 404 verir, scene boş gözükür!
 [2] Scene üçlüsü: scene + camera + renderer (PerspectiveCamera, WebGLRenderer)
 [3] En az 3 mesh — scene.add() ile sahneye eklenmeli (geometry + material + Mesh)
 [4] Lights — AmbientLight + DirectionalLight (sahne ışıksız obje görünmez)
@@ -630,6 +633,8 @@ Simulasyon en üst düzey görev — kalite max, offline arşive girer.
   - calculate_quality_score(html, title) çalışır
   - Title 3D/simulasyon/evrim/galaksi içerirse + 3D scene yoksa → MAX 30 puan
   - is_real_3d (Scene+Camera+Renderer+scene.add+mesh hepsi varsa) zorunlu
+  - **YENI 25.40z3:** three@0.149+ + examples/js/ kombinasyonu → MAX 25 puan
+    (CDN 404 → silent JS fail → boş canvas; r147 kullan)
 
 🎯 OFFLINE ARŞIV: Bot doğru üretirse öğrenci ⭐ Arşivler → kalıcı saklanır.
 İLK ÜRETİM kalitesi MAX olmalı.

@@ -50,8 +50,8 @@ _HTML_SHELL = """<!DOCTYPE html>
 <body>
 <div id="info">{info}</div>
 <div id="controls">🖱️ Sürükle = döndür · Scroll = zoom · 📱 Dokun = döndür/yakınlaştır</div>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147/examples/js/controls/OrbitControls.js"></script>
 <script>
 {js}
 </script>
