@@ -4130,8 +4130,25 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                     _trace = getattr(agent, "last_decision_trace", None) or {}
                     _tools = list(getattr(agent, "last_tools_called", None) or [])
                     _blocks = list(getattr(agent, "last_prompt_blocks", None) or [])
+                    # 25.40z3-ROUTING-FIX2: Decision trace 'unknown' bug fix
+                    # Bridge level garanti: route hala "unknown" ise _src'den türet
+                    # Fast path agent.run() çağırmadığı için trace boş → unknown kalıyordu
+                    if not _trace or _trace.get("route") == "unknown":
+                        if not _trace:
+                            _trace = {}
+                        # _src bridge'den geliyor: "fast_response", "claude", "cerebras_235b" vb.
+                        if _src == "fast_response":
+                            _trace["route"] = "fast"
+                        elif _src and _src.startswith("cerebras"):
+                            _trace["route"] = f"local_{_src}"
+                        elif _src in ("groq", "ollama"):
+                            _trace["route"] = f"local_{_src}"
+                        elif _src == "claude":
+                            _trace["route"] = "claude"  # tool_loop/text_only agent set etmediyse
+                        elif _src:
+                            _trace["route"] = _src
                     # Source bilgisini de trace'e yaz (granuler analiz icin)
-                    if _trace and not _trace.get("source"):
+                    if not _trace.get("source"):
                         _trace["source"] = _src
                     _trace_json = _json_trace.dumps(_trace, ensure_ascii=False) if _trace else None
                 except Exception:

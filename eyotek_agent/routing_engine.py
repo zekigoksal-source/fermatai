@@ -183,6 +183,23 @@ def decide_route(
     if detect_duygu_psikoloji(message):
         return "claude"
 
+    # ── 0c. SECURITY INTENT GUARD (25.40z3-ROUTING-FIX1, EN ÜST GÜVENLİK) ──
+    # KRITIK: Bu kontrol HİÇBİR routing kararından SONRA gelmemeli — lane/fast
+    # match security mesajını local'e atabiliyor (örn injection lane'de "kibarlik"e
+    # benziyor). Hassas niyetler ZORLA Claude'a → maksimum güvenlik + KVKK koruma.
+    _intent = ""
+    try:
+        from intent_classifier import classify_intent
+        _intent = classify_intent(message) or ""
+        _security_intents = {
+            "injection_suspect", "role_change", "hassas_veri",
+            "finans", "admin_action",
+        }
+        if _intent in _security_intents:
+            return "claude"
+    except Exception:
+        pass
+
     # ── 1. ADMIN → her zaman Claude (selamlama+not_et hariç) ──
     if role == "admin":
         is_greeting = bool(re.match(r'^(merhaba|selam|sa$|iyi\s*g[uü]n|hey|na[sb])', msg_lower))
@@ -244,8 +261,27 @@ def decide_route(
     try:
         from llm_router import classify_complexity
         complexity = classify_complexity(message)
-        # local → "local" (Groq), cloud → claude, auto → "local" (Groq dene)
+
+        # 25.40z3-ROUTING-FIX1: claude_text_only → Cerebras 235b yönlendirme
+        # Bot analizi (5 May): Claude trafiğinin %39'u tool kullanmadan direkt cevap
+        # (claude_text_only: 173/(270+173) son 7 gün). Bu mesajların büyük kısmı
+        # öğrenci kavramsal soruları ("Tyt fizik anlat", "Cati eki", "AA yayı uzunluğu")
+        # → Cerebras 235b'ye taşınır. Admin text_only DEV TARTIŞMASI olduğu için
+        # Claude'da kalır (mimari nüans + kalite zorunlu).
+        # NOT: security guard yukarıda zaten yakaladı, burada güvenli intent'ler kalır.
         if complexity == "cloud":
+            if role in ("ogrenci", "ogretmen", "rehber"):
+                # Tool gerektirmeyen kavramsal/yardımcı intent'ler → local (Cerebras 235b)
+                text_only_safe_intents = {
+                    "kavram_aciklama", "ornek_iste", "cozum_iste",
+                    "ozet_iste", "yontem_iste", "konu_anlatim_uzun",
+                    "sohbet", "selamlama", "veda", "tesekkur",
+                    "motivasyon_destek", "duygu_paylasim",
+                    "kurum_bilgi", "yks_takvim", "mufredat_bilgi",
+                    "yetenek_sorgu", "metin_zenginlestir",
+                }
+                if _intent in text_only_safe_intents:
+                    return "local"
             return "claude"
         if complexity == "local":
             return "local"

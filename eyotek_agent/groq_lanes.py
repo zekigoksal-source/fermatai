@@ -171,6 +171,59 @@ _KONU_HARITASI = re.compile(
     re.IGNORECASE,
 )
 
+# ═══════════════════════════════════════════════════════════════════
+# 25.40z3-ROUTING-FIX3: 5 YENI LANE (Cerebras pay %5 → %25 hedef)
+# Mevcut 11 lane Cerebras'a yeterince trafik vermiyordu. Bot analizi:
+# Claude'a giden text_only mesajların büyük kısmı bu pattern'lara uyuyor.
+# ═══════════════════════════════════════════════════════════════════
+
+# 12. DERS_ANLATIM — geniş ders/konu açıklama istekleri
+# "TYT fizik anlat", "AYT mat hepsini açıkla", "Türkçe konularını göster"
+_DERS_ANLATIM = re.compile(
+    r'\b((tyt|ayt|lgs|yks)\s+(\w+)\s*(anlat|açıkla|aciklа|göster|özet|ozet|nasil|nasıl)|'
+    r'(matematik|geometri|fizik|kimya|biyoloji|türkçe|turkce|tarih|coğrafya|cografya|felsefe|edebiyat|din|ingilizce)'
+    r'\s+(anlat|açıkla|aciklа|göster|özet|ozet|hepsi|konuları?|hocası|dersleri?|temel)|'
+    r'(\w+)\s+konusunu\s+(anlat|açıkla|aciklа|göster|özet)|'
+    r'(\w+)\s+dersini\s+(anlat|açıkla|aciklа|göster))',
+    re.IGNORECASE,
+)
+
+# 13. FORMUL_ACIKLAMA — formül/denklem açıklama
+# "F=ma ne demek", "E=mc2 açıkla", "Newton 2 yasası"
+_FORMUL_ACIKLAMA = re.compile(
+    r'(=\s*\w+\s*[\^\*\+\-/]?\s*\w*|'  # X=Y ifadesi
+    r'\b(formul|formül|denklem|esitlik|eşitlik|integral|türev|turev|limit|toplam)\b|'
+    r'\b(newton|einstein|pascal|hooke|coulomb|ohm|kepler|kirchhoff|faraday)\s+(yasa|kural|kanun|denkl|prensib))',
+    re.IGNORECASE,
+)
+
+# 14. ORNEK_URETIM — "X örneği ver", "soru ver" (test_olusturma değil)
+# Kullanıcı OGRETIM amaçlı örnek istiyor (RAG'dan veya bot kendi)
+_ORNEK_URETIM = re.compile(
+    r'\b(ornek|örnek)\s+(ver|göster|getir|hazirla|hazırla)|'
+    r'\b(\w+)\s+(ile\s+ilgili|hakkında|hakkinda|konusunda)\s+(ornek|örnek|soru)|'
+    r'\b(basit|kolay|temel|orta|zor)\s+(ornek|örnek|soru)|'
+    r'\baciklayici\s+ornek|açıklayıcı\s+ornek',
+    re.IGNORECASE,
+)
+
+# 15. UZUN_MOTIVASYON — kriz değil ama destek isteyen orta uzunluk
+# "bugün moralim çok kötü, ne yapayım"
+_UZUN_MOTIVASYON = re.compile(
+    r'\b(moralim|enerjim|isteğim|hevesim|motivasyonum)\s+(yok|dusuk|düşük|kötü|kotu)|'
+    r'\b(yardim|yardım|tavsiye|öneri|fikir|tavsiye)\s+(et|ver|gerek|verir|edin)|'
+    r'\b(ne\s+yapayim|ne\s+yapay[iı]m|ne\s+yapsam|nasil\s+(devam|baslayim|başlay))|'
+    r'\b(zihn|kafa)m\s+(dağ|dag|karis|karış|tutmuy)',
+    re.IGNORECASE,
+)
+
+# 16. KISACA_OZET — "kısaca anlat", "özet ver", "tek cümlede"
+_KISACA_OZET = re.compile(
+    r'\b(kisaca|kısaca|özet|ozet|tek\s+cümle|tek\s+cumle|kısa\s+özet|kisa\s+ozet|'
+    r'maddeleyerek|özetle|ozetle|kısa\s+ve\s+öz|ana\s+fikir|temel\s+nokta)',
+    re.IGNORECASE,
+)
+
 
 # ── Lane Classifier ────────────────────────────────────────────────────────
 
@@ -179,6 +232,9 @@ GroqSafeLane = Literal[
     "egitim_icerik", "red_generik", "kisa_motivasyon",
     # 25.37+ (Neo): Cerebras-safe render istekleri (renderer hint inject ile zenginleşir)
     "render_request", "karsilastirma", "quiz_request", "konu_haritasi",
+    # 25.40z3-ROUTING-FIX3: Cerebras pay %5→%25 hedefi (5 yeni lane)
+    "ders_anlatim", "formul_aciklama", "ornek_uretim",
+    "uzun_motivasyon", "kisaca_ozet",
 ]
 
 
@@ -267,9 +323,38 @@ def classify_lane(message: str, role: str = "", phone: str = "") -> Optional[str
     if text_len < 50 and _KISA_MOTIVASYON.match(text):
         return "kisa_motivasyon"
 
+    # 15. UZUN_MOTIVASYON — orta uzunluk destek isteği (kriz değil)
+    # KISA_MOTIVASYON'dan SONRA, KAVRAMSAL'dan ÖNCE — uzun motivasyon mesajı
+    if _UZUN_MOTIVASYON.search(text_lower) and 30 <= text_len <= 200:
+        return "uzun_motivasyon"
+
     # 3. META_DIREKTIF (bot davranışı)
     if _META_DIREKTIF.search(text_lower):
         return "meta_direktif"
+
+    # 25.40z3-ROUTING-FIX3: Spesifik ders/formul/ornek/ozet lane'leri ÖNCE
+    # (kavramsal_kisa/egitim_icerik/sohbet'ten ÖNCE — onlar daha geniş yakalar)
+
+    # 12. DERS_ANLATIM — "TYT fizik anlat", "matematik dersini açıkla"
+    if _DERS_ANLATIM.search(text_lower) and text_len < 250:
+        if not re.search(r'\b(benim|kendi|ben(de|im))', text_lower):
+            return "ders_anlatim"
+
+    # 13. FORMUL_ACIKLAMA — "F=ma", "Newton yasası"
+    if _FORMUL_ACIKLAMA.search(text_lower) and text_len < 200:
+        return "formul_aciklama"
+
+    # 16. KISACA_OZET — "kısaca", "özet", "tek cümle"
+    if _KISACA_OZET.search(text_lower) and text_len < 200:
+        if not re.search(r'\b(benim|kendi|netim|hocam|sınıfım|sinifim)', text_lower):
+            return "kisaca_ozet"
+
+    # 14. ORNEK_URETIM — "X örneği ver", "soru ver" (RAG-based, test_olusturma değil)
+    if _ORNEK_URETIM.search(text_lower) and text_len < 200:
+        # Spesifik öğrenci adı + için varsa Claude'a (compound karne+...)
+        # NOT: classify_lane ad-bazlı yakalama PERSONAL_DATA'da, burada kelime-bazlı
+        if not re.search(r'\b(benim|kendi|hangi\s+ogrenci|hangi\s+öğrenci|i[cç]in)\s+(ornek|örnek|soru)', text_lower):
+            return "ornek_uretim"
 
     # 6. RED_GENERIK (kurum dışı eğlenceli)
     if _RED_GENERIK.search(text_lower):
@@ -316,6 +401,10 @@ def classify_lane(message: str, role: str = "", phone: str = "") -> Optional[str
         if not re.search(r'\b(benim|kendi|\b\w+\s+(adli|adlı|isimli)\s+(öğrenci|ogrenci))', text_lower):
             return "render_request"
 
+    # 25.40z3-ROUTING-FIX3: Yeni lane'ler (ders/formul/ornek/uzun_motivasyon/kisaca_ozet)
+    # ZATEN YUKARIDA tek tek check edildi — kavramsal_kisa/sohbet'ten ÖNCE.
+    # Burada duplicate kontrole gerek yok.
+
     # Hiçbir lane'e uymadı → Claude'a (default güvenli)
     return None
 
@@ -327,6 +416,9 @@ def is_groq_safe(lane: Optional[str]) -> bool:
         "egitim_icerik", "red_generik", "kisa_motivasyon",
         # 25.37+ (Neo): render istekleri Cerebras'a, renderer hint inject ile zenginleşir
         "render_request", "karsilastirma", "quiz_request", "konu_haritasi",
+        # 25.40z3-ROUTING-FIX3: 5 yeni lane (Cerebras pay %5→%25 hedef)
+        "ders_anlatim", "formul_aciklama", "ornek_uretim",
+        "uzun_motivasyon", "kisaca_ozet",
     }
 
 

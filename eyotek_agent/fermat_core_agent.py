@@ -5078,6 +5078,11 @@ class FermatCoreAgent:
                         _local_provider = "ollama"
                     else:
                         _local_provider = "local"  # bilinmeyen ama yerel-benzeri
+                    # 25.40z3-ROUTING-FIX2: Decision trace 'unknown' bug fix
+                    # Local path da route bilgisini set etmeli (önceden sadece Claude yapıyordu)
+                    # Bu sayede routing_stats analizinde NULL/unknown kalmaz.
+                    if self.last_decision_trace.get("route") == "unknown":
+                        self.last_decision_trace["route"] = f"local_{_local_provider}"
                     # 25.40j: Tonal redundant greeting filter (Yagiz/Ada vakası)
                     try:
                         from conversation_memory import strip_redundant_greeting
