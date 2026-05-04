@@ -1,6 +1,6 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 4 Mayıs 2026, AKŞAM 19:30 — **🎯 OTURUM 25.40z3-ATLAS: 4 kritik bug fix (status uyumsuzluk + signature dedup + kod-içerik check + auto-archive aging) — 3 tekrar öneri → 1 anlamlı, ekran temiz**
+> **Son güncelleme:** 4 Mayıs 2026, GECE 21:00 — **🎯 OTURUM 25.40z3-ATLAS-UNIFIED: Atlas-1 + Atlas-2 BIRLEŞIK MIMARI (tek tablo + tek API + Cerebras qwen-3-235b + signature dedup), 89 öneri tek yerde, 0 pending, dashboard temiz**
 
 ---
 
@@ -106,6 +106,13 @@
 | 87 | **Atlas BUG #4 fix:** Aging mekanizması yoktu, eski 'yeni' öneriler ekranda kalıyor — **`auto_archive_stale()`** atlas_lifecycle.py'a eklendi: info 7gün+ stale → archived, warning 21gün+ → archived, critical NEVER (Neo manuel); atlas_nightly.sh'a cron çağrısı eklendi | LIVE | 25.40z3-ATLAS |
 | 88 | **DB cleanup live:** 16 eski 'uygulandi' (7gün+) → 'archived' + 17 kayda signature backfill + 3 aktif öneri analiz: #53 web kodu → uygulandi (kod zaten var), #55 latency → ertelendi (Neo karar), #54 frustrated → KALDI | LIVE | 25.40z3-ATLAS |
 | 89 | **SONUÇ: Atlas ekranı temiz** — 50+ uygulandi → 16 archived + 35 uygulandi; **3 tekrar öneri → 1 gerçekten anlamlı (#54 öğrenci 4419)**; auto_archive nightly aktif, gelecekte stale önerile otomatik temizlenecek | VERIFIED | 25.40z3-ATLAS |
+| 90 | **Atlas-2 (prompt_optimizer) sorunu** — Neo dashboard 5 öneri görüyordu (KVKK/empati/şablon varyasyon vb.); analiz: 24 approved + 6 rejected + 5 pending; Atlas-2 her gece AYNI 5 öneriyi tekrar üretiyor; aynı dedup bug | ANALIZ | 25.40z3-ATLAS2 |
+| 91 | **Atlas-2 FAZ A: Model upgrade + Cerebras-first + dedup** — `gpt-oss-120b` → `qwen-3-235b-a22b-instruct-2507` (Neo: "70B/120B salakca, 235B veya Claude"); Cerebras-first + Groq fallback (mimari prensip); 90 gün normalize başlık dedup; DB cleanup (5 pending → rejected, 3 superseded); 0 pending kalan | LIVE | 25.40z3-ATLAS2 |
+| 92 | **Neo direktifi: "Neden 2 ayrı sistem? Tek sistem hayal ettik. Salakca düzen, birleştir."** — Atlas-1 (atlas_observations + atlas_suggestions) + Atlas-2 (prompt_suggestions) iki tabloda iki farklı API | DIREKTIF | 25.40z3-UNIFIED |
+| 93 | **Atlas-2 FAZ B: BIRLEŞIK MIMARI** — atlas_suggestions tablosuna +5 kolon (source/description/affected_pattern/expected_impact/sample_conversations); prompt_optimizer.py INSERT atlas_suggestions'a (source='prompt_optimizer'); get_pending/approve/reject/apply hepsi tek tablodan | LIVE | 25.40z3-UNIFIED |
+| 94 | **Data migration** — 35/35 prompt_suggestions → atlas_suggestions (status mapping: pending→yeni, approved→uygulandi, rejected→rejected, superseded→archived); prompt_suggestions tablosu → prompt_suggestions_legacy_backup (rename, silinmedi) | LIVE | 25.40z3-UNIFIED |
+| 95 | **TEK TABLO TEK API:** atlas_suggestions toplam 89 öneri (54 source=observer + 35 source=prompt_optimizer); dashboard `/admin/api/atlas-suggestions` aynı endpoint, içeride source filtrele; bridge HTTP 200 + admin live test "Zeki Bey 👋 Hazırım" | VERIFIED | 25.40z3-UNIFIED |
+| 96 | **Live durum** — 0 pending öneri Neo dashboard'da; gelecek nightly cron: Cerebras 235b ile sadece YENİ öneriler üretilecek, dedup tüm 89 başlığı kontrol edecek | LIVE | 25.40z3-UNIFIED |
 
 ### Bekleyen iş listesi (Neo onayladıktan sonra)
 
