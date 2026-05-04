@@ -3696,6 +3696,15 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 logger.info(f"  [WP-FAST] Aninda yanitlandi (<100ms)")
                 logger.info(f"  [WP-FAST] Soru: {text[:80]}")
                 logger.info(f"  [WP-FAST] Yanit: {fast[:100]}")
+                # 25.41 (Neo) — ANTI-REPEAT GUARD: handler'i kaydet (sonraki mesaj kontrol icin)
+                try:
+                    from fast_responses import get_last_handler as _glh_rec
+                    from fast_response_loop_guard import record_handler
+                    _hh = _glh_rec()
+                    if _hh:
+                        record_handler(phone, _hh, text)
+                except Exception:
+                    pass
                 # Agent history'sine ekle — bağlam koruması için
                 try:
                     _agent = get_agent(phone)

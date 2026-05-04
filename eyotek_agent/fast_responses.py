@@ -415,6 +415,77 @@ async def ogrenci_son_deneme(soz_no: int, name: str, exam_filter: str = "") -> s
     lines.append(f"🎯 _\"zayıf konularım\"_ → neye odaklanmalı")
     lines.append(f"📊 _\"son 3 denememi kıyasla\"_ → trend grafiği")
     lines.append(f"📅 _\"çalışma planı yap\"_ → kişisel program")
+
+    # ─── Faz 2 (25.41) — RENDER AUGMENTATION: weekly dashboard ──
+    # Toplam net 30+ ise (gerçek veri var) dashboard üret
+    try:
+        if (e.get('toplam') or 0) >= 30:
+            from fast_response_render import make_weekly_dashboard
+            # Dashboard datasını topla
+            dash_data = {
+                'son_deneme': {
+                    'toplam': e.get('toplam'),
+                    'tarih': str(e.get('exam_date', '')),
+                    'name': e.get('exam_name', ''),
+                },
+                'sinif': '',
+            }
+            # Devamsızlık çek
+            try:
+                dev_row = await _q1(
+                    "SELECT toplam_saat FROM devamsizlik_sayisi WHERE soz_no=$1", soz_no
+                )
+                dash_data['devamsizlik'] = int((dev_row or {}).get('toplam_saat', 0) or 0)
+            except Exception:
+                dash_data['devamsizlik'] = 0
+            # Zayıf + Güçlü konular
+            try:
+                zayif_rows = await _q(
+                    "SELECT ders, konu, sinav_hata_yuzdesi as basari FROM student_topic_tracker "
+                    "WHERE soz_no=$1 AND tamamlandi=FALSE AND COALESCE(status,'') != 'metadata' "
+                    "AND sinav_hata_yuzdesi < 60 "
+                    "ORDER BY sinav_hata_yuzdesi ASC LIMIT 3", soz_no
+                )
+                dash_data['zayif_konular'] = [dict(r) for r in zayif_rows]
+
+                guclu_rows = await _q(
+                    "SELECT ders, konu, sinav_hata_yuzdesi as basari FROM student_topic_tracker "
+                    "WHERE soz_no=$1 AND sinav_hata_yuzdesi >= 70 "
+                    "ORDER BY sinav_hata_yuzdesi DESC LIMIT 3", soz_no
+                )
+                dash_data['guclu_konular'] = [dict(r) for r in guclu_rows]
+            except Exception:
+                dash_data['zayif_konular'] = []
+                dash_data['guclu_konular'] = []
+            # Sınıf
+            try:
+                stu_row = await _q1(
+                    "SELECT class_name FROM students WHERE soz_no=$1", soz_no
+                )
+                dash_data['sinif'] = (stu_row or {}).get('class_name', '?')
+            except Exception:
+                pass
+            # Etüt
+            try:
+                etut_row = await _q1(
+                    "SELECT toplam, yapildi FROM etut_student_control WHERE soz_no=$1", soz_no
+                )
+                dash_data['etut'] = dict(etut_row) if etut_row else {}
+            except Exception:
+                dash_data['etut'] = {}
+
+            from fast_response_render import make_weekly_dashboard
+            url = await make_weekly_dashboard(soz_no, name, dash_data)
+            if url:
+                lines.append("")
+                lines.append("━━━━━━━━━━━━━━━━━━━━━━")
+                lines.append(f"📊 *Detaylı Haftalık Dashboard:*")
+                lines.append(f"   {url}")
+                lines.append(f"   _Tüm akademik durumun tek görselde — netler, devamsızlık, konular._")
+    except Exception as _re:
+        import logging
+        logging.getLogger(__name__).debug(f"[FAST_RENDER] dashboard fail: {_re}")
+
     return "\n".join(lines)
 
 
@@ -589,6 +660,23 @@ async def ogrenci_deneme_kiyasla(soz_no: int, name: str, count: int = 3) -> str:
         if abs(d) >= 3:
             emoji = "yukselis" if d > 0 else "dusus"
             lines.append(f"  {ders}: {f_val:.1f} -> {l_val:.1f} ({emoji})")
+
+    # ─── Faz 2 (25.41) — RENDER AUGMENTATION: trend chart link ──
+    # 3+ deneme varsa görsel chart üret + link ekle
+    if len(rows) >= 3:
+        try:
+            from fast_response_render import make_trend_chart
+            url = await make_trend_chart(soz_no, name, rows)
+            if url:
+                lines.append("")
+                lines.append("━━━━━━━━━━━━━━━━━━━━━━")
+                lines.append(f"📊 *İnteraktif Trend Grafiği:*")
+                lines.append(f"   {url}")
+                lines.append(f"   _Tıklayınca grafik açılır — istatistikleri detaylı gör._")
+        except Exception as _re:
+            import logging
+            logging.getLogger(__name__).debug(f"[FAST_RENDER] trend_chart fail: {_re}")
+            # Sessiz fail — ana cevap yine gönderilir
 
     return "\n".join(lines)
 
@@ -852,21 +940,50 @@ async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", s
 
     lines.append("━━━━━━━━━━━━━━━━━━━━━━")
     lines.append(f"_{first}, birlikte çözelim — nereden başlayalım?_ 💪")
+
+    # ─── Faz 2 (25.41) — RENDER AUGMENTATION: konu heatmap link ──
+    # 5+ konu varsa görsel heatmap üret + link ekle
+    if len(rows) >= 5:
+        try:
+            from fast_response_render import make_topic_heatmap
+            # rows: [{ders, konu, sinav_hata_yuzdesi}, ...] — render zaten bu format kabul ediyor
+            url = await make_topic_heatmap(soz_no, name, rows)
+            if url:
+                lines.append("")
+                lines.append("━━━━━━━━━━━━━━━━━━━━━━")
+                lines.append(f"🗺️ *İnteraktif Konu Haritası:*")
+                lines.append(f"   {url}")
+                lines.append(f"   _Renkli görselle hangi konular zayıf/güçlü görebilirsin._")
+        except Exception as _re:
+            import logging
+            logging.getLogger(__name__).debug(f"[FAST_RENDER] heatmap fail: {_re}")
+
     return "\n".join(lines)
 
 
 async def ogretmen_bugun_ders(staff_name: str) -> Optional[str]:
-    """'Bugün hangi derslerim var', 'bugünkü programım'"""
-    gun_map = {0:"Pazartesi",1:"Salı",2:"Çarşamba",3:"Perşembe",4:"Cuma",5:"Cumartesi",6:"Pazar"}
+    """'Bugün hangi derslerim var', 'bugünkü programım' — A+++ visual (Oturum 25.41).
+
+    Eski: basit liste 'saat → sınıf | ders'
+    Yeni: bugünün özet kartı + ders saati gauge + ilk/son ders + gün sonu motivasyon
+    """
+    from fast_response_visuals import (
+        sep, header, ders_emoji, action_block
+    )
+    gun_map = {0:"Pazartesi",1:"Salı",2:"Çarşamba",3:"Perşembe",
+               4:"Cuma",5:"Cumartesi",6:"Pazar"}
     today = date.today()
     gun = gun_map.get(today.weekday(), "?")
+    tarih = today.strftime('%d.%m.%Y')
 
     if gun == "Cuma":
         return (
-            f"📅 Bugun *{gun}* — kurumumuzda *ders yok!* 🎉\n\n"
-            f"Cuma gunleri Turkiye geneli *deneme sinavlari* yapilmaktadir.\n"
-            f"Ogretmenlerimizin ortak izin gunudur.\n\n"
-            f"_Iyi dinlenmeler!_"
+            f"{header('Bugün Cuma — DERS YOK 🎉', tarih, '📅')}\n"
+            f"🇹🇷 *Türkiye Geneli Deneme Sınavı Günü*\n\n"
+            f"Cumaları kurumumuz öğretmenler için *ortak izin günüdür*.\n"
+            f"Öğrenciler bu gün sınava giriyor.\n\n"
+            f"☕ *İyi dinlenmeler hocam!*\n\n"
+            f"_Yarın için programınıza bakmak ister misiniz? \"yarın programım\" yazın._ 🌟"
         )
 
     search = staff_name.split()[0] if staff_name else ""
@@ -876,38 +993,155 @@ async def ogretmen_bugun_ders(staff_name: str) -> Optional[str]:
         f"%{search}%", gun)
 
     if not rows:
-        return f"📅 Bugun *{gun}* — sizin icin ders kaydi bulunamadi."
+        return (
+            f"{header(f'Bugün — {gun}', tarih, '📅')}\n"
+            f"📭 *Bugün için ders kaydı bulunamadı.*\n\n"
+            f"_Bu boş gün! İsterseniz \"haftalık programım\" yazın, tüm haftayı görelim._"
+        )
 
-    lines = [f"📅 *Bugun — {gun} ({today.strftime('%d.%m.%Y')})*\n"]
+    toplam = len(rows)
+    saat_toplam = round(toplam * 35 / 60, 1)
+    ilk_ders = rows[0]
+    son_ders = rows[-1]
+
+    lines = [
+        header(f'Bugün — {gun}', tarih, '📅'),
+        f"📊 *{toplam} ders* | _yaklaşık {saat_toplam} saat_",
+        f"🕐 İlk ders: *{ilk_ders['saat']}* | Son ders: *{son_ders['saat']}*",
+        "",
+        sep(),
+        "📚 *Günün Programı:*",
+        "",
+    ]
+
     for r in rows:
-        lines.append(f"  🕐 {r['saat']} → *{r['sinif']}* | {r['ders']}")
-    lines.append(f"\n_Toplam {len(rows)} ders ({round(len(rows)*35/60,1)} saat)_")
+        em = ders_emoji(r['ders'])
+        sinif = r.get('sinif', '?')
+        ders = r.get('ders', '?')
+        lines.append(f"  🕐 *{r['saat']}* → {em} *{sinif}* — {ders}")
+
+    # Gün sonu motivasyon (ders sayısına göre)
+    if toplam >= 6:
+        lines.append("\n💪 *Yoğun bir gün hocam!* Aralarınızda kahve molası ihmal etmeyin.")
+    elif toplam >= 4:
+        lines.append("\n✨ *Verimli bir program* — başarılı dersler dileriz.")
+    else:
+        lines.append("\n🌟 *Hafif tempolu bir gün* — ek vakti planlamaya kullanabilirsiniz.")
+
+    lines.extend([
+        "",
+        action_block(
+            "Şunlara da bakabilirsiniz:",
+            [
+                ("📅", '"haftalık programım" → tüm hafta'),
+                ("📊", '"etüt istatistiğim" → performans'),
+            ],
+        ),
+    ])
     return "\n".join(lines)
 
 
 async def ogrenci_devamsizlik(soz_no: int, name: str) -> str:
-    """'Devamsizligim kac saat?', 'kac gun gelmedim'"""
-    row = await _q1("SELECT toplam_saat FROM devamsizlik_sayisi WHERE soz_no=$1", soz_no)
-    if not row:
-        return f"📋 *{name} — Devamsizlik Durumu*\n\nDevamsizlik kaydimiz yok. Duzenli devam ediyorsun! ✅\n\n_Boyle devam et!_"
+    """'Devamsizligim kac saat?', 'kac gun gelmedim' — A+++ visual (Oturum 25.41).
 
-    saat = row['toplam_saat']
-    if saat < 50:
-        emoji = "🟢"
-        yorum = "Gayet iyi durumdasin! Boyle devam et."
-    elif saat < 150:
-        emoji = "🟡"
-        yorum = "Biraz dikkat etmekte fayda var. Duzenli devam onemli."
-    else:
-        emoji = "🔴"
-        yorum = "Bu ciddi bir rakam. Daha duzenli olmaya calis."
-
-    return (
-        f"📋 *{name} — Devamsizlik Durumu*\n\n"
-        f"{emoji} Toplam devamsizlik: *{saat} saat*\n\n"
-        f"{yorum}\n\n"
-        f"_Devamsizlik limiti hakkinda bilgi almak icin 'limit nedir' yazabilirsin._"
+    Eski: tek satır toplam saat + generic yorum.
+    Yeni: gauge + kalan tolerans + ders bazli breakdown + actionable next step.
+    """
+    from fast_response_visuals import (
+        sep, dot, gauge, header, action_block, hitap, status_line, kv_line
     )
+
+    row = await _q1("SELECT toplam_saat FROM devamsizlik_sayisi WHERE soz_no=$1", soz_no)
+    fname = hitap(name)
+
+    if not row or not row.get('toplam_saat'):
+        empty_actions = action_block('Şimdi ne yapalım?', [
+            ('📊', '"son denemem" → analiz'),
+            ('🎯', '"zayıf konularım" → öncelikler'),
+        ])
+        head = header('Devamsızlık Durumun', name, '📋')
+        return (
+            f"{head}\n"
+            f"🟢 *Tertemiz!* Devamsızlık kaydın yok.\n\n"
+            f"_İstikrarın çok kıymetli — disiplin başarıyı getirir._ ✨\n\n"
+            f"{empty_actions}"
+        )
+
+    saat = int(row['toplam_saat'])
+    # YKS sınava giriş için kurum politikası: ~200 saat üst limit
+    LIMIT = 200
+    kalan = max(0, LIMIT - saat)
+
+    # Renk kodlu durum
+    color = dot(saat, (50, 150), reverse=True)
+    if saat < 50:
+        durum_text = "İYİ"
+        yorum = "İstikrarlı devam ediyorsun. Bu disiplini koru!"
+        next_action = "Bu seviyeyi koru — başarın için kritik."
+    elif saat < 100:
+        durum_text = "DİKKAT"
+        yorum = "Henüz tehlikeli değil ama istikrar önemli."
+        next_action = "Bundan sonra her dersi planla, kritik gün varsa erken haber ver."
+    elif saat < 150:
+        durum_text = "ORTA"
+        yorum = "Riskli sınıra yaklaşıyorsun. Disiplini topla."
+        next_action = "Bir hafta tam katılım hedefle — yeniden ivme yakalayacaksın."
+    else:
+        durum_text = "KRİTİK"
+        yorum = "Sınava giriş hakkın risk altında. Acil eylem gerekli."
+        next_action = "Rehberlikle bir plan yapalım — birlikte toparlayabiliriz."
+
+    # Devamsızlık ders bazli breakdown — devamsizlik_ders tablosu varsa
+    ders_lines = []
+    try:
+        ders_rows = await _q(
+            "SELECT ders, saat FROM devamsizlik_ders "
+            "WHERE soz_no=$1 ORDER BY saat DESC LIMIT 5",
+            soz_no
+        )
+        if ders_rows:
+            from fast_response_visuals import ders_emoji
+            ders_lines.append("")
+            ders_lines.append("📚 *Ders Bazında Dağılım:*")
+            for r in ders_rows:
+                em = ders_emoji(r['ders'])
+                ders_lines.append(f"  {em} *{r['ders']}:* {int(r['saat'])} saat")
+    except Exception:
+        pass  # tablo yoksa atla
+
+    # Görsel gauge (limit dolu yüzde)
+    pct = int((saat / LIMIT) * 100) if LIMIT else 0
+    gauge_visual = gauge(saat, LIMIT)
+
+    # Build response
+    lines = [
+        header('Devamsızlık Durumun', name, '📋'),
+        f"{color} *{durum_text}* — Toplam: *{saat} saat*",
+        "",
+        f"📊 Limit doluluğu:",
+        f"   `{gauge_visual}`",
+        f"   _{pct}% dolu | Kalan tolerans: *{kalan} saat*_",
+    ]
+
+    if ders_lines:
+        lines.extend(ders_lines)
+
+    lines.extend([
+        "",
+        sep(),
+        f"💡 *Yorum:* {yorum}",
+        f"🎯 *Sonraki adım:* {next_action}",
+        "",
+        action_block(
+            "İstersen şunlara bakalım:",
+            [
+                ("📊", '"son denemem" → akademik durum'),
+                ("📅", '"ders programım" → bu hafta dersler'),
+                ("🎯", '"çalışma planı" → telafi planı'),
+            ],
+        ),
+    ])
+    return "\n".join(lines)
 
 
 async def ogrenci_ders_programi(soz_no: int, name: str) -> str:
@@ -944,26 +1178,169 @@ async def ogrenci_ders_programi(soz_no: int, name: str) -> str:
             f"Bu arada *sana özel çalışma planı* hazırlayabilirim — 'çalışma planı yap' diyerek başlayabilirsin. 📅"
         )
 
-    lines = [f"*{name}, {sinif} ders programin:*\n"]
-    current_day = ""
+    # ─── A+++ visual (Oturum 25.41) ───
+    from fast_response_visuals import header, ders_emoji, action_block, sep
+    from datetime import date
+    today = date.today()
+    bugun_gun_map = {0: "Pazartesi", 1: "Sali", 2: "Carsamba", 3: "Persembe",
+                     4: "Cuma", 5: "Cumartesi", 6: "Pazar"}
+    bugun = bugun_gun_map.get(today.weekday(), "")
+
+    # Gun bazli grupla
+    by_day = {}
     for r in rows:
-        if r['gun'] != current_day:
-            current_day = r['gun']
-            lines.append(f"\n*{current_day}:*")
-        lines.append(f"  {r['saat']} - {r['ders']} ({r['ogretmen'][:15]})")
+        by_day.setdefault(r['gun'], []).append(r)
+
+    lines = [
+        header(f"{sinif} Ders Programın", name, '📅'),
+    ]
+    # Bugünün dersleri öncelikli
+    if bugun in by_day:
+        bugun_dersler = by_day[bugun]
+        lines.extend([
+            "",
+            f"📍 *BUGÜN — {bugun} ({len(bugun_dersler)} ders)*",
+        ])
+        for r in bugun_dersler:
+            em = ders_emoji(r['ders'])
+            ogretmen_kisa = (r.get('ogretmen') or '?').split()[0][:12]
+            lines.append(f"   🕐 {r['saat']} — {em} *{r['ders']}* _({ogretmen_kisa})_")
+        lines.append("")
+        lines.append(sep())
+
+    # Diger günler
+    gun_sira = ["Pazartesi", "Sali", "Carsamba", "Persembe", "Cuma", "Cumartesi", "Pazar"]
+    for gun in gun_sira:
+        if gun == bugun:
+            continue
+        if gun not in by_day:
+            continue
+        dersler = by_day[gun]
+        lines.extend([
+            "",
+            f"📌 *{gun}* _(_{len(dersler)} ders_)_",
+        ])
+        for r in dersler:
+            em = ders_emoji(r['ders'])
+            ogretmen_kisa = (r.get('ogretmen') or '?').split()[0][:12]
+            lines.append(f"   {r['saat']} — {em} {r['ders']} _({ogretmen_kisa})_")
+
+    # Toplam ders saati
+    toplam_ders = len(rows)
+    lines.extend([
+        "",
+        sep(),
+        f"📊 *Haftalık Toplam:* {toplam_ders} ders | _yaklaşık {round(toplam_ders*35/60,1)} saat_",
+        "",
+        action_block(
+            "Şimdi ne yapalım?",
+            [
+                ("📚", '"etütlerim" → etüt programı'),
+                ("📊", '"son denemem" → akademik durum'),
+                ("🎯", '"çalışma planı yap" → kişisel program'),
+            ],
+        ),
+    ])
     return "\n".join(lines)
 
 
 async def ogrenci_etutlerim(soz_no: int, name: str) -> str:
-    """'Etutlerim ne zaman?', 'bu hafta etutum var mi'"""
-    # Son 7 gun + gelecek 7 gun etutleri
-    # etut_history'de ogrenci bazli kayit yok (etut = ogretmen + sinif bazli)
-    # Ama ogrencinin sinifina gore filtreleyebiliriz
-    student = await _q1("SELECT class_name FROM students WHERE soz_no=$1", soz_no)
-    if not student:
-        return f"{name}, sinif bilgin bulunamadi."
+    """'Etutlerim ne zaman?', 'bu hafta etutum var mi' — A+++ visual (Oturum 25.41).
 
-    return f"{name}, etut bilgilerini kontrol ediyorum. Sinifin: {student.get('class_name', '?')}. Detay icin ogretmenine sor veya 'etut istiyorum' yaz, planlayalim!"
+    Eski: tek satır generic mesaj, hiç gerçek veri yok.
+    Yeni: etut_student_control'den toplam/yapildi/gelmedi + son etutler + katilim oranı.
+    """
+    from fast_response_visuals import (
+        sep, dot, gauge, header, action_block, hitap, ders_emoji, fmt_tarih
+    )
+
+    student = await _q1(
+        "SELECT class_name FROM students WHERE soz_no=$1", soz_no
+    )
+    if not student:
+        return (
+            f"{header('Etüt Programın', name, '📚')}\n"
+            f"Profil bilgin sistemde tam yüklü değil. 😊\n\n"
+            f"_Birazdan tekrar dene veya \"etüt istiyorum\" yazarak öğretmenine talep iletebilirim._"
+        )
+
+    sinif = student.get('class_name', '?')
+    # Etüt katilim ozeti (etut_student_control)
+    etut_summary = None
+    try:
+        etut_summary = await _q1(
+            "SELECT toplam, yapildi, ogrenci_gelmedi FROM etut_student_control "
+            "WHERE soz_no=$1", soz_no
+        )
+    except Exception:
+        pass
+
+    # Son 5 etut (etut_history sinif bazli — ogrencinin sinifindan filtre)
+    son_etutler = []
+    try:
+        son_etutler = await _q(
+            "SELECT tarih, ogretmen, ders, konu FROM etut_history "
+            "WHERE sinif ILIKE $1 ORDER BY tarih DESC LIMIT 5",
+            f"%{sinif}%"
+        )
+    except Exception:
+        pass
+
+    lines = [
+        header('Etüt Programın', name, '📚'),
+        f"🏫 *Sınıfın:* {sinif}",
+    ]
+
+    # Katilim summary (varsa)
+    if etut_summary and etut_summary.get('toplam'):
+        toplam = int(etut_summary['toplam'] or 0)
+        yapildi = int(etut_summary['yapildi'] or 0)
+        gelmedi = int(etut_summary.get('ogrenci_gelmedi', 0) or 0)
+        if toplam > 0:
+            oran = int((yapildi / toplam) * 100)
+            color = dot(oran / 100, (0.4, 0.7))
+            gauge_visual = gauge(yapildi, toplam)
+            lines.extend([
+                "",
+                f"📊 *Etüt Katılımın*",
+                f"   `{gauge_visual}`",
+                f"   {color} *{yapildi}*/{toplam} etüt katıldın ({oran}% katılım)",
+            ])
+            if gelmedi > 0:
+                lines.append(f"   ⚠️ *{gelmedi}* etüde gelmedin")
+
+    # Son etutler (varsa)
+    if son_etutler:
+        lines.extend(["", sep(), "📅 *Son Etütler:*"])
+        for e in son_etutler[:5]:
+            tarih = fmt_tarih(e['tarih']) if e.get('tarih') else "?"
+            ogretmen = (e.get('ogretmen') or '?')[:18]
+            ders = (e.get('ders') or '')[:15]
+            em = ders_emoji(ders)
+            konu = (e.get('konu') or '')[:30]
+            line = f"  {em} *{tarih}* — {ders} ({ogretmen})"
+            if konu:
+                line += f"\n     _{konu}_"
+            lines.append(line)
+    else:
+        lines.extend([
+            "",
+            "_Sınıfın için son etüt kaydı bulunamadı._",
+            "_Yeni etütler eklendiğinde burada görünecek._",
+        ])
+
+    lines.extend([
+        "",
+        action_block(
+            "Şimdi ne yapalım?",
+            [
+                ("🎯", '"etüt istiyorum" → öğretmenine talep ilet'),
+                ("📊", '"son denemem" → akademik durum'),
+                ("📚", 'Konu seç → birlikte çalışalım'),
+            ],
+        ),
+    ])
+    return "\n".join(lines)
 
 
 async def ogrenci_calisma_plani(soz_no: int, name: str) -> str:
@@ -1013,62 +1390,189 @@ async def ogrenci_calisma_plani(soz_no: int, name: str) -> str:
 
 
 async def ogrenci_hedef(soz_no: int, name: str) -> str:
-    """'Hedefim ne olmali?', 'kac net yapmam lazim'"""
+    """'Hedefim ne olmali?', 'kac net yapmam lazim' — A+++ visual (Oturum 25.41).
+
+    Eski: text formatinda hedef puan + odak
+    Yeni: gauge ile mevcut→hedef görseli + bant analizi + sıradaki adım
+    """
+    from fast_response_visuals import (
+        sep, dot, gauge, header, action_block, hitap, kv_line, progress_bar
+    )
+
     analysis = await _q1(
         "SELECT ham_puan, yerlesme_puani, toplam_net, sinav_sayisi "
         "FROM student_exam_analysis WHERE soz_no::int=$1", soz_no)
+
+    fname = hitap(name)
+
     if not analysis:
         return (
-            f"🎯 *{name} — Hedef Analizi*\n\n"
-            f"Henuz yeterli sinav analiz verimiz yok.\n"
-            f"Deneme sinavlarina katildikca hedef analizi yapilacak.\n\n"
-            f"_Hedef bolumun veya universite tercihin var mi? Birlikte planlayalim!_"
+            f"{header('Hedef Analizin', name, '🎯')}\n"
+            f"Henüz birleştir analizimiz hazır değil. 📊\n\n"
+            f"_Birkaç deneme sonrası otomatik oluşacak._\n\n"
+            f"💡 *Şimdi yardımcı olabileceğim:*\n"
+            f"  🎓 Hedef bölüm konuş — yol haritası çıkaralım\n"
+            f"  📚 Çalışma planı yap — eksiklere göre\n"
+            f"  📊 \"son denemem\" → güncel durum\n\n"
+            f"_Hangi bölümü hedefliyorsun? Söyle, birlikte planlayalım!_ 🚀"
         )
 
-    current = analysis.get('toplam_net') or 0
-    ham = analysis.get('ham_puan') or 0
-    sinav = analysis.get('sinav_sayisi') or 0
+    try:
+        ham = float(str(analysis.get('ham_puan') or 0).replace(',', '.'))
+    except Exception:
+        ham = 0
+    try:
+        yerlesme = float(str(analysis.get('yerlesme_puani') or 0).replace(',', '.'))
+    except Exception:
+        yerlesme = 0
 
-    lines = [f"🎯 *{name} — Hedef Analizi*\n"]
-    if sinav:
-        lines.append(f"  📊 Ortalama net: *{current/sinav:.1f}*")
+    sinav = int(analysis.get('sinav_sayisi') or 0)
+    toplam_net = float(analysis.get('toplam_net') or 0)
+    avg_net = (toplam_net / sinav) if sinav > 0 else 0
+
+    # Hedef bant analizi
+    if ham < 250:
+        bant = "GİRİŞ"; bant_color = "🔴"
+        sonraki_hedef = 300
+        odak = "Türkçe paragraf + Matematik temel işlemler"
+        next_step = "Günde 30 paragraf + 20 mat sorusu — 2 hafta sonra +30 puan"
+    elif ham < 350:
+        bant = "TEMEL"; bant_color = "🟡"
+        sonraki_hedef = 400
+        odak = "Türkçe-Matematik dengesi + Fen başlangıç"
+        next_step = "Zayıf derste haftada 1 etüt + günlük 50 soru → +40 puan"
+    elif ham < 450:
+        bant = "ORTA"; bant_color = "🟢"
+        sonraki_hedef = 480
+        odak = "Fen netlerini yükselt (Fizik/Kimya/Biyoloji)"
+        next_step = "Zayıf konularda hata analizi + her ders 2 net artış"
+    elif ham < 510:
+        bant = "İYİ"; bant_color = "🟢"
+        sonraki_hedef = 530
+        odak = "Detay konularda hata azaltma"
+        next_step = "Zor sorularda hız + tuzak farkındalığı çalışmaları"
     else:
-        lines.append(f"  📊 Toplam net: *{current:.1f}*")
-    lines.append(f"  📈 Ham puan: *{ham:.1f}*")
+        bant = "ÜST"; bant_color = "🌟"
+        sonraki_hedef = ham + 15
+        odak = "Tam puan dersleri + zaman optimizasyonu"
+        next_step = "Süre baskısı altında deneme + tek-soru-1-dakika hedefi"
 
-    lines.append(f"\n*Hedef Onerileri:*")
-    if ham < 300:
-        lines.append(f"  🎯 Kisa vade: *300+ puan* (temel konulari saglamlastir)")
-        lines.append(f"  📌 Odak: Turkce paragraf + Mat temel islemler")
-    elif ham < 400:
-        lines.append(f"  🎯 Kisa vade: *400+ puan* (orta seviye)")
-        lines.append(f"  📌 Odak: Zayif derslerde *5+ net* artisi")
-    else:
-        lines.append(f"  🎯 Kisa vade: *450+ puan* icin Fizik/Kimya netleri artirmak")
-        lines.append(f"  📌 Odak: Detay konularda hata azaltma")
+    # Görsel gauge (mevcut puan → 560 maksimum)
+    gauge_visual = progress_bar(ham, 560, width=14)
+    pct_to_max = int((ham / 560) * 100)
 
-    lines.append(f"\n_Hedef bolumun var mi? Soyle ki daha detayli yol haritasi cikaralim!_ 🎓")
+    # Sonraki hedefe ne kadar
+    fark = sonraki_hedef - ham
+
+    lines = [
+        header('Hedef Analizin', name, '🎯'),
+        f"{bant_color} *{bant} BANT* — Şu anki ham puan: *{ham:.1f}*",
+        "",
+        f"📊 *Puan Konumun (560 üzerinden)*",
+        f"   `{gauge_visual}` *{pct_to_max}%*",
+        "",
+    ]
+
+    # Yerleşme puanı (varsa)
+    if yerlesme > 0:
+        lines.append(f"📈 *Yerleşme Puanın:* {yerlesme:.1f}")
+    if sinav > 0:
+        lines.append(f"📝 *Sınav Sayın:* {sinav} | _Ort: {avg_net:.1f} net/sınav_")
+
+    lines.extend([
+        "",
+        sep(),
+        f"🎯 *Sonraki Hedef:* *{sonraki_hedef:.0f} puan* _(+{fark:.1f} kazanım)_",
+        f"📌 *Odak Alanın:* {odak}",
+        "",
+        f"💡 *Sonraki Adım:*",
+        f"   {next_step}",
+        "",
+        action_block(
+            "Birlikte ne yapalım?",
+            [
+                ("🎓", '"netlerimle hangi üniversite" → kişisel analiz'),
+                ("📚", '"çalışma planı yap" → detaylı program'),
+                ("🎯", '"zayıf konularım" → öncelikli alanlar'),
+            ],
+        ),
+    ])
     return "\n".join(lines)
 
 
 async def ogrenci_rehberlik(soz_no: int, name: str) -> str:
-    """'Rehberlik gorusmelerim', 'kardelen hocayla gorusmem ne zaman'"""
+    """'Rehberlik gorusmelerim', 'kardelen hocayla gorusmem ne zaman' — A+++ visual.
+
+    Eski: tek satır per kayıt, kuru liste
+    Yeni: tarih + öğretmen + not özeti card layout + kaç görüşme + son ne zaman
+    """
+    from fast_response_visuals import (
+        sep, header, action_block, hitap, fmt_tarih
+    )
+
     rows = await _q(
         "SELECT gorusme_tarihi, ogretmen, not_metni FROM counsellor_notes "
         "WHERE soz_no=$1 ORDER BY gorusme_tarihi DESC LIMIT 5", soz_no)
+
+    fname = hitap(name)
+
     if not rows:
         return (
-            f"📋 *{name} — Rehberlik Gorusmeleri*\n\n"
-            f"Henuz rehberlik gorusme kaydimiz bulunmuyor.\n"
-            f"Rehberlik ogretmenimizle gorusme planlamak istersen bana yazabilirsin.\n\n"
-            f"_Herhangi bir konuda destek almak ister misin?_ 🤝"
+            f"{header('Rehberlik Geçmişin', name, '📋')}\n"
+            f"Henüz rehberlik görüşme kaydın yok. 🤝\n\n"
+            f"💡 *Bunun anlamı şu:*\n"
+            f"  • Henüz akut bir konu yaşamamışsın (iyi haber)\n"
+            f"  • Ama proaktif görüşme her zaman yararlı\n\n"
+            f"📌 *Rehberlik için iyi sebepler:*\n"
+            f"  🎯 Hedef belirleme + üniversite tercihi\n"
+            f"  📚 Çalışma stratejisi + zaman yönetimi\n"
+            f"  💪 Motivasyon + sınav stresi yönetimi\n\n"
+            f"_Herhangi birini konuşmak istersen yaz, organize edelim._ 🌟"
         )
 
-    lines = [f"📋 *{name} — Rehberlik Gorusmeleri*\n"]
+    # Görüşme istatistik
+    toplam = len(rows)
+    son = rows[0]
+    son_tarih = fmt_tarih(son.get('gorusme_tarihi'))
+
+    # Öğretmen bazlı dağılım
+    ogretmen_count = {}
     for r in rows:
-        tarih = r['gorusme_tarihi'].strftime('%d.%m.%Y') if r['gorusme_tarihi'] else '?'
-        not_kisaltma = (r.get('not_metni') or '')[:60]
-        lines.append(f"  {tarih} - {r['ogretmen'][:20]} - {not_kisaltma}")
+        og = r.get('ogretmen', '?').strip()
+        ogretmen_count[og] = ogretmen_count.get(og, 0) + 1
+    en_sik = max(ogretmen_count.items(), key=lambda x: x[1]) if ogretmen_count else (None, 0)
+
+    lines = [
+        header('Rehberlik Geçmişin', name, '📋'),
+        f"📊 *Toplam görüşme:* {toplam}",
+        f"📅 *Son görüşme:* {son_tarih}",
+    ]
+    if en_sik[0] and en_sik[1] > 1:
+        lines.append(f"🎯 *En sık konuştuğun:* {en_sik[0][:25]} _({en_sik[1]} görüşme)_")
+
+    lines.extend(["", sep(), "📝 *Görüşme Notları:*", ""])
+
+    for r in rows:
+        tarih = fmt_tarih(r.get('gorusme_tarihi'))
+        ogretmen = (r.get('ogretmen') or '?')[:22]
+        not_metni = (r.get('not_metni') or '').strip()
+        lines.append(f"📌 *{tarih}* — {ogretmen}")
+        if not_metni:
+            # Notu 100 char'a böl
+            kisalt = not_metni[:100]
+            if len(not_metni) > 100:
+                kisalt += "..."
+            lines.append(f"   _{kisalt}_")
+        lines.append("")
+
+    lines.append(action_block(
+        "Şimdi ne yapalım?",
+        [
+            ("🤝", '"rehberlik istiyorum" → yeni görüşme talep'),
+            ("🎯", '"hedef analizim" → yol haritası'),
+            ("💪", '"çalışma planı" → strateji'),
+        ],
+    ))
     return "\n".join(lines)
 
 
@@ -1109,7 +1613,14 @@ async def ogrenci_motivasyon(soz_no: int, name: str) -> str:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 async def ogretmen_ders_programi(staff_name: str) -> str:
-    """'Ders programim ne?', 'bu hafta derslerim'"""
+    """'Ders programim ne?', 'bu hafta derslerim' — A+++ visual (Oturum 25.41).
+
+    Eski: kuru günlük liste 'saat - sınıf (ders)'
+    Yeni: bugün vurgulu + ders dağılımı + ders sayısı + günlük yoğunluk indikatörü
+    """
+    from fast_response_visuals import (
+        sep, header, ders_emoji, action_block, dot
+    )
     rows = await _q(
         "SELECT gun, saat, sinif, ders FROM teacher_timetable WHERE ogretmen_ad ILIKE $1 "
         "ORDER BY CASE gun WHEN 'Pazartesi' THEN 1 WHEN 'Sali' THEN 2 WHEN 'Carsamba' THEN 3 "
@@ -1117,18 +1628,84 @@ async def ogretmen_ders_programi(staff_name: str) -> str:
         f"%{staff_name}%")
     if not rows:
         return None  # Claude'a git
-    lines = [f"*Haftalik ders programiniz:*\n"]
-    current_day = ""
+
+    # Gun bazli grupla
+    by_day = {}
     for r in rows:
-        if r['gun'] != current_day:
-            current_day = r['gun']
-            lines.append(f"\n*{current_day}:*")
-        lines.append(f"  {r['saat']} - {r['sinif']} ({r['ders']})")
+        by_day.setdefault(r['gun'], []).append(r)
+
+    # Bugün
+    today = date.today()
+    bugun_map = {0:"Pazartesi",1:"Sali",2:"Carsamba",3:"Persembe",
+                 4:"Cuma",5:"Cumartesi",6:"Pazar"}
+    bugun = bugun_map.get(today.weekday(), "")
+
+    toplam = len(rows)
+    en_yogun = max(by_day.items(), key=lambda x: len(x[1])) if by_day else (None, [])
+    en_hafif = min(((g, len(d)) for g, d in by_day.items()), key=lambda x: x[1]) if by_day else (None, 0)
+
+    lines = [
+        header('Haftalık Ders Programınız', staff_name, '📅'),
+        f"📊 *Toplam:* {toplam} ders | _yaklaşık {round(toplam*35/60, 1)} saat_",
+    ]
+    if en_yogun[0]:
+        lines.append(f"🔥 *En yoğun gün:* {en_yogun[0]} _({len(en_yogun[1])} ders)_")
+    if en_hafif[0] and en_hafif[1] != len(en_yogun[1]):
+        lines.append(f"☕ *En hafif gün:* {en_hafif[0]} _({en_hafif[1]} ders)_")
+    lines.append("")
+
+    # Bugünün dersleri öncelikli
+    if bugun in by_day:
+        bugun_dersler = by_day[bugun]
+        lines.extend([
+            sep(),
+            f"📍 *BUGÜN — {bugun} ({len(bugun_dersler)} ders)*",
+            "",
+        ])
+        for r in bugun_dersler:
+            em = ders_emoji(r['ders'])
+            lines.append(f"   🕐 {r['saat']} — {em} *{r['sinif']}* | {r['ders']}")
+        lines.append("")
+
+    # Diger günler
+    gun_sira = ["Pazartesi", "Sali", "Carsamba", "Persembe", "Cuma", "Cumartesi", "Pazar"]
+    for gun in gun_sira:
+        if gun == bugun or gun not in by_day:
+            continue
+        dersler = by_day[gun]
+        # Yogunluk indikatoru
+        yogunluk = "🔥" if len(dersler) >= 5 else ("📚" if len(dersler) >= 3 else "☕")
+        lines.extend([
+            sep("dashed"),
+            f"{yogunluk} *{gun}* _({len(dersler)} ders)_",
+        ])
+        for r in dersler:
+            em = ders_emoji(r['ders'])
+            lines.append(f"   {r['saat']} — {em} {r['sinif']} | {r['ders']}")
+
+    lines.extend([
+        "",
+        action_block(
+            "Şunlara da bakabilirsiniz:",
+            [
+                ("📅", '"bugün hangi derslerim" → günlük detay'),
+                ("📊", '"etüt istatistiğim" → performans özeti'),
+            ],
+        ),
+    ])
     return "\n".join(lines)
 
 
 async def ogretmen_etut_istatistik(staff_name: str) -> str:
-    """'Kac etut verdim?', 'etut istatistigim'"""
+    """'Kac etut verdim?', 'etut istatistigim' — A+++ visual (Oturum 25.41).
+
+    Eski: kuru istatistik (toplam, öğrenci, tarih, son 30 gün)
+    Yeni: dashboard kartı + ortalamalar + son hafta + görsel özet + tebrik
+    """
+    from fast_response_visuals import (
+        sep, header, action_block, fmt_tarih, sparkline
+    )
+
     row = await _q1(
         "SELECT COUNT(*) as toplam, SUM(ogrenci_sayisi) as ogrenci, "
         "MIN(tarih) as ilk, MAX(tarih) as son "
@@ -1136,18 +1713,89 @@ async def ogretmen_etut_istatistik(staff_name: str) -> str:
     if not row or not row['toplam']:
         return None
 
-    lines = [f"*Etut istatistikleriniz:*\n"]
-    lines.append(f"  Toplam etut: *{row['toplam']}*")
-    lines.append(f"  Toplam ogrenci: {row['ogrenci']}")
-    lines.append(f"  Tarih araligi: {row['ilk']} - {row['son']}")
+    toplam = int(row['toplam'])
+    ogrenci_sayisi = int(row.get('ogrenci') or 0)
+    ort_ogrenci = round(ogrenci_sayisi / toplam, 1) if toplam > 0 else 0
+    ilk_t = fmt_tarih(row.get('ilk'))
+    son_t = fmt_tarih(row.get('son'))
 
     # Son 30 gun
-    son30 = await _q1(
-        "SELECT COUNT(*) as c FROM etut_history WHERE ogretmen ILIKE $1 AND tarih >= CURRENT_DATE - 30",
+    son30_row = await _q1(
+        "SELECT COUNT(*) as c FROM etut_history "
+        "WHERE ogretmen ILIKE $1 AND tarih >= CURRENT_DATE - 30",
         f"%{staff_name}%")
-    if son30:
-        lines.append(f"  Son 30 gun: {son30['c']} etut")
+    son30 = int(son30_row['c']) if son30_row else 0
 
+    # Son 7 gun
+    son7_row = await _q1(
+        "SELECT COUNT(*) as c FROM etut_history "
+        "WHERE ogretmen ILIKE $1 AND tarih >= CURRENT_DATE - 7",
+        f"%{staff_name}%")
+    son7 = int(son7_row['c']) if son7_row else 0
+
+    # Haftalik dağılım (son 4 hafta için sparkline)
+    haftalik = []
+    try:
+        haftalik_rows = await _q(
+            "SELECT EXTRACT(WEEK FROM tarih)::int as hafta, COUNT(*) as cnt "
+            "FROM etut_history WHERE ogretmen ILIKE $1 "
+            "AND tarih >= CURRENT_DATE - 28 "
+            "GROUP BY EXTRACT(WEEK FROM tarih) ORDER BY hafta",
+            f"%{staff_name}%"
+        )
+        haftalik = [int(r['cnt']) for r in haftalik_rows]
+    except Exception:
+        pass
+
+    # Performans seviyesi
+    if toplam >= 200:
+        perf = "🌟 *EFSANE*"
+        perf_yorum = "Sezonun en yüksek performansları arasındasınız!"
+    elif toplam >= 100:
+        perf = "🏆 *ÜST DÜZEY*"
+        perf_yorum = "Üstün katkı sağlıyorsunuz, teşekkürler!"
+    elif toplam >= 50:
+        perf = "💪 *İYİ*"
+        perf_yorum = "İstikrarlı ve değerli katkı."
+    elif toplam >= 20:
+        perf = "🌱 *BAŞLANGIÇ*"
+        perf_yorum = "İyi başladınız, devamı gelir!"
+    else:
+        perf = "📋 *YENİ*"
+        perf_yorum = "Yeni bir sezon, yeni adımlar."
+
+    lines = [
+        header('Etüt İstatistikleriniz', staff_name, '📊'),
+        f"{perf}",
+        "",
+        f"📚 *Toplam Etüt:* {toplam}",
+        f"👨‍🎓 *Toplam Öğrenci:* {ogrenci_sayisi} _(ort: {ort_ogrenci}/etüt)_",
+        f"📅 *Aktif Süre:* {ilk_t} → {son_t}",
+        "",
+        sep(),
+        "📈 *Son Performans:*",
+        f"  • Son 30 gün: *{son30}* etüt",
+        f"  • Son 7 gün: *{son7}* etüt",
+    ]
+
+    # Haftalık trend sparkline
+    if haftalik and len(haftalik) >= 2:
+        spark = sparkline(haftalik)
+        lines.append(f"  • Trend: `{spark}` _(son {len(haftalik)} hafta)_")
+
+    lines.extend([
+        "",
+        sep(),
+        f"💬 _{perf_yorum}_",
+        "",
+        action_block(
+            "Şunlara da bakabilirsiniz:",
+            [
+                ("📅", '"haftalık programım" → ders programı'),
+                ("📍", '"bugün hangi derslerim" → günlük plan'),
+            ],
+        ),
+    ])
     return "\n".join(lines)
 
 
@@ -1432,19 +2080,66 @@ async def admin_ogretmen_program_detay(query: str) -> Optional[str]:
 
 
 async def admin_ogretmen_kiyasla() -> Optional[str]:
-    """'Ogretmenlerin etut yogunluklarini kiyasla'"""
+    """'Ogretmenlerin etut yogunluklarini kiyasla' — A+++ visual (Oturum 25.41).
+
+    Eski: medallar var ama kuru liste, ders/etüt/öğrenci ayrı satır
+    Yeni: leaderboard kart + total kategori istatistik + bar chart + insight
+    """
+    from fast_response_visuals import (
+        sep, header, action_block, medal as medal_fn, progress_bar
+    )
     # Yeni etut_teacher_summary tablosundan daha doğru veri
     data = await _q(
         "SELECT ad_soyad, toplam_ders, ogrenci_sayisi, toplam_etut "
         "FROM etut_teacher_summary ORDER BY toplam_etut DESC")
     if data:
-        lines = ["📊 *Ogretmen Etut Yogunlugu*"]
-        lines.append(f"_2025-26 Sezonu Toplam_\n")
+        toplam_etut = sum(int(t.get('toplam_etut', 0) or 0) for t in data)
+        toplam_ogr = sum(int(t.get('ogrenci_sayisi', 0) or 0) for t in data)
+        toplam_ders = sum(int(t.get('toplam_ders', 0) or 0) for t in data)
+        max_etut = max((int(t.get('toplam_etut', 0) or 0) for t in data), default=0)
+        ort_etut = round(toplam_etut / len(data), 1) if data else 0
+
+        lines = [
+            header('Öğretmen Etüt Liderliği', '2025-26 Sezonu', '📊'),
+            f"📚 *Toplam:* {toplam_etut} etüt | {toplam_ogr} öğrenci | {toplam_ders} ders saati",
+            f"📐 *Ortalama:* {ort_etut} etüt / öğretmen",
+            f"👥 *Aktif öğretmen:* {len(data)}",
+            "",
+            sep(),
+            "🏆 *ETÜT LİDERLİK SIRASI:*",
+            "",
+        ]
         for i, t in enumerate(data, 1):
             name = t['ad_soyad']
-            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
-            lines.append(f"  {medal} *{name}*")
-            lines.append(f"     {t['toplam_etut']} etut | {t['ogrenci_sayisi']} ogrenci | {t['toplam_ders']} ders")
+            etut = int(t.get('toplam_etut', 0) or 0)
+            ogr = int(t.get('ogrenci_sayisi', 0) or 0)
+            ders = int(t.get('toplam_ders', 0) or 0)
+            m = medal_fn(i)
+            bar = progress_bar(etut, max_etut, width=10)
+            lines.append(f"{m} *{name}*")
+            lines.append(f"   `{bar}` *{etut}* etüt")
+            lines.append(f"   👨‍🎓 {ogr} öğrenci | 📚 {ders} ders saati")
+            lines.append("")
+
+        # Insight
+        if data and len(data) >= 3:
+            ust_3 = sum(int(t.get('toplam_etut', 0) or 0) for t in data[:3])
+            yuzde = round((ust_3 / toplam_etut) * 100, 1) if toplam_etut > 0 else 0
+            lines.extend([
+                sep(),
+                f"💡 *Insight:* Üst 3 öğretmen toplam etütlerin *%{yuzde}*'ini veriyor.",
+            ])
+
+        lines.extend([
+            "",
+            action_block(
+                "Şunlara da bakabilirsiniz:",
+                [
+                    ("📚", '"en çok etüt alan öğrenci" → öğrenci sıralama'),
+                    ("👨‍🏫", 'Öğretmen adı → detaylı performans'),
+                ],
+            ),
+        ])
         return "\n".join(lines)
 
     # Fallback: eski cache
@@ -1452,60 +2147,166 @@ async def admin_ogretmen_kiyasla() -> Optional[str]:
     data = get_cached("ogretmen_etut_toplam")
     if not data:
         return None
-    lines = ["*Ogretmen Etut Yogunlugu:*\n"]
+    lines = [header('Öğretmen Etüt Yoğunluğu', '', '📊'), ""]
+    max_cnt = max((t.get('etut_sayisi', 0) for t in data[:15]), default=0)
     for i, t in enumerate(data[:15], 1):
-        name = t.get('ogretmen', '?')[:20]
+        name = t.get('ogretmen', '?')[:25]
         cnt = t.get('etut_sayisi', 0)
         ogrenci = t.get('toplam_ogrenci', 0)
-        lines.append(f"  {i}. {name:20s} | {cnt:4d} etut | {ogrenci} ogrenci")
+        m = medal_fn(i)
+        bar = progress_bar(cnt, max_cnt, width=10)
+        lines.append(f"{m} *{name}* `{bar}` {cnt} etüt | {ogrenci} öğrenci")
     return "\n".join(lines)
 
 
 async def admin_en_cok_etut_alan_ogrenci() -> Optional[str]:
-    """'En cok etut alan ogrenci kim', 'en fazla etut yapan'"""
+    """'En cok etut alan ogrenci kim', 'en fazla etut yapan' — A+++ visual.
+
+    Eski: medallar var ama düz liste, katılım renk kodlu
+    Yeni: leaderboard kart + ortalama katılım + insight + en aktif sınıf
+    """
+    from fast_response_visuals import (
+        sep, header, action_block, dot, medal as medal_fn
+    )
+
     data = await _q(
         "SELECT soz_no, full_name, sinif, toplam, yapildi, ogrenci_gelmedi "
         "FROM etut_student_control WHERE toplam > 0 ORDER BY toplam DESC LIMIT 15")
     if not data:
         return None
 
-    lines = ["📚 *En Cok Etut Alan Ogrenciler*"]
-    lines.append(f"_2025-26 Sezonu_\n")
+    # İstatistikler
+    toplam_etut_sum = sum(int(r.get('toplam', 0) or 0) for r in data)
+    toplam_yapildi = sum(int(r.get('yapildi', 0) or 0) for r in data)
+    ort_katilim = round(toplam_yapildi / toplam_etut_sum * 100, 1) if toplam_etut_sum > 0 else 0
+
+    # En aktif sınıf
+    sinif_etut = {}
+    for r in data:
+        s = r.get('sinif', '?') or '?'
+        sinif_etut[s] = sinif_etut.get(s, 0) + int(r.get('toplam', 0) or 0)
+    en_aktif_sinif = max(sinif_etut.items(), key=lambda x: x[1]) if sinif_etut else (None, 0)
+
+    lines = [
+        header('Etüt Liderlik Tablosu', '2025-26 Sezonu', '📚'),
+        f"📊 *Top 15 öğrenci toplam:* {toplam_etut_sum} etüt",
+        f"✅ *Ortalama katılım:* %{ort_katilim}",
+    ]
+    if en_aktif_sinif[0]:
+        lines.append(f"🏆 *En aktif sınıf:* {en_aktif_sinif[0]} _({en_aktif_sinif[1]} etüt)_")
+    lines.extend(["", sep(), "🏷️ *EN ÇOK ETÜT ALAN ÖĞRENCİLER:*", ""])
+
     for i, r in enumerate(data, 1):
         name = r['full_name']
-        toplam = r['toplam']
-        yapildi = r['yapildi']
-        gelmedi = r['ogrenci_gelmedi']
-        # Katılım oranı
+        toplam = int(r.get('toplam', 0) or 0)
+        yapildi = int(r.get('yapildi', 0) or 0)
+        gelmedi = int(r.get('ogrenci_gelmedi', 0) or 0)
+        sinif = (r.get('sinif', '?') or '?')[:15]
+
         if toplam > 0:
             oran = round(yapildi / toplam * 100)
-            oran_emoji = "🟢" if oran > 70 else "🟡" if oran > 40 else "🔴"
         else:
             oran = 0
-            oran_emoji = "⚪"
-        medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
-        lines.append(f"  {medal} *{name}*")
-        lines.append(f"     {r['sinif'][:15]} | *{toplam}* etut | {oran_emoji} katilim %{oran}")
+
+        # Katilim rozet
+        if oran >= 80:
+            kat_em, kat_etiket = "🟢", "MÜKEMMEL"
+        elif oran >= 60:
+            kat_em, kat_etiket = "🟡", "İYİ"
+        elif oran >= 40:
+            kat_em, kat_etiket = "🟠", "ORTA"
+        else:
+            kat_em, kat_etiket = "🔴", "DÜŞÜK"
+
+        m = medal_fn(i)
+        lines.append(f"{m} *{name}*")
+        lines.append(f"   {sinif} | 📚 *{toplam}* etüt")
+        lines.append(f"   {kat_em} Katılım: %{oran} ({yapildi}/{toplam}) — {kat_etiket}")
+        if gelmedi > 0 and gelmedi > toplam * 0.3:
+            lines.append(f"   ⚠️ {gelmedi} etüde gelmedi")
+        lines.append("")
+
+    lines.extend([
+        sep(),
+        action_block(
+            "Şunlara da bakabilirsiniz:",
+            [
+                ("📊", '"öğretmen kıyaslama" → eğitmen leaderboard'),
+                ("📋", '"devamsızlık listesi" → risk öğrencileri'),
+                ("👤", 'Öğrenci adı → bireysel detay'),
+            ],
+        ),
+    ])
     return "\n".join(lines)
 
 
 async def admin_ogrenci_sayisi() -> Optional[str]:
-    """'Kac ogrenci var', 'sinif dagilimi'"""
+    """'Kac ogrenci var', 'sinif dagilimi' — A+++ visual (Oturum 25.41).
+
+    Eski: kuru istatistik + sınıf liste
+    Yeni: kategori dashboard + sınıf dağılımı bar chart + en kalabalık/küçük + insight
+    """
+    from fast_response_visuals import (
+        sep, header, action_block, progress_bar
+    )
     from analytics_cache import get_cached
     stats = get_cached("genel_istatistik")
     siniflar = get_cached("sinif_ogrenci_sayisi")
     if not stats:
         return None
 
-    lines = [f"🏫 *Kurum Ozeti*\n",
-             f"  👨‍🎓 Toplam ogrenci: *{stats.get('toplam_ogrenci', '?')}*",
-             f"  👨‍🏫 Personel: *{stats.get('toplam_personel', '?')}*",
-             f"  📚 Etut kaydi: *{stats.get('toplam_etut', '?')}*",
-             f"  📋 Rehberlik notu: *{stats.get('toplam_rehberlik', '?')}*"]
+    toplam_ogr = stats.get('toplam_ogrenci', 0) or 0
+    toplam_per = stats.get('toplam_personel', 0) or 0
+    toplam_etut = stats.get('toplam_etut', 0) or 0
+    toplam_reh = stats.get('toplam_rehberlik', 0) or 0
+
+    # Ortalamalar
+    ogr_per_per = round(toplam_ogr / toplam_per, 1) if toplam_per > 0 else 0
+    etut_per_ogr = round(toplam_etut / toplam_ogr, 1) if toplam_ogr > 0 else 0
+
+    lines = [
+        header('Kurum Özet Dashboard', '', '🏫'),
+        f"📊 *KAPASİTE*",
+        f"   👨‍🎓 *{toplam_ogr}* öğrenci",
+        f"   👨‍🏫 *{toplam_per}* personel",
+        f"   📐 _Öğrenci/Öğretmen oranı: {ogr_per_per}_",
+        "",
+        f"📚 *AKTİVİTE*",
+        f"   📚 *{toplam_etut}* etüt kaydı",
+        f"   📋 *{toplam_reh}* rehberlik görüşmesi",
+        f"   📐 _Öğrenci başına ort: {etut_per_ogr} etüt_",
+    ]
+
     if siniflar:
-        lines.append(f"\n*Sinif Dagilimi:*")
+        # En kalabalık + ortalama
+        max_siz = max((s.get('ogrenci_sayisi', 0) for s in siniflar), default=0)
+        ort_siz = round(sum(s.get('ogrenci_sayisi', 0) for s in siniflar) / len(siniflar), 1)
+
+        lines.extend([
+            "",
+            sep(),
+            f"🏷️ *SINIF DAĞILIMI* _(toplam {len(siniflar)} sınıf, ort {ort_siz} öğr/sınıf)_",
+            "",
+        ])
+
+        # Görsel bar chart
         for s in siniflar[:15]:
-            lines.append(f"  {s.get('class_name','?'):20s} | {s.get('ogrenci_sayisi',0)} ogrenci")
+            sinif_ad = (s.get('class_name', '?') or '?')[:18]
+            cnt = s.get('ogrenci_sayisi', 0) or 0
+            bar = progress_bar(cnt, max_siz, width=10)
+            lines.append(f"  *{sinif_ad:<18}* `{bar}` {cnt:>3}")
+
+    lines.extend([
+        "",
+        action_block(
+            "Detaylı raporlar:",
+            [
+                ("👤", 'Öğrenci adı → bireysel akademik durum'),
+                ("📊", '"en başarılı" → liderlik tablosu'),
+                ("📋", '"devamsızlık listesi" → risk öğrencileri'),
+            ],
+        ),
+    ])
     return "\n".join(lines)
 
 
@@ -1623,40 +2424,161 @@ async def admin_en_basarili() -> Optional[str]:
 
 
 async def admin_devamsizlik_top() -> Optional[str]:
-    """'En cok devamsiz', 'devamsizlik listesi'"""
+    """'En cok devamsiz', 'devamsizlik listesi' — A+++ visual (Oturum 25.41).
+
+    Eski: kuru liste, emoji + sıra + isim + saat
+    Yeni: dashboard kartı + risk istatistik + bant dağılımı + aksiyon önerisi
+    """
+    from fast_response_visuals import (
+        sep, header, action_block, dot, medal
+    )
     from analytics_cache import get_cached
     data = get_cached("devamsizlik_top20")
     if not data:
         return None
-    lines = ["📋 *En Cok Devamsiz Ogrenciler*\n"]
+
+    # Risk bantları
+    kritik = [d for d in data if (d.get('toplam_saat', 0) or 0) >= 150]
+    yuksek = [d for d in data if 100 <= (d.get('toplam_saat', 0) or 0) < 150]
+    orta = [d for d in data if 50 <= (d.get('toplam_saat', 0) or 0) < 100]
+
+    lines = [
+        header('Devamsızlık İzleme Tablosu', '', '📋'),
+        f"📊 *Risk Bantları*",
+        f"  🔴 KRİTİK (150+ saat): *{len(kritik)}* öğrenci",
+        f"  🟠 YÜKSEK (100-150 saat): *{len(yuksek)}* öğrenci",
+        f"  🟡 ORTA (50-100 saat): *{len(orta)}* öğrenci",
+        "",
+        sep(),
+        "🏷️ *EN ÇOK DEVAMSIZ ÖĞRENCİLER:*",
+        "",
+    ]
+
     for i, d in enumerate(data[:10], 1):
-        saat = d.get('toplam_saat', 0)
-        emoji = "🔴" if saat > 100 else "🟡" if saat > 50 else "🟢"
-        lines.append(f"  {emoji} {i}. *{d.get('adi','')} {d.get('soyadi','')}* — {d.get('sinif','?')} | *{saat}* saat")
-    lines.append(f"\n_Belirli bir ogrenci icin detay: isim yazin._")
+        saat = int(d.get('toplam_saat', 0) or 0)
+        ad = d.get('adi', '') or ''
+        soyad = d.get('soyadi', '') or ''
+        sinif = d.get('sinif', '?')
+
+        # Renk + bant etiketi
+        if saat >= 150:
+            color, etiket = "🔴", "KRİTİK"
+        elif saat >= 100:
+            color, etiket = "🟠", "YÜKSEK"
+        elif saat >= 50:
+            color, etiket = "🟡", "ORTA"
+        else:
+            color, etiket = "🟢", "DÜŞÜK"
+
+        m = medal(i)
+        lines.append(f"{m} {color} *{ad} {soyad}*")
+        lines.append(f"   {sinif[:20]} | *{saat} saat* — {etiket}")
+        lines.append("")
+
+    # Eylem önerisi
+    if kritik:
+        lines.extend([
+            sep(),
+            f"⚠️ *Acil Eylem:* {len(kritik)} öğrenci sınava giriş hakkını kaybedebilir.",
+            f"   _Velilere bildirim + birebir görüşme öneriliyor._",
+        ])
+
+    lines.extend([
+        "",
+        action_block(
+            "Şunlara da bakabilirsiniz:",
+            [
+                ("👤", 'Öğrenci adı yazın → bireysel detay'),
+                ("📊", '"sınıf bazlı devamsızlık" → ders dağılımı'),
+            ],
+        ),
+    ])
     return "\n".join(lines)
 
 
 async def ogrenci_guclu_konular(soz_no: int, name: str) -> str:
-    """'Iyi oldugum konular', 'guclu yanlarim'"""
+    """'Iyi oldugum konular', 'guclu yanlarim' — A+++ visual (Oturum 25.41).
+
+    Eski: kuru liste, emoji + ders + konu + yüzde
+    Yeni: medal sıralama + ders bazlı grup + güç istatistik kartı
+    """
+    from fast_response_visuals import (
+        sep, header, medal, action_block, hitap, ders_emoji
+    )
+
     rows = await _q(
         "SELECT ders, konu, sinav_hata_yuzdesi FROM student_topic_tracker "
-        "WHERE soz_no=$1 AND sinav_hata_yuzdesi > 60 ORDER BY sinav_hata_yuzdesi DESC LIMIT 8", soz_no)
+        "WHERE soz_no=$1 AND sinav_hata_yuzdesi > 60 "
+        "ORDER BY sinav_hata_yuzdesi DESC LIMIT 8", soz_no)
+
     if not rows:
         return (
-            f"💪 *{name} — Guclu Konularin*\n\n"
-            f"Henuz yeterli deneme sonucu olmadigi icin konu analizi olusturulamadi.\n"
-            f"Denemelere katildikca guclu ve zayif konularin otomatik belirlenecek.\n\n"
-            f"_Hangi derslerde kendini iyi hissediyorsun? Birlikte degerlendirelim!_ 🌟"
+            f"{header('Güçlü Konuların', name, '💪')}\n"
+            f"Henüz yeterli deneme verisi olmadığı için detaylı analiz hazır değil. 🌱\n\n"
+            f"💡 *Bunun anlamı şu:*\n"
+            f"  • Yakında otomatik oluşacak (denemelere katıldıkça)\n"
+            f"  • Şimdilik kendi hissini paylaşabilirsin\n\n"
+            f"📌 *Bana söyle:*\n"
+            f"  🌟 Hangi derslerde *rahat* hissediyorsun?\n"
+            f"  🎯 Hangi konularda *kendine güveniyorsun*?\n\n"
+            f"_Birlikte güçlü yanlarını parlatalım!_ ✨"
         )
 
-    lines = [f"💪 *{name} — Guclu Konularin*\n"]
-    for i, r in enumerate(rows, 1):
-        basari = r.get('sinav_hata_yuzdesi', 0) or 0
-        emoji = "🌟" if basari > 80 else "🟢"
-        lines.append(f"  {emoji} *{r['ders']}* — {r['konu'][:35]} (basari: %{basari:.0f})")
+    # Ders bazlı grup + en güçlü 3
+    en_guclu = rows[:3]
+    digerleri = rows[3:]
 
-    lines.append(f"\n_Bu konularda cok iyisin! Simdi zayif alanlara odaklanalim mi?_")
+    # Ders bazlı dağılım
+    ders_count = {}
+    for r in rows:
+        d = r['ders']
+        ders_count[d] = ders_count.get(d, 0) + 1
+    top_ders = max(ders_count.items(), key=lambda x: x[1]) if ders_count else (None, 0)
+
+    lines = [
+        header('Güçlü Konuların', name, '💪'),
+        f"🌟 *Toplam {len(rows)} güçlü konu tespit edildi!*",
+    ]
+    if top_ders[0]:
+        em = ders_emoji(top_ders[0])
+        lines.append(f"{em} *En güçlü dersin:* {top_ders[0]} _({top_ders[1]} konu)_")
+
+    lines.extend(["", sep(), "🏆 *EN GÜÇLÜ 3 KONUN:*", ""])
+
+    for i, r in enumerate(en_guclu, 1):
+        basari = float(r.get('sinav_hata_yuzdesi') or 0)
+        m = medal(i)
+        em = ders_emoji(r['ders'])
+        konu = (r['konu'] or '')[:35]
+        rozet = "🌟" if basari >= 85 else "🟢"
+        lines.append(f"{m} {em} *{r['ders']}* — {konu}")
+        lines.append(f"   {rozet} *%{basari:.0f}* başarı")
+        lines.append("")
+
+    if digerleri:
+        lines.extend([sep(), "✨ *Diğer Güçlü Konular:*", ""])
+        for r in digerleri:
+            basari = float(r.get('sinav_hata_yuzdesi') or 0)
+            em = ders_emoji(r['ders'])
+            konu = (r['konu'] or '')[:30]
+            lines.append(f"  🟢 {em} *{r['ders']}:* {konu} _(%{basari:.0f})_")
+
+    lines.extend([
+        "",
+        sep(),
+        f"💡 *Stratejik Tavsiye:*",
+        f"   Bu güçlü alanları *koruyup ileri taşımak* için sınava kadar düzenli soru çözümü önemli.",
+        f"   Aynı zamanda zayıf konulara odaklan — *en hızlı puan kazanımı* orada.",
+        "",
+        action_block(
+            "Şimdi ne yapalım?",
+            [
+                ("🎯", '"zayıf konularım" → puan kazanma alanları'),
+                ("📊", '"son denemem" → güncel performans'),
+                ("📚", '"çalışma planı" → dengeli program'),
+            ],
+        ),
+    ])
     return "\n".join(lines)
 
 
@@ -1967,10 +2889,24 @@ ADMIN_PATTERNS = [
 # Eksik handler'lar icin inline yardimcilar:
 
 def _handler_kurum_reddet(name: str) -> str:
-    hitap = name.split()[0] if name else ""
+    """A+++ visual (Oturum 25.41) — generic red yerine constructive yönlendirme."""
+    from fast_response_visuals import sep, header, action_block
+    hitap_str = name.split()[0] if name else ""
+    head = header('Bu bilgi paylaşıma kapalı', '', '🔒')
+    actions = action_block(
+        "Sana yardım edebileceklerim:",
+        [
+            ("📊", '"son denemem" → akademik durum'),
+            ("🎯", '"zayıf konularım" → öncelikli alanlar'),
+            ("📅", '"çalışma planı yap" → kişisel program'),
+            ("📚", 'Konu adı yaz → birlikte çözelim'),
+        ],
+    )
     return (
-        f"*{hitap}*, kurum ve personel bilgileri sadece yonetim tarafindan gorulebilir. 😊\n\n"
-        f"_Sana akademik konularda yardimci olabilirim — ders, sinav veya calisma plani?_ 🎯"
+        f"{head}\n"
+        f"*{hitap_str}*, kurum ve personel bilgileri sadece yönetim tarafından görülebilir. 😊\n\n"
+        f"_Bu kural KVKK ve kurum gizlilik politikası gereği — herkes için geçerli._\n\n"
+        f"{actions}"
     )
 
 
@@ -2580,6 +3516,18 @@ async def try_fast_response(
     if role == "ogrenci" and soz_no:
         for pattern, handler, desc in OGRENCI_PATTERNS:
             if re.search(pattern, msg_lower) or (msg_norm != msg_lower and re.search(pattern, msg_norm)):
+                # 25.41 (Neo) — ANTI-REPEAT: Aynı handler 90sn arda tetiklenirse SKIP → LLM
+                # Kullanıcı tekrar soruyorsa demek ki detay istiyor → Cerebras/Claude bağlamla anlasın
+                try:
+                    from fast_response_loop_guard import should_skip_repeat
+                    if should_skip_repeat(caller_phone, handler, message):
+                        import logging
+                        logging.getLogger(__name__).info(
+                            f"[ANTI_REPEAT] {handler} 90sn arda tekrar → SKIP → LLM"
+                        )
+                        return None  # LLM devreye, bağlamla anlasın
+                except Exception:
+                    pass
                 # 22.1n-neo: routing_stats.handler_name takibi
                 try: _fr_last_handler.set(handler)
                 except: pass
@@ -2643,11 +3591,50 @@ async def try_fast_response(
                         from motivation_library import get_sohbet
                         return get_sohbet(name)
                     elif handler == "foto_hakki":
+                        # ─── A+++ visual (Oturum 25.41) ───
+                        # Foto kullanım sayısı varsa progress bar göster
+                        from fast_response_visuals import (
+                            sep, header, action_block, gauge
+                        )
+                        first = name.split()[0] if name else ""
+                        # Foto kullanım sayısı çek
+                        kullanilan = 0
+                        kalan = 3
+                        try:
+                            from db_pool import db_fetchval as _dfv2
+                            kullanilan = await _dfv2(
+                                "SELECT COUNT(*) FROM agent_conversations "
+                                "WHERE phone=$1 AND DATE(created_at)=CURRENT_DATE "
+                                "AND content LIKE '[FOTO%' AND message_role='user'",
+                                caller_phone
+                            ) or 0
+                            kullanilan = int(kullanilan)
+                            kalan = max(0, 3 - kullanilan)
+                        except Exception:
+                            pass
+
+                        gauge_visual = gauge(kullanilan, 3)
+                        if kalan == 0:
+                            durum_color = "🔴"
+                            durum_msg = "Bugünkü hakkın doldu! Yarın 00:00'da sıfırlanır."
+                        elif kalan == 1:
+                            durum_color = "🟡"
+                            durum_msg = "Son hakkın kaldı! Önemli sorular için sakla."
+                        else:
+                            durum_color = "🟢"
+                            durum_msg = f"Bol bol kullanabilirsin — {kalan} hak var."
+
                         return (
-                            f"📸 *{name.split()[0] if name else ''}, foto soru çözüm hakkın:*\n\n"
-                            f"Günlük *3 fotoğraf* gönderebilirsin.\n"
-                            f"Yarın sıfırlanır! 🔄\n\n"
-                            f"Yazılı soru sormak ise *sınırsız* — istediğin kadar yaz! ✍️"
+                            f"{header('Foto Soru Çözüm Hakkın', first, '📸')}\n"
+                            f"📊 *Bugünkü Kullanım:*\n"
+                            f"   `{gauge_visual}`\n"
+                            f"   {durum_color} *{kullanilan}/3* kullanıldı | *{kalan}* hak kaldı\n\n"
+                            f"💬 _{durum_msg}_\n\n"
+                            f"{sep()}\n"
+                            f"💡 *İyi haber:* ✍️ Yazılı soru sormak *sınırsız* — istediğin kadar yaz!\n\n"
+                            f"📌 *Foto sınırının amacı:* Sistem yükünü dengeli tutmak ve "
+                            f"her öğrencinin adil hak almasını sağlamak.\n\n"
+                            f"_Foto göndereceğin sorunun *en zor* sorun olduğundan emin ol._ 🎯"
                         )
                     elif handler == "sinav_bilgi":
                         return await sinav_bilgi(name, message)
@@ -2747,6 +3734,17 @@ async def try_fast_response(
         # Ogretmen pattern'lari
         for pattern, handler, desc in OGRETMEN_PATTERNS:
             if re.search(pattern, msg_lower):
+                # 25.41 (Neo) — ANTI-REPEAT: aynı handler 90sn arda → SKIP → LLM
+                try:
+                    from fast_response_loop_guard import should_skip_repeat
+                    if should_skip_repeat(caller_phone, handler, message):
+                        import logging
+                        logging.getLogger(__name__).info(
+                            f"[ANTI_REPEAT] ogretmen {handler} tekrar → SKIP → LLM"
+                        )
+                        return None
+                except Exception:
+                    pass
                 # 22.1n-neo: handler takibi
                 try: _fr_last_handler.set(handler)
                 except: pass
@@ -3347,6 +4345,18 @@ async def try_fast_response(
 
         for pattern, handler, desc in ADMIN_PATTERNS:
             if re.search(pattern, msg_lower):
+                # 25.41 (Neo) — ANTI-REPEAT: aynı handler 90sn arda → SKIP → LLM
+                # Admin/mudur/rehber için de geçerli (sadece selamlama/menu skip listesinde)
+                try:
+                    from fast_response_loop_guard import should_skip_repeat
+                    if should_skip_repeat(caller_phone, handler, message):
+                        import logging
+                        logging.getLogger(__name__).info(
+                            f"[ANTI_REPEAT] {role} {handler} tekrar → SKIP → LLM"
+                        )
+                        return None
+                except Exception:
+                    pass
                 # 22.1n-neo: handler takibi
                 try: _fr_last_handler.set(handler)
                 except: pass
