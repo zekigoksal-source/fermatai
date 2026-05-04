@@ -1170,38 +1170,42 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
                         local_system = local_system + "\n\n[LANE TALIMATI]" + parts[1]
 
                 # ─── Oturum 25.29: Web kanali zenginlestirme ──────────────
-                # Web'de prompt'a addon ekle + RAG context inject (varsa)
+                # Web'de prompt'a addon ekle
                 if channel == "web":
                     local_system = local_system + self._LOCAL_SYSTEM_WEB_ADDON
-                    # RAG arama: son user mesajindan ders/konu cikar
-                    try:
-                        last_user = ""
-                        for m in reversed(messages):
-                            if m.get("role") == "user":
-                                content = m.get("content", "")
-                                if isinstance(content, list):
-                                    text_parts = [
-                                        p.get("text", "") for p in content
-                                        if isinstance(p, dict) and p.get("type") == "text"
-                                    ]
-                                    last_user = " ".join(text_parts)
-                                else:
-                                    last_user = str(content)
-                                break
-                        if last_user and len(last_user) > 10:
-                            from rag_engine import search_curriculum as _rag_search
-                            rag_hits = await _rag_search(last_user, limit=2)
-                            if rag_hits:
-                                rag_context = "\n\n[RAG_CONTEXT — Fermat veritabanindan]\n"
-                                for h in rag_hits[:2]:
-                                    rag_context += (
-                                        f"\n* {h.get('ders', '?')} / {h.get('konu', '?')}:\n"
-                                        f"  {(h.get('icerik', '') or '')[:400]}\n"
-                                    )
-                                local_system = local_system + rag_context
-                                logger.info(f"  [CEREBRAS-WEB] RAG: {len(rag_hits)} chunk eklendi")
-                    except Exception as _rag_err:
-                        logger.debug(f"  [CEREBRAS-WEB] RAG fail: {_rag_err}")
+
+                # ─── 25.40z3-CEREBRAS-PREFETCH: Akilli Pre-Fetch Context Engine ─
+                # Cerebras tool calling yetenegi YOK — ama mevcut tool ekosisteminden
+                # PRE-FETCH ile destek alir. Intent + mesaj icerigi -> paralel API
+                # cagrisi (RAG/Wiki/PubChem/USGS/arXiv) -> Cerebras prompt'una inject.
+                # Onceki RAG-only davranisi BU ENGINE icinde (genisletilmis halde).
+                # Web/WhatsApp her ikisinde calisir (eskisi sadece web'di).
+                try:
+                    last_user = ""
+                    for m in reversed(messages):
+                        if m.get("role") == "user":
+                            content = m.get("content", "")
+                            if isinstance(content, list):
+                                text_parts = [
+                                    p.get("text", "") for p in content
+                                    if isinstance(p, dict) and p.get("type") == "text"
+                                ]
+                                last_user = " ".join(text_parts)
+                            else:
+                                last_user = str(content)
+                            break
+                    if last_user and len(last_user) > 5:
+                        from cerebras_prefetch import prefetch_context
+                        prefetch_block = await prefetch_context(
+                            message=last_user,
+                            intent=intent or "",
+                            channel=channel,
+                            timeout=2.5,  # max 2.5sn bekle, sonra Cerebras'a git
+                        )
+                        if prefetch_block:
+                            local_system = local_system + prefetch_block
+                except Exception as _pf_err:
+                    logger.debug(f"  [CEREBRAS-PREFETCH] fail: {_pf_err}")
 
                 # Intent → model eşleştir (channel-aware)
                 cerebras_model = select_cerebras_model(intent, channel=channel)
