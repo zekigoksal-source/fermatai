@@ -26,16 +26,20 @@ from typing import Optional
 # ─── Modül Yükleme Stratejisi ───────────────────────────────────────────────
 
 def _should_load_pedagoji(role: str, intent: Optional[str]) -> bool:
-    """Pedagoji bloğu (~52K char): rol + intent bazlı."""
+    """Pedagoji bloğu (~39K char): rol + intent bazlı.
+
+    25.40z3 LOOP1 fix: admin'de SADECE pedagoji-related intent'lerde yükle
+    (admin'in sürekli pedagoji bloğu yüklemesine gerek yok — daha optimize)
+    """
     role_l = (role or "").lower()
     if role_l in ("ogrenci", "rehber"):
         return True  # bu roller her zaman pedagoji ile çalışır
-    if role_l == "admin":
-        # Admin pedagoji bilgisi alabilir (öğrenci hakkında soruyorsa)
-        return True
-    if role_l in ("mudur", "ogretmen"):
-        # Müdür/öğretmen: sadece pedagoji-related intent'lerde
-        if intent in ("plan_yap", "analiz_iste", "deneme_analiz", "hedef_analiz"):
+    if role_l in ("admin", "mudur", "ogretmen"):
+        # Sadece pedagoji-related intent'lerde
+        if intent in ("plan_yap", "kavram_aciklama", "ornek_iste", "cozum_iste",
+                      "ozet_iste", "yontem_iste", "duygu_paylasim", "motivasyon_destek",
+                      "test_olusturma", "soru_uret", "yeni_nesil_uret",
+                      "konu_anlatim_uzun", "ornek_paket_uret"):
             return True
     return False
 
