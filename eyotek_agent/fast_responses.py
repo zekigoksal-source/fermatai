@@ -2649,6 +2649,12 @@ OGRENCI_PATTERNS = [
     (r"(nasilsin|nasılsın|naber|ne\s*haber|iyi\s*misin)", "sohbet", "Sohbet"),
 
     # OGM Yonlendirme (22.1n-ogm) — ogrenci soru calismak istiyor
+    # 25.41 (Neo bug 5 May): Bekir "2025 tyt matematik çıkmış sınav sorularını çıkartır mısın"
+    # Cerebras "henüz yayımlanmadı" dedi (TARİHSEL HATA — 2025 TYT geçen yıl yapıldı).
+    # Yıl + sınav türü + ders + çıkmış/soru → Claude'a (list_exam_questions tool çağrı)
+    # "20XX TYT/AYT" + "ders" — ESNEK: araya "sınav/yılı/yıl" geçebilir
+    (r"\b20\d{2}\b.{0,15}\b(tyt|ayt|ydt)\b.{0,20}\b(matematik|mat|fizik|kimya|biyoloji|turkce|türkçe|tarih|cografya|coğrafya|felsefe|tde|edebiyat|ingilizce|geometri)\b", "claude_cikmis_yil", "Yıl+TYT/AYT+ders esnek"),
+    (r"\b(tyt|ayt|ydt)\b.{0,20}\b20\d{2}\b.{0,20}\b(matematik|mat|fizik|kimya|biyoloji|turkce|türkçe|tarih|cografya|coğrafya|felsefe|tde|edebiyat|ingilizce|geometri)\b", "claude_cikmis_yil", "TYT/AYT+yıl+ders esnek"),
     (r"\b(tyt|ayt|ydt)\s+(matematik|fizik|kimya|biyoloji|turkce|türkçe|tarih|cografya|coğrafya|felsefe|tde|edebiyat|ingilizce)\s+(soru|test|deneme|calisma|çalışma|pratik)", "ogm_yonlendir_ogrenci", "OGM ders+sinav yonlendir"),
     (r"\b(matematik|fizik|kimya|biyoloji|turkce|türkçe|tarih|cografya|coğrafya|felsefe|edebiyat|ingilizce)\s+(soru\s*bankasi|soru\s*bankası|3\s*adim|3\s*adım|konu\s*ozeti|konu\s*özeti)", "ogm_yonlendir_ogrenci", "OGM tip belirt"),
     (r"\b(yks|meb)\s+(deneme|puan\s*hesapla|cikmis|konu\s*anlatim)", "ogm_yonlendir_ogrenci", "OGM hub"),
@@ -2685,6 +2691,12 @@ OGRENCI_PATTERNS = [
     (r"(yks|tyt|ayt).{0,15}(siralama|sıralama|sira|sıra)\s*(yapar|olur|girer|alabilir|tahmin)", "claude_kisisel_hedef", "YKS sıralama tahmini"),
     (r"(siralama|sıralama|sira|sıra).{0,15}(yapar|olur|alabilir|girer|tahmin|yaparım|olurum)", "claude_kisisel_hedef", "Siralama tahmin"),
     (r"(sence|sanırım|sanirim|tahmin\s*et).{0,30}(siralama|sıralama|sira|sıra|yks|tyt|ayt)", "claude_kisisel_hedef", "Sence sıralama tahmin"),
+    # 25.41 (Neo bug 5 May): Derya "şu an tahmini puanım ne olacak" sordu,
+    # Cerebras "verilerine erişemem" dedi (oysa Derya kayıtlı, calculate_yks_score var).
+    # "Tahmini puan/net/sıralama" → MUTLAKA Claude tool çağırsın, Cerebras spekülasyon yapmasın
+    (r"(tahmin\w*\s*(puan|net|sıralama|siralama|skor)|puan\w*\s*(tahmin|hesap)|kac\s*puan\s*(yap|al)|kaç\s*puan\s*(yap|al))", "claude_kisisel_hedef", "Tahmini puan/sıralama"),
+    (r"(şu\s*an|simdi|şimdi|bu\s*an)\s*(tahmin|puan|sıralama|siralama|net)", "claude_kisisel_hedef", "Şu an tahmini puan"),
+    (r"^(puanım|puanim|netim|sıralamam|siralamam)\s*(ne|kac|kaç|nedir|nasıl|nasil)", "claude_kisisel_hedef", "Puanım nedir"),
     (r"(sonuc|sonuç)\w*\s*(ac[iı]kland|ne\s+oldu|bak)", "son_deneme", "Sonuc sorma"),
     # deneme analizi / karsilastirma → kiyaslama (Claude-seviye analiz)
     (r"deneme\s*(analiz|karsilastir|kıyasla)", "deneme_kiyasla", "Deneme analizi"),
@@ -3611,6 +3623,11 @@ async def try_fast_response(
                         return await ogm_yonlendir_response(message, name)
                     if handler == "claude_ogm_onerisi":
                         return None  # Claude'a — ogrenci profilinden ders onerisi
+                    if handler == "claude_cikmis_yil":
+                        # 25.41 Neo bug fix: "2025 tyt matematik çıkmış" → Claude
+                        # Cerebras tarihsel veri uyduramaz (Bekir vakası)
+                        # Claude list_exam_questions tool ile gerçek arşivden çekecek
+                        return None
                     if handler == "privacy_reject":
                         # 22.1n-audit: adres/ikamet/kisisel iletisim yasak — fast reject
                         return (
