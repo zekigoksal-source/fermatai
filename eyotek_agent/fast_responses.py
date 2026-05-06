@@ -2950,10 +2950,13 @@ OGRENCI_PATTERNS = [
     # Bot yanlis davrandiginda Claude study_plan_builder tool ile gercek kisiselleştirilmis plan üretir
     # NOT: Bu pattern fast_response'da YOK — Claude path'ine dusmesi icin return None
 
-    # Etut — 25.41 (Neo QA): "etütlerim" tek kelime de yakalansın
+    # Etut — 25.41 (Neo QA): genişletildi
     (r"^et[uü]tlerim?[\s\.\?!]*$", "etutlerim", "Etutlerim tek kelime"),
     (r"^et[uü]t\s*program[iı]m", "etutlerim", "Etut programim"),
     (r"^hangi\s*et[uü]t", "etutlerim", "Hangi etut"),
+    (r"^et[uü]tlerim\s+ne\s*zaman", "etutlerim", "Etütlerim ne zaman"),
+    (r"^bu\s+hafta\s+et[uü]t", "etutlerim", "Bu hafta etüt"),
+    (r"^ne\s*zaman\s+et[uü]t", "etutlerim", "Ne zaman etüt"),
     (r"(etut|etüt).*(ne\s*zaman|var\s*mi|program)", "etutlerim", "Etut programi"),
 
     # Sinif bilgisi
@@ -2989,7 +2992,8 @@ OGRENCI_PATTERNS = [
      "hedef", "Universite istek"),
 
     # Rehberlik — genis paraphrase
-    (r"(rehberlik|g[oö]r[uü]sme|görüşme|kardelen|rehber)", "rehberlik", "Rehberlik"),
+    # 25.41 (Neo QA iter5): \b sınırı eklendi — "görüşmek üzere" yanlış yakalanıyordu
+    (r"\b(rehberlik|kardelen|rehber\b)|\bg[oö]r[uü][sş]me\b(?!k\b)", "rehberlik", "Rehberlik"),
 
     # Motivasyon → student_scenarios detect_scenario yakalayacak (Claude akışı)
     # OGRENCI_PATTERNS'da motivasyon pattern YOK — detect_scenario önce çalışır
