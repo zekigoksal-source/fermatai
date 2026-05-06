@@ -172,12 +172,55 @@ async def verify_otp(phone: str, code: str, ip: str = "", user_agent: str = "") 
     OTP doğrula, session token üret, cookie için döndür.
 
     Returns: {"success": bool, "token": "...", "name": "...", "role": "..."}
+
+    25.41 (Neo direktifi 7 May): MİSAFİR GİRİŞİ
+    Özel kod "123456" → DB sorgu YOK, geçici misafir session.
+    Potansiyel kullanıcı (veli/aday) tanıtım botunu deneyimlemek için kullanır.
+    Sıfır veri sızıntısı — misafir rolü hiçbir gerçek öğrenci verisine erişemez.
     """
     phone_clean = phone.replace("+", "").strip()
     code = code.strip()
 
     if not phone_clean or not code or len(code) != OTP_LENGTH:
         return {"success": False, "message": "Telefon ve kod gerekli."}
+
+    # ─── MİSAFİR GİRİŞİ — özel kod 123456 ─────────────────────────────
+    GUEST_CODE = "123456"
+    if code == GUEST_CODE:
+        # Geçici misafir session — DB sorgu yok, doğrudan token üret
+        token = _gen_session_token()
+        # Kısa TTL — 2 saat (production load koruma + tanıtım amaçlı yeterli)
+        session_exp = datetime.now() + timedelta(hours=2)
+        # DB'ye misafir kayıt (audit + capacity tracking için)
+        try:
+            await db_execute(
+                """
+                INSERT INTO web_sessions
+                    (phone, full_name, role, otp_code, otp_created_at,
+                     otp_expires_at, otp_used_at, session_token,
+                     session_expires_at, ip_address, user_agent)
+                VALUES ($1, $2, $3, $4, NOW(), NOW() + INTERVAL '15 minutes',
+                        NOW(), $5, $6, $7, $8)
+                """,
+                phone_clean, "Misafir Ziyaretçi", "misafir", code,
+                token, session_exp, ip[:64], user_agent[:256],
+            )
+        except Exception as e:
+            # DB hatası kritik değil — token yine de geçerli
+            import logging
+            logging.getLogger(__name__).warning(f"[GUEST] DB log fail: {e}")
+
+        return {
+            "success": True,
+            "token": token,
+            "name": "Misafir",
+            "role": "misafir",
+            "phone": phone_clean,
+            "expires_hours": 2,
+            "kicked_previous": 0,
+            "guest": True,  # frontend'in tanıyabilmesi için
+        }
+    # ─── /MİSAFİR ──────────────────────────────────────────────────────
 
     # 19 Nisan — Brute force koruma: son 5dk'da 5+ yanlis deneme varsa bloklama uyarisi
     # hack_tracker tablosunu kullan (web_auth_fail namespace)

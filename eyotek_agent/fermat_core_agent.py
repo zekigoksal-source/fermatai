@@ -4375,8 +4375,17 @@ class FermatCoreAgent:
 
         # C15 — Rol-aware prompt: gereksiz bloklari kes (Oturum 22.1)
         # 25.40z3-MIMARI: V3 enable iken role_prompt SKIP — boşa CPU+bellek (172K replace).
+        # 25.41 (Neo): MİSAFİR rolü → özel kurumsal tanıtım prompt'u
+        # WP guest_responses ile aynı kurumsal deneyim, sıfır veri sızıntısı
+        if role == "misafir":
+            try:
+                from misafir_prompt import MISAFIR_SYSTEM_PROMPT
+                _role_aware_prompt = MISAFIR_SYSTEM_PROMPT
+                logger.info(f"[MISAFIR] Tanıtım modu prompt aktif (phone tail: ...{(caller_phone or '')[-4:]})")
+            except Exception:
+                _role_aware_prompt = SYSTEM_PROMPT
         # V3 modüler yapı zaten role-spesifik filtreleme yapıyor (BASE'den 3 modül çıkarılmış).
-        if _v3_enabled:
+        elif _v3_enabled:
             _role_aware_prompt = SYSTEM_PROMPT  # V3 zaten override edecek, placeholder
         else:
             try:

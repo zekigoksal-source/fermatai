@@ -2859,6 +2859,21 @@ html[data-theme="dark"] .msg.bot.streaming::after {
         Kod almak için WhatsApp'tan <strong>"web kodu"</strong> yaz.<br>
         Kod 15 dakika geçerli. Günde en fazla 5 kod alabilirsin.
       </p>
+
+      <!-- 25.41 (Neo): Misafir / Demo girişi -->
+      <div class="guest-hint" style="
+        margin-top: 18px; padding: 12px 14px;
+        background: linear-gradient(135deg, rgba(199, 111, 62, 0.08), rgba(245, 158, 11, 0.06));
+        border-left: 3px solid #C76F3E; border-radius: 8px;
+        font-size: 13px; line-height: 1.55; color: var(--fg-muted, #555);">
+        <strong style="color: #C76F3E;">🎓 Misafir Demo Girişi</strong><br>
+        Ürünü denemek ister misiniz? Telefon numaranızı yazın, kod kısmına
+        <strong style="color: #2F2F2F;">123456</strong> girin —
+        2 saatlik demo arayüzünde bot ile her konuda konuşun.<br>
+        <em style="font-size: 12px; opacity: 0.85;">
+          Sıfır veri sızıntısı · sadece kurum tanıtımı + genel akademik destek
+        </em>
+      </div>
     </div>
 
     <!-- 22.1n-marka + Oturum 23 (Neo feedback: 3 büyük rozet, kalan bilgi manifestoya derlendi) -->
@@ -7132,10 +7147,32 @@ async function doLogin() {
     // Başarılı — chat aç
     localStorage.setItem("fermat_name", d.name || "Öğrenci");
     localStorage.setItem("fermat_role", d.role || "ogrenci");
+    // 25.41 (Neo): MİSAFİR mod flag
+    if (d.guest === true) {
+      localStorage.setItem("fermat_guest", "1");
+    } else {
+      localStorage.removeItem("fermat_guest");
+    }
     showChat(d.name);
 
+    // 25.41 (Neo): Misafir hoş geldin mesajı + tanıtım yönlendirme
+    if (d.guest === true) {
+      setTimeout(() => {
+        addMsg(
+          "👋 *Hoş geldiniz! Demo arayüzdesiniz.*\n\n" +
+          "Bu *misafir mod* — Fermat AI'nin yeteneklerini deneyimliyorsunuz. " +
+          "Burada bana her şeyi sorabilirsiniz:\n\n" +
+          "🎓 *Kurum tanıtımı* — programlar, başarılar, fark\n" +
+          "📚 *YKS/LGS* — sınav formatı, çalışma stratejileri\n" +
+          "🎯 *Üniversite tercihi* — bölüm öneri, puan analizi\n" +
+          "💎 *Pedagojik destek* — çocuğunuza özel yaklaşım\n\n" +
+          "_📞 Detaylı görüşme: +90 546 260 54 46_",
+          "bot"
+        );
+      }, 600);
+    }
     // Eski cihaz kapatıldıysa bilgilendir (tek oturum modeli)
-    if (d.kicked_previous && d.kicked_previous > 0) {
+    else if (d.kicked_previous && d.kicked_previous > 0) {
       setTimeout(() => {
         addMsg(`🔒 Güvenlik: *${d.kicked_previous}* önceki oturum kapatıldı. Aynı anda tek cihazdan giriş — WhatsApp Web mantığı.`, "bot");
       }, 600);
@@ -7157,6 +7194,26 @@ function showChat(name) {
   userName.textContent = name;
   welcomeName.textContent = (name || "Öğrenci").split(" ")[0];
   chatInput.focus();
+  // 25.41 (Neo): MİSAFİR mode banner — sticky uyarı
+  const isGuest = localStorage.getItem("fermat_guest") === "1";
+  const existingBanner = document.getElementById("guestBanner");
+  if (isGuest && !existingBanner) {
+    const banner = document.createElement("div");
+    banner.id = "guestBanner";
+    banner.style.cssText =
+      "position: sticky; top: 0; z-index: 100; " +
+      "background: linear-gradient(90deg, #C76F3E, #F59E0B); color: white; " +
+      "padding: 10px 16px; font-size: 13px; font-weight: 600; " +
+      "display: flex; justify-content: space-between; align-items: center; " +
+      "box-shadow: 0 2px 8px rgba(0,0,0,0.15);";
+    banner.innerHTML =
+      '<span>🎓 <b>Misafir Demo Modu</b> · 2 saatlik tanıtım deneyimi</span>' +
+      '<span style="font-weight: 400; opacity: 0.95;">📞 +90 546 260 54 46</span>';
+    const chatInner = chatWrap.querySelector(".chat-inner") || chatWrap;
+    chatInner.insertBefore(banner, chatInner.firstChild);
+  } else if (!isGuest && existingBanner) {
+    existingBanner.remove();
+  }
   // A4: Öğrenci rolündeyse dashboard kartları yükle
   const role = localStorage.getItem("fermat_role") || "";
   if (role === "ogrenci") {

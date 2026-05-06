@@ -312,6 +312,26 @@ _ACL_MATRIX: dict[str, set[str]] = {
     # Misafir / bilinmeyen: hiçbir araç
     "guest": set(),
     "unknown": set(),
+    # 25.41 (Neo): MİSAFİR rolü — web tanıtım deneyimi
+    # Sıfır kişisel veri erişimi. Sadece kurum hakkında konuşma + genel
+    # akademik bilgi (kavram anlatımı, müfredat soruları) izinli.
+    # ASLA: query_analytics, get_student_*, search_students, etüt yazma
+    "misafir": {
+        # Genel bilgi ve müfredat (kişisel veri yok)
+        "search_curriculum",
+        # Kurumsal tanıtım için OGM kaynak yönlendirme
+        "ogm_yonlendir",
+        # Kavram anlatımı için Wikipedia
+        "wiki_lookup",
+        # Tanıtım amaçlı puan tahmin (öğrenci verisi olmadan)
+        "calculate_yks_score",
+        # Üniversite tanıtımı (kamu veri)
+        "universite_taban_sorgu", "siralama_ile_bolumler",
+        # Genel kariyer bilgisi
+        "get_career_info",
+        # Sınav takvimi/format bilgisi
+        "tercih_donemi_durum",
+    },
 }
 
 # Sadece admin/müdür SMS gönderebilir ve toplu etüt yazabilir
@@ -326,6 +346,12 @@ _ELEVATED_ROLES   = {"admin", "mudur"}
 # Veli: sadece kendi çocuğu
 
 _FORBIDDEN_COLUMNS = {
+    # 25.41 (Neo): MİSAFİR — TÜM kişisel kolonlar yasak
+    "misafir": ["phone", "veli_phone", "anne_phone", "baba_phone", "tc_no",
+                "odeme", "borc", "payment", "maas", "salary",
+                "veli_cep", "anne_cep", "baba_cep", "ogrenci_cep",
+                "veli_adi", "anne_adi", "baba_adi", "full_name",
+                "soz_no", "eyotek_id", "ad", "soyad", "first_name", "last_name"],
     "ogrenci": ["phone", "veli_phone", "anne_phone", "baba_phone", "tc_no",
                 "odeme", "borc", "payment", "maas", "salary",
                 "veli_cep", "anne_cep", "baba_cep", "ogrenci_cep"],
@@ -361,6 +387,21 @@ _SYSTEM_PRIVATE_TABLES = [
 ]
 
 _FORBIDDEN_TABLES = {
+    # 25.41 (Neo): MİSAFİR — TÜM tablolar yasak (KVKK + tanıtım modu)
+    # Sadece rag_content (kamu müfredat) ve universite_taban (kamu YÖK Atlas) izinli
+    "misafir": ["acl_users", "staff", "students", "agent_conversations",
+                "student_exams", "student_topic_tracker", "student_exam_analysis",
+                "devamsizlik_sayisi", "devamsizlik_ders", "etut_history",
+                "etut_student_control", "etut_teacher_summary",
+                "counsellor_notes", "teacher_timetable", "class_timetable",
+                "usage_log", "blocked_numbers", "overdue_payments",
+                "teacher_performance", "daily_stats", "admin_talimat",
+                "frustration_log", "hack_attempts", "user_feedback",
+                "atlas_suggestions", "atlas_observations", "atlas_chat_state",
+                "routing_stats", "deployment_log", "query_cache", "sistem_ayar",
+                "tercih_profil", "tercih_listesi", "teacher_etut_onerileri",
+                "student_insights", "student_signals", "render_artifacts",
+                "agent_sessions", "web_sessions"],
     # Öğrenci: kendi verisi hariç HER ŞEY yasak (sensitive_tables ACL kontrolü de ayrıca)
     "ogrenci": ["acl_users", "staff", "agent_conversations", "usage_log",
                 "blocked_numbers", "overdue_payments", "teacher_performance",

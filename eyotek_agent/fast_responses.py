@@ -3389,6 +3389,24 @@ async def try_fast_response(
         staff_name = _tr_title(staff_name)
 
     # ══════════════════════════════════════════════════════════════════════
+    # 🎓 MİSAFİR FAST PATH (25.41 Neo) — web tanıtım modu
+    # Web kodu 123456 ile giren ziyaretçiler için guest_responses'i tetikle
+    # WP'deki kayıtsız numara deneyimiyle aynı kurumsal cevaplar
+    # ══════════════════════════════════════════════════════════════════════
+    if role == "misafir":
+        try:
+            from guest_responses import try_guest_response
+            guest_resp = await try_guest_response(message)
+            if guest_resp:
+                try: _fr_last_handler.set('misafir_guest_fast')
+                except: pass
+                return guest_resp
+            # Guest pattern eşleşmezse Claude'a (misafir prompt aktif)
+            return None
+        except Exception:
+            return None  # Hata → Claude misafir prompt ile devreye
+
+    # ══════════════════════════════════════════════════════════════════════
     # ⚡ RAPID-TYPING DETECTOR (25.41 Neo bug, GÖKTÜRK 5 May)
     # Phone son 30sn'de 3+ kısa kelime → "tek mesajda yaz" uyarısı
     # Cerebras tetiklenmez, $0 maliyet, kullanıcı eğitilir
