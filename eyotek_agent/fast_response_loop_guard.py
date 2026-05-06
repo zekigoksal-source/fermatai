@@ -148,15 +148,34 @@ _RAPID_THRESHOLD = 3  # 30sn'de 3+ kısa mesaj → "birleştir" uyarısı
 
 
 def _is_short_word(message: str) -> bool:
-    """Mesaj 'kısa tek kelime' mi? (Çabuk, Beni, Hızlı, Ol gibi)"""
+    """Mesaj 'kısa tek kelime' mi? (Çabuk, Beni, Hızlı, Ol gibi)
+
+    25.41 (Neo bug 5 May, Emin Hoca testi):
+    Selamlama (selam, merhaba, günaydın, nasılsın, hey, slm) burst sayacına
+    GİRMEMELİ — kullanıcı 5 selam yazsa "tek mesajda yaz" mesajı saçma olur.
+    Bu kelimeler safe-greeting listesinde, _is_short_word False döner.
+    """
     if not message:
         return False
-    msg = message.strip()
+    msg = message.strip().lower()
     # Tek kelime, 8 char altı, sayı değil, noktalama yok
     if " " in msg or len(msg) > 8:
         return False
     # Anlamlı kelime mi (alfabetik karakter ağırlıklı)
     if not msg.isalpha():
+        return False
+    # 25.41: Safe greetings + ack words → burst sayacına dahil etme
+    SAFE_GREETING_WORDS = {
+        "selam", "merhaba", "hey", "slm", "sa", "selamun",
+        "merhabalar", "selamlar", "selammer", "selamcim",
+        "iyi", "günaydın", "gunaydin", "naber", "nbr",
+        "tamam", "tmm", "ok", "evet", "hayır", "hayir",
+        "olur", "tabii", "tabi", "peki", "hadi",
+        "tesekkur", "saol", "eyvallah", "saolun",
+        "anladım", "anladim", "tmm",
+        "bye", "hosca", "hoşca", "görüşürüz",
+    }
+    if msg in SAFE_GREETING_WORDS:
         return False
     return True
 

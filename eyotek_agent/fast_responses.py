@@ -1696,6 +1696,178 @@ async def ogretmen_ders_programi(staff_name: str) -> str:
     return "\n".join(lines)
 
 
+async def ogretmen_yarinki_program(staff_name: str) -> str:
+    """'Yarın programım', 'yarın hangi derslerim var' — A+++ visual (25.41).
+
+    Neo bug 5 May (Emin Hoca testi): "yarın programım" fast None düştü,
+    LLM kafası karışıyordu. Tek günlük filtre ile özel handler.
+    """
+    from fast_response_visuals import (
+        sep, header, ders_emoji, action_block
+    )
+    from datetime import date, timedelta
+
+    yarin = date.today() + timedelta(days=1)
+    gun_map = {0:"Pazartesi",1:"Salı",2:"Çarşamba",3:"Perşembe",
+               4:"Cuma",5:"Cumartesi",6:"Pazar"}
+    gun = gun_map.get(yarin.weekday(), "?")
+    tarih = yarin.strftime('%d.%m.%Y')
+
+    if gun == "Cuma":
+        return (
+            f"{header(f'Yarın — {gun} ({tarih})', staff_name, '📅')}\n"
+            f"🎉 *Yarın Cuma — DERS YOK!*\n\n"
+            f"🇹🇷 Türkiye Geneli Deneme Sınavı Günü.\n"
+            f"Cumaları öğretmenler için ortak izin günü.\n\n"
+            f"☕ *Dinlenmeli bir gün geçirin hocam!*"
+        )
+
+    search = staff_name.split()[0] if staff_name else ""
+    rows = await _q(
+        "SELECT saat, sinif, ders FROM teacher_timetable "
+        "WHERE ogretmen_ad ILIKE $1 AND gun = $2 ORDER BY saat",
+        f"%{search}%", gun)
+
+    if not rows:
+        return (
+            f"{header(f'Yarın — {gun} ({tarih})', staff_name, '📅')}\n"
+            f"📭 *Yarın için ders kaydı bulunamadı.*\n\n"
+            f"_İsterseniz \"haftalık programım\" yazın, tüm haftayı görelim._"
+        )
+
+    toplam = len(rows)
+    saat_toplam = round(toplam * 35 / 60, 1)
+    ilk = rows[0]
+    son = rows[-1]
+
+    lines = [
+        header(f'Yarın — {gun} ({tarih})', staff_name, '📅'),
+        f"📊 *{toplam} ders* | _yaklaşık {saat_toplam} saat_",
+        f"🕐 İlk: *{ilk['saat']}* | Son: *{son['saat']}*",
+        "",
+        sep(),
+        "📚 *Yarın Ders Akışınız:*",
+        "",
+    ]
+    for r in rows:
+        em = ders_emoji(r['ders'])
+        lines.append(f"  🕐 *{r['saat']}* → {em} *{r['sinif']}* — {r['ders']}")
+
+    lines.extend([
+        "",
+        action_block(
+            "Hazırlık için:",
+            [
+                ("📊", '"haftalık programım" → tüm hafta'),
+                ("📚", '"etüt istatistiğim" → sezon performansı'),
+            ],
+        ),
+    ])
+    return "\n".join(lines)
+
+
+async def ogretmen_etut_donemli(staff_name: str, message: str) -> str:
+    """'Bu ay kaç etüt yaptım', 'son 30 gün etüt' — dönemli filtre (25.41).
+
+    Neo bug 5 May: "bu ay kaç etüt yaptım" → tüm sezon (275 etüt) gösterdi.
+    Aylık/haftalık filtre yok. Bu fonksiyon dönemi mesajdan parse eder.
+    """
+    from fast_response_visuals import (
+        sep, header, action_block, dot, fmt_tarih
+    )
+    import re as _re
+
+    msg_lower = message.lower()
+
+    # Dönem tespiti
+    if "bu hafta" in msg_lower:
+        donem_gun = 7
+        donem_label = "Bu Hafta"
+    elif "bu ay" in msg_lower:
+        donem_gun = 30
+        donem_label = "Bu Ay"
+    elif "son" in msg_lower:
+        m = _re.search(r"son\s+(\d+)\s*g[uü]n", msg_lower)
+        m2 = _re.search(r"son\s+(\d+)\s*ay", msg_lower)
+        if m:
+            donem_gun = int(m.group(1))
+            donem_label = f"Son {donem_gun} Gün"
+        elif m2:
+            ay = int(m2.group(1))
+            donem_gun = ay * 30
+            donem_label = f"Son {ay} Ay"
+        else:
+            donem_gun = 30
+            donem_label = "Son 30 Gün"
+    else:
+        donem_gun = 30
+        donem_label = "Son 30 Gün"
+
+    search = staff_name.split()[0] if staff_name else ""
+
+    # Dönemli sayı
+    row = await _q1(
+        f"SELECT COUNT(*) as toplam, SUM(ogrenci_sayisi) as ogrenci, "
+        f"COUNT(DISTINCT sinif) as sinif_sayisi, "
+        f"MIN(tarih) as ilk, MAX(tarih) as son "
+        f"FROM etut_history WHERE ogretmen ILIKE $1 "
+        f"AND tarih >= CURRENT_DATE - {int(donem_gun)}",
+        f"%{search}%"
+    )
+    if not row or not row['toplam']:
+        return (
+            f"{header(f'Etüt Performansı — {donem_label}', staff_name, '📊')}\n"
+            f"📭 *Bu dönemde etüt kaydı bulunamadı.*\n\n"
+            f"_Sezon geneli için \"etüt istatistiğim\" yazabilirsiniz._"
+        )
+
+    toplam = int(row['toplam'])
+    ogrenci = int(row.get('ogrenci') or 0)
+    sinif = int(row.get('sinif_sayisi') or 0)
+    ort_ogrenci = round(ogrenci / toplam, 1) if toplam > 0 else 0
+
+    # Performans değerlendirme
+    if donem_gun >= 30:
+        # Aylık ortalama
+        ort_haftalik = round(toplam * 7 / donem_gun, 1)
+        if toplam >= 30:
+            yorum = "🌟 *Yoğun bir dönem* — öğrencilere değerli destek!"
+        elif toplam >= 15:
+            yorum = "💪 *İstikrarlı tempo* — devam edin."
+        elif toplam >= 5:
+            yorum = "🌱 *Hafif bir dönem* — daha fazla katkı için fırsat var."
+        else:
+            yorum = "📋 *Az aktivite* — bir hatırlatma faydalı olabilir."
+    else:
+        ort_haftalik = round(toplam * 7 / donem_gun, 1)
+        yorum = ""
+
+    lines = [
+        header(f'Etüt Performansı — {donem_label}', staff_name, '📊'),
+        f"📚 *Toplam Etüt:* {toplam}",
+        f"👨‍🎓 *Toplam Öğrenci:* {ogrenci} _(ort: {ort_ogrenci}/etüt)_",
+        f"🏫 *Sınıf Sayısı:* {sinif}",
+        f"📅 *Aktif Tarih:* {fmt_tarih(row['ilk'])} → {fmt_tarih(row['son'])}",
+    ]
+    if donem_gun >= 7:
+        lines.append(f"⏱️ *Haftalık Ort:* {ort_haftalik} etüt/hafta")
+    if yorum:
+        lines.extend(["", sep(), yorum])
+
+    lines.extend([
+        "",
+        action_block(
+            "Şunlara da bakabilirsiniz:",
+            [
+                ("📊", '"etüt istatistiğim" → sezon toplamı'),
+                ("📅", '"haftalık programım" → ders programı'),
+                ("📍", '"bugün hangi derslerim" → bugünkü plan'),
+            ],
+        ),
+    ])
+    return "\n".join(lines)
+
+
 async def ogretmen_etut_istatistik(staff_name: str) -> str:
     """'Kac etut verdim?', 'etut istatistigim' — A+++ visual (Oturum 25.41).
 
@@ -2804,10 +2976,20 @@ OGRENCI_PATTERNS = [
 OGRETMEN_PATTERNS = [
     # Web chat OTP — ogretmen de test edebilsin
     (r"^(web\s*(kodu?|giris|gir|bagla|bağla|link))", "web_kodu", "Web chat OTP"),
+    # 25.41 (Neo bug 5 May, Emin Hoca testi):
+    # Brans öğretmeni ETUT YAZAMAZ (Neo karari, role_access.py satır 196-200).
+    # "etüt yaz/ekle/oluştur" → ogretmen_etut_onerisi tool'una yönlendir
+    # Bu Claude path'inde tool call ile rehbere öneri yazılır.
+    (r"\b(etut|etüt)\s*(yaz|ekle|olustur|oluştur|aç|ac|öner|oner|tavsiye)", "claude_etut_onerisi", "Etüt yazma → öneri tool"),
+    (r"\b(etut|etüt)\s*(önerisi|onerisi|isteği|istegi|talep)", "claude_etut_onerisi", "Etüt önerisi"),
+    # 25.41: "yarın programım" → tek günlük filtre (özel handler)
+    (r"^(yarın|yarin)\s*(program[iı]m|ders[ler]?[im]?)", "yarinki_program", "Yarın programı"),
     (r"(ders\s*program|haftal[iı]k\s*(program|ders)|bu\s*hafta)", "ders_programi", "Ders programi"),
     (r"program[iı]m[iı]?\s*(ne|goster|göster)", "ders_programi", "Programim ne"),
     (r"haftal[iı]k\s*ders\s*saat", "ders_programi", "Haftalik ders saati"),
     (r"(bugun.*ders|bugün.*ders|bugunki|bugünkü|b[uü]g[uü]n.*program|hangi\s*ders)", "bugun_ders", "Bugun ders"),
+    # 25.41: "bu ay/bu hafta etüt" → aylık/haftalık filtre destekli
+    (r"\b(bu\s*ay|bu\s*hafta|son\s*\d+\s*(g[uü]n|ay))\s*(ka[cç])?\s*(etut|etüt)", "etut_istatistik_donemli", "Etüt dönemli"),
     (r"(ka[cç]\s*etut|ka[cç]\s*et[uü]t|etut\s*istatistik|et[uü]t\s*istatisti|etut\s*say[iı]s[iı]|et[uü]t\s*performans)", "etut_istatistik", "Etut istatistik"),
 ]
 
@@ -3781,12 +3963,40 @@ async def try_fast_response(
 
     elif role == "ogretmen" and staff_name:
         # GUVENLIK: Baska ogretmen ismi geciyorsa engelle
+        # 25.41 (Neo bug 5 May, Emin Hoca testi):
+        # ESKI: hardcoded liste ["orhan","merve","emin"...] — Vedat YOK,
+        #       MEHMET öğretmen değil ama liste vardı → öğrenci adı false positive
+        # YENI: SUFFIX KONTROLU — sadece "X HOCA/öğretmen/bey/hanim" suffix
+        #       VE "etüt yaz/etut yaz/öneri" intent yoksa engelle
         staff_first = staff_name.split()[0].lower() if staff_name else ""
-        other_teacher_names = ["orhan","merve","emin","hasan","deniz","kardelen","ezgi",
-                               "mehmet","alper","murat","kadir","elif","zeki","mahsum","duygu"]
-        for tname in other_teacher_names:
-            if tname in msg_lower and tname != staff_first.lower():
-                return "Baska ogretmenin bilgilerine erisim yetkiniz yok. Kendi programiniz veya ogrencileriniz hakkinda yardimci olabilirim."
+        # Etut yazma/öneri intent — burada engelleme yapma, alt dispatcher karar versin
+        _is_etut_intent = bool(re.search(
+            r'\b(etut|etüt)\s*(yaz|ekle|olustur|aç|ac|öner|oner|tavsiye)\b',
+            msg_lower
+        ))
+        # "X hoca/hocam/öğretmen/bey/hanım/hanim" pattern'i — başka öğretmen sorgusu
+        _other_teacher_match = re.search(
+            r'\b(\w+)\s+(hoca\w*|öğretmen\w*|ogretmen\w*|bey|hanım|hanim)\b',
+            msg_lower
+        )
+        if _other_teacher_match and not _is_etut_intent:
+            other_first = _other_teacher_match.group(1).lower().strip()
+            # Stop-word filtre — "saygıdeğer hoca", "değerli hoca" gibi
+            _stops = {"saygidegerli","sayin","sayın","değerli","degerli","değer","deger",
+                      "kıymetli","kiymetli","fermat","fermatın","fermatin","kurumun"}
+            if other_first not in _stops and other_first != staff_first:
+                # Bu başka bir öğretmen sorusu — DB'den doğrula
+                try:
+                    other_check = await _q1(
+                        "SELECT full_name FROM staff WHERE LOWER(full_name) LIKE LOWER($1) "
+                        "AND LOWER(full_name) NOT LIKE LOWER($2) LIMIT 1",
+                        f"%{other_first}%", f"%{staff_first}%"
+                    )
+                    if other_check:
+                        return ("Baska ogretmenin bilgilerine erisim yetkiniz yok. "
+                                "Kendi programiniz veya ogrencileriniz hakkinda yardimci olabilirim.")
+                except Exception:
+                    pass  # DB hata → alt akış yine de çalışsın
 
         # Ogretmen pattern'lari
         for pattern, handler, desc in OGRETMEN_PATTERNS:
@@ -3814,6 +4024,15 @@ async def try_fast_response(
                         return await ogretmen_bugun_ders(staff_name)
                     elif handler == "etut_istatistik":
                         return await ogretmen_etut_istatistik(staff_name)
+                    # 25.41 yeni handler'lar (Emin Hoca testi)
+                    elif handler == "claude_etut_onerisi":
+                        # Brans öğretmeni etüt YAZAMAZ — Claude ogretmen_etut_onerisi tool çağırır
+                        # role_access.py satır 200: "ogretmen_etut_onerisi" listede
+                        return None  # Claude'a yönlendir, tool ile rehbere öneri yazılır
+                    elif handler == "yarinki_program":
+                        return await ogretmen_yarinki_program(staff_name)
+                    elif handler == "etut_istatistik_donemli":
+                        return await ogretmen_etut_donemli(staff_name, message)
                 except Exception:
                     return None
 
