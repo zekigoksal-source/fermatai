@@ -10,7 +10,7 @@
  * 25.40 (Neo): /chat artık cache-first → PWA açılışı 1sn beyaz ekran ortadan kalktı
  * Versiyon değiştir → tüm cache temizlenir.
  */
-const VERSION = 'fermatai-v25.40l';
+const VERSION = 'fermatai-v25.41-auth-retry';
 const STATIC_CACHE = `${VERSION}-static`;
 const RENDER_CACHE = `${VERSION}-render`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
@@ -92,10 +92,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // /chat ana sayfa — STALE-WHILE-REVALIDATE (Oturum 25.40 Neo: 1sn beyaz ekran fix)
-  // Cache'den anında render, network arka planda günceller → PWA açılışı INSTANT
+  // /chat ana sayfa — NETWORK-FIRST (Oturum 25.41 Neo bug 6 May)
+  // ESKI: stale-while-revalidate (cache'den anlık → 1sn beyaz ekran fix)
+  // YENI: network-first → auth/JS değişiklikleri ANINDA yansır.
+  // Trade-off: ilk açılış ~200ms daha yavaş ama "eski authFetch kodu" sorunu yok.
+  // Network fail'da cache fallback (offline desteği korunuyor).
   if (url.pathname === '/chat' || url.pathname === '/chat/') {
-    event.respondWith(staleWhileRevalidate(request, RUNTIME_CACHE));
+    event.respondWith(networkFirst(request, RUNTIME_CACHE));
     return;
   }
 

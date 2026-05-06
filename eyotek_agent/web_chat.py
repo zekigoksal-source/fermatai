@@ -177,10 +177,15 @@ async def chat_ui():
     )
     # X-Frame-Options legacy (bazi Wix setup icin)
     response.headers["X-Frame-Options"] = "ALLOWALL"
-    # Oturum 25.40 (Neo PWA): Cache 5 dakika, must-revalidate
-    # Eski: no-store → SW cache edemiyor → PWA açılışı 1sn beyaz ekran
-    # Yeni: short cache + revalidate → SW cache eder, F5'te ETag ile fresh kontrol
-    response.headers["Cache-Control"] = "public, max-age=300, must-revalidate"
+    # Oturum 25.41 (Neo bug 6 May): "Sisteme girdiğimde bot atıyor"
+    # SEBEP: 5 dk cache + SW stale-while-revalidate → eski authFetch JS
+    # geliyor → agresif logout. Ana HTML her zaman fresh olmalı.
+    # YENİ: no-cache (server her seferinde yeni HTML kontrolü)
+    # SW tarafında network-first stratejisi (offline'da fallback var)
+    # Trade-off: ilk açılış ~200ms yavaş ama auth bug'ı yok.
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     return response
 
 
