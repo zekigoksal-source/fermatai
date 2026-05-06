@@ -435,6 +435,34 @@ async def create_artifact(html: str, title: str = "FermatAI Görsel",
         score, breakdown = calculate_quality_score(html, title=title or "")
         # 25.37 — topic_hash
         thash = _topic_hash(title or "")
+
+        # 25.41 (Neo direktif): TÜM ROLLER İÇİN PREMİUM KALİTE
+        # 3D/simulasyon istekleri için min_score 60 — altı atlasta kayda alınır
+        # Düşük kaliteli render üretildiğinde Neo'ya alarm (atlas_observations)
+        title_lower = (title or "").lower()
+        is_3d_request = any(k in title_lower for k in [
+            "3d", "simulasyon", "simülasyon", "evrim", "yıldız", "yildiz",
+            "galaksi", "kuantum", "kara delik", "molekül", "molekul",
+            "atom", "evren", "kozmik", "uzay", "yörünge", "yorunge",
+        ])
+        if is_3d_request and score < 60:
+            logger.warning(
+                f"⚠️  LOW-QUALITY 3D RENDER (score={score}/100) — title='{title[:50]}' "
+                f"creator={creator_phone[-4:] if creator_phone else 'N/A'}. "
+                f"Breakdown: {breakdown}. Neo direktif: ROL BAĞIMSIZ premium hedefi."
+            )
+            # Atlas'a kaydet — Neo trend takibi için
+            try:
+                await db_execute(
+                    """INSERT INTO atlas_observations (kategori, baslik, detay, severity, created_at)
+                       VALUES ('render_quality', $1, $2, 'warning', NOW())""",
+                    f"Düşük kaliteli 3D render: score={score}",
+                    f"title={title[:100]} | creator={creator_phone[-4:] if creator_phone else 'N/A'} | "
+                    f"breakdown={breakdown}"
+                )
+            except Exception:
+                pass  # atlas tablosu yoksa sessiz fail
+
         await db_execute(
             """INSERT INTO render_artifacts (uuid, title, html, creator_phone, expires_at, quality_score, topic_hash)
                VALUES ($1, $2, $3, $4, $5, $6, $7)""",
