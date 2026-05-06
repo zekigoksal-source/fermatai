@@ -234,10 +234,12 @@ async def main():
         await conn.execute("UPDATE sync_tracking SET needs_update = TRUE")
         logger.info("Full mode: tüm öğrenciler yeniden taranacak")
 
-    pw = await async_playwright().start()
-    browser = await pw.chromium.connect_over_cdp(CDP_URL)
-    ctx = browser.contexts[0]
-    page = ctx.pages[0]
+    # 25.41 (Neo bug 7 May): VPS'te CDP yok — headless launch + cookie inject
+    # ESKI: pw.chromium.connect_over_cdp("http://localhost:9222") → ECONNREFUSED
+    # YENI: eyotek_browser_helper.get_eyotek_page() → headless + auto login
+    from eyotek_browser_helper import get_eyotek_page
+    browser, ctx, page = await get_eyotek_page()
+    pw = None  # cleanup için flag (browser.close() yeterli)
 
     total_records = await open_student_list(page)
     if total_records == 0:
@@ -412,6 +414,12 @@ async def main():
             logger.info("Post-sync güncelleme tamamlandı")
         except Exception as e:
             logger.warning(f"Post-sync hatası: {e}")
+
+    # 25.41 (Neo bug 7 May): Browser cleanup — önceden CDP olduğu için yoktu
+    try:
+        await browser.close()
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":

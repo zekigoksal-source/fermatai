@@ -107,12 +107,11 @@ async def list_recent_exams(days: int = 30) -> list[dict]:
     rows_out: list[dict] = []
     pw = None
     page = None
+    browser = None
     try:
-        pw = await async_playwright().start()
-        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
-        ctx = browser.contexts[0]
-        await _inject_cookies(ctx)
-        page = await ctx.new_page()
+        # 25.41 (Neo bug 7 May): VPS'te CDP yok — headless launch
+        from eyotek_browser_helper import get_eyotek_page
+        browser, ctx, page = await get_eyotek_page()
         await page.goto("https://fermat.eyotek.com/v1/Pages/Student/test-transferred",
                         timeout=20000, wait_until="domcontentloaded")
         await page.wait_for_timeout(3000)
@@ -169,6 +168,12 @@ async def list_recent_exams(days: int = 30) -> list[dict]:
         try:
             if page:
                 await page.close()
+        except Exception:
+            pass
+        # 25.41: helper browser'ı kapat (CDP'ye bağlı değil artık, kendi browser)
+        try:
+            if browser:
+                await browser.close()
         except Exception:
             pass
         try:
