@@ -14,6 +14,30 @@ from typing import Optional
 
 GUEST_PATTERNS = [
 
+    # 0. Sistem terimleri — kayıtsız kullanıcının "web kodu" anlamını bilemediği
+    # 25.41 (Neo bug 7 May konuşma analizi):
+    # 905056728868 (kayıtsız) "web kodu" yazınca bot HTML/CSS/JavaScript açıkladı.
+    # "web kodu" Fermat sistem terimi (WP→Web girişi için OTP), yetkisiz kişi
+    # bilemez. Bu yüzden açıklama veriyor.
+    {
+        "patterns": [
+            r"^(web\s*(kodu?|gir[iı][sş]|gir|bagla|bağla|link))\b",
+            r"^(gir[iı][sş]\s*kodu?|otp|kod\s*ver)\b",
+            r"^fermat\s*ai\s*(kodu?|gir[iı][sş]|baglan)?\b",
+            r"^(kod|kodu)[\s\.\?!]*$",
+        ],
+        "response": (
+            "🔐 *Web Kodu — Sadece Kayıtlı Kullanıcılar*\n\n"
+            "'Web kodu' Fermat öğrenci/personel asistanına web üzerinden "
+            "giriş için kullanılan tek kullanımlık şifredir.\n\n"
+            "Bu numara Fermat sistemine kayıtlı görünmüyor.\n\n"
+            "📞 *Bilgi & Kayıt:* +90 546 260 54 46\n"
+            "🌐 *Web:* fermategitimkurumlari.com\n\n"
+            "_Tanıtım demosu için sitemizden 'Misafir Demo' alanına "
+            "geçebilirsin — orada 6 haneli demo kodu *123456*._"
+        ),
+    },
+
     # 1. Selamlama
     {
         "patterns": [r"^(merhaba|selam|iyi\s*gun|hey|meraba|slm|sa|selamun)"],

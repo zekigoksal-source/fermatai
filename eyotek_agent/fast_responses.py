@@ -70,6 +70,135 @@ from db_pool import (
 # Her fonksiyon: soz_no alir, string dondurur. None donerse → Claude'a git.
 
 
+async def ogrenci_kimligin(soz_no: int, name: str) -> str:
+    """Öğrenci 'Ben kimim' / 'beni tanıyor musun' dediğinde zengin profil özeti.
+
+    25.41 (Neo bug 7 May konuşma analizi):
+    Mehmet Ali Karpuz "Ben kimim" yazdı → bot "Sen Mehmet Ali Karpuz! Fermat öğrencisi."
+    cevabı verdi. Çok kısa — sınıf/hedef/son sınav/devamsızlık eklenmeli.
+    """
+    try:
+        from db_pool import db_fetchrow, db_fetchval
+        prof = await db_fetchrow("""
+            SELECT first_name, full_name, sube, kur, devre, program, soz_no
+            FROM students WHERE soz_no::text = $1
+        """, str(soz_no))
+        if not prof:
+            return f"Sen *{name}*! 🎓\nFermat Egitim Kurumlari ogrencisi."
+        first = prof.get('first_name') or (name.split()[0] if name else "")
+        sube = prof.get('sube') or ""
+        kur = prof.get('kur') or ""
+        devre = prof.get('devre') or ""
+        program = prof.get('program') or ""
+
+        # Son TYT (exam_type = TYT, toplam = net)
+        son_tyt = await db_fetchrow("""
+            SELECT exam_name, exam_date::date d, COALESCE(toplam::text, 'yok') net
+            FROM student_exams
+            WHERE soz_no::text = $1 AND COALESCE(exam_type,'TYT') = 'TYT'
+              AND toplam IS NOT NULL
+            ORDER BY exam_date DESC LIMIT 1
+        """, str(soz_no))
+
+        # Devamsızlık saat
+        devamsizlik = await db_fetchval("""
+            SELECT toplam_saat FROM devamsizlik_sayisi WHERE soz_no::text = $1
+        """, str(soz_no))
+
+        # Zayıf konu sayısı
+        zayif_count = await db_fetchval("""
+            SELECT COUNT(*) FROM student_topic_tracker
+            WHERE soz_no::text = $1 AND tamamlandi = FALSE
+              AND sinav_hata_yuzdesi < 50 AND LENGTH(konu) > 5
+              AND konu NOT LIKE 'Ortalama %'
+        """, str(soz_no))
+
+        lines = [
+            f"Selam *{first}* 👋",
+            "",
+            f"🎓 *{prof.get('full_name','')}*",
+            f"📚 Fermat Eğitim Kurumları öğrencisi",
+        ]
+        if sube or kur or devre or program:
+            sub_parts = [x for x in (kur, devre, sube, program) if x]
+            lines.append(f"🏷️ {' · '.join(sub_parts)}")
+        if soz_no:
+            lines.append(f"🆔 Söz no: *{soz_no}*")
+        lines.append("")
+        # Son sınav
+        if son_tyt and son_tyt.get('net') != 'yok':
+            lines.append(f"📊 *Son TYT:* {son_tyt['exam_name'][:40]}")
+            lines.append(f"   Net: *{son_tyt['net']}* · Tarih: {son_tyt['d']}")
+        # Devamsızlık
+        if devamsizlik is not None:
+            emoji = "🟢" if devamsizlik < 50 else ("🟡" if devamsizlik < 100 else "🔴")
+            lines.append(f"{emoji} *Devamsızlık:* {devamsizlik} saat")
+        # Zayıf konu
+        if zayif_count and zayif_count > 0:
+            lines.append(f"🎯 *Çalışılacak konu:* {zayif_count} zayıf alan tespit edildi")
+        lines.append("")
+        lines.append(f"_Bana 'son sınavlarım' / 'zayıf konularım' / 'çalışma planı yap' yazabilirsin._ 💪")
+        return "\n".join(lines)
+    except Exception:
+        # Fallback: minimal
+        return f"Sen *{name}*! 🎓\nFermat Egitim Kurumlari ogrencisi."
+
+
+async def foto_cevap_dogrulama(name: str, phone: str, sik: str) -> Optional[str]:
+    """Öğrenci foto soru sonrası şık tahmini yaptığında doğrulama.
+
+    25.41 (Neo bug 7 May konuşma analizi):
+    Ezgi 15:55'te foto soru gönderdi → bot analiz + çözüm + doğru cevap üretti.
+    15:56'da "E cevap" yazdı → bot CONTEXT KAYBI yaşadı → "Şu an sadece 'E cevap'
+    yazdın, ne hakkında konuşuyoruz?" cevabını verdi.
+
+    Çözüm: Son 5dk içinde bot mesajında "Doğru Cevap: X" varsa, kullanıcının
+    şık tahminini karşılaştır. Yoksa None → Claude'a (context'le).
+    """
+    try:
+        import re as _re
+        from db_pool import db_fetchrow
+        # Son 5dk bot mesajı
+        row = await db_fetchrow("""
+            SELECT content, created_at
+            FROM agent_conversations
+            WHERE phone = $1 AND message_role = 'assistant'
+              AND created_at > NOW() - INTERVAL '5 minutes'
+            ORDER BY created_at DESC LIMIT 1
+        """, phone)
+        if not row:
+            return None  # Claude'a — context yok zaten
+        content = row.get("content") or ""
+        # "Doğru Cevap: X" veya "Doğru Cevap: 0.5F" gibi
+        m = _re.search(r"Doğru\s+Cevap[:：]\s*\*?([A-Ea-e0-9.,/F]+)\*?", content)
+        if not m:
+            # Belki "Soru Analizi" mesajı var ama doğru cevap belirtilmemiş
+            if "Soru Analizi" in content or "Çözüm" in content:
+                return None  # Claude doğrulasın (önceki çözümü görüyor)
+            return None  # Foto soru context yok → Claude'a (clarification)
+        dogru_cevap = m.group(1).strip().upper().rstrip(".")
+        sik_upper = sik.strip().upper().rstrip(".")
+        # Eğer şık tek harf ise direkt karşılaştır
+        if len(dogru_cevap) == 1 and dogru_cevap in "ABCDE":
+            if sik_upper == dogru_cevap:
+                return (
+                    f"🎯 *Doğru!* Cevap *{dogru_cevap}* şıkkı.\n\n"
+                    f"Çözümü tam anladığına emin misin? Bu konudan benzer "
+                    f"bir soru çözmek ister misin? 💪"
+                )
+            else:
+                return (
+                    f"❌ Hayır, doğru cevap *{dogru_cevap}* şıkkı.\n\n"
+                    f"Üzülme — yanlış yapmak öğrenmenin parçası. "
+                    f"_Çözümde nereyi kaçırmış olabilirsin? Birlikte bakalım._\n\n"
+                    f"Hangi adımda takıldığını söylersen sebep neydi anlayabilirim."
+                )
+        # Sayısal/metinsel cevap (örn: "0.5F") — Claude'a yönlendir, daha hassas
+        return None
+    except Exception:
+        return None
+
+
 async def web_kodu(name: str, phone: str = "") -> str:
     """
     Web chat icin OTP kodu uret ve kullaniciya ver.
@@ -3449,7 +3578,13 @@ async def try_fast_response(
         # akademik bağlamda "web" tek kelime nadir → güvenli varsayım).
         r'^(web|kodu?|kod)[\s\.\?!]*$',  # tek kelime web/kod/kodu
     ]
-    if role in ('ogrenci', 'ogretmen', 'rehber') and any(re.search(p, msg_lower) for p in _AUTH_FAST_PATTERNS):
+    # 25.41 (Neo bug 7 May konuşma analizi): admin/mudur/yonetim de eklendi.
+    # Önceden sadece 'ogrenci/ogretmen/rehber' vardı → Neo (admin) "web kodu"
+    # yazdığında fast trigger olmuyordu, Claude'a gidiyordu.
+    # Ayrıca unknown rolle gelen "web kodu" handler'ı aşağıda eklendi (request_otp
+    # zaten "kayıtlı değilsin" mesajı döner — halüsilasyon riski engellenir).
+    _ALLOWED_AUTH_ROLES = ('ogrenci', 'ogretmen', 'rehber', 'admin', 'mudur', 'yonetim', 'unknown')
+    if role in _ALLOWED_AUTH_ROLES and any(re.search(p, msg_lower) for p in _AUTH_FAST_PATTERNS):
         try:
             try: _fr_last_handler.set('web_kodu_auth_fast')
             except: pass
@@ -3458,6 +3593,48 @@ async def try_fast_response(
             import logging
             logging.getLogger(__name__).warning(f"[AUTH_FAST] web_kodu hata: {_ae}")
             # Hata olursa normal akisa devam et (alt patterns yine deneyecek)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # 🎯 FOTO ŞIK TAHMİNİ DOĞRULAMA (25.41 Neo bug 7 May konuşma analizi)
+    # Ezgi: foto soru → bot çözüm + "Doğru Cevap: 0.5F" → 1 dk sonra "E cevap"
+    # → bot context kaybı → "ne hakkında konuşuyoruz?" diye sordu.
+    # Çözüm: son 5dk bot mesajında "Doğru Cevap: X" varsa karşılaştır.
+    # ══════════════════════════════════════════════════════════════════════
+    if role in ('ogrenci', 'misafir'):
+        sik_match = re.match(r'^([A-Ea-e])\s*(cevap|sik|si|şıkkı?|şık|şikkı?|olur)?\s*[\.\?!]*\s*$', msg_lower, re.IGNORECASE)
+        if sik_match:
+            sik_letter = sik_match.group(1).upper()
+            try:
+                _resp = await foto_cevap_dogrulama(name=name, phone=caller_phone, sik=sik_letter)
+                if _resp:
+                    try: _fr_last_handler.set('foto_sik_dogrulama')
+                    except: pass
+                    return _resp
+                # _resp None ise Claude'a yönlendir (context dahil)
+            except Exception:
+                pass  # normal akışa devam
+
+    # ══════════════════════════════════════════════════════════════════════
+    # 🚫 UNKNOWN ROL EARLY RETURN (25.41 Neo bug 7 May konuşma analizi)
+    # 905056728868 (kayıtsız) "Neo" + "web kodu" yazdı → Claude'a gitti →
+    # bot HTML/CSS/JavaScript açıkladı (sistem terimini bilmedi).
+    # Çözüm: bilinmeyen numara için kurumsal RED mesajı (LLM'a gitme).
+    # web_kodu pattern yukarıda zaten unknown'ı kabul ediyor (request_otp
+    # "kayıtlı değilsin" mesajı döner — bu ayrı path).
+    # ══════════════════════════════════════════════════════════════════════
+    if role == "unknown" or role is None or role == "":
+        try: _fr_last_handler.set('unknown_kayitsiz')
+        except: pass
+        return (
+            "Merhaba 👋\n\n"
+            "Bu numara Fermat Eğitim Kurumları sistemine kayıtlı değil. "
+            "Yapay zeka asistanımız sadece kayıtlı öğrenci, veli ve personele "
+            "hizmet veriyor.\n\n"
+            "📞 *Bilgi & Kayıt:* +90 546 260 54 46\n"
+            "🌐 *Web:* fermategitimkurumlari.com\n\n"
+            "_Tanıtım demosu için web sitesinden 'Misafir Demo' alanına "
+            "geçebilirsin._"
+        )
 
     # ══════════════════════════════════════════════════════════════════════
     # 🌟 ENRICHMENT FAST PATH (25.40y — Neo "max kalite cevap" direktifi)
@@ -4139,6 +4316,13 @@ async def try_fast_response(
             elif "Duygu" in (name or ""):
                 return KIMLIK["mudur_duygu"]
             return f"Siz *{name}*! Fermat Eğitim Kurumları yöneticisi."
+        elif role == "ogrenci" and soz_no:
+            # 25.41 (Neo bug 7 May): zengin profil özeti — sınıf, son sınav,
+            # devamsızlık, zayıf konu (eski: tek satır "Fermat öğrencisi")
+            try:
+                return await ogrenci_kimligin(soz_no, name)
+            except Exception:
+                return KIMLIK["ogrenci"].replace("{name}", name or "")
         elif role == "ogrenci":
             return KIMLIK["ogrenci"].replace("{name}", name or "")
         return f"Sen *{name or 'bir kullanıcı'}*!"

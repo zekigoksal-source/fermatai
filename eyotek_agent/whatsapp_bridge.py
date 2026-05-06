@@ -3681,9 +3681,24 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
         if profile:
             _soz = None
             try:
-                _soz = int(profile.get("eyotek_id") or profile.get("soz_no") or 0) or None
+                _soz = int(profile.get("soz_no") or profile.get("eyotek_id") or 0) or None
             except (ValueError, TypeError):
                 pass
+            # 25.41 (Neo bug 7 May): ACL profile soz_no içermiyor, sadece
+            # eyotek_id var. Mehmet Ali Karpuz "ben kimim" → soz_no None →
+            # zengin handler bypass → kısa cevap. Çare: students'ten direkt çek.
+            if not _soz and profile.get("phone"):
+                try:
+                    from db_pool import db_fetchval as _dfv_soz
+                    _phone_clean = profile["phone"].replace("+", "").strip()
+                    _soz_lookup = await _dfv_soz(
+                        "SELECT soz_no FROM students WHERE REPLACE(phone,'+','')=$1 LIMIT 1",
+                        _phone_clean,
+                    )
+                    if _soz_lookup:
+                        _soz = int(_soz_lookup) if str(_soz_lookup).isdigit() else None
+                except Exception:
+                    pass
             fast = await try_fast_response(
                 message=text,
                 caller_phone=phone,
