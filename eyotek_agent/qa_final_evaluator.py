@@ -120,20 +120,19 @@ def score_iletisim(cevap: Optional[str], expected: dict) -> tuple[int, list]:
 
     # Ton — öğrenci için samimi, admin için profesyonel
     role = expected.get("role", "")
-    if role == "ogrenci":
-        # Samimi ton göstergeleri
+    if role == "ogrenci" and len(cl) > 100:  # 25.41: kısa cevapta zorlama yok
         warm_indicators = ["sen", "hadi", "birlikte", "🌟","💪","✨","🎯",
-                          "merhaba","selam","aferin","tebrikler","düşün","seninle"]
+                          "merhaba","selam","aferin","tebrikler","düşün","seninle",
+                          "söyle","kendin","yardım","öğrenci","istiyorum"]
         if not any(w in cl for w in warm_indicators):
-            score -= 8
-            notes.append("⚠️ Samimi ton zayıf (öğrenci)")
-    elif role in ("admin", "mudur", "yonetim"):
-        # Profesyonel ton
-        prof_indicators = ["bey","hanım","müdürüm","hocam","sayın","raporu",
-                          "analiz","özet","zeki bey"]
-        if not any(p in cl for p in prof_indicators) and len(cl) > 50:
             score -= 5
-            notes.append("⚠️ Profesyonel ton zayıf (admin/müdür)")
+            notes.append("⚠️ Samimi ton zayıf (öğrenci)")
+    elif role in ("admin", "mudur", "yonetim") and len(cl) > 100:
+        prof_indicators = ["bey","hanım","müdürüm","hocam","sayın","raporu",
+                          "analiz","özet","zeki bey","kurum"]
+        if not any(p in cl for p in prof_indicators):
+            score -= 3
+            notes.append("⚠️ Profesyonel ton zayıf")
 
     # Robotik dil
     robotic = ["unable to","i cannot","i am sorry but","upgraded version",
