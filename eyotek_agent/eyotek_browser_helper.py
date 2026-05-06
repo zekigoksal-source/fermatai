@@ -25,6 +25,44 @@ from loguru import logger
 from playwright.async_api import async_playwright
 
 
+async def _read_session_file() -> list[dict] | None:
+    """SESSION_FILE'dan cookie oku (interactive get_session() yerine).
+
+    25.41 (Neo bug 7 May): eyotek_wrapper.get_session() systemd contextinde
+    input() çağırıyor → EOFError. Bu fonksiyon NON-INTERACTIVE alternatif.
+
+    İKİ FARKLI PATH desteği:
+      - eyotek_auto_login.SESSION_FILE (parent dir, /opt/fermatai/.eyotek_session.json)
+      - eyotek_wrapper.SESSION_FILE (cwd-relative, .eyotek_session.json)
+    Önce auto_login path'i (asıl yazan yer), sonra wrapper fallback.
+    """
+    import json
+    paths_to_try = []
+    try:
+        from eyotek_auto_login import SESSION_FILE as AUTO_SESSION
+        paths_to_try.append(AUTO_SESSION)
+    except Exception:
+        pass
+    try:
+        from eyotek_wrapper import SESSION_FILE as WRAPPER_SESSION
+        paths_to_try.append(WRAPPER_SESSION)
+    except Exception:
+        pass
+
+    for path in paths_to_try:
+        try:
+            if not path.exists():
+                continue
+            text = path.read_text(encoding='utf-8')
+            cookies = json.loads(text)
+            if isinstance(cookies, list) and cookies:
+                logger.info(f"[BROWSER] Cookie okundu: {path} ({len(cookies)} cookie)")
+                return cookies
+        except Exception as e:
+            logger.debug(f"[BROWSER] {path} okunamadı: {e}")
+    return None
+
+
 @asynccontextmanager
 async def open_eyotek_browser(
     headless: bool = True,
@@ -36,10 +74,10 @@ async def open_eyotek_browser(
     Yields:
         (browser, context, page) — page authenticated state
     """
-    from eyotek_wrapper import get_session, session_is_valid, save_session
+    from eyotek_wrapper import session_is_valid, save_session
 
-    # ─── 1. Cookie al ───────────────────────────────────────
-    cookies = await get_session()
+    # ─── 1. Cookie oku — NON-INTERACTIVE ───────────────────
+    cookies = await _read_session_file()
 
     # Cookie var ama geçerli değilse, veya yoksa → auto login
     needs_login = not cookies
@@ -57,9 +95,9 @@ async def open_eyotek_browser(
             from eyotek_auto_login import try_auto_login
             result = await try_auto_login(timeout_ms=timeout_ms)
             if result.get("success"):
-                cookies = result.get("cookies") or []
-                if cookies:
-                    save_session(cookies)
+                # Auto_login zaten doğru path'e (parent dir) yazar, save_session
+                # eski wrapper path'ine yazıyor ama önemli değil — re-read aşağıda
+                cookies = await _read_session_file() or []
                 logger.success(f"[BROWSER] Auto login OK ({len(cookies)} cookie)")
             else:
                 logger.error(f"[BROWSER] Auto login fail: {result.get('message', '?')}")
@@ -117,11 +155,14 @@ async def get_eyotek_page() -> tuple:
 
     Returns: (browser, context, page) — caller close etmek zorunda
     Eski kod uyumluluğu için.
-    """
-    from eyotek_wrapper import get_session, session_is_valid, save_session
 
-    cookies = await get_session()
+    25.41: NON-INTERACTIVE — interactive get_session() yerine direkt file oku
+    """
+    from eyotek_wrapper import session_is_valid, save_session
+
+    cookies = await _read_session_file()
     if not cookies or not await session_is_valid(cookies):
+        logger.info("[BROWSER] Cookie eksik/expire, auto login")
         from eyotek_auto_login import try_auto_login
         result = await try_auto_login()
         if not result.get("success"):

@@ -148,10 +148,29 @@ async def run_attendance_sync(days: int = 1) -> dict:
         return {'success': False, 'count': 0, 'reason': 'session offline'}
 
     try:
-        from eyotek_wrapper import EyotekWrapper, get_session
-        cookies = await get_session()
+        # 25.41 (Neo bug 7 May): VPS'te CDP yok + systemd interactive input desteklemez
+        # → eyotek_browser_helper._read_session_file() non-interactive yol
+        from eyotek_wrapper import EyotekWrapper, session_is_valid
+        from eyotek_browser_helper import _read_session_file
+
+        cookies = await _read_session_file()
+        if not cookies or not await session_is_valid(cookies):
+            # Cookie eksik/expire → auto login dene
+            logger.info("[ATTENDANCE] Cookie eksik/expire, auto login")
+            try:
+                from eyotek_auto_login import try_auto_login
+                result = await try_auto_login()
+                if result.get("success"):
+                    cookies = await _read_session_file()
+                else:
+                    await update_freshness('attendance', 0, False, f'auto_login fail: {result.get("message", "?")}')
+                    return {'success': False, 'count': 0, 'reason': 'auto_login fail'}
+            except Exception as e:
+                await update_freshness('attendance', 0, False, f'login exc: {str(e)[:100]}')
+                return {'success': False, 'count': 0, 'reason': str(e)}
+
         if not cookies:
-            await update_freshness('attendance', 0, False, 'no session')
+            await update_freshness('attendance', 0, False, 'no session after auto_login')
             return {'success': False, 'count': 0, 'reason': 'no session'}
 
         async with EyotekWrapper(cookies) as ew:
