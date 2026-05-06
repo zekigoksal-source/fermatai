@@ -3043,11 +3043,69 @@ function authHeaders(extra = {}) {
 // Oturum 25.29: Tüm session-aware fetch'lerde 401 olunca auto-reload
 // Eski tab + expired cookie senaryosu: yeni tabda login sonrası bu tabda
 // hala eski token. fetch 401 alınca → cleanup + reload + sliding 8h aktif.
-async function authFetch(url, options = {}) {
+//
+// Oturum 25.41 (Neo bug 5 May): "Sisteme girdiğimde bazen logout oluyorum"
+// SORUN: Tek 401 → ANINDA logout. Bridge restart anında (multi-worker race),
+// network glitch, transient connection error → kullanıcı atılıyor.
+// Neo bugün 4 kez yeniden OTP istedi (08:51, 10:46, 11:32, ...).
+//
+// FİX: 3 katmanlı koruma:
+//   1. Network error (TypeError) → retry (1.5sn sonra)
+//   2. 503/502/504 (server geçici hata) → retry, logout YAPMA
+//   3. 401 → 1 kez retry, hala 401 ise → /chat/me ile DOUBLE-CHECK
+//      Sadece /chat/me de 401 dönerse GERÇEK expire → logout
+//   → Aktif kullanıcı bridge restart sırasında atılmaz.
+async function authFetch(url, options = {}, _retryCount = 0) {
   options.credentials = options.credentials || "include";
   options.headers = authHeaders(options.headers || {});
-  const r = await fetch(url, options);
+
+  let r;
+  try {
+    r = await fetch(url, options);
+  } catch (netErr) {
+    // Network error (DNS, CORS, abort, offline) — tek retry
+    if (_retryCount < 1) {
+      console.warn("[authFetch] network error, retry in 1.5s:", netErr);
+      await new Promise(s => setTimeout(s, 1500));
+      return authFetch(url, options, _retryCount + 1);
+    }
+    throw netErr;
+  }
+
+  // 503/502/504 → server geçici (bridge restart) — retry et, logout YAPMA
+  if ((r.status === 503 || r.status === 502 || r.status === 504) && _retryCount < 1) {
+    console.warn(`[authFetch] ${r.status} bridge transient, retry in 2s`);
+    await new Promise(s => setTimeout(s, 2000));
+    return authFetch(url, options, _retryCount + 1);
+  }
+
   if (r.status === 401) {
+    // 401 alındı — GERÇEK EXPIRE mi yoksa transient mi? Double-check yap.
+    if (_retryCount < 1) {
+      console.warn("[authFetch] 401 received, double-checking session via /chat/me");
+      try {
+        const meCheck = await fetch("/chat/me", {
+          credentials: "include",
+          headers: authHeaders({}),
+        });
+        if (meCheck.ok) {
+          const meData = await meCheck.json();
+          if (meData.authenticated) {
+            // Session AKTİF! İlk 401 transient'ti, request'i retry et
+            console.warn("[authFetch] /chat/me says authenticated, retrying request");
+            await new Promise(s => setTimeout(s, 500));
+            return authFetch(url, options, _retryCount + 1);
+          }
+        }
+      } catch (_) {
+        // /chat/me bile fail ediyorsa GERÇEK ağ sorunu, retry et
+        console.warn("[authFetch] /chat/me unreachable, retrying once");
+        await new Promise(s => setTimeout(s, 1500));
+        return authFetch(url, options, _retryCount + 1);
+      }
+    }
+
+    // İkinci 401 + /chat/me da authenticated:false → GERÇEK EXPIRE
     try { localStorage.removeItem("fermat_token"); } catch (_) {}
     // Sessiz değil — kullanıcıya kısa bilgi ver, sonra reload
     try {
