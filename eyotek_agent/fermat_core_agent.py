@@ -4616,76 +4616,35 @@ class FermatCoreAgent:
             except Exception as _cm_e:
                 logger.debug(f"classroom_management hata: {_cm_e}")
 
-        # OTURUM 21.1 (21 Nisan 14:00) — pedagoji_literatur wiring
-        # Mesajdaki trigger pattern'lari (yapamiyorum, beceremiyorum vb.) -> 12 kavramdan en uygun 1-2 tanesini prompt'a inject
+        # ═══════════════════════════════════════════════════════════════════════
+        # PEDAGOJI V2 (25.41 — Neo) — TEK paket inject (eski 3 bloğun yerine)
+        # ─── Kategori-bazlı kavram + anekdot + sentez (DB'den, lazy)
+        # ─── ESKI sistem: pedagoji_literatur + anekdot_kutuphanesi + pedagojik_sablonlar
+        # ─── Token tasarrufu: 1080 → 310 (%67), kapsam 3x büyük (76 anekdot, 41 kavram)
         try:
-            from pedagoji_literatur import match_triggers
-            _pl_matches = await match_triggers(user_input, limit=2)
-            if _pl_matches:
-                _pl_text = "\n\n📚 PEDAGOJIK KAVRAM REFERANSI (kullanicinin mesajina uyan):"
-                for _m in _pl_matches:
-                    _pl_text += f"\n• *{_m.get('baslik','?')}*: {_m.get('kisaca','')[:200]}"
-                    _uo = _m.get('kullanim_ornegi', '')
-                    if _uo:
-                        _pl_text += f"\n  Strateji: {_uo[:240]}"
-                _role_aware_prompt += _pl_text
-        except Exception as _pl_e:
-            logger.debug(f"pedagoji_literatur hata: {_pl_e}")
-
-        # OTURUM 21.2 (21 Nisan 14:00) — anekdot_kutuphanesi wiring
-        # Psikolojik durum tespit edildiyse o mood'a uygun anekdot, yoksa akademik sorulardaki derse gore
-        try:
-            from anekdot_kutuphanesi import get_for_mood, get_for_ders
-            _anekdot = None
-            if _detected_mood:
-                _anekdot = await get_for_mood(_detected_mood)
-            if not _anekdot:
-                # Akademik mesajsa ders bazli anekdot
-                _ders_keywords = {
-                    "matematik": ["turev", "integral", "limit", "fonksiyon", "denklem", "matematik"],
-                    "fizik": ["kuvvet", "enerji", "hiz", "manyetik", "elektrik", "fizik"],
-                    "kimya": ["atom", "molekul", "bag", "asit", "kimya"],
-                    "biyoloji": ["hucre", "dna", "protein", "biyoloji", "evrim"],
-                    "edebiyat": ["siir", "roman", "yazar", "edebiyat", "dil"],
-                    "tarih": ["osmanli", "savas", "tarih", "medeniyet"],
-                }
-                _ui_lower = (user_input or "").lower()
-                for _ders, _kws in _ders_keywords.items():
-                    if any(k in _ui_lower for k in _kws):
-                        _anekdot = await get_for_ders(_ders)
-                        break
-            if _anekdot and isinstance(_anekdot, dict):
-                _role_aware_prompt += (
-                    f"\n\n💡 ANEKDOT REFERANSI (opsiyonel kullan, zorla sokma):"
-                    f"\n• *{_anekdot.get('kim','?')}* ({_anekdot.get('konu','')[:60]}): {_anekdot.get('metin','')[:280]}"
-                )
-        except Exception as _ak_e:
-            logger.debug(f"anekdot_kutuphanesi hata: {_ak_e}")
-
-        # OTURUM 21.3 (21 Nisan 14:00) — pedagojik_sablonlar wiring
-        # Psikolojik durum -> sablon kategorisi mapping (KRIZ_DESTEK, SINAV_YAKIN vb.)
-        try:
-            from pedagojik_sablonlar import list_by_kategori
-            _SABLON_MAP = {
-                "sinav_kaygisi": "KRIZ_DESTEK",
-                "motivasyon_dusuk": "KRIZ_DESTEK",
-                "ogrenme_bloku": "KONU_GERI_BILDIRIM",
-                "perfeksiyonizm": "KRIZ_DESTEK",
-                "kiyas_travmasi": "KRIZ_DESTEK",
-            }
-            _sablon_kat = _SABLON_MAP.get(_detected_durum or "", None)
-            if _sablon_kat:
-                _tpls = await list_by_kategori(_sablon_kat, rol=role or "ogrenci")
-                if _tpls:
-                    # Max 1 sablon enjekte et (token tasarrufu)
-                    _tpl = _tpls[0]
+            from pedagoji.lazy_loader import build_pedagoji_block
+            _pedagoji_block = await build_pedagoji_block(
+                message=user_input,
+                ders="",  # _detect_ders içinde otomatik
+                soz_no=str(soz_no) if soz_no else None,
+                detected_mood=_detected_mood,
+            )
+            if _pedagoji_block:
+                _role_aware_prompt += _pedagoji_block
+        except Exception as _pdj_e:
+            logger.debug(f"pedagoji_v2 hata: {_pdj_e}")
+            # Fallback: eski sistem (V2 down ise — geriye uyum)
+            try:
+                from pedagoji_literatur import match_triggers
+                _pl_matches = await match_triggers(user_input, limit=1)
+                if _pl_matches:
+                    _m = _pl_matches[0]
                     _role_aware_prompt += (
-                        f"\n\n📝 SABLON ONERISI ({_sablon_kat}/{_tpl.get('alt_tip','')}):"
-                        f"\n{(_tpl.get('sablon_metin') or '')[:380]}"
-                        f"\n_Uygulama: {(_tpl.get('uygulama_notu') or '')[:120]}_"
+                        f"\n\n📚 PEDAGOJIK KAVRAM (fallback):"
+                        f"\n• *{_m.get('baslik','?')}*: {_m.get('kisaca','')[:180]}"
                     )
-        except Exception as _ps_e:
-            logger.debug(f"pedagojik_sablonlar hata: {_ps_e}")
+            except Exception:
+                pass
 
         # 25.37 (Neo) — Dinamik davranış kuralları DB'den inject
         # bot_behavior_rules tablosu — prompt şişmesin, kalıcı kurallar burada
