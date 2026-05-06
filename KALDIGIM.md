@@ -1,8 +1,85 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 5 Mayıs 2026, GECE 02:00 — **🎯 OTURUM 25.41-FAST-A+++: Faz 1 (15 fast response A+++ rewrite) + Faz 2 (3 render template + augmentation pattern) + Neo Kural #1 (anti-repeat 90sn guard) + Neo Kural #2 (memory entegrasyon doğrulama)**
+> **Son güncelleme:** 7 Mayıs 2026, GECE 23:10 — **🎯 OTURUM 25.41-PEDAGOJI-V2: Sync EOF/CDP fix + Pedagoji V2 (8 kategori, 76 anekdot, 41 kavram, %55 token tasarruf, Cerebras qwen-3-235b ile üretildi)**
 
 ---
+
+## 🎯 OTURUM 25.41 — SYNC FIX + PEDAGOJI V2 (7 May 22:00-23:10)
+
+### Bölüm 1 — Sync onarımı (smart_sync 3 gün, attendance 4 gün FAILED)
+
+**Kök sebep:** VPS'te CDP yok + systemd interactive `input("ENTER →")` desteklemez → EOFError.
+
+**Fix:**
+- `eyotek_browser_helper.py` — headless Chromium + cookie inject + auto_login fallback
+- SESSION_FILE iki path: parent dir (auto_login asıl yazan) + cwd (wrapper fallback)
+- `smart_sync.py` + `sync_recent_exams.py` + `sync_attendance.py` → CDP'den helper'a geçti
+- Manual canlı test: smart_sync 125/125 ✓ (120 güncellendi, 0 hata, 6dk), sync_attendance 220 kayıt
+- Commit `3d83687` push + VPS reset --hard aktif
+
+**DB durumu (sync sonrası):**
+- attendance: 63 satır (Eyotek'te 06.04'ten beri yoklama girişi yok)
+- student_exams: 2.025 satır (22.04 son sınav)
+- student_exam_analysis: 99 satır
+- topic_tracker: 574 kayıt güncellendi
+
+### Bölüm 2 — Pedagoji V2 (Neo direktifi: çeşitlendir, kategorize et, token bilinçli)
+
+**Kapsam genişlemesi (4x):**
+| Eski | Yeni | Δ |
+|------|------|---|
+| 22 anekdot | 76 anekdot | +245% |
+| 12 kavram | 41 kavram | +242% |
+| 0 kategori | 8 ana kategori | YENI |
+| Tek dosya | `pedagoji/` modüler | YENI |
+
+**8 ana kategori:**
+HAFIZA (5+8) · MOTIVASYON (7+12) · ODAK (5+6) · STRES (5+6) · DISIPLIN (5+10) · KIMLIK (4+12) · OGRENME (6+8) · AZIM (4+14)
+
+**Token bilinçli mimari (Neo'nun kritik uyarısı):**
+- ESKI: 736 token statik + 3 ayrı dynamic block (peak 1080) = ~859 ortalama
+- YENI: 248 token mini-index + 1 paket (peak 280) = ~390 ortalama
+- **TASARRUF: %55 (toplam token), %66 (statik blok)**
+
+**Cerebras qwen-3-235b üretimi:**
+- 76 anekdot + 41 kavram = 117 içerik 75 saniyede
+- Maliyet ~$0.05 (qwen-3-235b)
+- Validation: core_facts uyum + isim match + JSON parse
+- 3 retry başarılı (Jordan, Yamanaka, Einstein)
+- Kalite mükemmel: gerçek tarihler, doğru bilgiler, akıcı Türkçe, öğrenci bağlantı cümleleri
+
+**Yeni dosyalar (`eyotek_agent/pedagoji/`):**
+| Dosya | Rol |
+|---|---|
+| `kategoriler.py` | 8 kategori meta + trigger pattern + sentez formül |
+| `anekdotlar_seed.py` | 76 SEED (curated isim + core_facts + kaynak) |
+| `kavramlar_seed.py` | 41 SEED (curated kavram + akademik kaynak) |
+| `cerebras_generator.py` | Cerebras qwen-3-235b üretici (validation+retry) |
+| `seeder.py` | DB hidrate (idempotent) |
+| `trigger_engine.py` | Mesaj→kategori match (regex priority order) |
+| `lazy_loader.py` | build_pedagoji_block (CTX paket builder, mini_index) |
+| `benchmark_tokens.py` | Eski vs yeni token karşılaştırma |
+| `db_schema.sql` | 4 yeni tablo |
+
+**Yeni DB tabloları:**
+- `pedagoji_kategori` (8) · `pedagoji_kavram_v2` (41) · `pedagoji_anekdot_v2` (76)
+- `pedagoji_kullanim_log` (analitik — hangi paket en çok tetiklendi)
+
+**Claude entegrasyonu:**
+- `system_prompts.py`: 35 satır statik referans (~736 token) → 13 satır mini-index (~248 token)
+- `fermat_core_agent.py`: 3 ayrı blok (pedagoji_literatur + anekdot_kutuphanesi + pedagojik_sablonlar) → TEK `build_pedagoji_block()` çağrısı (lazy)
+- Eski sistem fallback (V2 down olursa rollback)
+- `_detected_mood` entegre (egitim_psikoloji ile uyum)
+
+**Canlı test (VPS bridge):**
+- "Ben fizik yapamam vazgeçeceğim" → MOTIVASYON paketi → empati + reframe ("Fizik yapamam diyen kaçıncı, sonunda en çok keyif alanlar onlar")
+- "Sınava 1 hafta var panikteyim donup kalıyorum" → STRES paketi → bilimsel açıklama (amigdala/PFC) + 4 seçenek soru
+- Doğal koç tonu, "literatür" YASAK kuralı tutuyor ✓
+
+**Eski dosyalar korundu (rollback için):**
+- `pedagoji_literatur.py` (12 kavram) · `anekdot_kutuphanesi.py` (22 anekdot) · `pedagojik_sablonlar.py` (27 şablon)
+
+### Bölüm 3 — Geriye dönük (eski oturum)
 
 ## 🎯 OTURUM 25.41 — FAST RESPONSE A+++ + RENDER + KURAL #1+#2 (5 May 02:00)
 
