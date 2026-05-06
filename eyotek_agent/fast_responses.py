@@ -1805,10 +1805,9 @@ async def ogretmen_etut_donemli(staff_name: str, message: str) -> str:
 
     search = staff_name.split()[0] if staff_name else ""
 
-    # Dönemli sayı
+    # Dönemli sayı (etut_history'de sinif kolonu yok, kaldir)
     row = await _q1(
         f"SELECT COUNT(*) as toplam, SUM(ogrenci_sayisi) as ogrenci, "
-        f"COUNT(DISTINCT sinif) as sinif_sayisi, "
         f"MIN(tarih) as ilk, MAX(tarih) as son "
         f"FROM etut_history WHERE ogretmen ILIKE $1 "
         f"AND tarih >= CURRENT_DATE - {int(donem_gun)}",
@@ -1823,7 +1822,7 @@ async def ogretmen_etut_donemli(staff_name: str, message: str) -> str:
 
     toplam = int(row['toplam'])
     ogrenci = int(row.get('ogrenci') or 0)
-    sinif = int(row.get('sinif_sayisi') or 0)
+    sinif = 0  # sinif kolonu yok, kaldirildi
     ort_ogrenci = round(ogrenci / toplam, 1) if toplam > 0 else 0
 
     # Performans değerlendirme
@@ -1846,7 +1845,6 @@ async def ogretmen_etut_donemli(staff_name: str, message: str) -> str:
         header(f'Etüt Performansı — {donem_label}', staff_name, '📊'),
         f"📚 *Toplam Etüt:* {toplam}",
         f"👨‍🎓 *Toplam Öğrenci:* {ogrenci} _(ort: {ort_ogrenci}/etüt)_",
-        f"🏫 *Sınıf Sayısı:* {sinif}",
         f"📅 *Aktif Tarih:* {fmt_tarih(row['ilk'])} → {fmt_tarih(row['son'])}",
     ]
     if donem_gun >= 7:
@@ -2838,9 +2836,15 @@ OGRENCI_PATTERNS = [
     (r"tüm\s*denemelere?\s*göre", "claude_ders_analiz", "Tum denemelere gore analiz"),
 
     # AYT pattern'ları — son_deneme'den ÖNCE (yoksa "son AYT" TYT'ye düşer)
-    (r"ayt\w*\s*(sinav|sınav|sonuc|sonuç|netler|denem|nas[iı]l|ka[cç]|yorum|analiz|hakkinda|hakkında)", "ayt_deneme", "AYT sonuclari"),
+    # 25.41 (Neo QA): "ka[cç]" çok geniş — "ayt kaç soru" yanlış yakalıyor
+    # Daha spesifik: "ayt kaç netim", "ayt kaç oldu" vb. ama "kaç soru" değil
+    (r"ayt\w*\s*(sinav|sınav|sonuc|sonuç|netler|denem|nas[iı]l|yorum|analiz|hakkinda|hakkında|durum)", "ayt_deneme", "AYT sonuclari"),
+    (r"ayt\w*\s*ka[cç]\s*(net|oldum|aldim|aldım|durumum)", "ayt_deneme", "AYT kaç net"),
     (r"(son|bu)\s*ayt", "ayt_deneme", "Son AYT"),
     (r"aytlerim?\w*", "ayt_deneme", "AYT'lerim"),
+    (r"^ayt\s*(sonucum|netim|sonucum|durumum|nas[iı]l)", "ayt_deneme", "AYT durum/sonuc"),
+    # 25.41 (Neo QA): "son ayt sonucum" gibi sıralı ifadeleri yakala
+    (r"son\s+ayt\s+(sonuc|netler|durum|analiz|nas)", "ayt_deneme", "Son AYT sıralı"),
     (r"ayt\s*(zayif|zayıf|eksik|konu)", "ayt_zayif", "AYT zayif konular"),
     # 22.1n-bugfix: "ayt fizik" / "ayt kimya" gibi 2 kelime → direkt o derste AYT zayif konular
     (r"^(ayt|tyt|ydt)\s+(matematik|mat|geometri|fizik|kimya|biyoloji|turkce|türkçe|edebiyat|tde|tarih|cografya|coğrafya|felsefe|din|ingilizce)\s*$", "sinav_ders_zayif", "Sinav+ders zayif"),
@@ -2853,6 +2857,14 @@ OGRENCI_PATTERNS = [
     (r"son\s*(sinav|sınav|deneme|sonuc|sonuç)", "son_deneme", "Son sinav"),
     (r"(sinav|sınav)\s*(sonuc|sonuç|nasil|nasıl|ne\s+oldu)", "son_deneme", "Sinav sonucu"),
     (r"denem\w*\s*nas[iı]l", "son_deneme", "Deneme nasil"),
+    # 25.41 (Neo QA): "son tyt nasıl", "tyt durumum", "netlerimi söyle"
+    (r"son\s+tyt\s*(nas[iı]l|sonuc|durum)", "son_deneme", "Son TYT nasıl"),
+    (r"^tyt\s*(durum|nas[iı]l)", "son_deneme", "TYT durum"),
+    (r"^netlerim[iı]?\s*(s[oö]yle|g[oö]ster|s[oö]yler\s*misin)", "son_deneme", "Netlerimi söyle"),
+    (r"^son\s*denmem?\b", "son_deneme", "Son denmem typo"),
+    (r"denmem?\s*nas[iı]l", "son_deneme", "Denmem nasil typo"),
+    (r"denme+m?\s*nas[iı]l", "son_deneme", "Denmeem typo"),  # denmeem
+    (r"^son\s*denemem?[\s\.\?!]*$", "son_deneme", "Son denemem (sufix toleranslı)"),
     # 25.41 (Neo bug 5 May): Damla "sence yks de kac sıralama yaparım" sorusu
     # son_deneme'ye düştü → bot deneme tablosu verdi (yanlış intent).
     # "siralama" kelimesi tahmin/analiz isteyebilir → "yks/yerlesme/tahmin"
@@ -2874,7 +2886,13 @@ OGRENCI_PATTERNS = [
     (r"deneme\s*(analiz|karsilastir|kıyasla)", "deneme_kiyasla", "Deneme analizi"),
 
     # YKS/TYT/AYT soru sayisi bilgisi
+    # 25.41 (Neo QA): "ayt kaç soru" → ayt_deneme yakalıyordu (yanlış)
+    # AYT pattern'a "ka[cç]" eklenmişti, kaldıralım — sinav_bilgi öncelikli
+    (r"(tyt|ayt|yks|lgs)\s*(ka[cç])\s*soru", "sinav_bilgi", "Kac soru var (TYT/AYT)"),
     (r"(tyt|ayt|yks|lgs).*(ka[cç]\s*soru|soru\s*say|soru\s*da[gğ])", "sinav_bilgi", "Sinav soru dagilimi"),
+    # Yazım hatalı tarih: "Ne zamn yks", "yks ne zaman olcak"
+    (r"\b(ne\s*zam[an]+|olcak|olacak)\b.*\b(yks|tyt|ayt|lgs)\b", "sinav_bilgi", "Tarih typo"),
+    (r"\b(yks|tyt|ayt|lgs)\b.*\b(ne\s*zam[an]+|olcak|olacak)\b", "sinav_bilgi", "Sinav ne zaman typo"),
     (r"ka[cç]\s*soru\s*(var|cik|çık)", "sinav_bilgi", "Kac soru var"),
     (r"(tyt|ayt|yks|lgs).*(ne\s*zaman|tarih|ka[cç]\s*g[uü]n|kald[iı])", "sinav_bilgi", "Sinav tarihi"),
     (r"(sinav|sınav)\w*\s*(ne\s*zaman|tarih)", "sinav_bilgi", "Sinav ne zaman"),
@@ -2905,6 +2923,8 @@ OGRENCI_PATTERNS = [
     (r"(nerede|nerde)\s*hata", "zayif_konular", "Nerede hata"),
     (r"neleri\s*bilmiyorum", "zayif_konular", "Neleri bilmiyorum"),
     (r"hangi\s*konul\w*\s*cal[iı]s", "zayif_konular", "Hangi konulara calis"),
+    # 25.41 (Neo QA): "nereye çalışmalıyım", uppercase, punctuation toleransı
+    (r"^nereye\s*cal[iı][sş](malıyım|mal[iı]y[iı]m|mam)", "zayif_konular", "Nereye çalış"),
 
     # Güçlü konular — genis paraphrase
     (r"(iyi\s*oldug|güçlü|guclu|g[uü]cl[uü]|bas[aə]r[iı]l[iı]\s*oldug|iyi\s*konular)", "guclu_konular", "Guclu konular"),
@@ -2930,7 +2950,10 @@ OGRENCI_PATTERNS = [
     # Bot yanlis davrandiginda Claude study_plan_builder tool ile gercek kisiselleştirilmis plan üretir
     # NOT: Bu pattern fast_response'da YOK — Claude path'ine dusmesi icin return None
 
-    # Etut
+    # Etut — 25.41 (Neo QA): "etütlerim" tek kelime de yakalansın
+    (r"^et[uü]tlerim?[\s\.\?!]*$", "etutlerim", "Etutlerim tek kelime"),
+    (r"^et[uü]t\s*program[iı]m", "etutlerim", "Etut programim"),
+    (r"^hangi\s*et[uü]t", "etutlerim", "Hangi etut"),
     (r"(etut|etüt).*(ne\s*zaman|var\s*mi|program)", "etutlerim", "Etut programi"),
 
     # Sinif bilgisi
@@ -2983,6 +3006,8 @@ OGRETMEN_PATTERNS = [
     (r"\b(etut|etüt)\s*(yaz|ekle|olustur|oluştur|aç|ac|öner|oner|tavsiye)", "claude_etut_onerisi", "Etüt yazma → öneri tool"),
     (r"\b(etut|etüt)\s*(önerisi|onerisi|isteği|istegi|talep)", "claude_etut_onerisi", "Etüt önerisi"),
     # 25.41: "yarın programım" → tek günlük filtre (özel handler)
+    # Bugun_ders'ten ÖNCE — "yarın hangi derslerim var" da yakalansın
+    (r"\byar[iı]n\b.{0,20}\b(program|ders|hangi|var)", "yarinki_program", "Yarın programı esnek"),
     (r"^(yarın|yarin)\s*(program[iı]m|ders[ler]?[im]?)", "yarinki_program", "Yarın programı"),
     (r"(ders\s*program|haftal[iı]k\s*(program|ders)|bu\s*hafta)", "ders_programi", "Ders programi"),
     (r"program[iı]m[iı]?\s*(ne|goster|göster)", "ders_programi", "Programim ne"),
@@ -3425,18 +3450,30 @@ async def try_fast_response(
     # - Sadece OGRENCI rolu (admin/personel kendi tartismasinda istemez)
     # - Kisa mesaj (1-3 kelime)
     # - Cerebras son 5dk icinde cevap vermis olmali (konu var)
+    #
+    # 25.41 (QA testi 5 May, Neo bug):
+    # ESKI: enrichment her öğrenci kısa mesajda tetikleniyordu →
+    # "matematik çıkmış sorular" → enrich → "konuyu hatırlayamadım".
+    # YENI: ÖNCE get_last_topic kontrolü — Cerebras son 5dk cevabı YOK ise
+    # enrichment SKIP, alt akış (OGRENCI_PATTERNS) çalışsın.
     # ══════════════════════════════════════════════════════════════════════
     if role == 'ogrenci' and len(msg_lower.split()) <= 4:
         try:
-            from enrichment_dispatcher import detect_enrichment_intent, dispatch_enrichment
+            from enrichment_dispatcher import detect_enrichment_intent, dispatch_enrichment, get_last_topic
             intent_info = detect_enrichment_intent(message)
             if intent_info:
-                try: _fr_last_handler.set(f'enrich_{intent_info["intent"]}')
-                except: pass
-                result = await dispatch_enrichment(intent_info, caller_phone)
-                if result:
-                    return result
-                # Result None ise (konu bulunamadi vb.) — alt akisa birak
+                # 25.41: Cerebras footer kontrolü — son 5dk konu varsa enrichment
+                last_topic = await get_last_topic(caller_phone)
+                if not last_topic:
+                    # Cerebras son cevabı yok → enrichment context'siz, SKIP
+                    pass  # alt akış (OGRENCI_PATTERNS) çalışsın
+                else:
+                    try: _fr_last_handler.set(f'enrich_{intent_info["intent"]}')
+                    except: pass
+                    result = await dispatch_enrichment(intent_info, caller_phone)
+                    if result:
+                        return result
+                    # Result None ise (konu bulunamadi vb.) — alt akisa birak
         except Exception as _ee:
             import logging
             logging.getLogger(__name__).debug(f"[ENRICH_FAST] dispatch fail: {_ee}")
@@ -4163,7 +4200,7 @@ async def try_fast_response(
             return "Iyiyim! Size nasil yardimci olabilirim? 😊"
 
         # "Meraba" — yazim hatali selamlama (Oturum 18: cesitli)
-        if re.match(r'^(meraba|mrb|merhba|merba|selamm|selaam)$', msg_lower):
+        if re.match(r'^(meraba|mrb|merhba|merba|selamm+|selaam|gunaydn|gunaydi+n|günaydn|günaydi+n)$', msg_lower):
             if role == "ogrenci" and name:
                 from response_templates import pick_selamlama
                 return pick_selamlama("ogrenci", name=name, phone=caller_phone)
