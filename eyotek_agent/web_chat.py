@@ -2818,10 +2818,28 @@ async def stream_message(
                         ev = await _aio.wait_for(stream_q.get(), timeout=QUEUE_POLL_SEC)
                     except _aio.TimeoutError:
                         elapsed = _aio.get_event_loop().time() - _start_ts
-                        # Uzun süre hiç chunk gelmiyorsa (tool çalışıyor olabilir)
-                        # thinking placeholder'ı güncel tut + keepalive yolla
-                        if elapsed > 12 and not thinking_cleared:
-                            yield f"data: {json.dumps({'thinking': 'Veriyi inceliyorum, biraz daha...'}, ensure_ascii=False)}\n\n"
+                        # 25.41 (Neo bug 6 May): Render 170sn sürdü, kullanıcı 3dk
+                        # boş gördü. Multi-stage heartbeat — her ~25sn'de yenile.
+                        if not thinking_cleared:
+                            _last_hb = getattr(stream_message, '_last_hb', {}).get(id(stream_q), 0)
+                            if elapsed - _last_hb >= 25 or _last_hb == 0:
+                                # Stage'e göre mesaj
+                                if elapsed < 15:
+                                    msg_text = "Düşünüyorum..."
+                                elif elapsed < 40:
+                                    msg_text = "🔍 Veriyi inceliyorum, biraz daha..."
+                                elif elapsed < 80:
+                                    msg_text = "🎨 Detaylı görsel/cevap hazırlıyorum (~1dk)..."
+                                elif elapsed < 140:
+                                    msg_text = "⏳ Karmaşık üretim — biraz daha sabır (~2dk)..."
+                                elif elapsed < 200:
+                                    msg_text = "🔍 İnce ayar yapıyorum, neredeyse hazır..."
+                                else:
+                                    msg_text = "⚙️ Hala çalışıyorum, vazgeçme..."
+                                yield f"data: {json.dumps({'thinking': msg_text}, ensure_ascii=False)}\n\n"
+                                if not hasattr(stream_message, '_last_hb'):
+                                    stream_message._last_hb = {}
+                                stream_message._last_hb[id(stream_q)] = elapsed
                         yield ": keepalive\n\n"
                         continue
 
