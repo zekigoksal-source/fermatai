@@ -21,8 +21,8 @@ OTP_LENGTH = 6
 OTP_VALIDITY_MIN = 15
 # Oturum 25.29 (Neo geri bildirim): 2h cok kisa — kullanici okurken atildi
 # 8h + sliding refresh: aktif kullanici asla atilmaz, 8h tamamen inaktif kalirsa cikar
-SESSION_VALIDITY_HOURS = 8
-SESSION_SLIDING_REFRESH = True  # her get_session'da expires_at = NOW() + 8h ileri
+SESSION_VALIDITY_HOURS = 168  # 7 gün (Neo direktif 7 May: telefonda sürekli açık kalsın)
+SESSION_SLIDING_REFRESH = True  # her get_session'da expires_at = NOW() + 7gün ileri
 DAILY_OTP_LIMIT = 5
 
 

@@ -2297,39 +2297,13 @@ def get_agent(phone: str):
             _AGENT_SESSIONS[phone] = agent
             logger.info(f"Yeni agent session ({ver}): {phone}")
 
-            # DB'den son konuşma bağlamını yükle (son 10 mesaj)
-            try:
-                import asyncio
-                from db_pool import db_fetch
-                async def _load_history():
-                    # 19 Nisan fix: inline connect kaldirildi, merkezi pool kullaniyor
-                    rows = await db_fetch("""
-                        SELECT message_role, content FROM agent_conversations
-                        WHERE phone = $1 AND message_role IN ('user','assistant')
-                        AND content NOT LIKE '[tool_calls%'
-                        AND created_at >= NOW() - INTERVAL '24 hours'
-                        ORDER BY created_at DESC LIMIT 10
-                    """, phone)
-                    return list(reversed(rows))
-
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # Event loop zaten çalışıyor — task olarak ekle
-                    import concurrent.futures
-                    with concurrent.futures.ThreadPoolExecutor() as pool:
-                        rows = pool.submit(lambda: asyncio.run(_load_history())).result(timeout=5)
-                else:
-                    rows = asyncio.run(_load_history())
-
-                if rows:
-                    for r in rows:
-                        agent.history.append({
-                            "role": r['message_role'] if r['message_role'] != 'assistant' else 'assistant',
-                            "content": r['content']
-                        })
-                    logger.info(f"  Baglam yuklendi: {len(rows)} mesaj (son 24 saat)")
-            except Exception as e:
-                logger.debug(f"  Baglam yukleme hatasi (devam): {e}")
+            # 25.41 (Neo bug 7 May, Brief #18): ThreadPoolExecutor + asyncio.run() ANTI-PATTERN kaldırıldı.
+            # ESKI: yeni event loop açıyordu → mevcut asyncpg pool'la çakışıyordu →
+            # "cannot perform operation: another operation is in progress" + ConnectionDoesNotExistError.
+            # YENI: history yüklemesini process_message tarafına ertele (async context'te).
+            # Agent burada history=[] ile başlatılır; ilk mesaj geldiğinde process_message
+            # async olarak yükler. Bu sayede pool mevcut event loop'ta düzgün çalışır.
+            agent._needs_history_load = True  # Lazy flag — process_message async yükler
 
         except Exception as e:
             logger.error(f"Agent oluşturulamadı: {e}")
@@ -3801,6 +3775,30 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
     agent = get_agent(phone)
     if not agent:
         return "Su anda yogun bir donemden geciyoruz. Biraz sonra tekrar yazabilir misiniz? Yardimci olmak icin buradayim."
+
+    # 25.41 (Brief #18): Lazy history yükleme — get_agent() artık ThreadPoolExecutor
+    # kullanmıyor, history burada async olarak yüklenir (mevcut event loop, pool stabil).
+    if getattr(agent, '_needs_history_load', False):
+        try:
+            from db_pool import db_fetch as _db_fetch_h
+            rows = await _db_fetch_h("""
+                SELECT message_role, content FROM agent_conversations
+                WHERE phone = $1 AND message_role IN ('user','assistant')
+                  AND content NOT LIKE '[tool_calls%'
+                  AND created_at >= NOW() - INTERVAL '24 hours'
+                ORDER BY created_at DESC LIMIT 10
+            """, phone)
+            if rows:
+                for r in reversed(rows):
+                    agent.history.append({
+                        "role": r['message_role'] if r['message_role'] != 'assistant' else 'assistant',
+                        "content": r['content']
+                    })
+                logger.info(f"  Baglam yuklendi (lazy): {len(rows)} mesaj")
+            agent._needs_history_load = False
+        except Exception as _h_err:
+            logger.debug(f"  Baglam lazy load hatasi (devam): {_h_err}")
+            agent._needs_history_load = False  # Tekrar denemeye gerek yok
 
     # Intent parser sadece yazma komutlari icin calistir (yaz, ekle, gonder)
     _WRITE_KEYWORDS = ["yaz", "ekle", "gonder", "gönder", "kaydet", "planla", "sms"]

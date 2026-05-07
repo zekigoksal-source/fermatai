@@ -10,20 +10,26 @@
  * 25.40 (Neo): /chat artık cache-first → PWA açılışı 1sn beyaz ekran ortadan kalktı
  * Versiyon değiştir → tüm cache temizlenir.
  */
-const VERSION = 'fermatai-v25.41-auth-retry';
+const VERSION = 'fermatai-v25.41-no-skip-waiting';
 const STATIC_CACHE = `${VERSION}-static`;
 const RENDER_CACHE = `${VERSION}-render`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
-// Install: yapılacak prefetch yok, sadece skip waiting
+// 25.41 (Neo bug 7 May konuşma analizi):
+// Neo "yazarken mesajlarım kayboluyor" bildirdi. Brief #18:
+// skipWaiting() + clients.claim() bot her güncellendiğinde sayfa reload tetikliyor
+// → kullanıcının yazdığı mesaj kayboluyor.
+// FIX: ikisi de KALDIRILDI. Yeni SW ancak tüm sekmeler kapanınca aktive olur,
+// kullanıcı aktif yazarken reload önlenir. CSS/JS bug fix'leri kullanıcı manuel
+// yeniden açana kadar gecikebilir — kabul edilebilir trade-off.
 self.addEventListener('install', (event) => {
-  console.log('[SW]', VERSION, 'install');
-  self.skipWaiting();
+  console.log('[SW]', VERSION, 'install (no-skipWaiting)');
+  // self.skipWaiting() KALDIRILDI — kullanıcı yazarken reload önlenir
 });
 
-// Activate: eski cache'leri temizle
+// Activate: eski cache'leri temizle (clients.claim() KALDIRILDI)
 self.addEventListener('activate', (event) => {
-  console.log('[SW]', VERSION, 'activate');
+  console.log('[SW]', VERSION, 'activate (no-claim)');
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
@@ -32,7 +38,8 @@ self.addEventListener('activate', (event) => {
           return caches.delete(k);
         })
       )
-    ).then(() => self.clients.claim())
+    )
+    // self.clients.claim() KALDIRILDI — mevcut sekmeler eski SW ile devam
   );
 });
 
