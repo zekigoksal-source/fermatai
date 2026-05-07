@@ -2944,6 +2944,10 @@ OGRENCI_PATTERNS = [
     # Selam + hal hatir ("merhaba nasilsin")
     (r"^(merhaba|selam)[\s,]+(nasilsin|nasılsın|nbr|naber)[.!?\s]*$", "selamlama", "Selam + hal"),
 
+    # 25.41 (Neo bug 7 May konuşma analizi): "ordamısın" 8 kez sorulmuş —
+    # bot uzun yanıt üretirken kullanıcı sabırsızlanıyor. Hızlı + neşeli cevap:
+    (r"^(orada?\s*m[ıi]s[ıi]n|ordam[ıi]s[ıi]n|halen\s*m[ıi]|hala\s*m[ıi]s[ıi]n|bot\s*\??|bekliyorum|ne\s*oldu|cevap\s*ver|cevap\s*nerede|kayboldun\s*mu|uyudun\s*mu)[.!?\s]*$", "buradayim", "Ordamisin pattern"),
+
     # Sohbet / hal hatır (selamlamadan sonra, daha spesifik)
     (r"(nasilsin|nasılsın|naber|ne\s*haber|iyi\s*misin)", "sohbet", "Sohbet"),
 
@@ -3007,7 +3011,19 @@ OGRENCI_PATTERNS = [
     # 25.41 (Neo bug 5 May): Derya "şu an tahmini puanım ne olacak" sordu,
     # Cerebras "verilerine erişemem" dedi (oysa Derya kayıtlı, calculate_yks_score var).
     # "Tahmini puan/net/sıralama" → MUTLAKA Claude tool çağırsın, Cerebras spekülasyon yapmasın
-    (r"(tahmin\w*\s*(puan|net|sıralama|siralama|skor)|puan\w*\s*(tahmin|hesap)|kac\s*puan\s*(yap|al)|kaç\s*puan\s*(yap|al))", "claude_kisisel_hedef", "Tahmini puan/sıralama"),
+    # 25.41 (Neo 7 May): Puan Tahmin Motoru — 10 kez sorulmuş "şu an tahmini puanım"
+    # Eski: claude_kisisel_hedef → Claude API (~30sn). Yeni: fast handler (~50ms).
+    # 25.41 (Neo 7 May): Puan Tahmin Motoru — basit + spesifik patterns
+    # 10 kez sorulmuş "şu an tahmini puanım" — fast handler ~50ms
+    (r"tahmini?\s*puan[ıi]m", "puan_tahmin", "Tahmini puanim"),
+    (r"puan[ıi]m\s*(ne|nedir|kac|kaç|nas[ıi]l)", "puan_tahmin", "Puanim ne/kac"),
+    (r"puan[ıi]m\s*ne\s*(durum|olur|olacak)", "puan_tahmin", "Puanim ne durumda"),
+    (r"\bkac\s*puan\s*(yap|al|olur|olacak)\b|\bkaç\s*puan\s*(yap|al|olur|olacak)\b", "puan_tahmin", "Kac puan yap"),
+    (r"puan\s*tahmin", "puan_tahmin", "Puan tahmin (kısa)"),
+    (r"yks(de|'?da|'?nde)?\s*puan[ıi]m", "puan_tahmin", "YKS puanim"),
+    (r"yerle[sş]me\s*puan", "puan_tahmin", "Yerlesme puan"),
+    # Genel tahmin (sıralama vs) — Claude'a (kompleks)
+    (r"(tahmin\w*\s*(sıralama|siralama|skor)|sıralama\s*tahmin|siralama\s*tahmin)", "claude_kisisel_hedef", "Tahmini sıralama"),
     (r"(şu\s*an|simdi|şimdi|bu\s*an)\s*(tahmin|puan|sıralama|siralama|net)", "claude_kisisel_hedef", "Şu an tahmini puan"),
     (r"^(puanım|puanim|netim|sıralamam|siralamam)\s*(ne|kac|kaç|nedir|nasıl|nasil)", "claude_kisisel_hedef", "Puanım nedir"),
     (r"(sonuc|sonuç)\w*\s*(ac[iı]kland|ne\s+oldu|bak)", "son_deneme", "Sonuc sorma"),
@@ -3153,6 +3169,11 @@ OGRETMEN_PATTERNS = [
 
 # Admin/Mudur soru kaliplari
 ADMIN_PATTERNS = [
+    # 25.41 (Neo 7 May): Konu zorluk haritası — kurum geneli analiz
+    (r"konu\s*(zorluk|harita|haritas[ıi])", "konu_haritasi", "Konu zorluk haritası"),
+    (r"acil\s*konu(lar)?", "konu_acil", "Acil konular top 3"),
+    (r"(en\s*zor|hatal[ıi])\s*konu(lar)?", "konu_haritasi", "En zor konular"),
+    (r"(matematik|fizik|kimya|biyoloji|t[uü]rk[cç]e|tarih|co[gğ]rafya|edebiyat|geometri)\s*(konu\s*harita|zor\s*konu|hatal[ıi])", "konu_haritasi_ders", "Ders konu haritası"),
     # ── Oturum 25.29 — SELF-DEV PIPELINE komutları (ADMIN ONLY) ──
     # Bu pattern'ler EN UST'TE — Claude'a düşmeden önce yakalansın.
     (r"^self\s*dev\s*(ac|aç|on|aktif)\s*$", "selfdev_killswitch_on", "Self-dev pipeline AC"),
@@ -4062,6 +4083,18 @@ async def try_fast_response(
                         # Oturum 18: cesitli selamlama
                         from response_templates import pick_selamlama
                         return pick_selamlama("ogrenci", name=name or "", phone=caller_phone)
+                    elif handler == "buradayim":
+                        # 25.41 (Neo 7 May): "ordamısın" pattern. 7 farklı varyasyon, döngüsel.
+                        import random as _r_buradayim
+                        first = (name.split()[0] if name else "") or "arkadaşım"
+                        cevaplar = [
+                            f"Buradayım *{first}* 🎯\n\n_Az önce tahkikat yapıyordum, sorun konuyu anlat birlikte halledelim._",
+                            f"Hep buradayım {first} 😄\n\n_Dünyanın diğer ucunda fizik notu kontrol ediyordum. Söyle bakalım?_",
+                            f"Burdayım! 👋\n\n_Bazen düşünmek için 10-15 saniye gerekiyor — uzun cevap üretirken acele etme. Yine sorabilirsin._",
+                            f"Aktifim {first} 🎯\n\n_Az önceki yanıtım gelmediyse mesajını yenile. Yoksa söyle, başlayalım._",
+                            f"Evet, burdayım 💪\n\n_Soru çok karmaşıksa cevap 30sn alabilir. Ama hep arkanda — devam et._",
+                        ]
+                        return _r_buradayim.choice(cevaplar)
                     elif handler == "sohbet":
                         from motivation_library import get_sohbet
                         return get_sohbet(name)
@@ -4151,6 +4184,10 @@ async def try_fast_response(
                         m = re.search(r'(\d+)', msg_lower)
                         count = int(m.group(1)) if m else 3
                         return await ogrenci_deneme_kiyasla(soz_no, name, count)
+                    elif handler == "puan_tahmin":
+                        # 25.41 (Neo 7 May): Puan Tahmin Motoru
+                        from puan_tahmin_motoru import puan_tahmin
+                        return await puan_tahmin(soz_no, name)
                     elif handler == "zayif_konular":
                         # Ders filtresi: "fizikteki eksiklerim" → ders_filtre="fizik"
                         # 25.8 fix: bilesik filtre ("fen kismindaki", "sosyalde") destegi
@@ -4855,7 +4892,9 @@ async def try_fast_response(
                 r'pr\s*#?\d+)',
                 msg_lower.strip(),
             )
-            if not is_greeting and not is_capability and not is_mini_cmd and not is_web_kodu and not is_selfdev_cmd:
+            # 25.41 (Neo 7 May): Konu zorluk haritası — admin fast handler
+            is_konu_haritasi = re.search(r"konu\s*(zorluk|harita|haritas[ıi])|acil\s*konu(lar)?|en\s*zor\s*konu", msg_lower)
+            if not is_greeting and not is_capability and not is_mini_cmd and not is_web_kodu and not is_selfdev_cmd and not is_konu_haritasi:
                 return None  # Admin analiz = Claude premium
         # Mudur/Yonetim: uzun mesajlar Claude'a (web kodu kisa, fast'ta kalsin)
         if len(msg_lower) > 60 and role in ("yonetim", "mudur"):
@@ -4935,6 +4974,22 @@ async def try_fast_response(
                         from self_dev_tools import set_pipeline_active
                         r = await set_pipeline_active(False, by_phone=caller_phone)
                         return r.get("message", "⛔ Self-dev pipeline kapatildi")
+                    elif handler == "konu_haritasi":
+                        # 25.41 (Neo 7 May): Kurum geneli konu zorluk haritası
+                        from konu_zorluk_haritasi import kurum_konu_haritasi
+                        return await kurum_konu_haritasi()
+                    elif handler == "konu_haritasi_ders":
+                        # Ders bazlı (matematik konu haritası, fizik...)
+                        from konu_zorluk_haritasi import kurum_konu_haritasi
+                        ders_match = re.search(r"(matematik|fizik|kimya|biyoloji|t[uü]rk[cç]e|tarih|co[gğ]rafya|edebiyat|geometri)", msg_lower)
+                        ders_filtre = ders_match.group(1) if ders_match else ""
+                        # Türkçe karakter normalize
+                        ders_filtre = ders_filtre.replace("ü", "u").replace("ç", "c")
+                        return await kurum_konu_haritasi(ders_filtre=ders_filtre)
+                    elif handler == "konu_acil":
+                        # Top 3 acil konu (1 dk özet)
+                        from konu_zorluk_haritasi import acil_konular_top3
+                        return await acil_konular_top3()
                     elif handler == "selfdev_status":
                         from self_dev_tools import _is_pipeline_active
                         from self_dev_git import _push_enabled

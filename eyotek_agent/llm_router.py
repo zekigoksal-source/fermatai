@@ -79,81 +79,47 @@ SAFE_GROQ_TOOLS = {
 
 # ── Karmasiklik Siniflandirmasi ───────────────────────────────────────────────
 
-# Tool gerektiren anahtar kelimeler — bunlar Claude API'ye gitmeli
+# 25.41 (Neo bug 7 May): _CLOUD_KEYWORDS DARALTILDI.
+# Eski liste 80+ pattern → Claude %71 routing. Çoğu Cerebras'ta hallediliyor.
+# Yeni liste: SADECE Claude tool-calling/yazma/kompleks analiz/kriz gerektirenler.
+# Kavramsal sorular (nedir, açıkla, formül, kurum bilgisi, basit istatistik) → Cerebras
 _CLOUD_KEYWORDS = [
-    # Yazma islemleri
-    "etut yaz", "etüt yaz", "not ekle", "not yaz", "sms gonder", "sms gönder",
-    "mesaj gonder", "mesaj gönder", "kaydet", "kayıt",
-    # Analiz gerektiren
-    "raporla", "rapor cek", "rapor çek", "analiz", "risk",
+    # 1. YAZMA (Eyotek/DB tool zorunlu)
+    "etut yaz", "etüt yaz", "not ekle", "not yaz",
+    "sms gonder", "sms gönder", "mesaj gonder", "mesaj gönder",
+    "kaydet", "sisteme yaz", "eyotek",
+    # 2. KOMPLEKS ANALIZ (multi-tool reasoning)
+    "raporla", "rapor cek", "rapor çek",
     "kiyasla", "kıyasla", "karsilastir", "karşılaştır",
-    # Veritabani sorgusu gerektiren
-    "kaç etüt", "kac etut", "kaç etut", "kac etüt",
-    "devamsizlik", "devamsızlık", "yoklama",
-    "yogunluk", "yoğunluk", "en cok", "en çok",
-    "ogretmen", "öğretmen", "hoca",
-    "akademik", "sinav", "sınav", "rehberlik",
-    "profil", "ogrenci", "öğrenci",
-    "son 1 ay", "bu hafta", "bu ay", "gecen hafta", "geçen hafta",
-    "listele", "sirala", "sırala", "istatistik",
-    # Eyotek islemleri
-    "eyotek", "lms", "sisteme yaz",
-    # Coklu arac gerektiren
-    "planla", "organize et", "duzenleme", "düzenleme",
-    # 25.14i (Neo P3 test): plan/program istegi — daily_brief'i proaktif kullanmak icin Claude zorunlu
-    "plan yap", "plan istiyorum", "plan yapsana", "plan yarat", "plan ver",
+    "risk altinda", "risk altında",
+    "deneme analiz", "ders program",
+    # 3. KISISEL PLAN (verisi DB'den, multi-data)
     "calisma plan", "çalışma plan", "calismam plan", "çalışmam plan",
-    "program yap", "program olustur", "program oluştur", "programimi yap",
+    "plan yap", "plan istiyorum", "plan yapsana", "plan yarat",
     "haftalik plan", "haftalık plan", "gunluk plan", "günlük plan",
-    "ne calisayim", "ne çalışayım", "ne yapayim", "ne yapayım",
-    # Calismam paneli ekle/yaz isteklerinde de Claude (P4 tool sadece Claude'da)
     "programa ekle", "calismama ekle", "çalışmama ekle", "panele ekle",
-    "ekleyebilir misin", "ekle lutfen", "ekle lütfen",
-    # Kisisel veri sorgusu — daha spesifik (tek kelime degil, baglam)
-    "ders program", "haftalik program", "haftalık program",
-    "deneme analiz", "deneme sonuc", "son deneme",
-    "netleri", "netlerim", "net analiz",
-    "gidisat", "gidişat",
-    "zayif konu", "zayıf konu", "guclu konu", "güçlü konu", "eksik konu",
-    "calismam lazim", "çalışmam lazım", "calismali", "çalışmalı",
-    "dagil", "dağıl", "dagilim", "dağılım",
-    "performans", "istatistik", "istatisti",
-    # Kurum bilgisi — Ollama yanlış bilgi verebilir
-    "fermat", "kurum", "dershane",
-    # 25.40o (Neo direktif DÜZELTİLDİ): Cerebras qwen-3-235b içerik üretiminde
-    # mükemmel. 25.40m'de yanlışlıkla bunları Claude'a yönlendirmiştim — Vedat
-    # vakası gpt-oss-120b'den geliyor olabilir (qwen değildi). qwen ile 211 paket
-    # 0.20$/3sn üretti, kalite Claude'a EŞDEĞER. Dolayısıyla bu pattern'ler
-    # Cerebras'a (qwen) gitmeli — _CLOUD_KEYWORDS'den ÇIKARILDI.
-    #
-    # Routing: "test hazırla / soru üret / yeni nesil" → cerebras_handler.py
-    # INTENT_TO_MODEL içinde "test_olusturma/soru_uret/yeni_nesil_uret" → qwen-3-235b
-    #
-    # Sadece KOMPLEX TOOL ZINCIRI gerektiren testler Claude'a:
-    # "Bu öğrenci için kişiye özel TYT denemesi" → tool: get_student_analytics
-    #   + search_curriculum + üret → bu gerçekten Claude (multi-tool reasoning)
-    # Hassas konular — Claude daha güvenli
-    "kufur", "küfür", "sacma", "saçma", "berbat", "rezalet",
-    "intihar", "olum", "ölüm",
-    "sikinti", "sıkıntı", "bunalim", "bunalım", "depresyon",
-    # Plan detay cevapları — öğrenci bilgi veriyorsa Claude analiz etmeli
-    "planliyorum", "planlıyorum", "yogunlas", "yoğunlaş", "odaklan",
-    "hafta ici", "hafta içi", "hafta sonu",
-    "gunluk", "günlük", "saatlik",
-    # Sistem meta-sorular — admin farkındalık/bilinç soruları Ollama'ya düşmesin
-    "farkindali", "farkındali", "bilinc", "bilinç", "self", "awareness",
-    "gozlem", "gözlem", "tespit", "iyilest", "iyileşt", "guncelle", "güncelle",
-    "ne degisti", "ne değişti", "ne hissed", "sistem durum",
-    # NOT: "nedir, acikla, anlat, formul" — LOCAL'e tasindi (Ollama kavramsal aciklar)
-    # Ama "ornegim" "sorumun cevabi" gibi KIŞISEL veri istekleri cloud'a gider (asagida _PERSONAL_KEYWORDS)
-    # Atlas #13 — Ollama cikmis soru HALUSINASYON yapiyor → RAG gerektiren sorgular ZORLA Claude
+    # 4. HASSAS / KRIZ (Claude daha güvenli)
+    "intihar", "olum", "ölüm", "kendime zarar",
+    "depresyon", "bunalim", "bunalım", "vazgeçtim",
+    # 5. SİSTEM META (admin, farkındalık)
+    "farkindali", "farkındali", "bilinc", "bilinç", "awareness",
+    "ne degisti", "ne değişti", "sistem durum", "self dev",
+    "iyilest", "iyileşt",
+    # 6. CIKMIS SORU (RAG + image gerek — Claude tool gerek)
     "cikmis soru", "çıkmış soru", "cikmis sorular", "çıkmış sorular",
-    "soru goster", "soru göster", "sorular goster", "sorular göster",
-    "soru at", "soruyu at", "soruları at", "sorulari at",
+    "soru goster", "soru göster", "soru at", "soruyu at",
     "soru paylas", "soru paylaş", "gorsel at", "görsel at",
-    "sayfa goster", "sayfa göster", "sayfayi at", "sayfayı at",
-    "yks sorular", "yks cikmis", "yks çıkmış",
-    "tyt sorular", "ayt sorular", "2024 sor", "2023 sor", "2022 sor",
+    "yks cikmis", "yks çıkmış", "tyt sorular", "ayt sorular",
+    "2024 sor", "2023 sor", "2022 sor", "2025 sor",
+    # 7. PUAN TAHMIN (yeni feature, Claude tool)
+    "puan tahmin", "puanim ne olur", "puanım ne olur",
+    "yks tahmin", "tercih tahmin",
+    # NOT: AŞAĞIDAKİLER ARTIK CEREBRAS'A:
+    #   - kurum bilgisi (fermat, dershane, kurum)
+    #   - kavramsal (nedir, açıkla, formül, ornek)
+    #   - basit istatistik (zayif konu, son deneme — fast_response yakalar)
+    #   - selamlama, sohbet, motivasyon (Cerebras 8b/120b)
+    #   - hata/red (kufur, sacma — fast_response yakalar)
 ]
 
 # KIŞISEL VERİ istekleri — Ollama ASLA yapmamali (halusinasyon riski)
@@ -1674,6 +1640,121 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
         # Oturum 24: Groq de "local" olarak sayilir (ucuz + hizli + cloud ama API)
         # 25.22: Cerebras eklendi — primary, paid tier, queue yok
         return self._cerebras_available or self._ollama_available or self._groq_available
+
+    # ── 25.41 (Neo 7 May): Cerebras Tool-Calling (opt-in, safe subset) ───────
+    async def chat_cerebras_with_tools(
+        self,
+        messages: list,
+        system: str,
+        tools: list,
+        tool_executor,
+        max_rounds: int = 2,
+        model: str = "qwen-3-235b-a22b-instruct-2507",
+    ):
+        """Cerebras (qwen-3-235b veya gpt-oss-120b) ile tool-calling.
+
+        Hata durumunda None döner → Claude'a sessizce fallback.
+
+        Tool whitelist: SAFE_GROQ_TOOLS (ortak, read-only).
+        SAFE_CEREBRAS_TOOLS = SAFE_GROQ_TOOLS (aynı liste, copy avoid).
+        """
+        import json as _json
+        if not (self._cerebras_available and self._cerebras_client):
+            return None
+
+        # 1) Tool allowlist
+        cerebras_tools = []
+        for t in tools or []:
+            name = t.get("name", "")
+            if name not in SAFE_GROQ_TOOLS:  # ortak whitelist
+                logger.info(f"[CEREBRAS-TOOLS] '{name}' whitelist disi -> Claude")
+                return None
+            cerebras_tools.append({
+                "type": "function",
+                "function": {
+                    "name": name,
+                    "description": t.get("description", "")[:512],
+                    "parameters": t.get("input_schema", {"type": "object", "properties": {}}),
+                },
+            })
+        if not cerebras_tools:
+            return None
+
+        # 2) Messages → OpenAI format
+        cb_msgs = []
+        if system:
+            cb_msgs.append({"role": "system", "content": system})
+        for m in messages:
+            c = m.get("content", "")
+            if isinstance(c, list):
+                text_parts = [p.get("text", "") for p in c
+                              if isinstance(p, dict) and p.get("type") == "text"]
+                c = " ".join(text_parts)
+            if isinstance(c, str) and c.strip():
+                cb_msgs.append({"role": m.get("role", "user"), "content": c})
+
+        try:
+            for round_idx in range(max_rounds):
+                result = await self._cerebras_client.complete_with_tools_async(
+                    messages=cb_msgs,
+                    tools=cerebras_tools,
+                    model=model,
+                    max_tokens=1500,
+                    temperature=0.3,
+                )
+                if not result.get("ok"):
+                    logger.warning(f"[CEREBRAS-TOOLS] hata: {result.get('error')}")
+                    return None
+
+                if not result.get("tool_calls"):
+                    self._last_local_provider = "cerebras"
+                    self._last_cerebras_model = model
+                    return {
+                        "text": result.get("text", ""),
+                        "provider": "cerebras",
+                        "model": model,
+                        "ms": result.get("ms", 0),
+                        "has_tool_calls": False,
+                    }
+
+                # Assistant mesajı + tool_calls
+                cb_msgs.append({
+                    "role": "assistant",
+                    "content": result.get("text") or None,
+                    "tool_calls": [
+                        {"id": tc["id"], "type": "function",
+                         "function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                        for tc in result["tool_calls"]
+                    ],
+                })
+
+                # Dispatch
+                for tc in result["tool_calls"]:
+                    name = tc.get("name", "")
+                    if name not in SAFE_GROQ_TOOLS:
+                        logger.warning(f"[CEREBRAS-TOOLS] mid-round whitelist disi: {name}")
+                        return None
+                    try:
+                        args = _json.loads(tc.get("arguments") or "{}")
+                    except _json.JSONDecodeError:
+                        logger.warning(f"[CEREBRAS-TOOLS] invalid JSON args: {tc.get('arguments')}")
+                        return None
+                    try:
+                        tool_result = await tool_executor(name, args)
+                    except Exception as e:
+                        logger.warning(f"[CEREBRAS-TOOLS] tool '{name}' fail: {e}")
+                        return None
+                    cb_msgs.append({
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": str(tool_result)[:6000],
+                    })
+            # max_rounds aşıldı
+            logger.info("[CEREBRAS-TOOLS] max_rounds aşıldı, fallback")
+            return None
+        except Exception as e:
+            logger.warning(f"[CEREBRAS-TOOLS] exception: {e}")
+            return None
 
     # ── Oturum 25: Groq Tool-Calling (opt-in, safe subset) ────────────────────
     async def chat_groq_with_tools(

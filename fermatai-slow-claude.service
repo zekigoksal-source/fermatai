@@ -1,0 +1,20 @@
+[Unit]
+Description=FermatAI - Slow Claude Detection (saatte 1)
+Documentation=Oturum 25.41 — Claude >60sn yanit detect + Neo bildirim
+After=fermatai-bridge.service network-online.target
+
+[Service]
+Type=oneshot
+User=neo
+Group=neo
+WorkingDirectory=/opt/fermatai/eyotek_agent
+Environment="PATH=/opt/fermatai/.venv/bin:/usr/bin"
+EnvironmentFile=/opt/fermatai/.env
+
+# Saat basi tara, kritik durumda Neo'ya WP gonder
+ExecStart=/opt/fermatai/.venv/bin/python slow_claude_monitor.py --hours 1 --notify
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fermatai-slow-claude
+TimeoutStartSec=120

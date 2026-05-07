@@ -229,6 +229,79 @@ class CerebrasClient:
                 "error": str(e)[:300],
             }
 
+    def complete_with_tools(
+        self,
+        messages: list,
+        tools: list,
+        model: str = "qwen-3-235b-a22b-instruct-2507",
+        max_tokens: int = 1500,
+        temperature: float = 0.3,
+    ) -> dict:
+        """OpenAI-format tool-calling.
+
+        Args:
+            messages: OpenAI format mesaj listesi (system dahil)
+            tools: OpenAI tool schema listesi [{type, function: {name, description, parameters}}]
+
+        Returns:
+            {text, tool_calls: [{id, name, arguments}], model, ms, ok}
+        """
+        t0 = time.time()
+        try:
+            r = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=tools,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+            ms = int((time.time() - t0) * 1000)
+            msg = r.choices[0].message
+            tool_calls = []
+            if msg.tool_calls:
+                for tc in msg.tool_calls:
+                    tool_calls.append({
+                        "id": tc.id,
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    })
+            return {
+                "text": msg.content or "",
+                "tool_calls": tool_calls,
+                "model": model,
+                "ms": ms,
+                "tokens_in": r.usage.prompt_tokens if r.usage else 0,
+                "tokens_out": r.usage.completion_tokens if r.usage else 0,
+                "ok": True,
+            }
+        except Exception as e:
+            ms = int((time.time() - t0) * 1000)
+            logger.warning(f"Cerebras {model} tool-calling hata: {str(e)[:200]}")
+            return {
+                "text": "",
+                "tool_calls": [],
+                "model": model,
+                "ms": ms,
+                "ok": False,
+                "error": str(e)[:300],
+            }
+
+    async def complete_with_tools_async(
+        self,
+        messages: list,
+        tools: list,
+        model: str = "qwen-3-235b-a22b-instruct-2507",
+        max_tokens: int = 1500,
+        temperature: float = 0.3,
+    ) -> dict:
+        """Async wrapper for complete_with_tools."""
+        import asyncio
+        return await asyncio.to_thread(
+            self.complete_with_tools,
+            messages=messages, tools=tools, model=model,
+            max_tokens=max_tokens, temperature=temperature,
+        )
+
     async def complete_async(
         self,
         messages: list,

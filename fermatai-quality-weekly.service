@@ -1,0 +1,21 @@
+[Unit]
+Description=FermatAI - Haftalik Konusma Kalite Analizi (25.41 Neo)
+Documentation=conversation_quality_analyzer.py — Groq 70B ile 168h konuşma analizi
+After=fermatai-bridge.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=neo
+Group=neo
+WorkingDirectory=/opt/fermatai/eyotek_agent
+Environment="PATH=/opt/fermatai/.venv/bin:/usr/bin"
+EnvironmentFile=/opt/fermatai/.env
+
+# Son 168 saat (1 hafta), min 3 turn konusma → kalite raporu + DB INSERT
+ExecStart=/opt/fermatai/.venv/bin/python conversation_quality_analyzer.py --hours 168 --min-turns 3
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fermatai-quality-weekly
+TimeoutStartSec=1800

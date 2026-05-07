@@ -1,0 +1,12 @@
+[Unit]
+Description=FermatAI - Haftalik kalite analizi timer (Pazar 02:00 UTC)
+Documentation=Oturum 25.41 Neo bug 7 May — quality analyzer hic calismamisti
+
+[Timer]
+# Her Pazar 02:00 UTC = 05:00 Istanbul (gece, sistem boş)
+OnCalendar=Sun *-*-* 02:00:00 UTC
+Persistent=true
+Unit=fermatai-quality-weekly.service
+
+[Install]
+WantedBy=timers.target
