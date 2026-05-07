@@ -409,10 +409,28 @@ async def scrape_class_timetables(conn, ew):
 
 
 async def main():
-    from eyotek_wrapper import EyotekWrapper, get_session
+    # 25.41 (Neo bug 7 May): get_session() interactive input → systemd EOF.
+    # eyotek_browser_helper non-interactive yol (smart_sync ile aynı pattern).
+    from eyotek_wrapper import EyotekWrapper, session_is_valid
+    from eyotek_browser_helper import _read_session_file
     pool = await _get_pool()
     conn = await pool.acquire()
-    cookies = await get_session()
+    cookies = await _read_session_file()
+    if not cookies or not await session_is_valid(cookies):
+        logger.info("[TIMETABLE] Cookie eksik/expire, auto login")
+        try:
+            from eyotek_auto_login import try_auto_login
+            result = await try_auto_login()
+            if result.get("success"):
+                cookies = await _read_session_file()
+        except Exception as e:
+            logger.error(f"[TIMETABLE] Auto login fail: {e}")
+            await pool.release(conn)
+            return
+    if not cookies:
+        logger.error("[TIMETABLE] Cookie alinamadi, abort.")
+        await pool.release(conn)
+        return
 
     async with EyotekWrapper(cookies) as ew:
         t_slots = await scrape_teacher_timetables(conn, ew)
