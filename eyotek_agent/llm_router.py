@@ -59,6 +59,12 @@ CLAUDE_MODEL    = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
 # Devre disi birakmak icin: ENABLE_GROQ_TOOLS=false env.
 ENABLE_GROQ_TOOLS = os.getenv("ENABLE_GROQ_TOOLS", "true").lower() == "true"
 
+# 25.41 (Neo 7 May): Cerebras tool-calling — Cerebras 235b/120b daha hızlı (1.5-2.5sn)
+# Groq'tan önce denenir. Hata olursa Groq'a → Groq da fail'da Claude'a fallback.
+# SAFE_GROQ_TOOLS allowlist'i paylaşılır.
+# Devre disi: ENABLE_CEREBRAS_TOOLS=false env.
+ENABLE_CEREBRAS_TOOLS = os.getenv("ENABLE_CEREBRAS_TOOLS", "true").lower() == "true"
+
 # Oturum 25 PROJ-2-A: Kavramsal sorular (nedir/anlat/formul) Groq 70B'ye.
 # Oturum 19'da Ollama halusinasyon yapiyordu -> cloud'a tasinmisti.
 # Groq 70B ile hallusilasyon riski dusuk, %25-30 Claude trafigi Groq'a kayabilir.

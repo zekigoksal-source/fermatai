@@ -5113,6 +5113,62 @@ class FermatCoreAgent:
                 logger.warning(f"  Ollama basarisiz, Claude'a geciliyor: {e}")
                 # Fallback — asagidaki Claude akisina devam et
 
+        # ── 25.41 (Neo 7 May): Cerebras tool-calling pre-check (opt-in) ───────
+        # Cerebras 235b/120b daha hızlı (1.5-2.5sn) → Groq'tan ÖNCE denenir.
+        # Hata olursa sessizce Groq pre-check'e düşer (alt blok).
+        try:
+            from llm_router import ENABLE_CEREBRAS_TOOLS, SAFE_GROQ_TOOLS as _SAFE_TOOLS
+            if (ENABLE_CEREBRAS_TOOLS and role == "ogrenci"
+                    and getattr(self.router, "_cerebras_available", False)):
+                _safe_subset_cb = [t for t in TOOLS
+                                   if t.get("name") in _SAFE_TOOLS]
+                if _safe_subset_cb:
+                    async def _cb_exec(name, args):
+                        return await run_tool(
+                            name, args,
+                            caller_phone=self._caller_phone,
+                            caller_role=role,
+                            caller_channel=getattr(self, "_channel", "whatsapp"),
+                        )
+                    _cb_t0 = time.time()
+                    _cb_r = await self.router.chat_cerebras_with_tools(
+                        messages=self.history,
+                        system=_role_aware_prompt,
+                        tools=_safe_subset_cb,
+                        tool_executor=_cb_exec,
+                    )
+                    _cb_ms = int((time.time() - _cb_t0) * 1000)
+                    if _cb_r and _cb_r.get("text") and len(_cb_r["text"].strip()) >= 20:
+                        answer = _cb_r["text"].strip()
+                        _cb_model = _cb_r.get("model", "qwen-3-235b")
+                        logger.info(f"  [CEREBRAS-TOOLS] Basarili {_cb_ms}ms, model={_cb_model}, {len(answer)} char")
+                        try:
+                            from conversation_memory import strip_redundant_greeting
+                            answer = strip_redundant_greeting(answer, self.history)
+                        except Exception: pass
+                        self.history.append({"role": "assistant", "content": answer})
+                        try:
+                            await _log_conversation(
+                                self.session_id, caller_phone, role,
+                                "assistant", answer, ["cerebras_tools"],
+                            )
+                        except Exception: pass
+                        try:
+                            from usage_tracker import log_event
+                            # Routing source: cerebras_235b veya cerebras_120b
+                            _src = "cerebras_235b" if "235b" in str(_cb_model) else (
+                                "cerebras_120b" if "120b" in str(_cb_model) else "cerebras_tools"
+                            )
+                            await log_event(
+                                phone=caller_phone, role=role, full_name=caller_name,
+                                event_type="message", response_source=_src, response_ms=_cb_ms,
+                            )
+                        except Exception: pass
+                        return answer
+                    # _cb_r None / kısa → Groq pre-check'e dus (alt blok)
+        except Exception as _cb_err:
+            logger.warning(f"  [CEREBRAS-TOOLS] pre-check hatasi, Groq'a dusuyor: {_cb_err}")
+
         # ── Oturum 25 PROJ-C: Groq tool-calling pre-check (opt-in) ───────────
         # ENABLE_GROQ_TOOLS aktif + ogrenci rolü + SAFE_GROQ_TOOLS icindeki araclar
         # kullanilabiliyorsa Groq 70B'yi dene. Herhangi bir hata/invalid output'ta
