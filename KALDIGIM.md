@@ -1,6 +1,72 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 7 Mayıs 2026, GECE 23:10 — **🎯 OTURUM 25.41-PEDAGOJI-V2: Sync EOF/CDP fix + Pedagoji V2 (8 kategori, 76 anekdot, 41 kavram, %55 token tasarruf, Cerebras qwen-3-235b ile üretildi)**
+> **Son güncelleme:** 7 Mayıs 2026, AKŞAM 20:00 — **🎯 OTURUM 25.41-OPT: 11 fazlı sistem optimizasyonu + 2 yeni motor (Puan Tahmin + Konu Zorluk Haritası), Routing fix, Quality+Slow Claude cron'lar aktif, 10GB RAM cleanup**
+
+---
+
+## 🎯 OTURUM 25.41-OPT (7 May AKŞAM) — Tam mimari inceleme + 11 fazlı bakım
+
+### Bakım operasyonları (gece + akşam)
+- ✅ Orphan Chrome cleanup — 28 process, 24 Nis'ten beri açık → **10GB RAM serbest** (used 13Gi → 2.8Gi)
+- ✅ Class/Teacher timetable scrape (29 gün eski → fresh, 189+189 slot)
+- ✅ Brief tablosu temizlik (4 hayalet draft → applied), bot yaşam döngüsü kuralı
+
+### Yeni motorlar (CANLI)
+- 🌟 **Puan Tahmin Motoru** (`puan_tahmin_motoru.py`) — 10x sorulmuş özellik
+  - student_exam_analysis + son 3 TYT trend + ÖSYM 2023-2025 + zayıf konu potansiyeli
+  - 7 pattern + fast handler ~50ms (vs Claude 30sn)
+  - Test: Mehmet Ali Karpuz Ham 284.7, Yerleşme 341.7, trend düşüş ✓
+- 🔬 **Konu Zorluk Haritası** (`konu_zorluk_haritasi.py`) — kurum geneli analiz
+  - 90+ öğrenci verisi, ders bazlı renk kodlu sıralama
+  - acil_konular_top3 — toplantıda 1dk özet
+  - Test: 47 öğr "Oran-Orantı %32", 57 öğr "Çokgenler %25" ✓
+
+### Routing optimizasyonu
+- _CLOUD_KEYWORDS DARALTILDI (80+ → 30 pattern)
+- Kavramsal sorular Cerebras'a (kurum, nedir, açıkla)
+- Sadece tool/yazma/kompleks/kriz Claude'a
+- chat_cerebras_with_tools() metodu eklendi (aktivasyon flag bekliyor)
+
+### Monitoring + Cron'lar (yeni)
+- **fermatai-quality-weekly.timer** — Pazar 02:00 UTC, Groq 70B kalite raporu
+- **fermatai-slow-claude.timer** — Saatte 1, 60sn+ Claude detect, %30 üstü Neo'ya WP
+- Toplam 7 timer aktif (atlas + backup + eyotek-daily + smart-sync + dr-drill + quality + slow-claude)
+
+### Cevaplanan UX bulguları
+- "Ordamısın" 8x sorulmuş → fast handler 5 yanıt varyasyonu
+- Foto cevap doğrulama (Ezgi context kaybı) — son 5dk "Doğru Cevap: X" karşılaştırma
+- "Ben kimim" zengin profil (sınıf + son TYT + devamsızlık + zayıf konu)
+- Yetkisiz "web kodu" → kurumsal RED (HTML/CSS halüsilasyon engellendi)
+
+### Pedagoji V2 (önceki oturum, hatırlatma)
+- 8 kategori, 76 anekdot, 41 kavram (Cerebras qwen-3-235b üretti)
+- Token tasarrufu: 859 → 390/mesaj (%55)
+- Adaptif anekdot grade kolonu eklendi (2 hafta veri toplandıktan sonra "en etkili" matrisi)
+
+### Brief tablosu (temizlendi)
+- 12 applied, 1 discarded, 3 superseded, **0 draft** ✅
+- Sistem prompt'a: bot brief uyguladığında DB'de status='draft' kalmasın kuralı
+
+### Aktif dosyalar (yeni)
+- `puan_tahmin_motoru.py` — Puan Tahmin Motoru
+- `konu_zorluk_haritasi.py` — Kurum konu analiz
+- `slow_claude_monitor.py` — Saatte 1 Claude latency tarama
+
+### DB değişiklikleri
+- `pedagoji_kullanim_log.grade SMALLINT` (adaptif anekdot)
+- `slow_response_log` tablosu (yeni)
+- 4 V1 pedagoji index DROP
+
+### Commits (oturum 25.41 toplu)
+- `2035a58` — OPT: 11 fazlı optimizasyon + 2 yeni motor
+- `912689d` — BRIEF-LIFECYCLE: bot brief yaşam döngüsü kuralı
+- `4656c9a` — MAINT: scrape_timetables EOF + bakım (Chrome cleanup, timetable)
+- `8716f1c` — CONV-2: SW reload + asyncpg + misafir UI + 7gün TTL
+- `854c8a9` — CONV-ANALIZ: 4 konuşma sorunu (web/foto/ben kimim)
+- `829479e` — PEDAGOJI-V2: 8 kategori, 76 anekdot, 41 kavram (%55 token)
+- `3d83687` — SYNC-EOF: smart_sync + sync_attendance fix
+
+---
 
 ---
 
