@@ -378,6 +378,11 @@ html[data-theme="dark"] .msg.bot .render-pending-card.chunk-pause-card {
 @keyframes renderSpin {
   to { transform: rotate(360deg); }
 }
+/* 25.41 (Neo): Welcome status dot pulse */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
 .msg.bot .render-pending-text {
   flex: 1; min-width: 0; position: relative; z-index: 1;
 }
@@ -2946,13 +2951,13 @@ html[data-theme="dark"] .msg.bot.streaming::after {
         max-width: 780px;
         box-shadow: 0 4px 32px rgba(59, 130, 246, 0.1);
       ">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
           <div style="font-size:11.5px;letter-spacing:2.5px;color:#60A5FA;text-transform:uppercase;font-weight:600;">
             ⚡ Frontier-Tier · Agentic AI EdTech
           </div>
           <div style="font-size:10px;color:#94A3B8;letter-spacing:0.8px;display:flex;align-items:center;gap:5px;">
-            <span style="display:inline-block;width:6px;height:6px;background:#FBBF24;border-radius:50%;box-shadow:0 0 8px #FBBF24;"></span>
-            powered by <span style="color:#FBBF24;font-weight:600;">CEREBRAS</span> — fastest AI on earth
+            <span style="display:inline-block;width:6px;height:6px;background:#22C55E;border-radius:50%;box-shadow:0 0 8px #22C55E;animation:pulse 2s infinite;"></span>
+            Hybrid Stack: <span style="color:#FBBF24;font-weight:600;">Cerebras</span> · Anthropic · Groq · OpenAI
           </div>
         </div>
         <div style="font-size:10.5px;color:#64748B;letter-spacing:0.5px;margin-bottom:12px;">
@@ -3007,9 +3012,29 @@ html[data-theme="dark"] .msg.bot.streaming::after {
           🎯 <span style="color:#FBBF24;">Vertical AI</span> — genel modellerden
           <span style="color:#FBBF24;font-weight:600;">5-10× daha yüksek başarı</span>
           <span style="color:#64748B;">(a16z 2024)</span>.
-          YKS &amp; LGS müfredatı, ÖSYM tarihçesi, kurumun
-          <span style="color:#FBBF24;">stratejik mülkiyet</span> verisi — sıfırdan inşa edildi.
+          YKS &amp; LGS müfredatı · <span style="color:#60A5FA;">ÖSYM tarihinden SAT, GMAT, IELTS, GRE'ye dünyadaki tüm ölçme &amp; değerlendirme sınavlarını</span> bilen hafıza ·
+          kurumun <span style="color:#FBBF24;">stratejik mülkiyet</span> verisi — sıfırdan inşa edildi.
         </p>
+        <!-- Hibrit stack tek tek motorlar — her biri en iddialı seçim -->
+        <div style="font-size:11.5px;line-height:1.7;color:#94A3B8;background:rgba(15,23,42,0.5);border:1px solid rgba(251,191,36,0.18);border-radius:8px;padding:10px 14px;margin:14px 0;">
+          🔀 <strong style="color:#FBBF24;">Hibrit motor</strong> — her görev için dünyadaki en iddialı platform:<br>
+          <span style="color:#CBD5E1;">
+            <strong style="color:#FBBF24;">Cerebras</strong>
+            <span style="color:#64748B;font-size:10px;">(cerebras.ai resmî iddia: "The Fastest AI Infrastructure on Earth — industry-leading speed, quality, scale")</span>
+            ·
+            <strong style="color:#93C5FD;">Anthropic Claude</strong>
+            <span style="color:#64748B;font-size:10px;">(derin akıl yürütme + tool-calling)</span>
+            ·
+            <strong style="color:#86EFAC;">Groq</strong>
+            <span style="color:#64748B;font-size:10px;">(ultra düşük gecikme akış)</span>
+            ·
+            <strong style="color:#F9A8D4;">OpenAI</strong>
+            <span style="color:#64748B;font-size:10px;">(Whisper ASR + Vision)</span>
+            ·
+            <strong style="color:#7DD3FC;">Ollama</strong>
+            <span style="color:#64748B;font-size:10px;">(yerel embedding + KVKK garanti)</span>
+          </span>
+        </div>
         <div style="display:flex;gap:7px;flex-wrap:wrap;font-size:11px;margin-top:14px;">
           <span style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);color:#93C5FD;padding:4px 10px;border-radius:20px;">📊 puan tahmin</span>
           <span style="background:rgba(96,165,250,0.13);border:1px solid rgba(96,165,250,0.35);color:#BFDBFE;padding:4px 10px;border-radius:20px;">📚 RAG semantik arama</span>
@@ -3024,7 +3049,7 @@ html[data-theme="dark"] .msg.bot.streaming::after {
           Her gün kendi kodunu izleyip evrimleşen, seninle birlikte gelişip
           <span style="color:#60A5FA;">rezonansa giren</span> agentic AI.
           <br>
-          <span style="color:#64748B;">Mesajı gönderdiğin saniye 5 LLM eş zamanlı yanışıyor, 50 intent karar mekanizmasından geçiyor, 157 araç hizaya geliyor — Cerebras altyapısında ışık hızında tek beyin.</span>
+          <span style="color:#64748B;">Mesajı gönderdiğin saniye 5 LLM eş zamanlı dans ediyor — intent classification milisaniye cinsinden seni doğru motora yönlendiriyor, 157 aracın orkestrası senin için hizaya geliyor. Tek beyin, çok damar.</span>
         </p>
       </div>
       <!-- A4: Öğrenci dashboard kartları (sadece öğrenci rolünde render) -->
