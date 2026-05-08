@@ -4656,6 +4656,22 @@ class FermatCoreAgent:
         except Exception as _br_e:
             logger.debug(f"behavior_rules inject hata: {_br_e}")
 
+        # 25.41 (Neo 9 May) — RENDERER HINT INJECT (Claude için)
+        # Sorun: Bot kullanıcı "grafik göster", "kıyasla", "trend" dese bile
+        # markdown tablo döndürüp ```chart``` blok ÜRETMIYORDU.
+        # Çözüm: Mesajdaki keyword pattern'ları → renderer ihtiyacı tespit →
+        # SERT system prompt direktif inject. Cerebras zaten INTENT_RENDERER_MAP
+        # ile yapıyor; bu Claude path için aynı mantık.
+        try:
+            from renderer_hint_inject import build_hint
+            _channel = getattr(self, "_channel", "whatsapp")
+            _renderer_hint = build_hint(user_input, channel=_channel)
+            if _renderer_hint:
+                _role_aware_prompt += _renderer_hint
+                logger.info(f"  [RENDERER-HINT] Inject: {_renderer_hint[:80]}...")
+        except Exception as _rh_e:
+            logger.debug(f"renderer_hint inject hata: {_rh_e}")
+
         system = _role_aware_prompt + dynamic_context
 
         # ─── Oturum 25.29: Dangling tool_use cleanup ─────────────────────────

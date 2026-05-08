@@ -185,6 +185,27 @@ class CerebrasClient:
             except Exception:
                 pass
 
+        # 25.41 (Neo 9 May) — Keyword-based renderer hint inject (fallback)
+        # Intent eşleşmese bile son user mesajından keyword tetikleme:
+        # "grafik göster" / "kıyasla" / "trend" → chart/compare2 SERT direktif
+        if channel == "web" and messages:
+            try:
+                last_user = ""
+                for m in reversed(messages):
+                    if m.get("role") == "user":
+                        c = m.get("content", "")
+                        if isinstance(c, list):
+                            c = " ".join(p.get("text", "") for p in c if isinstance(p, dict))
+                        last_user = str(c)
+                        break
+                if last_user:
+                    from renderer_hint_inject import build_hint
+                    kw_hint = build_hint(last_user, channel="web")
+                    if kw_hint:
+                        system = (system or "") + kw_hint
+            except Exception:
+                pass
+
         msgs = []
         if system:
             msgs.append({"role": "system", "content": system})

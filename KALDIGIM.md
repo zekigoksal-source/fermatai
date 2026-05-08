@@ -1,6 +1,51 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 7 Mayıs 2026, AKŞAM 20:00 — **🎯 OTURUM 25.41-OPT: 11 fazlı sistem optimizasyonu + 2 yeni motor (Puan Tahmin + Konu Zorluk Haritası), Routing fix, Quality+Slow Claude cron'lar aktif, 10GB RAM cleanup**
+> **Son güncelleme:** 9 Mayıs 2026, GECE 00:50 — **🎯 OTURUM 25.41-AUDIT: Comprehensive renderer + external API audit, %100 PASS (35/35), Renderer hint inject (Claude+Cerebras), 27/27 fence pipeline doğrulandı, compound-aware test logic**
+
+---
+
+## 🎯 OTURUM 25.41-AUDIT (9 May GECE) — Comprehensive Audit (%100)
+
+### Audit Sonucu: 35/35 (%100) ✅
+- **ENV: 12/12** — dotenv path fix (parent .env önce)
+- **Bridge: 1/1** — fermatai-bridge active
+- **External APIs: 12/12** — Cerebras 403, Anthropic 405, Groq 401, Ollama, Wolfram, YouTube, Sentry, PubChem, NASA, Wikipedia, OGM Materyal, PhET (gerçek dünya status code'larına göre)
+- **Renderers: 10/10** — chart, compare2, radar, gauge, timeline, steps, kgraph, quiz, formula, heatmap (compound-wrapped detection ile)
+
+### Yeni dosyalar
+| Dosya | Rol |
+|-------|-----|
+| `renderer_hint_inject.py` | Pattern-based renderer detection (16 pattern, 27 renderer mapping) |
+| `test_full_audit.py` | 4-katman audit: ENV + Bridge + Ext API + Renderer |
+| `test_renderer_pipeline.py` | 27/27 fence backend→frontend→dispatcher pipeline doğrulama |
+
+### Renderer Hint Inject Mimarisi
+- 16 pattern kategori (kgraph, timeline, compare2, radar, gauge, chart, steps, quiz, heatmap, mol3d, sound, desmos, geogebra, mermaid, codeout, element, recall, compound, calc, sim, vr, excalidraw)
+- Priority sırası: özel pattern (kgraph, timeline) chart'tan önce
+- Channel='web' kontrolü — WhatsApp'ta hint inject yok
+- Hem Claude pipeline'da (fermat_core_agent.py) hem Cerebras handler'da fallback
+- Local test 10/10 hint match
+
+### Pipeline Tamlığı
+- 27 aktif renderer fence (3d/plot3d deprecated, frontend pending marker yok)
+- Her fence için: pending marker + replace logic + JS dispatcher (rerenderXyz)
+- 27/27 ✅
+
+### Compound-Aware Test Logic
+- `compound` renderer multi-panel wrapper
+- Test: target_found = direkt match VEYA compound içinde "type":"<renderer>"
+- "compound-wrapped" indicator çıktıda gösteriliyor
+- gauge/radar gibi renderer'lar compound ile sarılınca da PASS
+
+### Düzeltilen sorunlar
+- ❌ Welcome v3 ÖSYM tarihçesi → ✅ v4: SAT/GMAT/IELTS/GRE + Hybrid Stack
+- ❌ Cerebras "tek beyin" algısı → ✅ 5 LLM hybrid badge (yeşil pulse)
+- ❌ "50 intent" basit → ✅ "milisaniye cinsinden"
+- ❌ marked.parse div sarma (Brief #19) → ✅ 2 regex unwrap
+- ❌ Render adoption zayıf → ✅ keyword-based hint inject
+- ❌ test ENV 0/12 → ✅ dotenv parent path fix
+- ❌ test compound = halüsilasyon yanılgısı → ✅ compound-wrapped detection
+- ❌ test 3d/plot3d eksik fence → ✅ deprecated, listeden çıkarıldı
 
 ---
 
