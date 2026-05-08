@@ -3549,6 +3549,29 @@ async def try_fast_response(
         staff_name = _tr_title(staff_name)
 
     # ══════════════════════════════════════════════════════════════════════
+    # 🎨 EXPLICIT RENDERER BYPASS (25.41 Audit, 9 May)
+    # "chart ile göster", "timeline ile çıkar", "heatmap göster" gibi explicit
+    # renderer talepleri fast_response handler'ı atlayıp Cerebras/Claude'a
+    # gitsin — orada renderer_hint_inject + INTENT_RENDERER_MAP fence üretir.
+    # Aksi halde fast_response cevap üretir ama fence eklemez (renderer kayıp).
+    # ══════════════════════════════════════════════════════════════════════
+    import re as _re_renderer
+    _RENDERER_FENCES = (
+        "chart", "timeline", "heatmap", "radar", "gauge", "compare2",
+        "kgraph", "quiz", "formula", "karne", "compound", "compare",
+        "calc", "desmos", "geogebra", "plotly", "mermaid", "mol3d",
+        "sound", "element", "excalidraw", "codeout", "steps", "recall",
+    )
+    _renderer_pattern = (
+        r"\b(" + "|".join(_RENDERER_FENCES) + r")\s+"
+        r"(ile|olarak|şeklinde|biçiminde|fence|blok|render|göster|gösterir|çıkar|ver)"
+    )
+    if _re_renderer.search(_renderer_pattern, msg_lower):
+        try: _fr_last_handler.set('renderer_bypass_to_llm')
+        except: pass
+        return None  # → Cerebras/Claude pipeline (fence ile cevap)
+
+    # ══════════════════════════════════════════════════════════════════════
     # 🎓 MİSAFİR FAST PATH (25.41 Neo) — web tanıtım modu
     # Web kodu 123456 ile giren ziyaretçiler için guest_responses'i tetikle
     # WP'deki kayıtsız numara deneyimiyle aynı kurumsal cevaplar
