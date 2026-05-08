@@ -2931,28 +2931,34 @@ html[data-theme="dark"] .msg.bot.streaming::after {
 
   <div class="chat-messages" id="messages">
     <div class="msg-welcome" id="welcomeArea">
-      <!-- 25.41 (Neo 8 May v2): Frontier-Tier Agentic EdTech Welcome
+      <!-- 25.41 (Neo 8 May v3): Welcome — somut metrikler + Cerebras vurgusu + rezonans
            Blog: fermategitimkurumlari.com/post/yapay-zeka-destekli-egitim-sistemleri-nasıl-çalışır
-           Akademik temel: Stanford (Agentic AI Era), Andreessen Horowitz (Vertical AI),
-           Carnegie Mellon ITS, Anthropic (Constitutional AI), Toolformer 2023 -->
+           Akademik: Stanford, a16z, Carnegie Mellon, Anthropic, Toolformer
+           Infra: Cerebras — "The Fastest AI Infrastructure" -->
       <div class="jarvis-welcome" style="
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 58, 138, 0.65));
-        border: 1px solid rgba(59, 130, 246, 0.35);
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(30, 58, 138, 0.6));
+        border: 1px solid rgba(59, 130, 246, 0.4);
         border-radius: 14px;
         padding: 24px 26px;
         margin-bottom: 14px;
         font-family: 'Fira Code', 'JetBrains Mono', monospace;
         color: #E5E7EB;
-        max-width: 760px;
-        box-shadow: 0 4px 28px rgba(59, 130, 246, 0.08);
+        max-width: 780px;
+        box-shadow: 0 4px 32px rgba(59, 130, 246, 0.1);
       ">
-        <div style="font-size:11.5px;letter-spacing:2.5px;color:#60A5FA;text-transform:uppercase;margin-bottom:6px;font-weight:600;">
-          ⚡ Frontier-Tier · Agentic AI EdTech
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+          <div style="font-size:11.5px;letter-spacing:2.5px;color:#60A5FA;text-transform:uppercase;font-weight:600;">
+            ⚡ Frontier-Tier · Agentic AI EdTech
+          </div>
+          <div style="font-size:10px;color:#94A3B8;letter-spacing:0.8px;display:flex;align-items:center;gap:5px;">
+            <span style="display:inline-block;width:6px;height:6px;background:#FBBF24;border-radius:50%;box-shadow:0 0 8px #FBBF24;"></span>
+            powered by <span style="color:#FBBF24;font-weight:600;">CEREBRAS</span> — fastest AI on earth
+          </div>
         </div>
         <div style="font-size:10.5px;color:#64748B;letter-spacing:0.5px;margin-bottom:12px;">
           Stanford "AI as Infrastructure" · Andreessen Horowitz Vertical AI · 2026
         </div>
-        <h2 style="font-size:23px;color:#F8FAFC;margin:6px 0 14px;font-weight:600;letter-spacing:0.5px;">
+        <h2 style="font-size:24px;color:#F8FAFC;margin:6px 0 14px;font-weight:600;letter-spacing:0.5px;">
           <span id="welcomeName">Öğrenci</span>.
         </h2>
         <p style="font-size:13.5px;line-height:1.75;color:#CBD5E1;margin-bottom:14px;">
@@ -2960,49 +2966,65 @@ html[data-theme="dark"] .msg.bot.streaming::after {
           Karşında <span style="color:#60A5FA;font-weight:600;">Multi-Channel, Tool-Augmented Agentic EdTech Platform</span> var —
           sadece soru-cevap değil; <span style="color:#60A5FA;">araştırır, araç kullanır, hata yaptığında düzeltir, hedef odaklı</span>.
         </p>
-        <div style="font-size:12.5px;line-height:1.85;color:#94A3B8;border-left:2px solid #60A5FA;padding-left:14px;margin:14px 0;background:rgba(59,130,246,0.04);padding:14px 16px;border-radius:6px;">
+
+        <!-- METRİK GRİDİ: 6 somut sayı, kompakt -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;background:rgba(15,23,42,0.6);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:14px;">
+          <div style="text-align:center;">
+            <div style="font-size:20px;color:#FBBF24;font-weight:700;">5</div>
+            <div style="font-size:9.5px;color:#94A3B8;letter-spacing:0.5px;text-transform:uppercase;">LLM Providers</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:20px;color:#60A5FA;font-weight:700;">157</div>
+            <div style="font-size:9.5px;color:#94A3B8;letter-spacing:0.5px;text-transform:uppercase;">AI Tool</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:20px;color:#A5B4FC;font-weight:700;">50</div>
+            <div style="font-size:9.5px;color:#94A3B8;letter-spacing:0.5px;text-transform:uppercase;">Intent Routing</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:20px;color:#86EFAC;font-weight:700;">35</div>
+            <div style="font-size:9.5px;color:#94A3B8;letter-spacing:0.5px;text-transform:uppercase;">Visual Renderer</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:20px;color:#F9A8D4;font-weight:700;">27</div>
+            <div style="font-size:9.5px;color:#94A3B8;letter-spacing:0.5px;text-transform:uppercase;">External API</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:20px;color:#7DD3FC;font-weight:700;">48K+</div>
+            <div style="font-size:9.5px;color:#94A3B8;letter-spacing:0.5px;text-transform:uppercase;">Akademik İçerik</div>
+          </div>
+        </div>
+
+        <div style="font-size:12.5px;line-height:1.85;color:#94A3B8;border-left:2px solid #60A5FA;padding:14px 16px;margin:14px 0;background:rgba(59,130,246,0.04);border-radius:6px;">
           🧠 <strong style="color:#93C5FD;">Knowledge Tracing</strong> <span style="color:#64748B;">(Corbett &amp; Anderson 1995)</span> — her konudaki gerçek anlama derinliğin matematiksel modellenir<br>
           ⏰ <strong style="color:#93C5FD;">Spaced Repetition</strong> <span style="color:#64748B;">(Ebbinghaus 1885 → SM-2)</span> — unutmaya karşı bilimsel mücadele<br>
-          ♟️ <strong style="color:#93C5FD;">ELO-Based Skill Assessment</strong> <span style="color:#64748B;">(Elo 1960)</span> — seviyen sürekli kalibre edilir<br>
-          💙 <strong style="color:#93C5FD;">Affective Computing</strong> <span style="color:#64748B;">(Picard MIT 1995)</span> — duygu sinyallerini okur, doğru anda destek<br>
-          🛠️ <strong style="color:#93C5FD;">Tool-Augmented Reasoning</strong> <span style="color:#64748B;">(Toolformer 2023)</span> — 50 uzman danışmanın eş zamanlı erişimi<br>
-          🌀 <strong style="color:#93C5FD;">Self-Reflective</strong> <span style="color:#64748B;">(Constitutional AI, Anthropic)</span> — her gece kendi konuşmalarını analiz eder, evrimleşir
+          ♟️ <strong style="color:#93C5FD;">ELO-Based Assessment</strong> <span style="color:#64748B;">(Elo 1960)</span> — seviyen her saniye kalibre<br>
+          💙 <strong style="color:#93C5FD;">Affective Computing</strong> <span style="color:#64748B;">(Picard MIT 1995)</span> — duygu sinyallerini okur<br>
+          🛠️ <strong style="color:#93C5FD;">Tool-Augmented Reasoning</strong> <span style="color:#64748B;">(Toolformer 2023)</span> — bütün bir araç orkestrası tek mesajda devreye girer<br>
+          🌀 <strong style="color:#93C5FD;">Recursive Self-Improvement</strong> <span style="color:#64748B;">(Anthropic Constitutional AI)</span> — kendi kodunu izler, kendini revize eder
         </div>
         <p style="font-size:12.5px;line-height:1.7;color:#CBD5E1;margin:14px 0 10px;">
           🎯 <span style="color:#FBBF24;">Vertical AI</span> — genel modellerden
           <span style="color:#FBBF24;font-weight:600;">5-10× daha yüksek başarı</span>
           <span style="color:#64748B;">(a16z 2024)</span>.
-          YKS / LGS müfredatı, ÖSYM 2023-2025 gerçek sıralama, kurumun
-          <span style="color:#FBBF24;">stratejik mülkiyet</span> verisi —
-          sıfırdan inşa edildi.
+          YKS &amp; LGS müfredatı, ÖSYM tarihçesi, kurumun
+          <span style="color:#FBBF24;">stratejik mülkiyet</span> verisi — sıfırdan inşa edildi.
         </p>
         <div style="display:flex;gap:7px;flex-wrap:wrap;font-size:11px;margin-top:14px;">
-          <span style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);color:#93C5FD;padding:4px 10px;border-radius:20px;">
-            📊 puan tahmin
-          </span>
-          <span style="background:rgba(96,165,250,0.13);border:1px solid rgba(96,165,250,0.35);color:#BFDBFE;padding:4px 10px;border-radius:20px;">
-            📚 RAG semantik arama
-          </span>
-          <span style="background:rgba(34,197,94,0.13);border:1px solid rgba(34,197,94,0.35);color:#86EFAC;padding:4px 10px;border-radius:20px;">
-            🎯 Bayesian zayıf konu
-          </span>
-          <span style="background:rgba(236,72,153,0.13);border:1px solid rgba(236,72,153,0.35);color:#F9A8D4;padding:4px 10px;border-radius:20px;">
-            📷 Vision foto çözüm
-          </span>
-          <span style="background:rgba(14,165,233,0.13);border:1px solid rgba(14,165,233,0.35);color:#7DD3FC;padding:4px 10px;border-radius:20px;">
-            🧪 PhET / Wolfram
-          </span>
-          <span style="background:rgba(168,85,247,0.13);border:1px solid rgba(168,85,247,0.35);color:#D8B4FE;padding:4px 10px;border-radius:20px;">
-            🎨 Three.js / Chart.js
-          </span>
-          <span style="background:rgba(245,158,11,0.13);border:1px solid rgba(245,158,11,0.35);color:#FCD34D;padding:4px 10px;border-radius:20px;">
-            🛰️ canlı LMS bağı
-          </span>
+          <span style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);color:#93C5FD;padding:4px 10px;border-radius:20px;">📊 puan tahmin</span>
+          <span style="background:rgba(96,165,250,0.13);border:1px solid rgba(96,165,250,0.35);color:#BFDBFE;padding:4px 10px;border-radius:20px;">📚 RAG semantik arama</span>
+          <span style="background:rgba(34,197,94,0.13);border:1px solid rgba(34,197,94,0.35);color:#86EFAC;padding:4px 10px;border-radius:20px;">🎯 Bayesian zayıf konu</span>
+          <span style="background:rgba(236,72,153,0.13);border:1px solid rgba(236,72,153,0.35);color:#F9A8D4;padding:4px 10px;border-radius:20px;">📷 Vision foto çözüm</span>
+          <span style="background:rgba(14,165,233,0.13);border:1px solid rgba(14,165,233,0.35);color:#7DD3FC;padding:4px 10px;border-radius:20px;">🧪 PhET / Wolfram</span>
+          <span style="background:rgba(168,85,247,0.13);border:1px solid rgba(168,85,247,0.35);color:#D8B4FE;padding:4px 10px;border-radius:20px;">🎨 Three.js / Chart.js</span>
+          <span style="background:rgba(245,158,11,0.13);border:1px solid rgba(245,158,11,0.35);color:#FCD34D;padding:4px 10px;border-radius:20px;">🛰️ canlı LMS bağı</span>
         </div>
-        <p style="font-size:11.5px;color:#64748B;margin-top:16px;font-style:italic;line-height:1.5;">
-          6 ay öncekiyle aynı sistem değil. Sürekli öğrenen, sürekli iyileşen bir organizma.
+        <p style="font-size:11.5px;color:#94A3B8;margin-top:16px;font-style:italic;line-height:1.7;">
+          <span style="color:#60A5FA;">Dün geceki sistem değil.</span>
+          Her gün kendi kodunu izleyip evrimleşen, seninle birlikte gelişip
+          <span style="color:#60A5FA;">rezonansa giren</span> agentic AI.
           <br>
-          <span style="color:#475569;">Konuş. Sen yazdığın anda 5 katman senin için harekete geçer.</span>
+          <span style="color:#64748B;">Mesajı gönderdiğin saniye 5 LLM eş zamanlı yanışıyor, 50 intent karar mekanizmasından geçiyor, 157 araç hizaya geliyor — Cerebras altyapısında ışık hızında tek beyin.</span>
         </p>
       </div>
       <!-- A4: Öğrenci dashboard kartları (sadece öğrenci rolünde render) -->
