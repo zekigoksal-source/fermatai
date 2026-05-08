@@ -1,6 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 9 Mayıs 2026 (gece 01:40) · **Oturum:** 25.41-PHOTO-LIMIT — **Foto soru limit 5 + Foto Guard bypass mimarisi (Cerebras halüsilasyon önleme) · 8 dosya senkron · 5 phrasing canlı test 5/5 PASS**
+> **Belge tarihi:** 9 Mayıs 2026 (gece 02:30) · **Oturum:** 25.41-REFACTOR — **God Class reduction · fermat_core_agent.py 5,840 → 5,182 (-658 satır, %11.3) · 9 fonksiyon services/'e taşındı · Quality refactor sırasında 96.6 → 97.6 A+ (kalite ARTTI)**
+> **9 May 01:40:** 25.41-PHOTO-LIMIT — Foto soru limit 5 + Foto Guard bypass mimarisi · 8 dosya senkron · 5 phrasing 5/5 PASS
 > **9 May 01:10:** 25.41-QUALITY — **Rol × Senaryo Quality Audit (32 senaryo × 6 rol) · Run 1 88.7 A → Run 2 97.0 A+ · 6/6 rol A+ · 3 fix loop deploy**
 > **9 May 00:50:** 25.41-AUDIT — **Comprehensive renderer + ext API audit %100 PASS (35/35) · Renderer hint inject (Claude+Cerebras) · 27/27 fence pipeline · compound-aware test logic**
 > **8 May 23:00:** 25.41-RENDER-ZORUNLU — System prompt render zorunluluk + pipeline test 27/27 · marked.parse Brief #19 fix

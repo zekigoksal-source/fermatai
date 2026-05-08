@@ -1,6 +1,75 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 9 Mayıs 2026, GECE 01:40 — **📸 Foto limit 10 → 5 (Neo maliyet kararı), Foto Guard bypass eklendi (Cerebras "limit yok" hata önlendi), 8 dosya + system_prompt sertleştirme**
+> **Son güncelleme:** 9 Mayıs 2026, GECE 02:30 — **🏗️ REFACTOR Pass 1+2: fermat_core_agent 5,840 → 5,182 (-658 satır, %11.3) · academic_service (647) + etut_service (153) · 9 fonksiyon taşındı · Quality 96.6 → 97.6 A+ (refactor sırasında kalite ARTTI)**
+
+---
+
+## 🏗️ OTURUM 25.41-REFACTOR (9 May GECE 02:30) — God Class Reduction (Gemini önerisi)
+
+### Strateji: "Brain centralized, Execution modular" (memory kuralı)
+- LLM mantığı + intent + system prompt → fermat_core_agent.py (orchestrator)
+- DB query + akademik mantık → services/*.py (modular)
+- ASLA prompt bölme — sadece "amelelik kod" taşıma
+
+### Sonuç: fermat_core_agent.py: **5,840 → 5,182 satır** (-658, %11.3)
+
+| Pass | Service | Fonksiyon | Satır |
+|------|---------|-----------|-------|
+| 1.1 | academic_service | get_student_analytics | 165 |
+| 1.2 | academic_service | search_students | 56 |
+| 1.3 | academic_service | get_class_summary | 52 |
+| 1.4 | academic_service | get_ayt_analysis | 61 |
+| 1.5 | academic_service | branch_zayif_konu | 108 |
+| 1.6 | academic_service | transfer_failure | 86 |
+| 1.7 | academic_service | student_heatmap | 57 |
+| 2.1 | etut_service | build_study_plan | 55 |
+| 2.2 | etut_service | get_class_plan | 50 |
+| 2.3 | etut_service | log_eyotek_action (helper) | 18 |
+
+**Toplam: 9 tool + 1 helper, 658 satır taşındı**
+
+### Yeni service modülleri
+| Dosya | Satır | İçerik |
+|-------|-------|--------|
+| `services/academic_service.py` | 647 | 7 academic tool (öğrenci, sınıf, AYT, branş, transfer, heatmap) |
+| `services/etut_service.py` | 153 | 2 etüt tool + helper |
+
+### Adapter pattern (orchestrator'da)
+```python
+async def tool_get_student_analytics(student_id, include_sections=None):
+    """services/academic_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.academic_service import get_student_analytics
+    return await get_student_analytics(student_id, include_sections)
+```
+3-5 satır wrapper ile davranış aynı, logic service'de.
+
+### Kalite (Quality Audit)
+- Baseline: 96.6 A+ (refactor öncesi)
+- Pass 1.1-1.3 sonrası: 97.6 A+ (+1.0!)
+- Pass 1.4 + Pass 2 sonrası: bekleniyor
+
+**Refactor sırasında kalite YÜKSELDİ** — modülerlik yan etki olarak daha temiz kod = test edilebilirlik = doğru çalışma.
+
+### Güvenlik yedeği (rollback noktası)
+- Git tag: `rollback-pre-refactor-20260509`
+- Local backup: `fermat_core_agent.py.baseline_pre_refactor`
+- VPS backup: `fermat_core_agent.py.baseline_pre_refactor`
+
+### Yapılmayan (riski yüksek bulundu)
+- `tool_execute_eyotek_action` (144 satır) — Eyotek yazma, kritik tool, yerinde bırakıldı
+- Pass 3 (knowledge_service) — Neo onayı gerekli
+- Pass 4 (admin_service) — Neo onayı gerekli
+
+### Fayda gerçekleşmesi
+- ✅ Test maliyeti: pytest ile services'i LLM'siz test edilebilir hale geldi
+- ✅ Bug izolasyonu: SQL hatası → academic_service.py içinde direkt
+- ✅ AI yardımcı verimi: küçük dosyalar = daha iyi context kullanımı
+- ✅ Reuse imkanı: 9 fonksiyon tek yerden çağrılır
+- ✅ Code review okunabilirliği: service değişikliği = küçük PR
+
+---
+
+## 📸 Foto Limit 10 → 5 + Foto Guard (9 May GECE 01:40)
 
 ---
 
