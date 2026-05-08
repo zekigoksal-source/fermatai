@@ -3053,8 +3053,14 @@ OGRENCI_PATTERNS = [
     (r"(ayt|tyt).*(hangi\s*ders|hangi\s*alan|hangi\s*konu)", "sinav_bilgi", "AYT/TYT hangi ders"),
     (r"(sayisal|sözel|esit\s*agir).*(hangi\s*ders|kac\s*soru|kaç\s*soru)", "sinav_bilgi", "Alan ders dağılımı"),
 
-    # Foto soru hakkı / soru limiti
-    (r"(ka[cç]\s*hakk[iı]m|foto\w*\s*hakk|soru\s*hakk|foto\s*limit|foto\w*\s*ka[cç])", "foto_hakki", "Foto soru hakki"),
+    # Foto soru hakkı / soru limiti — pattern genişletildi (9 May, "günde kaç foto" varyasyonları)
+    (r"(ka[cç]\s*hakk[iı]m|foto\w*\s*hakk|soru\s*hakk|"
+     r"foto\w*\s*limit|foto\w*\s*sin[ıi]r|"
+     r"foto\w*\s*ka[cç]|g[uü]nde\s*ka[cç]\s*foto|ka[cç]\s*foto.{0,15}(g[oö]nder|sor|y[uü]kle|cek)|"
+     r"foto.{0,10}(limit|hak|sin[ıi]r).{0,15}(nedir|kac|kaç|ne|var|m[ıi])|"
+     r"sin[ıi]r[ıi]m\s*var\s*m[ıi]|"
+     r"ka[cç]\s*foto[gğ]raf|"
+     r"g[uü]nl[uü]k.{0,10}foto.{0,10}(limit|hak))", "foto_hakki", "Foto soru hakki"),
     (r"tyt\s*(sinav|sınav|sonuc|sonuç|netler|denem)", "son_deneme", "TYT sonuclari"),
     (r"ortalama\s*net", "son_deneme", "Ortalama net"),
     (r"(netlerim|sonuclarim|sonuçlarım)\s*(nas[iı]l|ne)", "son_deneme", "Netlerim nasil"),
@@ -3547,6 +3553,60 @@ async def try_fast_response(
         name = _tr_title(name)
     if staff_name and staff_name == staff_name.upper() and len(staff_name) > 2:
         staff_name = _tr_title(staff_name)
+
+    # ══════════════════════════════════════════════════════════════════════
+    # 📸 FOTO LIMIT GUARD (9 May, Neo direktif)
+    # "foto" + "limit/hak/sınır" geçen herhangi bir mesaj direkt foto_hakki
+    # handler'a gitsin. Cerebras/Claude "limit yok" diyerek kullanıcıyı
+    # yanıltıyordu — bu bypass GARANTI 5 cevabını verir.
+    # ══════════════════════════════════════════════════════════════════════
+    import re as _re_foto
+    if _re_foto.search(r"foto\w*", msg_lower) and _re_foto.search(
+        r"(limit|hak|sin[ıi]r|kac|kaç|gunde|günde|gunl[uü]k|günl[uü]k|sinirsiz|sınırsız)",
+        msg_lower
+    ):
+        # Foto + limit/hak/sınır kelimesi bir arada → foto_hakki
+        try:
+            _fr_last_handler.set('foto_hakki_guard')
+        except: pass
+        # foto_hakki handler'ı _dispatch_registry_handler veya direkt çağır
+        # Burada inline çağrı yapalım — hızlı ve güvenli
+        from fast_response_visuals import sep, header, gauge as _gauge_fn
+        try:
+            from whatsapp_bridge import _PHOTO_DAILY_LIMIT as _PL
+        except Exception:
+            _PL = 5
+        first = name.split()[0] if name else ""
+        kullanilan = 0
+        try:
+            from db_pool import db_fetchval as _dfv_g
+            kullanilan = await _dfv_g(
+                "SELECT COUNT(*) FROM agent_conversations "
+                "WHERE phone=$1 AND DATE(created_at)=CURRENT_DATE "
+                "AND content LIKE '[FOTO%' AND message_role='user'",
+                caller_phone
+            ) or 0
+            kullanilan = int(kullanilan)
+        except Exception:
+            pass
+        kalan = max(0, _PL - kullanilan)
+        gv = _gauge_fn(kullanilan, _PL)
+        if kalan == 0:
+            durum = ("🔴", "Bugünkü hakkın doldu! Yarın 00:00'da sıfırlanır.")
+        elif kalan <= 2:
+            durum = ("🟡", f"Son {kalan} hakkın kaldı! Önemli sorular için sakla.")
+        else:
+            durum = ("🟢", f"Bol bol kullanabilirsin — {kalan} hak var.")
+        return (
+            f"{header('Foto Soru Çözüm Hakkın', first, '📸')}\n"
+            f"📊 *Bugünkü Kullanım:*\n"
+            f"   `{gv}`\n"
+            f"   {durum[0]} *{kullanilan}/{_PL}* kullanıldı | *{kalan}* hak kaldı\n\n"
+            f"💬 _{durum[1]}_\n\n"
+            f"{sep()}\n"
+            f"💡 *İyi haber:* ✍️ Yazılı soru sormak *sınırsız* — istediğin kadar yaz!\n\n"
+            f"_Foto göndereceğin sorunun *en zor* sorun olduğundan emin ol._ 🎯"
+        )
 
     # ══════════════════════════════════════════════════════════════════════
     # 🎨 EXPLICIT RENDERER BYPASS (25.41 Audit, 9 May)
@@ -4134,7 +4194,7 @@ async def try_fast_response(
                     elif handler == "foto_hakki":
                         # ─── A+++ visual (Oturum 25.41) ───
                         # Foto kullanım sayısı varsa progress bar göster
-                        # Limit kaynak: whatsapp_bridge._PHOTO_DAILY_LIMIT (Neo direktif 9 May, 3 → 10)
+                        # Limit kaynak: whatsapp_bridge._PHOTO_DAILY_LIMIT (Neo direktif 9 May, 10 → 5)
                         from fast_response_visuals import (
                             sep, header, action_block, gauge
                         )
@@ -4142,7 +4202,7 @@ async def try_fast_response(
                         try:
                             from whatsapp_bridge import _PHOTO_DAILY_LIMIT as _PHOTO_LIMIT
                         except Exception:
-                            _PHOTO_LIMIT = 10  # fallback
+                            _PHOTO_LIMIT = 5  # fallback
                         first = name.split()[0] if name else ""
                         # Foto kullanım sayısı çek
                         kullanilan = 0

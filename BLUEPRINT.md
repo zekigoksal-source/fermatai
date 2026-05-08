@@ -1,10 +1,83 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 4 Mayıs 2026 (akşam 18:30) · **Oturum:** 25.40z3-FINETUNE — **Per-user karakter blokları kompakt (Örsel -56%, Mahsum/Duygu -40%) + baseline cleanup + sistematik dead code scan** · 388/388 PASS · karakter özellikleri intact
-> **Akşam 17:30:** 25.40z3-CONSOLIDATION — kural sertliği korundu, 84 bağlam kompakt | **Öğle 16:30:** 25.40z3-SHRINK | **Öğle 15:00:** 25.40z3-MIMARI
-> **Öğle 14:15 güncellemesi:** 25.40z3-FIX — V3 PRODUCTION + Claude path 3 enrichment eksigi kapatildi (Wiki + HANDOFF tracking + Footer) · 363/363 test PASS
-> **Sabah 07:30 güncellemesi:** 25.40z3 PRODUCTION DEPLOY — V3 Modüler Prompt + Hierarchical Cache_Control TÜM KULLANICILARDA CANLI · 354/354 production gate test PASS · Cache HIT %100 ölçüldü
-> **Önceki güncelleme:** 3 Mayıs 2026, Oturum 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
+> **Belge tarihi:** 9 Mayıs 2026 (gece 01:40) · **Oturum:** 25.41-PHOTO-LIMIT — **Foto soru limit 5 + Foto Guard bypass mimarisi (Cerebras halüsilasyon önleme) · 8 dosya senkron · 5 phrasing canlı test 5/5 PASS**
+> **9 May 01:10:** 25.41-QUALITY — **Rol × Senaryo Quality Audit (32 senaryo × 6 rol) · Run 1 88.7 A → Run 2 97.0 A+ · 6/6 rol A+ · 3 fix loop deploy**
+> **9 May 00:50:** 25.41-AUDIT — **Comprehensive renderer + ext API audit %100 PASS (35/35) · Renderer hint inject (Claude+Cerebras) · 27/27 fence pipeline · compound-aware test logic**
+> **8 May 23:00:** 25.41-RENDER-ZORUNLU — System prompt render zorunluluk + pipeline test 27/27 · marked.parse Brief #19 fix
+> **8 May 18:00:** 25.41-PRODUCTION-AUDIT — 11 fazlı production hazırlık + 3 fix · 29/30 regression PASS
+> **7 May 20:00:** 25.41-OPT — 11 fazlı sistem optimizasyonu + Puan Tahmin + Konu Zorluk + Quality/Slow Claude cron · 10GB RAM cleanup
+> **4 May 18:30:** 25.40z3-FINETUNE — Per-user karakter blokları kompakt + dead code scan · 388/388 PASS
+> **4 May 17:30:** 25.40z3-CONSOLIDATION — kural sertliği korundu, 84 bağlam kompakt
+> **3 May:** 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
+
+---
+
+## 🆕 25.41 SERİSİ — 7-9 May (3 gün, 6 oturum, ~15 commit)
+
+### Mimari yenilikler (yeni dosyalar)
+| Tarih | Bileşen | Etki |
+|-------|---------|------|
+| 7 May | `puan_tahmin_motoru.py` | YKS puan tahmin (~50ms vs Claude 30s, 7 pattern) |
+| 7 May | `konu_zorluk_haritasi.py` | Kurum geneli konu hata yoğunluğu, top3 acil |
+| 8 May | `renderer_hint_inject.py` | 16 pattern → 27 renderer mapping (Claude+Cerebras) |
+| 8 May | `test_full_audit.py` | 4-katman audit (ENV+Bridge+ExtAPI+Renderer), 35/35 PASS |
+| 8 May | `test_renderer_pipeline.py` | 27/27 fence backend→frontend→dispatcher doğrulama |
+| 9 May | `test_quality_audit.py` | Rol × Senaryo audit framework (32 senaryo × 6 rol, 8 kriter) |
+| 9 May | **Foto Guard** (fast_responses.py içi) | "foto"+"limit/hak/sınır" → garantili foto_hakki bypass |
+
+### Yeni cron'lar (timer aktif, 7 toplam)
+- `fermatai-quality-weekly.timer` — Pazar 02:00, Groq 70B konuşma kalite raporu
+- `fermatai-slow-claude.timer` — Saatte 1, 60sn+ Claude detect, %30 üzerinde Neo'ya WP
+- Eski cron'lar: atlas-nightly + backup + eyotek-daily + smart-sync + dr-drill
+
+### Renderer + API Pipeline (Audit %100)
+- 27 aktif fence: chart, calc, desmos, sim, radar, heatmap, karne, gauge, timeline, progress, compare, compare2, geogebra, plotly, mermaid, vr, mol3d, sound, element, excalidraw, codeout, steps, kgraph, quiz, recall, compound, formula
+- 12 external API: Cerebras, Anthropic, Groq, Ollama, Wolfram, YouTube, Sentry, PubChem, NASA, Wikipedia, OGM Materyal, PhET — gerçek dünya status code'larına göre
+- compound-wrapped detection: gauge/radar compound içinde sarsa da target_found PASS
+
+### Welcome ekranı (10 kutucuk, simetri için justify-content:center)
+📊 puan tahmin · 📚 RAG semantik · 🎯 Bayesian zayıf konu · 📷 Vision foto · 🧪 PhET/Wolfram
+🎨 Three.js/Chart.js · 🛰️ canlı LMS · 🌌 NASA APOD · 🧬 PubChem 3D · 🌊 USGS deprem
+
+### Quality Audit (32 senaryo × 6 rol, 9 May 01:10)
+| Rol | Run 1 | Run 2 | Δ |
+|-----|-------|-------|---|
+| admin | 80.4 B+ | **97.6 A+** | +17.2 |
+| mudur | 91.0 A | **95.4 A+** | +4.4 |
+| yonetim | 66.7 B | **96.7 A+** | +30.0 |
+| ogretmen | 93.0 A | **95.5 A+** | +2.5 |
+| rehber | 96.8 A+ | **95.5 A+** | -1.3 |
+| ogrenci | 97.1 A+ | **100.0 A+** | +2.9 |
+| **TOPLAM** | 88.7 A | **97.0 A+** | **+8.3** ✅ |
+
+3 fix loop deploy:
+1. test must_contain OR-grup mantığı (alt-liste = OR)
+2. Renderer bypass to LLM (explicit fence keyword → Cerebras/Claude renderer hint)
+3. Bridge timeout 45→75sn (kompleks tool çağrıları)
+
+### Foto Soru Limiti (9 May, Neo direktif)
+- Sabah: 3 → 10 (artı yön denendi)
+- Akşam: 10 → **5** (maliyet kontrolu, $25 → $12.5/gün teorik tavan)
+- Aktif öğrenci bonus: +2 → toplam **7**
+- Yenilenme: 00:00
+- 8 dosya senkron: bridge=master, fast_response=dynamic import, foto_solver, system_prompts, web_chat, mathpix, CLAUDE.md, KALDIGIM
+- Foto Guard: Cerebras/Claude'a ulaşmadan fast_response handler bypass — "limit yok" halüsilasyon önlendi
+
+### Routing Hedefleri (VPS+Groq sonrası, güncel)
+| Kaynak | Hedef | Aciklama |
+|--------|-------|----------|
+| Fast Response | %45 | Selamlama, veri, foto guard, renderer bypass |
+| Groq 70B | %30 | Kavramsal + sohbet (chat_groq_with_tools hazır, flag bekliyor) |
+| Claude API | %25 | Hassas tool, yazma, analiz, kriz |
+| Ollama | %0 (laptop %20) | VPS'te yok, Groq onun yerini aldı |
+
+### Rakamlarla Şu An
+- Quality skoru: **97.0 A+** (6/6 rol)
+- Renderer pipeline: **27/27 ✅**
+- External API: **12/12 ✅**
+- Foto günlük limit: **5** (aktif 7), maliyet ~$2-4/gün pratik
+- Aylık API maliyet hedefi: ~$20-25 (Mathpix ~$20/ay)
+- Toplam dosya: 200+ Python · Active timer: 7 · DB tablo: 50+
 
 ---
 

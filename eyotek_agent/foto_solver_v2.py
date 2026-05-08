@@ -150,19 +150,19 @@ async def _mark_topic_studying(soz_no: str, ders: str, konu: str):
         logger.debug(f"topic tracker update hatasi: {e}")
 
 
-async def get_dynamic_photo_limit(soz_no: str, base_limit: int = 10) -> int:
-    """Aktif ogrenciye ek foto hakki ver. (Neo direktif 9 May: base 3→10, aktif +3 → 13)"""
+async def get_dynamic_photo_limit(soz_no: str, base_limit: int = 5) -> int:
+    """Aktif ogrenciye ek foto hakki ver. (Neo direktif 9 May: base 5, aktif +2 → 7)"""
     if not soz_no:
         return base_limit
     try:
-        # Son 7 gunde sinav verisi varsa +3 (aktif ogrenci bonus)
+        # Son 7 gunde sinav verisi varsa +2 (aktif ogrenci bonus)
         cnt = await db_fetchval("""
             SELECT COUNT(*) FROM student_exams
             WHERE soz_no::text = $1
             AND exam_date >= CURRENT_DATE - INTERVAL '7 days'
         """, str(soz_no))
         if cnt and cnt > 0:
-            return base_limit + 3  # 10 → 13
+            return base_limit + 2  # 5 → 7
     except Exception:
         pass
     return base_limit

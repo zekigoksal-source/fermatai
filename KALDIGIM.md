@@ -1,13 +1,52 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 9 Mayıs 2026, GECE 01:25 — **📸 Foto limit 3 → 10 (Neo direktif), 6 dosya senkronlu güncelleme + bot yanıt doğrulandı**
+> **Son güncelleme:** 9 Mayıs 2026, GECE 01:40 — **📸 Foto limit 10 → 5 (Neo maliyet kararı), Foto Guard bypass eklendi (Cerebras "limit yok" hata önlendi), 8 dosya + system_prompt sertleştirme**
 
 ---
 
-## 📸 Foto Limit Güncelleme (9 May GECE 01:25) — Neo direktif
+## 📸 Foto Limit 10 → 5 + Foto Guard (9 May GECE 01:40)
 
-### Değişiklik
-- **Günlük foto soru limiti: 3 → 10** (aktif öğrenci bonus +3 → 13)
+### Neo direktifi
+- "Pratik $8-12/gün, teorik $25 — az değil. **Limit 5'e düşür**"
+- Sabah 10 yaptık, akşam 5'e döndük (maliyet kontrolu)
+
+### 8 Dosya senkron
+| Dosya | 5 değeri |
+|-------|---------|
+| `whatsapp_bridge.py` | `_PHOTO_DAILY_LIMIT = 5` (master) |
+| `foto_solver_v2.py` | `base_limit=5`, aktif +2 → 7 |
+| `system_prompts.py` | "Gunluk 5 foto limiti var (aktif 7)" + sertleştirme |
+| `fast_responses.py` | bridge'den dynamic + **Foto Guard bypass** |
+| `web_chat.py` | yorum |
+| `mathpix_client.py` | "~5 foto/gün → ~$20/ay" |
+| `CLAUDE.md` | "5 foto/ogrenci, ~$12.5/gün teorik tavan" |
+| `KALDIGIM.md` | bu blok |
+
+### Foto Guard (yeni mimari)
+- `try_fast_response` başında: mesajda "foto" + ("limit/hak/sınır/kac/günde") varsa
+- Cerebras/Claude'a hiç gitmez → garantili 5/5 cevap
+- Sebep: Cerebras `"limit yok"` halüsilasyon yapıyordu (system_prompt'a rağmen)
+- 5 farklı phrasing canlı test: "foto limiti nedir", "kaç foto sorabilirim",
+  "günlük foto sınırım", "foto hakkım var mı", "foto kaç tane" — **5/5 ✅**
+
+### System prompt sertleştirme
+```
+FOTO SORU COZUM (KESIN BILGI — uydurma yapma):
+- Gunluk fotograf limiti = 5 (BES, sayisal: 5). Aktif ogrenci 7.
+- ASLA "sinirsiz", "kesin sinir yok", "10", "3" gibi rakamlar verme.
+```
+
+### Maliyet (revize)
+- Pratik: ~$2-4/gün
+- Teorik tavan: 125 × 5 × $0.02 = **~$12.5/gün**
+- Mathpix: 125 × 5 × %30 = ~5000 req/ay → **~$20/ay**
+
+---
+
+## 📸 Foto Limit Güncelleme (9 May GECE 01:25) — Neo direktif (revize edildi → 5)
+
+### Değişiklik (revize edildi 01:40'ta 5'e düşürüldü)
+- ~~Günlük foto soru limiti: 3 → 10 (aktif öğrenci bonus +3 → 13)~~
 - Maliyet projeksiyonu güncellendi: ~$8-12/gün pratik, ~$25/gün teorik tavan
 
 ### 6 Dosyada single-source-of-truth

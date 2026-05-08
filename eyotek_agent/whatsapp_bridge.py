@@ -1508,7 +1508,7 @@ _CAPACITY_COUNTS = HybridDict("cap:", ttl_default=_CAPACITY_WINDOW * 2)
 _TEMP_BANS = HybridDict("ban:", ttl_default=_FLOOD_BAN_DURATION)
 
 # ── Medya Kontrol ────────────────────────────────────────────────────────────
-_PHOTO_DAILY_LIMIT = 10  # ogrenci basina gunluk foto limiti (Neo direktif 9 May, 3 → 10)
+_PHOTO_DAILY_LIMIT = 5   # ogrenci basina gunluk foto limiti (Neo direktif 9 May, 10 → 5 maliyet kontrolu)
 _PHOTO_COUNTS = HybridDict("photo:", ttl_default=86400)  # {phone: {"date": "2026-04-08", "count": 5}}
 VIDEO_ENABLED = False  # Video KAPALI — gereksiz islem gucu
 
