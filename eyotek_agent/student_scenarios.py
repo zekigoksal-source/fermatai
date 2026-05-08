@@ -219,14 +219,18 @@ def detect_scenario(message: str, role: str) -> Optional[dict]:
             # "Bu netlerle üniversite sınavında sıralama nasıl olur" → bolum formu geldi (YANLIS)
             # "sıralama/puan tahmin/netlerle/kaçıncı olurum" varsa bolum formu DEGIL,
             # Claude calculate_yks_score tool ile direkt sıralama tahmini versin.
+            # 25.41 (Neo 8 May): netlerim(le) + tahmini puanım eklendi
+            # Eski "netlerle" → "Yagız" vakası, ama "netlerim/netlerimle" eklenmemişti
             _puan_tahmin_sorusu = re.search(
                 r"(s[iı]ralama|s[iı]ra.*nas[iı]l|kac[iı]nc[iı]|kaçıncı|"
-                r"puan.*tahmin|tahmin.*puan|bu\s*netle|netlerle|"
-                r"nerede.*olurum|hangi.*nere|nere.*girerim)",
+                r"puan.*tahmin|tahmin.*puan|tahmini\s*puan|"
+                r"bu\s*netle|netlerle|netlerim(le|den)?|netim|"
+                r"nerede.*olurum|hangi.*nere|nere.*girerim|"
+                r"hangi\s*(universite|üniversite|b[oö]l[uü]m).*?(girer|girebilir|gider|yazabilir))",
                 msg
             )
             if _puan_tahmin_sorusu:
-                return None  # Claude calculate_yks_score kullansin
+                return None  # puan_tahmin handler veya Claude calculate_yks_score
 
             return {"scenario": "bolum", "questions": BOLUM_QUESTIONS[0], "needs_claude": True}
 

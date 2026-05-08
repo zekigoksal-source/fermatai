@@ -172,16 +172,45 @@ async def puan_tahmin(soz_no: int, name: str = "") -> str:
             ok = profile["oncelikli_konular"]
             if isinstance(ok, str):
                 ok = json.loads(ok)
-            if isinstance(ok, list) and ok:
+            # 25.41 (Neo 8 May fix): yapı [{"level":1, "konular":[{konu, yuzde,...}, ...]}, ...]
+            # Flatten et — level grouplarından konu'ları çıkar
+            flat_konular = []
+            if isinstance(ok, list):
+                for grup in ok:
+                    if isinstance(grup, dict) and "konular" in grup:
+                        for k in grup["konular"]:
+                            if isinstance(k, dict):
+                                konu_str = k.get("konu", "")
+                                yuzde = k.get("yuzde", "")
+                                if konu_str:
+                                    flat_konular.append((konu_str, yuzde))
+                    elif isinstance(grup, dict) and "konu" in grup:
+                        flat_konular.append((grup["konu"], grup.get("yuzde", "")))
+                    elif isinstance(grup, str):
+                        flat_konular.append((grup, ""))
+            if flat_konular:
                 lines.append(f"\n📚 *Öncelikli 3 konu:*")
-                for k in ok[:3]:
-                    if isinstance(k, dict):
-                        konu = k.get("konu", "?")
-                        lines.append(f"   • {konu[:55]}")
-                    elif isinstance(k, str):
-                        lines.append(f"   • {k[:55]}")
+                for konu, yuzde in flat_konular[:3]:
+                    suffix = f" — başarı {yuzde}" if yuzde else ""
+                    lines.append(f"   • {str(konu)[:60]}{suffix}")
         except Exception:
             pass
+
+    # 25.41 (Neo 8 May): student_topic_tracker'dan zayıf konu — daha iyi kaynak
+    try:
+        zayif_top = await db_fetch("""
+            SELECT konu, ders FROM student_topic_tracker
+            WHERE soz_no::text = $1 AND tamamlandi = FALSE
+              AND sinav_hata_yuzdesi < 50 AND LENGTH(konu) > 5
+              AND konu NOT LIKE 'Ortalama %'
+            ORDER BY sinav_hata_yuzdesi ASC LIMIT 3
+        """, str(soz_no))
+        if zayif_top and not (profile and profile.get("oncelikli_konular")):
+            lines.append(f"\n📚 *En çok hata yaptığın 3 konu:*")
+            for r in zayif_top:
+                lines.append(f"   • {r['konu'][:50]} ({r['ders']})")
+    except Exception:
+        pass
 
     lines.append("\n━━━━━━━━━━━━━━━━━━━━━━━")
     lines.append("_Tahminler indikatif. Gerçek puan deneme + ÖSYM gününe bağlı._")

@@ -3022,6 +3022,11 @@ OGRENCI_PATTERNS = [
     (r"puan\s*tahmin", "puan_tahmin", "Puan tahmin (kısa)"),
     (r"yks(de|'?da|'?nde)?\s*puan[ıi]m", "puan_tahmin", "YKS puanim"),
     (r"yerle[sş]me\s*puan", "puan_tahmin", "Yerlesme puan"),
+    # 25.41 (Neo 8 May konuşma): "netlerimle hangi üniversite" → bot soru sordu (yanlış)
+    # DOĞRU: DB'den son TYT'yi çekip direkt tahmin ver (puan_tahmin_motoru zaten yapıyor)
+    (r"netler(im(le|den)?|imle)\s*(hangi|nereye|nasil|nas[ıi]l)\s*(universit|üniversit|b[oö]l[uü]m|girebilir|gider)", "puan_tahmin", "Netlerimle hangi uni"),
+    (r"(hangi|nereye)\s*(universit|üniversit|b[oö]l[uü]m).*?(girebilir|girerim|yazabilir|gider)", "puan_tahmin", "Hangi uni girerim"),
+    (r"(netlerim|netlerimle|verim|netim).*?(uygun|yeter|girebilir|tutar|girer)", "puan_tahmin", "Netlerim uygun mu"),
     # Genel tahmin (sıralama vs) — Claude'a (kompleks)
     (r"(tahmin\w*\s*(sıralama|siralama|skor)|sıralama\s*tahmin|siralama\s*tahmin)", "claude_kisisel_hedef", "Tahmini sıralama"),
     (r"(şu\s*an|simdi|şimdi|bu\s*an)\s*(tahmin|puan|sıralama|siralama|net)", "claude_kisisel_hedef", "Şu an tahmini puan"),
@@ -3111,6 +3116,11 @@ OGRENCI_PATTERNS = [
     # "ne calismali" zaten zayif_konular'da (satir 1183)
 
     # Hedef — basit hedef sorusu → fast veri, detaylı analiz → Claude
+    # 25.41 (Neo 8 May konuşma analizi): "netlerimle hangi üniversite" → puan_tahmin
+    # Eski: claude_kisisel_hedef → Claude bot soru sordu (yanlış UX)
+    # Yeni: puan_tahmin_motoru DB'den son TYT + ÖSYM 2023-2025 + zayıf konu çekip tahmin verir
+    (r"netler(im(le|den)?|imle)\s*(hangi|nereye|nasil|nas[ıi]l)\s*(universit|üniversit|b[oö]l[uü]m|girebilir|gider)", "puan_tahmin", "Netlerimle hangi uni"),
+    (r"(hangi|nereye)\s*(universit|üniversit|b[oö]l[uü]m).*?(girebilir|girerim|yazabilir|gider)", "puan_tahmin", "Hangi uni girerim"),
     # ONEMLI: "benim netim/verilerime gore/netlerimle hangi universite" → Claude (kisisel veri analiz)
     (r"(benim|netim|netlerim|netlerimle|verilerim|durumumla|netler(ime|imle|im)\s*g[oö]re|netlerimle)\s*(hedef|universite|üniversite|bolum|bölüm|kac|kaç|nereye|hangi)", "claude_kisisel_hedef", "Kisisel hedef analizi"),
     # 22.1n — Peer kiyaslama (anonim) — Turkce karakter esnek

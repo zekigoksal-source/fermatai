@@ -172,6 +172,8 @@ STUDENT_QUERY_REGISTRY = [
     },
 
     # ─── KATEGORI 5: HEDEF & PUAN ───────────────────────────────────────
+    # 25.41 (Neo 8 May): "claude_required" → "fast" (path=fast, handler=puan_tahmin)
+    # Eski: Claude soru sorardı → Yeni: puan_tahmin_motoru DB'den direkt tahmin verir
     {
         "id": "kisisel_hedef_analiz",
         "patterns": [
@@ -183,10 +185,10 @@ STUDENT_QUERY_REGISTRY = [
             r"mevcut\s*durum",
             r"su\s*anki\s*(netlerim|puan|durum)",
         ],
-        "path": "claude_required",
-        "reason": "Kisisel veri + yerlesme puani + bolum hedef analizi — Claude",
-        "tools_needed": ["get_student_analytics", "get_ayt_analysis", "query_analytics"],
-        "quality_check": "Ogrencinin yerlesme puani + hedef bolum 3 yillik taban + gereken net hesabi",
+        "path": "fast",
+        "handler": "puan_tahmin",
+        "reason": "puan_tahmin_motoru DB'den son TYT + ÖSYM 2023-2025 + zayıf konu",
+        "tools_needed": [],
     },
     {
         "id": "puan_tahmin",
@@ -195,9 +197,10 @@ STUDENT_QUERY_REGISTRY = [
             r"yks\s*puan(im|ım|imi|ımı)",
             r"tahmini\s*puan",
         ],
-        "path": "claude_required",
-        "reason": "Puan tahmin algoritmasi + bolum hedef",
-        "tools_needed": ["get_ayt_analysis"],
+        "path": "fast",
+        "handler": "puan_tahmin",
+        "reason": "Puan tahmin motoru fast handler",
+        "tools_needed": [],
     },
     {
         "id": "bolum_bilgisi_generic",
