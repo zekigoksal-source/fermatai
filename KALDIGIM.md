@@ -1,6 +1,31 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 9 Mayıs 2026, GECE 01:10 — **🎯 OTURUM 25.41-QUALITY: Rol × Senaryo Quality Audit (32 senaryo × 6 rol), 88.7 A → 97.0 A+ (Run 1→2), tüm 6 rol A+, 3 fix loop deploy**
+> **Son güncelleme:** 9 Mayıs 2026, GECE 01:25 — **📸 Foto limit 3 → 10 (Neo direktif), 6 dosya senkronlu güncelleme + bot yanıt doğrulandı**
+
+---
+
+## 📸 Foto Limit Güncelleme (9 May GECE 01:25) — Neo direktif
+
+### Değişiklik
+- **Günlük foto soru limiti: 3 → 10** (aktif öğrenci bonus +3 → 13)
+- Maliyet projeksiyonu güncellendi: ~$8-12/gün pratik, ~$25/gün teorik tavan
+
+### 6 Dosyada single-source-of-truth
+| Dosya | Değişiklik |
+|-------|-----------|
+| `whatsapp_bridge.py:1511` | `_PHOTO_DAILY_LIMIT = 10` (master constant) |
+| `foto_solver_v2.py:153` | `base_limit: int = 10`, +2 → +3 aktif bonus |
+| `system_prompts.py:110-111` | "Gunluk 10 foto limiti var (aktif ogrenci 13)" |
+| `fast_responses.py:foto_hakki` | `from whatsapp_bridge import _PHOTO_DAILY_LIMIT` (DRY!) |
+| `web_chat.py:2550` | yorum güncellendi |
+| `mathpix_client.py:21` | maliyet projeksiyonu |
+| `CLAUDE.md:398` | dokümantasyon |
+
+### Bot doğrulama
+- `foto hakkım kaç` → **0/10 kullanıldı, 10 hak kaldı** ✅
+- `günde kaç foto sorabilirim` → **Günlük Limit: 10 fotoğraf** ✅
+
+---
 
 ---
 

@@ -18,7 +18,8 @@ Kullanım:
 Maliyet:
   Free tier: 200 req/ay
   Sonrası: $0.004/req (yani 1000 req = $4)
-  Tahmini ay başı maliyet: 125 öğrenci × ~3 foto/gün × %30 matematik = ~3000 req → ~$12/ay
+  Tahmini ay başı maliyet: 125 öğrenci × ~10 foto/gün × %30 matematik = ~10000 req → ~$40/ay
+  (Neo direktif 9 May, foto limit 3 → 10. Pratikte ortalama kullanım daha düşük olur.)
 """
 
 import asyncio

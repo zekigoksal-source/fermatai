@@ -2547,7 +2547,7 @@ async def upload_photo(
 ):
     """
     Foto soru çözümü — öğrenci fotoyu atar, Claude Vision çözer.
-    Aynı WP pipeline — günlük 5 foto limiti paylaşılır.
+    Aynı WP pipeline — günlük 10 foto limiti paylaşılır (aktif öğrenci 13).
 
     Accept: multipart/form-data
       - photo: image file (JPG/PNG, max 10MB)

@@ -4134,13 +4134,19 @@ async def try_fast_response(
                     elif handler == "foto_hakki":
                         # ─── A+++ visual (Oturum 25.41) ───
                         # Foto kullanım sayısı varsa progress bar göster
+                        # Limit kaynak: whatsapp_bridge._PHOTO_DAILY_LIMIT (Neo direktif 9 May, 3 → 10)
                         from fast_response_visuals import (
                             sep, header, action_block, gauge
                         )
+                        # Single source of truth — bridge'den limit oku
+                        try:
+                            from whatsapp_bridge import _PHOTO_DAILY_LIMIT as _PHOTO_LIMIT
+                        except Exception:
+                            _PHOTO_LIMIT = 10  # fallback
                         first = name.split()[0] if name else ""
                         # Foto kullanım sayısı çek
                         kullanilan = 0
-                        kalan = 3
+                        kalan = _PHOTO_LIMIT
                         try:
                             from db_pool import db_fetchval as _dfv2
                             kullanilan = await _dfv2(
@@ -4150,17 +4156,17 @@ async def try_fast_response(
                                 caller_phone
                             ) or 0
                             kullanilan = int(kullanilan)
-                            kalan = max(0, 3 - kullanilan)
+                            kalan = max(0, _PHOTO_LIMIT - kullanilan)
                         except Exception:
                             pass
 
-                        gauge_visual = gauge(kullanilan, 3)
+                        gauge_visual = gauge(kullanilan, _PHOTO_LIMIT)
                         if kalan == 0:
                             durum_color = "🔴"
                             durum_msg = "Bugünkü hakkın doldu! Yarın 00:00'da sıfırlanır."
-                        elif kalan == 1:
+                        elif kalan <= 2:
                             durum_color = "🟡"
-                            durum_msg = "Son hakkın kaldı! Önemli sorular için sakla."
+                            durum_msg = f"Son {kalan} hakkın kaldı! Önemli sorular için sakla."
                         else:
                             durum_color = "🟢"
                             durum_msg = f"Bol bol kullanabilirsin — {kalan} hak var."
@@ -4169,7 +4175,7 @@ async def try_fast_response(
                             f"{header('Foto Soru Çözüm Hakkın', first, '📸')}\n"
                             f"📊 *Bugünkü Kullanım:*\n"
                             f"   `{gauge_visual}`\n"
-                            f"   {durum_color} *{kullanilan}/3* kullanıldı | *{kalan}* hak kaldı\n\n"
+                            f"   {durum_color} *{kullanilan}/{_PHOTO_LIMIT}* kullanıldı | *{kalan}* hak kaldı\n\n"
                             f"💬 _{durum_msg}_\n\n"
                             f"{sep()}\n"
                             f"💡 *İyi haber:* ✍️ Yazılı soru sormak *sınırsız* — istediğin kadar yaz!\n\n"

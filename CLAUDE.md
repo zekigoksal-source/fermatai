@@ -395,9 +395,9 @@ Konusma → Anlam Cikarma → Profil Guncelleme → Sonraki Konusmada Kullanma
 
 ### Foto Soru Cozum Sistemi
 - Ogrenci soru fotografi atar → Claude Vision analiz eder → adim adim cozum doner
-- Gunluk limit: 5 foto/ogrenci (abuse onleme)
+- Gunluk limit: **10 foto/ogrenci** (Neo direktif 9 May, 3 → 10; aktif ogrenci +3 = 13)
 - Maliyet: ~$0.02/foto (Claude Sonnet Vision)
-- 150 ogrenci × 3 foto/gun = ~$9/gun max
+- 125 ogrenci × ~10 foto/gun max = ~$25/gun teorik tavan (pratik ~$8-12)
 - Model: claude-sonnet (hiz/maliyet dengesi)
 
 ## Tamamlanan Gorevler (10 Nisan 2026 — Oturum 6: Paraphrase Coverage + Kalite)
