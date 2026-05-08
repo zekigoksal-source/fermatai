@@ -67,6 +67,50 @@ _SESSION_FILE = Path(os.getenv("SESSION_FILE") or (_ROOT / ".eyotek_session.json
 _CDP_PORT = int(os.getenv("CDP_PORT", "9222"))
 _CDP_URL = f"http://localhost:{_CDP_PORT}"
 
+
+# 25.41 (Neo bug 7 May): Chrome cleanup → CDP regression fix.
+# eski: connect_over_cdp(localhost:9333) → Chrome kapandı → bağlantı kopyu
+# yeni: önce CDP dene, fail olursa headless launch + cookie inject (helper pattern)
+async def _navigator_browser(pw):
+    """Navigator için browser+context döner — CDP fail'da headless launch.
+
+    Returns: (browser, ctx) — caller browser.close() yapmalı.
+    """
+    # 1. CDP'ye dene (eski kod uyumlu)
+    try:
+        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
+        ctx = browser.contexts[0]
+        return browser, ctx, "cdp"
+    except Exception:
+        pass
+
+    # 2. Fail → headless launch + cookie inject (smart_sync ile aynı pattern)
+    browser = await pw.chromium.launch(
+        headless=True,
+        args=["--no-sandbox", "--disable-dev-shm-usage",
+              "--disable-setuid-sandbox", "--disable-gpu"],
+    )
+    ctx = await browser.new_context(
+        user_agent=(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        ),
+        viewport={"width": 1366, "height": 768},
+        locale="tr-TR",
+    )
+    # Cookie inject
+    try:
+        # Mevcut SESSION_FILE'dan cookie yükle (helper'a benzer)
+        if _SESSION_FILE.exists():
+            import json as _j
+            cookies = _j.loads(_SESSION_FILE.read_text(encoding="utf-8"))
+            if isinstance(cookies, list) and cookies:
+                await ctx.add_cookies(cookies)
+                logger.debug(f"[NAVIGATOR] Cookie inject: {len(cookies)} cookie")
+    except Exception as _ce:
+        logger.warning(f"[NAVIGATOR] Cookie inject hata: {_ce}")
+    return browser, ctx, "headless"
+
 # ─── FILTER ALIAS HARITASI ────────────────────────────────────────────────────
 # Bot/planner ne kullanirsa kullansin, yakalanir.
 _FILTER_ALIAS = {
@@ -706,9 +750,8 @@ async def inspect_page_form(page_path: str, mode: str = "auto") -> dict:
     page = None
     try:
         pw = await async_playwright().start()
-        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
-        ctx = browser.contexts[0]
-        await _inject_cookies(ctx)
+        # 25.41: CDP fail'da headless launch + cookie inject
+        browser, ctx, _bmode = await _navigator_browser(pw)
         page = await ctx.new_page()
         await page.goto(f"{_BASE_URL}{page_path}", timeout=20000, wait_until="domcontentloaded")
         await page.wait_for_timeout(2500)
@@ -876,8 +919,8 @@ async def navigate(
     page = None
     try:
         pw = await async_playwright().start()
-        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
-        ctx = browser.contexts[0]
+        # 25.41: CDP fail'da headless launch + cookie inject
+        browser, ctx, _bmode = await _navigator_browser(pw)
 
         injected = await _inject_cookies(ctx)
         result["debug"]["cookies_injected"] = injected
@@ -1133,9 +1176,8 @@ async def sinav_drilldown(
     try:
         from playwright.async_api import async_playwright
         pw = await async_playwright().start()
-        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
-        ctx = browser.contexts[0]
-        await _inject_cookies(ctx)
+        # 25.41: CDP fail'da headless launch + cookie inject
+        browser, ctx, _bmode = await _navigator_browser(pw)
         page = await ctx.new_page()
 
         # 1. Sınav listesi sayfasına git
@@ -1316,9 +1358,8 @@ async def student_drilldown(
     try:
         from playwright.async_api import async_playwright
         pw = await async_playwright().start()
-        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
-        ctx = browser.contexts[0]
-        await _inject_cookies(ctx)
+        # 25.41: CDP fail'da headless launch + cookie inject
+        browser, ctx, _bmode = await _navigator_browser(pw)
         page = await ctx.new_page()
 
         # 1. Student listesine git
