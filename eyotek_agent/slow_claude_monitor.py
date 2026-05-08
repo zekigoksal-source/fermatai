@@ -50,9 +50,14 @@ async def analyze_slow_claude(hours: int = 24) -> dict:
     """)
 
     if not rows:
+        # 25.41 (Neo bug 8 May): empty case key isimlerinin alt akışla uyumlu olması
         return {
-            "slow_count": 0, "total_count": 0,
-            "slow_pct": 0, "avg_ms": 0, "max_ms": 0,
+            "total_count": 0,
+            "slow_60sn_count": 0,
+            "slow_120sn_count": 0,
+            "slow_60sn_pct": 0,
+            "avg_ms": 0,
+            "max_ms": 0,
             "top_slow": [],
         }
 

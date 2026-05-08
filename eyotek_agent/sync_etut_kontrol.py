@@ -38,16 +38,15 @@ sys.path.insert(0, str(_ROOT))
 async def fetch_etut_student_control() -> list[dict]:
     """Eyotek'ten etut ogrenci kontrol verisini cek."""
     from playwright.async_api import async_playwright
-    from eyotek_knowledge.eyotek_navigator import (
-        _CDP_URL, _inject_cookies, _is_login,
-    )
+    # 25.41 (Neo 8 May): CDP regression fix — _navigator_browser CDP fail'da
+    # headless launch + cookie inject yapar (Chrome cleanup sonrası bağımsız)
+    from eyotek_knowledge.eyotek_navigator import _navigator_browser, _is_login
 
     pw = await async_playwright().start()
     page = None
+    browser = None
     try:
-        browser = await pw.chromium.connect_over_cdp(_CDP_URL)
-        ctx = browser.contexts[0]
-        await _inject_cookies(ctx)
+        browser, ctx, _bmode = await _navigator_browser(pw)
         page = await ctx.new_page()
 
         url = "https://fermat.eyotek.com/v1/Pages/Student/individual-lesson-control-student"

@@ -222,9 +222,10 @@ async def main():
     logger.info(f"Son TYT: {last_exam}, Son AYT: {last_ayt}")
 
     pw = await async_playwright().start()
-    browser = await pw.chromium.connect_over_cdp(CDP_URL)
-    ctx = browser.contexts[0]
-    page = ctx.pages[0]  # Mevcut sayfa
+    # 25.41 (Neo 8 May): CDP regression fix — Chrome cleanup sonrası bağımsız
+    from eyotek_knowledge.eyotek_navigator import _navigator_browser
+    browser, ctx, _bmode = await _navigator_browser(pw)
+    page = ctx.pages[0] if ctx.pages else await ctx.new_page()
 
     # Ogrenci listesini ac
     total_records = await open_student_list(page)
