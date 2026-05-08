@@ -3475,6 +3475,29 @@ function formatMsg(text) {
 
       let html = marked.parse(md);
 
+      // 25.41 (Neo Brief #19, 8 May): Frontend render bug fix
+      // Sorun: marked.parse() bazen `<div class="X-pending" data-X-idx="N"></div>`
+      // placeholder'larını `<p>...</p>` paragraph içine sarıyor → sonraki regex
+      // replace'ler `</p>` ile eşleşmediği için JSON inject olmuyor → frontend
+      // boş chart/calc/3d gösteriyor (yatay grid çizgileri).
+      // Çözüm: parse sonrası tüm pending-div'leri paragraph sarmasından kurtar.
+      // Tek regex 30+ renderer'a uygulanır (chart/calc/3d/desmos/sim/radar/heatmap/
+      // karne/gauge/timeline/progress/compare/geogebra/plotly/mermaid/vr/mol3d/sound/
+      // element/excalidraw/codeout/steps/kgraph/quiz/compare2/recall/compound/...).
+      html = html.replace(
+        /<p>\s*(<div class="[a-z0-9_-]+-pending"[^>]*><\/div>)\s*<\/p>/g,
+        '$1'
+      );
+      // Paragraph içinde başka içerikle birlikte sarılmış olabilir (nadir)
+      html = html.replace(
+        /<p>([^<]*)(<div class="[a-z0-9_-]+-pending"[^>]*><\/div>)([^<]*)<\/p>/g,
+        (m, before, divEl, after) => {
+          const beforeP = before.trim() ? `<p>${before}</p>` : '';
+          const afterP = after.trim() ? `<p>${after}</p>` : '';
+          return beforeP + divEl + afterP;
+        }
+      );
+
       // Chart placeholder'ları geri çevir — data-chart attribute'u ile
       chartPlaceholders.forEach((json, i) => {
         const escaped = json.replace(/"/g, "&quot;");

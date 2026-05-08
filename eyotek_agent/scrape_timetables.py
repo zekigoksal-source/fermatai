@@ -235,7 +235,13 @@ async def scrape_teacher_timetables(conn, ew):
         """, tid)
         await asyncio.sleep(0.3)
 
-    await conn.execute("UPDATE data_freshness SET last_sync=CURRENT_TIMESTAMP WHERE module='teacher_timetable'")
+    # 25.41 (Neo bug 8 May): sadece last_sync degil, last_success + last_attempt da guncelle
+    await conn.execute("""
+        INSERT INTO data_freshness (module, refresh_type, interval_hrs, last_sync, last_success, last_attempt, last_error)
+        VALUES ('teacher_timetable', 'auto', 168, NOW(), NOW(), NOW(), NULL)
+        ON CONFLICT (module) DO UPDATE SET
+            last_sync=NOW(), last_success=NOW(), last_attempt=NOW(), last_error=NULL
+    """)
     logger.success(f"  TOPLAM: {total_slots} slot ({time.time()-t0:.1f}s)")
     return total_slots
 
@@ -403,7 +409,13 @@ async def scrape_class_timetables(conn, ew):
         """, sinif)
         await asyncio.sleep(0.3)
 
-    await conn.execute("UPDATE data_freshness SET last_sync=CURRENT_TIMESTAMP WHERE module='class_timetable'")
+    # 25.41 (Neo bug 8 May): sadece last_sync degil, last_success + last_attempt da guncelle
+    await conn.execute("""
+        INSERT INTO data_freshness (module, refresh_type, interval_hrs, last_sync, last_success, last_attempt, last_error)
+        VALUES ('class_timetable', 'auto', 168, NOW(), NOW(), NOW(), NULL)
+        ON CONFLICT (module) DO UPDATE SET
+            last_sync=NOW(), last_success=NOW(), last_attempt=NOW(), last_error=NULL
+    """)
     logger.success(f"  TOPLAM: {total_slots} slot ({time.time()-t0:.1f}s)")
     return total_slots
 
