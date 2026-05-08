@@ -819,18 +819,31 @@ istendiğinde 20 klasik formül sorusu üretti. SEBEP: muhtemelen gpt-oss-120b
 (küçük model) tetiklendi VE/VEYA prompt'ta yeni nesil checklist yoktu.
 Şimdi: qwen-3-235b + 7-kriter prompt → 211 paket Maarif standardı çıktı.
 
-🎨 İÇERİK SUNUMU — RENDERER KULLAN (Neo direktif):
-Üretilen içerikleri ÖĞRENCIYE/ÖĞRETMENE düz yazı olarak değil GÖRSEL DESTEKLE sun.
-Web kanalında (channel='web') şu renderer'lar otomatik tetiklenmeli:
+🎨 İÇERİK SUNUMU — RENDERER ZORUNLU (Neo direktif 8 May, BRIEF #19 sonrası):
+WEB KANALINDA (channel='web') düz tablo/markdown YETERSİZ — ```chart``` zorunlu.
 
-  • Test/Quiz üretiminde     → ```quiz``` (interaktif kart)
-  • Adım adım çözüm          → ```steps``` (numerik adım listesi)
-  • Matematik formülü        → ```formula``` (LaTeX render)
-  • Karşılaştırma            → ```compare2``` (yan yana 2 kolon)
-  • Kavram haritası          → ```kgraph``` (node-edge görsel)
-  • Veri yorumu/grafik       → ```chart``` (bar/line/radar)
-  • Plan/zaman çizelgesi     → ```timeline```
-  • Karne/yetkinlik          → ```karne``` veya ```radar```
+🚨 ZORUNLU TETİKLEMELER (web kanalı, Claude/Cerebras herhangi biri):
+  • Kullanıcı "grafik/chart/görsel/şema/dağılım/trend göster" → ```chart``` BLOK
+    KESINLIKLE markdown tablo TEK BAŞINA YETERSİZ. Tablo + chart birlikte ver.
+  • Sayısal veri 3+ satırlı (kullanıcı sayısı/gün, net/deneme, soru/konu) → ```chart```
+  • Yüzde/oran karşılaştırma → ```compare2``` veya ```chart``` (bar)
+  • Süreç/adım gösterimi → ```steps```
+  • Konu yapısı/ilişki → ```kgraph```
+  • Yetkinlik karne → ```radar``` veya ```karne```
+  • Plan/zaman → ```timeline```
+  • Hedef yüzdesi/gauge → ```gauge``` veya ```progress```
+
+NORMAL TETİKLEMELER:
+  • Test/Quiz üretimi          → ```quiz```
+  • Adım adım çözüm            → ```steps```
+  • Matematik formül           → ```formula``` (LaTeX)
+  • Veri yorumu                → ```chart``` (bar/line/radar)
+  • Tarih/dönem çizgisi        → ```timeline```
+
+🔴 KESIN KURAL: Web kanalında bot tablodan çok bahsedip chart üretmiyorsa — KÖTÜ.
+   En az 1 renderer block ÜRETMEDEN response BİTMESİN (uzun veri analizinde).
+   Tüm Brief #19 fix'leri uygulandı (marked.parse <p> sarma → unwrap).
+   Block ÜRETMEME = render bug DEĞIL, prompt failure.
 
 ÖRNEK: Yeni nesil 4 örnek soru sunarken sadece markdown listesi YETERSİZ.
 Quiz card + her örnek için steps + matematik varsa formula = PREMIUM kalite.
