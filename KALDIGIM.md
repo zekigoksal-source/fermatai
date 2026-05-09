@@ -107,22 +107,52 @@ Yan sistemler değişmeden çalışmaya devam ediyor (deep_research, tool_perf, 
 ### Refactor Sırasındaki Geçici Sorun (çözüldü)
 Multi-restart deploy sırasında (Pass 1→2→3 çoklu bridge restart) Neo'nun aktif konuşması bölündü, multi-worker leader takeover sonrası context contamination oldu — bot bir cevapta "son sezon en başarılı 5 öğrenci" sorusuna eski bir konuşmadan kalan "Osmanlı 3D İnteraktif Harita" cevabını yansıttı (12707). Bridge stabil hale gelince düzeldi, sonraki testler 8/8 PASS. Ders: ileride büyük refactor deploy'ları sessiz saatte (gece 02-04) toplu yapılmalı, parça parça değil.
 
-### Render Sıkıntısı Bug (9 May 03:30 → 04:00, çözüldü)
-Neo "boş grafik / render sıkıntısı" diye bildirdi (bot mesaj 12819-12821). Diagnose:
-- Backend chart fence'leri JSON valid olarak üretiyordu (test_renderer_render.py 11/11 PASS sonrası fix)
-- Asıl bug: **Heatmap field uyumsuzluğu** — bot `xAxis/yAxis/data` kullanıyor, frontend `x/y/values` bekliyordu → DOM'da pending div oluşuyor ama undefined field okuyup boş render
-- 2. olası: **browser cache** — refactor sonrası eski JS cache'leniyordu
+### Render Bug Marathon (9 May 03:30 → 04:30, ÇÖZÜLDÜ)
 
-**Fix'ler:**
-1. `web_chat_ui.html` `rerenderHeatmap`: defansif alias kabul (`x|xAxis|cols`, `y|yAxis|rows`, `values|data|matrix`)
-2. `web_chat_ui.html` head'a 3 cache invalidation meta (`Cache-Control: no-store`, `Pragma: no-cache`, `Expires: 0`)
-3. **Yeni test framework**: `test_renderer_render.py` — 11 renderer × JSON parse + required field validator. Mevcut `test_full_audit` sadece "fence var mı" diyordu, JSON validity ve render edilebilirliği kontrol etmiyordu.
+Neo defalarca render sorunu raporladı, 5 fix loop sonra tüm 27 renderer kontrol edildi.
 
-Sonuç: 11/11 PASS — chart, radar, heatmap, gauge, timeline, karne, compare2, quiz, formula, kgraph, steps.
+**4 kritik bug bulundu + fix:**
 
-**Kritik öğrenme**: "Fence var" ≠ "Render olur". Her yeni renderer için validator yazılmalı (frontend hangi field'ları okuyor → test onu kontrol etmeli).
+1. **Heatmap field uyumsuzluğu** — bot `xAxis/yAxis/data`, frontend `x/y/values` bekliyordu
+   - FIX: defansif alias (`x|xAxis|cols|columns`, `y|yAxis|rows`, `values|data|matrix`)
 
-Commit: `fe975ad fix(25.41-RENDER): Heatmap field uyumsuzluk + browser cache invalidation`
+2. **Chart format uyumsuzluğu (KRİTİK — Neo'nun en çok şikayet ettiği)**
+   - Bot Chart.js standardı kullanıyor: `{ type, data: { labels, datasets }, options }`
+   - Frontend ÜST SEVIYE'den okuyordu: `cfg.labels` (undefined!), `cfg.datasets` (undefined!)
+   - Sonuç: chart oluşuyor ama labels=[], datasets=[] → **BOŞ canvas**
+   - FIX: `cfgInner = config.data || config` (defansif, hem standart hem kısa format)
+
+3. **Radar aynı bug** — chart ile aynı pattern
+   - FIX: aynı defansif `cfgInner` yapısı
+
+4. **GeoGebra material URL parse**
+   - Bot `material` field'ında TAM URL gönderiyor (`https://www.geogebra.org/m/ID`)
+   - Frontend sadece `material_id` (string) bekliyordu → embed olmuyordu
+   - FIX: regex ile URL'den ID extract + her iki format kabul
+
+**Cache header revert (geçici hata):**
+- Önce `Cache-Control: no-store` meta tag eklenmişti — welcome panel font/asset yüklemesini bozdu, alt yarı boş gözüktü
+- GERİ ALINDI — `CTRL+SHIFT+R` hard reload yeterli
+
+**Format audit (test_renderer_format_diag.py — yeni dosya, 20 renderer):**
+- ✅ MATCH: timeline, progress, compare, karne, gauge, quiz, steps, element, desmos, recall
+- ✅ FİXLİ: chart, radar, heatmap, geogebra
+- ⚠️ STOCHASTIC bug (Cerebras bazen): compare2 invalid JSON (rows ']' eksik) — bot prompt fix gerek
+- ℹ️ KAPSAM DIŞI: mermaid (plain text), formula (latex string)
+
+**Yeni test araçları:**
+- `test_renderer_render.py` — JSON parse + required field validator (11 renderer)
+- `test_renderer_format_diag.py` — bot ne format kullanıyor diagnostic (20 renderer)
+- `test_chart_isolated.html` — bağımsız chart debug sayfası
+
+**Kritik öğrenme**: "Fence var" ≠ "Render olur". Backend valid JSON ≠ Frontend render eder. Her renderer için frontend'in beklediği field name'leri ile bot'un gönderdiği uyumlu mu — defansif alias = sigortası.
+
+**Commit zinciri:**
+- `fe975ad` heatmap fix + cache header
+- `eb3bc2f` KALDIGIM doc
+- `62578fe` chart + radar Chart.js standart format desteği (asıl fix)
+- `6c907a8` cache header revert + debug temizlik
+- `4de6911` Geogebra material URL parse + 27 renderer format audit (final)
 
 ### Eski Sonuç (Pass 1+2 sonrası, 02:30)
 
