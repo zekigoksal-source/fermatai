@@ -4,6 +4,90 @@
 
 ---
 
+## 🛠️ OTURUM 25.43-CONV (10 May SABAH 02:30 → 03:00) — Konuşma analizi 2 fix
+
+**Tetik:** Neo "botla konuşmamı incele, render iteration bug'ı bu gece bitir, teknik borç kalmasın".
+
+### Bulgu 1: Lazy sync sınav adı injection bug
+
+Konuşma 21:32-21:35:
+- 21:32 — Bot `sinav_sonuclari` ile 14 öğrenci çekti (Sıfır Pozitif Apotemi TG-3 altında)
+- 21:33 — Neo: "lazy sync yapıp DB'yi güncelledin mi?"
+- 21:33 — Bot: "log'da iz yok, sessizce fail ediyor olmalı"
+- 21:35 — Neo: **"ama olması gerekiyordu"**
+
+**Kök neden:** `sinav_drilldown` row'larında `sinav_adi` field YOK (sayfa header'da). `_upsert_student_exams` her satırda `sinav_adi` arıyor → boş → skip → 0 upsert.
+
+**Fix:** `_tool_sinav_sonuclari` içinde `sinav_found` header'dan extract edip her row'a inject:
+```python
+sinav_meta = result["sinav_found"]   # [sube, kurs, tarih, kod, sinav_adi, ...]
+extracted_tarih = sinav_meta[2]
+extracted_sinav_adi = sinav_meta[4]
+enriched_rows = [{**r, "sinav_adi": extracted_sinav_adi, "tarih": extracted_tarih}
+                 for r in result["rows"]]
+```
+
+**Test (canlı VPS):** 14 öğrenci sonucu → student_exams'a INSERT, `_lazy_synced.count: 14` ✅
+
+### Bulgu 2: Render iteration kalitesi (Neo'nun esas şikayeti)
+
+Konuşma 20:21-20:58, 5 deneme:
+- v1: 93/100 — kabul edilebilir ama Neo "2 gömlek altında, başarısız"
+- v2: 75/100 — KÖTÜLEŞTİ
+- v3: "ortada lacivert boş ekran" — 3D scene yok
+- v4: timeout
+- v5: 100/100 — eski referansı baz aldı, başarılı
+
+**Kök neden:** `make_render_link` quality_score'u sondan hesaplıyor, bot zaten linki user'a gösterdi. User "boş ekran" dediğinde bot debug → tekrar dene. 3 boşa deneme.
+
+**Fix:** Pre-flight quality gate eklendi — `create_artifact` ÇAĞIRMADAN ÖNCE:
+```python
+if is_3d_request and not is_real_3d:
+    return {"success": False, "missing_3d_components": [...], "retry_now": True}
+if pre_score < 70:
+    return {"success": False, "quality_breakdown": {...}, "retry_now": True}
+```
+
+3D request + boş canvas birleşimi (silent fail riski) yakalandı:
+- THREE.Scene + Camera + Renderer + scene.add + animate() eksikse → fail döner
+- HTML kalitesi < 70 ise → fail döner
+- Bot fail görür → ekstra reasoning yapmadan HEMEN retry
+
+**system_prompts.py'a kural:** "success=False + retry_now → HEMEN tekrar tool, kullanıcıya 'tekrar dene' deme"
+
+### Test Sonuçları (VPS canlı, 3/3)
+
+```
+Test 1 (3D request + boş canvas):
+  → success=False, retry_now=True
+  → missing_3d: [Scene, Camera, Renderer, scene.add, 3D objects, Lights, Controls, animate()]
+
+Test 2 (kısa HTML, kalite 5):
+  → success=False, score=5
+
+Test 3 (lazy sync sinav inject):
+  → student_exams: 1 kayıt upsert
+```
+
+### Kazanç
+
+- **Lazy sync sınav:** Artık her sınav drill-down'da TÜM öğrenci sonuçları DB'ye otomatik yazılır
+- **Render quality gate:** Bot HTML üretti → quality gate engelledi → bot retry yaptı = User asla "lacivert boş ekran" görmez
+- **5 deneme → 1-2 deneme:** Quality threshold'a takılan ham HTML asla user'a gitmiyor
+
+### Production Sağlık (final)
+
+```
+✅ Bridge HTTP 200
+✅ 3 systemd service active
+✅ Eyotek health: online
+✅ Lazy sync sinav: çalışıyor (14 öğrenci INSERT verified)
+✅ Render quality gate: çalışıyor (3D fail + score<70 fail)
+✅ Git origin/main: 992dcec
+```
+
+---
+
 ## 🔬 OTURUM 25.43-LAZY-EXTEND (10 May SABAH 02:00 → 02:30) — Lazy sync genişleme
 
 **Tetik:** Neo "Eyotek'e bir öğrencinin denemesine baktığımda hazır girmişken tüm öğrenciler için DB'ye eklliyor olması gerekiyor — daha önce yapmıştık bunu."
