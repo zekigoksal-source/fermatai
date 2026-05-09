@@ -1,6 +1,80 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 9 Mayıs 2026, GECE 03:00 — **🏗️ REFACTOR TAM: fermat_core_agent 5,840 → 4,661 (-1,179 satır, %20.2) · 4 service modülü (academic 647 + etut 153 + admin 138 + knowledge 488 = 1,426) · 15 fonksiyon taşındı · 10/10 smoke PASS · Quality refactor sırasında stabil kaldı**
+> **Son güncelleme:** 9 Mayıs 2026, AKŞAM 21:20 — **🔧 25.42 KONUSMA ANALIZI FIX LOOP: 7 bulgu (A/B/C/D/E/F/G/H) Mehmet Karpuz vakası + Atlas #91/#92/#94 KVKK riski + Neo render bug — hepsi canlı, 8/8 VPS smoke PASS, Atlas 91/92/94 status='uygulandi'**
+
+---
+
+## 🔧 OTURUM 25.42 — KONUSMA ANALIZI FIX LOOP (9 May AKŞAM 18:30 → 21:20)
+
+**Tetik:** Neo "bugünkü konuşmaları detaylı incele" → 9 May tüm gün konuşmaları okundu (Neo, Mehmet Karpuz, Kardelen Hoca, Duygu Müdür, render test öğrenci 905309356389, vb.) → 7 kritik bulgu çıkarıldı.
+
+### Bulgular ve Fix Özeti
+
+| # | Bulgu | Fix | Test |
+|---|-------|-----|------|
+| **A** | "0 pozitif" / "Sıfır Pozitif" → bot "0 sayısı pozitif midir" matematik (Mehmet 4 kez tekrar) | `yayinevi_katalog.py` (24 yayınevi + varyant regex) + `ogrenci_yayinevi_denemesi` handler + OGRENCI_PATTERNS + system_prompt KVKK kuralı | ✅ canlı VPS 5/5 |
+| **B** | Foto sınav sonuç tablosu → bot "soru çözümü" sandı | `whatsapp_bridge.vision_prompt` ADIM 0: TIP A (SORU) / TIP B (TABLO/SONUC) / TIP C (KONU) sınıflandırma | ✅ deployed |
+| **C** | Atlas #91 — "Sen Mehmet Ali Karpuz!" sabit kimlik atama | `ogrenci_kimligin` fallback → "tanımlayamadım, yöneticiyle iletişim" | ✅ Atlas uygulandi |
+| **D** | Atlas #94 — Kayıtsız numaraya "Fermat öğrencisi" + #92 session leak | `_get_caller_profile` exception fallback `role=admin` → `role=unknown` + `is_verified=False` | ✅ canlı VPS PASS |
+| **E** | Chart render — TYT Net Trendi boş (streaming kesintisi) | `web_chat_ui.html formatMsg` tamamlanmamış chart bloğu için "yükleniyor" placeholder | ✅ deployed |
+| **F** | routing %57 Claude yanıltıcı (235 mesajlık test öğrenci tetikledi) | `test_user_registry.py` (905309356389) + `is_test_user` kolonu + `real_user_routing_stats` view | ✅ canlı, retroaktif 94 update, real user routing %50 fast / %38 claude / %12 cerebras |
+| **G** | Web kodu Mehmet 31sn arayla 3 farklı kod aldı | `web_chat_auth` 30sn guard → tüm OTP_VALIDITY_MIN (15dk) | ✅ canlı 3/3 aynı kod |
+| **H** | Puan tahmini 15:58 ve 16:01 birebir aynı (foto+frustration ignore) | `puan_tahmin` handler son 5dk [FOTO/yanılıyor/baz al] → Claude'a + window 300s | ✅ deployed |
+
+### Yeni Dosyalar (4 + 1 migration + 2 smoke)
+
+| Dosya | Rol |
+|-------|-----|
+| `eyotek_agent/yayinevi_katalog.py` | 24 yayınevi + regex katalog |
+| `eyotek_agent/test_user_registry.py` | Test/gerçek kullanıcı ayrımı |
+| `eyotek_agent/test_bulgu_a_yayinevi.py` | Bulgu A pytest (23 katalog + 13 pattern) |
+| `eyotek_agent/test_bulgu_g_web_kodu.py` | Bulgu G pytest (OTP duplicate guard) |
+| `eyotek_agent/smoke_test_25_42.py` | 8 fix VPS smoke runner |
+| `eyotek_agent/smoke_test_g_otp.py` | OTP rate-limit canlı test |
+| `eyotek_agent/migrations/016_routing_stats_test_user.sql` | is_test_user + view + retroaktif update |
+
+### Atlas Güncelleme (uygulandi)
+
+- #91 (HIGH, sabit kimlik) → uygulandi 18:19
+- #92 (MEDIUM, session leak) → uygulandi 18:19
+- #94 (HIGH, yanlış kurum atama) → uygulandi 18:19
+
+### Routing Dağılımı Değişimi (9 May)
+
+**Önce (test users dahil):** Claude %57 / Fast %26 / Cerebras %16 — yanıltıcı
+**Sonra (real_user_routing_stats):** Fast %50 / Claude %38 / Cerebras %12 — sağlıklı
+
+### Smoke Test Final (VPS, 8/8 PASS)
+
+```
+[OK] Bulgu A — yayinevi 5/5 PASS
+[OK] Bulgu F — test_user_registry
+[OK] Bulgu C+D — unknown profile guvenli (role=unknown, verified=False)
+[OK] Bulgu H — puan_tahmin window 300s
+[OK] OGRENCI_PATTERNS — yayinevi_denemesi yakalanir
+[OK] fast_responses dispatch — yayinevi_denemesi case mevcut
+[OK] routing_stats.is_test_user kolonu mevcut
+[OK] real_user_routing_stats view is_test_user filtresi var
+```
+
+### Canlı Mehmet Senaryosu Test
+
+```
+INPUT:  "sifir pozitif yayinlari na baz al"
+OUTPUT: "Mehmet, *Sıfır Pozitif Yayınları* denemesi sistemde gözükmüyor 📝
+         Bu denemeyi yeni mi çözdün? Netini paylaş, hemen analiz edeyim..."
+```
+Eski "0 sayısı pozitif midir" math açıklaması ASLA gelmez.
+
+```
+Web Kodu: 3 ardışık çağrı = AYNI kod (441387) + "Az önceki kod hâlâ geçerli, 15dk daha"
+```
+
+### Sonraki Sprint
+
+- Cerebras 235b/120b lane'leri açma (Claude %38 → %25 hedefi)
+- Vision pre-classifier canlı browser test
+- Atlas dashboard is_test_user filtresi UI
 
 ---
 
