@@ -11153,7 +11153,15 @@ html[data-theme="dark"] #push-permission-dialog .ppd-btn-skip:hover {
   width: 380px;
   transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
   font-family: inherit;
+  /* 25.43-UI-FIX (Neo F12 kanit 10 May): Banner z-index 99999 ile DOM'da F5 sonrasi
+     hamburger butonunun ustune biniyordu (elementFromPoint(39,31) banner-icon donduruyor).
+     Cozum: banner kendisi pass-through (click yiyemez) — sadece icindeki action button'lar
+     (Yukle / X) tiklanabilir olur. Boylece banner gorunur kalir ama altindaki hamburger,
+     login formu, vs. erisilebilir kalir. */
+  pointer-events: none;
 }
+#pwa-install-banner .pwa-banner-install,
+#pwa-install-banner .pwa-banner-cancel { pointer-events: auto; }
 #pwa-install-banner.show { transform: translateX(-50%) translateY(0); }
 #pwa-install-banner .pwa-banner-icon img {
   border-radius: 9px;
