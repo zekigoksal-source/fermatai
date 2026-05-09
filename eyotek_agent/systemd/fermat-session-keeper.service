@@ -1,0 +1,31 @@
+[Unit]
+Description=Fermat Eyotek Session Keep-Alive — 3dk periyod, drop tespiti, auto-relogin
+Documentation=https://github.com/zekigoksal-source/fermatai
+After=network-online.target fermat-chrome-cdp.service fermatai-bridge.service
+Wants=network-online.target fermat-chrome-cdp.service
+
+[Service]
+Type=simple
+User=neo
+Group=neo
+WorkingDirectory=/opt/fermatai/eyotek_agent
+EnvironmentFile=/opt/fermatai/.env
+Environment="PYTHONUNBUFFERED=1"
+Environment="HOME=/home/neo"
+
+ExecStart=/opt/fermatai/.venv/bin/python /opt/fermatai/eyotek_agent/session_keeper.py
+
+# Restart on failure (network glitch, OOM, drop event)
+Restart=always
+RestartSec=10
+# Memory + CPU limits
+MemoryMax=512M
+CPUQuota=20%
+
+# Stdout/stderr -> journalctl
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fermat-session-keeper
+
+[Install]
+WantedBy=multi-user.target

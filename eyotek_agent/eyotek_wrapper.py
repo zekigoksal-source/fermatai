@@ -56,7 +56,12 @@ from dotenv import load_dotenv
 from loguru import logger
 from playwright.async_api import async_playwright, BrowserContext, Page
 
-load_dotenv()
+# 25.43-OPS-FIX: Explicit parent .env path (eyotek_agent cwd'den parent .env bulamiyor)
+_PARENT_ENV = Path(__file__).resolve().parent.parent / ".env"
+if _PARENT_ENV.exists():
+    load_dotenv(_PARENT_ENV, override=True)
+else:
+    load_dotenv(override=True)
 
 BASE_URL    = os.getenv("EYOTEK_URL", "https://fermat.eyotek.com/v1")
 CDP_PORT    = int(os.getenv("CDP_PORT", "9222"))

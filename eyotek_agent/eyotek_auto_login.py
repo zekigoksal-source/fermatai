@@ -31,7 +31,15 @@ from typing import Optional
 from loguru import logger
 from dotenv import load_dotenv
 
-load_dotenv(override=True)
+# 25.43-OPS-FIX (10 May): Default load_dotenv() cwd'den çıkmaz — parent .env
+# bulamaz. eyotek_agent cwd'sinden çağırıldığında EYOTEK_USER='' okunuyordu
+# → auto-login fail. Explicit path ile parent (/opt/fermatai/) .env yüklenir.
+_PARENT_ENV = Path(__file__).resolve().parent.parent / ".env"
+if _PARENT_ENV.exists():
+    load_dotenv(_PARENT_ENV, override=True)
+else:
+    # Fallback: default davranis (cwd traversal)
+    load_dotenv(override=True)
 
 BASE_URL = os.getenv("EYOTEK_URL", "https://fermat.eyotek.com/v1")
 EYOTEK_USER = os.getenv("EYOTEK_USER", "")

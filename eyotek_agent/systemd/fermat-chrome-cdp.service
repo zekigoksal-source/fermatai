@@ -15,7 +15,7 @@ ExecStartPre=/bin/mkdir -p /home/neo/.fermat-chrome /home/neo/.fermat-chrome-log
 # Chrome CDP — port 9222, headless new, persistent profile
 ExecStart=/home/neo/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome \
     --headless=new \
-    --remote-debugging-port=9222 \
+    --remote-debugging-port=9333 \
     --remote-debugging-address=127.0.0.1 \
     --user-data-dir=/home/neo/.fermat-chrome \
     --disable-gpu \

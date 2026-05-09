@@ -1,6 +1,146 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 10 Mayıs 2026, GECE 00:50 — **🚀 25.43-OPS TAM: 3 ops task — fermat-chrome-cdp.service (port 9222 7/24) + Cerebras+Groq tool-calling staff role expansion + routing baseline (real user 7 gün: Fast %47, Claude %31, Cerebras %21) · 5/5 ops smoke PASS · sıfır teknik borç**
+> **Son güncelleme:** 10 Mayıs 2026, GECE 01:30 — **🌐 EYOTEK 7/24 CANLI: auto_login load_dotenv path bug fix + CapSolver Turnstile token alma OK + Chrome CDP port 9333 + session_keeper.service active · eyotek_health 3/3 tutarlı 'online' · gerçek API doğrulandı · 5/5 final smoke PASS — Neo "her zaman ulaşılabilir" hedefi gerçekleşti**
+
+---
+
+## 🌐 OTURUM 25.43-EYOTEK-724 (10 May GECE 00:50 → 01:30) — Eski sistem geri
+
+**Tetik:** Neo "Eyotek 7/24 hazırdı, lazy sync yapmıştık, capsolver var, eski çalışan sistem bozulmuş — fonksiyon kaybı var, dikkatli düzelt."
+
+### Tespit Edilen Sorunlar
+
+| # | Sorun | Sebep |
+|---|-------|-------|
+| 1 | `try_auto_login` "EYOTEK_USER/PASS .env'de yok" hatası | `load_dotenv()` cwd'den parent'a çıkmıyor — eyotek_agent içinden çağrılınca /opt/fermatai/.env okunmuyor |
+| 2 | `fermat-session-keeper` service yoktu (yalnız .py dosyası) | Sistemd unit hiç oluşturulmamış — manuel başlatılmadıkça keep-alive yok |
+| 3 | Chrome CDP port mismatch | `.env` `CDP_PORT=9333`, ama service `9222`'de açıldı — kodlar 9333 bekliyor, port'a bağlanamıyor |
+
+### Fix'ler
+
+#### Fix 1 — load_dotenv explicit parent path (3 dosya)
+
+`eyotek_auto_login.py`, `eyotek_wrapper.py`, `session_keeper.py`:
+
+```python
+_PARENT_ENV = Path(__file__).resolve().parent.parent / ".env"
+if _PARENT_ENV.exists():
+    load_dotenv(_PARENT_ENV, override=True)
+else:
+    load_dotenv(override=True)  # fallback
+```
+
+**Sonuç:** EYOTEK_USER='1003zeki', EYOTEK_PASS=set (auto_login artık çalışıyor).
+
+#### Fix 2 — fermat-session-keeper.service systemd unit
+
+```ini
+[Service]
+ExecStart=/opt/fermatai/.venv/bin/python /opt/fermatai/eyotek_agent/session_keeper.py
+EnvironmentFile=/opt/fermatai/.env
+After=fermat-chrome-cdp.service
+Restart=always
+RestartSec=10
+MemoryMax=512M, CPUQuota=20%
+```
+
+**Sonuç:** 3 dakikada bir cookie/session check, drop tespit edince auto-relogin.
+
+#### Fix 3 — fermat-chrome-cdp.service port 9222 → 9333
+
+`.env` ile uyumlu hale getirildi. eyotek_health, eyotek_wrapper, session_keeper hepsi aynı port'a bağlanıyor.
+
+### Capsolver Entegrasyonu Doğrulandı
+
+`capsolver_helper.solve_turnstile()` Cloudflare Turnstile token alıyor (~6.7sn). Auto-login chain'i tam:
+
+```
+1. Cookie expire kontrol
+2. Login sayfasına git
+3. CAPTCHA tespit → CapSolver API çağrı (CAP-A9F1815...)
+4. Token alındı → form'a inject
+5. Login submit → 8 cookie kaydedildi
+6. Health check → status='online' ✅
+```
+
+### Final Smoke Test (5/5 PASS)
+
+```
+─── 1. Credentials (auto_login dotenv path fix) ───
+  [OK] user=1003zeki, base=https://fermat.eyotek.com/v1
+
+─── 2. Systemd services (3 service) ───
+  [OK] fermatai-bridge: active
+  [OK] fermat-chrome-cdp: active (port 9333)
+  [OK] fermat-session-keeper: active
+
+─── 3. CDP port (env'den oku) ───
+  [OK] CDP port 9333 listening
+
+─── 4. Health check tutarlı (3 ardışık) ───
+  [OK] 3/3 tutarlı: 'online'
+
+─── 5. Health status='online' (canlı API) ───
+  [OK] Eyotek CANLI — live API doğrulandı
+
+✅ Eyotek 7/24 ULAŞILABILIR — sistem üzerine yatırım yapılabilir
+```
+
+### Yeni Dosyalar
+
+| Dosya | Rol |
+|-------|-----|
+| `eyotek_agent/systemd/fermat-session-keeper.service` | 3 dakikalık keep-alive systemd unit |
+| `eyotek_agent/test_eyotek_login_live.py` | Auto-login + capsolver canlı CLI testi |
+| `eyotek_agent/smoke_test_25_43_eyotek_724.py` | 5 task end-to-end 7/24 smoke |
+
+### Mimari (Sonuç)
+
+```
+┌─ fermatai-bridge.service (FastAPI uvicorn, port 8001)
+├─ fermat-chrome-cdp.service (Chromium, port 9333) ← yeni 7/24
+├─ fermat-session-keeper.service (3dk loop) ← yeni 7/24
+├─ fermat_postgres (Docker, port 5432)
+└─ fermat_redis (Docker, port 6379)
+
+Eyotek bağlantı zinciri:
+  Bot sorgu → eyotek_health()
+              ├─ CDP socket check (9333)
+              ├─ Cookie file freshness
+              └─ Live API call (Eyotek Default.aspx)
+              → tek doğru status
+
+Cookie taze değilse:
+  session_keeper 3dk içinde fark eder → try_auto_login()
+                                         → CapSolver (Turnstile)
+                                         → POST credentials
+                                         → 8 cookie kaydet
+  → tekrar 'online'
+```
+
+### Production Sağlık (final, 01:30)
+
+| Bileşen | Durum |
+|---------|-------|
+| Bridge (uvicorn) | ✅ active, HTTP 200, 3.8ms |
+| Chrome CDP (port 9333) | ✅ active |
+| Session Keeper (3dk loop) | ✅ active |
+| Eyotek health check | ✅ status=online |
+| Live API | ✅ Default.aspx 200 OK |
+| 8 cookie taze | ✅ |
+| CapSolver | ✅ token alma 6.7sn |
+| Auto-login chain | ✅ end-to-end |
+| Git origin/main | `?` (commit beklemede) |
+
+### Sonraki Sprint İçin
+
+- 24 saat sonra eyotek_health, session_keeper rotasyonu canlıda doğrulamak (cookie expire → auto-relogin → tekrar online)
+- 7 gün sonra routing dağılımı ölçüm (Cerebras %21 → %30 hedef)
+- Veli modülü aktivasyonu (1 Eylül 2026)
+
+---
+
+## 🚀 OTURUM 25.43-OPS (10 May GECE 00:30 → 00:50)
 
 ---
 
