@@ -1110,7 +1110,12 @@ html[data-theme="dark"] .theme-toggle:hover {
    100dvh mobile viewport için daha doğru (adres çubuğu hesabı). */
 html, body { height: 100%; background: var(--bg); color: var(--fg); font-size: 15px; }
 html, body { height: 100dvh; overflow: hidden; }  /* dvh destekli tarayıcı tercih, değilse fallback 100% */
-body { display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; min-height: 0; }
+html { height: 100%; }
+body { display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; min-height: 100vh; height: 100vh; margin: 0; }
+/* 25.41-RENDER-FIX (9 May): Desktop'ta body min-height:0 idi — chat-input altında
+   boşluk oluşuyordu (body içerik kadar yükseklik alıyordu). 100vh ile viewport'un
+   tamamını doldur, chat-input garantili en alta yapışsın. Touch-screen CSS zaten
+   any-pointer:coarse media query ile bu kuralı override eder. */
 
 /* === Login ekranı === */
 .login-wrap {
