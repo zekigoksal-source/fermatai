@@ -147,12 +147,24 @@ Neo defalarca render sorunu raporladı, 5 fix loop sonra tüm 27 renderer kontro
 
 **Kritik öğrenme**: "Fence var" ≠ "Render olur". Backend valid JSON ≠ Frontend render eder. Her renderer için frontend'in beklediği field name'leri ile bot'un gönderdiği uyumlu mu — defansif alias = sigortası.
 
+**Compare2 Stochastic Bug — 2 katmanlı defansif fix (e70c220):**
+- **Bug 1**: rows array `]` kapatılmadan takeaway sokuluyor
+- **Bug 2**: String içinde unescaped `"` (örn `"sperm")"`)
+- **Bot prompt fix** (system_prompts.py): JSON KAPANIŞ + ESCAPE KURALI 3 detaylı rule
+- **Frontend repair** (`_repairCompare2Json`): 3 pattern düzeltici regex
+  - Pattern 1: `},"takeaway":` → `}],"takeaway":` (eksik `]` ekle)
+  - Pattern 2: bracket count mismatch
+  - Pattern 3: unescaped `")},` → `)},` (gereksiz `"` sil)
+- End-to-end test: bot INVALID JSON üretse bile +1 char ile valid'e dönüyor ✅
+
 **Commit zinciri:**
 - `fe975ad` heatmap fix + cache header
 - `eb3bc2f` KALDIGIM doc
 - `62578fe` chart + radar Chart.js standart format desteği (asıl fix)
 - `6c907a8` cache header revert + debug temizlik
-- `4de6911` Geogebra material URL parse + 27 renderer format audit (final)
+- `4de6911` Geogebra material URL parse + 27 renderer format audit
+- `cce5a69` KALDIGIM marathon kaydı
+- `e70c220` Compare2 stochastic JSON 2 katmanlı defansif fix (final)
 
 ### Eski Sonuç (Pass 1+2 sonrası, 02:30)
 
