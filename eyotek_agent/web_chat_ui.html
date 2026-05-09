@@ -4863,10 +4863,17 @@ function rerenderGeogebra(el) {
       try { cfg = JSON.parse(raw); } catch { cfg = { type: "geometry" }; }
       const type = cfg.type || cfg.app || "geometry";  // geometry | graphing | 3d | classic
       const title = cfg.title || "GeoGebra Etkileşimli";
-      // Material ID varsa direkt embed, yoksa boş calculator
+      // 25.41-RENDER-FIX (9 May): Bot 'material' field'ında TAM URL gönderebilir,
+      // 'material_id' field'ında sadece ID. İkisini de destekle (URL'den ID extract).
+      let materialId = cfg.material_id || null;
+      if (!materialId && cfg.material) {
+        // URL ise ID'yi parse et: https://www.geogebra.org/m/djv4uxq6 → djv4uxq6
+        const m = String(cfg.material).match(/(?:geogebra\.org\/m\/|geogebra\.org\/material\/iframe\/id\/)([\w\d]+)/);
+        materialId = m ? m[1] : (String(cfg.material).match(/^[\w\d]{6,12}$/) ? cfg.material : null);
+      }
       let url;
-      if (cfg.material_id) {
-        url = `https://www.geogebra.org/material/iframe/id/${cfg.material_id}/width/640/height/480/border/E7E5DE/sfsb/false/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false`;
+      if (materialId) {
+        url = `https://www.geogebra.org/material/iframe/id/${materialId}/width/640/height/480/border/E7E5DE/sfsb/false/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false`;
       } else {
         const appMap = { "3d": "3d", "geometry": "geometry", "graphing": "graphing", "classic": "classic" };
         url = `https://www.geogebra.org/${appMap[type] || "calculator"}?embed&lang=tr`;
