@@ -22,8 +22,17 @@ KULLANIM (kademeli geçiş):
 Test: her servis bağımsız smoke test edilir.
 """
 
-# Kolay import: from services import exam_service, student_service
+# Kolay import: from services import academic_service, knowledge_service, etc.
 from . import exam_service
 from . import student_service
+# 25.41-REFACTOR (9 May): God Class reduction sonrası eklenen 4 service
+from . import academic_service
+from . import etut_service
+from . import knowledge_service
+from . import admin_service
 
-__all__ = ["exam_service", "student_service"]
+__all__ = [
+    "exam_service", "student_service",
+    "academic_service", "etut_service",
+    "knowledge_service", "admin_service",
+]
