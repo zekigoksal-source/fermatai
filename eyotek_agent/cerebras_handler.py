@@ -95,12 +95,12 @@ INTENT_RENDERER_MAP: dict[str, list[str]] = {
     "cozum_iste":        ["steps", "formula"],
     "ornek_iste":        ["steps", "compare2"],
     "ozet_iste":         ["steps", "kgraph"],
-    "karsilastirma":     ["compare2"],
-    "deneme_analiz":     ["chart", "radar", "karne"],
-    "analiz_iste":       ["chart", "radar"],
-    "hedef_analiz":      ["gauge", "progress", "timeline"],
+    "karsilastirma":     ["compare2", "parallel"],   # 25.43: parallel coords kıyas için
+    "deneme_analiz":     ["chart", "radar", "karne", "treemap"],  # 25.43: treemap konu ağırlık
+    "analiz_iste":       ["chart", "radar", "treemap"],
+    "hedef_analiz":      ["gauge", "progress", "timeline", "sankey"],  # 25.43: sankey kazanç akışı
     "plan_yap":          ["timeline", "kgraph", "progress"],
-    "mufredat_bilgi":    ["progress", "karne"],
+    "mufredat_bilgi":    ["progress", "karne", "force_graph"],  # 25.43: force_graph ilişki
     # 25.40o (Neo direktif) — yeni icerik uretim renderer eslestirmeleri
     # "Goresel anlamda premium kalitede icerik aktariyor olalim, sadece duz yazi degil"
     "test_olusturma":    ["quiz", "steps", "chart"],         # interaktif quiz + adim adim
@@ -111,6 +111,17 @@ INTENT_RENDERER_MAP: dict[str, list[str]] = {
     "ornek_paket_uret":  ["quiz", "compare2", "steps"],       # 5 ornek paket
     "ozet_uzun":         ["steps", "kgraph", "timeline"],     # zenginlestirilmis ozet
     "metin_zenginlestir":["formula", "steps"],                # RAG icerik + gorsel
+    # ════════════════════════════════════════════════════════════════════
+    # 25.43 (Neo: 8 yeni render) — yeni intent → renderer map
+    # ════════════════════════════════════════════════════════════════════
+    "akis_gorselleme":     ["sankey", "chart"],          # net kazanç akışı, kaynak-hedef
+    "alan_orani":          ["treemap"],                  # konu ağırlık haritası
+    "cok_ogrenci_kiyas":   ["parallel", "chart"],        # öğrenciler × dersler matrisi
+    "konu_iliskisi_dinamik": ["force_graph", "kgraph"],  # interaktif bilgi ağı
+    "geometri_interaktif": ["jsxgraph", "geogebra"],     # sürüklenebilir geometri
+    "harita_3d":           ["cesium_globe"],             # 3D dünya, coğrafi nokta
+    "matematik_anim":      ["manim_anim", "formula"],    # 3Blue1Brown stili
+    "declarative_chart":   ["vega_lite", "chart"],       # JSON spec chart
     # Renderer YOK — bu intent'lerde sadece sıcak metin
     "motivasyon_destek": [],
     "duygu_paylasim":    [],

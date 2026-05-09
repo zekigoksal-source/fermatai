@@ -80,6 +80,19 @@ SAFE_GROQ_TOOLS = {
     "get_class_plan",          # salt okuma: ders programi
     "list_exam_questions",     # RAG cikmis soru katalogu
     "get_daily_etut",          # salt okuma: gunluk etut listesi
+    # 25.43 (Neo) — yeni dis API'ler salt okuma, key gerekmez, kisisel veri yok
+    "tdk_sozluk",              # TDK Turkce sozluk (kavramsal)
+    "nist_constant",           # Fizik sabitleri (statik)
+    "oeis_search",             # Sayilar dizisi (lokal fallback dahil)
+    "open_meteo_climate",      # Cografya iklim (key yok)
+    "wikidata_lookup",         # Yapilandirilmis bilgi
+    "cern_open_data",          # CERN dataset (read-only)
+    "huggingface_search_models", # HF Hub model arama (auth yok)
+    "tuik_dataset",            # Turkiye istatistik snapshot (statik)
+    "alphafold_lookup",        # Protein 3D (read-only)
+    "nist_webbook",            # Kimya termo (read-only HTML parse)
+    "crossref_search",         # Akademik makale (read-only)
+    "osm_lookup",              # Geocoding (read-only)
 }
 
 
@@ -120,12 +133,39 @@ _CLOUD_KEYWORDS = [
     # 7. PUAN TAHMIN (yeni feature, Claude tool)
     "puan tahmin", "puanim ne olur", "puanım ne olur",
     "yks tahmin", "tercih tahmin",
+    # 8. 25.43 (Neo) — Yeni dis API tool intent kelimeleri
+    # Bu kelimeler → Claude'a (tool_call zorunlu, struct response)
+    # NOT: Cerebras tool-calling enable ise (ENABLE_GROQ_TOOLS=true) bunlar
+    # da Cerebras'a inebilir — SAFE_GROQ_TOOLS allowlist hepsi okuma.
+    # Coğrafya iklim
+    "iklim", "yagis", "yağış", "sicaklik bugun", "sıcaklık bugün",
+    "hava durumu", "hava nasil", "hava nasıl",
+    # Sayı dizisi
+    "fibonacci", "asal sayilar", "asal sayılar", "kombinatorik dizisi",
+    "catalan", "lucas dizisi", "ucgensel", "üçgensel", "1,1,2,3,5",
+    # Akademik araştırma
+    "akademik makale", "araştırma makale", "doi ", "crossref",
+    "arxiv değil", "scholar",
+    # Yer/koordinat (OSM)
+    "koordinat", "enlem boylam", "haritada nerede",
+    # Wikidata struct
+    "wikidata", "structured data", "yapilandirilmis bilgi",
+    # CERN
+    "cern", "lhc", "büyük hadron", "atlas dataset", "cms dataset",
+    # AlphaFold/PDB
+    "alphafold", "uniprot", "protein 3d", "protein yapı tahmin",
+    # NIST WebBook (kimya termo)
+    "termodinamik veri", "olusum entalpi", "oluşum entalpi", "delta h",
+    "kimya verisi", "molekul agirligi", "molekül ağırlığı",
     # NOT: AŞAĞIDAKİLER ARTIK CEREBRAS'A:
     #   - kurum bilgisi (fermat, dershane, kurum)
     #   - kavramsal (nedir, açıkla, formül, ornek)
     #   - basit istatistik (zayif konu, son deneme — fast_response yakalar)
     #   - selamlama, sohbet, motivasyon (Cerebras 8b/120b)
     #   - hata/red (kufur, sacma — fast_response yakalar)
+    #   - TDK kelime anlamı (Cerebras kavramsal — kelime acklamasi yapabilir
+    #     veya gerekirse Claude tool çağırır — ek anahtar kelime gerek yok)
+    #   - NIST sabit (Cerebras Wolfram'a/kavramsal yanıt verebilir)
 ]
 
 # KIŞISEL VERİ istekleri — Ollama ASLA yapmamali (halusinasyon riski)

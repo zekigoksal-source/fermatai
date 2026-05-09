@@ -166,6 +166,65 @@ RENDERER_PATTERNS = [
         r"(excalidraw|elle\s*çiz|kroki|taslak\s*çiz)",
         ["excalidraw"],
     ),
+    # ════════════════════════════════════════════════════════════════════
+    # 25.43 (Neo: 8 yeni render) — sankey/treemap/parallel/force/vega/jsx/cesium/manim
+    # ════════════════════════════════════════════════════════════════════
+    # --- SANKEY / AKIŞ DİYAGRAMI ---
+    (
+        r"(sankey|akış\s*diyagram|akış\s*görsel|kaynak\s*hedef|"
+        r"akış\s*haritası|nereden\s*nereye|geçiş\s*şema|"
+        r"net\s*kazan|net\s*akış|kaybedilen\s*net|kazanılan\s*net)",
+        ["sankey"],
+    ),
+    # --- TREEMAP / ALAN ORANI ---
+    (
+        r"(treemap|alan\s*harita|orantılı\s*kutu|hiyerarşi\s*alan|"
+        r"konu\s*ağırlık|ders\s*ağırlık|yüzde\s*alan|kapsam\s*haritası|"
+        r"ağırlık\s*dağıl)",
+        ["treemap"],
+    ),
+    # --- PARALLEL COORDS / ÇOKLU BOYUT ---
+    (
+        r"(paralel\s*koordinat|çoklu\s*boyut|multi\s*dim|"
+        r"birden\s*çok\s*ölçüt|öğrenciler\s*kıyas|sınıf\s*sınıf\s*kıyas|"
+        r"birden\s*fazla\s*öğrenci.*kıyas)",
+        ["parallel"],
+    ),
+    # --- FORCE GRAPH / DİNAMİK BİLGİ AĞI ---
+    (
+        r"(force\s*graph|dinamik\s*ağ|bilgi\s*ağı\s*interaktif|"
+        r"konu\s*ilişki\s*ağı|kavram\s*haritası\s*interaktif|"
+        r"sürüklenebilir\s*ağ|node\s*sürükle)",
+        ["force_graph"],
+    ),
+    # --- VEGA-LITE / DECLARATIVE ---
+    (
+        r"(vega|vegalite|vega-lite|declarative\s*chart|"
+        r"json\s*spec\s*chart|grammar\s*of\s*graphics)",
+        ["vega_lite"],
+    ),
+    # --- JSXGRAPH / İNTERAKTİF GEOMETRİ + KALKÜLÜS ---
+    (
+        r"(jsxgraph|interaktif\s*geometri|sürüklenebilir\s*geometri|"
+        r"interaktif\s*kalkülüs|interaktif\s*fonksiyon|"
+        r"slider\s*ile\s*geometri|nokta\s*sürükle)",
+        ["jsxgraph"],
+    ),
+    # --- CESIUM / 3D GLOBE / DÜNYA HARİTA ---
+    (
+        r"(cesium|3d\s*dünya|globe|3d\s*harita|"
+        r"dünya\s*üzerinde|enlem\s*boylam\s*göster|harita\s*üzerinde\s*göster|"
+        r"konum\s*haritası|coğrafi\s*nokta)",
+        ["cesium_globe"],
+    ),
+    # --- MANIM ANIM / 3BLUE1BROWN STİL MATEMATİK ANİMASYONU ---
+    (
+        r"(manim|3blue1brown|matematik\s*animasyon|"
+        r"formül\s*dönüşüm\s*animasyon|adım\s*adım\s*animasyon|"
+        r"limit\s*animasyon|türev\s*animasyon|integral\s*animasyon|"
+        r"görsel\s*olarak\s*çöz)",
+        ["manim_anim", "formula"],
+    ),
 ]
 
 
