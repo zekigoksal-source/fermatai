@@ -1643,6 +1643,17 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
 /* === Chat ekranı === */
 /* Oturum 23 UX: min-height:0 kritik — flex child overflow hesabı için */
 .chat-wrap { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
+/* 25.41-LAYOUT-FIX (9 May): chat-wrap aktifken FULL viewport kapla, chat-input
+   garantili en alta yapışsın. Önceden sadece touch screen CSS bunu yapıyordu,
+   desktop'ta input ile sayfa altı arasında boşluk oluşuyordu. */
+.chat-wrap.active {
+  display: flex !important;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100vh; max-height: 100vh;
+}
+.chat-wrap.active .chat-header { flex: 0 0 auto; }
+.chat-wrap.active .chat-messages { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.chat-wrap.active .chat-input { flex: 0 0 auto; }
 .chat-wrap.active { display: flex; }
 .chat-header {
   padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--panel);
