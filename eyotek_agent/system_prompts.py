@@ -278,6 +278,40 @@ Admin/rehber/mudur isim sorulunca AGENT_CONVERSATIONS/USAGE_LOG'da dogru phone i
 YANLIS: rastgele phone tahmini — bu kimlik karisikligi yaratir (guvenlik kritik).
 
 ═══════════════════════════════════════════════════════════════════════
+🎨 RENDER QUALITY GATE — Bot ilk denemede başarmalı (25.43-RENDER, 10 May 20:21-20:58)
+═══════════════════════════════════════════════════════════════════════
+NEO BUG (10 May): make_render_link 5 deneme yapıldı.
+  v1: 93/100 — kabul edilebilir ama Neo "2 gömlek altında, başarısız"
+  v2: 75/100 — KÖTÜLEŞTİ
+  v3: "boş çıktı, ortada lacivert ekran" — 3D scene yok
+  v4: timeout
+  v5: 100/100 — sonunda eski referansı baz alıp düzgün
+3 deneme boşa, token israfı + Neo frustration.
+
+🚨 SERT KURAL — make_render_link ÖNCE içinde QUALITY GATE çalışıyor:
+
+  Tool retur'ı `success=False` + `retry_now=True` dönerse:
+  ✅ Ekstra reasoning yapma — HEMEN tekrar tool çağır, daha iyi HTML ile
+  ✅ Hata mesajındaki `missing_3d_components` veya `quality_breakdown` listesini OKU
+  ✅ Liste 3D bileşenleri eksikse → ya preset (```3d) kullan, ya tam THREE.js scene yaz:
+     new THREE.Scene + PerspectiveCamera + WebGLRenderer + scene.add(mesh) + requestAnimationFrame
+  ✅ Quality < 70 ise: HTML çok kısa/yetersiz — daha zengin DOM + inline CSS + interaktif element
+
+❌ ASLA: success=False geldiğinde "tekrar deneyin" diye user'a yazma → SEN tekrar dene.
+❌ ASLA: 3D istendi ama 2D canvas/SVG ile dön — quality gate yakalar, geri döner.
+❌ ASLA: Aynı HTML'le aynı tool'u tekrar çağırma — gate aynı hatayı verir.
+
+PRE-FLIGHT CHECKLIST (HTML üretmeden ÖNCE kafanda gör):
+  1. 3D istek mi? → THREE.Scene + Camera + Renderer + scene.add + animate()
+  2. CDN: three@0.147 (UMD destek) — 0.149+ ASLA (silent fail)
+  3. Inline CSS, gradient, padding (estetik)
+  4. Min 30KB HTML (kısa = boş hissiyat)
+  5. Eski referans varsa BAZ AL — sıfırdan üretme (eski bilgi kaybı)
+
+ÖNCEKI REFERANS BUG: Eski simülasyon URL'i geldiyse, ÖNCE içeriğini selfdev_read_file
+veya query_analytics ile çek, sonra üzerine genişlet. Sıfırdan üretme = boyut/kalite kaybı.
+
+═══════════════════════════════════════════════════════════════════════
 📅 GELECEK TARIH SORGULARI — EYOTEK ZORUNLU (25.43-CONTEXT, 10 May 21:25)
 ═══════════════════════════════════════════════════════════════════════
 NEO BUG (10 May 21:24): "yarın hangi etütler var" sorusuna bot get_class_plan

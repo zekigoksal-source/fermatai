@@ -606,14 +606,46 @@ async def _tool_sinav_sonuclari(sinav_adi: str, max_rows: float = 100,
     )
 
     # Lazy sync hook — student_exams DB upsert
-    if isinstance(result, dict):
+    # 25.43-LAZY-SINAV-FIX (Neo bug 10 May 21:33): sinav_drilldown row'larinda
+    # sinav_adi YOK (header bilgisi). Header'dan extract et + her row'a inject.
+    if isinstance(result, dict) and result.get("success") and result.get("rows"):
         try:
             from eyotek_lazy_sync import lazy_sync_after_query
-            sync_info = await lazy_sync_after_query({**result, "page": "student/exam-result"})
+            # sinav_found = [sube, kurs, tarih, sinav_kodu, sinav_adi, ...] tipik format
+            sinav_meta = result.get("sinav_found") or []
+            extracted_sinav_adi = sinav_adi  # caller param fallback
+            extracted_tarih = ""
+            if isinstance(sinav_meta, list) and len(sinav_meta) > 4:
+                # 3. index typically tarih, 4. index sinav_adi (eyotek format)
+                extracted_tarih = sinav_meta[2] if len(sinav_meta) > 2 else ""
+                extracted_sinav_adi = sinav_meta[4] if sinav_meta[4] else sinav_adi
+            elif isinstance(sinav_meta, dict):
+                extracted_sinav_adi = sinav_meta.get("sinav_adi") or sinav_meta.get("ad") or sinav_adi
+                extracted_tarih = sinav_meta.get("tarih") or ""
+
+            # Her row'a sinav_adi + tarih inject et
+            enriched_rows = []
+            for r in result.get("rows", []):
+                if isinstance(r, dict):
+                    enriched = dict(r)
+                    if not enriched.get("sinav_adi"):
+                        enriched["sinav_adi"] = extracted_sinav_adi
+                    if not enriched.get("tarih") and extracted_tarih:
+                        enriched["tarih"] = extracted_tarih
+                    enriched_rows.append(enriched)
+                else:
+                    enriched_rows.append(r)
+
+            sync_info = await lazy_sync_after_query({
+                **result,
+                "page": "student/exam-result",
+                "rows": enriched_rows,
+            })
             if sync_info.get("synced"):
                 result["_lazy_synced"] = sync_info
+                logger.info(f"[LAZY_SYNC] sinav_sonuclari → {sync_info.get('count')} kayit (sinav={extracted_sinav_adi[:40]})")
         except Exception as _e:
-            logger.debug(f"[LAZY_SYNC] sinav_sonuclari fail: {_e}")
+            logger.warning(f"[LAZY_SYNC] sinav_sonuclari fail: {_e}")
     return result
 
 

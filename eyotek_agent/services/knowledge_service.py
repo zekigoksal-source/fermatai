@@ -448,6 +448,63 @@ async def make_render_link(html: str = "", title: str = "FermatAI Görsel",
             "error": f"HTML cok buyuk ({html_size//1024}KB > 1024KB/1MB max). "
                      f"Daha kisa HTML uret (~200-400KB ideal) veya 22 renderer'dan birini kullan."
         }
+    # 25.43-RENDER-QUALITY-GATE (Neo bug 10 May 20:21-20:58):
+    # 5 deneme yapildi, 3'u "lacivert bos ekran". HTML create etmeden ONCE
+    # quality skoru hesapla, threshold altindaysa direkt fail + bot retry et.
+    # Bos canvas + 3D request mismatch = silent fail. Erken yakala.
+    try:
+        from render_endpoint import calculate_quality_score
+        pre_score, pre_breakdown = calculate_quality_score(html, title)
+    except Exception:
+        pre_score, pre_breakdown = 0, {}
+
+    QUALITY_THRESHOLD = 70  # 70 alti -> retry. 70-100 sun.
+    is_3d_request = any(k in (title or "").lower() for k in [
+        "3d", "simul", "evrim", "yildiz", "yıldız", "galaksi", "kuantum",
+        "kara delik", "molek", "atom", "uzay", "yorunge", "yörünge"
+    ])
+    is_real_3d = pre_breakdown.get("3d_scene_complete", False)
+
+    # Critical: 3D istendi ama gercek 3D scene yok = "lacivert bos ekran" (Neo bug)
+    if is_3d_request and not is_real_3d:
+        missing = [k for k, v in (pre_breakdown.get("3d_components") or {}).items() if not v]
+        return {
+            "success": False,
+            "error": (
+                f"❌ 3D simulasyon istendi ama HTML'de gercek 3D scene YOK. "
+                f"'{title}' baslikli render bos canvas/lacivert ekran cikacak. "
+                f"\n\n🔧 EKSIK BILESENLER: {', '.join(missing) if missing else 'tüm 3D motor parçaları'}. "
+                f"\n\n⚡ HEMEN RETRY:\n"
+                f"1) Ya ```3d preset kullan (blackhole/dna_helix/atom_proper/sine_wave/calabi_yau/lattice/magnetic_field/water/sphere)\n"
+                f"2) Ya HTML'de SUNLAR'i ekle: new THREE.Scene + PerspectiveCamera + WebGLRenderer + scene.add(mesh) + requestAnimationFrame\n"
+                f"3) CDN: three@0.147 (UMD), examples/js/controls/OrbitControls.js — three@0.149+ ASLA"
+            ),
+            "quality_score": pre_score,
+            "missing_3d_components": missing,
+            "retry_now": True,
+            "preset_fallback": ["blackhole", "dna_helix", "atom_proper", "sine_wave",
+                                "calabi_yau", "lattice", "magnetic_field", "water", "sphere"],
+        }
+
+    # Genel quality threshold
+    if pre_score < QUALITY_THRESHOLD:
+        return {
+            "success": False,
+            "error": (
+                f"⚠️ HTML kalite skoru DUSUK ({pre_score}/100, esik {QUALITY_THRESHOLD}). "
+                f"Kullanicinin gormesi sakincalı — geri don, daha zengin uret. "
+                f"\n\nKalite breakdown: {pre_breakdown}\n\n"
+                f"⚡ HEMEN RETRY:\n"
+                f"1) Daha zengin DOM (heading + paragraf + canvas/svg + interaktif element)\n"
+                f"2) Inline CSS (renkli gradient, padding, border)\n"
+                f"3) Bilgilendirici icerik (legend, label, aciklama)\n"
+                f"4) Min 30KB HTML (cok kisa = bos hissiyat)"
+            ),
+            "quality_score": pre_score,
+            "quality_breakdown": pre_breakdown,
+            "retry_now": True,
+        }
+
     try:
         from render_endpoint import create_artifact
         ttl = max(1, min(30, int(ttl_days or 7)))
@@ -459,11 +516,6 @@ async def make_render_link(html: str = "", title: str = "FermatAI Görsel",
                 "success": False,
                 "error": "Kayit hatasi (DB veya backend). Tekrar deneyin veya 12 renderer kullanın."
             }
-        try:
-            from render_endpoint import calculate_quality_score
-            score, _breakdown = calculate_quality_score(html)
-        except Exception:
-            score = 0
         import os
         base = os.getenv("PUBLIC_BASE_URL", "https://api.fermategitimkurumlari.com").rstrip("/")
         url = f"{base}/render/{uuid}"
@@ -473,7 +525,7 @@ async def make_render_link(html: str = "", title: str = "FermatAI Görsel",
             "url": url,
             "uuid": uuid,
             "ttl_days": ttl,
-            "quality_score": score,
+            "quality_score": pre_score,
             "size_kb": round(html_size / 1024, 1),
             "expires_at": (datetime.now() + timedelta(days=ttl)).isoformat(),
             "kullanim": f"Ogrenciye 'Buyuk gorseli ac: {url}' diye sun. Mobilde tek tikla acilir."
