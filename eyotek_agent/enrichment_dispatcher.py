@@ -466,23 +466,15 @@ def _detect_wiki_topic(user_msg: str, bot_response: str) -> str | None:
             words = user_msg.split()[:6]
             return " ".join(words).rstrip("?.!,").strip()
 
-    # 2. Bot cevabında öne çıkan özel isim (Resat Nuri Guntekin, Newton, vs.)
-    import re
-    # 2-4 kelimelik Title Case özel isim ara (Türkçe karakter dahil)
-    matches = re.findall(
-        r"\b([A-ZÇĞİÖŞÜ][a-zçğıöşü]+(?:\s+[A-ZÇĞİÖŞÜ][a-zçğıöşü]+){1,3})\b",
-        bot_response[:1500],  # ilk 1500 char
-    )
-    if matches:
-        # En sık geçeni al
-        from collections import Counter
-        most_common = Counter(matches).most_common(1)
-        if most_common and most_common[0][1] >= 1:
-            candidate = most_common[0][0]
-            # Çok yaygın kelimeleri filtrele
-            if candidate.lower() not in ("merhaba", "evet", "tamam", "fermat",
-                                          "neo", "yks", "tyt", "ayt", "lgs"):
-                return candidate
+    # 25.43-WIKI-FIX (Neo bug 11 May): Step 2 (Title Case fallback) KALDIRILDI.
+    # Sebep: Bot cevabında geçen RANDOM Title Case kelime'yi Wikipedia'ya yolluyordu →
+    # alakasız sonuçlar:
+    #   "Ankara hava" cevabında "Şu'ara Suresi" (Kuran suresi) çıktı
+    #   "Behavior rule" cevabında "Claude Monet" (ressam) çıktı
+    #   "Örsel" cevabında "Victor Orsel" (Fransız ressam) çıktı
+    #   "Erciyes" cevabında "Zeki Bey" (Osmanlı bürokratı) çıktı
+    # Title Case fallback %90 alakasız content getiriyordu — kaldırıldı.
+    # Sadece whitelist akademik keyword match (step 1) ile Wikipedia eklenir.
     return None
 
 
