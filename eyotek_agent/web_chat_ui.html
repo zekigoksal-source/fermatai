@@ -16,6 +16,37 @@
   window.addEventListener('pageshow', function(e) {
     if (e.persisted) window.location.reload();
   });
+
+  // 25.43-PURGE (10 May Neo F12 kanit): Eski Service Worker stale HTML donduruyor →
+  // PWA banner pointer-events fix'i kullaniciya ulasmiyor. One-shot temizlik:
+  // localStorage flag ile sadece bir kez calisir, sonra geri donmuyor.
+  (async () => {
+    try {
+      if (localStorage.getItem('fermatai_sw_purged_25_43') === '1') return;
+      let purged = false;
+      if (navigator.serviceWorker) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        if (regs.length > 0) {
+          for (const r of regs) await r.unregister();
+          purged = true;
+        }
+      }
+      if (window.caches) {
+        const keys = await caches.keys();
+        // Sadece eski SW versiyonlarini sil (yeni v25.43-* korunsun)
+        const old = keys.filter(k => !k.startsWith('fermatai-v25.43'));
+        if (old.length > 0) {
+          for (const k of old) await caches.delete(k);
+          purged = true;
+        }
+      }
+      localStorage.setItem('fermatai_sw_purged_25_43', '1');
+      if (purged) {
+        console.log('[FermatAI] Eski SW + cache temizlendi, reload...');
+        location.reload();
+      }
+    } catch (e) { /* sessizce gec */ }
+  })();
 </script>
 <!-- 25.40c (Neo bug fix): Tema toggle bozulmus durumdaydi cunku inline style ve
      hardcoded background rule'lari mevcut --bg CSS variable sistemini override
