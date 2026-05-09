@@ -2417,6 +2417,15 @@ html[data-theme="dark"] .msg.bot.streaming::after {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
 #fermatai-splash.fade { opacity: 0; transform: scale(1.08); pointer-events: none; }
+/* 25.43-UI-FIX (10 May Neo): pointer-events:none CSS'de child'lara propagate etmez —
+   splash fade-out olurken canvas/particle/logo gibi child'lar tiklamalari yiyordu.
+   Bu yuzden hamburger butonu intermittent calismiyordu (splash DOM'da gorunmez ama tiklanan oluyordu).
+   Force: tum splash subtree'sine pointer-events:none + visibility:hidden — fade-out anlik. */
+#fermatai-splash.fade,
+#fermatai-splash.fade * {
+  pointer-events: none !important;
+}
+#fermatai-splash.fade { visibility: hidden; }
 
 /* Mesh gradient — 4 renkli animasyonlu arka plan */
 #fermatai-splash::before {
@@ -2741,7 +2750,16 @@ html[data-theme="dark"] .msg.bot.streaming::after {
     sp.classList.add('fade');
     if (particleCtl && particleCtl.stop) particleCtl.stop();
     if (tagCtl && tagCtl.stop) tagCtl.stop();
-    setTimeout(() => { try { sp.remove(); } catch (_) {} }, 600);
+    // 25.43-UI-FIX: Hizli + agresif remove — DOM'da kalirsa hamburger intermittent
+    setTimeout(() => {
+      try { sp.remove(); } catch (_) {}
+      const still = document.getElementById('fermatai-splash');
+      if (still) {
+        still.style.display = 'none';
+        still.style.pointerEvents = 'none';
+        still.style.visibility = 'hidden';
+      }
+    }, 300);
   }
 
   // En geç fallback: 5sn sonra zorla kapat
@@ -11039,6 +11057,95 @@ async function outreachSubmit(action, ids) {
   window.fermatPushPermState = permissionState;
 })();
 
+</script>
+
+<!-- ═══ 25.43-UI-FIX (10 May Neo): Hamburger watchdog + splash cleanup ═══
+     Webde hamburger menü intermittent çalışmıyordu. 3 katmanlı defensive fix:
+     1. addEventListener — inline onclick'e ek backup handler (capture phase)
+     2. Splash watchdog — DOM'da kalmış splash'i agresif temizle
+     3. Document level click delegation — son çare yakalayıcı
+=== -->
+<script>
+(function() {
+  'use strict';
+
+  // 1. Splash watchdog — sayfa yüklendikten 1sn sonra splash hala DOM'daysa zorla kaldır
+  function killZombieSplash() {
+    const sp = document.getElementById('fermatai-splash');
+    if (sp) {
+      // Görünür mü? Computed opacity > 0.05 ise henüz fade-out olmamış
+      const op = parseFloat(getComputedStyle(sp).opacity);
+      if (op < 0.05) {
+        // Fade-out olmuş ama remove edilmemiş — kaldır
+        try { sp.remove(); } catch (e) {
+          sp.style.display = 'none';
+          sp.style.pointerEvents = 'none';
+          sp.style.visibility = 'hidden';
+        }
+      }
+    }
+  }
+  // Çoklu zamanlamada kontrol — fade-out 600ms+, biz 1sn, 3sn, 6sn'de kontrol
+  setTimeout(killZombieSplash, 1000);
+  setTimeout(killZombieSplash, 3000);
+  setTimeout(killZombieSplash, 6000);
+
+  // 2. Hamburger butonu için backup event listener — inline onclick'e EK
+  function attachHamburgerBackup() {
+    const btn = document.querySelector('.history-btn');
+    if (!btn) return false;
+    if (btn.dataset.fermatHamburgerBackup === '1') return true;  // zaten attach
+    btn.dataset.fermatHamburgerBackup = '1';
+
+    // Capture phase — overlay/splash bubble'da yutsa bile burada yakalanır
+    btn.addEventListener('click', function(e) {
+      // Splash zombi varsa hemen temizle
+      killZombieSplash();
+      // openHistoryDrawer eğer onclick ile çalışmadıysa, bizimle çalışsın
+      if (typeof window.openHistoryDrawer === 'function') {
+        try { window.openHistoryDrawer(); } catch (err) {
+          console.warn('[FermatAI UI] openHistoryDrawer hata:', err);
+        }
+      }
+      // Inline onclick zaten çağırdıysa toggle yapar (ikinci çağrı close eder)
+      // Bu duplicate riskini openHistoryDrawer toggle mantığı çözüyor — drawer açıksa close yapar
+    }, true);  // useCapture = true — bubble fazından önce yakala
+    return true;
+  }
+
+  // DOM hazır olur olmaz dene; başarısızsa interval ile bekle
+  if (document.readyState !== 'loading') {
+    if (!attachHamburgerBackup()) {
+      const iv = setInterval(() => {
+        if (attachHamburgerBackup()) clearInterval(iv);
+      }, 200);
+      setTimeout(() => clearInterval(iv), 10000);  // 10sn sonra bırak
+    }
+  } else {
+    document.addEventListener('DOMContentLoaded', attachHamburgerBackup);
+  }
+
+  // 3. Son çare: document level click delegation — capture phase
+  // Eğer button DOM'da var ama event'ler hala kayboluyorsa burada yakala
+  document.addEventListener('click', function(e) {
+    const t = e.target;
+    if (!t) return;
+    // Hamburger butonuna veya iç ☰ char'ına click
+    if (t.classList && t.classList.contains('history-btn')) {
+      killZombieSplash();
+    }
+  }, true);  // capture phase
+
+  // ESC tuşu → drawer kapat (UX bonus)
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const drawer = document.getElementById('historyDrawer');
+      if (drawer && drawer.classList.contains('open') && typeof window.closeHistoryDrawer === 'function') {
+        window.closeHistoryDrawer();
+      }
+    }
+  });
+})();
 </script>
 
 <style>
