@@ -2990,7 +2990,7 @@ html[data-theme="dark"] .msg.bot.streaming::after {
   <div class="chat-header">
     <!-- 22.1n-ui: FermatAI title solda, hamburger'in yaninda (onceden ortadaydi, asimetrik) -->
     <div class="header-left">
-      <button class="history-btn" onclick="openHistoryDrawer()" title="Hızlı komutlar + geçmiş">☰</button>
+      <button class="history-btn" id="hamburgerBtn" type="button" title="Hızlı komutlar + geçmiş">☰</button>
       <div class="title"><span class="dot"></span>FermatAI</div>
     </div>
     <div class="user">
@@ -11090,26 +11090,39 @@ async function outreachSubmit(action, ids) {
   setTimeout(killZombieSplash, 3000);
   setTimeout(killZombieSplash, 6000);
 
-  // 2. Hamburger butonu için backup event listener — inline onclick'e EK
+  // 2. Hamburger butonu için TEK KAYNAK event listener
+  // 25.43-UI-V3 (10 May Neo): Onceki versiyonda inline onclick + addEventListener
+  // capture phase ikiside calisiyordu — capture'da openHistoryDrawer ACIYORDU,
+  // bubble'da inline onclick TEKRAR cagirip toggle ile KAPATIYORDU. Net etki: drawer
+  // hicbir zaman acik gorunmuyor. Cozum: inline onclick HTML'den kaldirildi, tek
+  // kaynak BURADA bubble phase listener (capture degil — inline ile cakismaz cunku
+  // inline kaldirildi, ama yine de bubble phase daha standart).
   function attachHamburgerBackup() {
-    const btn = document.querySelector('.history-btn');
+    const btn = document.getElementById('hamburgerBtn') || document.querySelector('.history-btn');
     if (!btn) return false;
     if (btn.dataset.fermatHamburgerBackup === '1') return true;  // zaten attach
     btn.dataset.fermatHamburgerBackup = '1';
 
-    // Capture phase — overlay/splash bubble'da yutsa bile burada yakalanır
     btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
       // Splash zombi varsa hemen temizle
       killZombieSplash();
-      // openHistoryDrawer eğer onclick ile çalışmadıysa, bizimle çalışsın
       if (typeof window.openHistoryDrawer === 'function') {
         try { window.openHistoryDrawer(); } catch (err) {
           console.warn('[FermatAI UI] openHistoryDrawer hata:', err);
         }
+      } else {
+        console.warn('[FermatAI UI] openHistoryDrawer fonksiyonu yok!');
       }
-      // Inline onclick zaten çağırdıysa toggle yapar (ikinci çağrı close eder)
-      // Bu duplicate riskini openHistoryDrawer toggle mantığı çözüyor — drawer açıksa close yapar
-    }, true);  // useCapture = true — bubble fazından önce yakala
+    });
+
+    // Mobil tap fallback — bazi mobil tarayicilarda click delay/kaybolma riski
+    btn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      btn.click();
+    }, { passive: false });
+
     return true;
   }
 
