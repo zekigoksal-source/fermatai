@@ -3754,11 +3754,16 @@ function rerenderCharts(el) {
       // Claude palet renkleri
       const palette = ["#C76F3E","#6B8E7F","#B08968","#5C6B8C","#A66B9C","#6B9E8E","#D4A574"];
 
-      // Normalize: title, labels, datasets varsa Chart.js config'e dönüştür
-      const chartType = config.type || "line";
+      // 25.41-RENDER-FIX (9 May): Bot 2 farklı format kullanıyor:
+      // (a) Chart.js standardi: { type, data: { labels, datasets }, options }
+      // (b) Kısa format: { type, labels, datasets, options }
+      // İkisini de destekle (defansif alias).
+      const cfgInner = (config.data && typeof config.data === "object" && !Array.isArray(config.data))
+        ? config.data : config;
+      const chartType = config.type || cfgInner.type || "line";
       const chartData = {
-        labels: config.labels || [],
-        datasets: (config.datasets || []).map((ds, i) => ({
+        labels: cfgInner.labels || config.labels || [],
+        datasets: (cfgInner.datasets || config.datasets || []).map((ds, i) => ({
           label: ds.label || "Veri",
           data: ds.data || [],
           backgroundColor: ds.backgroundColor || (chartType === "line" ? palette[i % palette.length] + "33" : palette[i % palette.length]),
@@ -4507,7 +4512,9 @@ function rerenderRadar(el) {
         try {
           const isDark = document.documentElement.getAttribute("data-theme") === "dark";
           const colors = ["#C76F3E", "#6B8E7F", "#A78BFA", "#F59E0B"];
-          const datasets = (cfg.datasets || []).map((ds, i) => ({
+          // 25.41-RENDER-FIX: Bot Chart.js standardı (cfg.data.labels) veya kısa (cfg.labels) kullanabilir
+          const cfgInner = (cfg.data && typeof cfg.data === "object" && !Array.isArray(cfg.data)) ? cfg.data : cfg;
+          const datasets = (cfgInner.datasets || cfg.datasets || []).map((ds, i) => ({
             label: ds.label || `Set ${i+1}`,
             data: ds.data || [],
             backgroundColor: colors[i % colors.length] + "33",
@@ -4516,7 +4523,7 @@ function rerenderRadar(el) {
           }));
           new Chart(canvas, {
             type: "radar",
-            data: { labels: cfg.labels || [], datasets },
+            data: { labels: cfgInner.labels || cfg.labels || [], datasets },
             options: {
               responsive: true, maintainAspectRatio: false,
               scales: { r: {
