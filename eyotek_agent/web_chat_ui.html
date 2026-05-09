@@ -1588,7 +1588,27 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
   }
   .chat-input {
     flex: 0 0 auto;                   /* alt sabit, asla buyumez */
+    /* 25.43-IPAD-FIX (Neo bug 11 May 02:46): iPad Pro'da alt input area sikisik
+       gozukuyor — fonksiyon kayb yok ama amator gorunum. Sebep: tablet aralig
+       icin padding tanimi YOKTU, default 14px/20px kullaniliyordu. iPad'de
+       safe-area-inset-bottom iOS Safari + PWA ikisinde de devreye girer.
+       Buton hizalamasi flex-end ile garantili. */
+    padding: 14px 18px calc(18px + env(safe-area-inset-bottom, 0px)) 18px;
+    gap: 10px;
+    align-items: center;              /* aux-btn / textarea / send hizali */
   }
+  .chat-input textarea {
+    min-height: 44px; max-height: 140px;
+    padding: 12px 14px; font-size: 15px;
+  }
+  .chat-input .aux-btn,
+  .chat-input .paperclip,
+  .chat-input button#sendBtn {
+    height: 44px;
+    flex-shrink: 0;
+  }
+  .chat-input .aux-btn,
+  .chat-input .paperclip { width: 44px; }
   /* Login wrap da ayni pin — login ekraninda sayfa scroll'u olusmasin */
   .login-wrap {
     position: absolute;
