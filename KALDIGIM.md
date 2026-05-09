@@ -1,6 +1,78 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 9 Mayıs 2026, GECE 23:30 — **🚀 25.43 SISTEM GENISLEME: 12 yeni dış API (TDK/NIST/OEIS/Open-Meteo/Wikidata/CERN/HF/TUIK/AlphaFold/NIST WebBook/Crossref/OSM) + 8 yeni render (sankey/treemap/parallel/force_graph/vega_lite/jsxgraph/cesium_globe/manim_anim) — VPS canlı, 47/47 senaryo PASS (%100), 6/6 grup smoke PASS**
+> **Son güncelleme:** 9 Mayıs 2026, GECE 23:50 — **🚀 25.43-INTEGRATION TAM: 12 yeni API + 8 yeni render TÜM routing katmanlarına entegre · SAFE_GROQ_TOOLS 4→16 · INTENT_RENDERER_MAP +8 intent · renderer_hint_inject +8 pattern · _CLOUD_KEYWORDS +8 keyword · 9/9 entegrasyon test PASS · 47/47 senaryo PASS · end-to-end dispatcher CANLI · sıfır teknik borç**
+
+---
+
+## 🔌 OTURUM 25.43-INTEGRATION (9 May GECE 23:00 → 23:50)
+
+**Tetik:** Neo "Yeni özellikler Cerebras/Claude/Groq ile koordineli mi? fast_response/şablonlar gerek mi? hepsini optimize et, sıfır teknik borç ile bitir."
+
+### Audit Sonuçları + Fix'ler
+
+| Katman | Audit | Fix |
+|--------|-------|-----|
+| **SAFE_GROQ_TOOLS** | 4 tool, yeni API'ler yok | ✅ +12 read-only API → 16 tool |
+| **INTENT_RENDERER_MAP** | 18 intent, yeni render'lar map'sız | ✅ +8 yeni intent + 4 mevcut genişletildi |
+| **renderer_hint_inject** | 21 pattern, yeni 8 render için hint yok | ✅ +8 pattern (sankey/treemap/parallel/force/vega/jsx/cesium/manim) |
+| **_CLOUD_KEYWORDS** | 75 keyword, yeni API intent kelimeleri yok | ✅ +8 keyword (iklim/fibonacci/akademik makale/koordinat/wikidata/cern/alphafold/termo) |
+| **TOOL_DISPATCH** | 12 yeni wrapper var ama dispatch entegre değil | ✅ Doğrulandı, canlı çalışıyor |
+| **ACL** | 6 rol × 12 API = 72/72 | ✅ Doğrulandı |
+| **system_prompts** | API mention var | ✅ + 8 render hint bloğu |
+
+### Yeni Smoke Test (smoke_test_25_43_integration.py — 9 grup)
+
+```
+[OK] SAFE_GROQ_TOOLS — 16 tool toplam (12 yeni)
+[OK] INTENT_RENDERER_MAP — 8 yeni intent eşleşme
+[OK] renderer_hint patterns — 8/8 match (akış/treemap/paralel/force/vega/jsx/cesium/manim)
+[OK] _CLOUD_KEYWORDS — yeni 8 anahtar kelime
+[OK] Tool dispatch — 12 wrapper mevcut
+[OK] ACL — 6 rol × 12 = 72/72
+[OK] Renderer — 8 fence + 8 function + dispatch
+[OK] system_prompts.py — 10 API + 8 render mention
+[OK] E2E dispatcher CANLI — TDK/NIST/OEIS/TUIK 4/4 başarılı API çağrısı
+
+TOPLAM: 9/9 grup PASS (VPS canlı)
+```
+
+### Routing Akışı (Final, 25.43-INT sonrası)
+
+```
+Mesaj geldi
+  ↓
+fast_response (5ms) — selamlama, sablon, guvenlik
+  ↓ pas
+LLM Router decision:
+  ├── _CLOUD_KEYWORDS varsa (yazma, hassas, tool, yeni API kelimeleri)
+  │     → Claude (tool-calling, struct response, render hint inject)
+  │
+  ├── Cerebras lane (kavramsal, basit sohbet)
+  │     ├── INTENT_RENDERER_MAP'tan render hint inject
+  │     └── ENABLE_GROQ_TOOLS=true ise SAFE_GROQ_TOOLS'tan tool çağırabilir
+  │           (TDK, NIST, OEIS, Wikidata, OSM vb. yeni 12 API dahil)
+  │
+  └── Ollama (laptop dev) — embedding, fallback
+```
+
+### Yeni Sıfır Teknik Borç Durumu
+
+- ✅ Yeni 12 API: tool def + dispatch + ACL + system prompt + Cerebras allowlist
+- ✅ Yeni 8 render: fence + function + dispatcher + INTENT_RENDERER_MAP + renderer_hint pattern + system prompt mention + welcome badge
+- ✅ Routing: hem Claude hem Cerebras (potansiyel) yeni özelliklerden haberdar
+- ✅ Test: 9/9 entegrasyon + 47/47 senaryo + 6/6 alt-test grup
+- ✅ Welcome ekran metric güncel
+- ✅ KALDIGIM + BLUEPRINT güncel
+
+### Yeni Dosya (Oturum 25.43-INT)
+
+| Dosya | Rol |
+|-------|-----|
+| `eyotek_agent/smoke_test_25_43_integration.py` | 9 grup entegrasyon smoke (SAFE_GROQ_TOOLS/INTENT_RENDERER_MAP/renderer_hint/CLOUD_KEYWORDS/dispatch/ACL/Renderer/system_prompts/E2E) |
+
+---
+
+## 🚀 OTURUM 25.43 — SISTEM GENISLEME (9 May GECE 21:30 → 23:00)
 
 ---
 

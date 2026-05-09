@@ -1,6 +1,9 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 9 Mayıs 2026 (gece 03:00) · **Oturum:** 25.41-REFACTOR-FULL — **God Class reduction TAM · fermat_core_agent.py 5,840 → 4,661 (-1,179 satır, %20.2) · 4 service modülü (1,426 satır) · 15 fonksiyon services/'e taşındı · 10/10 smoke PASS · Yan sistemler audit ✅**
+> **Belge tarihi:** 9 Mayıs 2026 (gece 23:50) · **Oturum:** 25.43-INTEGRATION — **12 yeni dış API + 8 yeni render TÜM routing katmanlarına entegre · Cerebras SAFE_GROQ_TOOLS 4→16 · INTENT_RENDERER_MAP 8 yeni intent · renderer_hint_inject 21→29 pattern · _CLOUD_KEYWORDS 8 yeni keyword · 9/9 entegrasyon test PASS, 47/47 senaryo PASS, end-to-end dispatcher CANLI**
+> **9 May 21:30:** 25.43 — 12 yeni dış API (TDK/NIST/OEIS/Open-Meteo/Wikidata/CERN/HF/TUIK/AlphaFold/NIST WebBook/Crossref/OSM) + 8 yeni render (sankey/treemap/parallel/force_graph/vega_lite/jsxgraph/cesium_globe/manim_anim)
+> **9 May 18:30:** 25.42 — 7 bulgu fix loop (Mehmet Karpuz konuşma analizi + Atlas #91/#92/#94 KVKK)
+> **9 May 03:00:** 25.41-REFACTOR-FULL — God Class reduction TAM · fermat_core_agent.py 5,840 → 4,661 (-1,179 satır, %20.2) · 4 service modülü (1,426 satır) · 15 fonksiyon services/'e taşındı · 10/10 smoke PASS · Yan sistemler audit ✅
 > **9 May 02:30:** 25.41-REFACTOR-PASS1+2 — academic_service (647) + etut_service (153) ekleme · 9 fonksiyon ilk dalga · Quality 96.6 → 97.5 A+
 > **9 May 01:40:** 25.41-PHOTO-LIMIT — Foto soru limit 5 + Foto Guard bypass mimarisi · 8 dosya senkron · 5 phrasing 5/5 PASS
 > **9 May 01:10:** 25.41-QUALITY — **Rol × Senaryo Quality Audit (32 senaryo × 6 rol) · Run 1 88.7 A → Run 2 97.0 A+ · 6/6 rol A+ · 3 fix loop deploy**
@@ -11,6 +14,92 @@
 > **4 May 18:30:** 25.40z3-FINETUNE — Per-user karakter blokları kompakt + dead code scan · 388/388 PASS
 > **4 May 17:30:** 25.40z3-CONSOLIDATION — kural sertliği korundu, 84 bağlam kompakt
 > **3 May:** 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
+
+---
+
+## 🚀 25.43 SERİSİ — Sistem Genişleme (9 May 21:30 → 23:50)
+
+### 12 Yeni Dış API (`external_apis_v3.py`, 1000 satır)
+
+| # | API | Kategori | YKS Uygulaması | Test |
+|---|-----|----------|----------------|------|
+| 13 | **TDK Sözlük** | Türkçe | TYT paragraf kelime/deyim | ✅ canlı |
+| 14 | **NIST Constants** | Fizik | AYT formül sabitleri (CODATA 2018, 17 sabit) | ✅ canlı |
+| 15 | **OEIS** | Matematik | Sayı dizisi tanıma + lokal fallback (10 dizi YKS odaklı) | ✅ canlı |
+| 16 | **Open-Meteo** | Coğrafya | İklim/forecast (key gerekmez) | ✅ canlı |
+| 17 | **Wikidata** | Genel bilgi | Yapılandırılmış factual data | ✅ canlı |
+| 18 | **CERN Open Data** | Fizik | LHC parçacık fiziği ("wow factor") | ✅ canlı |
+| 19 | **Hugging Face Search** | AI | Hub model arama (auth gerekmez) | ✅ canlı |
+| 20 | **TÜİK dataset** | Sosyal | Türkiye 7 kategori istatistik | ✅ canlı |
+| 21 | **AlphaFold (EBI)** | Biyoloji | DeepMind protein 3D yapı | ✅ canlı |
+| 22 | **NIST WebBook** | Kimya | Termodinamik (formül, ΔHf, CAS) | ✅ canlı |
+| 23 | **Crossref** | Akademik | Makale arama (DOI, abstract) | ✅ canlı |
+| 24 | **OpenStreetMap** | Coğrafya | Geocoding (yer → koordinat) | ✅ canlı |
+
+**Toplam external API:** 12 → **24** (+12)
+
+### 8 Yeni Render (`web_chat_ui.html`)
+
+| Render | Library | Kullanım | Yeni intent |
+|--------|---------|----------|-------------|
+| ```sankey``` | ECharts 5.5 | Akış (kazanç akışı, kaynak-hedef) | `akis_gorselleme`, `hedef_analiz` |
+| ```treemap``` | ECharts 5.5 | Alan-bazlı oran (konu ağırlık) | `alan_orani`, `analiz_iste` |
+| ```parallel``` | ECharts 5.5 | Çok-boyutlu kıyaslama | `cok_ogrenci_kiyas`, `karsilastirma` |
+| ```force_graph``` | D3 7.9 | Knowledge graph dinamik | `konu_iliskisi_dinamik`, `mufredat_bilgi` |
+| ```vega_lite``` | Vega-Lite 5.20 | Declarative chart spec | `declarative_chart` |
+| ```jsxgraph``` | JSXGraph 1.10 | Interactive geometry/calculus | `geometri_interaktif` |
+| ```cesium_globe``` | Cesium 1.115 | 3D earth globe | `harita_3d` |
+| ```manim_anim``` | KaTeX+GSAP | 3Blue1Brown stil math anim | `matematik_anim` |
+
+**Toplam render fence:** 28 → **36** (+8)
+
+### Routing Katmanları Entegrasyon (25.43-INT)
+
+| Katman | Önceki | 25.43 sonrası | Etki |
+|--------|--------|---------------|------|
+| `SAFE_GROQ_TOOLS` (Cerebras allowlist) | 4 tool | **16 tool** (+12) | ENABLE_GROQ_TOOLS aktive olunca yeni API'ler de Cerebras'a |
+| `INTENT_RENDERER_MAP` (Cerebras renderer hint) | 18 intent | **26 intent** (+8) | Cerebras yeni renderlar için hint üretebilir |
+| `renderer_hint_inject` (Claude pattern) | 21 pattern | **29 pattern** (+8) | Claude system prompt'a render zorunluluğu inject |
+| `_CLOUD_KEYWORDS` (Claude keyword routing) | 75 keyword | **83 keyword** (+8) | Yeni API kelimeleri Claude tool path'e |
+| `TOOL_DISPATCH` (handler registry) | 115 handler | **127 handler** (+12) | 12 yeni wrapper async fonksiyon |
+| `_ACL_MATRIX` (rol erişim) | 6 rol mevcut | **6 rol × 12 API = 72/72** | Tüm roller yeni API'lere erişebilir |
+| `system_prompts.py` (LLM mention) | API mention + render hint | **+12 API + 8 render bloğu** | Karar ağacı genişletildi |
+
+### Yeni Dosyalar
+
+| Dosya | Satır | Rol |
+|-------|-------|-----|
+| `external_apis_v3.py` | 1000+ | 12 yeni API + OEIS local fallback |
+| `smoke_test_25_43.py` | 165 | 6 grup smoke runner |
+| `smoke_test_25_43_scenarios.py` | 175 | 47 senaryo derinlemesine test |
+| `smoke_test_25_43_integration.py` | 200 | 9 grup entegrasyon smoke |
+
+### Test Sonuçları (VPS canlı)
+
+```
+─── Senaryo (smoke_test_25_43_scenarios.py) ───
+  TDK 5/5 · NIST 5/5 · OEIS 5/5 (fallback) · Meteo 5/5
+  Wikidata 4/4 · CERN 3/3 · HF 3/3 · TUIK 5/5
+  AlphaFold 3/3 · NIST WebBook 3/3 · Crossref 3/3 · OSM 3/3
+  TOPLAM: 47/47 PASS (%100)
+
+─── Entegrasyon (smoke_test_25_43_integration.py) ───
+  [OK] SAFE_GROQ_TOOLS · INTENT_RENDERER_MAP · renderer_hint
+  [OK] _CLOUD_KEYWORDS · Tool dispatch · ACL · Renderer · system_prompts
+  [OK] E2E dispatcher canlı (TDK/NIST/OEIS/TUIK 4/4)
+  TOPLAM: 9/9 grup PASS
+```
+
+### OEIS Cloudflare 403 Çözümü
+
+VPS IP'si OEIS.org Cloudflare ile bloklanıyor. Çözüm: `_OEIS_FALLBACK` yerel mini-katalog (10 YKS-odaklı dizi: Fibonacci, asal, kareler, küpler, faktöriyel, Catalan, üçgensel, 2^n, Lucas, doğal). API → 403 olunca lokal'e düşer, kullanıcı farkı görmez.
+
+### Welcome Ekranı Güncelleme
+
+- Metric grid: 35 → **36** Visual Renderer · 27 → **30+** External API
+- 12 yeni badge eklendi (TDK/NIST/OEIS/Open-Meteo/Wikidata/CERN/HF/TÜİK/AlphaFold/NIST WebBook/Crossref/OSM)
+- Hook line: "Türkiye'nin kurum-içi geliştirilen ilk eğitim yapay zeka ajanı"
+- Verb değişti: "5 LLM eş zamanlı **devreye giriyor**" (eski: dans ediyor)
 
 ---
 

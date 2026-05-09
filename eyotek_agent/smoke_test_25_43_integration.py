@@ -153,7 +153,7 @@ async def test_api_e2e_via_dispatcher():
         print("  [SKIP] DATABASE_URL yok — dispatcher e2e atlandi")
         return True
     try:
-        from fermat_core_agent import TOOL_REGISTRY
+        from fermat_core_agent import TOOL_DISPATCH
     except Exception as e:
         print(f"  [SKIP] fermat_core_agent import fail: {e}")
         return False
@@ -167,7 +167,7 @@ async def test_api_e2e_via_dispatcher():
     fail = 0
     for tool_name, params in new_apis_test:
         try:
-            handler = TOOL_REGISTRY.get(tool_name)
+            handler = TOOL_DISPATCH.get(tool_name)
             if not handler:
                 print(f"  [FAIL] {tool_name} TOOL_REGISTRY'de YOK")
                 fail += 1
