@@ -1,6 +1,85 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 9 Mayıs 2026, GECE 23:50 — **🚀 25.43-INTEGRATION TAM: 12 yeni API + 8 yeni render TÜM routing katmanlarına entegre · SAFE_GROQ_TOOLS 4→16 · INTENT_RENDERER_MAP +8 intent · renderer_hint_inject +8 pattern · _CLOUD_KEYWORDS +8 keyword · 9/9 entegrasyon test PASS · 47/47 senaryo PASS · end-to-end dispatcher CANLI · sıfır teknik borç**
+> **Son güncelleme:** 10 Mayıs 2026, GECE 00:30 — **🛠️ 25.43-INT-FIXES TAM: 7 dev bulgu fix loop (Neo 19:46-20:14 konuşma analizi) — eyotek_health tek doğruluk + U-turn kuralı + bağlam koruma + HF fallback + selfdev iyileştirmeler · 7/7 lokal + VPS smoke PASS · canlı health check `cdp_down` net cevap · sıfır teknik borç**
+
+---
+
+## 🛠️ OTURUM 25.43-INT-FIXES (10 May GECE 00:00 → 00:30)
+
+**Tetik:** Neo "botla konuşmalarıma bak son 1 saati dev açısından" → 7 ciddi sorun tespit edildi (Eyotek 3 zıt cevap, bağlam karışıklığı, U-turn inkar, selfdev tutarsızlık, HF fallback yok).
+
+### 7 Fix Özeti
+
+| # | Bulgu | Fix | Test |
+|---|-------|-----|------|
+| **1** | Eyotek 3 zıt cevap (20:09 KAPALI / 20:13 CANLI / 20:14 DÜŞMÜŞ) | Yeni `eyotek_health.py` — port + cookie + live API tek doğruluk + 5 status enum | ✅ canlı VPS test: net `cdp_down` cevap |
+| **2** | Bot U-turn'ünü inkar ediyor + bağlam karışıyor | `system_prompts.py` 3 yeni bölüm: EYOTEK BAGLANTI / U-TURN KURALI / BAGLAM KORUMA | ✅ deployed |
+| **3** | Bağlam karışıklığı (Eyotek↔HF) | `conversation_memory.get_recent_user_questions(phone, count, max_age_minutes)` — son N user mesajı + 14 topic keyword map | ✅ importable |
+| **4** | HF Search VPS'te boş dönüyor | `_HF_FALLBACK_MODELS` (6 kategori) + graceful degrade | ✅ 6 kategori |
+| **5** | `selfdev_list_dir` 0 entries (transient) | os.scandir RETRY + `_diagnostics` field (filtered_secret/filtered_outside) | ✅ deployed |
+| **6** | `selfdev_read_file` subdir bulamıyor | `recursive=True` opsiyonu + auto-retry rglob | ✅ deployed |
+| **7** | `selfdev_read_logs` default 50 boş dönüyor | Default 50 → 200 (MAX_LOG_LINES=1000 koruma korundu) | ✅ deployed |
+
+### Yeni Dosyalar (7-fix)
+
+| Dosya | Rol |
+|-------|-----|
+| `eyotek_agent/eyotek_health.py` | Tek doğruluk Eyotek bağlantı health check (5 status) |
+| `eyotek_agent/smoke_test_25_43_int_fixes.py` | 7 fix entegrasyon smoke runner |
+
+### Canlı Eyotek Health Çıktısı (10 May 00:30)
+
+```json
+{
+  "status": "cdp_down",
+  "is_connected": false,
+  "user_message": "❌ Eyotek bağlı DEĞİL — Chrome CDP portu kapalı, browser yeniden başlatılmalı",
+  "checks": {
+    "cdp": {"ok": false, "detail": "CDP port 9222/9333 kapali"},
+    "cookie": {"ok": true, "age_minutes": 987},
+    "live": {"ok": false, "detail": "Atlandi (CDP veya cookie eksik)"}
+  }
+}
+```
+
+**Bot artık bu `user_message`'i direkt sunabilir** — eskiden 3 farklı kontrolden 3 zıt cevap çıkarıyordu, şimdi tek tutarlı cevap.
+
+### Smoke Test (VPS, 7/7 PASS)
+
+```
+─── Fix #1: eyotek_health (Eyotek tek doğruluk) ───
+  [OK] tool tam entegre (TOOLS_ACTIVE/wrapper/dispatch/ACL/module 5/5)
+
+─── Fix #2: system_prompt U-turn + bağlam koruma ───
+  [OK] EYOTEK BAGLANTI / U-TURN / BAGLAM kuralları yerinde (5/5)
+
+─── Fix #3: conversation_memory recent_user_questions ───
+  [OK] importable, 14 topic keyword map
+
+─── Fix #4: HF Search local fallback ───
+  [OK] 6 kategori (turkish bert/image/sentiment/QA/summ/embedding)
+
+─── Fix #5: list_dir retry + diagnostics ───
+  [OK] os.scandir retry + _diagnostics field
+
+─── Fix #6: read_file recursive ───
+  [OK] rglob arama + auto-retry
+
+─── Fix #7: read_logs default 200 ───
+  [OK] self_dev_tools + wrapper aynı
+
+TOPLAM: 7/7 PASS
+```
+
+### Sonraki Sprint Önerileri
+
+- Eyotek CDP otomatik başlatma cron (Chrome 7/24 açık olsun)
+- Cerebras tool-calling aktivasyon (ENABLE_GROQ_TOOLS=true) — yeni 12 API'yi de kullanabilir
+- Routing dağılımı yeniden ölçüm (real_user_routing_stats — Claude %38 hedef %25)
+
+---
+
+## 🔌 OTURUM 25.43-INTEGRATION (9 May GECE 23:00 → 23:50)
 
 ---
 
