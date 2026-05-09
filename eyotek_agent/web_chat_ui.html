@@ -11190,9 +11190,11 @@ html[data-theme="dark"] #push-permission-dialog .ppd-btn-skip:hover {
      hala 'auto' kalip click yiyordu. Cozum: universal selector + !important. */
   pointer-events: none !important;
 }
-/* Banner ICINDEKI HER SEYE pointer-events:none zorla */
+/* 25.43-PWA-V3 (Neo browser-test 10 May): Onceki rule banner ROOT'a embed
+   pointer-events ekledi, Chrome CSS parser uzun comment + nested rule onu
+   skip ediyordu. Cozum: ROOT, child, button rule'lari AYRI satirlarda. */
+#pwa-install-banner { pointer-events: none !important; }
 #pwa-install-banner * { pointer-events: none !important; }
-/* SADECE Yukle ve X butonlarina auto — sadece bunlar tiklanabilir */
 #pwa-install-banner .pwa-banner-install,
 #pwa-install-banner .pwa-banner-cancel { pointer-events: auto !important; cursor: pointer; }
 #pwa-install-banner.show { transform: translateX(-50%) translateY(0); }
