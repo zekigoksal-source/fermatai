@@ -4,6 +4,82 @@
 
 ---
 
+## 🔍 OTURUM 25.43-DIAG (10 May SABAH 03:30 → 04:00) — selfdev teşhis bug + HF token
+
+**Tetik:** Neo "botla konuşmamı incele + HF token ekle". Konuşma 21:35-21:38'de bot lazy_sync ile ilgili **YANLIŞ teşhis** verdi: "import yok, hook yok, deploy edilmemiş". Gerçekte tam tersi — 4 dosyada `from eyotek_lazy_sync import` mevcut.
+
+### Bot Yanlış Teşhisinin Kök Nedeni (3 katman)
+
+| # | Katman | Bug |
+|---|--------|-----|
+| 1 | VPS infra | `ripgrep` (rg) kurulu değildi → selfdev_grep_repo Python fallback'a düşüyor |
+| 2 | Python fallback | Bot ripgrep alternation `\|` escape yazıyor, Python re literal pipe arıyor → 0 match |
+| 3 | Bot davranışı | 0 match'ı doğrulamadan "kod yok" kesin yorum → Neo'ya yanlış bilgi |
+
+### 3 Fix
+
+**Fix 1 — ripgrep VPS'e kuruldu:**
+```
+sudo apt-get install ripgrep
+→ /usr/bin/rg, ripgrep 14.1.0
+```
+
+**Fix 2 — `self_dev_tools.py` grep_repo Python fallback escape normalize:**
+```python
+# 25.43-CONV-FIX
+normalized_pattern = pattern.replace(r'\|', '|').replace(r'\\|', '|')
+regex = re.compile(normalized_pattern)
+```
+
+**Fix 3 — `system_prompts.py` yeni kural bölümü:**
+> 🔍 SELFDEV TEŞHİS DOĞRULAMA — 0 Match Şüpheli
+> - 0 match → ALTERNATIF pattern dene
+> - selfdev_read_file ile DOĞRUDAN dosyaya bak
+> - 3 kanıt olmadan "kod yok" YASAK
+
+### HF_API_TOKEN Eklendi
+
+Neo HuggingFace token aldı: `hf_***MASKED***` (VPS'e güvenli aktarıldı, git'te değil)
+- VPS `/opt/fermatai/.env` eklendi (ASLA git'te DEĞİL — security)
+- Bridge restart sonrası systemd EnvironmentFile yeniden yüklendi
+- Bridge process env doğrulandı: `HF_API_TOKEN=hf_***MASKED***`
+- Bot artık `huggingface_inference` tool'unda authenticated istek atabilir
+- Inference: text-classification, sentiment, NER, summ, QA — hepsi açık
+
+### Lazy Sync Doğrulandı (yanlış teşhise rağmen çalışıyor)
+
+VPS'te direkt grep verifikasyon:
+```
+grep -rn 'from eyotek_lazy_sync\|import eyotek_lazy_sync' /opt/fermatai/eyotek_agent/
+fermat_core_agent.py:577:  from eyotek_lazy_sync import lazy_sync_after_query
+fermat_core_agent.py:613:  from eyotek_lazy_sync import lazy_sync_after_query
+fermat_core_agent.py:705:  from eyotek_lazy_sync import lazy_sync_after_query
+fermat_core_agent.py:750:  from eyotek_lazy_sync import lazy_sync_after_query
+```
+
+4 hook aktif:
+- L577: `_tool_eyotek_query` (agentic)
+- L613: `_tool_eyotek_read`
+- L705: `_tool_sinav_sonuclari` (sinav header'dan sinav_adi inject)
+- L750: `_tool_ogrenci_drilldown`
+
+Smoke test (önceki oturumda) 5/5 PASS — student_exams + counsellor + attendance + teacher_timetable + devamsizlik gerçek INSERT.
+
+### Production Sağlık (final)
+
+```
+✅ Bridge HTTP 200
+✅ 3 systemd service active (bridge + chrome-cdp + session-keeper)
+✅ Eyotek health: online
+✅ Lazy sync 5 tablo gerçek INSERT (4 hook aktif)
+✅ Render quality gate (3D + skor pre-flight)
+✅ ripgrep 14.1.0 VPS'te
+✅ HF_API_TOKEN aktif (bridge env'de)
+✅ Git origin/main: 538cb4f
+```
+
+---
+
 ## 🛠️ OTURUM 25.43-CONV (10 May SABAH 02:30 → 03:00) — Konuşma analizi 2 fix
 
 **Tetik:** Neo "botla konuşmamı incele, render iteration bug'ı bu gece bitir, teknik borç kalmasın".
