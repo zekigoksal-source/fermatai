@@ -5643,7 +5643,8 @@ function _repairCompare2Json(raw) {
   // Pattern 3: String içinde unescaped " (örn: ...sperm")},"takeaway":...)
   // İmza: harf/rakam/parantez sonrası " sonra " (yani string kapatmaya niyetlenmiş ama içerik bitmemiş)
   // Heuristic: })" pattern — string içinde " var, sonra )," yapıyı bozmuş
-  fixed = fixed.replace(/([a-zA-ZçğıöşüÇĞİÖŞÜ\)\]])\s*"\s*\)\s*\}/g, '$1)"}');
+  // ASCII-only pattern — tarayıcı uyumluluk
+  fixed = fixed.replace(/([a-zA-Z\)\]])\s*"\s*\)\s*\}/g, '$1)"}');
   try { JSON.parse(fixed); return fixed; } catch (_) {}
 
   return raw; // repair edemedi, orijinal döndür
