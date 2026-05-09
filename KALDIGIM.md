@@ -85,6 +85,28 @@ Yan sistemler değişmeden çalışmaya devam ediyor (deep_research, tool_perf, 
 - **Reuse imkanı** — 15 fonksiyon tek service'den çağrılır (cron, dashboard, web_chat)
 - **Code review** — PR'lar küçük, odaklı
 
+### Final Sistem Sağlık Kontrolü (9 May 03:20 GECE)
+| Bileşen | Durum |
+|---------|-------|
+| fermat_core_agent.py | 4,661 satır (orchestrator) |
+| 6 service modülü | academic, etut, knowledge, admin, exam, student — tüm import OK |
+| Bridge (uvicorn) | 3 worker (multiprocessing.spawn) ✅ |
+| Redis | 2+ hafta uptime, PONG ✅ |
+| Renderer pipeline | 27/27 ✅ |
+| External APIs | 12/12 reachable ✅ |
+| Final smoke test | 8/8 PASS ✅ |
+| Cache HIT | %100 |
+| Foto limit | 5 (master constant) |
+| Git tag rollback | rollback-pre-refactor-20260509 |
+
+### Cleanup (oturum sonu)
+- `services/fermat_core_agent.py` (289KB yanlış scp) silindi
+- `services/__pycache__` temizlendi
+- `services/__init__.py` 4 yeni service export eklendi (commit 652efb4)
+
+### Refactor Sırasındaki Geçici Sorun (çözüldü)
+Multi-restart deploy sırasında (Pass 1→2→3 çoklu bridge restart) Neo'nun aktif konuşması bölündü, multi-worker leader takeover sonrası context contamination oldu — bot bir cevapta "son sezon en başarılı 5 öğrenci" sorusuna eski bir konuşmadan kalan "Osmanlı 3D İnteraktif Harita" cevabını yansıttı (12707). Bridge stabil hale gelince düzeldi, sonraki testler 8/8 PASS. Ders: ileride büyük refactor deploy'ları sessiz saatte (gece 02-04) toplu yapılmalı, parça parça değil.
+
 ### Eski Sonuç (Pass 1+2 sonrası, 02:30)
 
 | Pass | Service | Fonksiyon | Satır |
