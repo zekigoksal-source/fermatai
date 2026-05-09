@@ -2101,7 +2101,42 @@ async def _solve_photo_question(image_bytes: bytes, user_prompt: str = "") -> st
     vision_prompt = (
         "Sen Fermat Egitim Kurumlari'nin uzman akademik asistanisin. "
         "Turkiye'deki YKS (TYT/AYT) ve LGS sinavlarina hazirlanan ogrencilere yardim ediyorsun.\n\n"
-        "BU FOTOGRAFTAKİ SORUYU COZ.\n\n"
+
+        "═══════════════════════════════════════════════════════════════\n"
+        "🔍 ADIM 0 — FOTOGRAF SINIFLANDIRMA (ZORUNLU ILK ADIM)\n"
+        "═══════════════════════════════════════════════════════════════\n"
+        "25.42 (Bulgu B, 9 May Mehmet Karpuz bug): Mehmet sinav sonuc tablosu\n"
+        "fotografi yolladi, bot soru zannedip 'cozulecek soru yok' dedi. KRİTİK:\n"
+        "fotografi once SINIFLANDIR, sonra uygun islemi yap.\n\n"
+
+        "ÜÇ tip:\n"
+        "  TIP A — SORU (TYT/AYT/LGS test sorusu, sıklı, çözüm bekliyor)\n"
+        "  TIP B — TABLO/SONUC (deneme sonuc ekrani, net listesi, puan tablosu)\n"
+        "  TIP C — KONU/NOTLAR (defter sayfasi, ders notu, kavram aciklamasi)\n\n"
+
+        "TIP TESPITI:\n"
+        "  • A) sorda) cözüm) sıklar (A/B/C/D/E) varsa + soru kökü → SORU\n"
+        "  • B) Sayisal değerler tabloda (net, puan, sira) + tarih/sınav adı → TABLO\n"
+        "  • C) El yazısı / matbu metin / kavram açıklaması → KONU\n\n"
+
+        "TIP B (TABLO) YANITI:\n"
+        "  📊 *Sınav Sonuç Tablosu Tespit Edildi*\n"
+        "  Görünen denemeler: [her sinav: ad, tarih, net, puan]\n"
+        "  💡 _Bu tabloyu nasıl değerlendireyim?_\n"
+        "  - 🎯 Puan tahmini istersen: \"şu an tahmini puanım\" yaz\n"
+        "  - 📈 Trend analiz istersen: \"deneme analizi\" yaz\n"
+        "  - 🔍 Belirli sınavın detayını istersen: o yayının adını söyle\n"
+        "  → Cözmem GERIK: HİÇBİR ŞEY UYDURMA, sadece görüneni yaz.\n"
+        "  → ASLA 'cozulecek soru yok' deme — kullaniciyi yonlendir.\n\n"
+
+        "TIP C (KONU/NOTLAR) YANITI:\n"
+        "  📝 *Konu Notu Tespit Edildi*\n"
+        "  Konu: [tahmin et]\n"
+        "  Senin notlar: [kısa ozet, 2-3 cumle]\n"
+        "  💡 _Bu konuda soru cozmek ister misin? 'X konusunda quiz' yaz._\n\n"
+
+        "TIP A (SORU) → AŞAĞIDAKI ÇÖZÜM FORMATINI KULLAN.\n"
+        "═══════════════════════════════════════════════════════════════\n\n"
 
         "COZUM FORMATI:\n"
         "📝 *Soru Analizi*\n"
@@ -3723,9 +3758,15 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                                 _hname = _glh() or None
                             except Exception:
                                 _hname = None
+                            # 25.42 (Bulgu F): test_user flag — Neo testi vs gercek kullanici ayrimi
+                            try:
+                                from test_user_registry import is_test_phone as _is_test_p
+                                _is_test = _is_test_p(phone)
+                            except Exception:
+                                _is_test = False
                             await _conn.execute(
-                                "INSERT INTO routing_stats (phone, role, message, response_source, response_ms, handler_name) VALUES ($1,$2,$3,$4,$5,$6)",
-                                phone, profile.get("role",""), text[:200], "fast_response", 5, _hname)
+                                "INSERT INTO routing_stats (phone, role, message, response_source, response_ms, handler_name, is_test_user) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+                                phone, profile.get("role",""), text[:200], "fast_response", 5, _hname, _is_test)
                 except Exception as _e:
                     logger.debug(f"  Fast DB log hatasi: {_e}")
                 # Usage log
@@ -3912,10 +3953,15 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                     if not _is_test_mode():
                         _pool_brst = await get_db_pool()
                         async with _pool_brst.acquire() as _cb:
+                            try:
+                                from test_user_registry import is_test_phone as _is_test_p
+                                _is_test_b = _is_test_p(phone)
+                            except Exception:
+                                _is_test_b = False
                             await _cb.execute(
-                                "INSERT INTO routing_stats (phone, role, message, response_source, response_ms, handler_name) VALUES ($1,$2,$3,$4,$5,$6)",
+                                "INSERT INTO routing_stats (phone, role, message, response_source, response_ms, handler_name, is_test_user) VALUES ($1,$2,$3,$4,$5,$6,$7)",
                                 phone, profile.get("role","") if profile else "", text[:200],
-                                "burst_limit", 0, "claude_burst_skip"
+                                "burst_limit", 0, "claude_burst_skip", _is_test_b
                             )
                 except Exception as _brst_audit_e:
                     logger.debug(f"  burst audit yazim hatasi: {_brst_audit_e}")
@@ -4178,11 +4224,17 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                     _tools = None
                     _blocks = None
                 if not _is_test_mode():
+                    # 25.42 (Bulgu F): test_user flag
+                    try:
+                        from test_user_registry import is_test_phone as _is_test_p
+                        _is_test_main = _is_test_p(phone)
+                    except Exception:
+                        _is_test_main = False
                     await _conn3.execute(
-                        "INSERT INTO routing_stats (phone, role, message, response_source, response_ms, handler_name, decision_trace, tools_called, prompt_blocks) "
-                        "VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9)",
+                        "INSERT INTO routing_stats (phone, role, message, response_source, response_ms, handler_name, decision_trace, tools_called, prompt_blocks, is_test_user) "
+                        "VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10)",
                         phone, profile.get("role",""), text[:200], _src, _agent_ms, _claude_tool,
-                        _trace_json, _tools or None, _blocks or None)
+                        _trace_json, _tools or None, _blocks or None, _is_test_main)
         except Exception as _rstats_err:
             logger.warning(f"routing_stats yazim hatasi: {_rstats_err}")
 

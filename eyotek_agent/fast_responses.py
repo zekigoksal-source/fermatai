@@ -76,6 +76,10 @@ async def ogrenci_kimligin(soz_no: int, name: str) -> str:
     25.41 (Neo bug 7 May konuşma analizi):
     Mehmet Ali Karpuz "Ben kimim" yazdı → bot "Sen Mehmet Ali Karpuz! Fermat öğrencisi."
     cevabı verdi. Çok kısa — sınıf/hedef/son sınav/devamsızlık eklenmeli.
+
+    25.42 (Bulgu C+D, Atlas #91/#94, Mehmet Karpuz 9 May):
+    Profile bulunamazsa ASLA 'Fermat öğrencisi' deme (#94 kayit-disi kurum atamasi)
+    Name ASLA stale cache'den gelirse 'Sen *X*!' deme (#91 sabit kimlik atama)
     """
     try:
         from db_pool import db_fetchrow, db_fetchval
@@ -84,7 +88,17 @@ async def ogrenci_kimligin(soz_no: int, name: str) -> str:
             FROM students WHERE soz_no::text = $1
         """, str(soz_no))
         if not prof:
-            return f"Sen *{name}*! 🎓\nFermat Egitim Kurumlari ogrencisi."
+            # 25.42 KVKK fix: kayitsiz/dogrulanmamis kullanici — guvenli not-tanima
+            return (
+                "Henüz seni sistemde tanımlayamadım 🤔\n\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "Eğer Fermat Eğitim Kurumları öğrencisiysen ve "
+                "telefon numaran sistemde kayıtlı değilse, "
+                "yöneticiyle iletişime geç.\n"
+                "━━━━━━━━━━━━━━━━━━━━\n\n"
+                "Misafir olarak deneme yapmak istersen, "
+                "_'web kodu'_ yaz — ziyaretçi modunda erişebilirsin. ✨"
+            )
         first = prof.get('first_name') or (name.split()[0] if name else "")
         sube = prof.get('sube') or ""
         kur = prof.get('kur') or ""
@@ -140,8 +154,13 @@ async def ogrenci_kimligin(soz_no: int, name: str) -> str:
         lines.append(f"_Bana 'son sınavlarım' / 'zayıf konularım' / 'çalışma planı yap' yazabilirsin._ 💪")
         return "\n".join(lines)
     except Exception:
-        # Fallback: minimal
-        return f"Sen *{name}*! 🎓\nFermat Egitim Kurumlari ogrencisi."
+        # 25.42 (Bulgu C, Atlas #91): Fallback'te 'Fermat ogrencisi' diye sabit
+        # kimlik atama YASAK. Profile bulamadik = bilmiyoruz, dogrulanmamis kullanici.
+        return (
+            "Profil bilgine şu an erişemiyorum, bir sorun oluşmuş olabilir 🔄\n\n"
+            "_Birkaç dakika sonra tekrar dene veya sistem yöneticisiyle "
+            "iletişime geç._"
+        )
 
 
 async def foto_cevap_dogrulama(name: str, phone: str, sik: str) -> Optional[str]:
@@ -615,6 +634,97 @@ async def ogrenci_son_deneme(soz_no: int, name: str, exam_filter: str = "") -> s
         import logging
         logging.getLogger(__name__).debug(f"[FAST_RENDER] dashboard fail: {_re}")
 
+    return "\n".join(lines)
+
+
+async def ogrenci_yayinevi_denemesi(soz_no: int, name: str, message: str) -> Optional[str]:
+    """Yayinevi mention'i (Sifir Pozitif, Apotemi, Palme, 3D, vb.) — fast yanit.
+
+    Oturum 25.42 (9 May 2026, Mehmet Karpuz bug):
+    "0 pozitif" / "sifir pozitif yayinlari'na baz al" → bot "0 sayisi pozitif midir"
+    matematik sorusu sandi (4 kez tekrar). Asil mesaj: Sifir Pozitif Yayinevi denemesi.
+
+    Akis:
+    1) Mesajda yayinevi adi var mi? Yoksa None (LLM'e dus)
+    2) Net (X net) belirtilmiş mi? Belirtildiyse Claude'a yonlendir (None) —
+       deneme kaydi + trend analizi LLM ile yapilir
+    3) Sadece yayinevi (net YOK) → DB'de o yayinevinin denemesi var mi?
+       - Var → son deneme tablosu + "bu mu kastettigin?"
+       - Yok → kibarca "elimde bu yayinin denemesi yok, netini paylas" yanit
+    """
+    try:
+        from yayinevi_katalog import detect_publisher, extract_net
+    except Exception:
+        return None  # katalog yoksa LLM dussun
+
+    pub = detect_publisher(message or "")
+    if not pub:
+        return None
+
+    net = extract_net(message or "")
+    if net is not None:
+        # "Sifir Pozitif 65 net" → Claude'a (yeni deneme kaydi + trend yorumu)
+        return None
+
+    # Sadece yayinevi adi — DB'de eslesen exam var mi?
+    # exam_name ILIKE pattern: "Sifir Pozitif" → "%pozitif%" (genis)
+    # Daha spesifik: kanonik adin ilk kelimesi
+    first_word = pub.split()[0].lower()
+    # Bazi yayinevleri DB'de farkli yazilmis olabilir
+    # "Sifir Pozitif" → DB'de "Pozitif" / "Sıfır Pozitif" / "0 Pozitif"
+    # ILIKE % kullaniriz, case + Turkce karakter farketmez
+    rows = await _q(
+        "SELECT exam_name, exam_date, turkce, matematik, geometri, fizik, kimya, biyoloji, toplam "
+        "FROM student_exams WHERE soz_no=$1 AND exam_name ILIKE $2 "
+        "ORDER BY exam_date DESC NULLS LAST LIMIT 3",
+        soz_no, f"%{first_word}%"
+    )
+
+    first = name.split()[0] if name else ""
+
+    if not rows:
+        # Yayin elinizde yok — kibar + actionable
+        return (
+            f"{first}, *{pub} Yayınları* denemesi sistemde gözükmüyor 📝\n\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"Bu denemeyi yeni mi çözdün? Netini paylaş, hemen analiz edeyim:\n\n"
+            f"   _\"{pub} TYT 65 net\"_\n"
+            f"   _\"{pub} matematik 18 net türkçe 30 net\"_\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "💡 Detaylı paylaşırsan (ders bazlı net), zayıf konularını "
+            "anında çıkartırım. ✨"
+        )
+
+    # Eslesen deneme(ler) var — son deneme tablosunu goster
+    e = rows[0]
+    lines = [
+        f"{first}, işte *{pub} Yayınları* sonuçların 📊\n",
+        "━━━━━━━━━━━━━━━━━━━━━━",
+        f"📝 *{e['exam_name']}*",
+        f"_{e['exam_date']}_ | Toplam: *{e['toplam']:.1f}* net" if e['toplam'] else f"_{e['exam_date']}_",
+        "━━━━━━━━━━━━━━━━━━━━━━\n",
+    ]
+    subjects = [
+        ("Türkçe", e.get('turkce'), 40, "📖"),
+        ("Matematik", e.get('matematik'), 30, "📐"),
+        ("Geometri", e.get('geometri'), 10, "📏"),
+        ("Fizik", e.get('fizik'), 7, "⚡"),
+        ("Kimya", e.get('kimya'), 7, "🧪"),
+        ("Biyoloji", e.get('biyoloji'), 6, "🧬"),
+    ]
+    for s, v, max_net, ic in subjects:
+        if v is not None and v > 0:
+            ratio = v / max_net if max_net > 0 else 0
+            emoji = "🟢" if ratio >= 0.7 else ("🟡" if ratio >= 0.4 else "🔴")
+            lines.append(f"{ic} *{s}*: {emoji} *{v:.1f}*/{max_net} net")
+
+    if len(rows) > 1:
+        lines.append("")
+        lines.append(f"📚 *{pub}* yayinindan toplam *{len(rows)}* deneme var.")
+        lines.append("_Detaylı trend için: \"deneme analizi\" yaz._")
+
+    lines.append("")
+    lines.append("Yeni bir denemeysen → netini paylaş, hemen kıyaslayayım. 🎯")
     return "\n".join(lines)
 
 
@@ -2887,6 +2997,24 @@ async def ogrenci_guclu_konular(soz_no: int, name: str) -> str:
 
 # Ogrenci soru kaliplari: (regex_pattern, handler_func, aciklama)
 OGRENCI_PATTERNS = [
+    # ═══════════════════════════════════════════════════════════════════════
+    # YAYINEVI ADI DETECTION — Oturum 25.42 (9 May, Mehmet Karpuz bug)
+    # "0 pozitif" / "sifir pozitif" → bot "0 sayisi pozitif midir" math sorusu
+    # sandi (4 kez tekrar). Handler precise yayinevi tespit yapar (katalog).
+    # Regex genis: yayinevi adi bicimini yakalar, handler eler/cevirir.
+    # ═══════════════════════════════════════════════════════════════════════
+    (
+        r"(\bs[iı]f[iı]r\s*pozitif|\b0\s*pozitif|\bpozitif\s*yay|"
+        r"\bapotem[iı]|\bpalme\b|\b3d\s*(tg|tyt|ayt|yay|deneme)|\b3d\s+\d+\s*net|"
+        r"\bbilgi\s*sarmal|\byay[iı]n\s*deniz|\bu[cç]\s*d[oö]rt\s*be[sş]|\budb\b|"
+        r"\blimit\s*(deneme|yay|tyt|ayt)|\besen\s*(yay|deneme|tyt|ayt)|"
+        r"\bcap\s*(deneme|yay|tyt|ayt)|\bkarek[oö]k|\btongu[cç]|"
+        r"\bi[sş]ler\s*acil|\bosym\s*direkt|\bendemik|\bkafa\s*dengi|"
+        r"\b345\s*yay)",
+        "yayinevi_denemesi",
+        "Yayinevi mention (Sifir Pozitif/Apotemi/Palme/3D vb)"
+    ),
+
     # Web chat OTP — "web kodu" / "giris kodu" / "fermat ai kodu" dedi
     # Turkce karakter: i/ı + s/ş kombinasyonlari (giriş/giris/giriş/giriş)
     # NOT: "chatgpt", "chat'e git" ifadeleri BU pattern'e takilmamali → özel EXCLUDE
@@ -4145,6 +4273,11 @@ async def try_fast_response(
                     if handler == "claude_atlas":
                         return None  # 22.1n — Claude get_atlas_trend tool cagirsin (Neo only)
 
+                    if handler == "yayinevi_denemesi":
+                        # Oturum 25.42 (9 May, Mehmet Karpuz "0 pozitif" bug fix)
+                        # Yayinevi mention'u → DB lookup veya net iste; net VARsa Claude'a (None)
+                        return await ogrenci_yayinevi_denemesi(soz_no, name, message)
+
                     if handler == "web_kodu":
                         return await web_kodu(name, phone=caller_phone)
 
@@ -4285,6 +4418,39 @@ async def try_fast_response(
                         return await ogrenci_deneme_kiyasla(soz_no, name, count)
                     elif handler == "puan_tahmin":
                         # 25.41 (Neo 7 May): Puan Tahmin Motoru
+                        # 25.42 (Mehmet Karpuz 9 May, Bulgu H): Context-aware skip.
+                        # Eger son 5 dk icinde:
+                        #   - [FOTO SORU] paylasimi geldi (yeni veri)
+                        #   - "yanılıyorsun" / "hayır" / "yanlış" / "baz al" gecti (frustration)
+                        # → fast_response ayni cevabi DON-MEZ, Claude'a → context'le yeni cevap
+                        try:
+                            from db_pool import db_fetch as _dfh
+                            recent = await _dfh(
+                                "SELECT content, message_role FROM agent_conversations "
+                                "WHERE phone=$1 AND created_at > NOW() - INTERVAL '5 minutes' "
+                                "AND id < (SELECT MAX(id) FROM agent_conversations WHERE phone=$1) "
+                                "ORDER BY created_at DESC LIMIT 6",
+                                caller_phone
+                            )
+                            iteration_signal = False
+                            for r in recent or []:
+                                c = (r.get("content") or "").lower()
+                                if r.get("message_role") == "user":
+                                    if (
+                                        "[foto" in c
+                                        or "yanil" in c or "yanıl" in c
+                                        or "yanli" in c or "yanlı" in c
+                                        or "hayır" in c or "hayir" in c
+                                        or "baz al" in c
+                                        or "değil" in c or "degil" in c
+                                    ):
+                                        iteration_signal = True
+                                        break
+                            if iteration_signal:
+                                # Claude context'i okuyup foto/frustration'a uyumlu cevap versin
+                                return None
+                        except Exception:
+                            pass  # DB yoksa fast davran
                         from puan_tahmin_motoru import puan_tahmin
                         return await puan_tahmin(soz_no, name)
                     elif handler == "zayif_konular":

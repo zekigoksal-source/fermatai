@@ -84,17 +84,21 @@ async def request_otp(phone: str) -> dict:
 
     # 25.40r-B2 (Yagiz fix): DUPLICATE OTP GUARD
     # Yagiz Alptekin (197) 18 Nis 21:22'de 5ms araliklarla 3 OTP urettigi icin
-    # 3 farkli WP mesaji aldi, hangisini yazacagi karisti. Frontend double-click
-    # / browser fetch retry / race condition bunu tetikleyebilir.
-    # COZUM: son 30sn icinde gecerli OTP varsa, yenisini URETME, mevcut olani
-    # tekrar dondur. Boylece kullanici 3 farkli kod almaz, hep tek geçerli kod.
+    # 3 farkli WP mesaji aldi, hangisini yazacagi karisti.
+    #
+    # 25.42 GENISLEME (Mehmet Karpuz 9 May): 30sn window cok dar — Mehmet 31sn
+    # araliklarla 3 OTP aldi (14:50:20 / 14:50:51 / 14:51:22). 30sn guard kacirdi.
+    # YENI MANTIK: Gecerli (kullanilmamis + expire olmamis) OTP varsa AYNISINI dondur.
+    # Window = OTP_VALIDITY_MIN (default 15 dk). Mantik: kod hala kullanilabiliyorsa
+    # yenisi gereksiz — kullanici onu kullansin. UX: "Az onceki kod hala gecerli".
     recent_otp = await db_fetchrow(
         """
-        SELECT otp_code, otp_expires_at
+        SELECT otp_code,
+               otp_expires_at,
+               EXTRACT(EPOCH FROM (otp_expires_at - NOW()))::int AS sec_remaining
         FROM web_sessions
         WHERE phone=$1
           AND otp_used_at IS NULL
-          AND otp_created_at > NOW() - INTERVAL '30 seconds'
           AND otp_expires_at > NOW()
         ORDER BY otp_created_at DESC
         LIMIT 1
@@ -104,6 +108,8 @@ async def request_otp(phone: str) -> dict:
     if recent_otp:
         # Var olan OTP'yi tekrar dondur — yenisini uretme (duplicate guard)
         code = recent_otp["otp_code"]
+        sec_left = int(recent_otp.get("sec_remaining") or 0)
+        min_left = max(1, sec_left // 60)
         return {
             "success": True,
             "code": code,
@@ -114,7 +120,8 @@ async def request_otp(phone: str) -> dict:
                 f"🔐 *Web Kodun: {code}*\n\n"
                 f"🌐 *https://www.fermategitimkurumlari.com/fermatai* adresinde "
                 f"telefonun + bu kod ile giriş yap.\n\n"
-                f"_Kod {OTP_VALIDITY_MIN} dakika geçerli._"
+                f"_Az önceki kodun hâlâ geçerli — yaklaşık *{min_left} dk* daha "
+                f"kullanılabilir._"
             ),
             "_dup_guard": True,  # debug — duplicate request, yeni OTP uretilmedi
         }

@@ -33,7 +33,17 @@ from typing import Optional
 _HISTORY: "OrderedDict[str, list]" = OrderedDict()
 _MAX_PHONES = 200
 _HISTORY_DEPTH = 3  # son 3 handler kaydet
-_REPEAT_WINDOW_SEC = 90  # 90 saniye icinde ayni handler → skip
+_REPEAT_WINDOW_SEC = 90  # default: 90 saniye icinde ayni handler → skip
+
+# 25.42 (Bulgu H, Mehmet Karpuz 9 May): Hesaplamali/expansive handler'lar
+# icin daha uzun pencere — kullanici 3 dk sonra ayni soruyu tekrarlasa
+# context degismis demektir, Claude'a yonlendir.
+_CUSTOM_WINDOWS = {
+    "puan_tahmin": 300,            # 5 dk — Mehmet 3dk16sn arayla 2 kez sordu, ayni cevap verdi
+    "claude_kisisel_hedef": 300,   # benzer (hedef puan analizi)
+    "deneme_kiyasla": 180,         # 3 dk
+    "zayif_konular": 180,          # 3 dk
+}
 
 # SKIP edilmemesi gereken handler'lar (her seferinde fast versin)
 _SAFE_REPEAT_HANDLERS = {
@@ -100,9 +110,10 @@ def should_skip_repeat(phone: str, handler: str, message: str = "") -> bool:
     if last["handler"] != handler:
         return False
 
-    # Zaman kontrolu
+    # Zaman kontrolu — 25.42: per-handler custom window
     age = time.time() - last["ts"]
-    if age > _REPEAT_WINDOW_SEC:
+    window = _CUSTOM_WINDOWS.get(handler, _REPEAT_WINDOW_SEC)
+    if age > window:
         return False
 
     # Mesaj cok benzer mi (ek kontrol — false positive azaltma)

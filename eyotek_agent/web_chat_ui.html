@@ -3283,12 +3283,27 @@ function formatMsg(text) {
 
   // ── 1. Chart blokları — markdown'a geçmeden önce placeholder ekle ──
   // Format: ```chart\n{json}\n```  (22.1n-bugfix: CRLF ve farkli newline'lara dayanikli)
+  // 25.42 (Bulgu E, 9 May): Streaming tamamlanmamis chart bloklari (kapatma ``` yok)
+  // sessizce dusuyordu — Neo "TYT Net Trendi sadece bu calısmadı" raporu.
+  // Fix: Once tamamlanmis bloklari isle, sonra eksik kalan acik blok varsa
+  // "yukleniyor" placeholder'i goster. Boylece kullanici chart bekledigini bilir.
   const chartPlaceholders = [];
   md = md.replace(/```chart\s*\r?\n([\s\S]*?)\r?\n?```/g, (match, jsonStr) => {
     const idx = chartPlaceholders.length;
     chartPlaceholders.push(jsonStr.trim());
     return `\n\n<div class="chart-pending" data-chart-idx="${idx}"></div>\n\n`;
   });
+  // Eksik kapatma — streaming kesintisi: ```chart var ama kapatma ``` yok
+  // (Bot streaming sirasinda chunk gelmedi VEYA token limiti dolmus)
+  if (/```chart\s*\r?\n/.test(md) && !md.match(/```chart\s*\r?\n[\s\S]*?```/)) {
+    md = md.replace(/```chart\s*\r?\n([\s\S]*)$/, () => (
+      '\n\n<div class="chart-incomplete" style="padding:10px 14px;' +
+      'background:rgba(245,158,11,0.08);border:1px dashed rgba(245,158,11,0.4);' +
+      'border-radius:8px;color:var(--fg-muted);font-size:13px;margin:8px 0">' +
+      '⏳ Grafik üretiliyor... <em style="opacity:0.7">' +
+      '(yanıt tamamlandığında otomatik yenilenir)</em></div>\n\n'
+    ));
+  }
 
   // ── Oturum 25.29 — Görsel renderer placeholder'ları ──
   // ```sim — p5.js iframe sandbox (interaktif simülasyon)

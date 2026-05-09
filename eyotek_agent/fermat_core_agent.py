@@ -4609,10 +4609,28 @@ async def _get_caller_profile(phone: str) -> dict:
                 "phone": clean_phone,
                 "source": "student_phone_match",
             }
-        # Hicbir yerde bulunamadi
-        return {"role": "unknown", "full_name": "", "phone": clean_phone, "source": "none"}
-    except Exception:
-        return {"role": "admin", "full_name": "Admin", "phone": phone}
+        # Hicbir yerde bulunamadi — kayitsiz misafir
+        # 25.42 (Bulgu D, Atlas #94): Kayitsiz numaraya 'Fermat ogrencisi' deme
+        return {
+            "role": "unknown",
+            "full_name": "",
+            "phone": clean_phone,
+            "source": "none",
+            "is_verified": False,  # KVKK guvenlik flag
+        }
+    except Exception as _profile_err:
+        # 25.42 (Bulgu D, Atlas #94): DB hicki olunca ASLA 'admin' rolune
+        # dusurme (KVKK + privilege escalation riski). 'unknown' don, downstream
+        # erisimi reddetsin.
+        logger.error(f"_get_caller_profile exception ({clean_phone}): {_profile_err}")
+        return {
+            "role": "unknown",
+            "full_name": "",
+            "phone": phone,
+            "source": "error_fallback",
+            "is_verified": False,
+            "_error": str(_profile_err)[:80],
+        }
 
 
 async def _get_caller_role(phone: str) -> str:
