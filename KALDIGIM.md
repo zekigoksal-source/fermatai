@@ -4,6 +4,78 @@
 
 ---
 
+## 🔬 OTURUM 25.43-LAZY-EXTEND (10 May SABAH 02:00 → 02:30) — Lazy sync genişleme
+
+**Tetik:** Neo "Eyotek'e bir öğrencinin denemesine baktığımda hazır girmişken tüm öğrenciler için DB'ye eklliyor olması gerekiyor — daha önce yapmıştık bunu."
+
+### Tespit (forensics)
+
+Lazy sync mevcut ama eksik kapsam:
+
+| Tool | Lazy sync | Durum |
+|------|-----------|-------|
+| `eyotek_query` (agentic) | ✅ var | Çalışıyor (4 May commit) |
+| `eyotek_read` | ❌ YOK | Hook eksik |
+| `sinav_sonuclari` | ❌ YOK | Hook eksik |
+| `ogrenci_drilldown` | ❌ YOK | Hook eksik |
+
+Ayrıca `_upsert_student_exams` **conservative idle** — sadece kayıt sayısı dönüyordu, **gerçek INSERT yapmıyordu** (schema mapping karmaşıklığı yüzünden bekletilmişti).
+
+Yani Neo'nun "her sorgu DB'ye gerçekten yazılsın" beklentisi tam karşılanmıyordu.
+
+### Fix 1 — 3 tool'a lazy hook eklendi
+
+`fermat_core_agent.py`:
+- `_tool_eyotek_read` — page_key → page_path mapping
+- `_tool_sinav_sonuclari` → student/exam-result mapping (drill-down çalışınca otomatik DB)
+- `_tool_ogrenci_drilldown` — alt_sayfa → page_path
+
+Hepsi result'a `_lazy_synced` field ekliyor — bot cevapta "DB güncellendi" diyebilir.
+
+### Fix 2 — `_upsert_student_exams` gerçek INSERT
+
+Schema-safe mapping (UNIQUE soz_no+exam_code):
+- `ogrenci_adi` → students table'dan soz_no lookup (yoksa skip)
+- `sinav_adi` → exam_name + exam_type tahmin (TYT/AYT/LGS)
+- `tarih_raw` esnek parse (ISO + DD.MM.YYYY + DD/MM/YYYY)
+- `exam_code = lazy_{sinav_slug}_{tarih}` — idempotent, UNIQUE
+- 11 ders/ham_puan parse
+- ON CONFLICT UPDATE (COALESCE — yeni eski'yi ezmiyor, fill ediyor)
+- `status='lazy_sync'` tag — kaynak ayırt edilir
+
+### Akış (Neo'nun beklediği)
+
+```
+Bot "Mehmet sinav sonucu" sordu
+  → _tool_ogrenci_drilldown('Mehmet', 'sinav')
+  → student_drilldown Eyotek'ten çek (TUM öğrenciler aynı sınav listesinde)
+  → result + page='student/exam-result' → lazy_sync_after_query()
+  → _upsert_student_exams: tüm rows DB'ye INSERT/UPDATE
+  → mark_success(student_exams) data_freshness güncelle
+  → bot cevapta gerçek + DB güncel
+```
+
+**Sonuç:** Tek öğrenci sorgusu, hazır oradayken **tüm öğrencilerin** sonuçlarını DB'ye yazıyor (Neo'nun original direktif 25.40t). Maximum data extraction per Eyotek hit.
+
+### Production Sağlık (sonra, 02:30)
+
+```
+✅ Bridge HTTP 200 (8.2ms)
+✅ fermatai-bridge: active
+✅ fermat-chrome-cdp: active
+✅ fermat-session-keeper: active
+✅ eyotek_health: status='online'
+✅ Lazy sync 4 tool kapsamı (eyotek_query + read + sinav + drilldown)
+✅ student_exams gerçek INSERT mantığı
+✅ Git origin/main: 68a00a2
+```
+
+### Kalan Bot Kalite Sorunu (ayrı sprint)
+
+**Render iteration:** Neo bir simulasyon iyileştirme için 4-5 deneme yaptı (boş, eksik, eski versiyondan kötü). `make_render_link` tool'unun mevcut HTML'i çekip iyileştirme yerine sıfırdan üretmesi muhtemel kök neden. **Ayrı oturum** gerekecek — derin debug + 1-3 fix.
+
+---
+
 ## 🌐 OTURUM 25.43-EYOTEK-724 (10 May GECE 00:50 → 01:30) — Eski sistem geri
 
 **Tetik:** Neo "Eyotek 7/24 hazırdı, lazy sync yapmıştık, capsolver var, eski çalışan sistem bozulmuş — fonksiyon kaybı var, dikkatli düzelt."
