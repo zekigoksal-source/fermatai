@@ -621,12 +621,21 @@ async def _tool_ogrenci_drilldown(student: str, alt_sayfa: str,
     )
 
     # 25.43-LAZY-SYNC-EXTEND: alt_sayfa → page_path mapping
+    # 25.43-LAZY-EXTEND-V2: rehberlik + ders programı + devamsızlık eklendi
     sub_page_map = {
-        "etut":     "student/individual-lesson",
-        "yoklama":  "student/attendance-report",
-        "sinav":    "student/exam-result",
-        "sinavlar": "student/exam-result",
-        "exam":     "student/student-exam-detail",
+        "etut":           "student/individual-lesson",
+        "yoklama":        "student/attendance-report",
+        "sinav":          "student/exam-result",
+        "sinavlar":       "student/exam-result",
+        "exam":           "student/student-exam-detail",
+        "rehberlik":      "student/counsellor-meeting",
+        "rehberlik_not":  "student/counsellor-meeting",
+        "counsellor":     "student/counsellor-meeting",
+        "ders_programi":  "student/timetable-teacher",
+        "timetable":      "student/timetable-teacher",
+        "program":        "student/timetable-teacher",
+        "devamsizlik":    "student/attendance-summary",
+        "attendance_summary": "student/attendance-summary",
     }
     page_path = sub_page_map.get(str(alt_sayfa).lower())
     if page_path and isinstance(result, dict):

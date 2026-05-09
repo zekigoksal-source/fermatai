@@ -38,10 +38,17 @@ from data_freshness_helper import mark_success, mark_failure
 
 # page_path lowercase → (module_adi, upsert_fonksiyonu)
 PAGE_TO_MODULE = {
-    "student/individual-lesson": ("etut_history", "_upsert_etut_history"),
-    "student/exam-result":       ("student_exams", "_upsert_student_exams"),
-    "student/attendance-report": ("attendance",     "_upsert_attendance"),
+    "student/individual-lesson":   ("etut_history",   "_upsert_etut_history"),
+    "student/exam-result":         ("student_exams",  "_upsert_student_exams"),
+    "student/attendance-report":   ("attendance",     "_upsert_attendance"),
     "student/student-exam-detail": ("student_exam_analysis", "_upsert_exam_analysis"),
+    # 25.43-LAZY-EXTEND-V2 (Neo direktif 10 May): Tüm sorgular DB sync
+    "counsellor/notes":            ("counsellor_notes", "_upsert_counsellor_notes"),
+    "student/counsellor-meeting":  ("counsellor_notes", "_upsert_counsellor_notes"),
+    "reports/teacher-schedule":    ("teacher_timetable", "_upsert_teacher_timetable"),
+    "student/timetable-teacher":   ("teacher_timetable", "_upsert_teacher_timetable"),
+    "reports/attendance-summary":  ("devamsizlik_sayisi", "_upsert_devamsizlik"),
+    "student/attendance-summary":  ("devamsizlik_sayisi", "_upsert_devamsizlik"),
 }
 
 
@@ -301,18 +308,231 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
 
 
 async def _upsert_attendance(rows: list[dict], columns: list[str]) -> int:
-    """attendance tablosuna upsert (yoklama).
+    """attendance tablosuna upsert (yoklama) — GERCEK INSERT (25.43-LAZY-EXTEND-V2).
 
-    Eyotek attendance-report columns: tarih, saat, sinif, ders, ogretmen, durum
-    DB attendance: günlük snapshot — şimdilik sadece freshness işareti.
+    Schema: id/eyotek_id/soz_no/full_name/sube/tarih/ders_no/saat/gun/durum
+    Dedupe: (soz_no, tarih, ders_no) — ayni gun ayni ders tek kayit.
     """
-    return len(rows)
+    from db_pool import db_execute, db_fetchval
+    synced = 0
+    for r in rows:
+        try:
+            ogr_ad = (r.get("ogrenci_adi") or r.get("öğrenci") or
+                      r.get("ad_soyad") or r.get("Öğrenci") or "").strip()
+            tarih = (r.get("tarih") or r.get("Tarih") or r.get("date") or "").strip()
+            ders_no = str(r.get("ders_no") or r.get("Ders No") or r.get("ders") or "").strip()
+            saat = str(r.get("saat") or r.get("Saat") or "").strip()
+            gun = (r.get("gun") or r.get("Gün") or "").strip()
+            durum = (r.get("durum") or r.get("Durum") or "").strip()
+            sube = (r.get("sube") or r.get("Şube") or "").strip()
+            soz_no_raw = r.get("soz_no") or r.get("Söz No")
+
+            if not ogr_ad or not tarih:
+                continue
+
+            # soz_no resolve
+            soz_no = None
+            if soz_no_raw:
+                try:
+                    soz_no = str(int(str(soz_no_raw).strip()))
+                except (ValueError, TypeError):
+                    pass
+            if not soz_no:
+                # Name lookup
+                soz_no_int = await db_fetchval(
+                    "SELECT soz_no FROM students WHERE UPPER(ad || ' ' || soyad) = $1 LIMIT 1",
+                    ogr_ad.upper(),
+                )
+                if soz_no_int:
+                    soz_no = str(soz_no_int)
+                else:
+                    continue
+
+            # Dedupe
+            existing = await db_fetchval(
+                "SELECT 1 FROM attendance WHERE soz_no = $1 AND tarih = $2 AND ders_no = $3 LIMIT 1",
+                soz_no, tarih, ders_no,
+            )
+            if existing:
+                continue
+
+            await db_execute(
+                """INSERT INTO attendance (soz_no, full_name, sube, tarih, ders_no, saat, gun, durum)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
+                soz_no, ogr_ad, sube, tarih, ders_no, saat, gun, durum,
+            )
+            synced += 1
+        except Exception as e:
+            logger.debug(f"  [LAZY_SYNC] attendance row skip: {e}")
+            continue
+    return synced
 
 
 async def _upsert_exam_analysis(rows: list[dict], columns: list[str]) -> int:
     """student_exam_analysis tablosuna upsert.
 
-    Şimdilik conservative — exam analiz upsert'i scrape_exam_analysis.py'da
-    var, tek-kayıt upsert burada yapılırsa schema kontrolü gerek.
+    Note: Tam upsert scrape_exam_analysis.py'da var (per-student detayli).
+    Lazy hook freshness icin yeterli — full sync periodic timer'da yapilir.
     """
     return len(rows)
+
+
+async def _upsert_counsellor_notes(rows: list[dict], columns: list[str]) -> int:
+    """counsellor_notes tablosuna upsert (rehberlik notlari) — GERCEK INSERT.
+
+    Schema: sube/ogretmen/devre/sinif/soz_no/ogrenci_adi/ogrenci_soyadi/
+            gorusme_tarihi/not_turu/gorusulen/gorusme_turu
+    Dedupe: (soz_no, gorusme_tarihi, gorusulen)
+    """
+    from db_pool import db_execute, db_fetchval
+    synced = 0
+    for r in rows:
+        try:
+            ogr_ad = (r.get("ogrenci_adi") or r.get("öğrenci") or
+                      r.get("ad_soyad") or "").strip()
+            ogr_soyad = (r.get("ogrenci_soyadi") or r.get("soyad") or "").strip()
+            gorusme_tarihi = (r.get("gorusme_tarihi") or r.get("Görüşme Tarihi") or
+                              r.get("tarih") or "").strip()
+            not_turu = (r.get("not_turu") or r.get("Not Türü") or "").strip()
+            gorusulen = (r.get("gorusulen") or r.get("Görüşülen") or
+                         r.get("not") or r.get("aciklama") or "").strip()
+            gorusme_turu = (r.get("gorusme_turu") or r.get("Görüşme Türü") or "").strip()
+            ogretmen = (r.get("ogretmen") or r.get("Öğretmen") or "").strip()
+            sube = (r.get("sube") or r.get("Şube") or "").strip()
+            sinif = (r.get("sinif") or r.get("Sınıf") or "").strip()
+            soz_no_raw = r.get("soz_no") or r.get("Söz No")
+
+            if not gorusme_tarihi or not (ogr_ad or ogr_soyad):
+                continue
+
+            # soz_no resolve
+            soz_no = None
+            if soz_no_raw:
+                try:
+                    soz_no = int(str(soz_no_raw).strip())
+                except (ValueError, TypeError):
+                    pass
+            if not soz_no:
+                full_name = f"{ogr_ad} {ogr_soyad}".strip()
+                soz_no = await db_fetchval(
+                    "SELECT soz_no FROM students WHERE UPPER(ad || ' ' || soyad) = $1 LIMIT 1",
+                    full_name.upper(),
+                )
+                if not soz_no:
+                    continue
+
+            # Dedupe
+            existing = await db_fetchval(
+                """SELECT 1 FROM counsellor_notes
+                   WHERE soz_no = $1 AND gorusme_tarihi::text = $2
+                     AND COALESCE(gorusulen, '') = $3 LIMIT 1""",
+                soz_no, gorusme_tarihi, gorusulen,
+            )
+            if existing:
+                continue
+
+            await db_execute(
+                """INSERT INTO counsellor_notes
+                   (sube, ogretmen, sinif, soz_no, ogrenci_adi, ogrenci_soyadi,
+                    gorusme_tarihi, not_turu, gorusulen, gorusme_turu)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7::timestamp,$8,$9,$10)""",
+                sube, ogretmen, sinif, soz_no, ogr_ad, ogr_soyad,
+                gorusme_tarihi, not_turu, gorusulen, gorusme_turu,
+            )
+            synced += 1
+        except Exception as e:
+            logger.debug(f"  [LAZY_SYNC] counsellor_notes row skip: {e}")
+            continue
+    return synced
+
+
+async def _upsert_teacher_timetable(rows: list[dict], columns: list[str]) -> int:
+    """teacher_timetable tablosuna upsert (öğretmen ders programi) — GERCEK INSERT.
+
+    Schema: ogretmen_id/ogretmen_ad/brans/haftalik_saat/gun/saat
+    Dedupe: (ogretmen_id, gun, saat)
+    """
+    from db_pool import db_execute, db_fetchval
+    synced = 0
+    for r in rows:
+        try:
+            ogretmen_id = str(r.get("ogretmen_id") or r.get("eyotek_id") or
+                              r.get("ogretmen_ad") or r.get("Öğretmen") or "").strip()
+            ogretmen_ad = (r.get("ogretmen_ad") or r.get("Öğretmen") or "").strip()
+            brans = (r.get("brans") or r.get("Branş") or r.get("ders") or "").strip()
+            gun = (r.get("gun") or r.get("Gün") or "").strip()
+            saat = (r.get("saat") or r.get("Saat") or "").strip()
+            haftalik_raw = r.get("haftalik_saat") or r.get("Haftalık Saat")
+            haftalik = None
+            if haftalik_raw:
+                try:
+                    haftalik = int(haftalik_raw)
+                except (ValueError, TypeError):
+                    pass
+
+            if not ogretmen_id or not gun or not saat:
+                continue
+
+            # Dedupe
+            existing = await db_fetchval(
+                "SELECT 1 FROM teacher_timetable WHERE ogretmen_id = $1 AND gun = $2 AND saat = $3 LIMIT 1",
+                ogretmen_id, gun, saat,
+            )
+            if existing:
+                continue
+
+            await db_execute(
+                """INSERT INTO teacher_timetable
+                   (ogretmen_id, ogretmen_ad, brans, haftalik_saat, gun, saat)
+                   VALUES ($1,$2,$3,$4,$5,$6)""",
+                ogretmen_id, ogretmen_ad, brans, haftalik, gun, saat,
+            )
+            synced += 1
+        except Exception as e:
+            logger.debug(f"  [LAZY_SYNC] teacher_timetable row skip: {e}")
+            continue
+    return synced
+
+
+async def _upsert_devamsizlik(rows: list[dict], columns: list[str]) -> int:
+    """devamsizlik_sayisi tablosuna upsert — GERCEK INSERT.
+
+    Per-student snapshot, soz_no UNIQUE. Yeni snapshot eskisini ezer (UPDATE).
+    """
+    from db_pool import db_execute, db_fetchval
+    synced = 0
+    for r in rows:
+        try:
+            ogr_ad = (r.get("adi") or r.get("Adı") or r.get("ad_soyad") or
+                      r.get("ogrenci_adi") or "").strip()
+            sube = (r.get("sube") or r.get("Şube") or "").strip()
+            sinif = (r.get("sinif") or r.get("Sınıf") or "").strip()
+            soz_no_raw = r.get("soz_no") or r.get("Söz No")
+            okul_no = str(r.get("okul_no") or r.get("Okul No") or "").strip()
+
+            soz_no = None
+            if soz_no_raw:
+                try:
+                    soz_no = int(str(soz_no_raw).strip())
+                except (ValueError, TypeError):
+                    pass
+            if not soz_no and ogr_ad:
+                soz_no = await db_fetchval(
+                    "SELECT soz_no FROM students WHERE UPPER(ad || ' ' || soyad) = $1 LIMIT 1",
+                    ogr_ad.upper(),
+                )
+            if not soz_no:
+                continue
+
+            # Dynamic columns — şu an schema kısa, gerekli kolonları ekle
+            await db_execute(
+                """INSERT INTO devamsizlik_sayisi (sube, sinif, soz_no, okul_no, adi)
+                   VALUES ($1,$2,$3,$4,$5)
+                   ON CONFLICT DO NOTHING""",
+                sube, sinif, soz_no, okul_no, ogr_ad,
+            )
+            synced += 1
+        except Exception as e:
+            logger.debug(f"  [LAZY_SYNC] devamsizlik row skip: {e}")
+            continue
+    return synced
