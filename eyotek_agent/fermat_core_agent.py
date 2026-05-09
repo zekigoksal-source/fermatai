@@ -4086,9 +4086,12 @@ class FermatCoreAgent:
         # ── 25.41 (Neo 7 May): Cerebras tool-calling pre-check (opt-in) ───────
         # Cerebras 235b/120b daha hızlı (1.5-2.5sn) → Groq'tan ÖNCE denenir.
         # Hata olursa sessizce Groq pre-check'e düşer (alt blok).
+        # 25.43-INT-FIX (10 May): Roller genisletildi — ogrenci + ogretmen + rehber + mudur
+        # admin haric (selfdev tool kullaniyor, Cerebras yetersiz)
+        _CB_ELIGIBLE_ROLES = {"ogrenci", "ogretmen", "rehber", "mudur", "yonetim"}
         try:
             from llm_router import ENABLE_CEREBRAS_TOOLS, SAFE_GROQ_TOOLS as _SAFE_TOOLS
-            if (ENABLE_CEREBRAS_TOOLS and role == "ogrenci"
+            if (ENABLE_CEREBRAS_TOOLS and role in _CB_ELIGIBLE_ROLES
                     and getattr(self.router, "_cerebras_available", False)):
                 _safe_subset_cb = [t for t in TOOLS
                                    if t.get("name") in _SAFE_TOOLS]
@@ -4145,7 +4148,8 @@ class FermatCoreAgent:
         # Claude akisina sessizce dus (asagidaki MAX_TURNS loop'u).
         try:
             from llm_router import ENABLE_GROQ_TOOLS, SAFE_GROQ_TOOLS
-            if (ENABLE_GROQ_TOOLS and role == "ogrenci"
+            # 25.43-INT-FIX: Groq tool-calling staff rollerine de acildi
+            if (ENABLE_GROQ_TOOLS and role in {"ogrenci", "ogretmen", "rehber", "mudur", "yonetim"}
                     and getattr(self.router, "_groq_available", False)):
                 _safe_tools_subset = [t for t in TOOLS
                                       if t.get("name") in SAFE_GROQ_TOOLS]

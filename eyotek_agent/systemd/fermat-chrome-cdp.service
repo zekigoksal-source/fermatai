@@ -1,0 +1,52 @@
+[Unit]
+Description=Fermat Chrome CDP — Eyotek 7/24 baglanti icin headless Chromium
+Documentation=https://github.com/zekigoksal-source/fermatai
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=neo
+Group=neo
+Environment="HOME=/home/neo"
+Environment="DISPLAY="
+# Playwright bundled Chromium (varsayilan path)
+ExecStartPre=/bin/mkdir -p /home/neo/.fermat-chrome /home/neo/.fermat-chrome-logs
+# Chrome CDP — port 9222, headless new, persistent profile
+ExecStart=/home/neo/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome \
+    --headless=new \
+    --remote-debugging-port=9222 \
+    --remote-debugging-address=127.0.0.1 \
+    --user-data-dir=/home/neo/.fermat-chrome \
+    --disable-gpu \
+    --no-sandbox \
+    --no-first-run \
+    --no-default-browser-check \
+    --disable-dev-shm-usage \
+    --disable-extensions \
+    --disable-background-networking \
+    --disable-default-apps \
+    --disable-sync \
+    --disable-translate \
+    --metrics-recording-only \
+    --safebrowsing-disable-auto-update \
+    --disable-component-update \
+    --window-size=1366,768 \
+    --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36" \
+    about:blank
+
+# Restart on failure (network glitch, OOM, etc)
+Restart=always
+RestartSec=5
+# Memory limit — Chrome'u 1GB ile kapatma (idle ~200MB)
+MemoryMax=1G
+# CPU quota (4 worker bridge ile race olmasin)
+CPUQuota=50%
+
+# Stdout/stderr -> journalctl
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fermat-chrome-cdp
+
+[Install]
+WantedBy=multi-user.target
