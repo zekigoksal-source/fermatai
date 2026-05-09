@@ -153,8 +153,11 @@ TOOLS: list[dict] = [
     {
         "name": "get_class_plan",
         "description": (
-            "Bir öğrencinin haftalık ders programını veya belirli bir günün etüt listesini döndürür. "
-            "Etüt çakışma kontrolü için kullan."
+            "Bir öğrencinin haftalık ders programını veya belirli bir günün etüt listesini "
+            "DB cache'den döndürür. ⚠️ DİKKAT: DB cache GEÇMİŞ veriler için (sync sırasında "
+            "yazılan snapshot). GELECEK tarih (yarın, pazartesi, gelecek hafta) sorgularında "
+            "ASLA bu tool'u kullanma — eyotek_query ile Eyotek'ten CANLI çek. "
+            "Bu tool sadece geçmiş günün etüt listesi veya CHECK amaçlı çakışma kontrolünde."
         ),
         "input_schema": {
             "type": "object",

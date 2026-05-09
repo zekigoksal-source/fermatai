@@ -370,9 +370,39 @@ async def _tool_build_study_plan(student_id="") -> dict:
 
 
 async def tool_get_class_plan(student_id: str = "", date: str = "") -> dict:
-    """Ders programı + günlük etüt — services/etut_service.py'e taşındı (25.41-REFACTOR)."""
+    """Ders programı + günlük etüt — services/etut_service.py'e taşındı (25.41-REFACTOR).
+
+    25.43-CONTEXT (Neo bug 10 May): GELECEK tarih sorgularinda DB cache yetersiz —
+    bot eyotek_query kullanmali. Bu wrapper guard ekler: tarih bugünden ileri ise
+    metadata flag ile bot'u uyar.
+    """
+    result = {}
     from services.etut_service import get_class_plan
-    return await get_class_plan(student_id, date)
+    result = await get_class_plan(student_id, date)
+
+    # Future date guard
+    if date:
+        try:
+            from datetime import datetime as _dt
+            # Tarih DD.MM.YYYY veya YYYY-MM-DD
+            requested = None
+            for fmt in ("%d.%m.%Y", "%Y-%m-%d", "%d/%m/%Y"):
+                try:
+                    requested = _dt.strptime(date, fmt).date()
+                    break
+                except ValueError:
+                    continue
+            if requested and requested > _dt.now().date():
+                # Gelecek tarih → DB sonucu yetersiz olabilir
+                if isinstance(result, dict):
+                    result.setdefault("_warning",
+                        "Gelecek tarih sorgusu — DB cache eksik olabilir, "
+                        "Eyotek canli icin eyotek_query Student/individual-lesson kullan")
+                    if not result.get("daily_etut") and result.get("etut_count", 0) == 0:
+                        result["_recommendation"] = "USE_EYOTEK_QUERY"
+        except Exception:
+            pass
+    return result
 
 
 async def _log_eyotek_action(
