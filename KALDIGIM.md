@@ -1,6 +1,113 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 10 Mayıs 2026, GECE 00:30 — **🛠️ 25.43-INT-FIXES TAM: 7 dev bulgu fix loop (Neo 19:46-20:14 konuşma analizi) — eyotek_health tek doğruluk + U-turn kuralı + bağlam koruma + HF fallback + selfdev iyileştirmeler · 7/7 lokal + VPS smoke PASS · canlı health check `cdp_down` net cevap · sıfır teknik borç**
+> **Son güncelleme:** 10 Mayıs 2026, GECE 00:50 — **🚀 25.43-OPS TAM: 3 ops task — fermat-chrome-cdp.service (port 9222 7/24) + Cerebras+Groq tool-calling staff role expansion + routing baseline (real user 7 gün: Fast %47, Claude %31, Cerebras %21) · 5/5 ops smoke PASS · sıfır teknik borç**
+
+---
+
+## 🚀 OTURUM 25.43-OPS (10 May GECE 00:30 → 00:50)
+
+**Tetik:** Neo "Eyotek CDP cron + Cerebras activation + routing dağılımı ölçüm — hepsini eksiksiz tamamla, fix loop yap, hazır et"
+
+### 3 Task Özeti
+
+| # | Task | Sonuç |
+|---|------|-------|
+| **1** | Eyotek CDP otomatik başlatma | `fermat-chrome-cdp.service` systemd unit — Playwright Chromium 1208, port 9222 7/24 listening, Restart=always, MemoryMax=1G |
+| **2** | Cerebras+Groq tool-calling activation | `ENABLE_GROQ_TOOLS=true` env, role expansion `{ogrenci, ogretmen, rehber, mudur, yonetim}` (admin hariç), SAFE_GROQ_TOOLS 16 tool (12 yeni 25.43 API dahil) |
+| **3** | Routing dağılımı ölçüm + optimizasyon | Real user 7 gün baseline: Fast %47 / Claude %31 / Cerebras %21 — hedef Fast %45 / Cerebras %30 / Claude %25; Cerebras role expansion ile staff query'leri otomatik kayar |
+
+### Yeni Dosyalar
+
+| Dosya | Rol |
+|-------|-----|
+| `eyotek_agent/systemd/fermat-chrome-cdp.service` | Headless Chromium CDP systemd unit |
+| `eyotek_agent/smoke_test_25_43_ops.py` | 3 task end-to-end smoke runner |
+
+### Chrome CDP Service Detay
+
+```ini
+ExecStart=/home/neo/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome \
+    --headless=new --remote-debugging-port=9222 \
+    --user-data-dir=/home/neo/.fermat-chrome \
+    --disable-gpu --no-sandbox --no-first-run --disable-dev-shm-usage
+Restart=always
+MemoryMax=1G
+CPUQuota=50%
+```
+
+VPS deploy: `sudo systemctl enable + start fermat-chrome-cdp.service` → port 9222 listening (PID 2081266 chrome).
+
+### Cerebras Role Expansion
+
+`fermat_core_agent.py:_CB_ELIGIBLE_ROLES = {"ogrenci", "ogretmen", "rehber", "mudur", "yonetim"}`
+
+- **Önce:** sadece `role == "ogrenci"` → Cerebras tool-calling
+- **Sonra:** 5 staff rolü dahil. Admin hariç (selfdev tool kullanıyor, Cerebras yetersiz)
+- Aynı genişleme Groq tool-calling için de uygulandı
+
+### Smoke Test (VPS, 5/5 PASS)
+
+```
+─── Task 1: Chrome CDP service ───
+  [OK] CDP port 9222 dinliyor
+  [OK] eyotek_health 3/3 tutarlı: 'session_drop'
+
+─── Task 2: Cerebras tool-calling activation ───
+  [OK] SAFE_GROQ_TOOLS 12/12 yeni API mevcut, ENABLE_GROQ_TOOLS=True
+  [OK] Role expansion: ogrenci+ogretmen+rehber+mudur+yonetim (admin hariç)
+
+─── Task 3: Routing dağılımı baseline ───
+  [OK] Routing baseline alındı — toplam 390 mesaj (real user 7 gün)
+       fast_response  : 183 (46.9%)
+       claude         : 122 (31.3%)
+       cerebras_120b  :  34 (8.7%)
+       cerebras_235b  :  25 (6.4%)
+       cerebras       :  23 (5.9%)
+
+TOPLAM: 5/5 PASS
+```
+
+### Routing Hedefi vs Mevcut
+
+| Source | Mevcut (real user 7 gün) | Hedef | Δ |
+|--------|--------------------------|-------|---|
+| fast_response | %47 | %45 | +2 ✅ |
+| claude | %31 | %25 | +6 ⚠️ |
+| cerebras (toplam) | %21 | %30 | -9 ⚠️ |
+
+Role expansion ile **staff tool-call query'leri** (ogretmen/rehber/mudur) Claude yerine Cerebras'a kayacak. Önümüzdeki 7 gün ölçüm yapılacak — düşmezse ek optimizasyon (keyword shift) gerekir.
+
+### Eyotek Health 3 Senaryo
+
+| Senaryo | Status | User Message |
+|---------|--------|--------------|
+| Chrome kapalı | `cdp_down` | "❌ Chrome CDP portu kapalı, browser yeniden başlatılmalı" |
+| Chrome açık + cookie eski | `session_drop` | "⚠️ Eyotek session düşmüş — `eyotek baglan` yaz" |
+| Chrome açık + cookie taze + login OK | `online` | "✅ Eyotek bağlı, canlı API doğrulandı" |
+
+Şu an: `session_drop` (CDP açık, cookie 16 saat eski). Login için Neo'nun manuel `eyotek baglan` komutu gerek (EYOTEK_USER/PASS .env'de yok — güvenlik tercihi).
+
+### Production Sağlık (final)
+
+| Bileşen | Durum |
+|---------|-------|
+| Bridge (uvicorn) | ✅ active, HTTP 200, 7.2ms |
+| fermat-chrome-cdp.service | ✅ active, port 9222 |
+| Cerebras tool-calling | ✅ enabled, 5 rol kapsam |
+| Groq tool-calling | ✅ enabled (default) |
+| ENABLE_GROQ_TOOLS env | ✅ explicit true |
+| 16 SAFE_GROQ_TOOLS | ✅ 12 yeni API dahil |
+| Real user routing data | ✅ 390 mesaj (7 gün) |
+
+### Sonraki Sprint İçin (Bu sprint sıfır borç)
+
+- 7 gün sonra routing dağılımı tekrar ölç (Cerebras %21 → %30 hedefi gerçekleşti mi?)
+- Eyotek manuel login (`eyotek baglan`) — Neo şahsen yaparsa session canlı olur
+- Veli modülü aktivasyonu (1 Eylül 2026 sezon başı)
+
+---
+
+## 🛠️ OTURUM 25.43-INT-FIXES (10 May GECE 00:00 → 00:30)
 
 ---
 
