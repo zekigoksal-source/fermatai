@@ -106,51 +106,117 @@ async def lazy_sync_after_query(result: dict) -> dict:
 # ─── Tablo-Spesifik Upsert Fonksiyonlari ───────────────────────────────────
 
 async def _upsert_etut_history(rows: list[dict], columns: list[str]) -> int:
-    """etut_history tablosuna upsert.
+    """etut_history tablosuna upsert (per-etut-slot, NOT per-student).
 
-    Eyotek individual-lesson columns:
-      tarih, saat, ders, ogrenci_adi, ogretmen, sinif, derslik, etut_turu, devre
+    25.43-DIAG-FIX (10 May, Neo konusma): Bot 21:25 itibariyle "column ogrenci does
+    not exist" hatasi nedeniyle her row'u skip ediyordu. etut_history tablosu PER-ETUT
+    (ders slot) bazli, ogrenci ismi tutmuyor — `ogrenci_sayisi` (count) tutuyor.
+
+    Eyotek individual-lesson row tipik formati:
+      etut_kodu (Kod), tarih, saat, ogretmen, ders, sinif, derslik, etut_turu, ogrenci_sayisi
 
     DB columns (etut_history):
-      etut_id (PK), tarih, ogretmen, ogrenci, sinif, ders, konu, saat, derslik
+      sube, etut_kodu, etut_turu, tarih, ogretmen, ders, konu, saat, sure,
+      derslik, ogrenci_sayisi, yoklama, kaydeden, olusturma_tarihi
+      (NOT NULL: -- hicbir kolon yok)
+
+    Dedupe: etut_kodu varsa primary, yoksa (tarih, saat, ogretmen, ders, sinif).
     """
     from db_pool import db_execute, db_fetchval
     synced = 0
+    skipped_reason = {}
     for r in rows:
         try:
-            # Hangi key'lerin var olduğunu kontrol et (columns'dan veya rows'dan)
+            # Çekirdek alanlar
             tarih = r.get("tarih") or r.get("Tarih") or r.get("date")
             saat = r.get("saat") or r.get("Saat") or r.get("time") or ""
             ders = r.get("ders") or r.get("Ders") or ""
-            ogr_ad = (r.get("ogrenci_adi") or r.get("öğrenci") or
-                      r.get("ogrenci") or r.get("Öğrenci") or "")
             ogretmen = r.get("ogretmen") or r.get("öğretmen") or r.get("Öğretmen") or ""
-            sinif = r.get("sinif") or r.get("Sınıf") or ""
+            sinif = r.get("sinif") or r.get("Sınıf") or r.get("sube") or r.get("Şube") or ""
             derslik = r.get("derslik") or r.get("Derslik") or ""
+            etut_turu = r.get("etut_turu") or r.get("Etüt Türü") or r.get("tur") or ""
+            konu = r.get("konu") or r.get("Konu") or ""
+
+            # etut_kodu → integer parse (table column int)
+            etut_kodu_raw = (r.get("etut_kodu") or r.get("Kod") or
+                             r.get("kod") or r.get("etut_id") or "")
+            etut_kodu = None
+            if etut_kodu_raw:
+                try:
+                    etut_kodu = int(str(etut_kodu_raw).strip())
+                except (ValueError, TypeError):
+                    etut_kodu = None
+
+            # ogrenci_sayisi → integer parse (varsa)
+            ogr_sayi_raw = r.get("ogrenci_sayisi") or r.get("Öğr.Say") or r.get("Öğrenci Sayısı")
+            ogr_sayi = None
+            if ogr_sayi_raw:
+                try:
+                    ogr_sayi = int(str(ogr_sayi_raw).strip())
+                except (ValueError, TypeError):
+                    ogr_sayi = None
 
             if not tarih or not ogretmen:
+                skipped_reason["no_tarih_ogretmen"] = skipped_reason.get("no_tarih_ogretmen", 0) + 1
                 continue  # eksik veri, skip
 
-            # DEDUPE: tarih+saat+ogretmen+ogrenci → unique check
-            existing = await db_fetchval(
-                """SELECT 1 FROM etut_history
-                   WHERE tarih::text = $1::text AND saat = $2 AND ogretmen = $3 AND ogrenci = $4
-                   LIMIT 1""",
-                str(tarih), saat, ogretmen, ogr_ad,
-            )
+            # DEDUPE: etut_kodu varsa o, yoksa (tarih+saat+ogretmen+ders+sinif)
+            if etut_kodu is not None:
+                existing = await db_fetchval(
+                    "SELECT 1 FROM etut_history WHERE etut_kodu = $1 LIMIT 1",
+                    etut_kodu,
+                )
+            else:
+                existing = await db_fetchval(
+                    """SELECT 1 FROM etut_history
+                       WHERE tarih::text = $1::text AND saat = $2
+                         AND ogretmen = $3 AND ders = $4
+                         AND COALESCE(sube,'') = $5
+                       LIMIT 1""",
+                    str(tarih), saat, ogretmen, ders, sinif,
+                )
             if existing:
                 continue  # zaten var
 
+            # date parse (asyncpg requires date object)
+            from datetime import date as _date
+            import re as _re
+            tarih_obj = None
+            if tarih:
+                t_str = str(tarih).strip()
+                m = _re.match(r'(\d{4})[\-/.](\d{1,2})[\-/.](\d{1,2})', t_str)
+                if m:
+                    try:
+                        tarih_obj = _date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                    except (ValueError, TypeError):
+                        pass
+                else:
+                    m = _re.match(r'(\d{1,2})[\-/.](\d{1,2})[\-/.](\d{4})', t_str)
+                    if m:
+                        try:
+                            tarih_obj = _date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+                        except (ValueError, TypeError):
+                            pass
+            if not tarih_obj:
+                skipped_reason["bad_date"] = skipped_reason.get("bad_date", 0) + 1
+                continue
+
             await db_execute(
-                """INSERT INTO etut_history (tarih, saat, ders, ogrenci, ogretmen, sinif, derslik, kaydeden)
-                   VALUES ($1::date, $2, $3, $4, $5, $6, $7, 'lazy_sync')
+                """INSERT INTO etut_history
+                     (sube, etut_kodu, etut_turu, tarih, ogretmen, ders, konu,
+                      saat, derslik, ogrenci_sayisi, kaydeden, olusturma_tarihi)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'lazy_sync', NOW())
                    ON CONFLICT DO NOTHING""",
-                str(tarih), saat, ders, ogr_ad, ogretmen, sinif, derslik,
+                sinif, etut_kodu, etut_turu, tarih_obj, ogretmen, ders, konu,
+                saat, derslik, ogr_sayi,
             )
             synced += 1
         except Exception as e:
-            logger.debug(f"  [LAZY_SYNC] etut_history row skip: {e}")
+            err_short = str(e).split("\n")[0][:80]
+            skipped_reason[err_short] = skipped_reason.get(err_short, 0) + 1
             continue
+    if skipped_reason:
+        logger.debug(f"  [LAZY_SYNC] etut_history skip stats: {skipped_reason}")
     return synced
 
 
