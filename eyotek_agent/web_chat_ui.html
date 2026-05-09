@@ -11186,13 +11186,15 @@ html[data-theme="dark"] #push-permission-dialog .ppd-btn-skip:hover {
   font-family: inherit;
   /* 25.43-UI-FIX (Neo F12 kanit 10 May): Banner z-index 99999 ile DOM'da F5 sonrasi
      hamburger butonunun ustune biniyordu (elementFromPoint(39,31) banner-icon donduruyor).
-     Cozum: banner kendisi pass-through (click yiyemez) — sadece icindeki action button'lar
-     (Yukle / X) tiklanabilir olur. Boylece banner gorunur kalir ama altindaki hamburger,
-     login formu, vs. erisilebilir kalir. */
-  pointer-events: none;
+     V2 hatasi: pointer-events:none CSS'te child'lara INHERIT ETMEZ — child pwa-banner-icon
+     hala 'auto' kalip click yiyordu. Cozum: universal selector + !important. */
+  pointer-events: none !important;
 }
+/* Banner ICINDEKI HER SEYE pointer-events:none zorla */
+#pwa-install-banner * { pointer-events: none !important; }
+/* SADECE Yukle ve X butonlarina auto — sadece bunlar tiklanabilir */
 #pwa-install-banner .pwa-banner-install,
-#pwa-install-banner .pwa-banner-cancel { pointer-events: auto; }
+#pwa-install-banner .pwa-banner-cancel { pointer-events: auto !important; cursor: pointer; }
 #pwa-install-banner.show { transform: translateX(-50%) translateY(0); }
 #pwa-install-banner .pwa-banner-icon img {
   border-radius: 9px;
