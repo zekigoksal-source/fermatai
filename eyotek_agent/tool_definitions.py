@@ -2517,6 +2517,27 @@ TOOLS.extend([
 ])
 
 # ════════════════════════════════════════════════════════════════════
+# 25.43-INT-FIX1: Eyotek tek doğruluk health check (Neo bug 9 May)
+# ════════════════════════════════════════════════════════════════════
+TOOLS.append({
+    "name": "eyotek_health",
+    "description": (
+        "Eyotek bağlantı durumu — TEK DOĞRULUK kaynağı. "
+        "'Eyotek'e bağlı mıyız' / 'Eyotek canlı mı' / 'Eyotek online mu' "
+        "sorularına SADECE bu tool ile cevap ver. Port + cookie + live API "
+        "üçlüsünü birleştirir, tutarsız U-turn cevap engellenir. "
+        "Status enum: online | session_drop | cdp_down | no_cookie | unknown"
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "use_cache": {"type": "boolean", "description": "15sn cache kullan (default true)"}
+        }
+    }
+})
+
+
+# ════════════════════════════════════════════════════════════════════
 # 25.43 (Neo: 12 yeni dis API tool tanimi)
 # ════════════════════════════════════════════════════════════════════
 TOOLS.extend([

@@ -102,6 +102,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "wikidata_lookup", "cern_open_data", "huggingface_search_models",
         "tuik_dataset", "alphafold_lookup", "nist_webbook",
         "crossref_search", "osm_lookup",
+        # 25.43-INT-FIX1: Eyotek tek doğruluk health check (admin/mudur/yonetim)
+        "eyotek_health",
     },
     # Yönetim üyesi (Bilge): müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     # Oturum 25.40: get_blueprint_section kaldırıldı (admin-özel mimari iç bilgi)
@@ -125,6 +127,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "wikidata_lookup", "cern_open_data", "huggingface_search_models",
         "tuik_dataset", "alphafold_lookup", "nist_webbook",
         "crossref_search", "osm_lookup",
+        # 25.43-INT-FIX1: Eyotek tek doğruluk health check (admin/mudur/yonetim)
+        "eyotek_health",
     },
     # Müdür (Mahsum, Duygu): TÜM kurum verisi (akademik + Eyotek + tercih + raporlar)
     # Oturum 25.40 (Neo direktif): SİSTEM AYARLARI ve ADMIN-ÖZEL TOOL'LAR ÇIKARILDI.
@@ -185,6 +189,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "wikidata_lookup", "cern_open_data", "huggingface_search_models",
         "tuik_dataset", "alphafold_lookup", "nist_webbook",
         "crossref_search", "osm_lookup",
+        # 25.43-INT-FIX1: Eyotek tek doğruluk health check (admin/mudur/yonetim)
+        "eyotek_health",
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)
@@ -244,6 +250,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "wikidata_lookup", "cern_open_data", "huggingface_search_models",
         "tuik_dataset", "alphafold_lookup", "nist_webbook",
         "crossref_search", "osm_lookup",
+        # 25.43-INT-FIX1: Eyotek tek doğruluk health check (admin/mudur/yonetim)
+        "eyotek_health",
     },
     # Rehber öğretmen: TÜM öğrenci + TÜM öğretmen programı + etüt yazma + rehberlik notu
     "rehber": {
@@ -291,6 +299,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "wikidata_lookup", "cern_open_data", "huggingface_search_models",
         "tuik_dataset", "alphafold_lookup", "nist_webbook",
         "crossref_search", "osm_lookup",
+        # 25.43-INT-FIX1: Eyotek tek doğruluk health check (admin/mudur/yonetim)
+        "eyotek_health",
     },
     # Veli: sadece kendi çocuğunun akademik verisi + universite tahmin (Neo onay)
     "veli": {"get_student_analytics", "get_ayt_analysis",

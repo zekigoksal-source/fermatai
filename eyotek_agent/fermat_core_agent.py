@@ -1359,6 +1359,8 @@ TOOL_DISPATCH = {
     "find_youtube_lesson":         lambda p: _tool_find_youtube(**p),
     "export_anki_deck":            lambda p: _tool_export_anki(**p),
     "wolfram_step_by_step":        lambda p: _tool_wolfram_step_by_step(**p),
+    # 25.43-INT-FIX1 (Neo bug 9 May 20:09-20:14): Eyotek 3 zit cevap fix
+    "eyotek_health":               lambda p: _tool_eyotek_health(**p),
     # 25.43 (Neo: 12 yeni dis API)
     "tdk_sozluk":                  lambda p: _tool_tdk_sozluk(**p),
     "nist_constant":               lambda p: _tool_nist_constant(**p),
@@ -1532,6 +1534,24 @@ async def _tool_student_heatmap(soz_no_list: list = None, ders: str = "",
         soz_no_list=soz_no_list, ders=ders, weeks=weeks,
         _caller_role=_caller_role, _caller_phone=_caller_phone, **_extra
     )
+
+
+# ════════════════════════════════════════════════════════════════════
+# 25.43-INT-FIX1 (Neo bug 9 May): Eyotek tek doğruluk health check
+# ════════════════════════════════════════════════════════════════════
+async def _tool_eyotek_health(use_cache: bool = True, **_extra) -> dict:
+    """Eyotek bağlantı durumu — TEK DOGRULUK kaynagi.
+
+    Bot 'eyotek bagli mi' / 'eyotege bagliyiz' sorularina SADECE bu tool ile cevap verir.
+    Port + cookie + live API uclusunu birlestirir, unified status doner.
+    """
+    try:
+        from eyotek_health import eyotek_health_check
+        return await eyotek_health_check(use_cache=use_cache)
+    except Exception as e:
+        return {"success": False, "status": "unknown", "is_connected": False,
+                "detail": f"health_check exception: {e}",
+                "user_message": "❓ Eyotek durumu belirsiz, sistem yöneticisiyle iletişim"}
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -1855,8 +1875,9 @@ async def _selfdev_grep_repo_w(pattern: str, file_type: str = "py", limit: int =
     return await grep_repo(pattern, file_type, limit, path, _caller_phone=_caller_phone)
 
 
-async def _selfdev_read_logs_w(service: str = "fermatai-bridge", lines: int = 50,
+async def _selfdev_read_logs_w(service: str = "fermatai-bridge", lines: int = 200,
                                 grep: str = "", _caller_phone: str = "", **_):
+    """25.43-INT-FIX7: default 50 → 200 (boş dönüş azaltma)."""
     from self_dev_tools import read_logs
     return await read_logs(service, lines, grep, _caller_phone=_caller_phone)
 

@@ -167,12 +167,15 @@ async def _audit(actor_phone: str, tool: str, args: dict, success: bool,
 # ─── 8 READ ARACI ───────────────────────────────────────────────────────────
 
 async def read_file(path: str, lines: Optional[str] = None,
-                    _caller_phone: str = "") -> dict:
+                    _caller_phone: str = "", recursive: bool = False) -> dict:
     """Dosya icerigini oku (sandbox + secret mask).
 
     Args:
         path: Dosya yolu (whitelist icinde olmalı)
         lines: Opsiyonel satir araligi 'N-M' (orn '50-150')
+        recursive: 25.43-INT-FIX6 (Neo bug 9 May): Path direkt yoksa
+                   subdirectory'lerde aynı dosya adıyla ara (eyotek_navigator.py
+                   gibi subdir'de olan dosyalar için).
     """
     if not await _is_pipeline_active():
         await _audit(_caller_phone, "read_file", {"path": path}, False, blocked_by="killswitch")
@@ -183,8 +186,30 @@ async def read_file(path: str, lines: Optional[str] = None,
         await _audit(_caller_phone, "read_file", {"path": path}, False, blocked_by=reason)
         return {"error": f"Sandbox engeli: {reason}", "path": path}
 
+    # 25.43-INT-FIX6: Recursive subdir arama
+    actual_path = path
+    if recursive and not Path(path).exists():
+        # Path bir directory.../filename.ext seklindeyse, parent dir'de
+        # filename'i recursive ara
+        try:
+            p = Path(path)
+            target_name = p.name
+            # En yakın existing parent'tan başla
+            parent = p.parent
+            while parent and not parent.exists() and parent != parent.parent:
+                parent = parent.parent
+            if parent.exists() and parent.is_dir():
+                # rglob ile ara, sandbox kontrol her bulunan icin
+                for found in parent.rglob(target_name):
+                    fok, _ = _is_allowed_path(str(found))
+                    if fok and found.is_file():
+                        actual_path = str(found)
+                        break
+        except Exception:
+            pass
+
     try:
-        with open(path, "rb") as f:
+        with open(actual_path, "rb") as f:
             data = f.read(MAX_READ_BYTES + 1)
         truncated = len(data) > MAX_READ_BYTES
         if truncated:
@@ -210,17 +235,24 @@ async def read_file(path: str, lines: Optional[str] = None,
 
         await _audit(_caller_phone, "read_file",
                      {"path": path, "lines": lines}, True, bytes_read=len(masked))
-        return {
-            "path": path,
+        result = {
+            "path": actual_path,
             "content": masked,
             "bytes": len(masked),
             "secrets_masked": hits,
             "truncated": truncated,
             "lines_filter": lines,
         }
+        if actual_path != path:
+            result["_resolved_via_recursive"] = path  # Bot bilsin: orijinal path farkliydi
+        return result
     except FileNotFoundError:
+        # 25.43-INT-FIX6: Recursive denenmediyse otomatik dene
+        if not recursive and "/" in path:
+            return await read_file(path, lines, _caller_phone, recursive=True)
         await _audit(_caller_phone, "read_file", {"path": path}, False, error="file_not_found")
-        return {"error": "Dosya bulunamadi", "path": path}
+        return {"error": "Dosya bulunamadi", "path": path,
+                "hint": "recursive=True ile subdir aramasi denenebilir" if not recursive else None}
     except Exception as e:
         await _audit(_caller_phone, "read_file", {"path": path}, False, error=str(e))
         return {"error": f"Okuma hatasi: {str(e)[:200]}", "path": path}
@@ -228,7 +260,15 @@ async def read_file(path: str, lines: Optional[str] = None,
 
 async def list_dir(path: str, glob_pattern: str = "*",
                    _caller_phone: str = "") -> dict:
-    """Dizin icerigi (sandbox)."""
+    """Dizin icerigi (sandbox).
+
+    25.43-INT-FIX5 (Neo bug 9 May 20:10-20:11): list_dir bazen 0 entries
+    dondurdu (eyotek_agent dir'i icin). Bu fix:
+      1. Pipeline aktif mi RETRY (3sn cache invalidate olduysa transient)
+      2. Glob 0 dondurduyse alternative os.scandir RETRY
+      3. Filtered out reason loglama (debug icin)
+      4. _diagnostics field don (transparency)
+    """
     if not await _is_pipeline_active():
         await _audit(_caller_phone, "list_dir", {"path": path}, False, blocked_by="killswitch")
         return {"error": "Self-dev pipeline kapali."}
@@ -243,9 +283,37 @@ async def list_dir(path: str, glob_pattern: str = "*",
         if not p.is_dir():
             return {"error": "Dizin değil", "path": path}
         entries = []
-        for entry in sorted(p.glob(glob_pattern or "*"))[:MAX_LIST_ENTRIES]:
-            ok2, _ = _is_allowed_path(str(entry))
+        total_seen = 0
+        filtered_secret = 0
+        filtered_outside = 0
+
+        # 1. ana dene — Path.glob
+        try:
+            raw_entries = sorted(p.glob(glob_pattern or "*"))[:MAX_LIST_ENTRIES]
+        except Exception as e:
+            logger.warning(f"list_dir glob hata {path}: {e}")
+            raw_entries = []
+
+        # 2. Boş dönüş & glob_pattern='*' ise os.scandir RETRY (FS race condition)
+        if not raw_entries and (glob_pattern in ("*", "", None)):
+            import os as _os
+            try:
+                with _os.scandir(path) as it:
+                    raw_entries = sorted([Path(path) / e.name for e in it
+                                          if not e.name.startswith(".__")])[:MAX_LIST_ENTRIES]
+                if raw_entries:
+                    logger.info(f"list_dir retry os.scandir hit on {path}, {len(raw_entries)} entries")
+            except Exception as e:
+                logger.warning(f"list_dir scandir retry fail {path}: {e}")
+
+        for entry in raw_entries:
+            total_seen += 1
+            ok2, why = _is_allowed_path(str(entry))
             if not ok2:
+                if why and "secret" in why:
+                    filtered_secret += 1
+                else:
+                    filtered_outside += 1
                 continue
             try:
                 stat = entry.stat()
@@ -260,7 +328,16 @@ async def list_dir(path: str, glob_pattern: str = "*",
 
         await _audit(_caller_phone, "list_dir",
                      {"path": path, "glob": glob_pattern}, True, bytes_read=len(entries) * 50)
-        return {"path": path, "entries": entries, "count": len(entries)}
+        result = {"path": path, "entries": entries, "count": len(entries)}
+        # Diagnostic — bot 0 entries gorurse niye anlamali
+        if total_seen != len(entries) or len(entries) == 0:
+            result["_diagnostics"] = {
+                "total_seen": total_seen,
+                "filtered_secret": filtered_secret,
+                "filtered_outside_sandbox": filtered_outside,
+                "glob_pattern": glob_pattern,
+            }
+        return result
     except Exception as e:
         await _audit(_caller_phone, "list_dir", {"path": path}, False, error=str(e))
         return {"error": str(e)[:200]}
@@ -350,9 +427,14 @@ async def grep_repo(pattern: str, file_type: str = "py", limit: int = 50,
     }
 
 
-async def read_logs(service: str = "fermatai-bridge", lines: int = 50,
+async def read_logs(service: str = "fermatai-bridge", lines: int = 200,
                     grep: str = "", _caller_phone: str = "") -> dict:
-    """systemd service log'u (journalctl). Bot kendi loguna bakabilir."""
+    """systemd service log'u (journalctl). Bot kendi loguna bakabilir.
+
+    25.43-INT-FIX7 (Neo bug 9 May 20:10-20:13): Default 50 satir sıkça
+    "-- No entries --" donduruyor (filter veya log rotation). Default 200'e
+    çıkarıldı, MAX_LOG_LINES=1000 zaten var, koruma kaybolmuyor.
+    """
     if not await _is_pipeline_active():
         await _audit(_caller_phone, "read_logs", {"service": service}, False, blocked_by="killswitch")
         return {"error": "Self-dev pipeline kapali."}
@@ -362,7 +444,7 @@ async def read_logs(service: str = "fermatai-bridge", lines: int = 50,
         await _audit(_caller_phone, "read_logs", {"service": service}, False, blocked_by="non_fermatai_service")
         return {"error": "Sadece fermatai-* servisleri okunabilir"}
 
-    lines = min(int(lines or 50), MAX_LOG_LINES)
+    lines = min(int(lines or 200), MAX_LOG_LINES)
     try:
         cmd = ["journalctl", "-u", f"{service}.service", "-n", str(lines), "--no-pager"]
         if grep:

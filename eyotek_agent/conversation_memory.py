@@ -744,6 +744,80 @@ def update_mood(phone: str, mood: str):
 
 # ── Bug fix 23 Nisan: Son bot cevabı getter (context bridge için) ─────────
 
+async def get_recent_user_questions(phone: str, count: int = 3, max_age_minutes: int = 15) -> list[dict]:
+    """Son N user mesajını ve tahmin edilen TOPIK'ini dön.
+
+    25.43-INT-FIX3 (Neo bug 9 May 20:11-20:12): Neo "Eyotek bağlantısı" sordu,
+    bot HuggingFace cevap verdi. Sonra bot tool sonucunu farklı konuya çevirdi.
+
+    Çözüm: Bot cevap üretmeden önce son user mesajını + TOPIK'ini check etmeli.
+    Tool sonucu farklı konudaysa kullanıcıya açıkça bildir.
+
+    Returns:
+        [
+          {"content": "Eyotek bağlı mıyız", "topic_keywords": ["eyotek", "baglanti"],
+           "minutes_ago": 0.5},
+          ...
+        ]
+    """
+    phone_clean = phone.replace("+", "").replace(" ", "").replace("-", "")
+    # Topic keyword extraction — basit but işe yarar
+    TOPIC_MAP = {
+        "eyotek": ["eyotek", "eyoteğe", "eyotekte", "lms"],
+        "huggingface": ["huggingface", "hugging face", "hf", "model arama"],
+        "openmeteo": ["meteo", "iklim", "hava durumu", "yagis", "sicaklik"],
+        "tdk": ["tdk", "kelime anlam", "deyim"],
+        "nist": ["nist", "fizik sabit", "planck", "boltzmann"],
+        "oeis": ["oeis", "fibonacci", "sayi dizisi", "asal"],
+        "wikidata": ["wikidata", "yapilandirilmis"],
+        "cern": ["cern", "lhc", "higgs"],
+        "tuik": ["tuik", "turkiye istatistik", "nufus"],
+        "alphafold": ["alphafold", "protein", "uniprot"],
+        "render": ["render", "grafik", "chart", "gorsel"],
+        "system": ["sistem", "guncelleme", "atlas", "blueprint", "kalditim"],
+        "ogrenci": ["ogrenci", "ogr no", "soz no", "deneme", "net"],
+    }
+    try:
+        from db_pool import db_fetch
+        rows = await db_fetch(
+            """
+            SELECT content, created_at
+            FROM fermat.agent_conversations
+            WHERE REPLACE(phone,'+','') = $1
+              AND message_role = 'user'
+              AND created_at > NOW() - make_interval(mins => $2)
+            ORDER BY created_at DESC
+            LIMIT $3
+            """,
+            phone_clean, max_age_minutes, count,
+        )
+        out = []
+        from datetime import datetime
+        now = datetime.now()
+        for row in (rows or []):
+            content = (row.get("content") or "").strip()
+            content_low = content.lower()
+            topics = []
+            for tkey, kws in TOPIC_MAP.items():
+                if any(kw in content_low for kw in kws):
+                    topics.append(tkey)
+            created = row.get("created_at")
+            mins_ago = 0
+            if created:
+                try:
+                    mins_ago = (now - created).total_seconds() / 60
+                except Exception:
+                    pass
+            out.append({
+                "content": content[:300],
+                "topic_keywords": topics,
+                "minutes_ago": round(mins_ago, 1),
+            })
+        return out
+    except Exception:
+        return []
+
+
 async def get_last_bot_response(phone: str, max_age_minutes: int = 10) -> Optional[dict]:
     """Son bot cevabını dön — kısa/belirsiz user mesajlarının bağlamı için.
 
