@@ -274,10 +274,16 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
             else:
                 # Name → soz_no lookup
                 ogr_ad_upper = _tr_upper(ogr_ad)
-                soz_no = await db_fetchval(
-                    "SELECT soz_no FROM students WHERE UPPER(ad || ' ' || soyad) = $1 LIMIT 1",
+                soz_no_lookup = await db_fetchval(
+                    "SELECT soz_no FROM students WHERE UPPER(full_name) = $1 OR UPPER(first_name || ' ' || last_name) = $1 LIMIT 1",
                     ogr_ad_upper,
                 )
+                # students.soz_no = TEXT, ama hedef tablolarin (student_exams, counsellor_notes, devamsizlik) soz_no = INTEGER
+                # Bu yuzden cast et — asyncpg strict typing.
+                try:
+                    soz_no = int(str(soz_no_lookup).strip()) if soz_no_lookup else None
+                except (ValueError, TypeError):
+                    soz_no = None
                 if not soz_no:
                     skipped += 1
                     continue
@@ -413,7 +419,7 @@ async def _upsert_attendance(rows: list[dict], columns: list[str]) -> int:
             if not soz_no:
                 # Name lookup
                 soz_no_int = await db_fetchval(
-                    "SELECT soz_no FROM students WHERE UPPER(ad || ' ' || soyad) = $1 LIMIT 1",
+                    "SELECT soz_no FROM students WHERE UPPER(full_name) = $1 OR UPPER(first_name || ' ' || last_name) = $1 LIMIT 1",
                     ogr_ad.upper(),
                 )
                 if soz_no_int:
@@ -487,10 +493,15 @@ async def _upsert_counsellor_notes(rows: list[dict], columns: list[str]) -> int:
                     pass
             if not soz_no:
                 full_name = f"{ogr_ad} {ogr_soyad}".strip()
-                soz_no = await db_fetchval(
-                    "SELECT soz_no FROM students WHERE UPPER(ad || ' ' || soyad) = $1 LIMIT 1",
+                soz_no_lookup = await db_fetchval(
+                    "SELECT soz_no FROM students WHERE UPPER(full_name) = $1 OR UPPER(first_name || ' ' || last_name) = $1 LIMIT 1",
                     full_name.upper(),
                 )
+                # counsellor_notes.soz_no = INTEGER, students.soz_no = TEXT → cast
+                try:
+                    soz_no = int(str(soz_no_lookup).strip()) if soz_no_lookup else None
+                except (ValueError, TypeError):
+                    soz_no = None
                 if not soz_no:
                     continue
 
@@ -606,10 +617,15 @@ async def _upsert_devamsizlik(rows: list[dict], columns: list[str]) -> int:
                 except (ValueError, TypeError):
                     pass
             if not soz_no and ogr_ad:
-                soz_no = await db_fetchval(
-                    "SELECT soz_no FROM students WHERE UPPER(ad || ' ' || soyad) = $1 LIMIT 1",
+                soz_no_lookup = await db_fetchval(
+                    "SELECT soz_no FROM students WHERE UPPER(full_name) = $1 OR UPPER(first_name || ' ' || last_name) = $1 LIMIT 1",
                     ogr_ad.upper(),
                 )
+                # devamsizlik_sayisi.soz_no = INTEGER, students.soz_no = TEXT → cast
+                try:
+                    soz_no = int(str(soz_no_lookup).strip()) if soz_no_lookup else None
+                except (ValueError, TypeError):
+                    soz_no = None
             if not soz_no:
                 continue
 
