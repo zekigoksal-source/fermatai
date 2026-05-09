@@ -1,6 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 10 Mayıs 2026 (sabah 04:00) · **Oturum:** 25.43-DIAG — **selfdev_grep_repo bot yanlış teşhis bug (3 katman) + HF_API_TOKEN aktif + ripgrep VPS kuruldu · Bot artık 0 match'i doğrulamadan kesin yorum vermez (3 kanıt zorunlu) · Bridge env'de HF token verified**
+> **Belge tarihi:** 10-11 Mayıs 2026 (gece-erken saatler) · **Oturum:** 25.43-LAZY-NAME + 25.43-WEBUI-FIXLOOP — **Personel konuşması (Örsel Koç) → 3 lazy_sync bug fix · Web hamburger F5 fix loop → browser MCP test ile kesin teşhis (PWA banner pointer-events ROOT+CHILD ayrı satır rule) · Neo "tamamdır problem çözüldü" onayı**
+> **10 May 04:00:** 25.43-DIAG — selfdev_grep_repo bot yanlış teşhis bug (3 katman) + HF_API_TOKEN aktif + ripgrep VPS kuruldu · Bot artık 0 match'i doğrulamadan kesin yorum vermez (3 kanıt zorunlu) · Bridge env'de HF token verified
 > **10 May 03:30:** 25.43-CONV — Lazy sync sınav adı injection (sinav_drilldown header'dan) + render quality gate (3D scene + skor pre-flight) · Bot artık "lacivert boş ekran" göstermez · 3/3 smoke PASS
 > **10 May 03:00:** 25.43-LAZY-EXTEND-V2 — Lazy sync 4 yeni tablo (attendance/counsellor_notes/teacher_timetable/devamsizlik_sayisi gerçek INSERT) · PAGE_TO_MODULE 4→10 mapping · ogrenci_drilldown 5→13 alt-sayfa keyword · 5/5 upsert smoke PASS
 > **10 May 02:30:** 25.43-LAZY-EXTEND — sinav_sonuclari/ogrenci_drilldown/eyotek_read'e lazy_sync hook + student_exams gerçek INSERT (önce conservative idle) · Schema-safe mapping · ON CONFLICT UPDATE COALESCE
@@ -22,6 +23,84 @@
 > **4 May 18:30:** 25.40z3-FINETUNE — Per-user karakter blokları kompakt + dead code scan · 388/388 PASS
 > **4 May 17:30:** 25.40z3-CONSOLIDATION — kural sertliği korundu, 84 bağlam kompakt
 > **3 May:** 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
+
+---
+
+## 🌐 25.43-WEBUI-FIXLOOP (10 May gece → 11 May) — Hamburger F5 bug + browser MCP test
+
+### Tetik
+Neo: "webte sol üst hamburger menü F5 sonrası çalışmıyor, mobilde sıkıntı yok". Saatlerce 5 yanlış tahminle deploy → revert → browser MCP ile direkt test → kesin teşhis.
+
+### Yanlış Tahmin Zinciri (Anti-Pattern Kayıt)
+| # | Commit | Hipotez | Sonuç |
+|---|--------|---------|-------|
+| 1 | ec4f250 | chat-header z-index 60 + history-btn 61 + toggle | YETMEDİ |
+| 2 | f01f6a4 | Splash zombi cleanup + capture phase listener | REGRESSION (çift tetikleme) |
+| 3 | 13d32bf | Inline onclick kaldır + tek listener + touchend | REGRESSION (mobil scroll glitch) |
+| 4 | e6538e1 | REVERT a3ac4b8 — eski koda dön | Eski intermittent geri |
+| 5 | c0934cb | Splash pointer-events:none + child wildcard | YETMEDİ |
+| 6 | 2c7a3e7 | Service Worker v25.43 + skipWaiting/claim + /chat network-only | DEPLOY OK ama browser SW takıldı |
+| 7 | 88054de | Auto-purge script (one-shot SW + cache temizliği) | Neo manuel komutla temizledi |
+
+### Neo F12 Console Kanıtı (Net Teşhis)
+```
+TIKLANAN: DIV.pwa-banner-icon
+PARENT: DIV#pwa-install-banner.show
+HAMBURGER pos: 39, 31
+```
+PWA install banner z-index 99999. F5 sonrası `beforeinstallprompt` event ANINDA tetikleniyor (cold load gecikmeli) → banner DOM'a `.show` ile geliyor → hamburger butonunun üstüne biniyor.
+
+### Browser MCP ile Direkt Test (Claude in Chrome)
+- 18c8cb7 (V2): banner ROOT içine embed `pointer-events: none !important` → Chrome CSS parser uzun comment + nested rule kombinasyonunda atladı (browser cssRules listesinde rule görünmüyor)
+- **8074514 (V3, FINAL):** ROOT + `*` wildcard + button auto rule'ları **AYRI SATIRLAR** → `getComputedStyle(banner).pointerEvents === "none"` ✓, hit testte `BUTTON.history-btn` ✓
+
+### Çözüm Mimarisi (Final, Production)
+```css
+#pwa-install-banner { pointer-events: none !important; }
+#pwa-install-banner * { pointer-events: none !important; }
+#pwa-install-banner .pwa-banner-install,
+#pwa-install-banner .pwa-banner-cancel { pointer-events: auto !important; cursor: pointer; }
+```
++ **Service Worker:** v25.43-chat-no-cache (skipWaiting + clients.claim + /chat intercept yok = network-only)
++ **Auto-purge:** localStorage flag `fermatai_sw_purged_25_43` → one-shot eski SW + cache temizliği
++ **HTML:** `Cache-Control no-store` meta + bfcache pageshow reload listener
+
+### Kalıcı Dersler (Süreç İyileştirme)
+1. **F12 console kanıtı erken iste** — 5 deploy yerine 1 deploy yeterdi
+2. **Browser MCP (Claude in Chrome) ile direkt DOM/CSS doğrulama** — tahminle deploy YASAK
+3. **CSS parser quirks**: uzun comment + nested rule içine `pointer-events:none !important` embed → Chrome bazen atlar. Kritik kuralı **AYRI satırda** yaz
+4. **CSS pointer-events INHERIT ETMEZ** — parent `none` versen bile child `auto` kalır, universal selector `*` zorunlu
+5. **Service Worker skipWaiting/claim AKTİF olmalı** — yoksa eski SW açık sekmede takılı kalır
+
+---
+
+## 🔧 25.43-LAZY-NAME (10 May gece) — Personel konuşması analizi → 3 lazy_sync bug fix
+
+### Tetik
+Neo "Örsel Koç hakkındaki konuşmaya bak, üstünden geç". 18:48'de bot audit raporu 3 gerçek bug tespit etmişti — başlangıçta 1'ini görmüştüm.
+
+### 3 Bug — Hepsi Doğrulandı + Fix
+| # | Commit | Bug | Fix |
+|---|--------|-----|-----|
+| 1 | a05584b | `_upsert_etut_history` → `column "ogrenci" does not exist` (her row silently skip) | Schema'ya uyumlu kolon listesi, etut_kodu primary dedupe key, fallback (tarih+saat+ogretmen+ders+sube) |
+| 2 | 9f30792 | `UPPER(ad \|\| ' ' \|\| soyad)` 4 yerde — students'da ad/soyad yok | `UPPER(full_name) OR UPPER(first_name \|\| ' ' \|\| last_name)` 4 yer (defense in depth) |
+| 3 | 9f30792 | soz_no cross-table mismatch: students=TEXT, student_exams/counsellor_notes/devamsizlik=INTEGER | Lookup sonrası `int(str(soz_no_lookup).strip())` cast (3 fonksiyon) |
+
+### Smoke Test (VPS canlı)
+- `_upsert_etut_history` 2 fake row → `INSERTED: 2` ✓
+- `_upsert_student_exams` MAYA ERDEK (soz_no 264) → `INSERTED: 1` ✓ (name lookup + cast)
+
+### Personel Profil (Örsel Koç, 905547043775)
+| Alan | Değer | Not |
+|------|-------|-----|
+| `acl_users.role` | `mudur` | sistem_muduru'na değişmedi (SQL guard `acl_users` write blokluyor — doğru tasarım) |
+| `bot_behavior_rules` rule_id 33 | AKTİF | "sadicım hitap, teknik şeffaflık, finans yasak" |
+| `staff.eyotek_id` | 1042 | acl_users.eyotek_id NULL (minor — link gerek değil) |
+
+### Bot Self-Assessment vs Reality
+- Bot: "lazy_sync hiçbir dosyadan import edilmiyor" → YANLIŞ (selfdev_grep_repo escape bug, 538cb4f'de fix)
+- Bot: "INSERT yapılmıyor count: 0 her seferinde" → DOĞRU (kolon mismatch + name lookup fail)
+- **Net: bot %85+ haklı**, ben başlangıçta yanlış değerlendirmişim
 
 ---
 

@@ -1,6 +1,81 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 10 Mayıs 2026, GECE 01:30 — **🌐 EYOTEK 7/24 CANLI: auto_login load_dotenv path bug fix + CapSolver Turnstile token alma OK + Chrome CDP port 9333 + session_keeper.service active · eyotek_health 3/3 tutarlı 'online' · gerçek API doğrulandı · 5/5 final smoke PASS — Neo "her zaman ulaşılabilir" hedefi gerçekleşti**
+> **Son güncelleme:** 10 Mayıs 2026 SABAH-GECE → 11 Mayıs ERKEN SAATLER — **OTURUM 25.43-LAZY-NAME + 25.43-WEBUI-FIXLOOP: 3 lazy_sync bug fix (etut_history kolon "ogrenci" yok + students kolon adları + soz_no INT cast) + web hamburger F5 fix loop (5 başarısız tahmin → revert → browser MCP test → kesin teşhis: PWA banner pointer-events root+child ayrı satır) — Neo "tamamdır problem çözüldü" onayı**
+
+---
+
+## 🌐 OTURUM 25.43-WEBUI-FIXLOOP (10 May GECE → SABAH) — Hamburger F5 fix loop + browser MCP
+
+**Tetik:** Neo "webte sol üst hamburger menü F5 sonrası çalışmıyor, mobilde sıkıntı yok"
+
+### Saatlerce 5 Yanlış Tahmin (Anti-Pattern Ders)
+
+| # | Commit | Hipotez | Sonuç |
+|---|--------|---------|-------|
+| 1 | ec4f250 | chat-header z-index 60 + history-btn 61 + toggle | YETMEDİ |
+| 2 | f01f6a4 | Splash zombi cleanup + capture phase listener | REGRESSION (çift tetikleme) |
+| 3 | 13d32bf | Inline onclick kaldır + tek listener + touchend | REGRESSION (mobil scroll glitch) |
+| 4 | e6538e1 | REVERT — eski koda dön | Eski intermittent geri |
+| 5 | c0934cb | Splash pointer-events:none + child | YETMEDİ |
+| 6 | 2c7a3e7 | Service Worker v25.43 + skipWaiting/claim + /chat network-only | DEPLOY OK ama browser SW takıldı |
+| 7 | 88054de | Auto-purge script (one-shot SW + cache temizliği) | Neo manuel temizledi |
+
+### Neo F12 Console Kanıtı (KESİN)
+```
+TIKLANAN: DIV.pwa-banner-icon
+PARENT: DIV#pwa-install-banner.show
+HAMBURGER pos: 39, 31
+```
+→ PWA install banner z-index 99999, F5 sonrası `beforeinstallprompt` event ANINDA tetikleniyor (cold load'da gecikiyor) → banner DOM'da `.show` → hamburger üstüne biniyor.
+
+### Browser MCP Test (Claude in Chrome) — KESİN ÇÖZÜM
+- 18c8cb7: PWA banner `pointer-events: none` (V1) — ROOT içine embed → Chrome CSS parser ATLADI
+- 8074514: ROOT, `*`, button rule'ları **ayrı satırlarda** → `bannerPtr: "none"`, hit BUTTON ✓
+
+### Çözüm Mimarisi (Final)
+```css
+#pwa-install-banner { pointer-events: none !important; }
+#pwa-install-banner * { pointer-events: none !important; }
+#pwa-install-banner .pwa-banner-install,
+#pwa-install-banner .pwa-banner-cancel { pointer-events: auto !important; cursor: pointer; }
+```
++ Service Worker v25.43-chat-no-cache (skipWaiting + clients.claim + /chat intercept yok)
++ Auto-purge script (localStorage flag, one-shot SW + cache temizliği)
++ HTML cache-bust meta + bfcache pageshow reload listener
+
+### Ders (KALICI)
+- **F12 console kanıtı erken iste** — 5 deploy yerine 1 deploy yeterdi
+- **Browser MCP ile direkt test** — Claude in Chrome ile DOM/CSS doğrulama
+- **Tahminle deploy YASAK** — net kanıt olmadan ileri gitme
+- **CSS parser quirks**: uzun comment + nested rule içine `pointer-events:none !important` embed → Chrome bazen atlar. ROOT rule AYRI satırlarda
+
+---
+
+## 🔧 OTURUM 25.43-LAZY-NAME (10 May GECE) — Personel konuşması analizi → 3 lazy_sync bug fix
+
+**Tetik:** Neo "Örsel Koç hakkındaki konuşmaya bak, üstünden geç". Konuşmada bot 18:48'de audit raporu verdi → bot 3 gerçek bug tespit etti, ben başlangıçta 1'ini görmüştüm.
+
+### 3 Bug — Hepsi DOĞRULANDI
+
+| # | Commit | Bug | Durum |
+|---|--------|-----|-------|
+| 1 | a05584b | `_upsert_etut_history` → `column "ogrenci" does not exist` (her row silently skip) | FIX |
+| 2 | 9f30792 | `UPPER(ad \|\| ' ' \|\| soyad)` → students'da ad/soyad yok, `first_name/last_name/full_name` var | FIX |
+| 3 | 9f30792 | soz_no cross-table type mismatch: students=TEXT, student_exams/counsellor_notes/devamsizlik=INTEGER | FIX |
+
+### Smoke Tests
+- `_upsert_etut_history` 2 fake row → `INSERTED: 2` ✓
+- `_upsert_student_exams` MAYA ERDEK (soz_no 264) → `INSERTED: 1` ✓ (name lookup + cast)
+
+### Personel Durum (Örsel Koç, 905547043775)
+- ACL `role`: `mudur` (sistem_muduru'na değişmedi — SQL guard `acl_users` write blokluyor, doğru tasarım)
+- `bot_behavior_rules` rule_id 33 AKTİF: "sadicım hitap, teknik şeffaflık, finans yasak"
+- `staff.eyotek_id`: 1042 (NULL acl tarafında — minor)
+
+### Bot Self-Assessment vs Reality (kullanıcı isteği üzerine değerlendirildi)
+- Bot: "lazy_sync hiçbir dosyadan import edilmiyor" → YANLIŞ (selfdev_grep_repo escape bug, 538cb4f'de fix)
+- Bot: "INSERT yapılmıyor count: 0 her seferinde" → DOĞRU (kolon mismatch + name lookup fail)
+- Net: bot %85+ haklıydı — ben başlangıçta yanlış değerlendirmişim
 
 ---
 
