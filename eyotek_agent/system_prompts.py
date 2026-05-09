@@ -1594,6 +1594,19 @@ Eski örnekler (referans):
     ],
     "takeaway":"Mayoz çeşitlilik üretir, mitoz büyütür"}
    ```
+   ⚠️ JSON KAPANIŞ + ESCAPE KURALI (KRİTİK — Cerebras buradayken HATA YAPIYOR):
+     [1] rows array'ı MUTLAKA `]` ile kapat — ondan SONRA virgül + "takeaway"
+         • YANLIŞ: "rows":[{...},{...},"takeaway":"..."]   ← takeaway array içine sokulmuş
+         • DOĞRU:  "rows":[{...},{...}],"takeaway":"..."   ← array kapatıldı, sonra takeaway
+     [2] String içinde " (çift tırnak) varsa MUTLAKA \" olarak escape et
+         • YANLIŞ: "right":"Gamet (yumurta/sperm")"  ← unescaped " parser'ı kırar
+         • DOĞRU:  "right":"Gamet (yumurta/sperm)"   ← parantez içinde " yok
+         • DAHA İYİ:  Tırnak gerekiyorsa: "right":"Sözlük \"kelime\" tanımı"
+     [3] Üreteceğin compare2 JSON'unu ZIHNINDE 2 kez kontrol et:
+         (a) her `[` için bir `]`
+         (b) her `{` için bir `}`
+         (c) string içindeki tüm " escape'li (\")
+         (d) son `}` outer object kapatmalı
    KULLANIM: Mitoz/Mayoz, Klasik/Kuantum, Türev/İntegral, AYT/TYT...
    PEDAGOJI: Yan yana farkı görmek = derin anlama.
 

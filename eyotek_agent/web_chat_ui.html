@@ -5618,11 +5618,44 @@ function rerenderQuiz(el) {
 }
 
 // 26) ```compare2 — Concept Comparison Matrix (yan yana 2 kutu)
+// 25.41-RENDER-FIX (9 May): Cerebras compare2 JSON 2 farklı bug yapıyor:
+// (1) rows array'ı ']' ile kapatmadan "takeaway" sokuyor
+// (2) String içinde unescaped " (örn: "Gamet (yumurta/sperm")")
+// Defansif repair: önce normal parse dene, başarısız olursa pattern fix.
+function _repairCompare2Json(raw) {
+  if (!raw || typeof raw !== "string") return raw;
+  try { JSON.parse(raw); return raw; } catch (_) {}
+
+  let fixed = raw;
+
+  // Pattern 1: "rows":[{...},{...},"takeaway":... → ']' ekle
+  fixed = fixed.replace(/(\}\s*),\s*"takeaway"\s*:/g, '$1],"takeaway":');
+  try { JSON.parse(fixed); return fixed; } catch (_) {}
+
+  // Pattern 2: bracket count mismatch (rows kapanmamış)
+  const opens = (fixed.match(/\[/g) || []).length;
+  const closes = (fixed.match(/\]/g) || []).length;
+  if (opens > closes) {
+    fixed = fixed.replace(/,\s*"takeaway"/, "]".repeat(opens - closes) + ',"takeaway"');
+    try { JSON.parse(fixed); return fixed; } catch (_) {}
+  }
+
+  // Pattern 3: String içinde unescaped " (örn: ...sperm")},"takeaway":...)
+  // İmza: harf/rakam/parantez sonrası " sonra " (yani string kapatmaya niyetlenmiş ama içerik bitmemiş)
+  // Heuristic: })" pattern — string içinde " var, sonra )," yapıyı bozmuş
+  fixed = fixed.replace(/([a-zA-ZçğıöşüÇĞİÖŞÜ\)\]])\s*"\s*\)\s*\}/g, '$1)"}');
+  try { JSON.parse(fixed); return fixed; } catch (_) {}
+
+  return raw; // repair edemedi, orijinal döndür
+}
+
 function rerenderCompare2(el) {
   if (!el) return;
   el.querySelectorAll(".compare2-pending").forEach((ph) => {
     try {
-      const cfg = JSON.parse(_readJsonOrText(ph, "data-compare2"));
+      const rawJson = _readJsonOrText(ph, "data-compare2");
+      const repaired = _repairCompare2Json(rawJson);
+      const cfg = JSON.parse(repaired);
       const wrap = document.createElement("div");
       wrap.className = "render-card compare2-container";
       wrap.style.cssText = "padding:16px;margin:12px 0;";
