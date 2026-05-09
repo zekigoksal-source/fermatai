@@ -107,6 +107,23 @@ Yan sistemler değişmeden çalışmaya devam ediyor (deep_research, tool_perf, 
 ### Refactor Sırasındaki Geçici Sorun (çözüldü)
 Multi-restart deploy sırasında (Pass 1→2→3 çoklu bridge restart) Neo'nun aktif konuşması bölündü, multi-worker leader takeover sonrası context contamination oldu — bot bir cevapta "son sezon en başarılı 5 öğrenci" sorusuna eski bir konuşmadan kalan "Osmanlı 3D İnteraktif Harita" cevabını yansıttı (12707). Bridge stabil hale gelince düzeldi, sonraki testler 8/8 PASS. Ders: ileride büyük refactor deploy'ları sessiz saatte (gece 02-04) toplu yapılmalı, parça parça değil.
 
+### Render Sıkıntısı Bug (9 May 03:30 → 04:00, çözüldü)
+Neo "boş grafik / render sıkıntısı" diye bildirdi (bot mesaj 12819-12821). Diagnose:
+- Backend chart fence'leri JSON valid olarak üretiyordu (test_renderer_render.py 11/11 PASS sonrası fix)
+- Asıl bug: **Heatmap field uyumsuzluğu** — bot `xAxis/yAxis/data` kullanıyor, frontend `x/y/values` bekliyordu → DOM'da pending div oluşuyor ama undefined field okuyup boş render
+- 2. olası: **browser cache** — refactor sonrası eski JS cache'leniyordu
+
+**Fix'ler:**
+1. `web_chat_ui.html` `rerenderHeatmap`: defansif alias kabul (`x|xAxis|cols`, `y|yAxis|rows`, `values|data|matrix`)
+2. `web_chat_ui.html` head'a 3 cache invalidation meta (`Cache-Control: no-store`, `Pragma: no-cache`, `Expires: 0`)
+3. **Yeni test framework**: `test_renderer_render.py` — 11 renderer × JSON parse + required field validator. Mevcut `test_full_audit` sadece "fence var mı" diyordu, JSON validity ve render edilebilirliği kontrol etmiyordu.
+
+Sonuç: 11/11 PASS — chart, radar, heatmap, gauge, timeline, karne, compare2, quiz, formula, kgraph, steps.
+
+**Kritik öğrenme**: "Fence var" ≠ "Render olur". Her yeni renderer için validator yazılmalı (frontend hangi field'ları okuyor → test onu kontrol etmeli).
+
+Commit: `fe975ad fix(25.41-RENDER): Heatmap field uyumsuzluk + browser cache invalidation`
+
 ### Eski Sonuç (Pass 1+2 sonrası, 02:30)
 
 | Pass | Service | Fonksiyon | Satır |
