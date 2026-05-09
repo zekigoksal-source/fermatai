@@ -1,6 +1,14 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 9 Mayıs 2026 (gece 23:50) · **Oturum:** 25.43-INTEGRATION — **12 yeni dış API + 8 yeni render TÜM routing katmanlarına entegre · Cerebras SAFE_GROQ_TOOLS 4→16 · INTENT_RENDERER_MAP 8 yeni intent · renderer_hint_inject 21→29 pattern · _CLOUD_KEYWORDS 8 yeni keyword · 9/9 entegrasyon test PASS, 47/47 senaryo PASS, end-to-end dispatcher CANLI**
+> **Belge tarihi:** 10 Mayıs 2026 (sabah 04:00) · **Oturum:** 25.43-DIAG — **selfdev_grep_repo bot yanlış teşhis bug (3 katman) + HF_API_TOKEN aktif + ripgrep VPS kuruldu · Bot artık 0 match'i doğrulamadan kesin yorum vermez (3 kanıt zorunlu) · Bridge env'de HF token verified**
+> **10 May 03:30:** 25.43-CONV — Lazy sync sınav adı injection (sinav_drilldown header'dan) + render quality gate (3D scene + skor pre-flight) · Bot artık "lacivert boş ekran" göstermez · 3/3 smoke PASS
+> **10 May 03:00:** 25.43-LAZY-EXTEND-V2 — Lazy sync 4 yeni tablo (attendance/counsellor_notes/teacher_timetable/devamsizlik_sayisi gerçek INSERT) · PAGE_TO_MODULE 4→10 mapping · ogrenci_drilldown 5→13 alt-sayfa keyword · 5/5 upsert smoke PASS
+> **10 May 02:30:** 25.43-LAZY-EXTEND — sinav_sonuclari/ogrenci_drilldown/eyotek_read'e lazy_sync hook + student_exams gerçek INSERT (önce conservative idle) · Schema-safe mapping · ON CONFLICT UPDATE COALESCE
+> **10 May 02:00:** 25.43-CONTEXT — Bot bağlam mantık fix · "GELECEK tarih → EYOTEK ZORUNLU" kuralı · "OTURUM-İÇİ ÖĞRENME — Tekrar Aynı Hatayı Yapma" · get_class_plan future-date runtime guard
+> **10 May 01:30:** 25.43-EYOTEK-724 — auto_login dotenv path bug fix (3 dosya) + fermat-session-keeper.service systemd unit + Chrome CDP port mismatch (9222→9333) · CapSolver Turnstile 6.7sn token chain · 5/5 final smoke PASS · Eyotek 7/24 CANLI
+> **10 May 00:30:** 25.43-OPS — fermat-chrome-cdp.service systemd (Playwright Chromium port 9333 + 1G mem) + Cerebras tool-calling staff role expansion (5 rol) + Routing baseline (real_user 7 gün: Fast %47 / Claude %31 / Cerebras %21)
+> **10 May 00:00:** 25.43-INT-FIXES — 7 dev bulgu fix loop (Neo konuşma analizi 19:46-20:14): eyotek_health tek doğruluk + U-turn kuralı + bağlam koruma + HF Search local fallback + selfdev list_dir retry + read_file recursive + read_logs default 200
+> **9 May 23:50:** 25.43-INTEGRATION — 12 API + 8 render TÜM routing katmanlarına entegre · Cerebras SAFE_GROQ_TOOLS 4→16 · INTENT_RENDERER_MAP +8 intent · renderer_hint_inject +8 pattern · _CLOUD_KEYWORDS +8 keyword · 9/9 entegrasyon + 47/47 senaryo PASS
 > **9 May 21:30:** 25.43 — 12 yeni dış API (TDK/NIST/OEIS/Open-Meteo/Wikidata/CERN/HF/TUIK/AlphaFold/NIST WebBook/Crossref/OSM) + 8 yeni render (sankey/treemap/parallel/force_graph/vega_lite/jsxgraph/cesium_globe/manim_anim)
 > **9 May 18:30:** 25.42 — 7 bulgu fix loop (Mehmet Karpuz konuşma analizi + Atlas #91/#92/#94 KVKK)
 > **9 May 03:00:** 25.41-REFACTOR-FULL — God Class reduction TAM · fermat_core_agent.py 5,840 → 4,661 (-1,179 satır, %20.2) · 4 service modülü (1,426 satır) · 15 fonksiyon services/'e taşındı · 10/10 smoke PASS · Yan sistemler audit ✅
@@ -14,6 +22,148 @@
 > **4 May 18:30:** 25.40z3-FINETUNE — Per-user karakter blokları kompakt + dead code scan · 388/388 PASS
 > **4 May 17:30:** 25.40z3-CONSOLIDATION — kural sertliği korundu, 84 bağlam kompakt
 > **3 May:** 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
+
+---
+
+## 🛠️ 25.43-DIAG (10 May 03:30 → 04:00) — Bot teşhis kalitesi + HF Token
+
+### Bot Yanlış Teşhis Bug (3 katman)
+
+| Katman | Bug | Fix |
+|--------|-----|-----|
+| VPS infra | `ripgrep` yok → Python fallback | `apt install ripgrep` (rg 14.1.0) |
+| `self_dev_tools.py` grep_repo | Python fallback'da ripgrep `\|` escape literal arıyor | `pattern.replace(r'\|', '|')` normalize |
+| Bot davranış | 0 match'ı doğrulamadan "kod yok" kesin yorum | system_prompt: 3 kanıt zorunlu, alternatif pattern + selfdev_read_file |
+
+### HF_API_TOKEN
+
+- Neo HuggingFace token aldı, VPS `/opt/fermatai/.env`'e eklendi (git'te değil)
+- Bridge restart sonrası systemd EnvironmentFile yeniden yüklendi
+- `/proc/PID/environ` doğrulandı: bridge process'inde token aktif
+- Bot artık authenticated `huggingface_inference` (sentiment/classification/NER/QA) yapabilir
+
+---
+
+## 🛠️ 25.43-CONV (10 May 02:30 → 03:00) — Lazy sync sınav + Render quality gate
+
+### Bug 1: Lazy sync sinav_sonuclari fail
+- `sinav_drilldown` row'larında `sinav_adi` field YOK (sayfa header'da)
+- `_upsert_student_exams` her satırda `sinav_adi` arıyor → boş → 0 upsert
+- **Fix:** `_tool_sinav_sonuclari` içinde `sinav_found` header'dan extract → her row'a inject
+
+### Bug 2: Render iteration kalite (5 deneme bug)
+- Eski: `make_render_link` quality_score'u SONDAN, bot user'a gösterdi → user "boş" → debug → 3 round israf
+- **Fix:** Pre-flight quality gate `create_artifact`'tan ÖNCE:
+  - 3D request + (Scene + Camera + Renderer + scene.add + animate) MISS → success=False + retry_now
+  - Quality skoru < 70 → success=False + retry_now
+- system_prompt: "success=False + retry_now → HEMEN tekrar tool, kullanıcıya 'tekrar dene' deme"
+
+---
+
+## 🔬 25.43-LAZY-EXTEND-V2 (10 May 02:00 → 02:30) — 5 tablo gerçek INSERT
+
+### PAGE_TO_MODULE 4 → 10 mapping
+
+| Eyotek Page | DB Tablo | Upsert Fn | Status |
+|-------------|----------|-----------|--------|
+| `student/individual-lesson` | `etut_history` | `_upsert_etut_history` | ✅ |
+| `student/exam-result` | `student_exams` | `_upsert_student_exams` | ✅ V2 |
+| `student/attendance-report` | `attendance` | `_upsert_attendance` | ✅ V2 |
+| `student/student-exam-detail` | `student_exam_analysis` | freshness only | — |
+| `student/counsellor-meeting` | `counsellor_notes` | `_upsert_counsellor_notes` | ✅ V2 |
+| `counsellor/notes` | `counsellor_notes` | (alias) | ✅ |
+| `student/timetable-teacher` | `teacher_timetable` | `_upsert_teacher_timetable` | ✅ V2 |
+| `reports/teacher-schedule` | `teacher_timetable` | (alias) | ✅ |
+| `student/attendance-summary` | `devamsizlik_sayisi` | `_upsert_devamsizlik` | ✅ V2 |
+| `reports/attendance-summary` | `devamsizlik_sayisi` | (alias) | ✅ |
+
+### `_tool_ogrenci_drilldown` alt-sayfa map 5 → 13 keyword
+
+```
+etut/yoklama/sinav/sinavlar/exam/rehberlik/rehberlik_not/counsellor/
+ders_programi/timetable/program/devamsizlik/attendance_summary
+```
+
+### Schema-safe upsert pattern
+
+- Eksik kolon → NULL
+- Format mismatch → skip + debug log
+- Dedupe (UNIQUE benzeri) → çift insert yok
+- ON CONFLICT UPDATE COALESCE — yeni eski'yi ezmiyor, fill ediyor
+- `status='lazy_sync'` tag → kaynak ayırt edilir
+- Datetime/date asyncpg-uyumlu Python obj binding (5 format strptime + fromisoformat fallback)
+
+---
+
+## 🛠️ 25.43-CONTEXT (10 May 00:30 → 01:30) — Bot mantık + bağlam fix
+
+### Bug: Bot DB cache vs Eyotek live karışıyor (gelecek tarih)
+- Neo: "yarın hangi etütler" → Bot DB'den 0 → "boş"  ❌ (Eyotek'te 16 var)
+- Neo "eyotekten bak" → Bot Eyotek → 16 etüt ✅
+- Neo: "pazartesi salı?" → Bot YİNE DB'den → 0  ❌ (working memory loss)
+
+### Fix
+- `tool_definitions.py` get_class_plan description: "DB cache GEÇMİŞ veri için. GELECEK tarih sorgularında ASLA — eyotek_query kullan"
+- `system_prompts.py` 2 yeni kural bölümü:
+  - **GELECEK TARIH SORGULARI — EYOTEK ZORUNLU** (karar matrisi)
+  - **OTURUM-İÇİ ÖĞRENME — Tekrar Aynı Hatayı Yapma** (working memory)
+- `fermat_core_agent.tool_get_class_plan()` runtime guard: gelecek tarih + DB boş → `_recommendation: USE_EYOTEK_QUERY`
+
+---
+
+## 🌐 25.43-EYOTEK-724 (10 May 00:00 → 00:30) — Eyotek 7/24 ulaşılabilir
+
+### Tespit (forensics)
+- `fermat-chrome-cdp.service` git'te HİÇ yoktu — VPS'te de manuel kurulmamıştı
+- 25.5 (24 Nis) commit'inde Chromium manuel başlatılmıştı (Xvfb+noVNC)
+- VPS reboot/update sonrası Chrome kalktı, kimse başlatmadı → Eyotek tools fail
+- `auto_login` → `load_dotenv()` cwd-traversal yetersiz → EYOTEK_USER='' → login fail
+
+### Fix
+- **systemd unit `fermat-chrome-cdp.service`** — Playwright Chromium port 9333, headless, persistent profile, Restart=always, MemoryMax=1G, CPUQuota=50%
+- **systemd unit `fermat-session-keeper.service`** — 3dk loop cookie/session check + auto-relogin, After=chrome-cdp
+- **`load_dotenv` explicit parent path** — `eyotek_auto_login.py`, `eyotek_wrapper.py`, `session_keeper.py` (3 dosya)
+- **CDP port 9222 → 9333** — `.env` ile uyumlu hale getirildi
+- **Inline auto-relogin** — `eyotek_health_check(auto_relogin=True)` session_drop tespit edince CapSolver chain'i tetikler, kullanıcı manuel komut atmak zorunda DEĞİL
+
+### CapSolver Chain
+```
+Cookie expire → Login sayfasına git → CAPTCHA tespit → CapSolver API
+→ Token (~6.7sn) → Form'a inject → Submit → 8 cookie kaydedildi
+→ eyotek_health → status='online' ✅
+```
+
+---
+
+## 🛠️ 25.43-INT-FIXES (10 May 00:00) — 7 dev bulgu fix loop
+
+| # | Bulgu | Fix |
+|---|-------|-----|
+| 1 | Eyotek 3 zıt cevap (KAPALI/CANLI/DÜŞMÜŞ) | `eyotek_health.py` tek doğruluk fonksiyonu (port + cookie + live API + 5 status enum) + 15sn cache |
+| 2 | Bot U-turn'ünü inkar ediyor | system_prompt: "Az önce X demiştim hatalıydı" template ack |
+| 3 | Bağlam karışıklığı (Eyotek↔HF) | `conversation_memory.get_recent_user_questions()` + 14 topic keyword map |
+| 4 | HF Search VPS'te boş | `_HF_FALLBACK_MODELS` 6 kategori (turkish bert/image/sentiment/QA/summ/embedding) |
+| 5 | `selfdev_list_dir` 0 entries | os.scandir RETRY + `_diagnostics` field |
+| 6 | `selfdev_read_file` subdir bulamıyor | `recursive=True` opsiyonu + auto-retry rglob |
+| 7 | `selfdev_read_logs` default 50 boş | Default 50 → 200 |
+
+---
+
+## 🚀 25.43-OPS (10 May 00:30) — Cerebras role expansion + routing baseline
+
+### Cerebras Tool-Calling Role Expansion
+**Önce:** Sadece `role == "ogrenci"` Cerebras tool-calling tetiklenirdi.
+**Sonra:** `_CB_ELIGIBLE_ROLES = {"ogrenci", "ogretmen", "rehber", "mudur", "yonetim"}` (admin hariç — selfdev kullanıyor).
+
+### Routing Baseline (real_user_routing_stats 7 gün, 390 mesaj)
+
+| Source | Count | % | Avg ms | Hedef |
+|--------|-------|---|--------|-------|
+| fast_response | 183 | 47% | 5 | 45% ✅ |
+| claude | 122 | 31% | 17,006 | 25% (-6) |
+| cerebras (3 lane) | 84 | 21% | ~3,000 | 30% (-9) |
+
+Role expansion sonrası staff query'leri Claude → Cerebras kayması bekleniyor.
 
 ---
 
@@ -100,6 +250,43 @@ VPS IP'si OEIS.org Cloudflare ile bloklanıyor. Çözüm: `_OEIS_FALLBACK` yerel
 - 12 yeni badge eklendi (TDK/NIST/OEIS/Open-Meteo/Wikidata/CERN/HF/TÜİK/AlphaFold/NIST WebBook/Crossref/OSM)
 - Hook line: "Türkiye'nin kurum-içi geliştirilen ilk eğitim yapay zeka ajanı"
 - Verb değişti: "5 LLM eş zamanlı **devreye giriyor**" (eski: dans ediyor)
+
+---
+
+## 🔧 25.42 SERİSİ — Konuşma Analizi Fix Loop (9 May 18:30)
+
+**Tetik:** Mehmet Karpuz konuşma analizi (12 dakika 4 farklı şekilde "Sıfır Pozitif" denedi, bot her seferinde "0 sayısı pozitif midir" matematik) + Atlas #91/#92/#94 KVKK açıkları.
+
+### 7 Bulgu Fix
+
+| Bulgu | Dosya | Fix |
+|-------|-------|-----|
+| A — Yayinevi parse hatası | `yayinevi_katalog.py` (yeni, 24 yayınevi + varyant regex) + `ogrenci_yayinevi_denemesi` handler | "0 pozitif"/"sıfır pozitif" → publisher (matematik DEĞİL) |
+| B — Vision foto tablo/soru ayrımı yok | `whatsapp_bridge.vision_prompt` | ADIM 0: TIP A (SORU) / TIP B (TABLO/SONUC) / TIP C (KONU) sınıflandırma |
+| C — Atlas #91 sabit kimlik atama | `ogrenci_kimligin` fallback + system_prompt KVKK | "Sen *Mehmet*!" hardcode kaldırıldı, "tanımlayamadım" |
+| D — Atlas #94 yanlış kurum atama | `_get_caller_profile` exception fallback | role=admin → role=unknown + is_verified=False |
+| E — Chart render streaming | `web_chat_ui.html formatMsg` | Tamamlanmamış chart bloğu için "yükleniyor" placeholder |
+| F — Routing test/gerçek ayrımı yok | `test_user_registry.py` (yeni) + `is_test_user` kolonu + `real_user_routing_stats` view | 905309356389 (235 mesajlık test) işaretli, retroaktif 94 update |
+| G — Web kodu Mehmet 31sn arayla 3 kod | `web_chat_auth` duplicate guard | 30sn → tüm OTP_VALIDITY_MIN (15dk), "Az önceki kod hâlâ geçerli" |
+| H — Puan tahmini cache aynı çıktı | `fast_responses.puan_tahmin` handler + `fast_response_loop_guard` | Son 5dk [FOTO/yanılıyor/baz al] → Claude'a + window 300s |
+
+### Yeni Dosyalar (Oturum 25.42)
+
+| Dosya | Rol |
+|-------|-----|
+| `yayinevi_katalog.py` | 24 yayınevi + regex katalog (Sıfır Pozitif/Apotemi/3D/Palme/Bilgi Sarmal/Yayın Denizi/...) |
+| `test_user_registry.py` | Test/gerçek kullanıcı ayrımı, env override desteği |
+| `migrations/016_routing_stats_test_user.sql` | is_test_user kolonu + view + retroaktif update |
+| `eyotek_health.py` | Eyotek bağlantı tek doğruluk fonksiyonu (port + cookie + live API + 5 status enum + 15sn cache + inline auto-relogin) |
+
+### Atlas Güncelleme
+- #91 (HIGH, sabit kimlik) → `uygulandi`
+- #92 (MEDIUM, session leak) → `uygulandi`
+- #94 (HIGH, yanlış kurum atama) → `uygulandi`
+
+### Routing Dağılımı Değişimi (9 May)
+**Önce (test users dahil):** Claude %57 / Fast %26 / Cerebras %16 — yanıltıcı
+**Sonra (real_user_routing_stats):** Fast %50 / Claude %38 / Cerebras %12 — sağlıklı
 
 ---
 
@@ -1159,15 +1346,15 @@ HASSAS_INTENTS = {  # Cerebras'a YASAK, Claude'a yönlendir
 - **`dashboard_api.py`** + **`dashboard_ui.html`** — Admin paneli (cohort, routing, token, atlas)
 - **`conversation_viewer.py`** — Admin konuşma history HTML viewer
 
-### Agent core
-- **`fermat_core_agent.py`** (~4150 satır) — Ana agent, tool dispatch, ACL, conversation
-- **`system_prompts.py`** (~1468 satır) — Monolitik 28K token system prompt
-- **`tool_definitions.py`** — 55 Claude tool tanımı (Anthropic schema)
-- **`role_access.py`** — `_ACL_MATRIX` rol-tool matrisi + SQL ACL guard
+### Agent core (10 May 04:00 itibarıyla güncel)
+- **`fermat_core_agent.py`** (~4939 satır) — Ana agent, tool dispatch, ACL, conversation, 4 lazy_sync hook
+- **`system_prompts.py`** (~3042 satır) — Monolitik system prompt (25.43 fix loop ile genişledi: EYOTEK 7/24, U-TURN, BAGLAM KORUMA, GELECEK→EYOTEK, OTURUM-İÇİ ÖĞRENME, RENDER QUALITY GATE, SELFDEV TEŞHİS DOĞRULAMA, KIMLIK ATAMASI KVKK, YAYINEVI WHITELIST kuralları)
+- **`tool_definitions.py`** — **128 Claude tool** tanımı (Anthropic schema). 25.43 ile +12 yeni dış API + eyotek_health (tek doğruluk)
+- **`role_access.py`** — `_ACL_MATRIX` rol-tool matrisi + SQL ACL guard. 6 rol × 12 yeni API = 72/72 grant
 
 ### Routing
 - **`routing_engine.py`** — `decide_route(msg, role, phone, soz_no)` → fast/local/cloud
-- **`fast_responses.py`** (~3290 satır) — Regex pattern matching, ~50 handler
+- **`fast_responses.py`** (~5473 satır) — Regex pattern matching, ~140 handler (25.42 ile yayinevi pattern + 5 staff query handler eklendi)
 - **`llm_router.py`** — `LLMRouter` class — Cerebras+Groq+Ollama+Claude orchestration
 - **`cerebras_handler.py`** (yeni 25.22) — Cerebras API client + intent→model
 - **`groq_handler.py`** — Groq API client (fallback)
@@ -1176,12 +1363,25 @@ HASSAS_INTENTS = {  # Cerebras'a YASAK, Claude'a yönlendir
 - **`prompt_tiers.py`** (yeni 25.15, **şu an MODE=disabled**) — LIGHT/NORMAL/FULL tier
 - **`text_normalize.py`** (yeni 25.21) — Türkçe normalize (kısaca/kisaca)
 
-### Otomasyon (Eyotek)
+### Otomasyon (Eyotek) — 7/24 sistem (25.43-EYOTEK-724 sonrası)
 - **`eyotek_wrapper.py`** — Playwright CDP — read_*, write_etut, write_counsellor_note
 - **`eyotek_agent.py`** — Toplu scraping → PostgreSQL UPSERT
 - **`session_keeper.py`** — Eyotek session canlı tutma (3dk periyod, **cookie-aware** check_session — yeni 25.27, "OFFLINE yanlış raporu kaldırıldı")
 - **`fermat_start.py`** — Tek dosya başlat (laptop dev için)
 - **`eyotek_auto_login.py`** — Headless Chromium + CapSolver (CAPTCHA otomatik çözüm)
+- **`eyotek_health.py`** (yeni 25.42) — Eyotek bağlantı tek doğruluk fonksiyonu (port + cookie + live API + 5 status enum + 15sn cache + inline auto-relogin) — bot artık 3 zıt cevap vermez
+- **`eyotek_lazy_sync.py`** (yeni 25.40t, V2 25.43) — 10 page mapping → 5 tablo gerçek INSERT (etut_history/student_exams/attendance/counsellor_notes/teacher_timetable/devamsizlik_sayisi), schema-safe ON CONFLICT UPDATE COALESCE, "her sorgu DB sync" prensibi
+
+### Systemd Service Mimarisi (25.43-EYOTEK-724)
+- **`fermatai-bridge.service`** — FastAPI + uvicorn (port 8001, 3 worker, EnvironmentFile=.env)
+- **`fermat-chrome-cdp.service`** (yeni 25.43-OPS) — Playwright Chromium port 9333, headless, persistent profile, Restart=always, MemoryMax=1G, CPUQuota=50%
+- **`fermat-session-keeper.service`** (yeni 25.43-EYOTEK-724) — `session_keeper.py` daemon, After=chrome-cdp, 3dk loop + auto-relogin
+- **`fermatai-bridge.service`** + 7 timer (atlas-nightly/backup/dr-drill/eyotek-daily/quality-weekly/slow-claude/smart-sync)
+
+### Yeni Eklenen Modüller (25.42 + 25.43)
+- **`yayinevi_katalog.py`** (25.42) — 24 yayınevi + regex (Sıfır Pozitif/Apotemi/3D/Palme/...)
+- **`test_user_registry.py`** (25.42) — Test/gerçek kullanıcı ayrımı (env override)
+- **`external_apis_v3.py`** (25.43, ~1000 satır) — 12 yeni dış API (TDK/NIST/OEIS/Open-Meteo/Wikidata/CERN/HF/TUIK/AlphaFold/NIST WebBook/Crossref/OSM)
 
 ### Agentic Eyotek (yeni 25.26+25.27)
 - **`eyotek_knowledge/eyotek_navigator.py`** (~1100 satır) — Generic parametric navigator
