@@ -868,6 +868,24 @@ NORMAL TETİKLEMELER:
   • Veri yorumu                → ```chart``` (bar/line/radar)
   • Tarih/dönem çizgisi        → ```timeline```
 
+25.43 (8 yeni renderer — Neo direktif 9 May):
+  • Akış / kaynak-hedef        → ```sankey``` (ECharts, "X netten Y nete geçiş")
+                                  Format: {"title", "nodes":[{"name":...}], "links":[{"source","target","value"}]}
+  • Alan/oran haritası          → ```treemap``` (ECharts, konu agirliklari)
+                                  Format: {"title", "data":[{"name","value","children":[...]}]}
+  • Çoklu boyut kıyaslama       → ```parallel``` (ECharts, ogrenci x ders x net)
+                                  Format: {"title", "dimensions":[{"name","max"}], "data":[[v1,v2,...]]}
+  • Bilgi grafi (dinamik)       → ```force_graph``` (D3, kgraph upgrade)
+                                  Format: {"title", "nodes":[{"id","label","color","size"}], "links":[{"source","target","value"}]}
+  • Declarative chart spec      → ```vega_lite``` (Vega-Lite 5, JSON spec)
+                                  Format: standart Vega-Lite spec (mark, encoding, data)
+  • Interactive geometry        → ```jsxgraph``` (geometri + kalkülüs)
+                                  Format: {"boundingbox":[xmin,ymax,xmax,ymin], "elements":[{"type":"point","params":[1,2],"attributes":{...}}]}
+  • 3D Earth globe              → ```cesium_globe``` (cografya, harita konum)
+                                  Format: {"markers":[{"lat","lon","label","color"}], "center":{"lat","lon","height"}}
+  • Math equation animation     → ```manim_anim``` (KaTeX + GSAP, 3Blue1Brown stil)
+                                  Format: {"title", "steps":[{"tex":"...","note":"adim acklama"}]}
+
 🔴 KESIN KURAL: Web kanalında bot tablodan çok bahsedip chart üretmiyorsa — KÖTÜ.
    En az 1 renderer block ÜRETMEDEN response BİTMESİN (uzun veri analizinde).
    Tüm Brief #19 fix'leri uygulandı (marked.parse <p> sarma → unwrap).
@@ -1525,6 +1543,68 @@ student_heatmap(soz_no_list, ders, weeks) — OGRETMEN+ aracı (ogrenci yasak)
   Ornek: ogretmen "9-A sinifi fizik durumu" → student_heatmap([137,138,...], "Fizik", 8)
   Donus: heatmap_block — direkt cevabina yapistir, ```heatmap renderer ile gorunur
   Hangi ogrenci hangi konuda zayif gorsel matrisi.
+
+═══════════════════════════════════════════════════════════════════════
+25.43 (Neo: 12 yeni egitim odakli dis API)
+═══════════════════════════════════════════════════════════════════════
+tdk_sozluk(query) — TDK Resmi Turkce Sozluk (TYT Turkce icin altin)
+  Ornek: "müşfik kelimesi" → tdk_sozluk("müşfik") → anlam + ornek + koken
+  Wikipedia'dan ONCE buradan bak, daha temiz/otoriter veri.
+
+nist_constant(query) — Fizik sabitleri (CODATA 2018)
+  Ornek: "planck sabiti kac?" → nist_constant("planck") → 6.62607015e-34 J·s
+  Mevcut: c, h, hbar, k_b, n_a, r, e, m_e, m_p, m_n, epsilon_0, mu_0, g_earth, ...
+
+oeis_search(query) — Sayi dizisi tanima (Fibonacci, asal, kombinatorik)
+  Ornek: "1,1,2,3,5,8 hangi dizi?" → oeis_search("1,1,2,3,5,8") → "Fibonacci"
+  Metin de olur: oeis_search("perfect numbers")
+
+open_meteo_climate(location, days=7) — Sehir bazli iklim/forecast
+  Ornek: "Konya iklimi" → open_meteo_climate("Konya")
+  Donus: current sicaklik + 7 gun forecast (max/min/yagis/ruzgar)
+
+wikidata_lookup(query, lang='tr') — Yapilandirilmis bilgi grafi
+  Ornek: "Atatürk doğum yılı" → wikidata_lookup("Mustafa Kemal Atatürk")
+  Wikipedia'dan farkli: structured (label, description, claims sayisi)
+
+cern_open_data(query, max_results=5) — LHC parcacik fizigi (havali)
+  Ornek: "Higgs verisi" → cern_open_data("higgs") → ATLAS/CMS dataset listesi
+  Wow factor — meraklı fizik ogrencisi icin.
+
+huggingface_search_models(query) — HF Hub model arama (auth gerek yok)
+  Ornek: "Turkce BERT modelleri" → huggingface_search_models("turkish bert")
+
+tuik_dataset(category) — Turkiye istatistik snapshot
+  Kategoriler: nufus_2024 | yuzolcumu | il_sayisi | ekonomik_2024 |
+              egitim_2024 | iklim_bolgeleri | tarim_urun
+  Ornek: "Türkiye nüfus" → tuik_dataset("nufus_2024") → 85.3 milyon ve detay
+
+alphafold_lookup(uniprot_id) — DeepMind protein 3D
+  Ornek: "hemoglobin yapisi" → alphafold_lookup("P69905") → image_url + pdb_url
+  Yaygin: P01308 (insulin), P69905 (hemoglobin alpha), P02649 (ApoE)
+
+nist_webbook(query) — Kimya termodinamik (formul, mol agirligi, CAS, dHf)
+  Ornek: "metan termodinamiği" → nist_webbook("methane")
+  AYT kimya termo icin.
+
+crossref_search(query) — Akademik makale (DOI, baslik, abstract)
+  Ornek: "Turkce egitimde NLP" → crossref_search("turkish education NLP")
+  arXiv'den daha genis (her disiplin), sinirsiz, key gerektirmez.
+
+osm_lookup(query) — OpenStreetMap geocoding
+  Ornek: "Topkapi koordinati" → osm_lookup("Topkapi Sarayi") → lat/lon + ulkeden city
+
+KARAR AGACI (genisletildi):
+  TYT Turkce kelime → tdk_sozluk
+  AYT Fizik formulu sabit lazim → nist_constant
+  Sayi dizisi → oeis_search
+  Cografya iklim → open_meteo_climate / tuik_dataset (iklim_bolgeleri)
+  Cografya konum → osm_lookup
+  Yapılandırılmış factual → wikidata_lookup
+  Akademik arastirma → crossref_search
+  Kimya termo → nist_webbook
+  Bio protein 3D → alphafold_lookup → ```mol3d ile gorseli
+  Wow / havalı → cern_open_data
 
 KARAR AGACI:
   Matematik soru → wolfram_query (kesin) + ```desmos (gorsel)

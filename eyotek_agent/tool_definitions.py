@@ -2516,6 +2516,138 @@ TOOLS.extend([
     },
 ])
 
+# ════════════════════════════════════════════════════════════════════
+# 25.43 (Neo: 12 yeni dis API tool tanimi)
+# ════════════════════════════════════════════════════════════════════
+TOOLS.extend([
+    {
+        "name": "tdk_sozluk",
+        "description": "Türk Dil Kurumu (TDK) Güncel Türkçe Sözlük — kelime anlamı, deyim, atasözü. TYT Türkçe paragraf sorularında resmi kaynak.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"query": {"type": "string", "description": "Aranacak kelime/deyim"}},
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "nist_constant",
+        "description": "NIST Physical Constants (CODATA 2018) — fizik sabitleri (c, h, G, k_B, N_A, e, m_e, m_p, R...). AYT fizik formül uygulama için.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"query": {"type": "string", "description": "Sabit adı (örn 'planck', 'avogadro', 'boltzmann')"}},
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "oeis_search",
+        "description": "OEIS — sayı dizisi tanıma (Fibonacci, asal, kombinatorik). 'Bu dizi nedir' sorularına altın kaynak.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Sayı dizisi (örn '1,1,2,3,5,8') VEYA metin"},
+                "max_results": {"type": "integer", "description": "Max sonuç (default 5)"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "open_meteo_climate",
+        "description": "Open-Meteo — şehir bazlı sıcaklık/yağış/rüzgar + 7 günlük forecast. Coğrafya iklim için canlı veri.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string", "description": "Şehir adı"},
+                "days": {"type": "integer", "description": "Forecast günü 1-14"}
+            },
+            "required": ["location"]
+        }
+    },
+    {
+        "name": "wikidata_lookup",
+        "description": "Wikidata — yapılandırılmış bilgi grafi. Wikipedia'dan farklı: structured factual veri.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Aranacak kavram/kişi"},
+                "lang": {"type": "string", "description": "Dil (default 'tr')"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "cern_open_data",
+        "description": "CERN Open Data — LHC parçacık fiziği veri seti. Meraklı fizik öğrencisi için 'wow' dış API.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Konu (örn 'higgs', 'atlas')"},
+                "max_results": {"type": "integer", "description": "Max sonuç (default 5)"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "huggingface_search_models",
+        "description": "Hugging Face Hub model arama — auth gerek yok. NLP/vision modelleri keşfi.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Model arama (örn 'turkish bert')"},
+                "max_results": {"type": "integer", "description": "Max model (default 5)"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "tuik_dataset",
+        "description": "Türkiye istatistik snapshot: nüfus, yüzölçümü, il sayısı, ekonomi, eğitim, iklim bölgeleri, tarım. Coğrafya/sosyal için.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"category": {"type": "string", "description": "nufus_2024 | yuzolcumu | il_sayisi | ekonomik_2024 | egitim_2024 | iklim_bolgeleri | tarim_urun"}},
+            "required": ["category"]
+        }
+    },
+    {
+        "name": "alphafold_lookup",
+        "description": "AlphaFold (DeepMind/EBI) — protein 3D yapı tahmini. UniProt ID alır.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"uniprot_id": {"type": "string", "description": "UniProt ID (örn 'P01308' insulin, 'P69905' hemoglobin alpha)"}},
+            "required": ["uniprot_id"]
+        }
+    },
+    {
+        "name": "nist_webbook",
+        "description": "NIST Chemistry WebBook — kimyasal madde formül, mol ağırlığı, CAS no, oluşum entalpisi. AYT kimya termo için.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"query": {"type": "string", "description": "Madde adı İngilizce (örn 'water', 'glucose')"}},
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "crossref_search",
+        "description": "Crossref — akademik makale arama (DOI, başlık, abstract). İleri araştırma sorularına.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Akademik konu/anahtar"},
+                "max_results": {"type": "integer", "description": "Max sonuç (default 5)"}
+            },
+            "required": ["query"]
+        }
+    },
+    {
+        "name": "osm_lookup",
+        "description": "OpenStreetMap Nominatim — yer adı → koordinat + detay (geocoding). Coğrafya konum soruları için.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"query": {"type": "string", "description": "Yer adı (örn 'Topkapı Sarayı', 'Erciyes Dağı')"}},
+            "required": ["query"]
+        }
+    },
+])
+
 # Active TOOLS — Claude system prompt'a gonderilen liste
 TOOLS_ACTIVE: list[dict] = [t for t in TOOLS if t.get("name") not in DEAD_TOOLS]
 

@@ -798,4 +798,17 @@ def status_report_v2() -> dict:
         "tts_elevenlabs": bool(ELEVENLABS_API_KEY),
         "code_execution": True,  # local subprocess, key gerek yok
         "suno": bool(SUNO_API_KEY),
+        # 25.43 (Neo: 12 yeni API):
+        "tdk_sozluk": True,           # Resmi TDK, key gerek yok
+        "nist_constants": True,       # Statik dataset, key yok
+        "oeis": True,                 # OEIS public, key yok
+        "open_meteo": True,           # Açık API, key yok
+        "wikidata_sparql": True,      # Public SPARQL, key yok
+        "cern_open_data": True,       # CERN public, key yok
+        "huggingface_inference": bool(os.getenv("HF_API_TOKEN")),
+        "tuik_dataset": True,         # JSON cache + scraping
+        "alphafold": True,            # EBI public, key yok
+        "nist_webbook": True,         # NIST public, key yok
+        "crossref_search": True,      # Crossref public, key yok
+        "openstreetmap": True,        # Nominatim public, key yok
     }

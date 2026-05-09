@@ -1359,6 +1359,19 @@ TOOL_DISPATCH = {
     "find_youtube_lesson":         lambda p: _tool_find_youtube(**p),
     "export_anki_deck":            lambda p: _tool_export_anki(**p),
     "wolfram_step_by_step":        lambda p: _tool_wolfram_step_by_step(**p),
+    # 25.43 (Neo: 12 yeni dis API)
+    "tdk_sozluk":                  lambda p: _tool_tdk_sozluk(**p),
+    "nist_constant":               lambda p: _tool_nist_constant(**p),
+    "oeis_search":                 lambda p: _tool_oeis_search(**p),
+    "open_meteo_climate":          lambda p: _tool_open_meteo_climate(**p),
+    "wikidata_lookup":             lambda p: _tool_wikidata_lookup(**p),
+    "cern_open_data":              lambda p: _tool_cern_open_data(**p),
+    "huggingface_search_models":   lambda p: _tool_hf_search_models(**p),
+    "tuik_dataset":                lambda p: _tool_tuik_dataset(**p),
+    "alphafold_lookup":            lambda p: _tool_alphafold_lookup(**p),
+    "nist_webbook":                lambda p: _tool_nist_webbook(**p),
+    "crossref_search":             lambda p: _tool_crossref_search(**p),
+    "osm_lookup":                  lambda p: _tool_osm_lookup(**p),
 }
 
 
@@ -1519,6 +1532,105 @@ async def _tool_student_heatmap(soz_no_list: list = None, ders: str = "",
         soz_no_list=soz_no_list, ders=ders, weeks=weeks,
         _caller_role=_caller_role, _caller_phone=_caller_phone, **_extra
     )
+
+
+# ════════════════════════════════════════════════════════════════════
+# 25.43 (Neo: 12 yeni dis API tool wrapper)
+# ════════════════════════════════════════════════════════════════════
+async def _tool_tdk_sozluk(query: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v3 import tdk_sozluk
+        return await tdk_sozluk(query=query)
+    except Exception as e:
+        return {"success": False, "error": f"tdk_sozluk: {e}"}
+
+
+async def _tool_nist_constant(query: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v3 import nist_constant
+        return await nist_constant(query=query)
+    except Exception as e:
+        return {"success": False, "error": f"nist_constant: {e}"}
+
+
+async def _tool_oeis_search(query: str = "", max_results: int = 5, **_extra) -> dict:
+    try:
+        from external_apis_v3 import oeis_search
+        return await oeis_search(query=query, max_results=int(max_results or 5))
+    except Exception as e:
+        return {"success": False, "error": f"oeis_search: {e}"}
+
+
+async def _tool_open_meteo_climate(location: str = "", days: int = 7, **_extra) -> dict:
+    try:
+        from external_apis_v3 import open_meteo_climate
+        return await open_meteo_climate(location=location, days=int(days or 7))
+    except Exception as e:
+        return {"success": False, "error": f"open_meteo_climate: {e}"}
+
+
+async def _tool_wikidata_lookup(query: str = "", lang: str = "tr", **_extra) -> dict:
+    try:
+        from external_apis_v3 import wikidata_lookup
+        return await wikidata_lookup(query=query, lang=lang)
+    except Exception as e:
+        return {"success": False, "error": f"wikidata_lookup: {e}"}
+
+
+async def _tool_cern_open_data(query: str = "higgs", max_results: int = 5, **_extra) -> dict:
+    try:
+        from external_apis_v3 import cern_open_data
+        return await cern_open_data(query=query, max_results=int(max_results or 5))
+    except Exception as e:
+        return {"success": False, "error": f"cern_open_data: {e}"}
+
+
+async def _tool_hf_search_models(query: str = "", max_results: int = 5, **_extra) -> dict:
+    try:
+        from external_apis_v3 import huggingface_search_models
+        return await huggingface_search_models(query=query, max_results=int(max_results or 5))
+    except Exception as e:
+        return {"success": False, "error": f"hf_search: {e}"}
+
+
+async def _tool_tuik_dataset(category: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v3 import tuik_dataset
+        return await tuik_dataset(category=category)
+    except Exception as e:
+        return {"success": False, "error": f"tuik_dataset: {e}"}
+
+
+async def _tool_alphafold_lookup(uniprot_id: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v3 import alphafold_lookup
+        return await alphafold_lookup(uniprot_id=uniprot_id)
+    except Exception as e:
+        return {"success": False, "error": f"alphafold: {e}"}
+
+
+async def _tool_nist_webbook(query: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v3 import nist_webbook
+        return await nist_webbook(query=query)
+    except Exception as e:
+        return {"success": False, "error": f"nist_webbook: {e}"}
+
+
+async def _tool_crossref_search(query: str = "", max_results: int = 5, **_extra) -> dict:
+    try:
+        from external_apis_v3 import crossref_search
+        return await crossref_search(query=query, max_results=int(max_results or 5))
+    except Exception as e:
+        return {"success": False, "error": f"crossref: {e}"}
+
+
+async def _tool_osm_lookup(query: str = "", **_extra) -> dict:
+    try:
+        from external_apis_v3 import osm_lookup
+        return await osm_lookup(query=query)
+    except Exception as e:
+        return {"success": False, "error": f"osm_lookup: {e}"}
 
 
 # ── Oturum 25.33 — 3 yeni external API wrapper ──

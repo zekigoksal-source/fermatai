@@ -97,6 +97,11 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # ── 25.38 (Neo) — PhET + YouTube + Anki + Wolfram step-by-step ──
         "search_phet_simulation", "embed_phet_simulation",
         "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step",
+        # ── 25.43 (Neo: 12 yeni dis API) — egitim odakli ──
+        "tdk_sozluk", "nist_constant", "oeis_search", "open_meteo_climate",
+        "wikidata_lookup", "cern_open_data", "huggingface_search_models",
+        "tuik_dataset", "alphafold_lookup", "nist_webbook",
+        "crossref_search", "osm_lookup",
     },
     # Yönetim üyesi (Bilge): müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     # Oturum 25.40: get_blueprint_section kaldırıldı (admin-özel mimari iç bilgi)
@@ -115,6 +120,11 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "tercih_donemi_durum",
         # 25.40k — sezon-bagimsiz YOK Atlas
         "universite_taban_sorgu", "siralama_ile_bolumler",
+        # ── 25.43 (Neo: 12 yeni dis API) — egitim odakli ──
+        "tdk_sozluk", "nist_constant", "oeis_search", "open_meteo_climate",
+        "wikidata_lookup", "cern_open_data", "huggingface_search_models",
+        "tuik_dataset", "alphafold_lookup", "nist_webbook",
+        "crossref_search", "osm_lookup",
     },
     # Müdür (Mahsum, Duygu): TÜM kurum verisi (akademik + Eyotek + tercih + raporlar)
     # Oturum 25.40 (Neo direktif): SİSTEM AYARLARI ve ADMIN-ÖZEL TOOL'LAR ÇIKARILDI.
@@ -170,6 +180,11 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # ── 25.38 (Neo) — PhET + YouTube + Anki + Wolfram step ──
         "search_phet_simulation", "embed_phet_simulation",
         "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step",
+        # ── 25.43 (Neo: 12 yeni dis API) — egitim odakli ──
+        "tdk_sozluk", "nist_constant", "oeis_search", "open_meteo_climate",
+        "wikidata_lookup", "cern_open_data", "huggingface_search_models",
+        "tuik_dataset", "alphafold_lookup", "nist_webbook",
+        "crossref_search", "osm_lookup",
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)
@@ -224,6 +239,11 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # 25.40k (Neo) — sezon-bagimsiz YOK Atlas (ogretmen ogrenciye yonlendirir)
         "universite_taban_sorgu", "siralama_ile_bolumler",
         "tercih_donemi_durum", "bolum_karsilastir",
+        # ── 25.43 (Neo: 12 yeni dis API) — egitim odakli ──
+        "tdk_sozluk", "nist_constant", "oeis_search", "open_meteo_climate",
+        "wikidata_lookup", "cern_open_data", "huggingface_search_models",
+        "tuik_dataset", "alphafold_lookup", "nist_webbook",
+        "crossref_search", "osm_lookup",
     },
     # Rehber öğretmen: TÜM öğrenci + TÜM öğretmen programı + etüt yazma + rehberlik notu
     "rehber": {
@@ -266,6 +286,11 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # ── 25.38 (Neo) — PhET + YouTube + Anki + Wolfram step (rehber öğrenci için Anki üretebilir) ──
         "search_phet_simulation", "embed_phet_simulation",
         "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step",
+        # ── 25.43 (Neo: 12 yeni dis API) — egitim odakli ──
+        "tdk_sozluk", "nist_constant", "oeis_search", "open_meteo_climate",
+        "wikidata_lookup", "cern_open_data", "huggingface_search_models",
+        "tuik_dataset", "alphafold_lookup", "nist_webbook",
+        "crossref_search", "osm_lookup",
     },
     # Veli: sadece kendi çocuğunun akademik verisi + universite tahmin (Neo onay)
     "veli": {"get_student_analytics", "get_ayt_analysis",
@@ -308,7 +333,12 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 "schedule_recall", "get_pending_recalls", "build_knowledge_graph",
                 # ── 25.38 (Neo) — PhET (DESTEK) + YouTube + Anki (kendi profili) + Wolfram step ──
                 "search_phet_simulation", "embed_phet_simulation",
-                "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step"},
+                "find_youtube_lesson", "export_anki_deck", "wolfram_step_by_step",
+                # ── 25.43 (Neo: 12 yeni dis API) — egitim odakli ──
+                "tdk_sozluk", "nist_constant", "oeis_search", "open_meteo_climate",
+                "wikidata_lookup", "cern_open_data", "huggingface_search_models",
+                "tuik_dataset", "alphafold_lookup", "nist_webbook",
+                "crossref_search", "osm_lookup"},
     # Misafir / bilinmeyen: hiçbir araç
     "guest": set(),
     "unknown": set(),

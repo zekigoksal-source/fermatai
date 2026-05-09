@@ -90,6 +90,24 @@
 <!-- 25.37+ (Neo): GLightbox — mobil görsel viewer (NASA/bilim foto pinch-to-zoom) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
 <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js" defer></script>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     25.43 (Neo: 8 yeni render) — yeni renderer CDN'leri
+     ════════════════════════════════════════════════════════════════════ -->
+<!-- ECharts: sankey, treemap, parallel_coords, heatmap-pro (Apache, Chart.js+) -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<!-- D3.js v7: force-directed graph, custom viz -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<!-- Vega + Vega-Lite + Vega-Embed: declarative chart spec -->
+<script src="https://cdn.jsdelivr.net/npm/vega@5.30.0/build/vega.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-lite@5.20.1/build/vega-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vega-embed@6.26.0/build/vega-embed.min.js"></script>
+<!-- JSXGraph: interactive geometry/calculus -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph@1.10.0/distrib/jsxgraph.css">
+<script src="https://cdn.jsdelivr.net/npm/jsxgraph@1.10.0/distrib/jsxgraphcore.min.js"></script>
+<!-- CesiumJS: 3D earth/globe (büyük, sadece talep ettiğinde yükle) -->
+<link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css">
+<script defer src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
 <style>
 /* Markdown output tables + code */
 .msg.bot table { border-collapse: collapse; margin: 10px 0; font-size: 13px; width: 100%; }
@@ -2995,7 +3013,7 @@ html[data-theme="dark"] .msg.bot.streaming::after {
             <div style="font-size:9.5px;color:#94A3B8;letter-spacing:0.5px;text-transform:uppercase;">LLM Providers</div>
           </div>
           <div style="text-align:center;">
-            <div style="font-size:20px;color:#60A5FA;font-weight:700;">157</div>
+            <div style="font-size:20px;color:#60A5FA;font-weight:700;">175+</div>
             <div style="font-size:9.5px;color:#94A3B8;letter-spacing:0.5px;text-transform:uppercase;">AI Tool</div>
           </div>
           <div style="text-align:center;">
@@ -3062,13 +3080,26 @@ html[data-theme="dark"] .msg.bot.streaming::after {
           <span style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);color:#A5B4FC;padding:4px 10px;border-radius:20px;">🌌 NASA APOD & Hubble</span>
           <span style="background:rgba(6,182,212,0.13);border:1px solid rgba(6,182,212,0.35);color:#67E8F9;padding:4px 10px;border-radius:20px;">🧬 PubChem 3D molekül</span>
           <span style="background:rgba(244,63,94,0.13);border:1px solid rgba(244,63,94,0.35);color:#FDA4AF;padding:4px 10px;border-radius:20px;">💻 Python sandbox</span>
+          <!-- 25.43 (Neo: 12 yeni dış API) -->
+          <span style="background:rgba(248,113,113,0.13);border:1px solid rgba(248,113,113,0.35);color:#FCA5A5;padding:4px 10px;border-radius:20px;">📖 TDK Sözlük</span>
+          <span style="background:rgba(251,146,60,0.13);border:1px solid rgba(251,146,60,0.35);color:#FDBA74;padding:4px 10px;border-radius:20px;">⚛️ NIST Constants</span>
+          <span style="background:rgba(167,139,250,0.13);border:1px solid rgba(167,139,250,0.35);color:#C4B5FD;padding:4px 10px;border-radius:20px;">🔢 OEIS dizileri</span>
+          <span style="background:rgba(56,189,248,0.13);border:1px solid rgba(56,189,248,0.35);color:#7DD3FC;padding:4px 10px;border-radius:20px;">☁️ Open-Meteo</span>
+          <span style="background:rgba(132,204,22,0.13);border:1px solid rgba(132,204,22,0.35);color:#BEF264;padding:4px 10px;border-radius:20px;">🌐 Wikidata</span>
+          <span style="background:rgba(244,114,182,0.13);border:1px solid rgba(244,114,182,0.35);color:#F9A8D4;padding:4px 10px;border-radius:20px;">⚡ CERN Open Data</span>
+          <span style="background:rgba(250,204,21,0.13);border:1px solid rgba(250,204,21,0.35);color:#FDE047;padding:4px 10px;border-radius:20px;">🤗 Hugging Face</span>
+          <span style="background:rgba(34,211,238,0.13);border:1px solid rgba(34,211,238,0.35);color:#67E8F9;padding:4px 10px;border-radius:20px;">📈 TÜİK dataset</span>
+          <span style="background:rgba(192,132,252,0.13);border:1px solid rgba(192,132,252,0.35);color:#D8B4FE;padding:4px 10px;border-radius:20px;">🦠 AlphaFold</span>
+          <span style="background:rgba(249,115,22,0.13);border:1px solid rgba(249,115,22,0.35);color:#FDBA74;padding:4px 10px;border-radius:20px;">⚗️ NIST WebBook</span>
+          <span style="background:rgba(20,184,166,0.13);border:1px solid rgba(20,184,166,0.35);color:#5EEAD4;padding:4px 10px;border-radius:20px;">🎓 Crossref akademik</span>
+          <span style="background:rgba(74,222,128,0.13);border:1px solid rgba(74,222,128,0.35);color:#86EFAC;padding:4px 10px;border-radius:20px;">📍 OpenStreetMap</span>
         </div>
         <p style="font-size:11.5px;color:#94A3B8;margin-top:16px;font-style:italic;line-height:1.7;">
           <span style="color:#60A5FA;">Dün geceki sistem değil.</span>
           Her gün kendi kodunu izleyip evrimleşen, seninle birlikte gelişip
           <span style="color:#60A5FA;">rezonansa giren</span> agentic AI.
           <br>
-          <span style="color:#64748B;">Mesajı gönderdiğin saniye 5 LLM eş zamanlı devreye giriyor — intent classification milisaniye cinsinden seni doğru motora yönlendiriyor, 157 aracın orkestrası senin için hizaya geliyor. Tek beyin, çok damar.</span>
+          <span style="color:#64748B;">Mesajı gönderdiğin saniye 5 LLM eş zamanlı devreye giriyor — intent classification milisaniye cinsinden seni doğru motora yönlendiriyor, 175+ aracın orkestrası senin için hizaya geliyor. Tek beyin, çok damar.</span>
         </p>
       </div>
       <!-- A4: Öğrenci dashboard kartları (sadece öğrenci rolünde render) -->
@@ -3490,6 +3521,58 @@ function formatMsg(text) {
     return `\n\n<div class="compound-pending" data-compound-idx="${idx}"></div>\n\n`;
   });
 
+  // ════════════════════════════════════════════════════════════════════
+  // 25.43 (Neo: 8 yeni render) — sankey/treemap/parallel/force/vega/jsx/cesium/manim
+  // ════════════════════════════════════════════════════════════════════
+  const sankeyPlaceholders = [];
+  md = md.replace(/```sankey\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = sankeyPlaceholders.length;
+    sankeyPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="sankey-pending" data-sankey-idx="${idx}"></div>\n\n`;
+  });
+  const treemapPlaceholders = [];
+  md = md.replace(/```treemap\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = treemapPlaceholders.length;
+    treemapPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="treemap-pending" data-treemap-idx="${idx}"></div>\n\n`;
+  });
+  const parallelPlaceholders = [];
+  md = md.replace(/```parallel\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = parallelPlaceholders.length;
+    parallelPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="parallel-pending" data-parallel-idx="${idx}"></div>\n\n`;
+  });
+  const forceGraphPlaceholders = [];
+  md = md.replace(/```force_graph\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = forceGraphPlaceholders.length;
+    forceGraphPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="force-graph-pending" data-force-idx="${idx}"></div>\n\n`;
+  });
+  const vegaLitePlaceholders = [];
+  md = md.replace(/```vega_lite\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = vegaLitePlaceholders.length;
+    vegaLitePlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="vega-pending" data-vega-idx="${idx}"></div>\n\n`;
+  });
+  const jsxgraphPlaceholders = [];
+  md = md.replace(/```jsxgraph\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = jsxgraphPlaceholders.length;
+    jsxgraphPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="jsx-pending" data-jsx-idx="${idx}"></div>\n\n`;
+  });
+  const cesiumPlaceholders = [];
+  md = md.replace(/```cesium_globe\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = cesiumPlaceholders.length;
+    cesiumPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="cesium-pending" data-cesium-idx="${idx}"></div>\n\n`;
+  });
+  const manimPlaceholders = [];
+  md = md.replace(/```manim_anim\s*\r?\n([\s\S]*?)\r?\n?```/g, (m, jsonStr) => {
+    const idx = manimPlaceholders.length;
+    manimPlaceholders.push(jsonStr.trim());
+    return `\n\n<div class="manim-pending" data-manim-idx="${idx}"></div>\n\n`;
+  });
+
   // ── 2. Collapsible blokları — :::detay ... ::: syntax ──
   // Format: :::detay Özet\n...\n:::
   md = md.replace(/:::detay\s+(.+?)\n([\s\S]*?)\n?:::/g, (m, summary, content) => {
@@ -3689,6 +3772,50 @@ function formatMsg(text) {
         const escaped = json.replace(/"/g, "&quot;");
         html = html.replace(new RegExp(`<div class="compound-pending" data-compound-idx="${i}"></div>`, 'g'),
           `<div class="compound-pending" data-compound="${escaped}"></div>`);
+      });
+
+      // ════════════════════════════════════════════════════════════════
+      // 25.43 — Yeni 8 renderer placeholder rebinding
+      // ════════════════════════════════════════════════════════════════
+      sankeyPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="sankey-pending" data-sankey-idx="${i}"></div>`, 'g'),
+          `<div class="sankey-pending" data-sankey="${escaped}"></div>`);
+      });
+      treemapPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="treemap-pending" data-treemap-idx="${i}"></div>`, 'g'),
+          `<div class="treemap-pending" data-treemap="${escaped}"></div>`);
+      });
+      parallelPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="parallel-pending" data-parallel-idx="${i}"></div>`, 'g'),
+          `<div class="parallel-pending" data-parallel="${escaped}"></div>`);
+      });
+      forceGraphPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="force-graph-pending" data-force-idx="${i}"></div>`, 'g'),
+          `<div class="force-graph-pending" data-force="${escaped}"></div>`);
+      });
+      vegaLitePlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="vega-pending" data-vega-idx="${i}"></div>`, 'g'),
+          `<div class="vega-pending" data-vega="${escaped}"></div>`);
+      });
+      jsxgraphPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="jsx-pending" data-jsx-idx="${i}"></div>`, 'g'),
+          `<div class="jsx-pending" data-jsx="${escaped}"></div>`);
+      });
+      cesiumPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="cesium-pending" data-cesium-idx="${i}"></div>`, 'g'),
+          `<div class="cesium-pending" data-cesium="${escaped}"></div>`);
+      });
+      manimPlaceholders.forEach((json, i) => {
+        const escaped = json.replace(/"/g, "&quot;");
+        html = html.replace(new RegExp(`<div class="manim-pending" data-manim-idx="${i}"></div>`, 'g'),
+          `<div class="manim-pending" data-manim="${escaped}"></div>`);
       });
 
       // DOMPurify — tüm pending div'lerine izin ver
@@ -5851,6 +5978,332 @@ function rerenderCompound(el) {
 }
 
 // Tek çağrı: tüm görsel renderer'ları toplu çalıştır
+// ════════════════════════════════════════════════════════════════════════════
+// 25.43 (Neo: 8 yeni render) — sankey/treemap/parallel/force/vega/jsx/cesium/manim
+// ════════════════════════════════════════════════════════════════════════════
+
+function _commonChartContainer(placeholder, height = 360) {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = `width:100%;min-height:${height}px;height:${height}px;margin:10px 0;`;
+  placeholder.replaceWith(wrap);
+  return wrap;
+}
+
+function _renderError(placeholder, msg) {
+  placeholder.innerHTML =
+    `<div style="color:#a3a3a3;font-size:12px;padding:8px;border:1px dashed #555;border-radius:6px">${msg}</div>`;
+  placeholder.classList.remove("sankey-pending", "treemap-pending", "parallel-pending",
+    "force-graph-pending", "vega-pending", "jsx-pending", "cesium-pending", "manim-pending");
+}
+
+// 1. SANKEY — ECharts (kazanç akışı, "X netten Y nete geçiş")
+function rerenderSankey(el) {
+  if (!el || typeof echarts === "undefined") return;
+  el.querySelectorAll(".sankey-pending").forEach((ph) => {
+    try {
+      const config = JSON.parse(ph.getAttribute("data-sankey") || "{}");
+      const wrap = _commonChartContainer(ph, 400);
+      const chart = echarts.init(wrap, null, { renderer: "svg" });
+      chart.setOption({
+        title: config.title ? { text: config.title, textStyle: { color: "#0f172a", fontSize: 14 } } : undefined,
+        tooltip: { trigger: "item" },
+        series: [{
+          type: "sankey",
+          data: config.nodes || [],
+          links: config.links || [],
+          emphasis: { focus: "adjacency" },
+          lineStyle: { color: "gradient", curveness: 0.5 },
+          label: { color: "#1f2937", fontSize: 11 },
+        }],
+      });
+      window.addEventListener("resize", () => chart.resize());
+    } catch (e) {
+      console.warn("Sankey render hata:", e);
+      _renderError(ph, "Sankey verisi hatalı");
+    }
+  });
+}
+
+// 2. TREEMAP — ECharts (alan-bazli oran, "konu agirliklari")
+function rerenderTreemap(el) {
+  if (!el || typeof echarts === "undefined") return;
+  el.querySelectorAll(".treemap-pending").forEach((ph) => {
+    try {
+      const config = JSON.parse(ph.getAttribute("data-treemap") || "{}");
+      const wrap = _commonChartContainer(ph, 360);
+      const chart = echarts.init(wrap, null, { renderer: "svg" });
+      chart.setOption({
+        title: config.title ? { text: config.title, textStyle: { fontSize: 14 } } : undefined,
+        tooltip: { formatter: "{b}: {c}" },
+        series: [{
+          type: "treemap",
+          data: config.data || [],
+          breadcrumb: { show: false },
+          label: { show: true, formatter: "{b}\n{c}", color: "#fff", fontSize: 11 },
+          itemStyle: { borderColor: "#fff", borderWidth: 1, gapWidth: 1 },
+          levels: [
+            { itemStyle: { borderColor: "#475569", borderWidth: 0, gapWidth: 1 } },
+            { itemStyle: { borderColor: "#cbd5e1", borderWidth: 1, gapWidth: 1 } },
+          ],
+        }],
+      });
+      window.addEventListener("resize", () => chart.resize());
+    } catch (e) {
+      console.warn("Treemap render hata:", e);
+      _renderError(ph, "Treemap verisi hatalı");
+    }
+  });
+}
+
+// 3. PARALLEL COORDINATES — ECharts (cok-boyutlu kiyaslama)
+function rerenderParallel(el) {
+  if (!el || typeof echarts === "undefined") return;
+  el.querySelectorAll(".parallel-pending").forEach((ph) => {
+    try {
+      const config = JSON.parse(ph.getAttribute("data-parallel") || "{}");
+      const wrap = _commonChartContainer(ph, 380);
+      const chart = echarts.init(wrap, null, { renderer: "svg" });
+      const dimensions = config.dimensions || [];
+      chart.setOption({
+        title: config.title ? { text: config.title, textStyle: { fontSize: 14 } } : undefined,
+        tooltip: { trigger: "item" },
+        parallelAxis: dimensions.map((d, i) => ({
+          dim: i, name: d.name || d, max: d.max, min: d.min,
+        })),
+        parallel: { left: "5%", right: "13%", bottom: "10%", top: "20%" },
+        series: [{
+          type: "parallel",
+          data: config.data || [],
+          lineStyle: { width: 1.5, opacity: 0.6 },
+          smooth: true,
+        }],
+      });
+      window.addEventListener("resize", () => chart.resize());
+    } catch (e) {
+      console.warn("Parallel render hata:", e);
+      _renderError(ph, "Parallel coords verisi hatalı");
+    }
+  });
+}
+
+// 4. FORCE-DIRECTED GRAPH — D3 (knowledge graph, dinamik)
+function rerenderForceGraph(el) {
+  if (!el || typeof d3 === "undefined") return;
+  el.querySelectorAll(".force-graph-pending").forEach((ph) => {
+    try {
+      const config = JSON.parse(ph.getAttribute("data-force") || "{}");
+      const nodes = (config.nodes || []).map(n => ({...n}));  // copy
+      const links = (config.links || []).map(l => ({...l}));
+      const width = 600, height = 420;
+      const wrap = _commonChartContainer(ph, height);
+      if (config.title) {
+        const t = document.createElement("div");
+        t.style.cssText = "font-size:14px;font-weight:600;margin-bottom:6px;color:#1f2937";
+        t.textContent = config.title;
+        wrap.appendChild(t);
+      }
+      const svg = d3.select(wrap).append("svg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("style", "width:100%;height:auto;background:#f8fafc;border-radius:8px");
+
+      const simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(80))
+        .force("charge", d3.forceManyBody().strength(-260))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collision", d3.forceCollide().radius(28));
+
+      const link = svg.append("g").selectAll("line").data(links).join("line")
+        .attr("stroke", "#94a3b8").attr("stroke-width", d => Math.sqrt(d.value || 1));
+
+      const node = svg.append("g").selectAll("g").data(nodes).join("g")
+        .call(d3.drag()
+          .on("start", (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+          .on("drag", (event, d) => { d.fx = event.x; d.fy = event.y; })
+          .on("end", (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+      node.append("circle").attr("r", d => d.size || 12).attr("fill", d => d.color || "#6366f1")
+        .attr("stroke", "#fff").attr("stroke-width", 2);
+      node.append("text").text(d => d.label || d.id).attr("x", 0).attr("y", 4)
+        .attr("text-anchor", "middle").attr("fill", "#fff").attr("font-size", "10px").attr("font-weight", "600");
+
+      simulation.on("tick", () => {
+        link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+        node.attr("transform", d => `translate(${d.x},${d.y})`);
+      });
+    } catch (e) {
+      console.warn("ForceGraph render hata:", e);
+      _renderError(ph, "Force graph verisi hatalı");
+    }
+  });
+}
+
+// 5. VEGA-LITE — declarative chart spec (Cerebras icin kolay)
+function rerenderVegaLite(el) {
+  if (!el || typeof vegaEmbed === "undefined") return;
+  el.querySelectorAll(".vega-pending").forEach((ph) => {
+    try {
+      const spec = JSON.parse(ph.getAttribute("data-vega") || "{}");
+      // $schema yoksa ekle
+      if (!spec.$schema) spec.$schema = "https://vega.github.io/schema/vega-lite/v5.json";
+      if (!spec.width) spec.width = "container";
+      if (!spec.config) spec.config = { background: "transparent" };
+      const wrap = _commonChartContainer(ph, 360);
+      vegaEmbed(wrap, spec, { actions: false, theme: "vox" })
+        .catch(err => {
+          console.warn("Vega render hata:", err);
+          wrap.innerHTML = `<div style="color:#a3a3a3;font-size:12px">[Vega render hatası: ${err.message}]</div>`;
+        });
+    } catch (e) {
+      console.warn("Vega parse hata:", e);
+      _renderError(ph, "Vega-Lite spec hatalı");
+    }
+  });
+}
+
+// 6. JSXGRAPH — interactive geometry/calculus
+let _jsxCounter = 0;
+function rerenderJSXGraph(el) {
+  if (!el || typeof JXG === "undefined") return;
+  el.querySelectorAll(".jsx-pending").forEach((ph) => {
+    try {
+      const config = JSON.parse(ph.getAttribute("data-jsx") || "{}");
+      const id = `jsx-board-${++_jsxCounter}`;
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "width:100%;height:380px;margin:10px 0";
+      wrap.innerHTML = `<div id="${id}" style="width:100%;height:100%;background:#fff;border-radius:8px"></div>`;
+      ph.replaceWith(wrap);
+
+      const board = JXG.JSXGraph.initBoard(id, {
+        boundingbox: config.boundingbox || [-5, 5, 5, -5],
+        axis: config.axis !== false,
+        grid: config.grid !== false,
+        showCopyright: false,
+        showNavigation: true,
+        keepaspectratio: true,
+      });
+      // Elementleri ekle
+      (config.elements || []).forEach(item => {
+        try {
+          board.create(item.type, item.params || [], item.attributes || {});
+        } catch (er) {
+          console.warn("JSXGraph element hata:", er);
+        }
+      });
+    } catch (e) {
+      console.warn("JSXGraph render hata:", e);
+      _renderError(ph, "JSXGraph konfigurasyonu hatalı");
+    }
+  });
+}
+
+// 7. CESIUM GLOBE — 3D earth
+let _cesiumCounter = 0;
+function rerenderCesium(el) {
+  if (!el || typeof Cesium === "undefined") return;
+  el.querySelectorAll(".cesium-pending").forEach((ph) => {
+    try {
+      const config = JSON.parse(ph.getAttribute("data-cesium") || "{}");
+      const id = `cesium-globe-${++_cesiumCounter}`;
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "width:100%;height:480px;margin:10px 0;border-radius:8px;overflow:hidden";
+      wrap.innerHTML = `<div id="${id}" style="width:100%;height:100%"></div>`;
+      ph.replaceWith(wrap);
+
+      Cesium.Ion.defaultAccessToken = config.token || "";  // Free imagery yeterli
+      const viewer = new Cesium.Viewer(id, {
+        animation: false, timeline: false, baseLayerPicker: true,
+        geocoder: false, homeButton: true, navigationHelpButton: false,
+        sceneModePicker: false, infoBox: false, fullscreenButton: false,
+      });
+
+      // Markerlar
+      (config.markers || []).forEach(m => {
+        viewer.entities.add({
+          name: m.label || "",
+          position: Cesium.Cartesian3.fromDegrees(m.lon, m.lat, m.height || 0),
+          point: { pixelSize: 12, color: Cesium.Color.fromCssColorString(m.color || "#f59e0b"), outlineColor: Cesium.Color.WHITE, outlineWidth: 2 },
+          label: m.label ? { text: m.label, font: "12pt sans-serif", pixelOffset: new Cesium.Cartesian2(0, -20), fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 2, style: Cesium.LabelStyle.FILL_AND_OUTLINE } : undefined,
+        });
+      });
+
+      // Cam yonu
+      if (config.center) {
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(config.center.lon, config.center.lat, config.center.height || 5_000_000),
+          duration: 2,
+        });
+      } else if ((config.markers || []).length) {
+        viewer.zoomTo(viewer.entities);
+      }
+    } catch (e) {
+      console.warn("Cesium render hata:", e);
+      _renderError(ph, "Cesium konfigurasyonu hatalı");
+    }
+  });
+}
+
+// 8. MANIM ANIM — 3Blue1Brown stili matematik animasyonu (KaTeX + GSAP)
+// NOT: Gercek Manim Python server-side; bu ASCII-style stand-in.
+// Equation transformation animation: adim adim formul donusumu
+let _manimCounter = 0;
+function rerenderManimAnim(el) {
+  if (!el || typeof gsap === "undefined" || typeof katex === "undefined") return;
+  el.querySelectorAll(".manim-pending").forEach((ph) => {
+    try {
+      const config = JSON.parse(ph.getAttribute("data-manim") || "{}");
+      const steps = config.steps || []; // ["x^2 + 2x", "(x+1)^2 - 1", ...]
+      const id = `manim-${++_manimCounter}`;
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:24px;border-radius:12px;margin:12px 0;text-align:center;min-height:200px;display:flex;flex-direction:column;justify-content:center;align-items:center";
+      wrap.innerHTML = `
+        ${config.title ? `<div style="font-size:14px;color:#94a3b8;margin-bottom:12px;letter-spacing:0.5px">${config.title}</div>` : ""}
+        <div id="${id}-display" style="font-size:24px;min-height:60px;display:flex;align-items:center;justify-content:center"></div>
+        <div id="${id}-explain" style="font-size:13px;color:#a78bfa;margin-top:14px;min-height:18px"></div>
+        <div style="display:flex;gap:8px;margin-top:18px">
+          <button id="${id}-prev" style="background:#374151;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">◀ Önceki</button>
+          <span id="${id}-counter" style="color:#64748b;align-self:center;font-size:12px">1/${steps.length}</span>
+          <button id="${id}-next" style="background:#6366f1;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">Sonraki ▶</button>
+        </div>
+      `;
+      ph.replaceWith(wrap);
+
+      const display = wrap.querySelector(`#${id}-display`);
+      const explain = wrap.querySelector(`#${id}-explain`);
+      const counter = wrap.querySelector(`#${id}-counter`);
+      const prevBtn = wrap.querySelector(`#${id}-prev`);
+      const nextBtn = wrap.querySelector(`#${id}-next`);
+      let cur = 0;
+
+      function showStep(i) {
+        if (i < 0 || i >= steps.length) return;
+        cur = i;
+        const step = steps[i];
+        const tex = typeof step === "string" ? step : (step.tex || step.formula || "");
+        const note = typeof step === "object" ? (step.note || step.explain || "") : "";
+        gsap.to(display, { opacity: 0, duration: 0.2, onComplete: () => {
+          display.innerHTML = "";
+          try { katex.render(tex, display, { throwOnError: false, displayMode: true }); }
+          catch (er) { display.textContent = tex; }
+          gsap.fromTo(display, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 });
+        }});
+        gsap.to(explain, { opacity: 0, duration: 0.15, onComplete: () => {
+          explain.textContent = note;
+          gsap.fromTo(explain, { opacity: 0 }, { opacity: 1, duration: 0.3 });
+        }});
+        counter.textContent = `${i + 1}/${steps.length}`;
+      }
+      prevBtn.onclick = () => showStep(Math.max(0, cur - 1));
+      nextBtn.onclick = () => showStep(Math.min(steps.length - 1, cur + 1));
+      if (steps.length) showStep(0);
+    } catch (e) {
+      console.warn("ManimAnim render hata:", e);
+      _renderError(ph, "Manim animasyon konfigurasyonu hatalı");
+    }
+  });
+}
+
+
 function rerenderAllVisuals(el) {
   try { rerenderCharts(el); } catch (e) {}
   try { rerenderSims(el); } catch (e) {}
@@ -5885,6 +6338,15 @@ function rerenderAllVisuals(el) {
   try { rerenderCompare2(el); } catch (e) {}
   try { rerenderRecall(el); } catch (e) {}
   try { rerenderCompound(el); } catch (e) {}
+  // 25.43 — 8 yeni renderer (sankey/treemap/parallel/force/vega/jsx/cesium/manim)
+  try { rerenderSankey(el); } catch (e) {}
+  try { rerenderTreemap(el); } catch (e) {}
+  try { rerenderParallel(el); } catch (e) {}
+  try { rerenderForceGraph(el); } catch (e) {}
+  try { rerenderVegaLite(el); } catch (e) {}
+  try { rerenderJSXGraph(el); } catch (e) {}
+  try { rerenderCesium(el); } catch (e) {}
+  try { rerenderManimAnim(el); } catch (e) {}
 }
 
 // Prism syntax highlight
