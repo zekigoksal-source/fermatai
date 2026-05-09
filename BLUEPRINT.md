@@ -1,6 +1,7 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 9 Mayıs 2026 (gece 02:30) · **Oturum:** 25.41-REFACTOR — **God Class reduction · fermat_core_agent.py 5,840 → 5,182 (-658 satır, %11.3) · 9 fonksiyon services/'e taşındı · Quality refactor sırasında 96.6 → 97.6 A+ (kalite ARTTI)**
+> **Belge tarihi:** 9 Mayıs 2026 (gece 03:00) · **Oturum:** 25.41-REFACTOR-FULL — **God Class reduction TAM · fermat_core_agent.py 5,840 → 4,661 (-1,179 satır, %20.2) · 4 service modülü (1,426 satır) · 15 fonksiyon services/'e taşındı · 10/10 smoke PASS · Yan sistemler audit ✅**
+> **9 May 02:30:** 25.41-REFACTOR-PASS1+2 — academic_service (647) + etut_service (153) ekleme · 9 fonksiyon ilk dalga · Quality 96.6 → 97.5 A+
 > **9 May 01:40:** 25.41-PHOTO-LIMIT — Foto soru limit 5 + Foto Guard bypass mimarisi · 8 dosya senkron · 5 phrasing 5/5 PASS
 > **9 May 01:10:** 25.41-QUALITY — **Rol × Senaryo Quality Audit (32 senaryo × 6 rol) · Run 1 88.7 A → Run 2 97.0 A+ · 6/6 rol A+ · 3 fix loop deploy**
 > **9 May 00:50:** 25.41-AUDIT — **Comprehensive renderer + ext API audit %100 PASS (35/35) · Renderer hint inject (Claude+Cerebras) · 27/27 fence pipeline · compound-aware test logic**

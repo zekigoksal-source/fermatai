@@ -333,409 +333,34 @@ async def _log_conversation(
 
 
 async def _keyword_search_rag(query: str, ders: str = "", limit: int = 3) -> list:
-    """Semantik arama yetersiz kaldiginda keyword-based fallback."""
-    pool = await _db_pool()
-    async with pool.acquire() as conn:
-        # Query'den anahtar kelimeler cikar (2+ harfli kelimeler)
-        words = [w.strip().lower() for w in query.split() if len(w.strip()) > 2]
-        if not words:
-            return []
-        # Cikmis soru anahtar kelimeleri filtrele (genel kelimeler atla)
-        skip_words = {'cikmis', 'cıkmış', 'soru', 'sorusu', 'sorulari', 'goster', 'göster',
-                      'getir', 'bul', 'var', 'konusundan', 'konusu', 'konusunda',
-                      'gecen', 'geçen', 'yil', 'yıl', 'son', 'bana', 'bir'}
-        content_words = [w for w in words if w not in skip_words]
-        if not content_words:
-            content_words = words[:2]
-        # Turkce karakter varyantlari (ASCII → orijinal)
-        _TR_MAP = {'turev':'türev', 'basinc':'basınç', 'kaldirma':'kaldırma',
-                   'cozum':'çözüm', 'olasilik':'olasılık', 'ucgen':'üçgen',
-                   'cember':'çember', 'donusum':'dönüşüm', 'ustel':'üstel',
-                   'hucre':'hücre', 'osmanli':'osmanlı', 'cumhuriyet':'cumhuriyet',
-                   'esitsizlik':'eşitsizlik', 'fonksiyon':'fonksiyon',
-                   'bolunebilme':'bölünebilme', 'carpanlar':'çarpanlar',
-                   'cozunurluk':'çözünürlük', 'induksiyon':'indüksiyon',
-                   'elektromanyetik':'elektromanyetik', 'frekans':'frekans',
-                   'isik':'ışık', 'sicaklik':'sıcaklık', 'yogunluk':'yoğunluk',
-                   'kalitim':'kalıtım', 'mutasyon':'mutasyon', 'ekoloji':'ekoloji'}
-        # 2 asamali arama: once KONU alaninda, sonuç yoksa ICERIK'te
-        # Konu araması daha kesin (ders:Biyoloji + konu:'bitkiler' = dogru eslesme)
-        conditions = []
-        params = []
-        for w in content_words:
-            idx = len(params) + 1
-            tr_w = _TR_MAP.get(w.lower())
-            if tr_w:
-                conditions.append(f"(konu ILIKE ${idx} OR konu ILIKE ${idx+1})")
-                params.extend([f"%{w}%", f"%{tr_w}%"])
-            else:
-                conditions.append(f"(konu ILIKE ${idx})")
-                params.append(f"%{w}%")
-        where = " AND ".join(conditions)
-        # SADECE OGM Vision kaynaklarinda ara
-        where += " AND kaynak LIKE '%OGM Vision%'"
-        # Ders filtresi — konu aramasinda onemli (asit-baz → Kimya, enerji → Fizik)
-        _DERS_NORM_KW = {'türkçe':'Turkce', 'turkce':'Turkce', 'matematik':'Matematik',
-                      'fizik':'Fizik', 'kimya':'Kimya', 'biyoloji':'Biyoloji',
-                      'tarih':'Tarih', 'cografya':'Cografya', 'felsefe':'Felsefe'}
-        ders_kw = _DERS_NORM_KW.get((ders or '').lower().strip(), ders)
-        if ders_kw:
-            params.append(ders_kw)
-            where += f" AND ders = ${len(params)}"
-        params.append(limit)
-        rows = await conn.fetch(f"""
-            SELECT id, sinav_turu, ders, konu, alt_konu, icerik_turu,
-                   baslik, icerik, kaynak, zorluk, soru_sayisi
-            FROM rag_content
-            WHERE {where}
-            ORDER BY
-                CASE WHEN kaynak LIKE '%%OGM Vision%%' THEN 0 ELSE 1 END,
-                LENGTH(icerik) DESC
-            LIMIT ${len(params)}
-        """, *params)
-        results = []
-        for r in rows:
-            results.append({
-                "id": r["id"], "sinav_turu": r["sinav_turu"], "ders": r["ders"],
-                "konu": r["konu"], "alt_konu": r["alt_konu"], "icerik_turu": r["icerik_turu"],
-                "baslik": r["baslik"], "icerik": r["icerik"], "kaynak": r["kaynak"],
-                "zorluk": r["zorluk"], "soru_sayisi": r["soru_sayisi"], "skor": 0.700,
-            })
-        # Konu aramasinda sonuc yoksa → icerik'te de ara (fallback)
-        if not results and content_words:
-            fallback_conds = []
-            fallback_params = []
-            for w in content_words:
-                idx = len(fallback_params) + 1
-                tr_w = _TR_MAP.get(w.lower())
-                if tr_w:
-                    fallback_conds.append(f"(icerik ILIKE ${idx} OR icerik ILIKE ${idx+1})")
-                    fallback_params.extend([f"%{w}%", f"%{tr_w}%"])
-                else:
-                    fallback_conds.append(f"(icerik ILIKE ${idx})")
-                    fallback_params.append(f"%{w}%")
-            fb_where = " AND ".join(fallback_conds)
-            fb_where += " AND kaynak LIKE '%OGM Vision%'"
-            if ders_kw:
-                fallback_params.append(ders_kw)
-                fb_where += f" AND ders = ${len(fallback_params)}"
-            fallback_params.append(limit)
-            fb_rows = await conn.fetch(f"""
-                SELECT id, sinav_turu, ders, konu, alt_konu, icerik_turu,
-                       baslik, icerik, kaynak, zorluk, soru_sayisi
-                FROM rag_content WHERE {fb_where}
-                ORDER BY LENGTH(icerik) DESC LIMIT ${len(fallback_params)}
-            """, *fallback_params)
-            for r in fb_rows:
-                results.append({
-                    "id": r["id"], "sinav_turu": r["sinav_turu"], "ders": r["ders"],
-                    "konu": r["konu"], "alt_konu": r["alt_konu"], "icerik_turu": r["icerik_turu"],
-                    "baslik": r["baslik"], "icerik": r["icerik"], "kaynak": r["kaynak"],
-                    "zorluk": r["zorluk"], "soru_sayisi": r["soru_sayisi"], "skor": 0.650,
-                })
-        return results
+    """RAG keyword fallback — services/knowledge_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.knowledge_service import keyword_search_rag
+    return await keyword_search_rag(query, ders, limit)
 
 
 async def _tool_ogm_yonlendir(ders: str = "", sinav_turu: str = "", tip: str = "") -> dict:
-    """MEB OGM Materyal resmi kaynagi yonlendirme (22.1n-ogm)."""
-    from ogm_catalog import yonlendir
-    # Ders normalizasyonu
-    _NORM = {'türkçe':'Turkce','turkce':'Turkce','matematik':'Matematik','fizik':'Fizik',
-             'kimya':'Kimya','biyoloji':'Biyoloji','tarih':'Tarih','coğrafya':'Cografya',
-             'cografya':'Cografya','felsefe':'Felsefe','edebiyat':'TDE','tde':'TDE',
-             'ingilizce':'Ingilizce','english':'Ingilizce'}
-    if ders:
-        ders = _NORM.get(ders.lower().strip(), ders)
-    if sinav_turu:
-        sinav_turu = sinav_turu.upper().strip()
-
-    results = await yonlendir(ders=ders, sinav_turu=sinav_turu, tip=tip)
-    if not results:
-        return {"sonuc": "OGM materyal kataloğunda eşleşen kaynak yok. Filtreleri gevşet."}
-    return {
-        "kaynak_sayisi": len(results),
-        "kaynaklar": [
-            {
-                "baslik": r["konu_adi"],
-                "url": r["url"],
-                "aciklama": r["icerik_ozet"],
-                "kategori": r["icerik_tipi"],
-                "sinav": r["sinif"],
-                "ders": r["ders"],
-            }
-            for r in results
-        ],
-        "hatirlatma": "Bu MEB OGM Materyal resmi kaynaklaridir. Ogrenciye 2-3 link paylaş, 'Bu linke git, X kadar soru çöz, zorlandığını bana getir' gibi PROAKTIF yönlendirme yap.",
-    }
+    """MEB OGM yönlendirme — services/knowledge_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.knowledge_service import ogm_yonlendir
+    return await ogm_yonlendir(ders, sinav_turu, tip)
 
 
 async def _tool_search_curriculum(query: str = "", ders: str = "", sinav_turu: str = "") -> dict:
-    """Müfredat bilgi bankasında semantik + keyword arama.
-
-    25.40n: sinav_turu parametresi eklendi — LGS_HAZIRLIK_6/7/LGS için
-    yeni nesil örnek paketleri ayrıştırma.
-    """
-    from rag_engine import search_curriculum
-    if not query:
-        return {"error": "query parametresi gerekli"}
-    # Ders normalizasyonu
-    _DERS_NORM = {'türkçe':'Turkce', 'turkce':'Turkce', 'matematik':'Matematik',
-                  'fizik':'Fizik', 'kimya':'Kimya', 'biyoloji':'Biyoloji',
-                  'tarih':'Tarih', 'coğrafya':'Cografya', 'cografya':'Cografya',
-                  'felsefe':'Felsefe', 'geometri':'Geometri',
-                  'fen bilimleri':'Fen Bilimleri', 'sosyal bilgiler':'Sosyal Bilgiler',
-                  'ingilizce':'İngilizce', 'i̇ngilizce':'İngilizce', 'turkce':'Türkçe',
-                  't.c. inkılap tarihi':'T.C. İnkılap Tarihi'}
-    if ders:
-        ders = _DERS_NORM.get(ders.lower().strip(), ders)
-    # sinav_turu hint Claude'dan gelmeli — yoksa tum bankada ara
-    sinav_turu_clean = (sinav_turu or "").strip().upper() or None
-    results = await search_curriculum(query, ders=ders, limit=5, sinav_turu=sinav_turu_clean)
-    # Ders filtresiyle yeterli sonuç bulunamazsa, filtre olmadan tekrar dene
-    if len(results) < 2 or (results and results[0]["skor"] < 0.5):
-        results_broad = await search_curriculum(query, ders="", limit=5)
-        if results_broad and (not results or results_broad[0]["skor"] > results[0]["skor"]):
-            results = results_broad
-    # Keyword fallback — cikmis soru gorseli bulmak icin keyword arama
-    has_ogm = any("OGM Vision" in r.get("kaynak", "") for r in results)
-    if not has_ogm or not results or results[0]["skor"] < 0.65:
-        kw_results = await _keyword_search_rag(query, ders=ders, limit=3)
-        if kw_results:
-            # Mevcut sonuçlarla birleştir, duplicate kaynak'ları atla
-            existing_ids = {r["id"] for r in results}
-            for kr in kw_results:
-                if kr["id"] not in existing_ids:
-                    results.insert(0, kr)  # Keyword sonuçlarını başa koy
-            results = results[:5]
-    # 22.1n-bug6: Her search_curriculum cevabina OGM konu ozeti PDF linkini ekle — ders tespit edildiyse
-    # Claude response sonunda: "Detaylı PDF: [link]" diyebilir. Bos sonuclarda TEKIL fallback.
-    _global_ogm = None
-    try:
-        from ogm_catalog import yonlendir
-        _q_low = query.lower()
-        _ders_map = {'fizik':'Fizik','matematik':'Matematik','mat':'Matematik','kimya':'Kimya',
-                     'biyoloji':'Biyoloji','turkce':'Turkce','türkçe':'Turkce','tarih':'Tarih',
-                     'cografya':'Cografya','coğrafya':'Cografya','felsefe':'Felsefe',
-                     'edebiyat':'TDE','tde':'TDE','geometri':'Matematik','basit makine':'Fizik'}
-        _detected = ders
-        if not _detected:
-            for k, v in _ders_map.items():
-                if k in _q_low:
-                    _detected = v
-                    break
-        if _detected:
-            _ogm_list = await yonlendir(ders=_detected, tip="konu_ozeti")
-            if _ogm_list:
-                _global_ogm = [
-                    {"baslik": r["konu_adi"], "url": r["url"]} for r in _ogm_list[:2]
-                ]
-    except Exception:
-        pass
-
-    if not results:
-        resp = {"sonuc": "Bu konuda henüz müfredat içeriği yok. Kendi bilginle kapsamlı anlat."}
-        if _global_ogm:
-            resp["ogm_onerisi"] = _global_ogm
-            resp["hatirlatma"] = "Cevabin sonunda MEB OGM konu ozeti PDF linkini ekle."
-        return resp
-    # Claude'a temiz format — OGM Vision sayfalarinda soru indeksi ekle
-    import re as _re
-    output = []
-    for r in results:
-        entry = {
-            "ders": r["ders"],
-            "konu": r["konu"],
-            "baslik": r["baslik"],
-            "icerik": r["icerik"],
-            "zorluk": r["zorluk"],
-            "soru_sayisi": r["soru_sayisi"],
-            "benzerlik": r["skor"],
-            "kaynak": r.get("kaynak", ""),
-            "icerik_turu": r.get("icerik_turu", ""),
-        }
-        # OGM Vision sayfalarinda soru indeksi + YAPILANDIRILMIS soru metni cikar
-        if "OGM Vision" in entry["kaynak"]:
-            matches = _re.findall(r'SORU\s+(\d+)\s*\|\s*(\d{4})[-–](AYT|TYT)', entry["icerik"][:2000])
-            if matches:
-                entry["sayfadaki_sorular"] = [
-                    {"soru_no": int(m[0]), "yil": int(m[1]), "sinav": m[2]}
-                    for m in matches
-                ]
-            # Her soruyu ayrı JSON objesine parse et — Claude kolay okusun
-            soru_blocks = _re.split(r'(?=SORU\s+\d+\s*\|)', entry["icerik"])
-            parsed_sorular = []
-            for block in soru_blocks:
-                block = block.strip()
-                if not block.startswith("SORU"):
-                    continue
-                header = _re.match(r'SORU\s+(\d+)\s*\|\s*(\d{4})[-–]?(AYT|TYT)?', block)
-                if header:
-                    soru_obj = {
-                        "soru_no": int(header.group(1)),
-                        "yil": header.group(2),
-                        "sinav": header.group(3) or "?",
-                        "metin": block[header.end():].strip()[:500],
-                    }
-                    # Şıkları çıkar
-                    siklar = _re.findall(r'([A-E]\))\s*(.+?)(?=[A-E]\)|$)', soru_obj["metin"], _re.DOTALL)
-                    if siklar:
-                        soru_obj["siklar"] = {s[0]: s[1].strip()[:100] for s in siklar}
-                    parsed_sorular.append(soru_obj)
-            if parsed_sorular:
-                entry["sorular_parsed"] = parsed_sorular
-        output.append(entry)
-    # 22.1n-bug6: Her zaman OGM konu ozeti link ekle (ders tespit edildiyse) — Claude karar versin ekleyip eklemeyecegini
-    final = {"sonuclar": output, "kayit_sayisi": len(output)}
-    if _global_ogm:
-        final["ogm_konu_ozeti"] = _global_ogm
-        final["hatirlatma"] = "RAG'da bulunmayan konular veya detay isteyen ogrencilerde cevap sonuna MEB OGM konu ozeti PDF linkini ekle."
-    return final
+    """RAG semantik arama — services/knowledge_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.knowledge_service import search_curriculum
+    return await search_curriculum(query, ders, sinav_turu)
 
 
 async def _tool_send_exam_image(kaynak: str = "", caption: str = "",
                                 _caller_phone: str = "", _caller_channel: str = "") -> dict:
-    """Cikmis soru gorselini kanala gore gonder (22.1n-rev — Atlas #16 fix).
-
-    WhatsApp: send_wa_image ile gorsel + caption
-    Web:      CDN URL dondurulur, UI <img> render eder (WP'ye gonderim KAPALI)
-    """
-    from whatsapp_bridge import kaynak_to_cdn_url
-
-    if not kaynak or "OGM Vision" not in kaynak:
-        return {"error": "Gecersiz kaynak — sadece 'OGM Vision' iceren kaynaklar desteklenir."}
-
-    cdn_url = kaynak_to_cdn_url(kaynak)
-    if not cdn_url:
-        return {"error": f"CDN URL olusturulamadi: {kaynak}"}
-
-    # 22.1n-rev: Atlas #16 — Web kanalinda WhatsApp'a gonderme, direkt URL don
-    if _caller_channel == "web":
-        return {
-            "basarili": True,
-            "kanal": "web",
-            "image_url": cdn_url,
-            "caption": caption or "YKS Cikmis Soru",
-            "mesaj": "Gorsel URL hazir — web UI'sinda inline render edilecek.",
-            "markdown": f"![{caption or 'YKS Soru'}]({cdn_url})",
-        }
-
-    # WhatsApp kanali (varsayilan)
-    if not _caller_phone:
-        return {"error": "Hedef telefon numarasi yok."}
-
-    from whatsapp_bridge import send_wa_image
-    ok = await send_wa_image(_caller_phone, cdn_url, caption or "YKS Cikmis Soru")
-    if ok:
-        return {"basarili": True, "kanal": "whatsapp", "mesaj": f"Gorsel gonderildi: {caption or kaynak}"}
-    else:
-        return {"basarili": False, "mesaj": "Gorsel gonderilemedi — text ile devam et."}
+    """Çıkmış soru görseli — services/knowledge_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.knowledge_service import send_exam_image
+    return await send_exam_image(kaynak, caption, _caller_phone, _caller_channel)
 
 
 async def _tool_list_exam_questions(konu: str = "", ders: str = "") -> dict:
-    """Cikmis soru katalogu — konu/ders bazli, yil ve sayfa bilgisiyle.
-
-    23 Nisan fix (Neo konuşma analizi):
-    - SADECE split kayıtlar aranır (her soru tek kayıt, konu tek ve doğru).
-    - Parent kayıtlar ('/' veya 've' ile çoklu konu) es geçilir — Soru 107 (Compton)
-      ve Soru 108 (Görüntüleme Teknolojileri) aynı sayfa Soru 106 (Fotoelektrik)
-      ile karıştırılmaz.
-    """
-    import re
-    # Ders normalizasyonu — Claude Turkce karakter gonderebilir
-    _DERS_NORM = {'türkçe':'Turkce', 'turkce':'Turkce', 'matematik':'Matematik',
-                  'fizik':'Fizik', 'kimya':'Kimya', 'biyoloji':'Biyoloji',
-                  'tarih':'Tarih', 'coğrafya':'Cografya', 'cografya':'Cografya',
-                  'felsefe':'Felsefe', 'geometri':'Geometri'}
-    if ders:
-        ders = _DERS_NORM.get(ders.lower().strip(), ders)
-    pool = await _db_pool()
-    async with pool.acquire() as conn:
-        # Arama kosullari — SADECE split kayıtlar (her soru tek kayıt, konu tek)
-        conditions = [
-            "kaynak LIKE '%OGM Vision%'",
-            "kaynak LIKE '%split%'",  # Parent kayıtları filtrele (çoklu konu sorunu)
-        ]
-        params = []
-        if konu:
-            # Turkce varyant
-            _TR = {'turev':'türev', 'basinc':'basınç', 'kaldirma':'kaldırma',
-                   'cember':'çember', 'cembersel':'çembersel', 'ucgen':'üçgen',
-                   'hucre':'hücre', 'osmanli':'osmanlı', 'esitsizlik':'eşitsizlik',
-                   'cozum':'çözüm', 'olasilik':'olasılık', 'isik':'ışık',
-                   'sicaklik':'sıcaklık', 'kalitim':'kalıtım', 'cozunurluk':'çözünürlük'}
-            konu_words = [w for w in konu.lower().split() if len(w) > 2]
-            konu_conds = []
-            for w in konu_words:
-                params.append(f"%{w}%")
-                idx = len(params)
-                tr_w = _TR.get(w)
-                if tr_w:
-                    params.append(f"%{tr_w}%")
-                    idx2 = len(params)
-                    # icerik'te değil SADECE konu'da ara — parent sızıntısı olmasın
-                    konu_conds.append(f"(konu ILIKE ${idx} OR konu ILIKE ${idx2})")
-                else:
-                    konu_conds.append(f"(konu ILIKE ${idx})")
-            if konu_conds:
-                conditions.append(f"({' OR '.join(konu_conds)})")
-        if ders:
-            params.append(f"%{ders}%")
-            conditions.append(f"ders ILIKE ${len(params)}")
-
-        where = " AND ".join(conditions)
-        rows = await conn.fetch(f"""
-            SELECT id, kaynak, konu, ders, icerik, baslik FROM rag_content
-            WHERE {where} ORDER BY kaynak LIMIT 80
-        """, *params)
-
-        # Split'te konu tek olduğu için doğrudan kullan
-        # Kaynak "s.141 (split Q106)" formatında — soru no'yu regex ile kaynak'tan çek
-        catalog = {}  # konu -> {yil: [{soru_no, kaynak, id}]}
-        for r in rows:
-            konu_adi = (r['konu'] or 'Genel').strip()
-            # Generic "Fizik" / "FİZİK" / "Biyoloji - Genel" gibi çok genel etiketleri
-            # kullanıcıya gösterme (arama hedefli olduğunda)
-            if konu and konu_adi.lower() in ('fizik', 'kimya', 'biyoloji', 'biyoloji - genel', 'matematik'):
-                continue
-
-            # baslik'ten yıl ve sınav tipi çek: "SORU 106 | 2024-AYT"
-            m = re.search(r'SORU\s+(\d+)\s*\|\s*(\d{4})[-–](AYT|TYT)', r['baslik'] or '')
-            if not m:
-                # Fallback: içerikten ara
-                m = re.search(r'SORU\s+(\d+)\s*\|\s*(\d{4})[-–](AYT|TYT)', r['icerik'] or '')
-            if not m:
-                continue
-            soru_no, yil, sinav = m.group(1), m.group(2), m.group(3)
-
-            if konu_adi not in catalog:
-                catalog[konu_adi] = {}
-            yil_key = f"{yil}-{sinav}"
-            if yil_key not in catalog[konu_adi]:
-                catalog[konu_adi][yil_key] = []
-            catalog[konu_adi][yil_key].append({
-                "soru_no": int(soru_no),
-                "kaynak": r['kaynak'],
-                "id": r['id'],
-            })
-
-        if not catalog:
-            return {"sonuc": "Bu konuda cikmis soru bulunamadi."}
-
-        result = []
-        for konu_name, yillar in sorted(catalog.items()):
-            entry = {"konu": konu_name, "yillar": {}}
-            for yil, sorular in sorted(yillar.items(), reverse=True):
-                entry["yillar"][yil] = [{"soru_no": s["soru_no"], "kaynak": s["kaynak"]} for s in sorular]
-            entry["toplam_soru"] = sum(len(v) for v in yillar.values())
-            result.append(entry)
-
-        result.sort(key=lambda x: -x["toplam_soru"])
-        return {
-            "katalog": result[:10],
-            "toplam_konu": len(result),
-            "toplam_soru": sum(e["toplam_soru"] for e in result),
-            "kullanim": "Ogrenciye yil ve konu secenekleri sun. Sectigi soruyu send_exam_image ile gonder."
-        }
+    """Çıkmış soru kataloğu — services/knowledge_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.knowledge_service import list_exam_questions
+    return await list_exam_questions(konu, ders)
 
 
 async def _tool_build_study_plan(student_id="") -> dict:
@@ -1077,24 +702,15 @@ async def _tool_puan_tahmin(**kwargs):
 
 
 async def _tool_counsellor_brief(**kwargs):
-    """22.1n-toplanti #4: Rehber brief — tek çağrıda öğrenci özeti + veli mesaj taslağı + öncelikler."""
-    from role_briefs import prepare_counsellor_brief
-    soz_no = kwargs.get("soz_no")
-    if not soz_no:
-        return {"error": "soz_no zorunlu"}
-    return await prepare_counsellor_brief(int(soz_no))
+    """Rehber brief — services/admin_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.admin_service import counsellor_brief
+    return await counsellor_brief(**kwargs)
 
 
 async def _tool_class_brief(**kwargs):
-    """22.1n-toplanti #5: Öğretmen sınıf brief — bugünün dersine hazırlık."""
-    from role_briefs import get_class_brief
-    sinif = (kwargs.get("sinif") or "").strip()
-    if not sinif:
-        return {"error": "sinif zorunlu"}
-    return await get_class_brief(
-        sinif=sinif, ders=kwargs.get("ders", ""),
-        tarih=kwargs.get("tarih", "")
-    )
+    """Öğretmen sınıf brief — services/admin_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.admin_service import class_brief
+    return await class_brief(**kwargs)
 
 
 async def _tool_branch_zayif_konu(**kwargs):
@@ -1431,90 +1047,15 @@ async def _tool_hazirla_etut_talebi(**kwargs):
 
 
 async def _tool_get_recent_system_updates(**kwargs):
-    """Oturum 22.1h — KALDIGIM.md canli okuma.
-    Admin/mudur/yonetim: tam detay; Diger roller: sadece header bilgisi."""
-    caller_role = kwargs.get("_caller_role", "")
-    max_sessions = min(int(kwargs.get("max_sessions") or 3), 5)
-    max_chars = min(int(kwargs.get("max_chars") or 4000), 8000)
-    try:
-        from system_awareness import get_recent_updates
-        result = get_recent_updates(max_sessions=max_sessions, max_chars=max_chars)
-
-        # Teknik detay filtre — sadece admin/mudur/yonetim tam gorur
-        if caller_role not in ("admin", "mudur", "yonetim"):
-            # Diger roller: sadece bridge versiyonu + son oturum tarihi
-            return {
-                "info": "Sistem son guncelleme bilgisi",
-                "son_guncelleme": result.get("header_info", {}).get("son_guncelleme", "-"),
-                "gun": result.get("file_modified_at", "-"),
-                "not": "Detaylı teknik gecmis admin erisimindedir.",
-            }
-        return result
-    except Exception as e:
-        return {"error": f"Sistem guncelleme okuma hatasi: {e}"}
+    """KALDIGIM canli okuma — services/admin_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.admin_service import get_recent_system_updates
+    return await get_recent_system_updates(**kwargs)
 
 
 async def _tool_get_blueprint_section(**kwargs):
-    """Oturum 25.29 — BLUEPRINT.md bolum erisimi.
-
-    Bot 'mimari nedir / X nasil calisir / kapasitemiz nedir' soru aldiginda
-    BLUEPRINT.md'den ilgili bolumu canli okur. Atlas advisor da yeni oneri
-    vermeden once bu tool'la mimari kararin var olup olmadigini kontrol eder.
-    """
-    section = kwargs.get("section", "")
-    caller_role = kwargs.get("_caller_role", "")
-    if not section:
-        # Default: section listesi
-        try:
-            from blueprint_awareness import list_blueprint_sections
-            sections = list_blueprint_sections()
-            return {
-                "info": "BLUEPRINT.md tum bolumler (detay icin section parametresi ver)",
-                "sections": [{"num": s["num"], "title": s["title"]} for s in sections],
-                "ornek": "section=3 veya section='LLM Routing'",
-            }
-        except Exception as e:
-            return {"error": str(e)[:200]}
-
-    try:
-        from blueprint_awareness import get_blueprint_section, search_blueprint
-        # Numerik mi yoksa keyword mu?
-        try:
-            sec_num = int(section)
-            result = get_blueprint_section(sec_num)
-        except (ValueError, TypeError):
-            result = get_blueprint_section(str(section))
-
-        if result:
-            # Diger roller icin trim — admin/mudur/yonetim tam icerik gorur
-            if caller_role not in ("admin", "mudur", "yonetim", "rehber"):
-                # Sadece basligi + ilk 800 karakter
-                content = result["content"][:800] + "\n[... detay yonetim erisiminde]"
-                return {
-                    "num": result["num"],
-                    "title": result["title"],
-                    "preview": content,
-                    "not": "Tam icerik yonetim erisimine acik.",
-                }
-            return {
-                "num": result["num"],
-                "title": result["title"],
-                "content": result["content"][:5000],
-                "char_count": result["char_count"],
-            }
-        # Bulamadi → search
-        hits = search_blueprint(section, max_results=3)
-        if hits:
-            return {
-                "info": f"'{section}' bolum olarak bulunamadi, keyword araamasi yapildi",
-                "hits": [
-                    {"num": h["num"], "title": h["title"], "snippet": h["snippet"][:300]}
-                    for h in hits
-                ],
-            }
-        return {"error": f"'{section}' icin bolum/keyword bulunamadi"}
-    except Exception as e:
-        return {"error": f"BLUEPRINT okuma hatasi: {e}"}
+    """BLUEPRINT bolum erişim — services/admin_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.admin_service import get_blueprint_section
+    return await get_blueprint_section(**kwargs)
 
 
 async def _tool_get_atlas_trend(**kwargs):
@@ -2177,72 +1718,10 @@ async def _tool_make_3d_template(template: str = "solar_system",
 async def _tool_make_render_link(html: str = "", title: str = "FermatAI Görsel",
                                  ttl_days: int = 7, _caller_phone: str = "",
                                  **_extra) -> dict:
-    """Bot tool — kompleks HTML kaydet, kalici link ver.
-
-    12 hazir renderer yetmediginde son care.
-    """
-    # Net hata mesajlari (Claude retry'da duzeltebilsin)
-    if not html or not html.strip():
-        return {
-            "success": False,
-            "error": (
-                "❌ html PARAMETRESI BOS — Claude output truncated (kronik 3+ kez bug). "
-                "ACIL HEMEN AŞAĞIDAKİNİ UYGULA:\n"
-                "1) ⚡ ŞIMDI TEKRAR make_render_link CAGIR ama bu kez DAHA KISA HTML "
-                "(max 60-80KB hedefli). Onceki uzun reasoning'i BIRAK, sadece kompakt HTML yaz: "
-                "<!DOCTYPE html><html>...<canvas>+tek script CDN+~50 satır JS+formul...</html>\n"
-                "2) ASLA reasoning yapma, ASLA kullaniciya 'tekrar dene' yazma — HEMEN tool retry.\n"
-                "3) İkinci kez de empty olursa → o zaman ```3d preset'e gec (karadelik→blackhole, "
-                "dna→dna_helix, atom→atom_proper, dalga→sine_wave, calabi→calabi_yau, "
-                "kafes→lattice, manyetik→magnetic_field, su→water).\n"
-                "4) Kullanici 'devam et' demek ZORUNDA KALMAMALI — sen hemen retry yap."
-            ),
-            "retry_now": True,  # Claude'a programatik sinyal — hemen tool tekrar cagir
-            "max_retry_size_kb": 80,
-            "preset_fallback": ["blackhole", "dna_helix", "atom_proper", "sine_wave",
-                                "calabi_yau", "lattice", "magnetic_field", "water", "sphere"]
-        }
-    html_size = len(html.encode('utf-8'))
-    if html_size > 1024 * 1024:
-        return {
-            "success": False,
-            "error": f"HTML cok buyuk ({html_size//1024}KB > 1024KB/1MB max). "
-                     f"Daha kisa HTML uret (~200-400KB ideal) veya 22 renderer'dan birini kullan."
-        }
-    try:
-        from render_endpoint import create_artifact
-        ttl = max(1, min(30, int(ttl_days or 7)))
-        uuid = await create_artifact(html=html, title=title,
-                                      creator_phone=_caller_phone or "",
-                                      ttl_days=ttl)
-        if not uuid:
-            return {
-                "success": False,
-                "error": "Kayit hatasi (DB veya backend). Tekrar deneyin veya 12 renderer kullanın."
-            }
-        # 25.37 (Neo): Quality score frontend'e iletilir (badge için)
-        try:
-            from render_endpoint import calculate_quality_score
-            score, _breakdown = calculate_quality_score(html)
-        except Exception:
-            score = 0
-        # Public URL
-        import os
-        base = os.getenv("PUBLIC_BASE_URL", "https://api.fermategitimkurumlari.com").rstrip("/")
-        url = f"{base}/render/{uuid}"
-        from datetime import datetime, timedelta
-        return {
-            "success": True,
-            "url": url,
-            "uuid": uuid,
-            "ttl_days": ttl,
-            "quality_score": score,
-            "size_kb": round(html_size / 1024, 1),
-            "expires_at": (datetime.now() + timedelta(days=ttl)).isoformat(),
-            "kullanim": f"Ogrenciye 'Buyuk gorseli ac: {url}' diye sun. Mobilde tek tikla acilir."
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    """HTML artefakt → kalıcı link — services/knowledge_service.py'e taşındı (25.41-REFACTOR)."""
+    from services.knowledge_service import make_render_link
+    return await make_render_link(html=html, title=title, ttl_days=ttl_days,
+                                  _caller_phone=_caller_phone, **_extra)
 
 
 # ── Oturum 25.29 Self-Dev Tool Wrappers ───────────────────────────────────
