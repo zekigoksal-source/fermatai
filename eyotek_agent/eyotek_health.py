@@ -142,13 +142,19 @@ async def _check_live_api() -> tuple[bool, str]:
         return False, f"Helper hata: {emsg}"
 
 
-async def eyotek_health_check(use_cache: bool = True) -> dict:
+async def eyotek_health_check(use_cache: bool = True, auto_relogin: bool = True) -> dict:
     """Tek doğruluk kaynağı — Eyotek bağlantı sağlık kontrolü.
 
     Sirasiyla:
       1. CDP port socket check (1sn timeout)
       2. Cookie dosyasi varlık + freshness
       3. Live API call (8sn timeout) — en güvenilir, ASP.NET session test
+      4. session_drop ise (cookie var, API fail) AUTO-RELOGIN dene (25.43-EYOTEK-LAZY)
+
+    Args:
+        use_cache: 15sn cache kullan (default True)
+        auto_relogin: session_drop tespit edince inline relogin dene (default True)
+                       Bot artık "eyotek baglan yaz" demek zorunda değil — sistem kendi düzeltir.
 
     Returns:
         {
@@ -157,6 +163,7 @@ async def eyotek_health_check(use_cache: bool = True) -> dict:
             "detail": str,
             "checks": {"cdp": {...}, "cookie": {...}, "live": {...}},
             "user_message": str  # bot bunu kullaniciya direkt gosterebilir
+            "auto_relogin_attempted": bool (varsa)
         }
     """
     # Cache kontrol
@@ -185,16 +192,48 @@ async def eyotek_health_check(use_cache: bool = True) -> dict:
             live_ok = False
             live_detail = f"Live API exception: {str(e)[:80]}"
 
+    # 25.43-EYOTEK-LAZY: session_drop tespit edilirse INLINE AUTO-RELOGIN dene
+    # Eski "her zaman ulaşılabilir" sistem böyle çalışıyordu — bot çağrısı sırasında
+    # cookie expire olunca otomatik refresh, kullanıcı farkı görmez.
+    relogin_attempted = False
+    if auto_relogin and cdp_ok and cookie_ok and not live_ok:
+        relogin_attempted = True
+        try:
+            from eyotek_auto_login import try_auto_login
+            login_r = await asyncio.wait_for(
+                try_auto_login(timeout_ms=25000, trigger_source="eyotek_health_lazy"),
+                timeout=30.0,
+            )
+            if login_r.get("success"):
+                logger.info("[HEALTH] auto_relogin BASARILI, live API tekrar test")
+                # Live test tekrar
+                try:
+                    live_ok2, live_detail2 = await asyncio.wait_for(_check_live_api(), timeout=12.0)
+                    if live_ok2:
+                        live_ok = True
+                        live_detail = f"Auto-relogin sonrasi: {live_detail2}"
+                except Exception as e:
+                    logger.warning(f"[HEALTH] post-relogin live test fail: {e}")
+            else:
+                logger.warning(f"[HEALTH] auto_relogin fail: {login_r.get('reason')}")
+        except asyncio.TimeoutError:
+            logger.warning("[HEALTH] auto_relogin timeout (>30s)")
+        except Exception as e:
+            logger.warning(f"[HEALTH] auto_relogin exception: {e}")
+
     # Karar matrisi (en güvenilir cevap)
     if live_ok:
         status = "online"
         is_connected = True
         msg = "✅ Eyotek bağlantısı CANLI — gerçek API doğrulandı"
+        if relogin_attempted:
+            msg += " (auto-relogin sonrasi)"
     elif cdp_ok and cookie_ok and not live_ok:
         # Browser var, cookie var ama API fail → session düşmüş
+        # Auto-relogin denendi ama olmadi — capsolver bakiye bittiyse veya credential bozulduysa
         status = "session_drop"
         is_connected = False
-        msg = "⚠️ Eyotek session düşmüş — re-login gerek (`eyotek baglan` yaz)"
+        msg = "⚠️ Eyotek geçici erişim sorunu — sistem otomatik düzeltiyor, birazdan tekrar dene"
     elif not cdp_ok:
         status = "cdp_down"
         is_connected = False
@@ -218,6 +257,7 @@ async def eyotek_health_check(use_cache: bool = True) -> dict:
             "live": {"ok": live_ok, "detail": live_detail},
         },
         "user_message": msg,
+        "auto_relogin_attempted": relogin_attempted,
         "checked_at": time.time(),
     }
     _HEALTH_CACHE["timestamp"] = now
