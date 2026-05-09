@@ -1676,6 +1676,19 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
 .chat-header {
   padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--panel);
   display: flex; align-items: center; justify-content: space-between;
+  /* 25.43-UI-FIX (10 May Neo): Hamburger butonu intermittent calismiyordu —
+     drawer-overlay (z-index 49) bazen header'in ustunde stacking context'e giriyordu.
+     Header'a explicit z-index 60 ver → drawer overlay (49) ve drawer (50) ustunde,
+     hamburger her zaman tiklanabilir. position: relative gerekli z-index calismasi icin. */
+  position: relative; z-index: 60;
+}
+/* Hamburger butonu daha buyuk hit area + tikla-yok hatalari engelle */
+.history-btn {
+  position: relative; z-index: 61;  /* Header'in ustunde */
+  min-width: 38px; min-height: 38px;  /* Tutarli hit area */
+  display: inline-flex; align-items: center; justify-content: center;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;  /* Mobil double-tap zoom engelle */
 }
 .chat-header .header-left { display: flex; align-items: center; gap: 12px; }
 .chat-header .title { font-size: 15px; font-weight: 500; color: var(--fg); }
@@ -1894,8 +1907,19 @@ html[data-theme="dark"] .msg.bot .msg-actions .action-divider {
   box-shadow: 0 6px 20px rgba(199,111,62,0.35);
 }
 
-.msg-welcome { text-align: center; color: var(--fg-muted); font-size: 14px; padding: 40px 20px; line-height: 1.7; }
+/* 25.43-UI-FIX (10 May Neo): Welcome web'de soluna yapısıyordu — ortalandı.
+   Wide ekranlarda max-width:780px kart sayfanın merkezine yerleşir. */
+.msg-welcome {
+  text-align: center; color: var(--fg-muted); font-size: 14px;
+  padding: 32px 20px 20px; line-height: 1.7;
+  width: 100%; max-width: 820px;
+  margin: 0 auto;  /* yatay merkezleme — flex parent içinde wide ekranlar için */
+  align-self: center;  /* chat-messages flex column'da yatay center */
+  box-sizing: border-box;
+}
 .msg-welcome h2 { font-size: 20px; color: var(--fg); margin-bottom: 12px; font-weight: 600; }
+/* jarvis-welcome iç kart (inline-style max-width:780px) — extra centering safety */
+.msg-welcome .jarvis-welcome { margin-left: auto !important; margin-right: auto !important; }
 
 /* WhatsApp-style markdown */
 .msg strong, .msg b { font-weight: 600; }
@@ -10110,6 +10134,12 @@ async function loadHistoryTab() {
 async function openHistoryDrawer() {
   const drawer = document.getElementById("historyDrawer");
   const overlay = document.getElementById("drawerOverlay");
+  // 25.43-UI-FIX (Neo 10 May): Eger drawer zaten acıksa toggle olarak davran (kapat).
+  // Boylece hamburger'a tekrar basinca kapanir, intermittent "tepki vermiyor" hissi cozulur.
+  if (drawer.classList.contains("open")) {
+    closeHistoryDrawer();
+    return;
+  }
   drawer.classList.add("open");
   overlay.classList.add("active");
 
