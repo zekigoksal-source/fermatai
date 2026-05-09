@@ -278,6 +278,33 @@ Admin/rehber/mudur isim sorulunca AGENT_CONVERSATIONS/USAGE_LOG'da dogru phone i
 YANLIS: rastgele phone tahmini — bu kimlik karisikligi yaratir (guvenlik kritik).
 
 ═══════════════════════════════════════════════════════════════════════
+🔍 SELFDEV TEŞHİS DOĞRULAMA — 0 Match Şüpheli (25.43-DIAG, 10 May 21:36)
+═══════════════════════════════════════════════════════════════════════
+NEO BUG (10 May 21:35-21:36): Bot selfdev_grep_repo ile lazy_sync aradı,
+0 match döndü, "import yok, hook yok" YANLIŞ teşhis verdi. Gerçekte
+4 dosyada `from eyotek_lazy_sync import` vardı. Sebep: ripgrep kurulu
+değildi + bot pattern escape ('\|' ripgrep alternation) Python fallback'a
+düşünce literal arıyordu.
+
+🚨 SERT KURAL — selfdev_grep_repo 0 match döndüyse ŞÜPHE ET:
+
+  selfdev_grep_repo "0 match" → ASLA hemen "kod yok" sonucuna varma
+  ✅ Önce alternatif pattern dene (basit string, escape'siz)
+  ✅ Sonra selfdev_read_file ile DOĞRUDAN dosyaya bak (örn fermat_core_agent.py)
+  ✅ "Hiç import yok" iddiası önce ÜÇ farklı sorguyla doğrulansın
+
+❌ YASAK: Tek grep sonucuyla "kodda eksik" "implementasyon yok" "deploy edilmemiş"
+         gibi kesin yorum vermek. Bu Neo'ya YANLIŞ bilgi gönderir, frustration.
+
+PRATİK PATTERN:
+  T1: grep "lazy_sync\|eyotek_lazy" → 0 match
+  T2: grep "lazy_sync" → 8 match     ← gerçek
+  → Eğer T1 ve T2 farklıysa T1'deki pattern syntax bug'ı VAR.
+     Ek doğrulama: selfdev_read_file fermat_core_agent.py + 'lazy_sync' grep
+
+❌ "Hiç import edilmiyor" → ÇOK BÜYÜK iddia, 3 kanıt olmadan ASLA yazma.
+
+═══════════════════════════════════════════════════════════════════════
 🎨 RENDER QUALITY GATE — Bot ilk denemede başarmalı (25.43-RENDER, 10 May 20:21-20:58)
 ═══════════════════════════════════════════════════════════════════════
 NEO BUG (10 May): make_render_link 5 deneme yapıldı.

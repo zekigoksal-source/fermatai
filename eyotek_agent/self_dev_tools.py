@@ -385,9 +385,14 @@ async def grep_repo(pattern: str, file_type: str = "py", limit: int = 50,
                     bytes_read += len(line)
     except FileNotFoundError:
         # ripgrep yok — Python fallback
+        # 25.43-CONV-FIX (Neo bug 10 May 21:35): bot ripgrep-syntax escape (\|) gönderiyor
+        # → Python re literal arıyor → 0 match → yanlış teşhis. Pattern normalize:
+        #   - `\|` (ripgrep alternation escape) → `|` (Python re alternation)
+        #   - Diğer ripgrep-only escape'ler bırakılır (önemli olan en sık kullanılan \|)
+        normalized_pattern = pattern.replace(r'\|', '|').replace(r'\\|', '|')
         try:
             file_glob = f"**/*.{file_type}" if file_type else "**/*"
-            regex = re.compile(pattern)
+            regex = re.compile(normalized_pattern)
             for fp in Path(path).rglob(file_glob):
                 if len(results) >= limit:
                     break
