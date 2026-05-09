@@ -531,7 +531,26 @@ from role_access import (
 async def _tool_eyotek_read(page_key: str = "etut_ara", max_rows: float = 20) -> dict:
     """Eyotek'ten anlık veri oku — CDP ile (basit, sabit kaynak)."""
     from eyotek_knowledge.eyotek_reader import read_eyotek_page
-    return await read_eyotek_page(page_key, max_rows=int(max_rows))
+    result = await read_eyotek_page(page_key, max_rows=int(max_rows))
+
+    # 25.43-LAZY-SYNC-EXTEND: Neo direktif — eyotek_read da DB sync etmeli
+    # page_key → page_path eslesmesi (etut_ara → student/individual-lesson)
+    page_map = {
+        "etut_ara":     "student/individual-lesson",
+        "etut_giris":   "student/individual-lesson",
+        "yoklama":      "student/attendance-report",
+        "sinav":        "student/exam-result",
+    }
+    page_path = page_map.get(str(page_key).lower())
+    if page_path and isinstance(result, dict):
+        try:
+            from eyotek_lazy_sync import lazy_sync_after_query
+            sync_info = await lazy_sync_after_query({**result, "page": page_path})
+            if sync_info.get("synced"):
+                result["_lazy_synced"] = sync_info
+        except Exception as _e:
+            logger.debug(f"[LAZY_SYNC] eyotek_read fail: {_e}")
+    return result
 
 
 async def _tool_sinav_sonuclari(sinav_adi: str, max_rows: float = 100,
@@ -545,13 +564,27 @@ async def _tool_sinav_sonuclari(sinav_adi: str, max_rows: float = 100,
     'Bilgi Sarmal TG TYT-3 nasıldı'.
 
     DB'de sync edilmemiş yeni sınavlar için ÇOK yararlı.
+
+    25.43-LAZY-SYNC-EXTEND: Neo direktif — bot bir sınav drill-down'i yapınca
+    student_exams DB sync (lazy). Hazır oradayken tüm öğrenci sonuçları DB'ye.
     """
     from eyotek_knowledge.eyotek_navigator import sinav_drilldown
-    return await sinav_drilldown(
+    result = await sinav_drilldown(
         sinav_adi=sinav_adi,
         max_rows=int(max_rows) if max_rows else 100,
         date_from_days=int(date_from_days) if date_from_days else 30,
     )
+
+    # Lazy sync hook — student_exams DB upsert
+    if isinstance(result, dict):
+        try:
+            from eyotek_lazy_sync import lazy_sync_after_query
+            sync_info = await lazy_sync_after_query({**result, "page": "student/exam-result"})
+            if sync_info.get("synced"):
+                result["_lazy_synced"] = sync_info
+        except Exception as _e:
+            logger.debug(f"[LAZY_SYNC] sinav_sonuclari fail: {_e}")
+    return result
 
 
 async def _tool_ogrenci_drilldown(student: str, alt_sayfa: str,
@@ -581,11 +614,30 @@ async def _tool_ogrenci_drilldown(student: str, alt_sayfa: str,
             }
 
     from eyotek_knowledge.eyotek_navigator import student_drilldown
-    return await student_drilldown(
+    result = await student_drilldown(
         student_identifier=student,
         sub_page=alt_sayfa,
         max_rows=int(max_rows) if max_rows else 50,
     )
+
+    # 25.43-LAZY-SYNC-EXTEND: alt_sayfa → page_path mapping
+    sub_page_map = {
+        "etut":     "student/individual-lesson",
+        "yoklama":  "student/attendance-report",
+        "sinav":    "student/exam-result",
+        "sinavlar": "student/exam-result",
+        "exam":     "student/student-exam-detail",
+    }
+    page_path = sub_page_map.get(str(alt_sayfa).lower())
+    if page_path and isinstance(result, dict):
+        try:
+            from eyotek_lazy_sync import lazy_sync_after_query
+            sync_info = await lazy_sync_after_query({**result, "page": page_path})
+            if sync_info.get("synced"):
+                result["_lazy_synced"] = sync_info
+        except Exception as _e:
+            logger.debug(f"[LAZY_SYNC] ogrenci_drilldown fail: {_e}")
+    return result
 
 
 async def _tool_eyotek_query(question: str, max_rows: float = 0,
