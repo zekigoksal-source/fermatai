@@ -253,17 +253,24 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
             din = _to_float(r.get("din") or r.get("Din") or r.get("din_kulturu"))
             toplam = _to_float(r.get("toplam") or r.get("Toplam") or r.get("toplam_net"))
 
-            # exam_date parse
-            exam_date_iso = None
+            # exam_date parse → datetime.date object (asyncpg requires)
+            from datetime import date as _date
+            exam_date_obj = None
             if tarih_raw:
                 # Format örnekleri: "2026-04-15", "15.04.2026", "15/04/2026"
                 m = _re.match(r'(\d{4})[\-/.](\d{1,2})[\-/.](\d{1,2})', tarih_raw)
                 if m:
-                    exam_date_iso = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+                    try:
+                        exam_date_obj = _date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                    except (ValueError, TypeError):
+                        pass
                 else:
                     m = _re.match(r'(\d{1,2})[\-/.](\d{1,2})[\-/.](\d{4})', tarih_raw)
                     if m:
-                        exam_date_iso = f"{m.group(3)}-{int(m.group(2)):02d}-{int(m.group(1)):02d}"
+                        try:
+                            exam_date_obj = _date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+                        except (ValueError, TypeError):
+                            pass
 
             # UPSERT
             await db_execute(
@@ -274,7 +281,7 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
                     tarih, cografya, felsefe, din_kulturu, toplam, exam_type, status
                 )
                 VALUES (
-                    $1, $2, $3, $4, $5::date,
+                    $1, $2, $3, $4, $5,
                     $6, $7, $8, $9, $10, $11,
                     $12, $13, $14, $15, $16, $17, 'lazy_sync'
                 )
@@ -292,7 +299,7 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
                     toplam      = COALESCE(EXCLUDED.toplam,      student_exams.toplam),
                     exam_date   = COALESCE(EXCLUDED.exam_date,   student_exams.exam_date)
                 """,
-                soz_no, ogr_ad, exam_code, sinav_adi, exam_date_iso,
+                soz_no, ogr_ad, exam_code, sinav_adi, exam_date_obj,
                 turkce, mat, geo, fizik, kimya, biyoloji,
                 tarih_ders, cografya, felsefe, din, toplam, exam_type,
             )
@@ -421,12 +428,28 @@ async def _upsert_counsellor_notes(rows: list[dict], columns: list[str]) -> int:
                 if not soz_no:
                     continue
 
-            # Dedupe
+            # Datetime parse — asyncpg python datetime obj ister
+            from datetime import datetime as _dt
+            gorusme_dt = None
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M",
+                         "%Y-%m-%d", "%d.%m.%Y %H:%M", "%d.%m.%Y"):
+                try:
+                    gorusme_dt = _dt.strptime(gorusme_tarihi, fmt)
+                    break
+                except ValueError:
+                    continue
+            if not gorusme_dt:
+                try:
+                    gorusme_dt = _dt.fromisoformat(gorusme_tarihi)
+                except Exception:
+                    continue
+
+            # Dedupe — datetime obj ile
             existing = await db_fetchval(
                 """SELECT 1 FROM counsellor_notes
-                   WHERE soz_no = $1 AND gorusme_tarihi::text = $2
+                   WHERE soz_no = $1 AND gorusme_tarihi = $2
                      AND COALESCE(gorusulen, '') = $3 LIMIT 1""",
-                soz_no, gorusme_tarihi, gorusulen,
+                soz_no, gorusme_dt, gorusulen,
             )
             if existing:
                 continue
@@ -435,9 +458,9 @@ async def _upsert_counsellor_notes(rows: list[dict], columns: list[str]) -> int:
                 """INSERT INTO counsellor_notes
                    (sube, ogretmen, sinif, soz_no, ogrenci_adi, ogrenci_soyadi,
                     gorusme_tarihi, not_turu, gorusulen, gorusme_turu)
-                   VALUES ($1,$2,$3,$4,$5,$6,$7::timestamp,$8,$9,$10)""",
+                   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)""",
                 sube, ogretmen, sinif, soz_no, ogr_ad, ogr_soyad,
-                gorusme_tarihi, not_turu, gorusulen, gorusme_turu,
+                gorusme_dt, not_turu, gorusulen, gorusme_turu,
             )
             synced += 1
         except Exception as e:
