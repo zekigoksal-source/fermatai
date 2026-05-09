@@ -336,6 +336,103 @@ async def nist_constants_list() -> dict:
 # ═══════════════════════════════════════════════════════════════════════
 # 15. OEIS — Online Encyclopedia of Integer Sequences
 # ═══════════════════════════════════════════════════════════════════════
+# OEIS fallback dataset — Cloudflare bazi IP'leri (VPS dahil) bloklayinca kullanilir.
+# YKS/AYT'de en sik karsilasilan diziler. Genisletilmesi gerekirse ekle.
+_OEIS_FALLBACK = {
+    "A000045": {  # Fibonacci
+        "name": "Fibonacci numbers",
+        "data": "0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987",
+        "formula": "a(n) = a(n-1) + a(n-2), a(0)=0, a(1)=1",
+        "comment": "F(0)=0, F(1)=1, F(n)=F(n-1)+F(n-2). Altin oran phi=(1+sqrt(5))/2.",
+        "match_keys": ["fibonacci", "0,1,1,2,3,5,8", "1,1,2,3,5,8", "1,2,3,5,8,13", "0,1,1,2,3"],
+    },
+    "A000040": {  # Asal sayilar
+        "name": "The prime numbers",
+        "data": "2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59",
+        "formula": "Asal sayilar: 1 ve kendinden baska bolen yok",
+        "comment": "Sonsuz coklukta asal sayi vardir (Euclid teoremi).",
+        "match_keys": ["asal", "prime", "primes", "2,3,5,7,11", "2,3,5,7"],
+    },
+    "A000027": {  # Sayma sayilari
+        "name": "Natural numbers",
+        "data": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20",
+        "formula": "a(n) = n",
+        "comment": "Pozitif tam sayilar.",
+        "match_keys": ["dogal sayilar", "natural", "1,2,3,4,5"],
+    },
+    "A000290": {  # Kareler
+        "name": "Squares: a(n) = n^2",
+        "data": "0,1,4,9,16,25,36,49,64,81,100,121,144,169,196,225,256",
+        "formula": "a(n) = n^2",
+        "comment": "Tam kare sayilar.",
+        "match_keys": ["kareler", "squares", "n^2", "1,4,9,16,25"],
+    },
+    "A000578": {  # Kupler
+        "name": "The cubes: a(n) = n^3",
+        "data": "0,1,8,27,64,125,216,343,512,729,1000,1331,1728,2197",
+        "formula": "a(n) = n^3",
+        "comment": "Tam kup sayilar.",
+        "match_keys": ["kupler", "cubes", "n^3", "1,8,27,64,125"],
+    },
+    "A000142": {  # Faktoriyel
+        "name": "Factorial numbers: n!",
+        "data": "1,1,2,6,24,120,720,5040,40320,362880,3628800",
+        "formula": "n! = n*(n-1)*(n-2)*...*1, 0! = 1",
+        "comment": "Permutasyon, kombinatorik temel.",
+        "match_keys": ["faktoriyel", "factorial", "1,2,6,24,120", "n!"],
+    },
+    "A000108": {  # Catalan
+        "name": "Catalan numbers",
+        "data": "1,1,2,5,14,42,132,429,1430,4862,16796,58786",
+        "formula": "C(n) = (2n)!/((n+1)!*n!) = binomial(2n,n)/(n+1)",
+        "comment": "Kombinatorik: parantez dengeleme, dik yol sayma.",
+        "match_keys": ["catalan", "1,1,2,5,14,42"],
+    },
+    "A000217": {  # Ucgensel
+        "name": "Triangular numbers: a(n) = n*(n+1)/2",
+        "data": "0,1,3,6,10,15,21,28,36,45,55,66,78,91,105,120,136,153",
+        "formula": "T(n) = n(n+1)/2 = 1+2+...+n",
+        "comment": "Toplam ardisik tam sayilar.",
+        "match_keys": ["ucgensel", "triangular", "1,3,6,10,15,21"],
+    },
+    "A000079": {  # Iki kuvvetleri
+        "name": "Powers of 2: a(n) = 2^n",
+        "data": "1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384",
+        "formula": "a(n) = 2^n",
+        "comment": "Bilgisayar bilimi temeli (bit, byte, kB, MB).",
+        "match_keys": ["2^n", "iki kuvvetleri", "powers of 2", "1,2,4,8,16,32"],
+    },
+    "A000032": {  # Lucas
+        "name": "Lucas numbers",
+        "data": "2,1,3,4,7,11,18,29,47,76,123,199,322,521,843",
+        "formula": "L(n) = L(n-1) + L(n-2), L(0)=2, L(1)=1",
+        "comment": "Fibonacci kuzeni — ayni rekurans, farkli baslangic.",
+        "match_keys": ["lucas", "2,1,3,4,7,11"],
+    },
+}
+
+
+def _oeis_local_search(query: str) -> list:
+    """Local fallback — query OEIS yerel mini-database'inde ara."""
+    q = (query or "").lower().strip()
+    if not q:
+        return []
+    matches = []
+    for seq_id, seq in _OEIS_FALLBACK.items():
+        for key in seq["match_keys"]:
+            if key.lower() in q or q in key.lower():
+                matches.append({
+                    "id": seq_id.lstrip("A"),
+                    "name": seq["name"],
+                    "first_terms": seq["data"],
+                    "formula": seq["formula"],
+                    "comment": seq["comment"],
+                    "url": f"https://oeis.org/{seq_id}",
+                })
+                break
+    return matches
+
+
 async def oeis_search(query: str, max_results: int = 5) -> dict:
     """OEIS — sayi dizisi/diziler tanima.
 
@@ -344,6 +441,10 @@ async def oeis_search(query: str, max_results: int = 5) -> dict:
 
     YKS-AYT Matematik: dizi sorulari, Fibonacci/asal sayilar/kombinatorik.
 
+    25.43-FALLBACK: VPS IP'lerini Cloudflare bloklayabiliyor (403). Bu durumda
+    yerel mini-katalogdan (Fibonacci, asallar, kareler, kupler, Catalan, vb.)
+    cevap doner.
+
     Ornek:
         >>> r = await oeis_search("1,1,2,3,5,8,13")
         >>> r["results"][0]["name"]
@@ -351,6 +452,8 @@ async def oeis_search(query: str, max_results: int = 5) -> dict:
     """
     if not query:
         return {"success": False, "error": "Sorgu bos"}
+    # Adim 1: Lokal fallback dataset'inde ara (hizli + Cloudflare-immun)
+    local_matches = _oeis_local_search(query)
     try:
         url = f"https://oeis.org/search?q={quote_plus(query)}&fmt=json&start=0"
         async with httpx.AsyncClient(
@@ -360,11 +463,27 @@ async def oeis_search(query: str, max_results: int = 5) -> dict:
         ) as client:
             r = await client.get(url)
             if r.status_code != 200:
+                # Cloudflare 403 vb. → fallback'e dus
+                if local_matches:
+                    return {
+                        "success": True,
+                        "found": True,
+                        "query": query,
+                        "results": local_matches[:max_results],
+                        "source": "local_fallback",
+                        "_note": f"OEIS API HTTP {r.status_code} (VPS Cloudflare blok), yerel mini-katalogdan",
+                    }
                 return {"success": False, "error": f"HTTP {r.status_code}"}
             data = r.json()
 
         # OEIS top-level LIST donuyor (dict degil — onceki implementasyon yanlisti)
         if not data or not isinstance(data, list):
+            # API bos → local fallback dene
+            if local_matches:
+                return {
+                    "success": True, "found": True, "query": query,
+                    "results": local_matches[:max_results], "source": "local_fallback",
+                }
             return {
                 "success": True,
                 "found": False,
@@ -391,6 +510,13 @@ async def oeis_search(query: str, max_results: int = 5) -> dict:
             "results": results,
         }
     except Exception as e:
+        # Network hatasi — local fallback'e dus
+        if local_matches:
+            return {
+                "success": True, "found": True, "query": query,
+                "results": local_matches[:max_results], "source": "local_fallback",
+                "_note": f"OEIS API hata ({e}), yerel mini-katalogdan",
+            }
         logger.warning(f"oeis_search hata: {e}")
         return {"success": False, "error": str(e)}
 
