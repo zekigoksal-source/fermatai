@@ -10,7 +10,7 @@
  * 25.40 (Neo): /chat artık cache-first → PWA açılışı 1sn beyaz ekran ortadan kalktı
  * Versiyon değiştir → tüm cache temizlenir.
  */
-const VERSION = 'fermatai-v25.41-no-skip-waiting';
+const VERSION = 'fermatai-v25.43-chat-no-cache';
 const STATIC_CACHE = `${VERSION}-static`;
 const RENDER_CACHE = `${VERSION}-render`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
@@ -23,23 +23,32 @@ const RUNTIME_CACHE = `${VERSION}-runtime`;
 // kullanıcı aktif yazarken reload önlenir. CSS/JS bug fix'leri kullanıcı manuel
 // yeniden açana kadar gecikebilir — kabul edilebilir trade-off.
 self.addEventListener('install', (event) => {
-  console.log('[SW]', VERSION, 'install (no-skipWaiting)');
-  // self.skipWaiting() KALDIRILDI — kullanıcı yazarken reload önlenir
+  console.log('[SW]', VERSION, 'install (skipWaiting AKTIF — 25.43 hamburger F5 fix)');
+  // 25.43-CACHE-FIX (Neo 10 May): Hamburger F5 sonrasi calismiyor sorunu — eski SW
+  // mevcut sekmede aktif kaliyordu, eski cached HTML/JS donuyordu. skipWaiting +
+  // clients.claim AKTIF EDILDI ki yeni SW hemen aktive olsun. Trade-off: kullanici
+  // yaziyorken cok nadir bir reload tetiklenebilir — hamburger calismazlığına gore
+  // kabul edilebilir.
+  self.skipWaiting();
 });
 
 // Activate: eski cache'leri temizle (clients.claim() KALDIRILDI)
 self.addEventListener('activate', (event) => {
-  console.log('[SW]', VERSION, 'activate (no-claim)');
+  console.log('[SW]', VERSION, 'activate (clients.claim AKTIF)');
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(k => !k.startsWith(VERSION)).map(k => {
-          console.log('[SW] eski cache silindi:', k);
-          return caches.delete(k);
-        })
-      )
-    )
-    // self.clients.claim() KALDIRILDI — mevcut sekmeler eski SW ile devam
+    Promise.all([
+      caches.keys().then(keys =>
+        Promise.all(
+          keys.filter(k => !k.startsWith(VERSION)).map(k => {
+            console.log('[SW] eski cache silindi:', k);
+            return caches.delete(k);
+          })
+        )
+      ),
+      // 25.43-CACHE-FIX: clients.claim() AKTIF — mevcut sekmeler de yeni SW'ye gecsin
+      // Aksi takdirde Neo'nun sekmesi eski SW ile takılı kalıyor F5 sonrası
+      self.clients.claim()
+    ])
   );
 });
 
@@ -99,14 +108,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // /chat ana sayfa — NETWORK-FIRST (Oturum 25.41 Neo bug 6 May)
-  // ESKI: stale-while-revalidate (cache'den anlık → 1sn beyaz ekran fix)
-  // YENI: network-first → auth/JS değişiklikleri ANINDA yansır.
-  // Trade-off: ilk açılış ~200ms daha yavaş ama "eski authFetch kodu" sorunu yok.
-  // Network fail'da cache fallback (offline desteği korunuyor).
+  // /chat ana sayfa — NETWORK-ONLY (25.43 Neo hamburger F5 fix 10 May)
+  // ESKI: networkFirst (cache fallback offline) → eski cached HTML donuyordu F5'te
+  // YENI: SW araya HIC girmesin, browser her seferinde direkt network'ten alir.
+  // Backend zaten Cache-Control: no-cache, no-store header gonderiyor.
+  // Offline destegi /chat icin kaybolur (kabul edilebilir — chat backend'siz
+  // calismaz zaten).
   if (url.pathname === '/chat' || url.pathname === '/chat/') {
-    event.respondWith(networkFirst(request, RUNTIME_CACHE));
-    return;
+    return;  // SW intercept yok, native fetch
   }
 
   // Diğer same-origin GET — runtime cache

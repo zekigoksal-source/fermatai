@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>FermatAI</title>
+<!-- 25.43-CACHE-FIX (10 May Neo): F5 sonrasi hamburger calismiyor sorunu — kok neden
+     browser'in eski (broken V1/V2/V3) JS'i cache'ten yuklemesi. F5 cache validate
+     etmeden direct cache hit yapiyordu. Cold load taze yukluyor (cache yok) — bu
+     yuzden ilk acilis calisiyor F5 calismiyor. Cozum: cache-busting + bfcache reset. -->
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<script>
+  // bfcache reset — eger sayfa back-forward cache'ten geri geliyorsa zorla taze reload
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted) window.location.reload();
+  });
+</script>
 <!-- 25.40c (Neo bug fix): Tema toggle bozulmus durumdaydi cunku inline style ve
      hardcoded background rule'lari mevcut --bg CSS variable sistemini override
      ediyordu. COZUM: No-FOUC pattern — head'in en basinda kucuk inline script
