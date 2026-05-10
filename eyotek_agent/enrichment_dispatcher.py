@@ -482,10 +482,28 @@ async def inject_wiki_block(user_msg: str, bot_response: str) -> str:
     """Cerebras cevabına Wikipedia bloğu ekle (uygunsa).
 
     Returns: "" (eklemeyecekse) veya "\n\n📚 Wikipedia: ..." bloğu.
+
+    25.43-WIKI-GUARD (Neo bot self-critique 11 May): Render URL içeren
+    cevaplarda Wiki injection ATLA — render cevap zaten görsel/zengin,
+    Wiki ekleme alakasız konu (Eyotek → Belfort Üniversitesi tarzı) riski.
     """
+    # GUARD: Render artifact cevaplarında wiki ekleme
+    if bot_response and "api.fermategitimkurumlari.com/render/" in bot_response:
+        return ""
+
     # Whitelist: sadece akademik konularda
     topic = _detect_wiki_topic(user_msg, bot_response)
     if not topic:
+        return ""
+
+    # 25.43 ek koruma — kurum-içi teknik terim Wiki'ye gitmesin
+    BLOCKED_TOPICS = {
+        "eyotek", "fermat", "fermatai", "blueprint", "three", "three.js",
+        "ngrok", "supabase", "redis", "cerebras", "groq", "anthropic",
+        "neo", "zeki", "duygu", "mahsum", "orsel", "bilge", "murathan",
+    }
+    topic_lower = topic.lower().strip()
+    if any(b in topic_lower for b in BLOCKED_TOPICS):
         return ""
 
     # Cerebras cevabında zaten Wikipedia bahsi varsa duplicate önle

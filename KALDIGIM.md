@@ -4,6 +4,84 @@
 >
 > Bu oturumda 4 büyük iş: (A) İnversion açık hesapları kapandı — 13 dosya fix. (B) Test izolasyon altyapısı kuruldu — [TEST:id] marker + 905990xxxx phone allowlist + side-effect skip (insights/sentiment/alert/conversation_memory/WP send/Eyotek write). (C) 522 soruluk profesyonel test corpus üretildi 8 kategoride. (D) 200 test canlı VPS'te koşuldu + Claude Sonnet judge ile A++/A/B/C/D/F notlanma. Pass rate %40.5 — top sorunlar: Cerebras 429 cascade + tool-call placeholder ("kontrol ediyorum") + test_phone↔soz_no context lookup bug. Bir pattern fix deploy edildi (ders programım/programim/bu hafta neler matching), rerun improved 36/106. Detaylı log/script production-ready dokümante.
 
+## 🔍 OTURUM 25.43-SELF-CRITIQUE-AUDIT (11 May 01:30-02:30) — Bot self-critique tespit + dogrulama + fix
+
+### Tetik (Neo direktif)
+> "Konuşmamı botla detaylı incele — sistemle ilgili eksikler ve açıklar buldu mu? Bot
+> bazı API'leri düzgün kullanamamaktan veya birçok fonksiyonun tam çalışır mimaride olmadığından
+> bahsediyor. Tespitleri doğruysa projede birçok fonksiyon kalibre olmamış demektir."
+
+### Yöntem
+1. agent_conversations'tan Neo (905051256802) ↔ bot konuşmaları (14 gün, 3096 mesaj)
+2. Self-critique regex filtresi: "yanlış kullan / tam değil / mimari / kalibrasyon / API eksik / fonksiyon eksik / halüsinasyon" + 8 alt pattern
+3. 105 candidate → son 7 gün 44 mesaj → 9 unique mimari tespit
+4. Her tespiti GERÇEK kodda doğrula → fix veya backlog
+
+### Bot Tespitleri × Doğrulama Sonucu
+
+| # | Bot tespit | Tarih | Gerçek Durum | Aksiyon |
+|---|-----------|-------|--------------|---------|
+| 1 | PROMPT_V3_ENABLED env yok | 4 May | ✅ ŞIMDI SET (true) | Düzeltilmiş, kapandı |
+| 2 | YOUTUBE_API_KEY yok | 4 May | ✅ ŞIMDI SET | Düzeltilmiş, kapandı |
+| 3 | SUNO_API_KEY yok | 9 May | ❌ HALA YOK | Backlog (Suno aktif kullanılmıyor) |
+| 4 | GOOGLE_API_KEY / GCAL yok | 9 May | ❌ HALA YOK | Backlog (GCal yeni sezon) |
+| 5 | google-auth-oauthlib pip eksik | 10 May | ❌ HALA YOK | Backlog (GCal kullanınca ekle) |
+| 6 | counsellor_notes.category kolonu yok | 9 May | ❌ DOĞRULANDI | **FIXED — kolon eklendi, 1632 satır seed** |
+| 7 | enrichment_dispatcher Wiki "Eyotek→Belfort" | 9 May | ⚠️ Step 2 zaten 11 May'de kaldırıldı | Defansif fix eklendi (render URL skip + BLOCKED_TOPICS) |
+| 8 | YouTube çift impl (tools/kaynak vs youtube_client) | 10 May | ⚠️ 6 dosyada referans | Backlog (refactor) |
+| 9 | detect_frustration eşik yüksek | 4 May | ⚠️ 200 char limit | **FIXED — 400 char'a çıkarıldı** |
+| 10 | Cerebras multi-tool kırılgan, halüsinasyon riski | 9 May | ✅ TEST DOĞRULADI (200 test, 25 timeout) | KALDIGIM-TEST-FRAMEWORK'te dokümante |
+
+### Uygulanan Fix'ler (4 dosya)
+
+**A. `enrichment_dispatcher.py` — Wikipedia injection guard**
+- Render artifact URL içeren cevaplarda Wiki injection ATLA
+- `BLOCKED_TOPICS` set: eyotek, fermat, fermatai, blueprint, three, ngrok, supabase, redis, cerebras, groq, anthropic, neo + kişi isimleri
+- Bot bug (Eyotek → Belfort Üniversitesi) zaten 11 May Step-2-kaldırma ile temizdi; bu fix DEFANSIF katman
+
+**B. PostgreSQL `counsellor_notes` — category kolonu**
+- `ALTER TABLE counsellor_notes ADD COLUMN category TEXT`
+- 1632 satır seed: `category = LOWER(not_turu)` (varsayılan 'genel')
+- `idx_counsellor_notes_category` index
+- `import_rehberlik_excel.py` CREATE TABLE'a category yansıtıldı (yeni VPS kurulumlarında auto)
+
+**C. `routing_engine.detect_frustration` — 200 → 400 char**
+- Bot tespit: "Uzun frustration ifadeleri kaçırılıyor"
+- 400 char limit hala spam koruması (1000+ char akademik soruları sızdırmaz)
+
+**D. `db_schema` kaynak yansıması**
+- `import_rehberlik_excel.py` content CREATE TABLE'a `category TEXT DEFAULT NULL`
+- `idx_cn_category` index
+
+### Backlog (Şu Anki Trafikte Etki Yok, Yeni Sezon Öncesi)
+
+| Borç | Önem | Tahmin |
+|------|------|--------|
+| Suno API key + müzik üretim aktivasyon | Düşük | İsteğe bağlı, 30 dk |
+| Google Calendar OAuth (auth-oauthlib pip + credentials.json) | Orta | Yeni sezon: 1 saat |
+| YouTube çift impl temizliği (tools/kaynak.py eski → youtube_client'a tek standart) | Orta | 45 dk refactor |
+| Bridge response validator: "kontrol ediyorum / erişiyorum / veritabanına" → Claude fallback | **Yüksek** | 15 dk kritik fix |
+| test_phone → soz_no acl_users.eyotek_id mapping (test corpus context bulamıyor) | **Yüksek** | 20 dk |
+| Test framework: kalan 322 test + capacity testleri | Orta | Sezon öncesi 2 saat |
+
+### Bot Self-Awareness Doğrulaması — Yeni Bulgular
+
+Bot'un teşhis kabiliyeti bu auditte test edildi. Sonuçlar:
+- ✅ **Kesin doğrular (4/10):** PROMPT_V3, YOUTUBE_API_KEY (zaten düzeltilmişler), counsellor_notes.category, detect_frustration limit
+- ⚠️ **Yarı doğrular (3/10):** Wiki Eyotek bug (kısmen düzeltilmişti), YouTube çift impl (6 dosya referans var ama belki tek path aktif), Cerebras kırılgan (test doğruladı)
+- ❌ **Eski/açık (3/10):** SUNO/GCAL — aktif kullanılmıyor, env eksikliği sorun değil; oauth-lib pip — GCal aktive edilirse ekle
+
+**Sonuç:** Bot self-awareness %70 doğru. **Halüsinasyon yok.** Bot kendi sınırlamalarını doğru tespit ediyor. Eksik gördüğü 3 nokta yapısal değil, KONFIGÜRASYON kaynaklı (env var yok, pip eksik).
+
+### Yeni Commit
+
+- `eyotek_agent/enrichment_dispatcher.py` — Wikipedia guard
+- `eyotek_agent/routing_engine.py` — frustration char limit
+- `eyotek_agent/_reserve/tek_seferlik_import/import_rehberlik_excel.py` — schema category
+- DB migration: counsellor_notes.category kolon (live)
+
+---
+
 ## 🧪 OTURUM 25.43-TEST-FRAMEWORK (10 May 22:00-01:30) — 500+ test + judge + fix loop
 
 ### Plan (Neo direktif)

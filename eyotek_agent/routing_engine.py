@@ -108,10 +108,12 @@ def detect_frustration(message: str) -> bool:
     """22.1n-toplanti: Mesajda frustration keyword var mı?
 
     Gerçek pattern check — hem lowercase, hem word boundary.
-    Sadece kısa mesajlarda (< 200 char) — uzun mesajlarda keyword rastgele
-    geçebiliyor (ör: "chatgpt ile karşılaştırma" akademik soru).
+    25.43-BOT-CRITIQUE (Neo 4 May tespit): 200 char limiti uzun frustration
+    ifadelerini kaçırıyor ("Bot bana sıkıcı geliyor, anlatamıyorum, hiç olmadı
+    iyi olmuyor..." gibi). 200 → 400 char. Akademik karışım riski hala dusuk
+    cunku iki ayrı whitelist filtre (cinsiyet, ders, akademik) zaten devrede.
     """
-    if not message or len(message) > 200:
+    if not message or len(message) > 400:
         return False
     msg_lower = message.lower()
     return any(kw in msg_lower for kw in _FRUSTRATION_KEYWORDS)

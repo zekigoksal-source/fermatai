@@ -25,11 +25,15 @@ CREATE TABLE IF NOT EXISTS counsellor_notes (
     gorusulen TEXT,
     gorusme_turu TEXT,
     not_metni TEXT,
+    -- 25.43-BOT-CRITIQUE (11 May): Bot kategori analizi icin eksik kolonu tespit
+    -- etmisti — eklendi. Default lower(not_turu) ile seed edilir.
+    category TEXT DEFAULT NULL,
     UNIQUE(soz_no, gorusme_tarihi, ogretmen)
 );
 CREATE INDEX IF NOT EXISTS idx_cn_soz_no ON counsellor_notes(soz_no);
 CREATE INDEX IF NOT EXISTS idx_cn_tarih ON counsellor_notes(gorusme_tarihi);
 CREATE INDEX IF NOT EXISTS idx_cn_ogretmen ON counsellor_notes(ogretmen);
+CREATE INDEX IF NOT EXISTS idx_cn_category ON counsellor_notes(category);
 """
 
 
