@@ -22,11 +22,7 @@
   // localStorage flag ile sadece bir kez calisir, sonra geri donmuyor.
   (async () => {
     try {
-      // 25.43-IPAD-V2 (11 May): flag versiyonu bump — iPad Safari agresif cache,
-      // V1'de purge yapsa bile yeni iPad fix'leri ulaşmıyor olabilir. V2 flag'le
-      // tek seferlik fresh purge tetiklenir, yeni HTML/CSS gelir.
-      if (localStorage.getItem('fermatai_sw_purged_25_43_v2') === '1') return;
-      localStorage.removeItem('fermatai_sw_purged_25_43');  // eski flag temizlenir
+      if (localStorage.getItem('fermatai_sw_purged_25_43') === '1') return;
       let purged = false;
       if (navigator.serviceWorker) {
         const regs = await navigator.serviceWorker.getRegistrations();
@@ -44,7 +40,7 @@
           purged = true;
         }
       }
-      localStorage.setItem('fermatai_sw_purged_25_43_v2', '1');
+      localStorage.setItem('fermatai_sw_purged_25_43', '1');
       if (purged) {
         console.log('[FermatAI] Eski SW + cache temizlendi, reload...');
         location.reload();
@@ -8015,19 +8011,13 @@ function smartScroll() {
   }
 }
 // Yeni mesaj bildirimi çipi (kullanıcı yukarıda iken yeni cevap gelirse)
-// 25.43-IPAD-V2 (Neo bug 11 May): Hardcoded `bottom: 90px` iPad'de chat-input area
-// daha yüksek olduğunda badge bot mesajının üstüne biniyordu ("amatör görünüm").
-// Dinamik: chat-input height + 12px boşluk → her viewport için doğru hizalama.
 let _newMsgChip = null;
 function showNewMessageChip() {
   if (_newMsgChip || isNearBottom()) return;
   _newMsgChip = document.createElement("div");
   _newMsgChip.textContent = "↓ Yeni mesaj";
-  // chat-input height + 12px → badge her zaman input'un hemen üstünde
-  const ci = document.querySelector('.chat-input');
-  const bottomOffset = (ci ? ci.offsetHeight : 90) + 12;
   _newMsgChip.style.cssText = `
-    position: fixed; bottom: ${bottomOffset}px; left: 50%; transform: translateX(-50%);
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
     background: var(--accent); color: white; padding: 8px 16px; border-radius: 20px;
     font-size: 13px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     z-index: 100; font-weight: 500;
