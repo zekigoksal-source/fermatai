@@ -611,14 +611,20 @@ async def _tool_sinav_sonuclari(sinav_adi: str, max_rows: float = 100,
     if isinstance(result, dict) and result.get("success") and result.get("rows"):
         try:
             from eyotek_lazy_sync import lazy_sync_after_query
-            # sinav_found = [sube, kurs, tarih, sinav_kodu, sinav_adi, ...] tipik format
+            # 25.43-DRILL-V2-FIX3: Eyotek sinav_found format DOGRU index map
+            # ['', 'Şube', 'Tarih', 'SınavKodu', 'Tür', 'Kategori', 'SınavAdı', 'Devre']
+            #  0    1        2          3         4        5            6           7
+            # Eski kod index 4 (Tür) okuyordu — sinav_adi 'TYT' geliyordu, sinav_adi
+            # field eksik kayıt (lookup'ta exam_code üretemiyordu).
             sinav_meta = result.get("sinav_found") or []
             extracted_sinav_adi = sinav_adi  # caller param fallback
             extracted_tarih = ""
-            if isinstance(sinav_meta, list) and len(sinav_meta) > 4:
-                # 3. index typically tarih, 4. index sinav_adi (eyotek format)
+            if isinstance(sinav_meta, list) and len(sinav_meta) > 6:
                 extracted_tarih = sinav_meta[2] if len(sinav_meta) > 2 else ""
-                extracted_sinav_adi = sinav_meta[4] if sinav_meta[4] else sinav_adi
+                # Index 6: SınavAdı (eski 4 hatalıydı — Tür'e işaret ediyordu)
+                cand = sinav_meta[6] if len(sinav_meta) > 6 else ""
+                if cand and cand.strip():
+                    extracted_sinav_adi = cand.strip()
             elif isinstance(sinav_meta, dict):
                 extracted_sinav_adi = sinav_meta.get("sinav_adi") or sinav_meta.get("ad") or sinav_adi
                 extracted_tarih = sinav_meta.get("tarih") or ""

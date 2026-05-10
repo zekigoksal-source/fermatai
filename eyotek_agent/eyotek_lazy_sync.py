@@ -251,10 +251,17 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
 
     for r in rows:
         try:
-            # Çekirdek alanlar
+            # 25.43-DRILL-V2-FIX3 (Neo bug 11 May): Eyotek dynamic-list table key'leri
+            # 'Adı', 'Soyadı', 'SözNo' (boşluksuz). Eski mapping bunları aramıyordu →
+            # her row skip oluyordu. Adı + Soyadı birleştir, SözNo direkt al.
+            ad_raw = (r.get("Adı") or r.get("ad") or "").strip()
+            soyad_raw = (r.get("Soyadı") or r.get("soyad") or "").strip()
             ogr_ad = (r.get("ogrenci_adi") or r.get("öğrenci") or
                       r.get("Öğrenci") or r.get("ogrenci") or
                       r.get("ad_soyad") or r.get("Ad Soyad") or "").strip()
+            if not ogr_ad and (ad_raw or soyad_raw):
+                ogr_ad = f"{ad_raw} {soyad_raw}".strip()
+
             sinav_adi = (r.get("sinav_adi") or r.get("Sinav") or
                          r.get("Sınav") or r.get("exam_name") or "").strip()
             tarih_raw = (r.get("tarih") or r.get("Tarih") or
@@ -265,7 +272,9 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
                 continue
 
             # soz_no — eğer row'da var direkt al, yoksa students tablosundan eşleştir
-            soz_no_raw = r.get("soz_no") or r.get("Söz No") or r.get("sözno")
+            # 25.43-DRILL-V2-FIX3: 'SözNo' (boşluksuz) Eyotek format eklendi
+            soz_no_raw = (r.get("soz_no") or r.get("Söz No") or
+                          r.get("sözno") or r.get("SözNo") or r.get("Söz_No"))
             if soz_no_raw:
                 try:
                     soz_no = int(str(soz_no_raw).strip())
@@ -313,17 +322,19 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
                 except (ValueError, TypeError):
                     return None
 
-            turkce = _to_float(r.get("turkce") or r.get("Türkçe") or r.get("TYT Türkçe"))
-            mat = _to_float(r.get("matematik") or r.get("Matematik") or r.get("TYT Matematik"))
-            geo = _to_float(r.get("geometri") or r.get("Geometri"))
-            fizik = _to_float(r.get("fizik") or r.get("Fizik"))
-            kimya = _to_float(r.get("kimya") or r.get("Kimya"))
-            biyoloji = _to_float(r.get("biyoloji") or r.get("Biyoloji"))
-            tarih_ders = _to_float(r.get("tarih_ders") or r.get("Tarih"))  # ders olarak tarih
-            cografya = _to_float(r.get("cografya") or r.get("Coğrafya"))
-            felsefe = _to_float(r.get("felsefe") or r.get("Felsefe"))
-            din = _to_float(r.get("din") or r.get("Din") or r.get("din_kulturu"))
-            toplam = _to_float(r.get("toplam") or r.get("Toplam") or r.get("toplam_net"))
+            # 25.43-DRILL-V2-FIX3: Eyotek dynamic-list NET kolon formati 'Türkçe_NET',
+            # 'Matematik_NET', 'Toplam_NET' vb. (underscore + NET suffix)
+            turkce = _to_float(r.get("turkce") or r.get("Türkçe") or r.get("TYT Türkçe") or r.get("Türkçe_NET"))
+            mat = _to_float(r.get("matematik") or r.get("Matematik") or r.get("TYT Matematik") or r.get("Matematik_NET"))
+            geo = _to_float(r.get("geometri") or r.get("Geometri") or r.get("Geometri_NET"))
+            fizik = _to_float(r.get("fizik") or r.get("Fizik") or r.get("Fizik_NET"))
+            kimya = _to_float(r.get("kimya") or r.get("Kimya") or r.get("Kimya_NET"))
+            biyoloji = _to_float(r.get("biyoloji") or r.get("Biyoloji") or r.get("Biyoloji_NET"))
+            tarih_ders = _to_float(r.get("tarih_ders") or r.get("Tarih_NET") or r.get("Tarih"))  # ders olarak tarih (NET)
+            cografya = _to_float(r.get("cografya") or r.get("Coğrafya") or r.get("Coğrafya_NET"))
+            felsefe = _to_float(r.get("felsefe") or r.get("Felsefe") or r.get("Felsefe_NET"))
+            din = _to_float(r.get("din") or r.get("Din") or r.get("din_kulturu") or r.get("DinKültürü_NET"))
+            toplam = _to_float(r.get("toplam") or r.get("Toplam") or r.get("toplam_net") or r.get("Toplam_NET"))
 
             # exam_date parse → datetime.date object (asyncpg requires)
             from datetime import date as _date
