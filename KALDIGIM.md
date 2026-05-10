@@ -1,6 +1,66 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Mayıs 2026 21:30 — **OTURUM 25.43-FAZ-4: Araç envanteri farkındalığı + 5 CTE şablonu (canlı doğrulanmış) + 9 yeni intent renderer + 9 regex pattern**
+> **Son güncelleme:** 11 Mayıs 2026 sabah → **OTURUM 25.43-FAZ-5: Bot'un kendi tespit ettiği 4 kök hatasına sert kontrol kuralları**
+>
+> Tetik (Neo bug 18:00-18:01): Bot kendisi 4 hata tespit etti — KONTROL 1: 11.sınıfa "YKS X gün kala" yazma (sınıf çerçeve hatası). KONTROL 2: 16030 etüt fizibilite check'siz sundu (124/gün insan yapamaz). KONTROL 3: "27.5 ort" demeden "9/21 üzerinden" demedi. KONTROL 4: ogrenci_sayisi'ni etüt sandı. system_prompt'a 4 ZORUNLU KONTROL bloğu eklendi.
+
+## 🚨 OTURUM 25.43-FAZ-5 (11 May sabah) — 4 Kök Hata Sert Kontrolü
+
+### Tetik (Bot Kendi Self-Critique 18:01)
+Bot 11 May 18:01'de KENDİSİ kök neden analizi yaptı:
+> "Hızlı sonuç üretme baskısı altında veriyi doğrulamadan formatlamaya geçiyorum.
+>  Raporun görsel kalitesi yüksek olunca içindeki hata daha az fark ediliyor."
+
+Tespit ettiği 4 kök:
+
+| Kontrol | Hata Örneği | Düzeltme |
+|---------|-------------|----------|
+| 1 | "Arda (11.SAY) — YKS'ye 40 gün kala" | Sınıf-bazlı sınav çerçevesi |
+| 2 | "129g'de 16,030 etüt" (=534/gün, mantıksız) | Aggregate fizibilite kapısı |
+| 3 | "Ortalama 27.5 net" (kaç öğr?) | "N / Toplam üzerinden" zorunlu |
+| 4 | `SUM(ogrenci_sayisi)` etüt sandı | Schema okuma disiplini |
+
+### Çözüm — system_prompts.py'a 4 ZORUNLU KONTROL bloğu
+
+**KONTROL 1: Sınıf-bazlı çerçeve**
+```
+| 12.SAY/SOZ, Mezun → YKS countdown OK
+| 11.SAY → "12'ye hazırlık" (YKS countdown YASAK)
+| 10.SAY → ders düzeyi (YKS bahsi YASAK)
+| 8.sınıf (LGS) → LGS countdown OK
+```
+
+**KONTROL 2: Aggregate sanity (>100 sonuç)**
+- Kurum 125 öğr → sayım > 200 ŞÜPHE
+- Etüt/gün > 200 → öğretmen sayısıyla kıyas
+- Net > 120 TYT / 80 AYT → mantıksız
+
+**KONTROL 3: Güven aralığı**
+- "X / Y öğrenci üzerinden" zorunlu
+- "Z eksik veri" belirt
+- "Şubat öncesi N denemenin verisi yok" belirt
+
+**KONTROL 4: Schema okuma**
+| Kolon | Aldatıcı |
+|-------|----------|
+| etut_history.ogrenci_sayisi | O ETÜT'teki kontenjan (4-15) — TOPLAM DEĞİL |
+| COUNT(*) | etüt sayısı |
+| SUM(ogrenci_sayisi) | öğrenci × etüt çarpımı |
+
+Kural: aggregate sorgu öncesi 3 soru: kolon NE ÖLÇER? SUM NE ANLAMA gelir? MAKUL mü?
+
+### Beklenen Etki
+Bot artık:
+1. **Profil/analiz cevabı yazarken** → kullanıcı.sınıf kontrol → 11.sınıfsa YKS countdown YASAK
+2. **Aggregate sonuçta** → fizibilite hesabı (saniyelik)
+3. **AVG/COUNT/SUM** → "kaç üzerinden" zorunlu
+4. **SQL üretirken** → kolon mantığı sorusu
+
+İlk cevap kalitesi, görünür hatalar elenir.
+
+---
+
+## 🛠️ OTURUM 25.43-FAZ-4 (11 May 21:00-21:30) — Araç envanteri + 5 CTE şablonu (canlı doğrulanmış) + 9 yeni intent renderer + 9 regex pattern
 >
 > **Yeni:**
 > - system_prompts'a "ARAÇ ENVANTERİ FARKINDALIK" evrensel prensibi (anti-amatör tablosu)
