@@ -4116,6 +4116,33 @@ class FermatCoreAgent:
                         _needs_escalation = True
                         logger.info("  [ESKALASYON] Cerebras sahte soz verdi (sistemden alacagim), Claude'a geciliyor")
 
+                    # 25.43-PLACEHOLDER-VALIDATOR (Neo test 10 May, 24 timeout root cause):
+                    # Cerebras 429 alinca tool cagiramiyor ama "kontrol ediyorum / verileri
+                    # cekiyorum / veritabanina baglaniyorum" gibi PLACEHOLDER text donduruyor.
+                    # Kullanici cevapsiz kaliyor. Bu pattern yakalanir, Claude'a fallback.
+                    if not _needs_escalation and _is_data_query:
+                        _placeholder_patterns = [
+                            "şu an kontrol", "su an kontrol", "şuan kontrol", "suan kontrol",
+                            "kontrol ediyorum", "kontrol etmemi ister",
+                            "veritabanına eriş", "veritabanina eris", "veritabanı sorgul",
+                            "veri tabanına", "veri tabanina",
+                            "akademik takip sistemimiz", "akademik takip sisteminden",
+                            "sistemde kontrol", "sistemden veri çek", "sistemden veri cek",
+                            "verileri çekiyorum", "verileri cekiyorum",
+                            "verileri analiz ed", "veri analizi yap",
+                            "denemeleri kontrol", "denemelerini kontrol",
+                            "sonuçlarını görüntüleyemiyorum", "sonuclarini goruntuleyemiyorum",
+                            "şu anda görüntül", "su anda goruntul",
+                            "bir kontrol etm", "kontrol etmem gerek",
+                            "veri tabanı sorgu", "veritabani sorgu",
+                            "ders programı bilgileri", "ders programi bilgileri",
+                            "güncel veriler", "guncel veriler",
+                            "verilerini analiz et", "verileri analiz et",
+                        ]
+                        if any(p in answer.lower() for p in _placeholder_patterns):
+                            _needs_escalation = True
+                            logger.info("  [ESKALASYON] Cerebras placeholder yanit (kontrol ediyorum/veritabanı) — Claude'a geciliyor")
+
                 if _needs_escalation:
                     # Claude akışına düş (aşağıdaki for loop)
                     logger.info("  [ESKALASYON] Claude API'ye yönlendiriliyor...")
@@ -4895,6 +4922,36 @@ async def _get_caller_profile(phone: str) -> dict:
                 "phone": clean_phone,
                 "source": "acl",
             }
+            # 25.43-TEST-MAPPING (Neo 11 May test framework):
+            # ACL row'da eyotek_id varsa students JOIN ile context zenginlestir.
+            # Test phone'lar (9059900020 → Berf) ve normal kullanicilarda
+            # eyotek_id mapping ile soz_no, class_name, sube cikar.
+            ey_id = prof.get("eyotek_id")
+            if ey_id and prof.get("role") == "ogrenci":
+                try:
+                    stu_rows = await _db_fetch(
+                        """SELECT soz_no, full_name, first_name, class_name, sube,
+                                  program, devre, kur
+                           FROM students WHERE soz_no = $1 OR eyotek_id = $1
+                           LIMIT 1""",
+                        str(ey_id),
+                    )
+                    if stu_rows:
+                        s = stu_rows[0]
+                        # Test kullanici: full_name TEST kalsin (loglarda ayirt edilebilir)
+                        # ama akademik context (soz_no, class) Berf'in olsun
+                        prof["soz_no"] = s.get("soz_no") or ey_id
+                        prof["class_name"] = s.get("class_name") or s.get("sube") or ""
+                        prof["sube"] = s.get("sube") or ""
+                        prof["program"] = s.get("program") or ""
+                        prof["devre"] = s.get("devre") or ""
+                        prof["kur"] = s.get("kur") or ""
+                        if not prof.get("first_name"):
+                            prof["first_name"] = s.get("first_name") or ""
+                        # Real student name'i ayri tut (privacy: test phone log'larda Test name kullanilir)
+                        prof["real_student_name"] = s.get("full_name") or ""
+                except Exception as _stu_err:
+                    logger.debug(f"  acl→students JOIN fail: {_stu_err}")
             # Orsel Koc — Sistem Gelistirme Muduru (ozel kademe, mudur yetkilerine ek)
             if clean_phone == "905547043775":
                 prof["title"] = "Sistem Gelistirme Muduru"
