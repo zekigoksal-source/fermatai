@@ -94,18 +94,20 @@ async def test_compact_long_conversation():
     """Uzun konuşma → Cerebras summary üret + format kontrol"""
     from context_compactor import compact_history_for_claude
 
+    # Test: düşük eşikle force compact (production threshold 3000, test 500)
     summary = await compact_history_for_claude(
         history=LONG_CONVERSATION,
-        user_msg="tamam etüt yaz",
+        user_msg="tamam ek etüt yaz fizik için",
         recent_n=20,
+        min_tokens=500,  # test için düşük eşik
     )
 
     if not summary:
-        print(f"  Compact SKIP olmuş (token sayısı yeterli değil olabilir)")
+        print(f"  Compact SKIP olmuş (Cerebras hata veya boş cevap)")
         return {"skipped": True}
 
     print(f"  Summary length: {len(summary)} chars")
-    print(f"  Summary preview:\n  {summary[:300]}...")
+    print(f"  Summary preview:\n  {summary[:400]}...")
 
     # Format check
     has_kullanici = "KULLANICI" in summary or "kullanıcı" in summary.lower()
@@ -130,8 +132,9 @@ async def test_quality_judge():
 
     summary = await compact_history_for_claude(
         history=LONG_CONVERSATION,
-        user_msg="tamam etüt yaz",
+        user_msg="tamam ek etüt yaz fizik için",
         recent_n=20,
+        min_tokens=500,
     )
     if not summary:
         return {"skipped": True}

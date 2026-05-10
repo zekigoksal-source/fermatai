@@ -106,38 +106,41 @@ FORMAT:
 # HEURISTICS — compact gerekli mi?
 # ─────────────────────────────────────────────────────────────────────────
 
-def should_compact(history: list, user_msg: str = "") -> dict:
+def should_compact(history: list, user_msg: str = "",
+                    min_messages: int = None,
+                    min_tokens: int = None) -> dict:
     """Compact gerekli mi karar ver. Cache-aware heuristics.
 
-    Returns:
-        {
-            "should": bool,
-            "reason": "...",
-            "msg_count": int,
-            "estimated_tokens": int,
-        }
+    Args:
+        min_messages: override min msg threshold (default ENV/COMPACT_MIN_MESSAGES)
+        min_tokens: override min token threshold (default 3000)
+
+    Returns: {should, reason, msg_count, estimated_tokens}
     """
     if not COMPACT_ENABLED:
         return {"should": False, "reason": "compact_disabled", "msg_count": 0}
 
+    min_msg = min_messages if min_messages is not None else COMPACT_MIN_MESSAGES
+    min_tok = min_tokens if min_tokens is not None else int(
+        os.getenv("FERMAT_COMPACT_MIN_TOKENS", "3000")
+    )
+
     msg_count = len([m for m in (history or []) if m.get("role") in ("user", "assistant")])
 
-    if msg_count < COMPACT_MIN_MESSAGES:
+    if msg_count < min_msg:
         return {
             "should": False,
-            "reason": f"history_short ({msg_count}<{COMPACT_MIN_MESSAGES})",
+            "reason": f"history_short ({msg_count}<{min_msg})",
             "msg_count": msg_count,
         }
 
-    # Estimate token count (rough: 4 chars/token)
     total_chars = sum(len(str(m.get("content", ""))) for m in history)
     est_tokens = total_chars // 4
 
-    # Eşik: 5K+ token'lık history → compact değerli
-    if est_tokens < 3000:
+    if est_tokens < min_tok:
         return {
             "should": False,
-            "reason": f"low_token_count ({est_tokens})",
+            "reason": f"low_token_count ({est_tokens}<{min_tok})",
             "msg_count": msg_count,
             "estimated_tokens": est_tokens,
         }
@@ -159,15 +162,13 @@ async def compact_history_for_claude(
     user_msg: str = "",
     recent_n: int = COMPACT_RECENT_N,
     target_tokens: int = COMPACT_TARGET_TOKENS,
+    min_messages: int = None,
+    min_tokens: int = None,
 ) -> Optional[str]:
-    """Cerebras 235B ile history → compact summary.
-
-    Returns:
-        str: compacted summary (300-500 token) — Claude'un system prompt'unun
-             sonuna eklenir.
-        None: compact yapılmadı/yapılamadı (Claude raw history kullansın)
-    """
-    decision = should_compact(history, user_msg)
+    """Cerebras 235B ile history → compact summary."""
+    decision = should_compact(history, user_msg,
+                                min_messages=min_messages,
+                                min_tokens=min_tokens)
     if not decision["should"]:
         logger.debug(f"[COMPACT] skip: {decision['reason']}")
         return None
