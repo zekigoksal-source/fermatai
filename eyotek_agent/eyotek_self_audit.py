@@ -330,7 +330,8 @@ async def audit_drill_completeness(
     actual = drill_result.get("row_count") or 0
     ratio = completeness.get("ratio")
 
-    should_audit = force or (expected and ratio is not None and ratio < 0.85)
+    # 25.43-AUDIT-V3 (Neo "stratejik"): threshold 0.85 → 0.7 — gerçek anormallik için
+    should_audit = force or (expected and ratio is not None and ratio < 0.7)
     if not should_audit:
         return {"audited": False, "reason": "no_mismatch"}
 
@@ -527,7 +528,8 @@ async def audit_navigate_query(page, *, page_path: str,
     ratio = completeness.get("ratio")
 
     # Trigger logic: force veya completeness eksik
-    should_audit = force or (expected and ratio is not None and ratio < 0.85)
+    # 25.43-AUDIT-V3 (Neo "stratejik"): threshold 0.85 → 0.7 — gerçek anormallik için
+    should_audit = force or (expected and ratio is not None and ratio < 0.7)
 
     if not should_audit:
         return {"audited": False, "reason": "no_mismatch"}
