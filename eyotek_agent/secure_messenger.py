@@ -86,8 +86,21 @@ def format_recipient_list(matches: list[dict]) -> str:
 
 
 async def send_wp_message(to_phone: str, message: str) -> bool:
-    """WhatsApp mesajı gönder."""
+    """WhatsApp mesajı gönder.
+
+    TEST MODE GUARD (10 May Neo direktif): test mode'da gercek WP mesaj
+    GONDERILMEZ — sadece log'a "dry-run" olarak yazilir.
+    """
     phone_clean = to_phone.replace("+", "").strip()
+
+    # ── Test mode bypass ──
+    try:
+        from test_mode import is_test_context
+        if is_test_context():
+            logger.warning(f"[WP_SEND] test mode → DRY-RUN (to={phone_clean[-4:]}, msg={message[:60]!r})")
+            return True  # Test akisi devam etsin, gercek gonderim atlanir
+    except Exception:
+        pass
 
     try:
         async with httpx.AsyncClient(timeout=15) as client:

@@ -2486,6 +2486,16 @@ class EyotekWrapper:
         log_tag = f"write_etut(sinif={class_name!r}, ogrenci={student_id_or_name!r}, ders={lesson!r}, tarih={target_date}, dersNo={ders_no})"
         logger.info(f"✏️  {log_tag}")
 
+        # ── TEST MODE GUARD (10 May Neo direktif) ──
+        # Test mode'da Eyotek'e GERCEK yazma yapilmaz — dry_run zorla True.
+        try:
+            from test_mode import is_test_context
+            if is_test_context() and not dry_run:
+                logger.warning(f"[WRITE_ETUT] test mode → dry_run=True zorla")
+                dry_run = True
+        except Exception:
+            pass
+
         # ── DRY RUN notu ──────────────────────────────────────────────────
         # dry_run=True olsa bile formu sonuna kadar doldurur, sadece KAYDET'e basmaz.
         # Boylece tum form adimlarinin dogru calistigini dogrulariz.
@@ -3041,6 +3051,16 @@ class EyotekWrapper:
         Döndürür: {"success": bool, "message": str}
         """
         logger.info(f"💬 write_counsellor_note(student={student_id})")
+
+        # ── TEST MODE GUARD (10 May Neo direktif) ──
+        # Test mode'da Eyotek'e GERCEK yazma yapilmaz — dry_run zorla True.
+        try:
+            from test_mode import is_test_context
+            if is_test_context() and not dry_run:
+                logger.warning(f"[COUNSELLOR_NOTE] test mode → dry_run=True zorla")
+                dry_run = True
+        except Exception:
+            pass
 
         # ── St_Id'yi bul (öğrenci profil URL'i için gerekli) ──────────────
         # get_student_profile() ile St_Id alınabilir, ama hız için önce
