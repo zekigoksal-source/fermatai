@@ -1424,6 +1424,22 @@ async def sinav_drilldown(
         result["row_count"] = len(result["rows"])
         result["success"] = True
 
+        # 25.43-DRILL-V3 (Neo direktif): Self-aware completeness — Eyotek
+        # 'Şube Katılım' rakamı ile actual rows karşılaştır. Bot kullanıcıya açık
+        # belirtsin: "60 katılımcı vardı, 30 verisi geldi" gibi.
+        try:
+            from field_reconciler import check_data_completeness
+            completeness = check_data_completeness(
+                sinav_found=result.get("sinav_found") or [],
+                actual_rows=result["row_count"],
+                devre_count=result.get("devre_count") or 1,
+            )
+            result["data_completeness"] = completeness
+            if completeness.get("warning"):
+                logger.warning(f"[NAV] data_completeness: {completeness['warning']}")
+        except Exception as _ce:
+            logger.debug(f"[NAV] completeness check skip: {_ce}")
+
         if not all_rows:
             result["error_code"] = "NO_DATA"
             result["error"] = "Hicbir devre satirinda ogrenci verisi yok."

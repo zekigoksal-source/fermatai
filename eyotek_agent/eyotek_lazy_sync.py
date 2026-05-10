@@ -249,32 +249,30 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
         if not s: return ""
         return s.upper().translate(str.maketrans("ığşüöçİ", "IĞŞÜÖÇI"))
 
+    # 25.43-DRILL-V3 (Neo direktif 11 May): manuel `r.get()` zincirleri kalktı.
+    # field_reconciler her Eyotek key varyantını LLM-native fuzzy match ile bulur.
+    # 'SözNo' / 'soz_no' / 'Söz No' / 'sözno' fark etmez, tek API.
+    from field_reconciler import find_field
+
     for r in rows:
         try:
-            # 25.43-DRILL-V2-FIX3 (Neo bug 11 May): Eyotek dynamic-list table key'leri
-            # 'Adı', 'Soyadı', 'SözNo' (boşluksuz). Eski mapping bunları aramıyordu →
-            # her row skip oluyordu. Adı + Soyadı birleştir, SözNo direkt al.
-            ad_raw = (r.get("Adı") or r.get("ad") or "").strip()
-            soyad_raw = (r.get("Soyadı") or r.get("soyad") or "").strip()
-            ogr_ad = (r.get("ogrenci_adi") or r.get("öğrenci") or
-                      r.get("Öğrenci") or r.get("ogrenci") or
-                      r.get("ad_soyad") or r.get("Ad Soyad") or "").strip()
+            # Çekirdek alanlar — schema-less, sadece canonical isim ile
+            ad_raw = str(find_field(r, 'ad', default='')).strip()
+            soyad_raw = str(find_field(r, 'soyad', default='')).strip()
+            # student_name birleşik field varsa öncelikli, yoksa ad+soyad
+            ogr_ad = str(find_field(r, 'student_name', default='')).strip()
             if not ogr_ad and (ad_raw or soyad_raw):
                 ogr_ad = f"{ad_raw} {soyad_raw}".strip()
 
-            sinav_adi = (r.get("sinav_adi") or r.get("Sinav") or
-                         r.get("Sınav") or r.get("exam_name") or "").strip()
-            tarih_raw = (r.get("tarih") or r.get("Tarih") or
-                         r.get("exam_date") or r.get("date") or "").strip()
+            sinav_adi = str(find_field(r, 'sinav_adi', default='')).strip()
+            tarih_raw = str(find_field(r, 'tarih', default='')).strip()
 
             if not ogr_ad or not sinav_adi:
                 skipped += 1
                 continue
 
-            # soz_no — eğer row'da var direkt al, yoksa students tablosundan eşleştir
-            # 25.43-DRILL-V2-FIX3: 'SözNo' (boşluksuz) Eyotek format eklendi
-            soz_no_raw = (r.get("soz_no") or r.get("Söz No") or
-                          r.get("sözno") or r.get("SözNo") or r.get("Söz_No"))
+            # soz_no — row'da varsa direkt, yoksa students lookup
+            soz_no_raw = find_field(r, 'soz_no')
             if soz_no_raw:
                 try:
                     soz_no = int(str(soz_no_raw).strip())
@@ -322,19 +320,19 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
                 except (ValueError, TypeError):
                     return None
 
-            # 25.43-DRILL-V2-FIX3: Eyotek dynamic-list NET kolon formati 'Türkçe_NET',
-            # 'Matematik_NET', 'Toplam_NET' vb. (underscore + NET suffix)
-            turkce = _to_float(r.get("turkce") or r.get("Türkçe") or r.get("TYT Türkçe") or r.get("Türkçe_NET"))
-            mat = _to_float(r.get("matematik") or r.get("Matematik") or r.get("TYT Matematik") or r.get("Matematik_NET"))
-            geo = _to_float(r.get("geometri") or r.get("Geometri") or r.get("Geometri_NET"))
-            fizik = _to_float(r.get("fizik") or r.get("Fizik") or r.get("Fizik_NET"))
-            kimya = _to_float(r.get("kimya") or r.get("Kimya") or r.get("Kimya_NET"))
-            biyoloji = _to_float(r.get("biyoloji") or r.get("Biyoloji") or r.get("Biyoloji_NET"))
-            tarih_ders = _to_float(r.get("tarih_ders") or r.get("Tarih_NET") or r.get("Tarih"))  # ders olarak tarih (NET)
-            cografya = _to_float(r.get("cografya") or r.get("Coğrafya") or r.get("Coğrafya_NET"))
-            felsefe = _to_float(r.get("felsefe") or r.get("Felsefe") or r.get("Felsefe_NET"))
-            din = _to_float(r.get("din") or r.get("Din") or r.get("din_kulturu") or r.get("DinKültürü_NET"))
-            toplam = _to_float(r.get("toplam") or r.get("Toplam") or r.get("toplam_net") or r.get("Toplam_NET"))
+            # 25.43-DRILL-V3: NET parsing — field_reconciler ile schema-less
+            # 'Türkçe_NET' / 'turkce' / 'Türkçe' otomatik canonical 'turkce' eşleşir
+            turkce = _to_float(find_field(r, 'turkce'))
+            mat = _to_float(find_field(r, 'matematik'))
+            geo = _to_float(find_field(r, 'geometri'))
+            fizik = _to_float(find_field(r, 'fizik'))
+            kimya = _to_float(find_field(r, 'kimya'))
+            biyoloji = _to_float(find_field(r, 'biyoloji'))
+            tarih_ders = _to_float(find_field(r, 'tarih_ders'))  # ders olarak tarih
+            cografya = _to_float(find_field(r, 'cografya'))
+            felsefe = _to_float(find_field(r, 'felsefe'))
+            din = _to_float(find_field(r, 'din'))
+            toplam = _to_float(find_field(r, 'toplam'))
 
             # exam_date parse → datetime.date object (asyncpg requires)
             from datetime import date as _date
