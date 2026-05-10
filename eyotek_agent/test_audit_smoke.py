@@ -156,11 +156,14 @@ async def t5():
     )
     assert r.get("success"), f"drill failed: {r.get('error')}"
     audit = r.get("_audit")
+    ratio = (r.get("data_completeness") or {}).get("ratio")
     if not audit:
         # Completeness 0.85+ olabilir → audit tetiklenmemiş, bu OK
-        return {"audit_skipped": True,
-                "row_count": r.get("row_count"),
-                "completeness": (r.get("data_completeness") or {}).get("ratio")}
+        if ratio is not None and ratio >= 0.85:
+            return {"audit_skipped": True, "reason": "completeness_ok",
+                    "row_count": r.get("row_count"), "ratio": ratio}
+        # Ratio düşük ama audit yok → BUG
+        raise AssertionError(f"audit beklenirdi (ratio={ratio}) ama yok: {audit}")
     assert audit.get("audited"), f"audit fail: {audit}"
     v = audit.get("vision_result") or {}
     assert v.get("verdict") in ("TRUE", "FALSE", "KISMEN", "BELIRSIZ"), \
@@ -195,10 +198,9 @@ async def t6():
 @test("7. eyotek_query audit hook")
 async def t7():
     from fermat_core_agent import _tool_eyotek_query
-    # Boş tablo dönmeyi tetiklemek için garip filter (bilerek)
+    # Boş veri dönmeyi tetikleyecek soru (2020 tarihli — kayıt yok)
     r = await _tool_eyotek_query(
-        page_path="Student/test-transferred",
-        filters={"date_from": "01.01.2020", "date_to": "31.12.2020"},
+        question="2020 yılı sınav listesi test-transferred",
         max_rows=10,
         _caller_role="admin",
     )
@@ -216,9 +218,14 @@ async def t7():
 async def t8():
     """DRY_RUN'da audit skip OLMALI (yazma yapılmadı)."""
     # eyotek_wrapper'ı doğrudan import etmek ağır — sadece import path test
-    from eyotek_wrapper import EyotekClient
-    # Sadece module-level import sınıf adı doğru mu kontrol — gerçek session yok
-    return {"class_imported": EyotekClient.__name__, "skip_reason": "no_session"}
+    from eyotek_wrapper import EyotekWrapper
+    # Sadece sınıf imported olduğunu doğrula + audit_write_etut import path test
+    from eyotek_self_audit import audit_write_etut
+    return {
+        "class_imported": EyotekWrapper.__name__,
+        "audit_helper_imported": audit_write_etut.__name__,
+        "skip_reason": "no_real_write_in_smoke",
+    }
 
 
 # ─── RUNNER ──────────────────────────────────────────────────────

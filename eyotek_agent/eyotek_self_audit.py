@@ -311,6 +311,64 @@ async def log_audit(
 # 4. DRILL HOOK — sinav_drilldown sonrası otomatik audit
 # ─────────────────────────────────────────────────────────────────────────
 
+async def audit_drill_completeness(
+    page,
+    drill_result: dict,
+    sinav_adi: str,
+    *,
+    force: bool = False,
+) -> dict:
+    """sinav_drilldown sonucu mismatch varsa otomatik ss + Vision teyit.
+
+    Trigger: completeness ratio < 0.85 (V3 self-aware drill)
+    """
+    if not AUDIT_ENABLED:
+        return {"audited": False, "reason": "audit_disabled"}
+
+    completeness = drill_result.get("data_completeness") or {}
+    expected = completeness.get("expected")
+    actual = drill_result.get("row_count") or 0
+    ratio = completeness.get("ratio")
+
+    should_audit = force or (expected and ratio is not None and ratio < 0.85)
+    if not should_audit:
+        return {"audited": False, "reason": "no_mismatch"}
+
+    label = f"drill_{re.sub(r'[^a-zA-Z0-9]', '_', sinav_adi)[:40]}"
+    claim = (
+        f"Bu Eyotek dynamic-list sayfasında öğrenci listesi tablosunda "
+        f"kaç tane veri satırı görünüyor? Header satırını sayma. "
+        f"Beklenen sayı {expected}, drill {actual} kayıt çekti."
+    )
+    ss = await take_audit_screenshot(page, label, claim)
+    if not ss.get("path"):
+        return {"audited": False, "reason": "screenshot_fail",
+                "ss_error": ss.get("error")}
+
+    vision = await verify_with_vision(ss["path"], claim)
+    log_id = await log_audit(
+        action="sinav_drill_completeness",
+        claim=claim,
+        screenshot=ss.get("path"),
+        page_url=ss.get("url"),
+        vision_result=vision,
+        expected=expected,
+        actual=actual,
+        extra={
+            "sinav_adi": sinav_adi,
+            "devre_count": drill_result.get("devre_count"),
+            "ratio": ratio,
+        },
+    )
+    return {
+        "audited": True,
+        "reason": "completeness_low" if not force else "forced",
+        "screenshot": ss,
+        "vision_result": vision,
+        "audit_log_id": log_id,
+    }
+
+
 async def audit_action(
     page,
     *,
