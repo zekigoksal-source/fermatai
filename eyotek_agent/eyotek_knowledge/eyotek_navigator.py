@@ -1241,7 +1241,7 @@ async def sinav_drilldown(
                         const sinav_kodu = cells[3] || '';
                         matches.push({
                             row_index: i,
-                            sinav: cells.slice(0, 8),
+                            sinav: cells.slice(0, 14),  // 25.43-DRILL-V3: Şube Katılım (index 11) icin tüm header'i kapsa
                             devre: devre,
                             sinav_kodu: sinav_kodu,
                         });
