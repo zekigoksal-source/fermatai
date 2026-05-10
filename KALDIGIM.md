@@ -1,6 +1,40 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Mayıs 2026 09:53 — **OTURUM 25.43-DRILL-V2: sinav_drilldown her devre satırı ayrı çek + birleştir (Neo bug brief #20 → V2 fix loop 4 katmanda) + halüsinasyon önleme (SINAV VERISI ETIKETLEME kuralı) — APOTEMI TG TYT-3 14→30 öğrenci (devre 12.Snf+Mezun), 5 sınav x 86 yeni kayıt DB'de**
+> **Son güncelleme:** 11 Mayıs 2026 10:02 — **OTURUM 25.43-DRILL-V3: LLM-native field reconciliation (schema-less, Türkçe-aware) + self-aware completeness check (Neo direktif "old school değil") — APOTEMI TG TYT-3: 14 → 30 (V2) + completeness warning aktif (60 expected vs 30 actual). field_reconciler.py yeni modül, 22 canonical x 80 varyant synonym graph**
+
+---
+
+## 🚀 OTURUM 25.43-DRILL-V3 (11 May 09:53-10:02) — LLM-native reconciliation + self-aware drill
+
+**Tetik:** Neo direktif: "Old school bakma. soz_no ile SözNo aynı şey diye anlayan bir LLM zaten var elimizde. Manuel mapping listeleri kalksın. Sayı az gelince fark et, dropdown'a bak, akıllı hareket et. Sistemde bilinçli hareket etmeyi amaçlamıştık."
+
+### 4 Katmanlı Yeniden Tasarım
+
+| Katman | Modül | Özellik |
+|--------|-------|---------|
+| **1: field_reconciler.py** (YENI) | Schema-less field matching | NFD Türkçe normalize + 22 canonical kavram x ~80 varyant synonym graph + suffix-aware (Türkçe_NET → 'turkce') + bigram fuzzy fallback. API: `find_field(row, 'soz_no')` |
+| **2: _upsert_student_exams refactor** | Manuel `r.get() or r.get()` chains kalktı | Schema-less — yeni Eyotek field otomatik handle. Kod 11 satır kısaldı |
+| **3: sinav_drilldown self-aware** | check_data_completeness | sinav_found[11] (Şube Katılım) ile actual rows oranı. ratio < 0.5 + devre 1 → "başka devre var" uyarısı, ratio < 0.85 → "eksik aktarım" uyarısı |
+| **4: System prompt VERI EKSIKLIK FARK ETME** | Bot completeness.warning'i okur, kullanıcıya açık belirtir | "60 öğrenci katılmış, 30 çekildi (%50)" — yanıltıcı ortalama vermek YASAK |
+
+### Smoke Test (canlı VPS)
+```
+APOTEMI TG TYT-3 sorgusu sonucu:
+  field_reconciler: soz_no=168, ad=ZEYNEP, turkce=31,25  ✓
+  V2 multi-devre:  12.Snf 14 + Mezun 16 = 30             ✓
+  V3 lazy_sync:    30 kayit upsert                       ✓
+  V3 completeness: complete=False, expected=60, actual=30, ratio=0.5
+                   warning="60 öğrenci katılmış, 30 çekildi..."  ✓
+```
+
+### Neo Vizyonu Karşılığı
+- ✅ "Sayı az gelince fark et" — ratio kontrol + warning üretimi
+- ✅ "soz_no ≡ SözNo" — field_reconciler synonym graph
+- ✅ "LLM-native, ilkel değil" — Türkçe normalize + fuzzy + canonical mapping
+- ✅ "Schema-less" — yeni Eyotek field gelirse kod değişmez
+- ✅ "İç bilinç" — bot tool result'unda eksiklik gördüğünde user'a açık bildirir
+
+Bu altyapı **her siteye genişletilebilir** — synonym graph başka siteye eklenip aynı pattern uygulanabilir.
 
 ---
 
