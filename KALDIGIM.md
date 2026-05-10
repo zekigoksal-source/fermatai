@@ -1,6 +1,72 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Mayıs 2026 20:30 — **OTURUM 25.43-FAZ-0+2: Cerebras 235B değerli kullanım + hibrit cevap altyapısı (Neo vizyon)**
+> **Son güncelleme:** 11 Mayıs 2026 21:00 — **OTURUM 25.43-FAZ-3: Toplu YKS sıralama tahmini için universite_taban (35.584 kayıt YÖK Atlas) JOIN — Neo bug 17:22 fix**
+>
+> **Tespit:** Bot toplu sıralama sorusunda kafadan tahmin yapıyor, DB'deki YÖK Atlas verisini kullanmıyor → "amatör hata" (Neo).
+>
+> **Fix:** system_prompts.py'a TOPLU/KURUM GENELI SIRALAMA sub-section: students × student_exam_analysis CTE + universite_taban subquery (yerlesme_puani Türkçe virgül `280,416` format → REPLACE cast). Render önerisi: chart/treemap/sankey toplu listede.
+>
+> **Canlı SQL test:** 5 öğrenci doğru üniversite önerisi: YİĞİT 509 → Özyeğin/Bahçeşehir/Hacettepe (sıra 7158), ZEYNEP 489 → Bilkent CS / Ondokuz Mayıs Tıp (14988), ENES 485 → Bilkent Fizik / ODTÜ Fizik (16715).
+
+## 🎓 OTURUM 25.43-FAZ-3 (11 May 20:45-21:00) — YÖK Atlas DB değerli kullanım
+
+### Tetik
+Neo (17:22): "Bence analizlerin çok saçma, öğrencilerin bu netlerle dediğin sıralamaları getireceklerini, YÖK Atlas verilerine de sahipken burada ciddi bir raporda yazıyor olman çok amatör — mevcut kapasiten ve DB genişliğin ortadayken."
+
+### Tespit Edilen Boşluk
+| Veri Kaynağı | Mevcut | Bot kullanımı |
+|--------------|--------|---------------|
+| `universite_taban` | 35.584 kayıt (2022-2025) | ❌ Toplu sıralama sorusunda atlanıyordu |
+| `student_exam_analysis` | 99 öğrenci sezon ortalaması | ⚠️ Kafadan eşleştiriliyor, JOIN yok |
+| Render araçları | 36 fence (chart/treemap/sankey) | ⚠️ Liste için sadece markdown tablo |
+
+### Düzeltme — system_prompt'a SQL şablonu
+ŞEMA NOTU eklendi (kritik):
+- `yerlesme_puani` TEXT format `'280,416'` (Türkçe virgül) → `REPLACE(',', '.')::numeric` cast
+- soz_no TEXT × TEXT eşit string compare
+- universite_taban.taban_puan NUMERIC (nokta)
+
+CTE template prompt'a gömüldü:
+```sql
+WITH ogrenci_puan AS (
+  SELECT s.full_name, REPLACE(sa.yerlesme_puani, ',', '.')::numeric as ayt_puan
+  FROM students s JOIN student_exam_analysis sa ON s.soz_no = sa.soz_no
+  WHERE sa.yerlesme_puani != ''
+)
+SELECT op.full_name, op.ayt_puan,
+       (SELECT string_agg(...) FROM universite_taban WHERE taban_puan BETWEEN ...) as olasi_yerlesme,
+       (SELECT MIN(siralama) FROM universite_taban WHERE taban_puan <= op.ayt_puan) as tahmini_siralama
+FROM ogrenci_puan op
+ORDER BY op.ayt_puan DESC;
+```
+
+Render önerisi: 10+ öğrenci listede tablo yerine `chart` (bar) / `treemap` (puan bandı dağılımı) / `sankey` (puan→üni-bölüm akış).
+
+### Canlı SQL Doğrulama (5 öğrenci)
+```
+YİĞİT ALP AKYEL  509.893  Özyeğin Endüstri Burslu / Bahçeşehir Tıp Burslu / Hacettepe EE  → ~7,158
+ZEYNEP AKBAŞ     489.816  Bilkent CS / Ankara CS / Ondokuz Mayıs Tıp                       → ~14,988
+ENES KARADAŞ     485.894  Bilkent Fizik / TED Yazılım Burslu / ODTÜ Fizik                  → ~16,715
+BÜŞRA ÇİFTÇİ     482.995  Okan Tıp Burslu / Bakırçay Tıp / Gaziantep Tıp                   → ~18,246
+ECRİN BELLER     457.36   TOBB Endüstri / YTÜ Metalurji / İTÜ İnşaat                       → ~33,565
+```
+
+### Generic Pattern — "Mevcut araçları yeterince kullanma" anti-pattern
+Bu fix **bir senaryo için** — ama prensip evrensel:
+> Bot her cevap üretirken mevcut tool/DB/render envanterine BAKMALI ve "Bu sorunun en zengin cevabı için elimde başka kaynak var mı?" diye sormalı.
+
+Üniversite cevaplarında bu boşluk vardı. Diğer alanlar:
+- Hava durumu → open_meteo (var, çalışıyor)
+- Akademik makale → crossref (var)
+- Coğrafya → osm_lookup (var)
+- Konu anlatım → search_curriculum + RAG (var)
+- Üniversite/sıralama → universite_taban (artık prompt'ta da)
+
+Sistem henüz "kendi araç envanterini bilinçli tarayıp en zengin cevap üretme" düşüncesini her cevapta **otomatik** yapmıyor. Bu felsefe hâlâ system_prompt'a (büyük geliştirme — gelecek sprint).
+
+---
+
+## 🚀 OTURUM 25.43-FAZ-0+2 (11 May 19:30-20:30) — Cerebras 235B değerli kullanım + hibrit cevap altyapısı (Neo vizyon)
 >
 > **Faz 0:** `_CLOUD_KEYWORDS` 80+ → 71 (rapor/kıyasla/iklim/fibonacci/cern/alphafold/koordinat → Cerebras tool-calling 16 SAFE_TOOLS allowlist'e). Hedef: Claude %65 → %35.
 >

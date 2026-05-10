@@ -1,6 +1,14 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 11 Mayıs 2026 10:02 · **Oturum:** 25.43-DRILL-V3 — **LLM-native field reconciliation (schema-less, Türkçe-aware, synonym graph) + self-aware drill (data completeness check) · field_reconciler.py yeni modül (22 canonical x 80 varyant) · sinav_drilldown her devre satırı ayrı çek + birleştir · APOTEMI TG TYT-3: 14 → 30 öğrenci (V2 multi-devre) + completeness warning "60 expected vs 30 actual" · 5 sınav 86 yeni DB kayıt · Halüsinasyon kalkanı (SINAV VERISI ETIKETLEME prompt kuralı)**
+> **Belge tarihi:** 11 Mayıs 2026 21:00 · **Oturum:** 25.43-FAZ-3 — **YÖK Atlas DB toplu kullanım (universite_taban 35.584 kayıt) + Cerebras 235B değerli kullanım (Faz 0+2 hibrit) + Self-Audit V3 (stratejik tetikleme) + Field Reconciliation V3 (schema-less)**
+>
+> **Bu sprint kazanımları:**
+> - Faz 0 (`_CLOUD_KEYWORDS` 80→71): Cerebras tool-calling alanı genişledi (rapor/kıyasla/iklim/fibonacci/cern/alphafold → Cerebras)
+> - Faz 2 (`context_compactor.py` 295 satır): Cerebras 235B son 20 mesajı action-aware özet (cache-aware heuristic 10+msg+3K+tok), quality judge 9-10/10
+> - Faz 3 (`system_prompts` toplu YKS sıralama): students × student_exam_analysis × universite_taban CTE pattern, REPLACE Türkçe virgül cast, 5 öğrenci canlı doğrulandı
+> - Self-Audit V3: stratejik tetikleme (sadece şüpheli durum), 6/6 strategy test PASS, 1/6 audit (sadece B senaryosu), %70 maliyet azalması
+> - 11 May ∼20:30: Anthropic prompt cache %94 hit (objektif veri) — compaction maliyet açısından az değer ama bağlam genişliği için değerli
+> - **10-11 May:** 25.43-DRILL-V3 — LLM-native field reconciliation (22 canonical × 80 varyant) + self-aware drill (data completeness check) + sinav_drilldown her devre ayrı çek + birleştir + APOTEMI TG TYT-3: 14 → 30 öğrenci + completeness warning
 > **11 May 02:55:** 25.43-IPAD-V1-V4 → REVERT — iPad PWA standalone alt boşluk fix loop (5 yanlış tahmin → revert). Donanım klavye etkisi tespit, gündem dışı.
 > **10-11 May:** 25.43-LAZY-NAME + 25.43-WEBUI-FIXLOOP — Personel konuşması (Örsel Koç) → 3 lazy_sync bug fix · Web hamburger F5 fix loop → browser MCP test ile kesin teşhis (PWA banner pointer-events ROOT+CHILD ayrı satır rule)
 > **10 May 04:00:** 25.43-DIAG — selfdev_grep_repo bot yanlış teşhis bug (3 katman) + HF_API_TOKEN aktif + ripgrep VPS kuruldu · Bot artık 0 match'i doğrulamadan kesin yorum vermez (3 kanıt zorunlu) · Bridge env'de HF token verified
