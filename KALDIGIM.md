@@ -1,6 +1,50 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Mayıs 2026 10:02 — **OTURUM 25.43-DRILL-V3: LLM-native field reconciliation (schema-less, Türkçe-aware) + self-aware completeness check (Neo direktif "old school değil") — APOTEMI TG TYT-3: 14 → 30 (V2) + completeness warning aktif (60 expected vs 30 actual). field_reconciler.py yeni modül, 22 canonical x 80 varyant synonym graph**
+> **Son güncelleme:** 11 Mayıs 2026 17:40 — **OTURUM 25.43-DRILL-V3-FULL: 3 görev tamam → (1) 5 lazy_sync upsert field_reconciler'a migrate (~35 manuel chain → tek satır find_field) (2) sinav_resync.py — re-sync helper + lazy→native merge script (3) exam_code native öncelik (sinav_kodu enrich) → eski 116 lazy_ kayıt → 57 silindi (43 + 14), 59 kalan native bekliyor (resync flag ile gelir). 11. SINIF İşler-Çap 2 smoke test PASS: native kod 1110, 9 upsert, completeness ratio 0.82**
+
+## 🏁 OTURUM 25.43-DRILL-V3-FULL (11 May 10:30-17:40) — 3 Görev Tamam
+
+### Görev 1: Tüm lazy_sync upsert'leri field_reconciler'a migrate
+| Fonksiyon | Eski chain | Yeni |
+|-----------|------------|------|
+| `_upsert_etut_history` | 8 manuel `r.get() or` | `find_field(r, 'tarih')` × 8 |
+| `_upsert_attendance` | 7 chain | schema-less |
+| `_upsert_counsellor_notes` | 10 chain | schema-less |
+| `_upsert_teacher_timetable` | 5 chain | schema-less |
+| `_upsert_devamsizlik` | 5 chain | schema-less |
+| `eyotek_navigator soz_no` | 4 chain | `find_field(r, 'soz_no')` |
+
+field_reconciler.SYNONYMS genişletildi: ogretmen_id, etut_turu, konu, ders_no, gun, durum, brans, gorusme_tarihi, not_turu, gorusulen, okul_no, devamsizlik_saat (12 yeni canonical).
+
+### Görev 2: sinav_resync.py
+Yeni script — 2 mod:
+- **Default merge_lazy_to_native:** lazy_* exam_code'ları aynı sınavın native koduyla birleştir. 2 stratejili (exam_date primary, exam_name fallback NULL date için)
+- **--resync flag:** test-transferred listesinden son N gün sınavlarını çek, her unique sınav için V3 multi-devre drill
+
+Smoke test (canlı VPS): 116 lazy_ → 57 silindi (43 ilk pass + 14 fallback pass). 59 kalan native bekliyor.
+
+### Görev 3: exam_code native öncelik
+`_upsert_student_exams`:
+- ESKI: `exam_code = f"lazy_{slug}_{tarih}"` her zaman lazy_
+- YENI: 1) `find_field(r, 'sinav_kodu')` numerik mi → native (999000107). 2) Fallback lazy slug.
+
+`fermat_core_agent` wrapper enrich:
+- `sinav_meta[3]` → `extracted_sinav_kodu` → her row'a `sinav_kodu` inject
+
+### Smoke Test (canlı, 11. SINIF İşler-Çap 2)
+```
+SINAV_FOUND: [..., '1110', 'TYT', ..., '11. SINIF İşler - Çap 2', '11.Snf', '11', ...]
+ROW_COUNT: 9
+LAZY_SYNCED: 9 upsert (exam_code='1110' native)
+COMPLETENESS: ratio 0.82 (11 expected vs 9 actual) → warning aktif
+DB doğrulama: exam_code='1110' tek satır (duplicate yok) ✓
+```
+
+### Bekleyen (opsiyonel, kullanıcı tetiklemeli)
+- `python sinav_resync.py --resync --days 60` → eski 59 lazy_ kayıt için Eyotek'ten taze çek (~5-10dk)
+- Diğer `eyotek_query` / `ogrenci_drilldown` tool'ları zaten field_reconciler kullanmıyordu (lazy_sync ile dolaylı), upsert layer migrate edildiği için otomatik kazanım
+
+---
 
 ---
 
