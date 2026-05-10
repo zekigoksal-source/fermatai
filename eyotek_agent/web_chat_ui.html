@@ -22,11 +22,10 @@
   // localStorage flag ile sadece bir kez calisir, sonra geri donmuyor.
   (async () => {
     try {
-      // 25.43-IPAD-V4 (11 May 03:00): PWA standalone cift safe-area fix iPad'e ulasmasi icin V4.
-      if (localStorage.getItem('fermatai_sw_purged_25_43_v4') === '1') return;
-      localStorage.removeItem('fermatai_sw_purged_25_43');
-      localStorage.removeItem('fermatai_sw_purged_25_43_v2');
-      localStorage.removeItem('fermatai_sw_purged_25_43_v3');
+      // 25.43-IPAD-V3 (11 May 02:55): yeni 100dvh fix iPad'e ulasmasi icin V3 bump.
+      if (localStorage.getItem('fermatai_sw_purged_25_43_v3') === '1') return;
+      localStorage.removeItem('fermatai_sw_purged_25_43');     // eski flag temizlenir
+      localStorage.removeItem('fermatai_sw_purged_25_43_v2');  // V2 flag temizlenir
       let purged = false;
       if (navigator.serviceWorker) {
         const regs = await navigator.serviceWorker.getRegistrations();
@@ -44,7 +43,7 @@
           purged = true;
         }
       }
-      localStorage.setItem('fermatai_sw_purged_25_43_v4', '1');
+      localStorage.setItem('fermatai_sw_purged_25_43_v3', '1');
       if (purged) {
         console.log('[FermatAI] Eski SW + cache temizlendi, reload...');
         location.reload();
@@ -11419,26 +11418,17 @@ html[data-theme="dark"] #pwa-manual-guide .pwa-guide-footer {
   body::before { content: ""; display: none; }
   #pwa-install-banner, #pwa-manual-guide { display: none !important; }
 
-  /* 25.43-IPAD-V4 (Neo bug 11 May 02:55, iPad Chrome PWA standalone):
-     Eski 25.40d body'ye safe-area padding ekliyordu. AMA chat-input KENDI
-     padding-bottom'unda da safe-area-inset-bottom ekliyor (25.43-IPAD CSS).
-     SONUC: CIFT EKLEME — alt boslukta body bg (var(--bg) en koyu) gozuktu,
-     chat-input bg (var(--panel) biraz acik) ile farkli tonlarda. Neo bunu
-     'siyah bolge' olarak gordu.
-
-     YENI YAKLASIM:
-     - body padding-bottom KALDIRILDI (chat-input safe-area'yi kendisi yonetir)
-     - body padding-top KORUNDU (status bar overlap onleme)
-     - body/html bg = var(--panel) → herhangi bir alt bosluk yumusak panel rengi
-       (siyah arkaplan goz hissiyatini ortadan kaldirir) */
-  html, body {
-    background: var(--panel) !important;
-  }
+  /* 25.40d (Neo bug fix): PWA standalone'da scroll lock — ust butonlar veya alt
+     input kayboluyordu. Sebep: viewport-fit=cover yoktu (iOS notch zone) +
+     safe-area-inset padding yoktu (status bar/home indicator overlap).
+     viewport meta'ya viewport-fit=cover eklendi (head'de) + bu padding'ler PWA
+     standalone'da chat header'i status bar'in altina, input'u home indicator'in
+     ustune iter. Web Chrome (display-mode: browser) ETKILENMEZ. */
   body {
     padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
-    /* padding-bottom: KALKTI — chat-input kendi safe-area'yi yonetiyor */
     box-sizing: border-box;
   }
   /* visualViewport-driven --vvh kullanan chat-wrap dvh hesabini koruyabilsin */
