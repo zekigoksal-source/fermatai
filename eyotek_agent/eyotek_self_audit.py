@@ -311,13 +311,138 @@ async def log_audit(
 # 4. DRILL HOOK — sinav_drilldown sonrası otomatik audit
 # ─────────────────────────────────────────────────────────────────────────
 
-async def audit_drill_completeness(
+async def audit_action(
     page,
-    drill_result: dict,
-    sinav_adi: str,
     *,
-    force: bool = False,
+    action: str,
+    claim: str,
+    label: Optional[str] = None,
+    expected: Optional[int] = None,
+    actual: Optional[int] = None,
+    extra: Optional[dict] = None,
 ) -> dict:
+    """Generic audit helper — herhangi bir Eyotek aksiyonu için ss + Vision.
+
+    Args:
+        page: Playwright page (aksiyondan sonra hâlâ açık)
+        action: tip ('write_etut', 'student_drill', 'eyotek_query', vs.)
+        claim: Vision'a sorulacak iddia
+        label: dosya adı için kısa etiket (varsayılan: action)
+        expected/actual: sayısal karşılaştırma (varsa DB'ye yazılır)
+        extra: ek metadata
+
+    Returns: {audited, screenshot, vision_result, audit_log_id}
+    """
+    if not AUDIT_ENABLED:
+        return {"audited": False, "reason": "audit_disabled"}
+
+    ss = await take_audit_screenshot(page, label or action, claim)
+    if not ss.get("path"):
+        return {"audited": False, "reason": "screenshot_fail",
+                "ss_error": ss.get("error")}
+
+    vision = await verify_with_vision(ss["path"], claim)
+
+    log_id = await log_audit(
+        action=action,
+        claim=claim,
+        screenshot=ss.get("path"),
+        page_url=ss.get("url"),
+        vision_result=vision,
+        expected=expected,
+        actual=actual,
+        extra=extra,
+    )
+
+    return {
+        "audited": True,
+        "screenshot": ss,
+        "vision_result": vision,
+        "audit_log_id": log_id,
+    }
+
+
+# ─── Spesifik audit helpers (her tool için anlamlı claim) ──────
+
+async def audit_write_etut(page, *, ogrenci_adi: str, ogretmen: str,
+                            tarih: str, saat: str, ders: str,
+                            sinif: str = "") -> dict:
+    """Etüt yazıldıktan sonra takvim sayfasında görünüyor mu teyit et."""
+    claim = (
+        f"Bu Eyotek takvim sayfasında {tarih} tarihli {saat} saatinde "
+        f"{ogretmen} öğretmenin {ders} etüdü görünüyor mu? "
+        f"Eğer öğrenci ekleme yapıldıysa {ogrenci_adi} adı tabloda var mı? "
+        f"Etüt slot'u {ders} bilgisi ile dolu mu?"
+    )
+    return await audit_action(
+        page,
+        action="write_etut_verify",
+        claim=claim,
+        label=f"write_etut_{tarih}_{saat}",
+        extra={
+            "ogrenci_adi": ogrenci_adi, "ogretmen": ogretmen,
+            "tarih": tarih, "saat": saat, "ders": ders, "sinif": sinif,
+        },
+    )
+
+
+async def audit_write_counsellor(page, *, ogrenci_adi: str, not_turu: str,
+                                  gorusulen: str = "") -> dict:
+    """Rehberlik notu yazıldıktan sonra listede görünüyor mu teyit et."""
+    short_not = (gorusulen[:60] + "...") if len(gorusulen) > 60 else gorusulen
+    claim = (
+        f"Bu Eyotek rehberlik notları sayfasında BUGÜN tarihli yeni bir not "
+        f"görünüyor mu? Öğrenci: '{ogrenci_adi}', not türü '{not_turu}'. "
+        f"Listenin başında bu kayıt var mı?"
+    )
+    return await audit_action(
+        page,
+        action="write_counsellor_verify",
+        claim=claim,
+        label=f"counsellor_{ogrenci_adi[:20]}",
+        extra={"ogrenci_adi": ogrenci_adi, "not_turu": not_turu,
+               "gorusulen_preview": short_not},
+    )
+
+
+async def audit_student_drill(page, *, student_identifier: str,
+                               sub_page: str, row_count: int = 0) -> dict:
+    """Öğrenci drill — doğru öğrenci profili açıldı mı + tablo sayısı doğru mu."""
+    claim = (
+        f"Bu Eyotek öğrenci profil sayfasında '{student_identifier}' adlı/sözlü "
+        f"öğrencinin '{sub_page}' alt sayfası açık mı? "
+        f"Tabloda {row_count} satır var mı (header hariç)? "
+        f"Yanlış öğrenci profili açılmış olabilir mi?"
+    )
+    return await audit_action(
+        page,
+        action="student_drill_verify",
+        claim=claim,
+        label=f"student_{student_identifier[:30]}_{sub_page}",
+        actual=row_count,
+        extra={"student_identifier": student_identifier, "sub_page": sub_page},
+    )
+
+
+async def audit_navigate_query(page, *, page_path: str,
+                                row_count: int = 0,
+                                filters: Optional[dict] = None) -> dict:
+    """Generic eyotek_query/navigate sonrası teyit."""
+    filter_desc = ", ".join(f"{k}={v}" for k, v in (filters or {}).items()
+                             if v) or "(filtre yok)"
+    claim = (
+        f"Bu Eyotek '{page_path}' sayfasında uygulanan filtreler: {filter_desc}. "
+        f"Tabloda {row_count} satır göründü. Filtre durumu doğru mu, "
+        f"sayfa boş mu, hata mesajı var mı?"
+    )
+    return await audit_action(
+        page,
+        action="navigate_query_verify",
+        claim=claim,
+        label=f"query_{page_path.replace('/','_')[:40]}",
+        actual=row_count,
+        extra={"page_path": page_path, "filters": filters},
+    )
     """sinav_drilldown sonucu mismatch varsa otomatik ss + Vision teyit.
 
     Args:
@@ -421,7 +546,12 @@ def cleanup_old_screenshots(days: int = AUDIT_RETENTION_DAYS) -> int:
 __all__ = [
     'take_audit_screenshot',
     'verify_with_vision',
+    'audit_action',
     'audit_drill_completeness',
+    'audit_write_etut',
+    'audit_write_counsellor',
+    'audit_student_drill',
+    'audit_navigate_query',
     'init_audit_table',
     'log_audit',
     'cleanup_old_screenshots',

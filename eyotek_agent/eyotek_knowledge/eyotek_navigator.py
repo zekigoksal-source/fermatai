@@ -1079,6 +1079,33 @@ async def navigate(
                 f"Sayfada bu input'lar yok veya isim farkli."
             )
 
+        # 25.43-AUDIT-V2: navigate (eyotek_query) audit hook — şüpheli durum
+        # tetikleyicileri: tablo boş, filter_bad, veya çok az satır.
+        # Maliyet kontrolü: success-of-success durumlarda atla.
+        try:
+            from eyotek_self_audit import audit_navigate_query, AUDIT_ENABLED
+            should_audit = (
+                AUDIT_ENABLED and (
+                    not rows_data or
+                    result.get("error_code") in ("NO_DATA", "FILTER_BAD") or
+                    len(rows_data) < 2
+                )
+            )
+            if should_audit:
+                audit_res = await audit_navigate_query(
+                    page,
+                    page_path=page_path,
+                    row_count=len(rows_data),
+                    filters=filters,
+                )
+                if audit_res.get("audited"):
+                    result["_audit"] = audit_res
+                    v = audit_res.get("vision_result") or {}
+                    logger.info(f"[AUDIT] navigate verdict={v.get('verdict')} "
+                                f"obs='{(v.get('observation') or '')[:80]}'")
+        except Exception as _ae:
+            logger.debug(f"[NAV] navigate audit skip: {_ae}")
+
         return result
 
     except Exception as e:
@@ -1708,6 +1735,28 @@ async def student_drilldown(
         if not rows_data:
             result["error_code"] = "NO_DATA"
             result["error"] = "Alt sayfa acildi ama tablo bos."
+
+        # 25.43-AUDIT-V2: student_drilldown audit hook — yanlış öğrenci profili
+        # açılma riski + boş tablo durumu için Vision teyit. Sadece tablo bossa
+        # veya çok az satır varsa tetikle (false positive maliyetinden kaçın).
+        try:
+            from eyotek_self_audit import audit_student_drill, AUDIT_ENABLED
+            if AUDIT_ENABLED and (len(rows_data) == 0 or len(rows_data) < 3):
+                # Boş tablo veya şüpheli az satır → audit
+                audit_res = await audit_student_drill(
+                    page,
+                    student_identifier=student_identifier,
+                    sub_page=sub_page,
+                    row_count=len(rows_data),
+                )
+                if audit_res.get("audited"):
+                    result["_audit"] = audit_res
+                    v = audit_res.get("vision_result") or {}
+                    logger.info(f"[AUDIT] student_drill verdict={v.get('verdict')} "
+                                f"obs='{(v.get('observation') or '')[:80]}'")
+        except Exception as _ae:
+            logger.debug(f"[NAV] student_drill audit skip: {_ae}")
+
         return result
 
     except Exception as e:

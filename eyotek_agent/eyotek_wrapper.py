@@ -2927,7 +2927,33 @@ class EyotekWrapper:
         else:
             logger.error(f"  ❌ Etüt kaydedilemedi: {msg[:100]}")
 
-        return {
+        # 25.43-AUDIT-V2: write_etut audit hook — KAYDET sonrası takvimde
+        # gerçekten oluştu mu Vision teyit. dry_run değilse + success ise.
+        audit_info = None
+        try:
+            from eyotek_self_audit import audit_write_etut, AUDIT_ENABLED
+            if AUDIT_ENABLED and not dry_run and success:
+                _SAAT_MAP = {1:"09:00",2:"09:45",3:"10:30",4:"11:15",5:"12:00",
+                             6:"12:45",7:"14:00",8:"14:45",9:"15:30",10:"16:15",
+                             11:"17:00",12:"17:45",13:"18:30",14:"19:15",15:"20:00"}
+                saat_str = _SAAT_MAP.get(int(ders_no), "?")
+                audit_info = await audit_write_etut(
+                    self._page,
+                    ogrenci_adi=str(student_id_or_name),
+                    ogretmen=teacher or "(seçili)",
+                    tarih=target_date,
+                    saat=saat_str,
+                    ders=lesson,
+                    sinif=class_name,
+                )
+                if audit_info.get("audited"):
+                    v = audit_info.get("vision_result") or {}
+                    logger.info(f"[AUDIT] write_etut verdict={v.get('verdict')} "
+                                f"obs='{(v.get('observation') or '')[:80]}'")
+        except Exception as _ae:
+            logger.debug(f"[WRAP] write_etut audit skip: {_ae}")
+
+        ret = {
             "success": success,
             "message": msg,
             "type": rtype,
@@ -2945,6 +2971,9 @@ class EyotekWrapper:
                 "classroom": classroom,
             },
         }
+        if audit_info and audit_info.get("audited"):
+            ret["_audit"] = audit_info
+        return ret
 
     # ── Sınıf Etüt Kaydı (tüm sınıf için) ──────────────────────────────────
     async def write_etut_for_class(
@@ -3210,28 +3239,60 @@ class EyotekWrapper:
             }
         """)
 
+        # 25.43-AUDIT-V2: write_counsellor_note audit hook — KAYDET sonrası
+        # rehberlik notları listesinde bugün kaydı görünüyor mu Vision teyit.
+        async def _audit_counsellor():
+            try:
+                from eyotek_self_audit import audit_write_counsellor, AUDIT_ENABLED
+                if not AUDIT_ENABLED:
+                    return None
+                return await audit_write_counsellor(
+                    self._page,
+                    ogrenci_adi=str(student_id),
+                    not_turu=note_type_val,
+                    gorusulen=note[:200],
+                )
+            except Exception as _ae:
+                logger.debug(f"[WRAP] write_counsellor audit skip: {_ae}")
+                return None
+
         if result_info:
             is_error = any(w in result_info["sel"] for w in ["danger", "error"])
             logger.info(f"  Sonuç: {result_info['msg']}")
-            return {
+            ret = {
                 "success": not is_error,
                 "message": result_info["msg"],
                 "note_type": note_type_val,
                 "meeting_type": meeting_type_val,
                 "save_btn": saved,
             }
+            if not is_error:
+                ai = await _audit_counsellor()
+                if ai and ai.get("audited"):
+                    ret["_audit"] = ai
+                    v = ai.get("vision_result") or {}
+                    logger.info(f"[AUDIT] write_counsellor verdict={v.get('verdict')} "
+                                f"obs='{(v.get('observation') or '')[:80]}'")
+            return ret
 
         # Toast yok — screenshot al ve metni döndür
         await self._page.screenshot(path="counsellor_note_result.png")
         page_text = await self._page.evaluate("() => document.body.innerText.slice(0,400)")
         has_error = any(w in page_text.lower() for w in ["hata", "error", "başarısız"])
-        return {
+        ret = {
             "success": not has_error,
             "message": "Sonuç algılanamadı — screenshot: counsellor_note_result.png",
             "note_type": note_type_val,
             "meeting_type": meeting_type_val,
             "save_btn": saved,
         }
+        if not has_error:
+            ai = await _audit_counsellor()
+            if ai and ai.get("audited"):
+                ret["_audit"] = ai
+                v = ai.get("vision_result") or {}
+                logger.info(f"[AUDIT] write_counsellor (no-toast) verdict={v.get('verdict')}")
+        return ret
 
     # ── SMS Gönder ───────────────────────────────────────────────────────────
     async def send_sms(
