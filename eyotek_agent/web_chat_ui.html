@@ -22,11 +22,10 @@
   // localStorage flag ile sadece bir kez calisir, sonra geri donmuyor.
   (async () => {
     try {
-      // 25.43-IPAD-V2 (11 May): flag versiyonu bump — iPad Safari agresif cache,
-      // V1'de purge yapsa bile yeni iPad fix'leri ulaşmıyor olabilir. V2 flag'le
-      // tek seferlik fresh purge tetiklenir, yeni HTML/CSS gelir.
-      if (localStorage.getItem('fermatai_sw_purged_25_43_v2') === '1') return;
-      localStorage.removeItem('fermatai_sw_purged_25_43');  // eski flag temizlenir
+      // 25.43-IPAD-V3 (11 May 02:55): yeni 100dvh fix iPad'e ulasmasi icin V3 bump.
+      if (localStorage.getItem('fermatai_sw_purged_25_43_v3') === '1') return;
+      localStorage.removeItem('fermatai_sw_purged_25_43');     // eski flag temizlenir
+      localStorage.removeItem('fermatai_sw_purged_25_43_v2');  // V2 flag temizlenir
       let purged = false;
       if (navigator.serviceWorker) {
         const regs = await navigator.serviceWorker.getRegistrations();
@@ -44,7 +43,7 @@
           purged = true;
         }
       }
-      localStorage.setItem('fermatai_sw_purged_25_43_v2', '1');
+      localStorage.setItem('fermatai_sw_purged_25_43_v3', '1');
       if (purged) {
         console.log('[FermatAI] Eski SW + cache temizlendi, reload...');
         location.reload();
@@ -1556,16 +1555,24 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     /* Fiziksel pin — iOS klavye scroll'unu bile zorla durdurur.
        --vvh: visualViewport.height (JS ile dinamik) → klavye/AutoFill toolbar
        acildiginda body height kucuilur, input toolbar'in uzerinde kalir.
-       Fallback 100% (eski tarayici). */
+
+       25.43-IPAD-V3 (Neo bug 11 May 02:55): iPad Safari'da URL bar saklaninca
+       innerHeight artiyor ama --vvh eski deger ile takili kaliyor → ALT SIYAH
+       BOSLUK olusuyordu. 100dvh (dynamic viewport height) URL bar durumundan
+       bagimsiz tam viewport. Cascade: dvh > --vvh > 100vh > 100%. Modern
+       browser dvh kullanir, eski 100vh, en eski 100%. */
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     width: 100%;
-    height: var(--vvh, 100%);
-    max-height: var(--vvh, 100%);
+    height: var(--vvh, 100vh);
+    max-height: var(--vvh, 100vh);
+    height: 100dvh;
+    max-height: 100dvh;
     overflow: hidden;
     overscroll-behavior: contain;
+    background: var(--panel);  /* alt boşluk olursa panel rengi (siyah arkaplan değil) */
   }
   .chat-wrap.active {
     /* iframe alanini kapla — fixed body icinde absolute inset */
@@ -1574,8 +1581,10 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
     left: 0;
     right: 0;
     bottom: 0;
-    height: var(--vvh, 100%);
-    max-height: var(--vvh, 100%);
+    height: var(--vvh, 100vh);
+    max-height: var(--vvh, 100vh);
+    height: 100dvh;
+    max-height: 100dvh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
