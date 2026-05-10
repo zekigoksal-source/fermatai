@@ -22,16 +22,24 @@ from db_pool import get_pool as _get_pool, db_fetch, db_fetchrow, db_fetchval, d
 
 
 async def get_student_weak_topics(soz_no: str, limit: int = 5) -> list:
-    """Öğrencinin en zayıf konuları (etüt için öncelikli)."""
+    """Öğrencinin en zayıf konuları (etüt için öncelikli).
+
+    INVERSION FIX (Berf bug 10 May): sinav_hata_yuzdesi = HATA % (yüksek=zayıf).
+    Eski 'basari' aliası yanıltıcıydı — şimdi 'hata_pct' + 'basari=100-hata' veriyoruz.
+    """
     return await db_fetch("""
-        SELECT ders, konu, sinav_hata_yuzdesi as basari, sinav_hata_sayisi as hata
+        SELECT ders, konu,
+               sinav_hata_yuzdesi as hata_pct,
+               (100 - sinav_hata_yuzdesi) as basari,
+               sinav_hata_sayisi as hata
         FROM student_topic_tracker
         WHERE soz_no::text = $1
         AND tamamlandi = FALSE
-        AND sinav_hata_yuzdesi < 50
+        AND COALESCE(status,'') != 'metadata'
+        AND sinav_hata_yuzdesi >= 30
         AND LENGTH(konu) > 5
         AND konu NOT LIKE 'Ortalama %'
-        ORDER BY sinav_hata_yuzdesi ASC LIMIT $2
+        ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT $2
     """, str(soz_no), limit)
 
 
@@ -184,19 +192,25 @@ async def recommend_etut_for_student(soz_no: str) -> str:
 
 
 async def get_kurum_etut_oncelikleri(top: int = 5) -> str:
-    """Kurum geneli en acil etüt ihtiyaçları (toplu öneri)."""
-    # En çok zorlanan öğrenci-konu çiftleri
+    """Kurum geneli en acil etüt ihtiyaçları (toplu öneri).
+
+    INVERSION FIX (Berf bug 10 May): sinav_hata_yuzdesi = HATA %.
+    En acil müdahale = YÜKSEK hata (zayıf), eskiden tam tersi sorgulanıyordu.
+    """
     rows = await db_fetch(f"""
         SELECT t.soz_no, s.full_name, s.class_name,
-               t.ders, t.konu, t.sinav_hata_yuzdesi as basari
+               t.ders, t.konu,
+               t.sinav_hata_yuzdesi as hata_pct,
+               (100 - t.sinav_hata_yuzdesi) as basari
         FROM student_topic_tracker t
         LEFT JOIN students s ON s.soz_no::text = t.soz_no::text
-        WHERE t.sinav_hata_yuzdesi < 30
+        WHERE t.sinav_hata_yuzdesi >= 60
         AND t.tamamlandi = FALSE
+        AND COALESCE(t.status,'') != 'metadata'
         AND s.full_name IS NOT NULL
         AND LENGTH(t.konu) > 5
         AND t.konu NOT LIKE 'Ortalama %'
-        ORDER BY t.sinav_hata_yuzdesi ASC LIMIT {top * 2}
+        ORDER BY t.sinav_hata_yuzdesi DESC NULLS LAST LIMIT {top * 2}
     """)
 
     if not rows:

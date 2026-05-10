@@ -49,13 +49,17 @@ async def prepare_counsellor_brief(soz_no: int) -> dict:
         str(soz_no),
     )
 
-    # 3. En zayıf 3 konu
+    # 3. En zayıf 3 konu — INVERSION FIX (Berf bug 10 May)
+    # sinav_hata_yuzdesi = HATA % (yuksek=zayif). DESC + >=25 + metadata filter.
     weak = await db_fetch(
         """SELECT ders, konu, sinav_hata_yuzdesi
            FROM student_topic_tracker
            WHERE soz_no=$1 AND (tamamlandi IS NULL OR tamamlandi=FALSE)
+             AND COALESCE(status,'') != 'metadata'
+             AND konu NOT LIKE 'Ortalama %'
              AND sinav_hata_yuzdesi IS NOT NULL
-           ORDER BY sinav_hata_yuzdesi ASC LIMIT 3""",
+             AND sinav_hata_yuzdesi >= 25
+           ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 3""",
         soz_no,
     )
 
@@ -96,8 +100,10 @@ async def prepare_counsellor_brief(soz_no: int) -> dict:
             } for e in exams
         ],
         "oncelikli_konular": [
+            # INVERSION FIX: sinav_hata_yuzdesi = HATA %. basari = 100 - hata.
             {"ders": w["ders"], "konu": w["konu"],
-             "basari_yuzdesi": round(float(w["sinav_hata_yuzdesi"] or 0), 1)}
+             "hata_yuzdesi": round(float(w["sinav_hata_yuzdesi"] or 0), 1),
+             "basari_yuzdesi": round(max(0.0, min(100.0, 100.0 - float(w["sinav_hata_yuzdesi"] or 0))), 1)}
             for w in weak
         ],
         "devamsizlik_saat": int(devam["toplam_saat"]) if devam and devam.get("toplam_saat") else 0,
@@ -189,25 +195,31 @@ async def get_class_brief(sinif: str, ders: str = "", tarih: str = "") -> dict:
     else:
         ort_net = None
 
-    # 3. Sınıfta en zayıf 3 konu (ders filtresiyle)
+    # 3. Sınıfta en zayıf 3 konu (ders filtresiyle) — INVERSION FIX
+    # sinav_hata_yuzdesi = HATA %. Sınıfın zayıflığı = YÜKSEK ort hata. DESC.
     where_ders = f"AND stt.ders ILIKE '%{ders.replace(chr(39), '')}%'" if ders else ""
     rows = await db_fetch(f"""
       SELECT stt.ders, stt.konu,
-             AVG(stt.sinav_hata_yuzdesi)::numeric(10,1) AS ort_yuzde,
+             AVG(stt.sinav_hata_yuzdesi)::numeric(10,1) AS ort_hata_yuzde,
+             (100 - AVG(stt.sinav_hata_yuzdesi))::numeric(10,1) AS ort_basari_yuzde,
              COUNT(DISTINCT stt.soz_no) AS ogr
       FROM student_topic_tracker stt
       JOIN students s ON s.soz_no::text = stt.soz_no::text
       WHERE (s.class_name = $1 OR s.sube = $1)
         AND (stt.tamamlandi IS NULL OR stt.tamamlandi = FALSE)
+        AND COALESCE(stt.status,'') != 'metadata'
+        AND stt.konu NOT LIKE 'Ortalama %'
       {where_ders}
       GROUP BY stt.ders, stt.konu
       HAVING COUNT(DISTINCT stt.soz_no) >= 2
-      ORDER BY AVG(stt.sinav_hata_yuzdesi) ASC LIMIT 5
+         AND AVG(stt.sinav_hata_yuzdesi) >= 30
+      ORDER BY AVG(stt.sinav_hata_yuzdesi) DESC NULLS LAST LIMIT 5
     """, sinif)
 
     weak_topics = [
         {"ders": r["ders"], "konu": r["konu"],
-         "sinif_basari": float(r["ort_yuzde"]) if r["ort_yuzde"] else 0,
+         "sinif_basari": float(r["ort_basari_yuzde"]) if r["ort_basari_yuzde"] else 0,
+         "sinif_hata": float(r["ort_hata_yuzde"]) if r["ort_hata_yuzde"] else 0,
          "etki_ogrenci": int(r["ogr"])}
         for r in rows
     ]

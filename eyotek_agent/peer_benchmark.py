@@ -102,14 +102,17 @@ async def ogrenci_peer_kiyas(soz_no: int, tolerans_net: int = 10) -> dict:
             "mesaj": f"Senin gibi {alan} alanında {son_net:.1f} net civarı peer henüz yok — pioneer'sin 🚀",
         }
 
-    # Peer'lerin en çok çalıştığı zayıf konular (öncelikli)
-    # status='calisiyor' veya tamamlandi=TRUE olanlar
+    # INVERSION FIX (Berf bug 10 May): sinav_hata_yuzdesi = HATA %.
+    # avg_basari aliasını "ortalama BASARI" olarak hesapla: 100 - AVG(hata).
+    # Peer'lerin en çok çalıştığı (status='calisiyor' VEYA tamamlandi=TRUE) konular
     oncelik = await db_fetch(
         """SELECT ders, konu, COUNT(*) as sayi,
-                  AVG(sinav_hata_yuzdesi) as avg_basari
+                  (100 - AVG(sinav_hata_yuzdesi)) as avg_basari,
+                  AVG(sinav_hata_yuzdesi) as avg_hata
            FROM student_topic_tracker
            WHERE soz_no = ANY($1::int[])
              AND (status = 'calisiyor' OR tamamlandi = TRUE)
+             AND COALESCE(status,'') != 'metadata'
            GROUP BY ders, konu
            HAVING COUNT(*) >= 2
            ORDER BY sayi DESC LIMIT 10""",
@@ -122,16 +125,20 @@ async def ogrenci_peer_kiyas(soz_no: int, tolerans_net: int = 10) -> dict:
         for o in oncelik
     ]
 
-    # Peer'lerin güçlü konuları (basari %70+)
+    # Peer'lerin güçlü konuları: DÜŞÜK hata = güçlü.
+    # Eski kod `>= 70` yazarak yüksek hata = zayıf konuyu güçlü diye seçiyordu (INVERSION).
     guclu = await db_fetch(
         """SELECT ders, konu, COUNT(*) as sayi,
-                  AVG(sinav_hata_yuzdesi) as avg_basari
+                  (100 - AVG(sinav_hata_yuzdesi)) as avg_basari,
+                  AVG(sinav_hata_yuzdesi) as avg_hata
            FROM student_topic_tracker
            WHERE soz_no = ANY($1::int[])
-             AND sinav_hata_yuzdesi >= 70
+             AND COALESCE(status,'') != 'metadata'
+             AND sinav_hata_yuzdesi <= 25
+             AND sinav_hata_yuzdesi IS NOT NULL
            GROUP BY ders, konu
            HAVING COUNT(*) >= 2
-           ORDER BY avg_basari DESC LIMIT 5""",
+           ORDER BY avg_hata ASC LIMIT 5""",
         peer_ids
     )
     guclu_list = [

@@ -82,12 +82,16 @@ async def generate_student_pdf(soz_no) -> str:
         devam = await conn.fetchval(
             "SELECT toplam_saat FROM devamsizlik_sayisi WHERE soz_no::int = $1", soz_no)
 
-        # Zayıf konular
+        # Zayıf konular — sinav_hata_yuzdesi = HATA % (yüksek=zayıf)
+        # INVERSION FIX (Berf bug 10 May): ASC → DESC + metadata filter + >=25 esik
         topics = await conn.fetch("""
             SELECT ders, konu, sinav_hata_yuzdesi
             FROM student_topic_tracker
             WHERE soz_no::int = $1 AND tamamlandi = FALSE
-            ORDER BY sinav_hata_yuzdesi ASC LIMIT 8
+              AND COALESCE(status,'') != 'metadata'
+              AND konu NOT LIKE 'Ortalama %'
+              AND sinav_hata_yuzdesi >= 25
+            ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 8
         """, soz_no)
 
         # Rehberlik notu sayısı (içerik GİZLİ)
@@ -152,13 +156,14 @@ async def generate_student_pdf(soz_no) -> str:
         pdf.key_value("Durum", "Devamsizlik kaydi yok")
     pdf.ln(3)
 
-    # Zayıf konular
+    # Zayıf konular — INVERSION FIX: hata yüksek = ACIL
     if topics:
         pdf.section_title("Gelisim Alanlari (Zayif Konular)")
         pdf.set_font("Arial", "", 9)
         for i, t in enumerate(topics, 1):
-            basari = t.get('sinav_hata_yuzdesi', 0) or 0
-            oncelik = "ACIL" if basari < 30 else "Orta" if basari < 60 else "Iyi"
+            hata = t.get('sinav_hata_yuzdesi', 0) or 0
+            basari = max(0.0, min(100.0, 100.0 - float(hata)))
+            oncelik = "ACIL" if hata >= 50 else "Orta" if hata >= 25 else "Iyi"
             pdf.cell(0, 5, f"  {i}. {t['ders']} - {t['konu'][:40]} (basari: %{basari:.0f}, oncelik: {oncelik})", 0, 1)
         pdf.ln(3)
 

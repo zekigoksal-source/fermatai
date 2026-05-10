@@ -102,7 +102,11 @@ async def _get_exam_summary(soz_no: int) -> dict:
 
 
 async def _get_weak_topics(soz_no: int, top_k: int = 5) -> list:
-    """En yüksek hata oranlı zayıf konular."""
+    """En yüksek hata oranlı zayıf konular.
+
+    sinav_hata_yuzdesi = HATA % (yuksek=zayif). Doğru yönde DESC.
+    Metadata satırları farklı semantik tutar — filtrele.
+    """
     from db_pool import db_fetch
     try:
         rows = await db_fetch(
@@ -110,6 +114,8 @@ async def _get_weak_topics(soz_no: int, top_k: int = 5) -> list:
                FROM student_topic_tracker
                WHERE soz_no = $1 AND sinav_hata_yuzdesi >= 40
                  AND tamamlandi = false
+                 AND COALESCE(status,'') != 'metadata'
+                 AND konu NOT LIKE 'Ortalama %'
                ORDER BY sinav_hata_yuzdesi DESC
                LIMIT $2""",
             soz_no, top_k,

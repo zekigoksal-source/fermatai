@@ -107,10 +107,14 @@ async def get_weak_topics(
     """
     from db_pool import db_fetch
     try:
+        # sinav_hata_yuzdesi = HATA % (yüksek = zayıf). Doğru yönde DESC.
+        # Metadata satırları ("Ortalama X/Y net") farklı semantik tutar — filtrele.
         sql = """SELECT ders, konu, sinav_hata_yuzdesi, status,
                         calisti_tarih, tamamlandi
                  FROM student_topic_tracker
-                 WHERE soz_no = $1 AND sinav_hata_yuzdesi >= $2"""
+                 WHERE soz_no = $1 AND sinav_hata_yuzdesi >= $2
+                   AND COALESCE(status,'') != 'metadata'
+                   AND konu NOT LIKE 'Ortalama %'"""
         if only_active:
             sql += " AND tamamlandi = false"
         sql += " ORDER BY sinav_hata_yuzdesi DESC LIMIT $3"
@@ -128,11 +132,15 @@ async def get_strong_topics(
     """En iyi performansli konular (hata oranı düşük)."""
     from db_pool import db_fetch
     try:
+        # GUCLU konu = DUSUK hata. Metadata satirlarini filtrele.
         rows = await db_fetch(
             """SELECT ders, konu, sinav_hata_yuzdesi
                FROM student_topic_tracker
                WHERE soz_no = $1 AND sinav_hata_yuzdesi <= 20
                  AND sinav_hata_yuzdesi IS NOT NULL
+                 AND COALESCE(status,'') != 'metadata'
+                 AND konu NOT LIKE 'Ortalama %'
+                 AND sinav_hata_sayisi >= 1
                ORDER BY sinav_hata_yuzdesi ASC LIMIT $2""",
             soz_no, top_k,
         )

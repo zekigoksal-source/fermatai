@@ -196,15 +196,18 @@ async def bugun_ne_calisayim(soz_no: str) -> str:
 
     pool = await _get_pool()
     async with pool.acquire() as conn:
+        # INVERSION FIX (Berf bug 10 May): sinav_hata_yuzdesi = HATA %
+        # Zayif konu = YUKSEK hata. >= 30 esik (anlamli zayiflik), DESC sort.
         weak = await conn.fetch("""
-            SELECT ders, konu, sinav_hata_yuzdesi as basari
+            SELECT ders, konu, sinav_hata_yuzdesi as hata
             FROM student_topic_tracker
             WHERE soz_no::text = $1
             AND tamamlandi = FALSE
-            AND sinav_hata_yuzdesi < 50
+            AND COALESCE(status,'') != 'metadata'
+            AND sinav_hata_yuzdesi >= 30
             AND LENGTH(konu) > 5
             AND konu NOT LIKE 'Ortalama %'
-            ORDER BY sinav_hata_yuzdesi ASC, RANDOM()
+            ORDER BY sinav_hata_yuzdesi DESC NULLS LAST, RANDOM()
             LIMIT 6
         """, str(soz_no))
 

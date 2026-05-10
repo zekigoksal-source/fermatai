@@ -120,13 +120,17 @@ async def build_study_plan_context(soz_no, force_refresh: bool = False) -> dict:
                 SELECT ders, konu, sinav_hata_yuzdesi, sinav_hata_sayisi, status
                 FROM student_topic_tracker
                 WHERE soz_no = $1 AND tamamlandi = FALSE
-                ORDER BY sinav_hata_yuzdesi DESC
+                  AND COALESCE(status,'') != 'metadata'
+                  AND konu NOT LIKE 'Ortalama %'
+                ORDER BY sinav_hata_yuzdesi DESC NULLS LAST
                 LIMIT 10
             """, soz_no),
             _fetch("""
                 SELECT ders, konu, sinav_hata_yuzdesi, sinav_hata_sayisi
                 FROM student_topic_tracker
                 WHERE soz_no = $1 AND sinav_hata_yuzdesi < 25 AND sinav_hata_sayisi > 3
+                  AND COALESCE(status,'') != 'metadata'
+                  AND konu NOT LIKE 'Ortalama %'
                 ORDER BY sinav_hata_yuzdesi ASC
                 LIMIT 5
             """, soz_no),

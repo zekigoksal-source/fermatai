@@ -81,10 +81,12 @@ async def puan_tahmin(soz_no: int, name: str = "") -> str:
     """, str(soz_no))
 
     # ─── 4. Zayıf konu sayısı + potansiyel ──────────────
+    # INVERSION FIX: sinav_hata_yuzdesi = HATA % (yüksek=zayıf)
     zayif = await db_fetchval("""
         SELECT COUNT(*) FROM student_topic_tracker
         WHERE soz_no::text = $1 AND tamamlandi = FALSE
-          AND sinav_hata_yuzdesi < 50 AND LENGTH(konu) > 5
+          AND COALESCE(status,'') != 'metadata'
+          AND sinav_hata_yuzdesi >= 50 AND LENGTH(konu) > 5
           AND konu NOT LIKE 'Ortalama %'
     """, str(soz_no)) or 0
 
@@ -197,13 +199,15 @@ async def puan_tahmin(soz_no: int, name: str = "") -> str:
             pass
 
     # 25.41 (Neo 8 May): student_topic_tracker'dan zayıf konu — daha iyi kaynak
+    # INVERSION FIX (Berf bug 10 May): YÜKSEK hata = ZAYIF konu
     try:
         zayif_top = await db_fetch("""
             SELECT konu, ders FROM student_topic_tracker
             WHERE soz_no::text = $1 AND tamamlandi = FALSE
-              AND sinav_hata_yuzdesi < 50 AND LENGTH(konu) > 5
+              AND COALESCE(status,'') != 'metadata'
+              AND sinav_hata_yuzdesi >= 50 AND LENGTH(konu) > 5
               AND konu NOT LIKE 'Ortalama %'
-            ORDER BY sinav_hata_yuzdesi ASC LIMIT 3
+            ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 3
         """, str(soz_no))
         if zayif_top and not (profile and profile.get("oncelikli_konular")):
             lines.append(f"\n📚 *En çok hata yaptığın 3 konu:*")

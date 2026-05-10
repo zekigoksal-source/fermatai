@@ -81,13 +81,18 @@ def _extract_ders_konu(answer: str) -> tuple:
 
 
 async def _is_weak_topic(soz_no: str, ders: str, konu: str) -> bool:
-    """Bu ders+konu ogrencinin zayif alanlarinda mi?"""
+    """Bu ders+konu ogrencinin zayif alanlarinda mi?
+
+    INVERSION FIX (Berf bug 10 May): sinav_hata_yuzdesi = HATA %.
+    Zayif = YUKSEK hata. Eski kod `< 50` ile basariliyi 'zayif' sayiyordu.
+    """
     if not soz_no or not ders:
         return False
     row = await db_fetchrow("""
         SELECT sinav_hata_yuzdesi FROM student_topic_tracker
         WHERE soz_no::text = $1 AND ders ILIKE $2
-        AND (sinav_hata_yuzdesi < 50 OR sinav_hata_yuzdesi IS NULL)
+        AND COALESCE(status,'') != 'metadata'
+        AND sinav_hata_yuzdesi >= 50
         LIMIT 1
     """, str(soz_no), f"%{ders}%")
     return bool(row)

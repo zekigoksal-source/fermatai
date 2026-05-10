@@ -390,11 +390,14 @@ async def branch_zayif_konu(**kwargs) -> dict:
         sinif_list = [s.strip() for s in sinif_list.split(",") if s.strip()]
 
     # Konu bazlı ortalama başarı (topic_tracker)
+    # INVERSION FIX (Berf bug 10 May): sinav_hata_yuzdesi = HATA %.
+    # En zayıf konular = EN YÜKSEK ortalama hata. ASC sıralama yanlış sonuç verirdi.
     try:
         if sinif_list:
             konular = await db_fetch(
                 """SELECT t.konu,
-                          AVG(t.sinav_hata_yuzdesi)::numeric(10,1) AS ort_basari,
+                          (100 - AVG(t.sinav_hata_yuzdesi))::numeric(10,1) AS ort_basari,
+                          AVG(t.sinav_hata_yuzdesi)::numeric(10,1) AS ort_hata,
                           COUNT(DISTINCT t.soz_no) AS ogr_sayisi
                    FROM student_topic_tracker t
                    JOIN students s ON s.soz_no::int = t.soz_no
@@ -402,22 +405,29 @@ async def branch_zayif_konu(**kwargs) -> dict:
                      AND s.sube = ANY($2::text[])
                      AND t.sinav_hata_yuzdesi IS NOT NULL
                      AND (t.tamamlandi IS NULL OR t.tamamlandi=FALSE)
+                     AND COALESCE(t.status,'') != 'metadata'
+                     AND t.konu NOT LIKE 'Ortalama %'
                    GROUP BY t.konu
-                   ORDER BY ort_basari ASC
+                   HAVING AVG(t.sinav_hata_yuzdesi) >= 30
+                   ORDER BY ort_hata DESC NULLS LAST
                    LIMIT 10""",
                 f"%{ders}%", sinif_list
             )
         else:
             konular = await db_fetch(
                 """SELECT konu,
-                          AVG(sinav_hata_yuzdesi)::numeric(10,1) AS ort_basari,
+                          (100 - AVG(sinav_hata_yuzdesi))::numeric(10,1) AS ort_basari,
+                          AVG(sinav_hata_yuzdesi)::numeric(10,1) AS ort_hata,
                           COUNT(DISTINCT soz_no) AS ogr_sayisi
                    FROM student_topic_tracker
                    WHERE LOWER(ders) LIKE LOWER($1)
                      AND sinav_hata_yuzdesi IS NOT NULL
                      AND (tamamlandi IS NULL OR tamamlandi=FALSE)
+                     AND COALESCE(status,'') != 'metadata'
+                     AND konu NOT LIKE 'Ortalama %'
                    GROUP BY konu
-                   ORDER BY ort_basari ASC
+                   HAVING AVG(sinav_hata_yuzdesi) >= 30
+                   ORDER BY ort_hata DESC NULLS LAST
                    LIMIT 10""",
                 f"%{ders}%"
             )
@@ -503,12 +513,17 @@ async def transfer_failure(**kwargs) -> dict:
         return {"error": "gecersiz soz_no"}
 
     # Topic tracker başarı (ders bazlı ortalama)
+    # INVERSION FIX: sinav_hata_yuzdesi = HATA %. ort_basari = 100 - ort_hata.
     topic_avg = await db_fetch(
-        """SELECT ders, AVG(sinav_hata_yuzdesi)::numeric(10,1) AS ort_basari,
+        """SELECT ders,
+                  (100 - AVG(sinav_hata_yuzdesi))::numeric(10,1) AS ort_basari,
+                  AVG(sinav_hata_yuzdesi)::numeric(10,1) AS ort_hata,
                   COUNT(*) AS konu_sayisi
            FROM student_topic_tracker
            WHERE soz_no=$1 AND sinav_hata_yuzdesi IS NOT NULL
              AND (tamamlandi IS NULL OR tamamlandi=FALSE)
+             AND COALESCE(status,'') != 'metadata'
+             AND konu NOT LIKE 'Ortalama %'
            GROUP BY ders""",
         soz_no
     )

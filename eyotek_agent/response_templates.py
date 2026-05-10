@@ -582,10 +582,12 @@ def format_student_profile(name, sinif, exam=None, devam=None, topics=None, etut
         lines.append(f"📚 *Etut:* {etut.get('toplam', 0)} toplam ({etut.get('yapildi', 0)} katilim)")
 
     if topics:
+        # INVERSION FIX (Berf bug 10 May): sinav_hata_yuzdesi = HATA %
         lines.append(f"\n🎯 *Gelisim Alanlari:*")
         for t in topics[:3]:
-            basari = t.get('sinav_hata_yuzdesi', 0) or 0
-            emoji = "🔴" if basari < 30 else "🟡" if basari < 60 else "🟢"
+            hata = t.get('sinav_hata_yuzdesi', 0) or 0
+            basari = max(0.0, min(100.0, 100.0 - float(hata)))
+            emoji = "🔴" if hata >= 50 else "🟡" if hata >= 25 else "🟢"
             lines.append(f"   {emoji} {t.get('ders','?')}: {t.get('konu','?')[:35]} (basari: %{basari:.0f})")
 
     lines.append(f"\n_Daha detayli analiz icin 'detayli raporla' yazabilirsiniz._")
