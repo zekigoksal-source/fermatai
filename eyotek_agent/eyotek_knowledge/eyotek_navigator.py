@@ -1152,31 +1152,40 @@ async def sinav_drilldown(
 ) -> dict:
     """Sınav adına göre Eyotek'ten sınav sonuç tablosunu çek (drill-down).
 
-    Akış:
-      1. Student/test-transferred sayfasına git
-      2. Modal aç + tarih filtresi (son N gün)
-      3. ARA → sınav listesi
-      4. Listede sinav_adi LIKE eşleşen ilk satırın ⋯ butonuna tıkla
-      5. Açılan dropdown'da "Dinamik Liste" linki tıkla
-      6. test-transferred-dynamic-list açıldı → tabloyu oku (öğrenci sonuçları)
+    Akış (25.43-DRILL-V2 — Neo bug 11 May): Eyotek test-transferred listesinde aynı
+    sınav her DEVRE için ayrı satır olarak listeleniyor (12.Snf, Mezun, 11.Snf...).
+    Her satırın ⋯ → Dinamik Liste'si SADECE o devrenin öğrencilerini gösteriyor
+    (URL'de encrypted Devre param). Eski kod ilk satıra tıkladığı için ~46 öğrenci
+    (Mezun + diğer devreler) atlanıyordu.
+
+    YENI Akış:
+      1. Student/test-transferred sayfasına git + tarih filtre
+      2. Sınav adına LIKE eşleşen TÜM satırları bul (her devre = ayrı satır)
+      3. Her satıra sırayla ⋯ → Dinamik Liste aç
+         3a. Dynamic-list'te cmbDevre + cmbSinif dropdown'larını BOŞALT ('Tümü')
+         3b. cmbHazirListe seç (TYT/AYT/LGS Net-Puan)
+         3c. ARA → tabloyu oku
+      4. Tüm devre satırlarının sonuçlarını BİRLEŞTİR (soz_no UNIQUE)
+      5. Birleşik sonucu döndür
 
     Args:
         sinav_adi: "Apotemi" veya "Apotemi TG TYT-3" (LIKE eşleşme)
         max_rows: max öğrenci satırı
         date_from_days: filtre — son kaç gün
 
-    Returns: {success, sinav_found, page_url, columns, rows, error}
+    Returns: {success, sinav_found, page_url, columns, rows, row_count, devre_count, error}
     """
     result = {
         "success": False, "sinav_found": None, "page_url": None,
         "columns": [], "rows": [], "row_count": 0,
+        "devre_count": 0, "devre_breakdown": [],
         "error_code": None, "error": None,
     }
 
+    page = None
     try:
         from playwright.async_api import async_playwright
         pw = await async_playwright().start()
-        # 25.41: CDP fail'da headless launch + cookie inject
         browser, ctx, _bmode = await _navigator_browser(pw)
         page = await ctx.new_page()
 
@@ -1203,112 +1212,212 @@ async def sinav_drilldown(
         await _click_search(page)
         await page.wait_for_timeout(3500)
 
-        # 4. Listede sinav_adi LIKE matching
-        # GridView1 satırlarında "Sınav Adı" sütunu var, kolon index ~5 (Şube/Tarih/Kod/Tür/Kategori/Adı)
-        match_info = await page.evaluate(
+        # 4. (V2) Sınav adı LIKE eşleşen TÜM satırları bul (her devre ayrı satır)
+        # Eyotek listesi: aynı sınav 12.Snf, Mezun, 11.Snf devreleri için ayrı satır.
+        # Eski kod ilk satıra tıkladığı için diğer devreler atlanıyordu.
+        all_matches = await page.evaluate(
             """(adi) => {
                 const rows = document.querySelectorAll('table tbody tr');
-                if (!rows.length) return {error: 'no_rows'};
+                if (!rows.length) return {error: 'no_rows', matches: []};
                 const al = adi.toLowerCase();
+                const matches = [];
                 for (let i = 0; i < rows.length; i++) {
                     const cells = Array.from(rows[i].cells).map(c => (c.innerText||'').trim());
+                    if (cells.length < 6) continue;  // header / boş
                     const fullText = cells.join(' | ').toLowerCase();
                     if (fullText.includes(al)) {
-                        // ⋯ butonunu bul (cls 'cust' veya 'dropdown-toggle')
-                        const btns = rows[i].querySelectorAll('a, button');
-                        for (const b of btns) {
-                            const cls = (b.className||'').toLowerCase();
-                            if (cls.includes('cust') || cls.includes('dropdown-toggle')) {
-                                b.click();
-                                return {clicked: true, row_index: i, sinav: cells.slice(0, 7)};
-                            }
-                        }
-                        return {error: 'no_dropdown_btn', row_index: i, sinav: cells.slice(0, 7)};
+                        // Devre kolonu (typically index 7: Şube|Tarih|Kod|Tür|Kategori|Adı|Devre|...)
+                        const devre = cells[7] || '?';
+                        const sinav_kodu = cells[3] || '';
+                        matches.push({
+                            row_index: i,
+                            sinav: cells.slice(0, 8),
+                            devre: devre,
+                            sinav_kodu: sinav_kodu,
+                        });
                     }
                 }
-                return {error: 'sinav_not_found', total_rows: rows.length};
+                return {matches: matches};
             }""",
             sinav_adi
         )
 
-        if match_info.get("error"):
+        matches = all_matches.get("matches", [])
+        if not matches:
             result["error_code"] = "SINAV_NOT_FOUND"
-            result["error"] = f"Sinav '{sinav_adi}' listede bulunamadi: {match_info.get('error')}"
+            result["error"] = f"Sinav '{sinav_adi}' listede bulunamadi"
             return result
 
-        result["sinav_found"] = match_info.get("sinav", [])
-        await page.wait_for_timeout(1500)
+        # İlk satırın meta bilgisini sınav header olarak ata
+        result["sinav_found"] = matches[0].get("sinav", [])
+        result["devre_count"] = len(matches)
 
-        # 5. Dropdown'daki "Dinamik Liste" linkini tıkla
-        clicked = await page.evaluate(
-            """() => {
-                const links = Array.from(document.querySelectorAll('a, button, .dropdown-menu li, .dropdown-menu a'));
-                const visible = links.filter(el => {
-                    const r = el.getBoundingClientRect();
-                    return r.width > 0 && r.height > 0;
-                });
-                for (const el of visible) {
-                    const t = (el.innerText||'').trim().toLowerCase();
-                    if (t === 'dinamik liste' || t.includes('dinamik liste')) {
-                        el.click();
-                        return {clicked: true, text: el.innerText.trim()};
-                    }
-                }
-                return {error: 'no_dinamik_liste_link'};
-            }"""
-        )
+        logger.info(f"[NAV] sinav_drilldown: {sinav_adi} → {len(matches)} devre satırı")
+        for m in matches:
+            logger.info(f"  · Devre={m['devre']} kod={m['sinav_kodu']} row_idx={m['row_index']}")
 
-        if clicked.get("error"):
-            result["error_code"] = "DRILL_LINK_NOT_FOUND"
-            result["error"] = "'Dinamik Liste' linki bulunamadi"
-            return result
-
-        # 6. dynamic-list sayfasını bekle
-        await page.wait_for_timeout(4500)
-        result["page_url"] = page.url
-
-        # 6a. Hazir liste (TYT/AYT/LGS Net-Puan) sec — sinav_adi'na gore
+        # 5. Her devre satırı için ayrı drill-down → sonuçları birleştir
         adi_lo = (sinav_adi or "").lower()
-        if "ayt" in adi_lo:
+        if "ayt" in adi_lo or "yks" in adi_lo:
             tip_kw = "ayt net"
         elif "lgs" in adi_lo:
             tip_kw = "lgs"
         else:
-            tip_kw = "tyt net"  # default
-        await page.evaluate(
-            """(kw) => {
-                if (!window.$ || !$('#cmbHazirListe').length) return false;
-                const opt = $('#cmbHazirListe option').filter(function(){
-                    const t = $(this).text().toLowerCase();
-                    return t.includes(kw) || t.includes('net-puan');
-                }).first().val();
-                if (opt) { $('#cmbHazirListe').val(opt).trigger('change'); return true; }
-                return false;
-            }""",
-            tip_kw
-        )
-        await page.wait_for_timeout(1500)
+            tip_kw = "tyt net"
 
-        # 6b. ARA (btnControl) — sonuclari yukle
-        try:
-            await page.click("#btnControl", timeout=4000)
-        except Exception:
-            # fallback: input[type=submit] olabilir
+        all_rows = []
+        all_columns = []
+        seen_soz_no = set()  # dedupe across devre satırları
+
+        for idx, match in enumerate(matches):
+            row_idx = match["row_index"]
+            devre = match["devre"]
+
+            # 5.1. Bu satırın ⋯ butonuna tıkla
+            click_res = await page.evaluate(
+                """(rowIdx) => {
+                    const rows = document.querySelectorAll('table tbody tr');
+                    if (rowIdx >= rows.length) return {error: 'row_index_out_of_range'};
+                    const tr = rows[rowIdx];
+                    const btns = tr.querySelectorAll('a, button');
+                    for (const b of btns) {
+                        const cls = (b.className||'').toLowerCase();
+                        if (cls.includes('cust') || cls.includes('dropdown-toggle')) {
+                            b.click();
+                            return {clicked: true};
+                        }
+                    }
+                    return {error: 'no_dropdown_btn'};
+                }""",
+                row_idx
+            )
+
+            if click_res.get("error"):
+                logger.warning(f"  [NAV] devre={devre} ⋯ click fail: {click_res}")
+                continue
+            await page.wait_for_timeout(1500)
+
+            # 5.2. "Dinamik Liste" tıkla
+            dl_clicked = await page.evaluate(
+                """() => {
+                    const links = Array.from(document.querySelectorAll('a, button, .dropdown-menu li, .dropdown-menu a'));
+                    const visible = links.filter(el => { const r = el.getBoundingClientRect(); return r.width>0 && r.height>0; });
+                    for (const el of visible) {
+                        const t = (el.innerText||'').trim().toLowerCase();
+                        if (t === 'dinamik liste' || t.includes('dinamik liste')) {
+                            el.click();
+                            return {clicked: true};
+                        }
+                    }
+                    return {error: 'no_dinamik_liste_link'};
+                }"""
+            )
+            if dl_clicked.get("error"):
+                logger.warning(f"  [NAV] devre={devre} Dinamik Liste link fail")
+                continue
+
+            # 5.3. Dynamic-list sayfasını bekle
+            await page.wait_for_timeout(4500)
+            if not result["page_url"]:
+                result["page_url"] = page.url
+
+            # 5.4. cmbHazirListe seç (TYT/AYT/LGS Net-Puan)
+            await page.evaluate(
+                """(kw) => {
+                    if (!window.$ || !$('#cmbHazirListe').length) return false;
+                    const opt = $('#cmbHazirListe option').filter(function(){
+                        const t = $(this).text().toLowerCase();
+                        return t.includes(kw) || t.includes('net-puan');
+                    }).first().val();
+                    if (opt) { $('#cmbHazirListe').val(opt).trigger('change'); return true; }
+                    return false;
+                }""",
+                tip_kw
+            )
+            await page.wait_for_timeout(1500)
+
+            # 5.5. (V2 KRITIK) cmbSinif boşalt — tüm sınıflar (sınıf default kalmasın)
+            # cmbDevre URL'den gelmiş, dropdown'da o devre seçili — bu DOĞRU çünkü her
+            # devre satırı için ayrı drill yapıyoruz. cmbSinif ise '' olmalı.
+            await page.evaluate(
+                """() => {
+                    if (window.$ && $('#cmbSinif').length) {
+                        $('#cmbSinif').val('').trigger('change');
+                    }
+                }"""
+            )
+            await page.wait_for_timeout(800)
+
+            # 5.6. ARA (btnControl)
             try:
-                await page.click("input[type=submit][value*='ARA']", timeout=2000)
+                await page.click("#btnControl", timeout=4000)
             except Exception:
-                pass
-        await page.wait_for_timeout(7000)
+                try:
+                    await page.click("input[type=submit][value*='ARA']", timeout=2000)
+                except Exception:
+                    pass
+            await page.wait_for_timeout(6000)
 
-        # 7. GridView1 / data tablosu (artik _read_table dogru sececek)
-        cols, rows_data = await _read_table(page, max_rows)
-        result["columns"] = cols
-        result["rows"] = rows_data
-        result["row_count"] = len(rows_data)
+            # 5.7. Tabloyu oku
+            cols, rows_data = await _read_table(page, max_rows)
+            if cols and not all_columns:
+                all_columns = cols
+
+            devre_added = 0
+            for r in rows_data:
+                # Dedupe by soz_no
+                soz_no = None
+                if isinstance(r, dict):
+                    soz_no = (r.get("soz_no") or r.get("Söz No") or
+                              r.get("sözno") or r.get("SözNo"))
+                if soz_no:
+                    soz_str = str(soz_no).strip()
+                    if soz_str in seen_soz_no:
+                        continue
+                    seen_soz_no.add(soz_str)
+                # devre tag'i ekle (debug + analiz için)
+                if isinstance(r, dict):
+                    r.setdefault("_devre", devre)
+                all_rows.append(r)
+                devre_added += 1
+
+            result["devre_breakdown"].append({
+                "devre": devre, "rows": devre_added, "total_in_table": len(rows_data),
+            })
+            logger.info(f"  [NAV] devre={devre} → {devre_added} kayit (tabloda {len(rows_data)})")
+
+            # 5.8. max_rows ulaşıldıysa erken çıkış
+            if len(all_rows) >= max_rows:
+                logger.info(f"  [NAV] max_rows={max_rows} ulasildi, devre dongusu durdu")
+                break
+
+            # 5.9. Bir sonraki devre için listeye geri dön
+            # (son devre değilse — gereksiz back navigation önlemi)
+            if idx < len(matches) - 1:
+                try:
+                    await page.go_back(wait_until="domcontentloaded", timeout=10000)
+                    await page.wait_for_timeout(2500)
+                    # Modal yine aç + tarih filtresi (state kaybı olabilir)
+                    await _open_search_modal(page)
+                    await page.wait_for_timeout(1000)
+                    await _fill_text_input(page, ["#txtKayitBas"], from_d)
+                    await _fill_text_input(page, ["#txtKayitBit"], to_d)
+                    await _click_search(page)
+                    await page.wait_for_timeout(3500)
+                except Exception as _be:
+                    logger.warning(f"  [NAV] back nav fail: {_be}")
+                    break
+
+        # 6. Sonuç birleştirme
+        result["columns"] = all_columns
+        result["rows"] = all_rows[:max_rows]
+        result["row_count"] = len(result["rows"])
         result["success"] = True
-        if not rows_data:
+
+        if not all_rows:
             result["error_code"] = "NO_DATA"
-            result["error"] = "Dinamik Liste acildi ama tablo bos (sinav henuz aktarilmamis olabilir)."
+            result["error"] = "Hicbir devre satirinda ogrenci verisi yok."
+
         return result
 
     except Exception as e:
@@ -1318,7 +1427,8 @@ async def sinav_drilldown(
         return result
     finally:
         try:
-            await page.close()
+            if page:
+                await page.close()
         except Exception:
             pass
         try:
