@@ -215,9 +215,18 @@ async def extract_insights_from_message(user_msg: str, bot_msg: str = "") -> dic
     """Ollama ile hızlı çıkarım yap (yerel, $0 maliyet).
 
     Claude yerine Ollama tercih — arka plan iş, latency < 3s, bedava.
+
+    TEST MODE GUARD (10 May Neo): Test mesajlarından insight çıkarma — gerçek
+    öğrenci profilini kirletmesin. ContextVar'a bakar.
     """
     if not user_msg or len(user_msg.strip()) < 10:
         return {}
+    try:
+        from test_mode import is_test_context
+        if is_test_context():
+            return {}
+    except Exception:
+        pass
 
     try:
         import ollama
