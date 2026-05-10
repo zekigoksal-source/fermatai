@@ -1,6 +1,53 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 10 Mayıs 2026 SABAH-GECE → 11 Mayıs ERKEN SAATLER — **OTURUM 25.43-LAZY-NAME + 25.43-WEBUI-FIXLOOP: 3 lazy_sync bug fix (etut_history kolon "ogrenci" yok + students kolon adları + soz_no INT cast) + web hamburger F5 fix loop (5 başarısız tahmin → revert → browser MCP test → kesin teşhis: PWA banner pointer-events root+child ayrı satır) — Neo "tamamdır problem çözüldü" onayı**
+> **Son güncelleme:** 11 Mayıs 2026 09:53 — **OTURUM 25.43-DRILL-V2: sinav_drilldown her devre satırı ayrı çek + birleştir (Neo bug brief #20 → V2 fix loop 4 katmanda) + halüsinasyon önleme (SINAV VERISI ETIKETLEME kuralı) — APOTEMI TG TYT-3 14→30 öğrenci (devre 12.Snf+Mezun), 5 sınav x 86 yeni kayıt DB'de**
+
+---
+
+## 🎯 OTURUM 25.43-DRILL-V2 (11 May 09:30-09:53) — sinav_drilldown devre döngüsü
+
+**Tetik:** Neo bug brief #20 — APOTEMİ TG TYT-3 (kod 999000107) 60 öğrenci girmiş, sinav_sonuclari sadece 14 dönüyordu. Plus halüsinasyon (gece): bot APOTEMI verisini "Sıfır Pozitif 5 Mayıs" etiketiyle sundu.
+
+### Kök neden — canlı VPS keşfi
+Eyotek `test-transferred` listesinde aynı sınav HER DEVRE için ayrı satır:
+```
+APOTEMİ TG TYT-3 | Devre=12.Snf | Şube Katılım=60
+APOTEMİ TG TYT-3 | Devre=Mezun  | Şube Katılım=60
+```
+Eski kod LIKE eşleşmede ilk satıra (12.Snf) tıklıyor → `dynamic-list?Devre=z9ii+epPLY...` (encrypted '12.Snf') URL → sadece o devre öğrencileri. Mezun (~46) atlanıyor.
+
+### V2 4 Katman Fix
+| Katman | Bug | Fix |
+|--------|-----|-----|
+| V2 (64854f1) | Tek devre tıklama | Tüm devre satırlarını dolaş, sonuçları soz_no UNIQUE birleştir |
+| V2-FIX (23336bc) | Türkçe `İ` toLowerCase combining mark | `replace(/İ/g, 'i')` zinciri |
+| V2-FIX2 (e85a812) | Combining mark hala kalıyordu | `NFD normalize + diakritik silme + toLowerCase` |
+| V2-FIX3 (7cb0d4c) | Row keys `Adı/Soyadı/SözNo/Türkçe_NET` lazy_sync'te yok | Field mapping eklendi + `sinav_meta[6]` index düzeltildi (eski [4] = Tür) |
+| V2-FIX4 (1fd0daf) | Halüsinasyon — bot APOTEMI'yi "Sıfır Pozitif" etiketledi | `SINAV VERISI ETIKETLEME` system prompt kuralı |
+
+### Smoke Test (canlı 5 sınav)
+| Sınav | Devre | DB Kayıt | Önceki |
+|-------|-------|----------|--------|
+| APOTEMI TG TYT-3 | 12.Snf + Mezun | 30 | 14 |
+| APOTEMI TG YKS-3 | 12.Snf + Mezun | 24 | 8 |
+| 11. SINIF İşler - Çap 2 | 11.Snf | 9 | - |
+| ACİL 2 TYT AYT BİRLEŞİK | 12.Snf + Mezun | 14 | - |
+| 11. sınıf Yanıt - Paraf 2 | 11.Snf | 9 | - |
+| **TOPLAM** | | **86 yeni kayıt** | |
+
+### Halüsinasyon Onleme (SINAV VERISI ETIKETLEME)
+5 katmanlı sistem prompt kuralı:
+1. tool_result.sinav_found[6] = cevap başlığı (rename YASAK)
+2. sinav_found[2] = gerçek tarih (rename YASAK)
+3. User farklı sınav isterse + tool farklı bulduysa: "Aradığınız X yok, yakın Y var, ister misiniz?" — açık belirt
+4. U-turn çiftlemesi: "Önce yok dedim, şimdi var" deme
+5. Kaynak tutarlılık: devre_breakdown toplamı ile katılım sayısı verme
+
+### Kalan teknik borç (minor)
+- `lazy_APOTEM_TG_TYT_3_*` exam_code (slug) vs `999000107` (Eyotek native) — duplicate. İleride sinav_meta'dan exam_code = sinav_kodu (index 3) almak daha temiz.
+- 22 Nisan öncesi sınavlar için manuel re-sync gerekebilir (auto helper script TODO).
+
+---
 
 ---
 
