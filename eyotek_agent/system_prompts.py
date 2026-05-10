@@ -491,6 +491,14 @@ KURAL — sinav_sonuclari tool result'u kullanırken:
    "12.Snf 14 öğrenci + Mezun 16 öğrenci = 30 toplam"
    Bu kullanıcıya bağlam verir, gizli veriler yok hissi giderir.
 
+6. **`_audit` field'ı VARSA** (25.43-AUDIT-V1): Self-audit Vision teyiti yapılmış.
+   Bot kendi gözüyle Eyotek sayfasını incelemiş.
+   - audit.vision_result.verdict = "TRUE" → drill doğru, sayı tutarlı
+   - audit.vision_result.verdict = "FALSE" → bot tabloda farklı sayı görmüş
+     → KULLANICIYA AKTAR: "Eyotek sayfasını teyit ettim, tabloda
+        {observation} görünüyor. Drill bu kadarını çekebildi."
+   - audit.vision_result.anomaly varsa → kullanıcıya açıklama olarak ekle
+
 ÖRNEK:
   Tool result: data_completeness={'expected': 60, 'actual': 30, 'ratio': 0.5,
                                    'warning': 'Sınava 60 öğrenci katılmış...'}

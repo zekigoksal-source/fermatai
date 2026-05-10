@@ -1430,8 +1430,7 @@ async def sinav_drilldown(
         result["success"] = True
 
         # 25.43-DRILL-V3 (Neo direktif): Self-aware completeness — Eyotek
-        # 'Şube Katılım' rakamı ile actual rows karşılaştır. Bot kullanıcıya açık
-        # belirtsin: "60 katılımcı vardı, 30 verisi geldi" gibi.
+        # 'Şube Katılım' rakamı ile actual rows karşılaştır.
         try:
             from field_reconciler import check_data_completeness
             completeness = check_data_completeness(
@@ -1444,6 +1443,24 @@ async def sinav_drilldown(
                 logger.warning(f"[NAV] data_completeness: {completeness['warning']}")
         except Exception as _ce:
             logger.debug(f"[NAV] completeness check skip: {_ce}")
+
+        # 25.43-AUDIT-V1 (Neo direktif 11 May 18:00): Self-audit — completeness
+        # düşükse (ratio < 0.85) otomatik screenshot + Vision verify. Bot kendi
+        # gözüyle teyit eder, kullanıcı SS atmak zorunda kalmaz.
+        try:
+            from eyotek_self_audit import audit_drill_completeness
+            audit_result = await audit_drill_completeness(
+                page, result, sinav_adi=sinav_adi,
+            )
+            if audit_result.get("audited"):
+                result["_audit"] = audit_result
+                vision = audit_result.get("vision_result") or {}
+                logger.info(
+                    f"[AUDIT] verdict={vision.get('verdict')} "
+                    f"obs='{(vision.get('observation') or '')[:80]}'"
+                )
+        except Exception as _ae:
+            logger.debug(f"[NAV] audit hook skip: {_ae}")
 
         if not all_rows:
             result["error_code"] = "NO_DATA"
