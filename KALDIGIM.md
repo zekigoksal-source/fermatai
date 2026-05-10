@@ -1,8 +1,76 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Mayıs 2026 sabah → **OTURUM 25.43-FAZ-5: Bot'un kendi tespit ettiği 4 kök hatasına sert kontrol kuralları**
+> **Son güncelleme:** 10 Mayıs 2026 gece → **OTURUM 25.43-INVERSION: sinav_hata_yuzdesi inversion + kur filter (Berf bug)**
 >
-> Tetik (Neo bug 18:00-18:01): Bot kendisi 4 hata tespit etti — KONTROL 1: 11.sınıfa "YKS X gün kala" yazma (sınıf çerçeve hatası). KONTROL 2: 16030 etüt fizibilite check'siz sundu (124/gün insan yapamaz). KONTROL 3: "27.5 ort" demeden "9/21 üzerinden" demedi. KONTROL 4: ogrenci_sayisi'ni etüt sandı. system_prompt'a 4 ZORUNLU KONTROL bloğu eklendi.
+> Tetik (Neo bug 10 May 21:00): Bot Berf'e (SAY öğr) GELİŞİM HARİTASI'nda "Edebi Akımlar / Servet-i Fünun / Paragrafta Ana Düşünce — Başarın %0/%9 ACİL öncelik" gösterdi. Neo: "sayısalcı çocuğa salakca sözel konular — başarı oranı bence hata oranı olabilir, sistemi kurduğumuz ilk andan beri yapıyor olabilirsin bu hatayı". TESPIT: column ERROR % tutar ama kod everywhere ASC sıralayıp "Başarın" diye basıyordu. 6 fast_responses + 1 render + 1 daily_push + system_prompt fix. Canlı VPS test: Berf yeni çıktıda Matematik %19-50 ACİL önde, Türkçe paragraf %55+ Orta arkada.
+
+## 🔁 OTURUM 25.43-INVERSION (10 May 21:00-22:00) — sinav_hata_yuzdesi inversion + kur filter
+
+### Tetik (Berf konuşması)
+Neo Berf konuşmasını okudu:
+> "berf yazmış cocuk sayısal öğrencisi bunu zaten sistemde biliyorsun adama öneri olarak salakca konular yazmışsın sanki bir sözel öğrencisi gibi"
+> "asla bir öğrencinin paragrafta sorusunun başarısı böyle olamaz tam tersine öğrenciler genelde paragrafta görece iyi yaparlar bu başarı oranı bence hata oranı olabilir"
+
+### Kök Sebep — VARYANTLI KOLON SEMANTİĞİ
+`student_topic_tracker.sinav_hata_yuzdesi` aynı kolon farklı yerlerde farklı anlam:
+- `build_topic_tracker.py` (normal satırlar): `yuzde = hata/soru*100` → **HATA %**
+- `post_sync_update.py` (status='yukselis' "Ortalama X/Y net"): `basari_pct = net/max*100` → **BAŞARI %**
+
+Eski `system_prompts.py` bota "ASLINDA BAŞARI YÜZDESİ" diyordu → tüm fast_responses ASC sıralayıp `< 30` 🔴 ACIL yazıyordu → ÖĞRENCİNİN EN İYİ YAPTIĞI KONULAR "ACIL" diye listeleniyordu.
+
+### Düzeltmeler (4 dosya, commit 3d7b90f)
+
+**eyotek_agent/fast_responses.py** — helper fonksiyonlar + 6 lokasyon:
+- `_basari_pct(hata)` → `100 - hata` clamped [0,100]
+- `_emoji_for_hata(h)` → ≥50 🔴 ACİL, ≥25 🟡 Orta, <25 🟢 İyi
+- `_track_from_student(class_name, kur)` → SAY/EA/SOZ/LGS (kur=NULL ise class_name parse, 106/123 öğr kur=NULL)
+- `_is_ders_irrelevant_for_track(ders, sinav_turu, track)` → AYT-only SOZ derslerini SAY öğrenciye gizle (TYT herkese ortak)
+- L1 (kimligin zayif_count): `< 50` → `>= 50` + metadata filter
+- L2 (haftalık dashboard zayıf+güçlü): ASC → DESC + 100-hata alias basari
+- L3 (GELİŞİM HARİTASI — Berf'in bug yüzeyi): ASC LIMIT 8 → DESC LIMIT 20 + filtre `< 25` atla + kur filter + "Başarın: %{100-hata} (hatan %hata)"
+- L4 (calisma_plani emoji): `_emoji_for_hata(hata)`
+- L5 (öğrenci özeti gelişim alanları): ASC → DESC + metadata
+- L6 (güçlü konular): `> 60 DESC` → `<= 20 ASC` (gerçek güçlü = düşük hata)
+
+**eyotek_agent/fast_response_render.py**:
+- `build_topic_heatmap_html`: hata → `100-hata` ile renk hesap (yeşil=başarılı)
+
+**eyotek_agent/daily_push.py**:
+- Zayıf konu sorgusu: metadata + "Ortalama %" prefix filter + `>= 25` threshold
+
+**eyotek_agent/system_prompts.py**:
+- KONTROL 4 tablosuna `sinav_hata_yuzdesi = HATA %` netleştirme + metadata istisnası + INVERSION GUARD bloğu (ORDER BY DESC zayıf için, ASC güçlü için, görüntüde 100-hata sun)
+- Yanlış "ASLINDA BAŞARI YÜZDESI" satırı düzeltildi → "HATA YUZDESI (0-100, ERROR %)"
+
+### Canlı Doğrulama (VPS, 3d7b90f deploy sonrası)
+Berf (soz_no=233, "11 SAY") için yeni `ogrenci_zayif_konular()` çıktısı:
+```
+1. 🔴 Matematik · Birim Çember              | Başarın %19 (hatan %81) | ACİL
+2. 🔴 Matematik · Trigonometrik Fonksiyonlar | Başarın %21 (hatan %79) | ACİL
+3. 🔴 Matematik · Fonksiyonlarla İlgili Uyg. | Başarın %33 (hatan %67) | ACİL
+4. 🔴 Matematik · Doğrunun Analitik Incele.  | Başarın %42 (hatan %58) | ACİL
+5. 🔴 Matematik · İkinci Dereceden Fonk.     | Başarın %50 (hatan %50) | ACİL
+6. 🟡 Türkçe    · Paragrafın Yorumu          | Başarın %55 (hatan %45) | Orta
+7. 🟡 Türkçe    · Paragrafta Yardımcı Düş.   | Başarın %67 (hatan %33) | Orta
+8. 🟡 Türkçe    · Sözcükte Anlam             | Başarın %67 (hatan %33) | Orta
+```
+Eski çıktıda "Edebi Akımlar %0 ACİL, Servet-i Fünun %0 ACİL, Paragrafta Ana Düşünce %9 ACİL" diye listeliyordu. Şimdi gerçek SAY profilini doğru sıralıyor; "iyi gittiği paragraf konuları" ACİL diye etiketlenmiyor.
+
+### Açık Hesap (Aynı pattern başka dosyalarda da olabilir — gelecek oturum audit)
+Bu commit'te ELLENMEDI ama aynı inversion HALA olabilir:
+- `pdf_report.py:87-90,160` (PDF rapor)
+- `pedagojik_koc.py:200-207` (pedagojik koç önerileri)
+- `puan_tahmin_motoru.py:87,204-206` (puan tahmin)
+- `smart_etut_advisor.py:27-34,191-199` (etut önerileri)
+- `foto_solver_v2.py:90` (foto soru çözüm konu seçimi)
+- `peer_benchmark.py:109,128` (akran kıyas)
+- `role_briefs.py:57-58,205` (rol brieflari)
+- `services/exam_service.py:132-136` (güçlü konu — `<= 20` zaten doğru sezgi)
+- `konu_zorluk_haritasi.py:38,113` (kontrol et)
+
+**Stratejik karar:** Şimdilik en görünür yüzey (WhatsApp fast response + heatmap + daily push) düzeltildi. system_prompts.py'da net kural artık var — Claude tarafı bunu kullanacak. Diğerleri bir sonraki oturumda audit.
+
+---
 
 ## 🚨 OTURUM 25.43-FAZ-5 (11 May sabah) — 4 Kök Hata Sert Kontrolü
 
