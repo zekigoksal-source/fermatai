@@ -1217,15 +1217,16 @@ async def sinav_drilldown(
         # Eski kod ilk satıra tıkladığı için diğer devreler atlanıyordu.
         all_matches = await page.evaluate(
             """(adi) => {
-                // 25.43-DRILL-V2-FIX: Türkçe İ/I/ı normalizasyonu — toLowerCase()
-                // 'İ' → 'i̇' (combining mark) yapıyor, match bozuluyordu.
-                const _norm = (s) => (s||'').toLowerCase()
-                    .replace(/İ/g, 'i').replace(/I/g, 'i').replace(/ı/g, 'i')
-                    .replace(/Ç/g, 'c').replace(/ç/g, 'c')
-                    .replace(/Ş/g, 's').replace(/ş/g, 's')
-                    .replace(/Ğ/g, 'g').replace(/ğ/g, 'g')
-                    .replace(/Ü/g, 'u').replace(/ü/g, 'u')
-                    .replace(/Ö/g, 'o').replace(/ö/g, 'o');
+                // 25.43-DRILL-V2-FIX2 (Neo bug 11 May): Türkçe İ → toLowerCase →
+                // 'i + combining dot above (U+0307)' birleşik karakter olusuyordu.
+                // 'apotemi'.includes('apotemİ_lower') match etmiyordu.
+                // FIX: NFD normalize → diakritik (combining) silme → toLowerCase
+                // Bu hem 'İ' hem 'Ç' hem 'Ş' hem 'Ğ' hem 'Ü' hem 'Ö' düzgün ascii'ye çevirir.
+                const _norm = (s) => (s||'')
+                    .normalize('NFD')
+                    .replace(/[\\u0300-\\u036f]/g, '')  // tum combining diakritikleri sil
+                    .toLowerCase()
+                    .replace(/ı/g, 'i');  // ı (NFD'de ayrılmaz) — manuel
                 const rows = document.querySelectorAll('table tbody tr');
                 if (!rows.length) return {error: 'no_rows', matches: []};
                 const al = _norm(adi);
