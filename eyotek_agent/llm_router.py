@@ -102,70 +102,49 @@ SAFE_GROQ_TOOLS = {
 # Eski liste 80+ pattern → Claude %71 routing. Çoğu Cerebras'ta hallediliyor.
 # Yeni liste: SADECE Claude tool-calling/yazma/kompleks analiz/kriz gerektirenler.
 # Kavramsal sorular (nedir, açıkla, formül, kurum bilgisi, basit istatistik) → Cerebras
+# 25.43-FAZ-0 (Neo direktif 11 May): _CLOUD_KEYWORDS DARALTILDI.
+# Önceki liste 80+ pattern → Claude %65 routing → ortalama 34s, p95 151s.
+# Hedef: Claude %25, Cerebras %30, Fast %45 (Oturum 24 baseline).
+# Cerebras 235B + 16 SAFE_TOOLS allowlist mevcut → çoğu non-write iş Cerebras'ta.
+# Bu liste SADECE: yazma + KVKK + foto + multi-tool kompleks + hassas konular.
 _CLOUD_KEYWORDS = [
-    # 1. YAZMA (Eyotek/DB tool zorunlu)
+    # 1. YAZMA (Eyotek/DB tool zorunlu — Cerebras tool-calling fallback yetersiz)
     "etut yaz", "etüt yaz", "not ekle", "not yaz",
     "sms gonder", "sms gönder", "mesaj gonder", "mesaj gönder",
     "kaydet", "sisteme yaz", "eyotek",
-    # 2. KOMPLEKS ANALIZ (multi-tool reasoning)
-    "raporla", "rapor cek", "rapor çek",
-    "kiyasla", "kıyasla", "karsilastir", "karşılaştır",
-    "risk altinda", "risk altında",
-    "deneme analiz", "ders program",
-    # 3. KISISEL PLAN (verisi DB'den, multi-data)
-    "calisma plan", "çalışma plan", "calismam plan", "çalışmam plan",
-    "plan yap", "plan istiyorum", "plan yapsana", "plan yarat",
-    "haftalik plan", "haftalık plan", "gunluk plan", "günlük plan",
-    "programa ekle", "calismama ekle", "çalışmama ekle", "panele ekle",
-    # 4. HASSAS / KRIZ (Claude daha güvenli)
-    "intihar", "olum", "ölüm", "kendime zarar",
-    "depresyon", "bunalim", "bunalım", "vazgeçtim",
-    # 5. SİSTEM META (admin, farkındalık)
-    "farkindali", "farkındali", "bilinc", "bilinç", "awareness",
-    "ne degisti", "ne değişti", "sistem durum", "self dev",
-    "iyilest", "iyileşt",
-    # 6. CIKMIS SORU (RAG + image gerek — Claude tool gerek)
+    # 2. ÇIKMIŞ SORU (image generation + send_exam_image tool — Claude vision)
     "cikmis soru", "çıkmış soru", "cikmis sorular", "çıkmış sorular",
     "soru goster", "soru göster", "soru at", "soruyu at",
     "soru paylas", "soru paylaş", "gorsel at", "görsel at",
     "yks cikmis", "yks çıkmış", "tyt sorular", "ayt sorular",
     "2024 sor", "2023 sor", "2022 sor", "2025 sor",
-    # 7. PUAN TAHMIN (yeni feature, Claude tool)
+    # 3. PUAN TAHMİN (Claude tool — ML-style multi-data sorgu)
     "puan tahmin", "puanim ne olur", "puanım ne olur",
     "yks tahmin", "tercih tahmin",
-    # 8. 25.43 (Neo) — Yeni dis API tool intent kelimeleri
-    # Bu kelimeler → Claude'a (tool_call zorunlu, struct response)
-    # NOT: Cerebras tool-calling enable ise (ENABLE_GROQ_TOOLS=true) bunlar
-    # da Cerebras'a inebilir — SAFE_GROQ_TOOLS allowlist hepsi okuma.
-    # Coğrafya iklim
-    "iklim", "yagis", "yağış", "sicaklik bugun", "sıcaklık bugün",
-    "hava durumu", "hava nasil", "hava nasıl",
-    # Sayı dizisi
-    "fibonacci", "asal sayilar", "asal sayılar", "kombinatorik dizisi",
-    "catalan", "lucas dizisi", "ucgensel", "üçgensel", "1,1,2,3,5",
-    # Akademik araştırma
-    "akademik makale", "araştırma makale", "doi ", "crossref",
-    "arxiv değil", "scholar",
-    # Yer/koordinat (OSM)
-    "koordinat", "enlem boylam", "haritada nerede",
-    # Wikidata struct
-    "wikidata", "structured data", "yapilandirilmis bilgi",
-    # CERN
-    "cern", "lhc", "büyük hadron", "atlas dataset", "cms dataset",
-    # AlphaFold/PDB
-    "alphafold", "uniprot", "protein 3d", "protein yapı tahmin",
-    # NIST WebBook (kimya termo)
-    "termodinamik veri", "olusum entalpi", "oluşum entalpi", "delta h",
-    "kimya verisi", "molekul agirligi", "molekül ağırlığı",
-    # NOT: AŞAĞIDAKİLER ARTIK CEREBRAS'A:
-    #   - kurum bilgisi (fermat, dershane, kurum)
-    #   - kavramsal (nedir, açıkla, formül, ornek)
-    #   - basit istatistik (zayif konu, son deneme — fast_response yakalar)
-    #   - selamlama, sohbet, motivasyon (Cerebras 8b/120b)
-    #   - hata/red (kufur, sacma — fast_response yakalar)
-    #   - TDK kelime anlamı (Cerebras kavramsal — kelime acklamasi yapabilir
-    #     veya gerekirse Claude tool çağırır — ek anahtar kelime gerek yok)
-    #   - NIST sabit (Cerebras Wolfram'a/kavramsal yanıt verebilir)
+    # 4. ÇOK-VERİLİ KİŞİSEL PLAN (Claude tool kompleks: profil + zayif konu + program)
+    "calisma plan", "çalışma plan", "calismam plan", "çalışmam plan",
+    "plan yap", "plan istiyorum", "plan yapsana", "plan yarat",
+    "haftalik plan", "haftalık plan", "gunluk plan", "günlük plan",
+    "programa ekle", "calismama ekle", "çalışmama ekle", "panele ekle",
+    # 5. HASSAS / KRİZ (Claude daha güvenli, hassas dil)
+    "intihar", "olum", "ölüm", "kendime zarar",
+    "depresyon", "bunalim", "bunalım", "vazgeçtim",
+    # 6. SİSTEM META (admin self-dev, BLUEPRINT/KALDIGIM gibi sistem yansıtma)
+    "farkindali", "farkındali", "bilinc", "bilinç", "awareness",
+    "ne degisti", "ne değişti", "sistem durum", "self dev",
+    "iyilest", "iyileşt",
+    # ─────────────────────────────────────────────────────────────────
+    # CEREBRAS'A KAYDIRILDI (V3 daralma — bu kelimeler ARTIK Claude'a GİTMİYOR):
+    #   - "raporla", "rapor cek" (Cerebras tool-calling 16 read-only tool yapabilir)
+    #   - "kiyasla", "karsilastir" (Cerebras kavramsal kıyas yapar)
+    #   - "deneme analiz", "ders program" (basit Cerebras + tool kombinasyonu)
+    #   - "iklim", "fibonacci", "akademik makale", "wikidata", "cern" (16 dış API
+    #     SAFE_GROQ_TOOLS'da, Cerebras direkt çağırır)
+    #   - "alphafold", "uniprot", "termodinamik veri" (Cerebras + dış API)
+    #   - "koordinat", "enlem boylam" (OSM Cerebras tarafında)
+    # Eğer Cerebras tool-calling bir noktada başarısız olursa otomatik Claude'a
+    # düşer (chat_cerebras_with_tools fallback mekanizması).
+    # ─────────────────────────────────────────────────────────────────
 ]
 
 # KIŞISEL VERİ istekleri — Ollama ASLA yapmamali (halusinasyon riski)
