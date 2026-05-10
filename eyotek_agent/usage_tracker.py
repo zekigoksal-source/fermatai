@@ -41,7 +41,18 @@ async def log_event(
 
     Oturum 25.39 (Neo): cache_read_tokens ve cache_write_tokens eklendi.
     Anthropic API response.usage: cache_read_input_tokens + cache_creation_input_tokens.
+
+    TEST MODE (10 May Neo direktif): test mode'da event_type'a '_test' suffix ekle —
+    daily_stats hesabinda WHERE event_type NOT LIKE '%_test' ile filtrelenebilir,
+    test mesajlari gercek kullanim metriklerini bozmaz.
     """
+    # Test modu ise event_type'a marker ekle (analytics filter icin)
+    try:
+        from test_mode import is_test_context
+        if is_test_context() and not event_type.endswith("_test"):
+            event_type = f"{event_type}_test"
+    except Exception:
+        pass
     try:
         pool = await _get_pool()
         async with pool.acquire() as conn:

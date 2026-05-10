@@ -52,19 +52,27 @@ _TEST_PHONES = _load_test_phones()
 def is_test_phone(phone: str) -> bool:
     """Telefon numarasi test kullanici mi? (gercek prod kullanici degil)
 
+    10 May 2026 (Neo direktif): 9059900xx range'i otomatik test phone — bridge
+    test_mode.py ile uyum icin. test_user_registry ile test_mode birleşik.
+
     Ornek:
         >>> is_test_phone("905309356389")
         True
+        >>> is_test_phone("9059900020")  # otomatik test range
+        True
         >>> is_test_phone("905050952398")  # Mehmet Karpuz, gercek
-        False
-        >>> is_test_phone("")
         False
     """
     if not phone:
         return False
-    # Normalize: + isareti, bosluk, vs. cikar
     p = str(phone).replace("+", "").replace(" ", "").strip()
-    return p in _TEST_PHONES
+    # Explicit registry
+    if p in _TEST_PHONES:
+        return True
+    # 10 May: 9059900xx (xx=00..99) test allowlist (test_mode.py ile sync)
+    if len(p) == 10 and p.startswith("9059900"):
+        return True
+    return False
 
 
 def list_test_phones() -> list[str]:

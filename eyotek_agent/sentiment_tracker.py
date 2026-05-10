@@ -83,7 +83,19 @@ async def log_sentiment(phone: str, soz_no: int, name: str, message: str, sentim
 
     22.1n-bug17: Atlas #17 fix — soz_no=0 ise phone'dan students JOIN ile lookup yap.
     Onceden soz_no=0 kayitlari JOIN'de eslesmeyince rehber bildirimleri kayboluyordu.
+
+    TEST MODE GUARD (10 May): test mode'daysa student_insights'a yazma —
+    test verisi gercek ogrenci profilini kirletmesin.
     """
+    # ── Test mode bypass ──
+    try:
+        from test_mode import is_test_context
+        if is_test_context():
+            logger.debug(f"[SENTIMENT] test mode → skip ({sentiment})")
+            return
+    except Exception:
+        pass
+
     if sentiment == "neutral":
         return  # Nötr kaydetmeye gerek yok
 

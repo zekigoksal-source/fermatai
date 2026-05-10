@@ -53,6 +53,16 @@ async def log_student_signal(
         logger.warning(f"log_student_signal: gecersiz soz_no={soz_no}")
         return None
 
+    # TEST MODE GUARD (10 May Neo direktif): test mesajlari ogrenci insight'ina
+    # yazilmasin — gercek profili kirletmesin, alarm tetiklemesin.
+    try:
+        from test_mode import is_test_context
+        if is_test_context():
+            logger.debug(f"[STUDENT_SIGNAL] test mode → skip (soz={soz_no}, type={signal_type})")
+            return None
+    except Exception:
+        pass
+
     # Content boyutu sinirla (DB sinirini zorlama)
     if isinstance(content, (dict, list)):
         content = json.dumps(content, ensure_ascii=False)[:500]

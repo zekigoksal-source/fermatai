@@ -286,11 +286,19 @@ async def _log_conversation(
     if not DATABASE_URL:
         return
     # Oturum Mentenans (21 Nisan 19:10) — TEST SESSION filtresi
-    # Ortam degiskeni FERMAT_TEST_MODE=1 ise veya session_id '_test_' ile basliyorsa:
+    # Ortam degiskeni FERMAT_TEST_MODE=1 ise veya session_id '_test_' ile basliyorsa
+    # VEYA test_mode.is_test_context() True ise (10 May Neo direktif):
     # - routing_stats'a yazma
     # - agent_conversations'a _test_ prefix'i ile yaz (kolay filtre için)
     import os as _os_log
     _is_test = bool(_os_log.getenv("FERMAT_TEST_MODE")) or (session_id or "").startswith("_test_")
+    if not _is_test:
+        try:
+            from test_mode import is_test_context as _itc
+            if _itc():
+                _is_test = True
+        except Exception:
+            pass
     if _is_test:
         # Test modu: DB'ye ya hiç yazma ya da test prefix ile yaz
         if _os_log.getenv("FERMAT_TEST_NO_DB") == "1":

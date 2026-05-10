@@ -130,10 +130,22 @@ async def get_db_pool():
 
 
 # Oturum Mentenans (21 Nisan 19:15) — Test mode tespit (routing_stats kirlenmesin)
+# Genisleme 10 May (Neo direktif): test_mode.is_test_context() ContextVar de okunur.
 def _is_test_mode() -> bool:
-    """FERMAT_TEST_MODE=1 env varsa test modu aktif → routing_stats'a yazilmaz."""
+    """Test modu aktif mi?
+    - FERMAT_TEST_MODE=1 env (global override)
+    - test_mode.is_test_context() (ContextVar: [TEST:id] marker veya test_phone)
+    """
     import os as _os_tm
-    return bool(_os_tm.getenv("FERMAT_TEST_MODE"))
+    if bool(_os_tm.getenv("FERMAT_TEST_MODE")):
+        return True
+    try:
+        from test_mode import is_test_context as _itc
+        if _itc():
+            return True
+    except Exception:
+        pass
+    return False
 
 
 # OTURUM 22.6 (21 Nisan) — Fire-and-forget task guvenlik sarmalayicisi
@@ -2382,6 +2394,20 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
     """
     # ── 0. Numara normalizasyonu + guvenlik kontrolleri ───────────────────────
     phone = _normalize_phone(phone)
+
+    # ── TEST MODE detection (10 May Neo direktif) ──────────────────────────────
+    # is_test=True ise: side-effect'ler (insights/memory/alert/sentiment) skip,
+    # rate-limit gevsek, usage_log'a is_test=true yazilir. Asil cevap normal uretilir.
+    try:
+        from test_mode import detect_test_context, set_test_mode, strip_test_marker
+        _is_test, _test_id = detect_test_context(phone, text)
+        if _is_test:
+            set_test_mode(True, _test_id)
+            # [TEST:id] prefix'i temizle — agent gercek soruyu gorsun
+            text = strip_test_marker(text)
+            logger.info(f"[TEST_MODE] active phone={phone[-4:]} test_id={_test_id} text={text[:60]!r}")
+    except Exception as _te:
+        logger.debug(f"[TEST_MODE] init fail: {_te}")
 
     # ── Split continuation leak guard (13:58 bug defansi) ──
     # Eğer text bir dict str repr'i gibi gözüküyorsa (örn "{'type': 'split_continuation'...")
