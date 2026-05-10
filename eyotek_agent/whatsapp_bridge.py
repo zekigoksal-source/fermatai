@@ -3681,7 +3681,11 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
             return f"_Tüm mesajı tekrar gönderiyorum:_\n\n{split_info['full_response']}"
 
     if lower in ("yardım", "help", "/help"):
-        # Rol bazli yardim mesaji
+        # 25.43-ACL-LEAK FIX (Neo iter#2 judge tespit):
+        # Eski kod: tüm non-ogrenci rollere ADMIN KOMUT LISTESI veriyordu —
+        # veli "yardım" deyince 'Etut: 11 SAY A'ya fizik etut yaz' görüyordu (ACL ihlali).
+        # Rol-bazlı yardım: admin/mudur admin komutları, ogretmen/rehber kendi,
+        # veli/guest sadece tanıtım, ogrenci akademik.
         from fermat_core_agent import _get_caller_profile
         prof = await _get_caller_profile(phone)
         role = prof.get("role", "unknown")
@@ -3698,15 +3702,52 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 "- Akademik destek (foto ile soru atabilirsin!)\n\n"
                 "Sifirlamak icin: *sifirla*"
             )
-        return (
-            f"{greeting}*FermatAI Komutlari*\n\n"
-            "Rapor: 'Ahmet'i raporla'\n"
-            "Etut: '11 SAY A'ya fizik etut yaz'\n"
-            "Not: 'Ali icin rehberlik notu ekle'\n"
-            "Sinif: '11 SAY A'nin durumu nasil'\n"
-            "Devamsiz: 'Bugun kimler gelmedi'\n\n"
-            "Sifirlamak icin: *sifirla*"
-        )
+        elif role == "ogretmen":
+            return (
+                f"{greeting}*FermatAI Ogretmen Asistani*\n\n"
+                "Size yardimci olabilecegim alanlar:\n"
+                "- Sinifimin son deneme ozeti\n"
+                "- Zayif konu haritasi (sinif bazli)\n"
+                "- Bu hafta ders programim\n"
+                "- Etut istatistiklerim\n"
+                "- Brans onerisi yazma (rehbere)\n\n"
+                "Sifirlamak icin: *sifirla*"
+            )
+        elif role == "rehber":
+            return (
+                f"{greeting}*FermatAI Rehberlik Asistani*\n\n"
+                "Size yardimci olabilecegim alanlar:\n"
+                "- Negatif duygu sinyali alan ogrenciler\n"
+                "- Ogrenci duygu durumu\n"
+                "- Brans ogretmeni etut onerileri\n"
+                "- Rehberlik notu ekleme\n"
+                "- Risk altinda ogrenci listesi\n\n"
+                "Sifirlamak icin: *sifirla*"
+            )
+        elif role in ("admin", "mudur", "yonetim"):
+            return (
+                f"{greeting}*FermatAI Yonetim Komutlari*\n\n"
+                "Rapor: 'Ahmet'i raporla'\n"
+                "Etut: '11 SAY A'ya fizik etut yaz'\n"
+                "Not: 'Ali icin rehberlik notu ekle'\n"
+                "Sinif: '11 SAY A'nin durumu nasil'\n"
+                "Devamsiz: 'Bugun kimler gelmedi'\n\n"
+                "Sifirlamak icin: *sifirla*"
+            )
+        elif role == "veli":
+            return (
+                f"{greeting}*FermatAI — Veli Asistani*\n\n"
+                "Cocugunuzla ilgili bilgileri rehberlik servisinden alabilirsiniz.\n"
+                "WP'den paylasilan haftalik raporlari bekleyiniz.\n\n"
+                "Soru icin: 0546 260 54 46"
+            )
+        else:  # guest, unknown
+            return (
+                f"{greeting}*FermatAI — Fermat Egitim Kurumlari Asistani*\n\n"
+                "Akademik destek icin Fermat'a kayitli olmaniz gerekir.\n"
+                "Kayit icin: 0546 260 54 46\n"
+                "Web: fermategitimkurumlari.com"
+            )
 
     # ── 3. HIZLI YANIT — Intent parser'dan ONCE, en hizli yol ─────────────────
     try:

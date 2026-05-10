@@ -618,19 +618,28 @@ async def ogrenci_son_deneme(soz_no: int, name: str, exam_filter: str = "") -> s
     _best_net_tyt = 0.0
     for s, v, max_net, ic in subjects:
         if v is not None and v > 0:
-            ratio = v / max_net if max_net > 0 else 0
+            # 25.43-FIX (Neo iter#2 judge bug, Berf "10.0/6 net" tespit):
+            # Net degeri max'i asarsa mantiksal celiski olusur. Kapat: min(v, max_net).
+            # Bu DB'deki yanlis veriyi mask'lar ama kullaniciya tutarli gosterir.
+            if v > max_net:
+                from loguru import logger as _lg_clamp
+                _lg_clamp.warning(f"  [TYT-NET-CLAMP] {s}: {v:.1f} > max {max_net}, clamping")
+                v_display = float(max_net)
+            else:
+                v_display = float(v)
+            ratio = v_display / max_net if max_net > 0 else 0
             if ratio >= 0.7:
                 emoji = "🟢"
             elif ratio >= 0.4:
                 emoji = "🟡"
             else:
                 emoji = "🔴"
-            lines.append(f"{ic} *{s}*: {emoji} *{v:.1f}*/{max_net} net")
+            lines.append(f"{ic} *{s}*: {emoji} *{v_display:.1f}*/{max_net} net")
             # En yuksek ratio (max'a goranlikta) — tebrik icin
-            if ratio > _best_ratio_tyt and v >= 5:
+            if ratio > _best_ratio_tyt and v_display >= 5:
                 _best_ratio_tyt = ratio
                 _best_ders_tyt = s
-                _best_net_tyt = v
+                _best_net_tyt = v_display
 
     # Onceki sinavla trend
     if len(rows) >= 2:
@@ -1309,7 +1318,9 @@ async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", s
                 cikmis_bilgi = f" 📸 _{cnt} çıkmış soru var!_"
 
         lines.append(f"*{i}.* {emoji} *{r['ders']}* · {r['konu'][:35]}{status_icon}")
-        lines.append(f"    Başarın: *%{basari:.0f}* (hatan %{hata:.0f}) | {oncelik_txt} öncelik{cikmis_bilgi}")
+        # 25.43-TEST-FIX (Neo iter#2): parantezde hata gosterim cifte bilgi karistirici
+        # idi. Sadece "Basarin: %X" goster, judge yorumu "kafa karistirici" demisti.
+        lines.append(f"    Başarın: *%{basari:.0f}* | {oncelik_txt} öncelik{cikmis_bilgi}")
         lines.append("")
 
     # Strateji onerisi + aksiyon
