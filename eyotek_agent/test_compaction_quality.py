@@ -30,21 +30,45 @@ if env.exists():
     load_dotenv(env)
 
 
-# ─── Test conversation fixtures ───
+# ─── Test conversation fixtures (production-like, uzun bot cevapları) ───
+_LONG_BOT_REPLY = """Kurumda toplam 125 aktif öğrenci var. Sınıf dağılımı şöyle:
+
+| Sınıf | Öğrenci |
+|-------|---------|
+| 12 SAY A | 14 |
+| 12 SAY B | 12 |
+| 12 SAY ZEN | 10 |
+| 12 SOZ A | 10 |
+| 12 SOZ B | 12 |
+| 11 SAY A | 14 |
+| 11 SAY ZEN | 12 |
+| 11 SAY VIB | 12 |
+| 11 SAY NXT | 10 |
+| 11 SOZ A | 8 |
+| 11 SOZ B | 12 |
+
+Devre olarak 12. sınıf 58, 11. sınıf 56, mezun 11 öğrenci toplam 125.
+Devamsızlık 100 saat üstü 32 öğrenci, 200 saat üstü 8 öğrenci kritik durumda.
+Ortalama TYT net 62, AYT 48, en başarılı sınıf 11 SAY ZEN. Devre bazında:
+- 11. SAY ZEN: ortalama 78 TYT, 65 AYT MAT (Mahmut Taha lider)
+- 12 SAY A: ortalama 70 TYT, 58 AYT MAT (Ecrin Aslan lider)
+- 11. SAY VIB: ortalama 60 TYT, 45 AYT (en düşük performans)
+"""
+
 LONG_CONVERSATION = [
     {"role": "user", "content": "merhaba"},
     {"role": "assistant", "content": "Merhaba Zeki Bey! Bugün size nasıl yardımcı olayım?"},
-    {"role": "user", "content": "kurumda kaç öğrenci var"},
-    {"role": "assistant", "content": "Kurumda toplam 125 aktif öğrenci var: 12.SAY 45, 12.SOZ 22, 11.SAY 38, 11.SOZ 20."},
-    {"role": "user", "content": "11. sınıf SAY öğrencilerinin ortalaması nasıl"},
-    {"role": "assistant", "content": "11. sınıf SAY: ortalama TYT net 65, AYT MAT-FEN 55. En başarılı: Mahmut Taha (TYT 95, AYT 82). En düşük: Damla K (TYT 38)."},
-    {"role": "user", "content": "Mahmut Taha hakkında daha fazla bilgi"},
-    {"role": "assistant", "content": "Mahmut Taha (soz_no 182): 11.SAY ZEN sınıfında. Son 3 deneme: TYT 95, 92, 88. Devamsızlık 12 saat. Etüt katılımı %95. Hedef: ODTÜ Fizik."},
-    {"role": "user", "content": "etüt programı nasıl"},
-    {"role": "assistant", "content": "Mahmut Taha haftalık 8 etüt: Fizik 3 (Örsel Hoca), Matematik 3 (Vedat Hoca), Kimya 2 (Emin Hoca). Cumartesi 09:00-15:00 + Çarşamba 16:00-18:00."},
-    {"role": "user", "content": "fizikte zayıf alanı var mı"},
-    {"role": "assistant", "content": "Mahmut Taha fizik analizi: Kuvvet ve hareket %95, Elektrik %88, AMA Kalın mercekler %50, Modern fizik %40. Kalın mercekler için Örsel Hoca ile ek 2 etüt önerebilirim."},
-    {"role": "user", "content": "tamam etüt yaz"},
+    {"role": "user", "content": "kurum geneli detaylı durum raporu istiyorum"},
+    {"role": "assistant", "content": _LONG_BOT_REPLY},
+    {"role": "user", "content": "11. sınıf SAY öğrencilerinin ortalaması nasıl detaylı"},
+    {"role": "assistant", "content": "11. sınıf SAY öğrencileri detaylı analiz:\n\n" + _LONG_BOT_REPLY[:1500]},
+    {"role": "user", "content": "Mahmut Taha hakkında tam profil"},
+    {"role": "assistant", "content": "Mahmut Taha (soz_no 182, 11.SAY ZEN):\n\nSınıf: 11.SAY ZEN\nDevre: 11.Snf\nDanışman: Kardelen Savcı\nVeli: Ahmet Taha (telefon kayıtlı)\n\nSon 5 deneme TYT netleri: 95, 92, 88, 91, 87\nSon 5 deneme AYT MAT-FEN: 82, 78, 80, 75, 79\nSon 3 sıralama: Genel 1850, 2200, 2050\n\nDevamsızlık 12 saat (kritik değil), Etüt katılımı %95.\n\nHedef: ODTÜ Fizik (yerleşme puanı ~440 lazım, şu an ~410 seviyesi).\nZayıf konular (önem sırasıyla): Kalın mercekler %50 net, Modern fizik %40 net, Atom fiziği %55 net, Optik dalga %62 net.\nGüçlü: Kuvvet ve hareket %95, Elektrik manyetizma %88, Termodinamik %85.\n\nRehberlik notları (son 3): 1) 'çok motiveli ama uyku düzeni bozuk' (28 Nis), 2) 'fiziği seviyor matematik biraz zorlanıyor' (15 Nis), 3) 'aile destekli, hedef net' (3 Nis)."},
+    {"role": "user", "content": "etüt programı nasıl tam liste"},
+    {"role": "assistant", "content": "Mahmut Taha haftalık etüt programı (8 etüt, 12 saat):\n\nCumartesi:\n- 09:00-09:45 Fizik (Örsel Hoca, D-2)\n- 09:45-10:30 Fizik (Örsel Hoca, D-2)\n- 10:30-11:15 Matematik (Vedat Hoca, D-1)\n- 11:15-12:00 Matematik (Vedat Hoca, D-1)\n- 12:00-12:45 Kimya (Emin Hoca, D-3)\n- 14:00-14:45 Matematik (Vedat Hoca, D-1)\n\nÇarşamba:\n- 16:00-16:45 Fizik (Örsel Hoca, D-2)\n- 17:00-17:45 Kimya (Emin Hoca, D-3)\n\nSon 4 hafta etüt katılımı: 32/32 (100%). Etüt notları: tüm hocalar 'aktif katılımcı, sorgulayan' yorumu yapmış."},
+    {"role": "user", "content": "fizikte hangi konularda en çok eksiği var"},
+    {"role": "assistant", "content": "Mahmut Taha fizik konu bazlı detay analiz (son 5 sınav ortalaması):\n\nKaldırma kuvveti: %95\nVektörler: %93\nHareket: %92\nNewton yasaları: %90\nEnerji: %88\nElektrik: %85\nManyetizma: %82\nTermodinamik: %78\nDalgalar: %72\nOptik dalga: %62\nAtom fiziği: %55\nKalın mercekler: %50\nModern fizik: %40\n\nKritik 3 alan (2024-2025 YKS'de soru çıkma yüzdesi):\n1. Kalın mercekler — yıllık ortalama 1-2 soru\n2. Modern fizik — yıllık ortalama 2-3 soru\n3. Atom fiziği — yıllık ortalama 1-2 soru\n\nKayıp net: bu 3 konudan ortalama 4-6 soru kaçırıyor → ~5-8 net potansiyel artış. Bu da TYT puanında ~12-15 puan artışına denk."},
+    {"role": "user", "content": "tamam ek etüt yaz fizik için"},
 ]
 
 
