@@ -219,7 +219,11 @@ STUDENT_QUERY_REGISTRY = [
         "id": "bugunku_program",
         "patterns": [
             r"bug[uü]nk[uü]\s*(ders\s*program|program|etut)",
-            r"bugun\s*(ne\s*var|hangi\s*ders)",
+            r"bug[uü]n\s*(ne\s*var|hangi\s*ders)",
+            # Genis pattern (10 May Berf-test bug): "ders programım", "programim", "haftalik program"
+            r"(haftal[ıi]k\s*)?ders\s*program[ıi]?m?",
+            r"\bprogram[ıi]m\b",
+            r"bu\s*hafta\s*(ne|hangi).{0,15}(var|ders)",
         ],
         "path": "fast",
         "handler": "ogrenci_gun_programi",
