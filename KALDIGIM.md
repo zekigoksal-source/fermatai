@@ -1,6 +1,72 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Mayıs 2026 17:40 — **OTURUM 25.43-DRILL-V3-FULL: 3 görev tamam → (1) 5 lazy_sync upsert field_reconciler'a migrate (~35 manuel chain → tek satır find_field) (2) sinav_resync.py — re-sync helper + lazy→native merge script (3) exam_code native öncelik (sinav_kodu enrich) → eski 116 lazy_ kayıt → 57 silindi (43 + 14), 59 kalan native bekliyor (resync flag ile gelir). 11. SINIF İşler-Çap 2 smoke test PASS: native kod 1110, 9 upsert, completeness ratio 0.82**
+> **Son güncelleme:** 11 Mayıs 2026 18:30 — **OTURUM 25.43-AUDIT-V1: Bot Self-Audit mekanizması — Eyotek'te ss + Claude Vision teyit (Neo direktif "kendi gözünle teyit et"). audit_drill_completeness hook: ratio<0.85 → otomatik ss + Vision "tabloda kaç satır?" soru → JSON verdict (TRUE/FALSE/CONFIDENCE) → audit_log DB. Smoke test: APOTEMI drill 30 öğrenci, Vision ekranda 16 görüyor (son devre Mezun) → FALSE 0.95 confidence, anomaly tespit. Maliyet ~$0.01/audit, sadece düşük ratio'da tetikleniyor**
+
+## 🤖 OTURUM 25.43-AUDIT-V1 (11 May 18:00-18:30) — Self-Audit (kendi gözüyle teyit)
+
+### Tetik
+Neo direktif: "Sen Eyotek'ten ss alarak ilerleyebiliyorsun, kendi teyit mekanizmanı oluştur. Her adımda ss alarak süreci kontrol et. Ben acıp ss atmayayım."
+
+### Mimari (eyotek_self_audit.py — 350 satır yeni modül)
+1. **`take_audit_screenshot(page, label, claim)`** — Playwright ss + `/audit_screenshots/{day}/` kaydet
+2. **`verify_with_vision(ss_path, claim)`** — Claude Sonnet 4.5 Vision JSON verdict
+3. **`audit_drill_completeness(...)`** — drill sonrası ratio<0.85 ise OTOMATİK
+4. **`init_audit_table()`** — `audit_log` tablosu (id, action, claim, screenshot, verdict, confidence, observation, numbers, anomaly)
+5. **`cleanup_old_screenshots(days)`** — N gün retention (default 14)
+
+### Otomatik Hook
+sinav_drilldown sonuna eklendi:
+```python
+if completeness.ratio < 0.85:
+    ss = await take_audit_screenshot(page, "drill_apotemi")
+    vision = await verify_with_vision(ss.path, "Tabloda kaç satır var?")
+    result["_audit"] = {"verdict": "FALSE", "observation": "16 satır", ...}
+```
+
+### Smoke Test (canlı, audit_log id=1)
+```
+DRILL APOTEMI TG TYT-3:
+  row_count: 30 (12.Snf 14 + Mezun 16)
+  completeness ratio: 0.5 (60 expected vs 30 actual)
+  → AUDIT TETİKLENDİ
+
+VISION VERDICT: FALSE (confidence 0.95)
+OBSERVATION: "Tabloda header satırı hariç 16 adet veri satırı görünüyor"
+NUMBERS: {row_count: 16, expected_claim: 60, drill_claim: 30, actual_visible: 16}
+ANOMALY: "Pagination veya lazy-loading olabilir"
+
+audit_log_id: 1 (DB'ye kaydedildi)
+SS path: /opt/fermatai/audit_screenshots/20260510/182753_drill_Apotemi_TG_TYT_3.png
+```
+
+Bot kendi gözüyle ekranda 16 satır gördü — drill 30 dedi (multi-devre birleştirme), gerçekte ekranda son devre var. Vision farkı doğru tespit + anomaly belirledi.
+
+### System Prompt Güncelleme — VERI EKSIKLIK FARK ETME
+6. madde eklendi: `_audit.verdict` ve `vision_result.observation` bot tarafından kullanıcıya iletilir:
+   "Eyotek sayfasını teyit ettim, ekranda 16 satır görünüyor — drill 2 devreyi birleştirip 30'a tamamladı."
+
+### Konfigurasyon (env)
+- `FERMAT_AUDIT_ENABLED=true` (default)
+- `FERMAT_AUDIT_DIR=/opt/fermatai/audit_screenshots`
+- `FERMAT_AUDIT_VISION_MODEL=claude-sonnet-4-5`
+- `FERMAT_AUDIT_RETENTION_DAYS=14`
+
+### Maliyet
+- Token: ~1500 input (image) + ~250 output → ~$0.01/audit
+- Tetikleme: sadece ratio<0.85 → günlük ~5-10 audit max → ~$0.05-0.10/gün
+- Kazanç: bot kendi sorununu teşhis eder, kullanıcı ss atmak zorunda kalmaz
+
+### Genişletilebilir
+Audit pattern her Eyotek tool'una uygulanabilir:
+- write_etut sonrası → "etüt yazıldı mı, takvimde göründü mü?"
+- write_counsellor_note sonrası → "not eklendi mi, listede var mı?"
+- ogrenci_drilldown sonrası → "ogrenci profil sayfası doğru açıldı mı?"
+
+---
+
+## 🏁 OTURUM 25.43-DRILL-V3-FULL (11 May 10:30-17:40) — 3 Görev Tamam
+
+> **Önceki güncelleme:** 11 Mayıs 2026 17:40 — **3 görev tamam → (1) 5 lazy_sync upsert field_reconciler'a migrate (~35 manuel chain → tek satır find_field) (2) sinav_resync.py — re-sync helper + lazy→native merge script (3) exam_code native öncelik (sinav_kodu enrich) → eski 116 lazy_ kayıt → 57 silindi (43 + 14), 59 kalan native bekliyor (resync flag ile gelir). 11. SINIF İşler-Çap 2 smoke test PASS: native kod 1110, 9 upsert, completeness ratio 0.82**
 
 ## 🏁 OTURUM 25.43-DRILL-V3-FULL (11 May 10:30-17:40) — 3 Görev Tamam
 
