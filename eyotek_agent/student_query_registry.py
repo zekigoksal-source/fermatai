@@ -117,7 +117,8 @@ STUDENT_QUERY_REGISTRY = [
         ],
         "path": "fast",
         "handler": "ogrenci_zayif_konular",
-        "data_sources": ["student_topic_tracker WHERE sinav_hata_yuzdesi<50 ORDER BY asc"],
+        # INVERSION FIX (10 May): sinav_hata_yuzdesi = HATA % (yuksek=zayif)
+        "data_sources": ["student_topic_tracker WHERE sinav_hata_yuzdesi>=25 ORDER BY sinav_hata_yuzdesi DESC"],
         "freq_observed": 6,
     },
     {
@@ -129,7 +130,8 @@ STUDENT_QUERY_REGISTRY = [
         ],
         "path": "fast",
         "handler": "ogrenci_guclu_konular",
-        "data_sources": ["student_topic_tracker WHERE sinav_hata_yuzdesi>=60 DESC"],
+        # INVERSION FIX: guclu = DUSUK hata (ogrenci az yanlis yapiyor)
+        "data_sources": ["student_topic_tracker WHERE sinav_hata_yuzdesi<=20 AND sinav_hata_sayisi>=1 ORDER BY ASC"],
     },
 
     # ─── KATEGORI 4: CIKMIS SORU (ÇOK KULLANILIYOR) ─────────────────────
