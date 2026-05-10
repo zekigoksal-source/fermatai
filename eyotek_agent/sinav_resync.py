@@ -76,19 +76,33 @@ async def merge_lazy_to_native(dry_run: bool = False) -> dict:
         exam_date = lr.get("exam_date")
         exam_name = (lr.get("exam_name") or "").strip()
 
-        if not soz_no or not exam_date:
+        if not soz_no:
             continue
 
-        # 2. Aynı (soz_no, exam_date) için NATIVE kayıt var mı?
-        # Native = exam_code numerik (sadece digit) VEYA exam_code LIKE değil 'lazy_%'
-        native = await db_fetchval(
-            """SELECT exam_code FROM student_exams
-               WHERE soz_no = $1 AND exam_date = $2
-                 AND exam_code NOT LIKE 'lazy_%'
-                 AND exam_code ~ '^[0-9]+$'
-               LIMIT 1""",
-            soz_no, exam_date,
-        )
+        # 2. Native kayıt arama — 2 stratejili (exam_date veya exam_name)
+        # Eski V2 öncesi lazy'lerde exam_date NULL olabiliyor (date parse fail —
+        # tarih yerine puan değeri yazılmış). Bu durumda exam_name fallback.
+        native = None
+        if exam_date:
+            native = await db_fetchval(
+                """SELECT exam_code FROM student_exams
+                   WHERE soz_no = $1 AND exam_date = $2
+                     AND exam_code NOT LIKE 'lazy_%'
+                     AND exam_code ~ '^[0-9]+$'
+                   LIMIT 1""",
+                soz_no, exam_date,
+            )
+
+        # Date NULL veya date match yoksa → name match dene
+        if not native and exam_name:
+            native = await db_fetchval(
+                """SELECT exam_code FROM student_exams
+                   WHERE soz_no = $1 AND exam_name = $2
+                     AND exam_code NOT LIKE 'lazy_%'
+                     AND exam_code ~ '^[0-9]+$'
+                   LIMIT 1""",
+                soz_no, exam_name,
+            )
 
         if not native:
             out["kept_lazy_no_native"] += 1
