@@ -1,6 +1,104 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Mayıs 2026 21:00 — **OTURUM 25.43-FAZ-3: Toplu YKS sıralama tahmini için universite_taban (35.584 kayıt YÖK Atlas) JOIN — Neo bug 17:22 fix**
+> **Son güncelleme:** 11 Mayıs 2026 21:30 — **OTURUM 25.43-FAZ-4: Araç envanteri farkındalığı + 5 CTE şablonu (canlı doğrulanmış) + 9 yeni intent renderer + 9 regex pattern**
+>
+> **Yeni:**
+> - system_prompts'a "ARAÇ ENVANTERİ FARKINDALIK" evrensel prensibi (anti-amatör tablosu)
+> - 5 CTE JOIN şablonu canlı SQL'de doğrulandı: student_topic_tracker, etut_history, counsellor_notes, devamsizlik_sayisi, multi-tablo öğrenci 360
+> - INTENT_RENDERER_MAP +9 entry (toplu_siralama, sinif_dagilimi, ogretmen_yogunluk, vb.)
+> - renderer_hint_inject.py +9 regex pattern (TR+ASCII karışık desteği) — 14/14 test PASS
+> - Şema mismatch fix: sinav_hata_yuzdesi (student_topic_tracker), toplam_saat (devamsizlik_sayisi)
+
+## 🛠️ OTURUM 25.43-FAZ-4 (11 May 21:00-21:30) — Araç envanteri + DB JOIN + render hint
+
+### Tetik
+Neo (17:22): "Mevcut araç envanteri farkındalığı + render hint zenginleştirme + diğer DB JOIN pattern'ları (student_topic_tracker, etut_history, counsellor_notes)."
+Bot bu sabah toplu YKS sıralama tahmininde kafadan attı, YÖK Atlas DB'yi atladı. Genel pattern: **araç envanterinden yararlanma** zayıf.
+
+### 1. Araç Envanteri Farkındalığı (system_prompt evrensel kural)
+Anti-pattern tablosu eklendi:
+
+| Soru Tipi | Yanlış (kafadan) | Doğru (envanter) |
+|-----------|------------------|-------------------|
+| Üni/sıralama tahmini | "~50K civarı" | universite_taban JOIN (35K kayıt) |
+| Konu zayıflığı | "Genelde mat zayıf" | student_topic_tracker GROUP BY |
+| Öğretmen yoğunluk | "Vedat Hoca yoğun" | etut_history COUNT GROUP BY |
+| Rehberlik aktivitesi | "Bu ay aktif" | counsellor_notes son 30 gün |
+| Hava/iklim | "Yaz sıcak" | open_meteo_climate API |
+| Akademik makale | "Şu makaleye bak" | crossref_search GERÇEK DOI |
+
+Tüm envanter prompt'a eklendi: 60+ DB tablo, 138 tool, 36 render fence, 15+ dış API, 4500+ RAG kayıt.
+
+### 2. CTE JOIN Şablonları (5 yeni, canlı SQL doğrulanmış)
+
+**A. student_topic_tracker** (toplu zayıf konu):
+```
+56 öğrenci Türkçe Paragrafta Yardımcı Düşünce zayıf
+47 öğrenci Türkçe Paragrafta Ana Düşünce zayıf
+33 öğrenci Matematik Sayı Kümeleri zayıf
+```
+
+**B. etut_history** (son 30g öğretmen yoğunluk):
+```
+ORHAN DEMİRBULAT 37 etüt | MERVE OKŞAŞ 25 | VEDAT ÖZTEKİN 24 | EMİN YİĞİT 17
+```
+
+**C. counsellor_notes** (son 30g aktivite):
+```
+FermatAI Bot V2 1 (gerçek danışmanlar son 30g'den eski → veri sync gerek)
+```
+
+**D. devamsizlik_sayisi** (kritik 100+):
+```
+DEVİN DENİZ DOĞAN 299 saat | ALİ BARAY KIRMAN 285 | BEHÇET OYTUN ALUR 260
+```
+
+**E. multi-tablo öğrenci 360** (tek SQL'de tam profil): students × student_exam_analysis × devamsizlik × counsellor × topic_tracker
+
+### 3. INTENT_RENDERER_MAP +9 Yeni Entry
+```python
+"toplu_siralama":      ["chart", "treemap", "sankey"]
+"kurum_geneli_rapor":  ["chart", "treemap", "radar"]
+"puan_uni_eslestirme": ["sankey", "treemap"]
+"sinif_dagilimi":      ["treemap", "chart"]
+"ogretmen_yogunluk":   ["chart", "sankey"]
+"konu_zayiflik_toplu": ["treemap", "heatmap"]
+"rehberlik_aktivite":  ["chart", "timeline"]
+"devamsizlik_kritik":  ["chart", "treemap"]
+"ogrenci_360":         ["radar", "kgraph"]
+```
+
+### 4. renderer_hint_inject +9 Regex Pattern
+TR+ASCII karışık karakter sınıfları (`[üu][şs][ğg][öo][çc]`) — 14/14 test PASS:
+- Toplu öğrenci sıralama → chart, treemap
+- Kurum geneli rapor → chart, treemap, radar
+- Puan-üni eşleştirme → sankey, treemap
+- Sınıf dağılımı → treemap, chart
+- Öğretmen yoğunluk → chart, sankey
+- Toplu konu zayıflık → treemap, heatmap
+- Rehberlik aktivite → chart, timeline
+- Devamsızlık kritik → chart, treemap
+- Öğrenci 360 → radar, kgraph
+
+### 5. Şema Düzeltmeleri (canlı SQL test sırasında bulundu)
+- `student_topic_tracker.dogru_orani` YOK → `sinav_hata_yuzdesi` (REAL 0-100)
+- `student_topic_tracker.soz_no` INTEGER (TEXT değil)
+- `devamsizlik_sayisi.devamsizlik_saati` YOK → `toplam_saat` (INTEGER)
+
+### Beklenen Etki
+Bot artık **toplu/kurum geneli sorgularda**:
+1. system_prompt'tan "envanteri tara" prensibi tetiklenir
+2. CTE şablonu seçer (5 hazır pattern)
+3. query_analytics tool ile çalıştırır
+4. renderer_hint_inject pattern eşleşir → render önerisi
+5. INTENT_RENDERER_MAP'le intent → renderer hint
+6. Cevap zenginleşir (chart/treemap/sankey + DB veri)
+
+İlk cevapta DOĞRU yanıt — Neo'nun "ilk cevap doğru olmalı" şartı.
+
+---
+
+## 🎓 OTURUM 25.43-FAZ-3 (11 May 20:45-21:00) — YÖK Atlas DB değerli kullanım
 >
 > **Tespit:** Bot toplu sıralama sorusunda kafadan tahmin yapıyor, DB'deki YÖK Atlas verisini kullanmıyor → "amatör hata" (Neo).
 >
