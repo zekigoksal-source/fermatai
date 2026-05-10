@@ -1363,28 +1363,30 @@ göre sıfırdan üret (7 zorunlu kriter zaten yukarıda).
    ════════════════════════════════════════════════════════════════════
 
    🎯 ŞABLON A — student_topic_tracker (toplu zayıf konu listesi):
+   ŞEMA: soz_no INTEGER, sinav_hata_yuzdesi REAL (0-100), status TEXT, sinav_turu TEXT
    "Kurum genelinde en çok hata yapılan konular nelerdir?"
    ```sql
-   SELECT stt.ders, stt.konu,
+   SELECT stt.ders, stt.konu, stt.sinav_turu,
           COUNT(DISTINCT stt.soz_no) as etkilenen_ogrenci,
-          AVG(stt.yanlis_orani::numeric) as ort_yanlis_orani,
-          AVG(stt.dogru_orani::numeric) as ort_dogru_orani
+          AVG(stt.sinav_hata_yuzdesi)::numeric(5,2) as ort_hata_yuzdesi,
+          SUM(stt.sinav_hata_sayisi) as toplam_hata
    FROM student_topic_tracker stt
-   WHERE stt.dogru_orani::numeric < 0.5
-   GROUP BY stt.ders, stt.konu
-   HAVING COUNT(DISTINCT stt.soz_no) >= 5
-   ORDER BY etkilenen_ogrenci DESC, ort_yanlis_orani DESC
+   WHERE stt.sinav_hata_yuzdesi >= 50
+   GROUP BY stt.ders, stt.konu, stt.sinav_turu
+   HAVING COUNT(DISTINCT stt.soz_no) >= 3
+   ORDER BY etkilenen_ogrenci DESC, ort_hata_yuzdesi DESC
    LIMIT 15;
    ```
 
    "Belirli bir öğrenci için zayıf konular?"
    ```sql
-   SELECT s.full_name, stt.ders, stt.konu, stt.dogru_orani::numeric
+   SELECT s.full_name, stt.ders, stt.konu,
+          stt.sinav_hata_yuzdesi, stt.status
    FROM students s
-   JOIN student_topic_tracker stt ON s.soz_no = stt.soz_no
+   JOIN student_topic_tracker stt ON s.soz_no::int = stt.soz_no
    WHERE s.full_name ILIKE '%MAHMUT%'
-     AND stt.dogru_orani::numeric < 0.5
-   ORDER BY stt.dogru_orani::numeric ASC;
+     AND stt.sinav_hata_yuzdesi >= 50
+   ORDER BY stt.sinav_hata_yuzdesi DESC;
    ```
 
    📊 Render: `treemap` (ders × konu × etkilenen sayı), `heatmap` (konu × dogru%)
@@ -1444,13 +1446,15 @@ göre sıfırdan üret (7 zorunlu kriter zaten yukarıda).
    ════════════════════════════════════════════════════════════════════
 
    🎯 ŞABLON D — devamsizlik_sayisi (kritik durum):
+   ŞEMA: soz_no INTEGER, toplam_saat INTEGER (devamsızlık saati), sinif/devre/sube TEXT
    "100+ saat devamsız öğrenciler?"
    ```sql
-   SELECT s.full_name, s.sube, ds.devamsizlik_saati
+   SELECT s.full_name, s.sube, ds.toplam_saat as devamsizlik_saat,
+          ds.sinif, ds.devre
    FROM students s
    JOIN devamsizlik_sayisi ds ON s.soz_no::int = ds.soz_no
-   WHERE ds.devamsizlik_saati >= 100
-   ORDER BY ds.devamsizlik_saati DESC;
+   WHERE ds.toplam_saat >= 100
+   ORDER BY ds.toplam_saat DESC;
    ```
 
    📊 Render: `chart` renk-kodlu (>200 kırmızı, 100-200 sarı), `treemap` (sınıf bazlı dağılım)
@@ -1463,9 +1467,10 @@ göre sıfırdan üret (7 zorunlu kriter zaten yukarıda).
    SELECT
      s.full_name, s.sube, s.devre,
      sa.toplam_net, sa.yerlesme_puani,
-     ds.devamsizlik_saati,
+     ds.toplam_saat as devamsizlik_saat,
      (SELECT COUNT(*) FROM counsellor_notes cn WHERE cn.soz_no = s.soz_no::int) as gorusme_sayisi,
-     (SELECT COUNT(*) FROM student_topic_tracker stt WHERE stt.soz_no = s.soz_no::int AND stt.dogru_orani::numeric < 0.5) as zayif_konu_sayisi
+     (SELECT COUNT(*) FROM student_topic_tracker stt
+      WHERE stt.soz_no = s.soz_no::int AND stt.sinav_hata_yuzdesi >= 50) as zayif_konu_sayisi
    FROM students s
    LEFT JOIN student_exam_analysis sa ON s.soz_no = sa.soz_no
    LEFT JOIN devamsizlik_sayisi ds ON s.soz_no::int = ds.soz_no
