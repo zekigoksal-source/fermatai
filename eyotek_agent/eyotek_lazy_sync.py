@@ -123,23 +123,24 @@ async def _upsert_etut_history(rows: list[dict], columns: list[str]) -> int:
     Dedupe: etut_kodu varsa primary, yoksa (tarih, saat, ogretmen, ders, sinif).
     """
     from db_pool import db_execute, db_fetchval
+    from field_reconciler import find_field
     synced = 0
     skipped_reason = {}
     for r in rows:
         try:
-            # Çekirdek alanlar
-            tarih = r.get("tarih") or r.get("Tarih") or r.get("date")
-            saat = r.get("saat") or r.get("Saat") or r.get("time") or ""
-            ders = r.get("ders") or r.get("Ders") or ""
-            ogretmen = r.get("ogretmen") or r.get("öğretmen") or r.get("Öğretmen") or ""
-            sinif = r.get("sinif") or r.get("Sınıf") or r.get("sube") or r.get("Şube") or ""
-            derslik = r.get("derslik") or r.get("Derslik") or ""
-            etut_turu = r.get("etut_turu") or r.get("Etüt Türü") or r.get("tur") or ""
-            konu = r.get("konu") or r.get("Konu") or ""
+            # 25.43-DRILL-V3: schema-less field çekimi (manuel chain'ler kalktı)
+            tarih = find_field(r, 'tarih')
+            saat = str(find_field(r, 'saat', default='') or '')
+            ders = str(find_field(r, 'ders', default='') or '')
+            ogretmen = str(find_field(r, 'ogretmen', default='') or '')
+            sinif = str(find_field(r, 'sinif', default='') or
+                        find_field(r, 'sube', default='') or '')
+            derslik = str(find_field(r, 'derslik', default='') or '')
+            etut_turu = str(find_field(r, 'etut_turu', default='') or '')
+            konu = str(find_field(r, 'konu', default='') or '')
 
             # etut_kodu → integer parse (table column int)
-            etut_kodu_raw = (r.get("etut_kodu") or r.get("Kod") or
-                             r.get("kod") or r.get("etut_id") or "")
+            etut_kodu_raw = find_field(r, 'etut_kodu')
             etut_kodu = None
             if etut_kodu_raw:
                 try:
@@ -148,7 +149,7 @@ async def _upsert_etut_history(rows: list[dict], columns: list[str]) -> int:
                     etut_kodu = None
 
             # ogrenci_sayisi → integer parse (varsa)
-            ogr_sayi_raw = r.get("ogrenci_sayisi") or r.get("Öğr.Say") or r.get("Öğrenci Sayısı")
+            ogr_sayi_raw = find_field(r, 'ogrenci_sayisi')
             ogr_sayi = None
             if ogr_sayi_raw:
                 try:
@@ -295,10 +296,23 @@ async def _upsert_student_exams(rows: list[dict], columns: list[str]) -> int:
                     skipped += 1
                     continue
 
-            # exam_code — sinav_adi'dan generate (idempotent, UNIQUE için stable)
-            # exam_code = soz_no + sinav_adi hash
-            sinav_slug = _re.sub(r'[^A-Za-z0-9]+', '_', sinav_adi)[:60]
-            exam_code = f"lazy_{sinav_slug}_{tarih_raw[:10] if tarih_raw else 'nodate'}"
+            # 25.43-DRILL-V3 FIX (Görev 3): exam_code önceliği:
+            # 1) Eyotek native kod (Sınav Kodu, ör: '999000107')
+            # 2) sinav_kodu field varsa (sinav_drilldown enrich edilmiş row)
+            # 3) Fallback: lazy slug
+            # Native kod numerik (3+ digit) ise tercih edilir → DB'de duplicate önlenir
+            # (eski tarih scrapper'lar native kod kullanmıştı, lazy slug ayrı kayıt yaratıyordu).
+            sinav_kodu_raw = find_field(r, 'sinav_kodu')
+            exam_code = None
+            if sinav_kodu_raw:
+                kodu_str = str(sinav_kodu_raw).strip()
+                # Numeric kod (Eyotek native: 999000107, 1110, 27 gibi)
+                if kodu_str.isdigit() and len(kodu_str) >= 1:
+                    exam_code = kodu_str
+            if not exam_code:
+                # Fallback: sinav_adi + tarih slug
+                sinav_slug = _re.sub(r'[^A-Za-z0-9]+', '_', sinav_adi)[:60]
+                exam_code = f"lazy_{sinav_slug}_{tarih_raw[:10] if tarih_raw else 'nodate'}"
 
             # exam_type — sinav_adi'dan tahmin (TYT/AYT/LGS)
             ad_low = sinav_adi.lower()
@@ -402,18 +416,19 @@ async def _upsert_attendance(rows: list[dict], columns: list[str]) -> int:
     Dedupe: (soz_no, tarih, ders_no) — ayni gun ayni ders tek kayit.
     """
     from db_pool import db_execute, db_fetchval
+    from field_reconciler import find_field
     synced = 0
     for r in rows:
         try:
-            ogr_ad = (r.get("ogrenci_adi") or r.get("öğrenci") or
-                      r.get("ad_soyad") or r.get("Öğrenci") or "").strip()
-            tarih = (r.get("tarih") or r.get("Tarih") or r.get("date") or "").strip()
-            ders_no = str(r.get("ders_no") or r.get("Ders No") or r.get("ders") or "").strip()
-            saat = str(r.get("saat") or r.get("Saat") or "").strip()
-            gun = (r.get("gun") or r.get("Gün") or "").strip()
-            durum = (r.get("durum") or r.get("Durum") or "").strip()
-            sube = (r.get("sube") or r.get("Şube") or "").strip()
-            soz_no_raw = r.get("soz_no") or r.get("Söz No")
+            ogr_ad = str(find_field(r, 'student_name', default='') or '').strip()
+            tarih = str(find_field(r, 'tarih', default='') or '').strip()
+            ders_no = str(find_field(r, 'ders_no', default='') or
+                          find_field(r, 'ders', default='') or '').strip()
+            saat = str(find_field(r, 'saat', default='') or '').strip()
+            gun = str(find_field(r, 'gun', default='') or '').strip()
+            durum = str(find_field(r, 'durum', default='') or '').strip()
+            sube = str(find_field(r, 'sube', default='') or '').strip()
+            soz_no_raw = find_field(r, 'soz_no')
 
             if not ogr_ad or not tarih:
                 continue
@@ -473,22 +488,20 @@ async def _upsert_counsellor_notes(rows: list[dict], columns: list[str]) -> int:
     Dedupe: (soz_no, gorusme_tarihi, gorusulen)
     """
     from db_pool import db_execute, db_fetchval
+    from field_reconciler import find_field
     synced = 0
     for r in rows:
         try:
-            ogr_ad = (r.get("ogrenci_adi") or r.get("öğrenci") or
-                      r.get("ad_soyad") or "").strip()
-            ogr_soyad = (r.get("ogrenci_soyadi") or r.get("soyad") or "").strip()
-            gorusme_tarihi = (r.get("gorusme_tarihi") or r.get("Görüşme Tarihi") or
-                              r.get("tarih") or "").strip()
-            not_turu = (r.get("not_turu") or r.get("Not Türü") or "").strip()
-            gorusulen = (r.get("gorusulen") or r.get("Görüşülen") or
-                         r.get("not") or r.get("aciklama") or "").strip()
-            gorusme_turu = (r.get("gorusme_turu") or r.get("Görüşme Türü") or "").strip()
-            ogretmen = (r.get("ogretmen") or r.get("Öğretmen") or "").strip()
-            sube = (r.get("sube") or r.get("Şube") or "").strip()
-            sinif = (r.get("sinif") or r.get("Sınıf") or "").strip()
-            soz_no_raw = r.get("soz_no") or r.get("Söz No")
+            ogr_ad = str(find_field(r, 'student_name', 'ad', default='') or '').strip()
+            ogr_soyad = str(find_field(r, 'soyad', default='') or '').strip()
+            gorusme_tarihi = str(find_field(r, 'gorusme_tarihi', 'tarih', default='') or '').strip()
+            not_turu = str(find_field(r, 'not_turu', default='') or '').strip()
+            gorusulen = str(find_field(r, 'gorusulen', default='') or '').strip()
+            gorusme_turu = str(find_field(r, 'gorusme_turu', default='') or '').strip()
+            ogretmen = str(find_field(r, 'ogretmen', default='') or '').strip()
+            sube = str(find_field(r, 'sube', default='') or '').strip()
+            sinif = str(find_field(r, 'sinif', default='') or '').strip()
+            soz_no_raw = find_field(r, 'soz_no')
 
             if not gorusme_tarihi or not (ogr_ad or ogr_soyad):
                 continue
@@ -562,16 +575,18 @@ async def _upsert_teacher_timetable(rows: list[dict], columns: list[str]) -> int
     Dedupe: (ogretmen_id, gun, saat)
     """
     from db_pool import db_execute, db_fetchval
+    from field_reconciler import find_field
     synced = 0
     for r in rows:
         try:
-            ogretmen_id = str(r.get("ogretmen_id") or r.get("eyotek_id") or
-                              r.get("ogretmen_ad") or r.get("Öğretmen") or "").strip()
-            ogretmen_ad = (r.get("ogretmen_ad") or r.get("Öğretmen") or "").strip()
-            brans = (r.get("brans") or r.get("Branş") or r.get("ders") or "").strip()
-            gun = (r.get("gun") or r.get("Gün") or "").strip()
-            saat = (r.get("saat") or r.get("Saat") or "").strip()
-            haftalik_raw = r.get("haftalik_saat") or r.get("Haftalık Saat")
+            ogretmen_id = str(find_field(r, 'ogretmen_id', default='') or
+                              find_field(r, 'ogretmen', default='') or '').strip()
+            ogretmen_ad = str(find_field(r, 'ogretmen', default='') or '').strip()
+            brans = str(find_field(r, 'brans', default='') or
+                        find_field(r, 'ders', default='') or '').strip()
+            gun = str(find_field(r, 'gun', default='') or '').strip()
+            saat = str(find_field(r, 'saat', default='') or '').strip()
+            haftalik_raw = find_field(r, 'haftalik_saat')
             haftalik = None
             if haftalik_raw:
                 try:
@@ -609,15 +624,15 @@ async def _upsert_devamsizlik(rows: list[dict], columns: list[str]) -> int:
     Per-student snapshot, soz_no UNIQUE. Yeni snapshot eskisini ezer (UPDATE).
     """
     from db_pool import db_execute, db_fetchval
+    from field_reconciler import find_field
     synced = 0
     for r in rows:
         try:
-            ogr_ad = (r.get("adi") or r.get("Adı") or r.get("ad_soyad") or
-                      r.get("ogrenci_adi") or "").strip()
-            sube = (r.get("sube") or r.get("Şube") or "").strip()
-            sinif = (r.get("sinif") or r.get("Sınıf") or "").strip()
-            soz_no_raw = r.get("soz_no") or r.get("Söz No")
-            okul_no = str(r.get("okul_no") or r.get("Okul No") or "").strip()
+            ogr_ad = str(find_field(r, 'student_name', 'ad', default='') or '').strip()
+            sube = str(find_field(r, 'sube', default='') or '').strip()
+            sinif = str(find_field(r, 'sinif', default='') or '').strip()
+            soz_no_raw = find_field(r, 'soz_no')
+            okul_no = str(find_field(r, 'okul_no', default='') or '').strip()
 
             soz_no = None
             if soz_no_raw:

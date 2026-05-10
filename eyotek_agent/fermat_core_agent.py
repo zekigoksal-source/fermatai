@@ -619,8 +619,10 @@ async def _tool_sinav_sonuclari(sinav_adi: str, max_rows: float = 100,
             sinav_meta = result.get("sinav_found") or []
             extracted_sinav_adi = sinav_adi  # caller param fallback
             extracted_tarih = ""
+            extracted_sinav_kodu = ""  # 25.43 Görev 3: native exam_code priority
             if isinstance(sinav_meta, list) and len(sinav_meta) > 6:
                 extracted_tarih = sinav_meta[2] if len(sinav_meta) > 2 else ""
+                extracted_sinav_kodu = sinav_meta[3] if len(sinav_meta) > 3 else ""
                 # Index 6: SınavAdı (eski 4 hatalıydı — Tür'e işaret ediyordu)
                 cand = sinav_meta[6] if len(sinav_meta) > 6 else ""
                 if cand and cand.strip():
@@ -628,8 +630,9 @@ async def _tool_sinav_sonuclari(sinav_adi: str, max_rows: float = 100,
             elif isinstance(sinav_meta, dict):
                 extracted_sinav_adi = sinav_meta.get("sinav_adi") or sinav_meta.get("ad") or sinav_adi
                 extracted_tarih = sinav_meta.get("tarih") or ""
+                extracted_sinav_kodu = sinav_meta.get("sinav_kodu") or sinav_meta.get("kod") or ""
 
-            # Her row'a sinav_adi + tarih inject et
+            # Her row'a sinav_adi + tarih + sinav_kodu inject et (V3 native code)
             enriched_rows = []
             for r in result.get("rows", []):
                 if isinstance(r, dict):
@@ -638,6 +641,9 @@ async def _tool_sinav_sonuclari(sinav_adi: str, max_rows: float = 100,
                         enriched["sinav_adi"] = extracted_sinav_adi
                     if not enriched.get("tarih") and extracted_tarih:
                         enriched["tarih"] = extracted_tarih
+                    # V3: native sinav_kodu enrichment → exam_code öncelik
+                    if not enriched.get("sinav_kodu") and extracted_sinav_kodu:
+                        enriched["sinav_kodu"] = extracted_sinav_kodu
                     enriched_rows.append(enriched)
                 else:
                     enriched_rows.append(r)

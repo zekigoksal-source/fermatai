@@ -113,11 +113,28 @@ SYNONYMS: dict[str, list[str]] = {
 
     # ─── Etüt / Yoklama ───
     'ders':         ['Ders', 'ders', 'lesson'],
-    'ogretmen':     ['Öğretmen', 'ogretmen', 'teacher'],
+    'ogretmen':     ['Öğretmen', 'ogretmen', 'teacher', 'öğretmen', 'ogretmen_ad', 'Öğretmen Adı'],
+    'ogretmen_id':  ['Öğretmen ID', 'ogretmen_id', 'eyotek_id', 'TeacherId'],
     'derslik':      ['Derslik', 'derslik', 'sinif_kodu', 'classroom'],
     'saat':         ['Saat', 'saat', 'time'],
     'etut_kodu':    ['Etüt Kodu', 'etut_kodu', 'Kod', 'kod'],
+    'etut_turu':    ['Etüt Türü', 'etut_turu', 'tur', 'Tür'],
+    'konu':         ['Konu', 'konu', 'topic'],
     'ogrenci_sayisi': ['Öğrenci Sayısı', 'ogrenci_sayisi', 'Öğr.Say'],
+    'ders_no':      ['Ders No', 'ders_no', 'lesson_no'],
+    'gun':          ['Gün', 'gun', 'day'],
+    'durum':        ['Durum', 'durum', 'status'],
+    'brans':        ['Branş', 'brans', 'specialty', 'subject'],
+
+    # ─── Rehberlik (Counsellor Notes) ───
+    'gorusme_tarihi': ['Görüşme Tarihi', 'gorusme_tarihi', 'meeting_date'],
+    'not_turu':       ['Not Türü', 'not_turu', 'note_type'],
+    'gorusulen':      ['Görüşülen', 'gorusulen', 'not', 'aciklama', 'Açıklama', 'note', 'description'],
+    'gorusme_turu':   ['Görüşme Türü', 'gorusme_turu', 'meeting_type'],
+
+    # ─── Devamsızlık ───
+    'okul_no':      ['Okul No', 'okul_no', 'school_no'],
+    'devamsizlik_saat': ['Devamsızlık Saati', 'devamsizlik_saat', 'absence_hours'],
 }
 
 

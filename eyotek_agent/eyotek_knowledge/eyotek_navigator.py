@@ -1378,8 +1378,13 @@ async def sinav_drilldown(
                 # Dedupe by soz_no
                 soz_no = None
                 if isinstance(r, dict):
-                    soz_no = (r.get("soz_no") or r.get("Söz No") or
-                              r.get("sözno") or r.get("SözNo"))
+                    # 25.43-DRILL-V3: schema-less field reconciler kullan
+                    try:
+                        from field_reconciler import find_field
+                        soz_no = find_field(r, 'soz_no')
+                    except Exception:
+                        soz_no = (r.get("soz_no") or r.get("Söz No") or
+                                  r.get("sözno") or r.get("SözNo"))
                 if soz_no:
                     soz_str = str(soz_no).strip()
                     if soz_str in seen_soz_no:
