@@ -1,6 +1,8 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 10-11 Mayıs 2026 (gece-erken saatler) · **Oturum:** 25.43-LAZY-NAME + 25.43-WEBUI-FIXLOOP — **Personel konuşması (Örsel Koç) → 3 lazy_sync bug fix · Web hamburger F5 fix loop → browser MCP test ile kesin teşhis (PWA banner pointer-events ROOT+CHILD ayrı satır rule) · Neo "tamamdır problem çözüldü" onayı**
+> **Belge tarihi:** 11 Mayıs 2026 10:02 · **Oturum:** 25.43-DRILL-V3 — **LLM-native field reconciliation (schema-less, Türkçe-aware, synonym graph) + self-aware drill (data completeness check) · field_reconciler.py yeni modül (22 canonical x 80 varyant) · sinav_drilldown her devre satırı ayrı çek + birleştir · APOTEMI TG TYT-3: 14 → 30 öğrenci (V2 multi-devre) + completeness warning "60 expected vs 30 actual" · 5 sınav 86 yeni DB kayıt · Halüsinasyon kalkanı (SINAV VERISI ETIKETLEME prompt kuralı)**
+> **11 May 02:55:** 25.43-IPAD-V1-V4 → REVERT — iPad PWA standalone alt boşluk fix loop (5 yanlış tahmin → revert). Donanım klavye etkisi tespit, gündem dışı.
+> **10-11 May:** 25.43-LAZY-NAME + 25.43-WEBUI-FIXLOOP — Personel konuşması (Örsel Koç) → 3 lazy_sync bug fix · Web hamburger F5 fix loop → browser MCP test ile kesin teşhis (PWA banner pointer-events ROOT+CHILD ayrı satır rule)
 > **10 May 04:00:** 25.43-DIAG — selfdev_grep_repo bot yanlış teşhis bug (3 katman) + HF_API_TOKEN aktif + ripgrep VPS kuruldu · Bot artık 0 match'i doğrulamadan kesin yorum vermez (3 kanıt zorunlu) · Bridge env'de HF token verified
 > **10 May 03:30:** 25.43-CONV — Lazy sync sınav adı injection (sinav_drilldown header'dan) + render quality gate (3D scene + skor pre-flight) · Bot artık "lacivert boş ekran" göstermez · 3/3 smoke PASS
 > **10 May 03:00:** 25.43-LAZY-EXTEND-V2 — Lazy sync 4 yeni tablo (attendance/counsellor_notes/teacher_timetable/devamsizlik_sayisi gerçek INSERT) · PAGE_TO_MODULE 4→10 mapping · ogrenci_drilldown 5→13 alt-sayfa keyword · 5/5 upsert smoke PASS
@@ -23,6 +25,75 @@
 > **4 May 18:30:** 25.40z3-FINETUNE — Per-user karakter blokları kompakt + dead code scan · 388/388 PASS
 > **4 May 17:30:** 25.40z3-CONSOLIDATION — kural sertliği korundu, 84 bağlam kompakt
 > **3 May:** 25.40r — Workers=3 + Distributed Lock + Leader Election + Semantic Cache + 34/34 integration test
+
+---
+
+## 🚀 25.43-DRILL-V3 (11 May 09:30-10:02) — LLM-native reconciliation + self-aware drill
+
+### Neo Direktifi
+"Old school bakma. soz_no ile SözNo aynı şey diye anlayan bir LLM zaten var elimizde. Manuel mapping listeleri kalksın. Sayı az gelince fark et, dropdown'a bak, akıllı hareket et. İlkel bakış açısını geliştirmemiz lazım, sistemde bilinçli hareket etmeyi amaçlamıştık."
+
+### Tetik Zinciri
+1. APOTEMI TG TYT-3 (kod 999000107) Eyotek'te 60 katılımcı, sinav_sonuclari sadece 14 dönüyordu
+2. Bot brief #20 yazdı: "dropdown Tümü seçilmeli, re-sync gerek"
+3. Canlı VPS keşfi: aynı sınav HER DEVRE için ayrı satır (12.Snf, Mezun)
+4. V2 multi-devre fix → 30 öğrenci ama Türkçe `İ` lowercase combining bug, row keys `Adı/Soyadı` mismatch
+5. **V3 mimari değişikliği** — schema-less + self-aware
+
+### V3 — 4 Katman Mimari
+
+| Katman | Modül | Detay |
+|--------|-------|-------|
+| **1. field_reconciler.py** (YENI 325 satır) | Schema-less field matching | NFD Türkçe normalize (İ→i), 22 canonical kavram x ~80 varyant synonym graph, suffix-aware (`Türkçe_NET`→'turkce'), bigram fuzzy fallback (sim>0.7). API: `find_field(row, 'soz_no')` |
+| **2. _upsert_student_exams refactor** | Manuel `r.get() or` zincirleri kalktı | `find_field(r, 'turkce')` tek satır. Yeni Eyotek field gelirse otomatik. 11 satır kısaldı. |
+| **3. sinav_drilldown self-aware** | `check_data_completeness()` | sinav_found[11] (Şube Katılım) ile actual oranı. ratio<0.5 + devre 1 → "başka devre var", ratio<0.85 → "eksik aktarım" warning |
+| **4. System prompt VERI EKSIKLIK** | Bot completeness.warning'i okur | Kullanıcıya açık: "60 katılmış, 30 çekildim, %50". Yanıltıcı ortalama YASAK. |
+
+### V2 Drill-down (multi-devre döngüsü)
+| Bug → Fix |  |
+|------|------|
+| Aynı sınav her devre ayrı satır → tek satır tıklama eksik | Tüm satırları dolaş, soz_no UNIQUE birleştir |
+| Türkçe `İ.toLowerCase()` combining mark | NFD normalize + diakritik silme |
+| Row keys `Adı/Soyadı/SözNo/Türkçe_NET` mapping yok | V3 field_reconciler ile çözüldü |
+| `sinav_meta[4]` (Tür) → sinav_adi yanlış | Index 6 (Adı) düzeltildi |
+| Halüsinasyon: APOTEMI'yi "Sıfır Pozitif" etiketleme | SINAV VERISI ETIKETLEME prompt kuralı |
+
+### Smoke Test (canlı VPS, 5 sınav)
+| Sınav | Devreler | Eski | Yeni | Lazy Sync |
+|-------|----------|------|------|-----------|
+| APOTEMI TG TYT-3 | 12.Snf + Mezun | 14 | **30** | ✓ |
+| APOTEMI TG YKS-3 | 12.Snf + Mezun | 8 | **24** | ✓ |
+| ACİL 2 TYT AYT BİRLEŞİK | 12.Snf + Mezun | - | **14** | ✓ |
+| 11. SINIF İşler-Çap 2 | 11.Snf | - | **9** | ✓ |
+| 11. sınıf Yanıt-Paraf 2 | 11.Snf | - | **9** | ✓ |
+| **Toplam** | | | **86 yeni DB kaydı** | |
+
+### Completeness Output (canlı)
+```python
+data_completeness: {
+  complete: False,
+  expected: 60,    # Eyotek Şube Katılım
+  actual: 30,      # bizim çektiğimiz
+  ratio: 0.5,
+  warning: "Sınava 60 öğrenci katılmış, 30 kayıt geldi (%50). 
+           Eyotek'te bazı katılımcılar farklı bir sayfa/filtrede 
+           olabilir veya sisteme aktarılmamış olabilir."
+}
+```
+
+### Kalıcı Mimari Kazanım — "İç Bilinç"
+- ✅ Schema-less: yeni Eyotek field kod değişmeden handle
+- ✅ LLM-native: synonym graph + Türkçe normalize + fuzzy
+- ✅ Self-aware: bot eksikliği fark ediyor, inkar etmiyor
+- ✅ Halüsilasyon kalkanı: tool result'taki sınav adını rename YASAK
+- ✅ Genişletilebilir: synonym graph'a başka site key'leri eklenebilir (Wix, başka LMS)
+
+Bu altyapı **multi-site agentic vizyonun** temeli — Neo'nun "her siteye entegrasyon mümkün" hedefine uygun.
+
+### Bekleyen (Neo onayı sonrası)
+- Diğer Eyotek tool'ları field_reconciler'a migrate (`ogrenci_drilldown`, `eyotek_query`, `etut_history`)
+- Re-sync helper script (eski 22 Nisan öncesi sınavlar tam liste için)
+- exam_code duplicate (Eyotek native vs lazy slug) birleştirme
 
 ---
 
