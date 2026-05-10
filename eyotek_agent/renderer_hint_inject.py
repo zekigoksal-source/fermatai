@@ -225,11 +225,79 @@ RENDERER_PATTERNS = [
         r"görsel\s*olarak\s*çöz)",
         ["manim_anim", "formula"],
     ),
+
+    # 25.43-FAZ-4 (Neo direktif 11 May): Kurum geneli toplu sorgular
+    # NOT: Pattern'ler hem TR (üö[şs]ı[ğg][çc]ü) hem ASCII (uoogicu) versiyonu i[çc]erir
+    # [çc]ünkü kullanıcılar Türk[çc]e klavye/ASCII karı[şs]ık yazabilir.
+
+    # --- TOPLU ÖĞRENCİ SIRALAMA ---
+    (
+        r"(kurum\s*geneli\s*s[ıi]ra|t[üu]m\s*[öo][ğg]renc\w*\s*s[ıi]ra|"
+        r"yks\s*tahmin\s*s[ıi]ra|[öo][ğg]renc\w*\s*s[ıi]ralama|"
+        r"kurum\s*ba[şs]ar[ıi]\s*s[ıi]ra|en\s*ba[şs]ar[ıi]l[ıi]\s*[öo][ğg]renc|"
+        r"[şs]ube\s*s[ıi]ralama|s[ıi]n[ıi]f\s*s[ıi]ralama|"
+        r"hangi\s*[öo][ğg]renc.*nere(de|ye)\s*yerle[şs])",
+        ["chart", "treemap"],
+    ),
+    # --- KURUM GENELİ RAPOR ---
+    (
+        r"(kurum\s*durum|kurum\s*rapor|genel\s*durum|"
+        r"genel\s*performans|t[üu]m\s*kurum)",
+        ["chart", "treemap", "radar"],
+    ),
+    # --- PUAN-ÜNİ EŞLEŞTİRME ---
+    (
+        r"(puan\s*ile.*[üu]niversit|hangi\s*[üu]ni.*girer|"
+        r"taban\s*puan.*hangi\s*b[öo]l[üu]m|s[ıi]ralama\s*ile\s*b[öo]l[üu]m|"
+        r"y[öo]k\s*atlas|olas[ıi]\s*yerle[şs]me|tahmini\s*yerle[şs]me|"
+        r"[üu]ni.*tercih|tercih\s*[üu]ni)",
+        ["sankey", "treemap"],
+    ),
+    # --- SINIF DAĞILIMI ---
+    (
+        r"(s[ıi]n[ıi]f\s*da[ğg][ıi]l[ıi]m|[şs]ube\s*da[ğg][ıi]l[ıi]m|devre\s*da[ğg][ıi]l[ıi]m|"
+        r"hangi\s*s[ıi]n[ıi]f.*ka[çc]|ka[çc]\s*ki[şs]i.*s[ıi]n[ıi]f|"
+        r"[öo][ğg]renci\s*say[ıi].*s[ıi]n[ıi]f)",
+        ["treemap", "chart"],
+    ),
+    # --- ÖĞRETMEN YOĞUNLUK ---
+    (
+        r"([öo][ğg]retmen\s*yo[ğg]unluk|hoca\s*yo[ğg]unluk|kim\s*ka[çc]\s*et[üu]t|"
+        r"[öo][ğg]retmen\s*k[ıi]yas|hoca\s*k[ıi]yas|en\s*[çc]ok\s*et[üu]t\s*veren|"
+        r"et[üu]t\s*veren\s*[öo][ğg]retmen)",
+        ["chart", "sankey"],
+    ),
+    # --- TOPLU KONU ZAYIFLIK ---
+    (
+        r"(en\s*[çc]ok\s*hata|toplu\s*zay[ıi]f|kurum\s*zay[ıi]f\s*konu|"
+        r"hangi\s*konu.*zay[ıi]f|[öo][ğg]rencilerin\s*zay[ıi]f|"
+        r"t[üu]m\s*[öo][ğg]rencilerin\s*konu|zay[ıi]f\s*konu\s*liste)",
+        ["treemap", "heatmap"],
+    ),
+    # --- REHBERLIK AKTİVİTE ---
+    (
+        r"(rehberlik\s*aktivite|g[öo]r[üu][şs]me\s*say[ıi]|kim\s*ka[çc]\s*g[öo]r[üu][şs]me|"
+        r"rehber\s*yo[ğg]unluk|son\s*g[öo]r[üu][şs]meler)",
+        ["chart", "timeline"],
+    ),
+    # --- DEVAMSIZLIK KRİTİK ---
+    (
+        r"(devams[ıi]zl[ıi]k.*kritik|100\+?\s*saat\s*devams[ıi]z|"
+        r"200\+?\s*saat\s*devams[ıi]z|devams[ıi]z\s*[öo][ğg]renci\s*liste|"
+        r"riskli\s*devams[ıi]z|kritik\s*devams[ıi]z)",
+        ["chart", "treemap"],
+    ),
+    # --- ÖĞRENCİ 360 (TEK ÖĞRENCİ TAM PROFİL) ---
+    (
+        r"(tam\s*profil|360\s*derece|t[üu]m\s*durumu|"
+        r"detayl[ıi]\s*durum|kapsaml[ıi]\s*durum|her\s*y[öo]n(üy|uy)?le)",
+        ["radar", "kgraph"],
+    ),
 ]
 
 
 def detect_renderer_need(message: str) -> list[str]:
-    """Mesajdan ihtiyaç duyulan renderer'ları tespit et.
+    """Mesajdan ihtiya[çc] duyulan renderer'ları tespit et.
 
     Returns: ["chart", "compare2"] gibi liste (priority, dedup)
     """
@@ -242,7 +310,7 @@ def detect_renderer_need(message: str) -> list[str]:
             for r in renderers:
                 if r not in found:
                     found.append(r)
-    # Maksimum 3 — fazla seçim olunca model karar veremiyor
+    # Maksimum 3 — fazla se[çc]im olunca model karar veremiyor
     return found[:3]
 
 
@@ -265,9 +333,9 @@ def build_hint(message: str, channel: str = "web") -> Optional[str]:
     return (
         f"\n\n🎨 [RENDERER — ZORUNLU İNJECT]: {r_block}\n"
         f"Kullanıcı mesajı bu blok(lar)ı tetikledi. Web kanalında düz markdown\n"
-        f"YETERSIZ — yanıtın içinde MUTLAKA yukarıdaki kod fence'lerini\n"
-        f"(geçerli JSON/string ile) ÜRET. Aksi halde cevap eksik kalır.\n"
-        f"Bot grafik/karşılaştırma istenince tablo sunup chart üretmeme = bug."
+        f"YETERSIZ — yanıtın i[çc]inde MUTLAKA yukarıdaki kod fence'lerini\n"
+        f"(ge[çc]erli JSON/string ile) ÜRET. Aksi halde cevap eksik kalır.\n"
+        f"Bot grafik/kar[şs]ıla[şs]tırma istenince tablo sunup chart üretmeme = bug."
     )
 
 
@@ -278,12 +346,12 @@ if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
 
     cases = [
-        "son 7 gün kullanıcı sayısı grafiği",
-        "matematik ve fizik netlerini karşılaştır",
+        "son 7 gün kullanıcı sayısı grafi[ğg]i",
+        "matematik ve fizik netlerini kar[şs]ıla[şs]tır",
         "ders bazlı yetkinlik karne göster",
-        "TYT puanım % kaç tamamlandı",
-        "haftalık çalışma planı",
-        "limit nasıl çözülür adım adım",
+        "TYT puanım % ka[çc] tamamlandı",
+        "haftalık [çc]alı[şs]ma planı",
+        "limit nasıl [çc]özülür adım adım",
         "kavram haritası türev integral",
         "yeni nesil 4 örnek soru üret",
         "selam nasılsın",  # NONE beklenir

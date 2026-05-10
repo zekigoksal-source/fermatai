@@ -122,6 +122,18 @@ INTENT_RENDERER_MAP: dict[str, list[str]] = {
     "harita_3d":           ["cesium_globe"],             # 3D dünya, coğrafi nokta
     "matematik_anim":      ["manim_anim", "formula"],    # 3Blue1Brown stili
     "declarative_chart":   ["vega_lite", "chart"],       # JSON spec chart
+    # ════════════════════════════════════════════════════════════════════
+    # 25.43-FAZ-4 (Neo direktif 11 May): Toplu / kurum geneli sorguları
+    # ════════════════════════════════════════════════════════════════════
+    "toplu_siralama":      ["chart", "treemap", "sankey"],   # öğrenci sıralama listesi
+    "kurum_geneli_rapor":  ["chart", "treemap", "radar"],    # kurum performans
+    "puan_uni_eslestirme": ["sankey", "treemap"],            # puan → üni-bölüm akışı
+    "sinif_dagilimi":      ["treemap", "chart"],             # sınıf × öğrenci dağılımı
+    "ogretmen_yogunluk":   ["chart", "sankey"],              # öğretmen × etüt sayı
+    "konu_zayiflik_toplu": ["treemap", "heatmap"],           # toplu konu zayıflık
+    "rehberlik_aktivite":  ["chart", "timeline"],            # görüşme aktivitesi
+    "devamsizlik_kritik":  ["chart", "treemap"],             # kritik devamsızlık
+    "ogrenci_360":         ["radar", "kgraph"],              # tek öğrenci tam profil
     # Renderer YOK — bu intent'lerde sadece sıcak metin
     "motivasyon_destek": [],
     "duygu_paylasim":    [],
