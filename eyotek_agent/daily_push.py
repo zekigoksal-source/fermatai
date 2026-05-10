@@ -30,10 +30,14 @@ async def build_student_push(soz_no, full_name, class_name) -> str | None:
         if gun < 0:
             return None  # YKS geçmiş
 
-        # En yüksek 2 zayıf konu
+        # En yüksek 2 zayıf konu — sinav_hata_yuzdesi = HATA% (yüksek=zayıf)
+        # Metadata satırları + "Ortalama X/Y net" pseudo-konular hariç
         weak = await db_fetch(
             "SELECT ders, konu FROM student_topic_tracker "
-            "WHERE soz_no::text = $1::text AND status != 'calisildi' "
+            "WHERE soz_no::text = $1::text "
+            "  AND COALESCE(status,'') NOT IN ('calisildi','metadata') "
+            "  AND konu NOT LIKE 'Ortalama %' "
+            "  AND sinav_hata_yuzdesi >= 25 "
             "ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 2",
             str(soz_no)
         )

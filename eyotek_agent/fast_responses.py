@@ -64,6 +64,128 @@ from db_pool import (
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# TOPIC TRACKER SEMANTICS — KRITIK NOT (Neo bug 10 May, Berf vakasi)
+#
+# student_topic_tracker.sinav_hata_yuzdesi = HATA YUZDESI (0-100, ERROR %)
+#   build_topic_tracker.py: yuzde = (hata / soru * 100)
+#
+# YUKSEK deger = COK HATA = ZAYIF konu (ogrenci zorlanıyor) → ACIL oncelik
+# DUSUK deger  = AZ HATA  = GUCLU konu (ogrenci iyi yapıyor) → koru
+#
+# Tarihsel olarak kodda 'basari' aliasiyla ASC siralandi — TAM TERS!
+# Helper'lari kullan, ham deger ile karistirma:
+#   _basari_pct(hata)    -> ogrenciye gosterilecek BASARI % (100-hata)
+#   _emoji_for_hata(h)   -> hata bandina gore renk (yuksek=kirmizi)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _basari_pct(hata) -> float:
+    """student_topic_tracker.sinav_hata_yuzdesi (HATA%) -> Basari % (0-100).
+
+    Ornek: hata=9.09 -> basari=90.91 (ogrenci paragraf sorusunu iyi yapiyor)
+    """
+    try:
+        h = float(hata or 0)
+    except (TypeError, ValueError):
+        h = 0.0
+    return max(0.0, min(100.0, 100.0 - h))
+
+
+def _emoji_for_hata(hata) -> tuple:
+    """Hata yuzdesi -> (emoji, oncelik_etiketi).
+
+    >=50% hata: 🔴 ACIL (zayif, mutlaka calismali)
+    >=25% hata: 🟡 Orta (gelisim alani)
+    <25% hata:  🟢 Iyi  (koruma, ileri tasi)
+    """
+    try:
+        h = float(hata or 0)
+    except (TypeError, ValueError):
+        h = 0.0
+    if h >= 50:
+        return ("🔴", "ACİL")
+    if h >= 25:
+        return ("🟡", "Orta")
+    return ("🟢", "İyi")
+
+
+# ── KUR (track) çıkarımı — class_name + kur kolonu hibrit ──
+# 106/123 ogrencide kur=NULL; class_name daha guvenilir
+def _track_from_student(class_name: str, kur: str = None) -> Optional[str]:
+    """Ogrenci track'i: 'SAY' / 'EA' / 'SOZ' / 'LGS' / None.
+
+    Once kur kolonuna bak (kesin), sonra class_name parse et.
+    'SAY' / 'EA' / 'TM' / 'SOZ' / 'SÖZ' / 'LGS' substring eslemesi.
+    """
+    if kur:
+        k = (kur or "").strip().upper()
+        if k in ("SAY", "SAYISAL"):
+            return "SAY"
+        if k in ("EA", "TM", "ESIT", "EŞIT"):
+            return "EA"
+        if k in ("SOZ", "SÖZ", "SOZEL", "SÖZEL"):
+            return "SOZ"
+    cn = (class_name or "").upper()
+    if "LGS" in cn:
+        return "LGS"
+    if "SAY" in cn:
+        return "SAY"
+    if "TM" in cn or " EA" in cn or cn.endswith("EA") or "EŞIT" in cn or "ESIT" in cn:
+        return "EA"
+    if "SÖZ" in cn or "SOZ" in cn:
+        return "SOZ"
+    return None
+
+
+# AYT'de track'a göre IRRELEVANT (sınava girmeyecek) ders listesi.
+# TYT herkese ortak — TYT filtrelenmez.
+_AYT_IRRELEVANT = {
+    "SAY": {
+        # SAY: Mat/Fiz/Kim/Bio/Geo girer; sözel dersler girmiyor
+        "edebiyat", "türk dili ve edebiyatı", "turkce", "türkçe",
+        "tarih", "coğrafya", "cografya", "cografya-1", "cografya-2",
+        "felsefe", "din", "din kültürü", "sosyoloji", "mantık", "mantik",
+    },
+    "EA": {
+        # EA: TDE/Tarih/Coğ/Mat/Geo girer; fen dersleri girmiyor
+        "fizik", "kimya", "biyoloji",
+        "felsefe", "din", "din kültürü", "sosyoloji", "mantık", "mantik",
+    },
+    "SOZ": {
+        # SOZ: TDE/Tarih/Coğ/Felsefe/Din girer; mat+fen girmiyor
+        "matematik", "geometri", "fizik", "kimya", "biyoloji",
+    },
+}
+
+
+def _ders_norm_for_track(ders: str) -> str:
+    """Track filtresi icin ders adi normalize (lower + TYT/AYT prefix temizle)."""
+    d = (ders or "").lower().strip()
+    for pre in ("ayt ", "tyt ", "lgs "):
+        if d.startswith(pre):
+            d = d[len(pre):]
+    return d
+
+
+def _is_ders_irrelevant_for_track(ders: str, sinav_turu: str, track: Optional[str]) -> bool:
+    """Bu ders/sınav türü, ogrencinin track'inde IRRELEVANT mı?
+
+    Sadece AYT için filtreleme yapılır. TYT herkese ortak, asla filtrelenmez.
+    track None ise (kur belirsiz) — hiçbir şey filtrelenmez (data koruma).
+    """
+    if not track:
+        return False
+    st = (sinav_turu or "").strip().upper()
+    # Sadece AYT'yi filtrele; TYT/LGS dokunma
+    if st != "AYT":
+        return False
+    irrelevant = _AYT_IRRELEVANT.get(track, set())
+    if not irrelevant:
+        return False
+    d = _ders_norm_for_track(ders)
+    return d in irrelevant
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # OGRENCI SORU KALIPLARI — ILK 30 SORU
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -119,12 +241,14 @@ async def ogrenci_kimligin(soz_no: int, name: str) -> str:
             SELECT toplam_saat FROM devamsizlik_sayisi WHERE soz_no::text = $1
         """, str(soz_no))
 
-        # Zayıf konu sayısı
+        # Zayıf konu sayısı — sinav_hata_yuzdesi YUKSEK olanlar gerçek zayıf konular
+        # (Eski kod < 50 yazıyordu — HATA AZ → student iyi yapıyor demek, INVERSION bug)
         zayif_count = await db_fetchval("""
             SELECT COUNT(*) FROM student_topic_tracker
             WHERE soz_no::text = $1 AND tamamlandi = FALSE
-              AND sinav_hata_yuzdesi < 50 AND LENGTH(konu) > 5
+              AND sinav_hata_yuzdesi >= 50 AND LENGTH(konu) > 5
               AND konu NOT LIKE 'Ortalama %'
+              AND COALESCE(status,'') != 'metadata'
         """, str(soz_no))
 
         lines = [
@@ -586,20 +710,26 @@ async def ogrenci_son_deneme(soz_no: int, name: str, exam_filter: str = "") -> s
                 dash_data['devamsizlik'] = int((dev_row or {}).get('toplam_saat', 0) or 0)
             except Exception:
                 dash_data['devamsizlik'] = 0
-            # Zayıf + Güçlü konular
+            # Zayıf + Güçlü konular — INVERSION FIX (Berf bug 10 May)
+            # sinav_hata_yuzdesi = HATA % (yuksek=zayif, dusuk=guclu)
+            # Render tarafi 'basari' alani bekliyor → 100-hata gondertiyoruz
             try:
                 zayif_rows = await _q(
-                    "SELECT ders, konu, sinav_hata_yuzdesi as basari FROM student_topic_tracker "
+                    "SELECT ders, konu, sinav_hata_yuzdesi as hata_pct, "
+                    "(100 - sinav_hata_yuzdesi) as basari FROM student_topic_tracker "
                     "WHERE soz_no=$1 AND tamamlandi=FALSE AND COALESCE(status,'') != 'metadata' "
-                    "AND sinav_hata_yuzdesi < 60 "
-                    "ORDER BY sinav_hata_yuzdesi ASC LIMIT 3", soz_no
+                    "AND sinav_hata_yuzdesi >= 40 "
+                    "ORDER BY sinav_hata_yuzdesi DESC LIMIT 3", soz_no
                 )
                 dash_data['zayif_konular'] = [dict(r) for r in zayif_rows]
 
                 guclu_rows = await _q(
-                    "SELECT ders, konu, sinav_hata_yuzdesi as basari FROM student_topic_tracker "
-                    "WHERE soz_no=$1 AND sinav_hata_yuzdesi >= 70 "
-                    "ORDER BY sinav_hata_yuzdesi DESC LIMIT 3", soz_no
+                    "SELECT ders, konu, sinav_hata_yuzdesi as hata_pct, "
+                    "(100 - sinav_hata_yuzdesi) as basari FROM student_topic_tracker "
+                    "WHERE soz_no=$1 AND tamamlandi=FALSE AND COALESCE(status,'') != 'metadata' "
+                    "AND sinav_hata_yuzdesi <= 20 AND sinav_hata_yuzdesi IS NOT NULL "
+                    "AND konu NOT LIKE 'Ortalama %' "
+                    "ORDER BY sinav_hata_yuzdesi ASC LIMIT 3", soz_no
                 )
                 dash_data['guclu_konular'] = [dict(r) for r in guclu_rows]
             except Exception:
@@ -1013,11 +1143,15 @@ async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", s
         idx += 2
 
     where = " AND ".join(conds)
+    # INVERSION FIX (Berf bug 10 May 2026):
+    # sinav_hata_yuzdesi = HATA % (NOT success). YUKSEK hata = ZAYIF konu = ACIL.
+    # ORDER BY DESC ile gerçek zayıf konular önce gelir; LIMIT 20 alıp Python tarafında
+    # kur-track filtresi (SAY -> AYT Türkçe/Tarih hariç) uyguluyoruz.
     rows = await _q(
-        f"SELECT ders, konu, sinav_hata_sayisi, sinav_hata_yuzdesi, status FROM student_topic_tracker "
-        f"WHERE {where} ORDER BY sinav_hata_yuzdesi ASC LIMIT 8",
+        f"SELECT ders, konu, sinav_hata_sayisi, sinav_hata_yuzdesi, status, sinav_turu "
+        f"FROM student_topic_tracker "
+        f"WHERE {where} ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 20",
         *params)
-    # sinav_hata_yuzdesi aslinda BASARI yuzdesi — dusuk olan = zayif konu
     if not rows:
         # 22.1n-irem-bugfix: AYT+ders icin tracker verisi yoksa, student_exams AYT net'ten
         # ders ortalamasi + akilli yonlendirme ver (generic "veri yok" yerine)
@@ -1101,35 +1235,55 @@ async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", s
     except Exception:
         pass
 
-    # Bug fix 23 Nisan: Sadece GERÇEKTEN ZAYIF konuları göster.
-    # Eski: basari<60 tüm konular → %67'lik konuyu da "İyi öncelik" diye
-    # gösteriyordu, kullanıcı "eksik değil bu" diye itiraz etti (Enes vakası).
-    # Yeni: status='yukselis' satırları + basari>=80 konular FİLTRE.
+    # ─── INVERSION FIX (Berf bug 10 May 2026) ──────────────────────────────────
+    # sinav_hata_yuzdesi = HATA % (yuksek=zayif). Eskiden 'basari' aliasiyla
+    # ASC siralanip "%X basari" diye gosteriliyordu — TAM TERS.
+    # Yeni filtre kurali:
+    #   hata < 25  -> ogrenci iyi yapiyor, "ACIL" deme — gosterme
+    #   metadata satirlar ("Ortalama X/Y net") -> her zaman atla
+    # ─── KUR-TRACK FILTER (Berf SAY bug 10 May) ───────────────────────────────
+    # AYT-only sözel dersleri (Edebiyat/Tarih/Coğ/Felsefe) SAY ogrenciye gosterme.
+    # students.kur kolonu cogunlukla NULL → class_name parse et.
+    track = None
+    try:
+        stu_row = await _q1(
+            "SELECT class_name, kur FROM students WHERE soz_no::text=$1",
+            str(soz_no))
+        if stu_row:
+            track = _track_from_student(stu_row.get('class_name'), stu_row.get('kur'))
+    except Exception:
+        track = None
+
     _filtered_rows = []
     for r in rows:
-        _b = r.get('sinav_hata_yuzdesi', 0) or 0
+        _h = r.get('sinav_hata_yuzdesi', 0) or 0  # HATA %
         _st = r.get('status', '') or ''
         _konu = (r.get('konu') or '').lower()
-        # Bug fix 23 Nisan — "Ortalama X/Y net" satırları METADATA, gerçek konu değil
-        # (Enes vakası: "AYT Ortalama 2.8/14 net" diye konu gösterdi, bu bir konu değil)
+        _ders = r.get('ders') or ''
+        _sturu = r.get('sinav_turu') or ''
+        # METADATA: "Ortalama X/Y net" satırları
         if "ortalama" in _konu and "net" in _konu:
             continue
-        # Ortalama/yukselis status'lü satırları atla (metadata, konu değil)
-        if _st in ('yukselis', 'dusus', 'bekliyor') and _b >= 85:
+        if _st == 'metadata':
             continue
-        # %80+ başarı = zaten iyi, "eksik" demek yanlış
-        if _b >= 80:
+        # Hata < 25% → öğrenci iyi yapıyor, zayıf konu değil
+        if _h < 25:
+            continue
+        # KUR FILTER — SAY ogrenciye AYT Edebiyat/Tarih vb. gosterme
+        if _is_ders_irrelevant_for_track(_ders, _sturu, track):
             continue
         _filtered_rows.append(r)
+        if len(_filtered_rows) >= 8:
+            break
 
-    # Filtreli liste boşsa → "bu derste genel başarınız iyi" mesajı
+    # Filtreli liste boşsa → "genel başarınız iyi" mesajı
     if not _filtered_rows:
         first_name = name.split()[0] if name else ""
         ders_text = f"{ders_filtre.title()} " if ders_filtre else ""
         return (
             f"🎯 *{first_name} — {ders_text}Konu Analizi*\n\n"
             f"Güzel haber: {ders_text}alanında *belirgin eksik konu görünmüyor!* 🟢\n"
-            f"Mevcut tracker verilerinde başarı yüzdesi %80+ seviyede.\n\n"
+            f"Mevcut tracker'da %75+ başarı (hata <%25) seviyesindesin.\n\n"
             f"💡 *Daha derin analiz için:*\n"
             f"  • Yeni deneme girdikçe tracker otomatik güncellenir\n"
             f"  • _\"son denemem\"_ → detaylı net analizi\n"
@@ -1140,17 +1294,10 @@ async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", s
     rows = _filtered_rows
 
     for i, r in enumerate(rows, 1):
-        basari = r.get('sinav_hata_yuzdesi', 0) or 0
-        hata = r.get('sinav_hata_sayisi', 0) or 0
-        if basari < 30:
-            emoji = "🔴"
-            oncelik_txt = "ACİL"
-        elif basari < 60:
-            emoji = "🟡"
-            oncelik_txt = "Orta"
-        else:
-            emoji = "🟢"
-            oncelik_txt = "Takip"  # "İyi öncelik" demek yanıltıcıydı, "Takip" daha doğru
+        hata = r.get('sinav_hata_yuzdesi', 0) or 0       # HATA % (0-100)
+        basari = _basari_pct(hata)                       # gosterilecek BASARI %
+        hata_sayisi = r.get('sinav_hata_sayisi', 0) or 0
+        emoji, oncelik_txt = _emoji_for_hata(hata)
         status_icon = " ✍️" if r.get('status') == 'calisiyor' else ""
 
         # Cikmis soru sayisi (eger varsa)
@@ -1162,7 +1309,7 @@ async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", s
                 cikmis_bilgi = f" 📸 _{cnt} çıkmış soru var!_"
 
         lines.append(f"*{i}.* {emoji} *{r['ders']}* · {r['konu'][:35]}{status_icon}")
-        lines.append(f"    Başarın: *%{basari:.0f}* | {oncelik_txt} öncelik{cikmis_bilgi}")
+        lines.append(f"    Başarın: *%{basari:.0f}* (hatan %{hata:.0f}) | {oncelik_txt} öncelik{cikmis_bilgi}")
         lines.append("")
 
     # Strateji onerisi + aksiyon
@@ -1615,12 +1762,12 @@ async def ogrenci_calisma_plani(soz_no: int, name: str) -> str:
     if dropping:
         lines.append(f"⚠️ *Dikkat:* Son denemede dusus: {', '.join(dropping)}\n")
 
-    # Haftalik plan
+    # Haftalik plan — sinav_hata_yuzdesi = HATA % (yuksek=zayif=ACIL)
     days = ["Pazartesi", "Sali", "Carsamba", "Persembe", "Cuma", "Cumartesi"]
     for i, topic in enumerate(topics[:6]):
         day = days[i % len(days)]
-        basari = topic.get('sinav_hata_yuzdesi', 0) or 0
-        emoji = "🔴" if basari < 30 else "🟡" if basari < 60 else "🟢"
+        hata = topic.get('sinav_hata_yuzdesi', 0) or 0
+        emoji, _ = _emoji_for_hata(hata)
         lines.append(f"  {emoji} *{day}:* {topic['ders']} — {topic['konu'][:35]}")
 
     lines.append(f"\n✅ Her konuyu calistiginda bana yaz, takip edeyim!")
@@ -2273,10 +2420,15 @@ async def admin_ogrenci_akademik(query: str) -> Optional[str]:
     # Devamsizlik
     devam = await _q1("SELECT toplam_saat FROM devamsizlik_sayisi WHERE soz_no=$1", soz)
 
-    # Zayif konular (basari yuzdesi en dusuk olanlar = en zayif)
+    # Zayif konular — sinav_hata_yuzdesi = HATA % (yuksek=zayif konu)
+    # INVERSION FIX: ORDER BY DESC + metadata satırları hariç
     topics = await _q(
         "SELECT ders, konu, sinav_hata_yuzdesi FROM student_topic_tracker "
-        "WHERE soz_no=$1 AND tamamlandi=FALSE ORDER BY sinav_hata_yuzdesi ASC LIMIT 3", soz)
+        "WHERE soz_no=$1 AND tamamlandi=FALSE "
+        "  AND COALESCE(status,'') != 'metadata' "
+        "  AND sinav_hata_yuzdesi >= 25 "
+        "  AND konu NOT LIKE 'Ortalama %' "
+        "ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 3", soz)
 
     # Rehberlik notu sayisi
     reh = await _qval("SELECT COUNT(*) FROM counsellor_notes WHERE soz_no=$1", soz)
@@ -2310,8 +2462,9 @@ async def admin_ogrenci_akademik(query: str) -> Optional[str]:
     if topics:
         lines.append(f"\n🎯 *Gelisim Alanlari:*")
         for t in topics:
-            basari = t.get('sinav_hata_yuzdesi', 0) or 0
-            emoji = "🔴" if basari < 30 else "🟡" if basari < 60 else "🟢"
+            hata = t.get('sinav_hata_yuzdesi', 0) or 0
+            basari = _basari_pct(hata)
+            emoji, _ = _emoji_for_hata(hata)
             lines.append(f"   {emoji} {t['ders']}: {t['konu'][:35]} (basari: %{basari:.0f})")
 
     if reh:
@@ -2915,10 +3068,19 @@ async def ogrenci_guclu_konular(soz_no: int, name: str) -> str:
         sep, header, medal, action_block, hitap, ders_emoji
     )
 
+    # INVERSION FIX (Berf bug 10 May): güçlü konu = DÜŞÜK hata%
+    # Eski kod sinav_hata_yuzdesi > 60 ARIYORDU (yuksek hata = zayif → tam ters)
+    # Yeni: hata <= 20 → ogrenci basarili → "guclu konu"
     rows = await _q(
         "SELECT ders, konu, sinav_hata_yuzdesi FROM student_topic_tracker "
-        "WHERE soz_no=$1 AND sinav_hata_yuzdesi > 60 "
-        "ORDER BY sinav_hata_yuzdesi DESC LIMIT 8", soz_no)
+        "WHERE soz_no=$1 "
+        "  AND tamamlandi=FALSE "
+        "  AND COALESCE(status,'') != 'metadata' "
+        "  AND konu NOT LIKE 'Ortalama %' "
+        "  AND sinav_hata_yuzdesi IS NOT NULL "
+        "  AND sinav_hata_yuzdesi <= 20 "
+        "  AND sinav_hata_sayisi >= 1 "
+        "ORDER BY sinav_hata_yuzdesi ASC LIMIT 8", soz_no)
 
     if not rows:
         return (
@@ -2955,7 +3117,8 @@ async def ogrenci_guclu_konular(soz_no: int, name: str) -> str:
     lines.extend(["", sep(), "🏆 *EN GÜÇLÜ 3 KONUN:*", ""])
 
     for i, r in enumerate(en_guclu, 1):
-        basari = float(r.get('sinav_hata_yuzdesi') or 0)
+        # sinav_hata_yuzdesi = HATA %; basari = 100 - hata
+        basari = _basari_pct(r.get('sinav_hata_yuzdesi'))
         m = medal(i)
         em = ders_emoji(r['ders'])
         konu = (r['konu'] or '')[:35]
@@ -2967,7 +3130,7 @@ async def ogrenci_guclu_konular(soz_no: int, name: str) -> str:
     if digerleri:
         lines.extend([sep(), "✨ *Diğer Güçlü Konular:*", ""])
         for r in digerleri:
-            basari = float(r.get('sinav_hata_yuzdesi') or 0)
+            basari = _basari_pct(r.get('sinav_hata_yuzdesi'))
             em = ders_emoji(r['ders'])
             konu = (r['konu'] or '')[:30]
             lines.append(f"  🟢 {em} *{r['ders']}:* {konu} _(%{basari:.0f})_")

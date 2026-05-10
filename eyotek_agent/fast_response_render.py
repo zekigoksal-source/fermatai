@@ -364,6 +364,10 @@ def build_topic_heatmap_html(name: str, topics: Sequence[dict]) -> str:
     """Ders bazli konu basari heatmap.
 
     topics: [{ders, konu, sinav_hata_yuzdesi}, ...]
+
+    INVERSION FIX (Berf bug 10 May 2026):
+    sinav_hata_yuzdesi = HATA % (yuksek=zayif). basari = 100 - hata.
+    Renk basari'ya gore atanir (yesil=basarili, kirmizi=zayif).
     """
     # Ders bazli grupla
     by_ders = {}
@@ -390,7 +394,11 @@ def build_topic_heatmap_html(name: str, topics: Sequence[dict]) -> str:
         # Ders satiri
         konu_cells = []
         for k in konu_list[:8]:  # max 8 konu/ders
-            basari = float(k.get('sinav_hata_yuzdesi', 0) or 0)
+            try:
+                hata = float(k.get('sinav_hata_yuzdesi', 0) or 0)
+            except (TypeError, ValueError):
+                hata = 0.0
+            basari = max(0.0, min(100.0, 100.0 - hata))
             konu_ad = (k.get('konu') or '')[:25]
             color = _color(basari)
             konu_cells.append(

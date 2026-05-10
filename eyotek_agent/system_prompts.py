@@ -609,9 +609,16 @@ Aşağıdaki kafa karıştırıcı durumları kontrol et:
 | etut_history | ogrenci_sayisi | O ETÜT'teki öğrenci kontenjanı (4-15) |
 | etut_history | COUNT(*) | Toplam etüt sayısı |
 | etut_history | SUM(ogrenci_sayisi) | ÖĞRENCİ × ETÜT (mantıklı yorum: "öğrenci-saat") |
-| student_topic_tracker | sinav_hata_yuzdesi | Hata YÜZDESİ (50 = %50, 0-100 arası) |
+| student_topic_tracker | sinav_hata_yuzdesi | **HATA YÜZDESİ** 0-100 (yüksek=zayıf konu) — başarı için (100 − hata) hesapla |
 | student_topic_tracker | sinav_hata_sayisi | TAM SAYI hata adedi |
+| student_topic_tracker | status='metadata' veya konu LIKE 'Ortalama %' | METADATA satır — bu durumda kolon BASARI%'yi tutar; her zaman FİLTRELE |
 | devamsizlik_sayisi | toplam_saat | Devamsızlık saati (0-300+) |
+
+⚠️ INVERSION GUARD — student_topic_tracker.sinav_hata_yuzdesi:
+- Bot tarihsel olarak bu kolonu "başarı" sandı → ASC sıraladı → tam ters sonuç verdi (Berf 10 May vakası).
+- ZAYIF konu listesi: ORDER BY sinav_hata_yuzdesi DESC + filtre `>= 25` (az hata göstermeyi atla).
+- GÜÇLÜ konu listesi: ORDER BY sinav_hata_yuzdesi ASC + filtre `<= 20`.
+- Görüntüde HER ZAMAN "Başarın: %{100−hata}" sun (öğrenciye hata gösterme kafasını karıştırır).
 
 KURAL: Aggregate sorgu öncesi:
 1. Bu kolon NE ÖLÇER? (kolon adı yanıltıcı olabilir)
@@ -3176,9 +3183,14 @@ Veya usage_log icin:
 BUYUK HATA: "phone LIKE '%5446%'" ← boyle rastgele tahmin YAPMA, yanlis kisiyi getirir.
 Gecmis hata: 19 Nisan 22:37 Neo "Mahsum ne konustu" sordu, bot Orsel'in mesajlarini gosterdi.
 ONEMLI KURALLAR (TOOL'DA TAMAMLAYICI):
-- 🚨 student_topic_tracker.sinav_hata_yuzdesi = ASLINDA BASARI YUZDESI! Kolon adi YANILTICI.
-  Yeni alias: `sinav_basari_yuzdesi` (ayni deger, dogru isim — her iki kolon da kullanilabilir).
-  YUKSEK (%80+) = GUCLU, DUSUK (<%40) = ZAYIF. Gosterimde "Basari: %88 ✅" / "Basari: %3 🔴".
+- 🚨 student_topic_tracker.sinav_hata_yuzdesi = HATA YUZDESI (0-100, ERROR %).
+  build_topic_tracker.py: yuzde = (hata / soru * 100). KOLON ADI DOGRU, ANLAMI HATA.
+  YUKSEK (%50+) = COK HATA = ZAYIF KONU (ACIL). DUSUK (<%25) = AZ HATA = GUCLU KONU.
+  Gostermede: Basari = (100 - sinav_hata_yuzdesi). Ornek: hata=%9 → basari=%91 ("paragraf iyi").
+  SIRALAMA: zayif konu icin ORDER BY sinav_hata_yuzdesi DESC (yuksek hata = once goster).
+  ISTISNA: status='yukselis'/'dusus'/'bekliyor' + konu LIKE 'Ortalama %' satirlari METADATA,
+  bu satirlarda sinav_hata_yuzdesi = BASARI % (post_sync_update.py boyle yaziyor). Metadata
+  satirlari her zaman 'metadata' status veya 'Ortalama' konu prefix ile FILTRELE.
 - Soru sayisi UYDURMA (toplam soru kolonu YOK)
 - student_exams [AYT] prefix → KOPYALANMIS, AYT icin get_ayt_analysis kullan
 - students tablosunda "ad/soyad" YOK → "first_name/last_name" kullan
