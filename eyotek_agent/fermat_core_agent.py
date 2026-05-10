@@ -1310,6 +1310,7 @@ def _build_claude_request_params(
     model: str,
     messages: list,
     max_tokens: int = 24576,
+    compact_summary: Optional[str] = None,  # 25.43-FAZ-2: Cerebras compact summary
 ) -> dict:
     """Claude API request params (stream + sync ortak) — DRY consolidation.
 
@@ -1317,10 +1318,31 @@ def _build_claude_request_params(
     duplicate logic vardı. Bu helper iki path'in tek kaynaktan params almasını
     sağlar — gelecek değişikliklerde sadece BURASI güncellenir.
 
+    25.43-FAZ-2: compact_summary verilirse system_blocks'a eklenir (Cerebras
+    pre-compile bağlam genişletmesi). cache hit performansı korunur — summary
+    son block olarak gelir, system+prompt cached kalır.
+
     Returns: messages.create / messages.stream'e direkt verilebilir dict.
     """
     cached_tools = _add_tools_cache_control(claude_tools)
     system_blocks = _build_system_blocks(v3_blocks, claude_prompt, dynamic_context)
+
+    # 25.43-FAZ-2: Cerebras compact summary — Anthropic prompt cache breakpoint
+    # SONRASINA ekle ki system+prompt+tools cached kalsın, summary her seferinde
+    # yeni hesaplansın (zaten yeni summary). cache_control YOK = cache MISS bu
+    # block için ama %94 cache hit toplam korunur.
+    if compact_summary:
+        system_blocks = list(system_blocks) + [
+            {
+                "type": "text",
+                "text": (
+                    f"\n\n═══════ KONUŞMA BAĞLAM ÖZETI (Cerebras 235B pre-compile) ═══════\n"
+                    f"{compact_summary}\n"
+                    f"═══════════════════════════════════════════════════════════"
+                ),
+            }
+        ]
+
     params = dict(
         model=model,
         max_tokens=max_tokens,  # Sonnet 4.5 max 64K, biz 24K (latency vs kapasite)
@@ -4391,10 +4413,28 @@ class FermatCoreAgent:
             # Prompt caching: SYSTEM_PROMPT statik bloku cache'e, dynamic ayri blok
             #
             # STREAMING YOLU — eğer _stream_queue varsa AsyncAnthropic ile
+            # 25.43-FAZ-2 (Neo direktif): Selective Cerebras pre-compile.
+            # Uzun konuşmalarda (10+ msg, 3K+ token) Cerebras 235B son 20 mesajı
+            # action-aware özetler, Claude bağlam zenginliği kazanır.
+            # Sadece TURN 0'da (ilk Claude çağrısı) tetiklenir — tool loop'unda her
+            # turda yeniden compact yapmak gereksiz (history zaten genişledi).
+            _compact_summary = None
+            if turn == 0:
+                try:
+                    from context_compactor import compact_history_for_claude
+                    _compact_summary = await compact_history_for_claude(
+                        history=self.history[:-1],  # son user mesajı hariç
+                        user_msg=user_input or "",
+                        recent_n=20,
+                    )
+                    if _compact_summary:
+                        logger.info(f"  [COMPACT] {len(_compact_summary)} char özet eklendi")
+                except Exception as _ce:
+                    logger.debug(f"  [COMPACT] skip: {_ce}")
+
             # native streaming: Claude her token ürettiğinde hemen queue'ya yaz.
             # Tool kullanımında text stream + tool_use fragman gelir, final_message'dan topla.
             # 25.40z3-MIMARI #6: Stream + sync ortak params helper'dan
-            # (DRY consolidation - tek kaynak, gelecek değişiklikler buraya)
             _request_params = _build_claude_request_params(
                 v3_blocks=self._v3_system_blocks,
                 claude_prompt=_claude_prompt,
@@ -4402,6 +4442,7 @@ class FermatCoreAgent:
                 claude_tools=_claude_tools,
                 model=MODEL,
                 messages=self.history,
+                compact_summary=_compact_summary,  # 25.43-FAZ-2
             )
             if self._stream_queue is not None and self.async_client:
                 # STREAMING YOLU — AsyncAnthropic native streaming
