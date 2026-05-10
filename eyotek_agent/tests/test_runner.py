@@ -37,7 +37,7 @@ async def _seed_test_users():
     print(f"[SEED] OK")
 
 
-async def _run_single_test(test: dict, concurrency_sem: asyncio.Semaphore, idx: int, total: int) -> dict:
+async def _run_single_test(test: dict, concurrency_sem: asyncio.Semaphore, idx: int, total: int, per_test_timeout: float = 60.0) -> dict:
     """Tek bir test sorusunu calistir, sonuc dictionary olarak don."""
     async with concurrency_sem:
         result = {
@@ -57,13 +57,20 @@ async def _run_single_test(test: dict, concurrency_sem: asyncio.Semaphore, idx: 
         error_msg = ""
         try:
             from whatsapp_bridge import process_message
-            response_text = await process_message(
-                phone=test["phone"],
-                text=test["question"],
-                channel="test",  # web/whatsapp yerine "test" — bildirim gonderilmez
+            # Per-test timeout — tek mesaj 60s'ten cok surerse iptal et,
+            # tum batch'i bloke etmesin.
+            response_text = await asyncio.wait_for(
+                process_message(
+                    phone=test["phone"],
+                    text=test["question"],
+                    channel="test",
+                ),
+                timeout=per_test_timeout,
             )
             if response_text is None:
                 response_text = ""
+        except asyncio.TimeoutError:
+            error_msg = f"timeout_{per_test_timeout}s"
         except Exception as e:
             error_msg = f"{type(e).__name__}: {str(e)[:200]}"
         elapsed = (time.monotonic() - t0) * 1000
@@ -100,41 +107,54 @@ async def _run_single_test(test: dict, concurrency_sem: asyncio.Semaphore, idx: 
         return result
 
 
-async def run_corpus(limit: int = None, concurrency: int = 5, out_dir: str = None) -> dict:
-    """Tum corpus'u calistir, paralel concurrency=K, sonuclari diske kaydet."""
+async def run_corpus(limit: int = None, concurrency: int = 3, out_dir: str = None, batch_size: int = 50) -> dict:
+    """Tum corpus'u calistir, BATCH bazli — her batch sonunda diske kaydet
+    (progressive save — bridge crash ederse sonuclar kaybolmaz)."""
     corpus = get_corpus()
     if limit:
         corpus = corpus[:limit]
     total = len(corpus)
     print(f"\n=== TEST RUNNER ===")
-    print(f"Total: {total} test | Concurrency: {concurrency}")
+    print(f"Total: {total} test | Concurrency: {concurrency} | Batch: {batch_size}")
     print(f"=" * 70)
 
     # Once test kullanicilarini seed et
     await _seed_test_users()
 
-    sem = asyncio.Semaphore(concurrency)
-    tasks = [_run_single_test(t, sem, i, total) for i, t in enumerate(corpus)]
-    t0 = time.monotonic()
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    total_elapsed = time.monotonic() - t0
-
-    # Exception olanlari handle et
-    clean = []
-    for r in results:
-        if isinstance(r, Exception):
-            clean.append({"error": f"{type(r).__name__}: {str(r)[:200]}", "latency_ms": 0})
-        else:
-            clean.append(r)
-
-    # Output
     if out_dir is None:
         out_dir = Path(__file__).resolve().parent / "runs"
     os.makedirs(out_dir, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     results_path = Path(out_dir) / f"results_{ts}.json"
-    with open(results_path, "w", encoding="utf-8") as f:
-        json.dump(clean, f, ensure_ascii=False, indent=2)
+
+    sem = asyncio.Semaphore(concurrency)
+    clean = []
+    t0 = time.monotonic()
+
+    # Batch'ler halinde calistir + her batch sonunda progressive save
+    for batch_start in range(0, total, batch_size):
+        batch_end = min(batch_start + batch_size, total)
+        batch = corpus[batch_start:batch_end]
+        print(f"\n[BATCH] {batch_start+1}-{batch_end} basliyor...")
+        bt0 = time.monotonic()
+        tasks = [_run_single_test(t, sem, batch_start + i, total) for i, t in enumerate(batch)]
+        batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+        belapsed = time.monotonic() - bt0
+        for r in batch_results:
+            if isinstance(r, Exception):
+                clean.append({"error": f"{type(r).__name__}: {str(r)[:200]}", "latency_ms": 0})
+            else:
+                clean.append(r)
+        # Progressive save
+        with open(results_path, "w", encoding="utf-8") as f:
+            json.dump(clean, f, ensure_ascii=False, indent=2)
+        print(f"[BATCH] {batch_start+1}-{batch_end} bitti ({belapsed:.0f}s) → progressive save ({len(clean)} kayit)")
+        # Cerebras 429 cool-down
+        if batch_end < total:
+            await asyncio.sleep(2)
+
+    total_elapsed = time.monotonic() - t0
+    results = clean
     print(f"\n[OUTPUT] {results_path}")
 
     # Summary
@@ -231,7 +251,7 @@ async def main():
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument("--limit", type=int, default=None, help="ilk N testi calistir (smoke)")
-    p.add_argument("--concurrency", type=int, default=5, help="paralel goruv sayisi")
+    p.add_argument("--concurrency", type=int, default=3, help="paralel goruv sayisi (default 3 — Cerebras rate limit)")
     p.add_argument("--out", type=str, default=None, help="cikti dizini")
     args = p.parse_args()
 
