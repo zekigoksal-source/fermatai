@@ -1079,17 +1079,17 @@ async def navigate(
                 f"Sayfada bu input'lar yok veya isim farkli."
             )
 
-        # 25.43-AUDIT-V2: navigate (eyotek_query) audit hook — şüpheli durum
-        # tetikleyicileri: tablo boş, filter_bad, veya çok az satır.
-        # Maliyet kontrolü: success-of-success durumlarda atla.
+        # 25.43-AUDIT-V3 (Neo direktif 11 May 19:00 — stratejik tetikleme):
+        # Audit SADECE gerçek hata/şüphe durumunda. Tek-satır query (örn: bir
+        # öğrencinin profili) NORMAL — audit yapma.
+        # Tetikleyici sadece:
+        #   - error_code: NO_DATA (filtre uygulandı ama tablo boş)
+        #   - error_code: FILTER_BAD (filtreler tanınmadı)
         try:
             from eyotek_self_audit import audit_navigate_query, AUDIT_ENABLED
             should_audit = (
-                AUDIT_ENABLED and (
-                    not rows_data or
-                    result.get("error_code") in ("NO_DATA", "FILTER_BAD") or
-                    len(rows_data) < 2
-                )
+                AUDIT_ENABLED and
+                result.get("error_code") in ("NO_DATA", "FILTER_BAD")
             )
             if should_audit:
                 audit_res = await audit_navigate_query(
@@ -1736,13 +1736,22 @@ async def student_drilldown(
             result["error_code"] = "NO_DATA"
             result["error"] = "Alt sayfa acildi ama tablo bos."
 
-        # 25.43-AUDIT-V2: student_drilldown audit hook — yanlış öğrenci profili
-        # açılma riski + boş tablo durumu için Vision teyit. Sadece tablo bossa
-        # veya çok az satır varsa tetikle (false positive maliyetinden kaçın).
+        # 25.43-AUDIT-V3 (Neo direktif 11 May 19:00 — "mantıklı tetikleme"):
+        # Audit stratejik araç olarak konumlanmalı, normal başarılı drill'de
+        # YAPILMAMALI. Sadece GERÇEK ŞÜPHE durumunda:
+        #   - Tablo TAMAMEN bossa (NO_DATA durumu)
+        #   - Eyotek hata mesajı dönüyorsa (error_code var)
+        # Eski tetikleyici "rows<3" çok agresifti — tek öğrencinin az kaydı
+        # olabilir, bu normal.
         try:
             from eyotek_self_audit import audit_student_drill, AUDIT_ENABLED
-            if AUDIT_ENABLED and (len(rows_data) == 0 or len(rows_data) < 3):
-                # Boş tablo veya şüpheli az satır → audit
+            should_audit = (
+                AUDIT_ENABLED and (
+                    len(rows_data) == 0 or
+                    result.get("error_code") in ("NO_DATA",)
+                )
+            )
+            if should_audit:
                 audit_res = await audit_student_drill(
                     page,
                     student_identifier=student_identifier,

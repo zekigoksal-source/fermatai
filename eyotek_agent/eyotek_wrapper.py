@@ -2927,12 +2927,25 @@ class EyotekWrapper:
         else:
             logger.error(f"  ❌ Etüt kaydedilemedi: {msg[:100]}")
 
-        # 25.43-AUDIT-V2: write_etut audit hook — KAYDET sonrası takvimde
-        # gerçekten oluştu mu Vision teyit. dry_run değilse + success ise.
+        # 25.43-AUDIT-V3 (Neo direktif — stratejik tetikleme):
+        # write_etut'ta her başarılı yazımda audit YAPMA. Eyotek'in dönen mesajı
+        # zaten teyit (alert-success, conflict, vs). Sadece BELIRSIZ durumda audit:
+        #   - rtype == 'no_message'        → toast/alert görünmedi, durum belirsiz
+        #   - is_conflict                   → çakışma uyarısı, kayıt gerçekleşti mi?
+        #   - rtype içinde belirsizlik       → message tipi anlaşılamadı
+        # Net success message varsa (alert-success vs) audit GEREKSIZ — Eyotek
+        # zaten "kaydedildi" diyor, Vision tekrar bakmasına gerek yok.
         audit_info = None
         try:
             from eyotek_self_audit import audit_write_etut, AUDIT_ENABLED
-            if AUDIT_ENABLED and not dry_run and success:
+            audit_needed = (
+                AUDIT_ENABLED and not dry_run and (
+                    rtype == "no_message" or
+                    is_conflict or
+                    (success and "success" not in rtype.lower() and "alert" not in rtype.lower())
+                )
+            )
+            if audit_needed:
                 _SAAT_MAP = {1:"09:00",2:"09:45",3:"10:30",4:"11:15",5:"12:00",
                              6:"12:45",7:"14:00",8:"14:45",9:"15:30",10:"16:15",
                              11:"17:00",12:"17:45",13:"18:30",14:"19:15",15:"20:00"}
@@ -2949,7 +2962,7 @@ class EyotekWrapper:
                 if audit_info.get("audited"):
                     v = audit_info.get("vision_result") or {}
                     logger.info(f"[AUDIT] write_etut verdict={v.get('verdict')} "
-                                f"obs='{(v.get('observation') or '')[:80]}'")
+                                f"reason='{rtype}' obs='{(v.get('observation') or '')[:60]}'")
         except Exception as _ae:
             logger.debug(f"[WRAP] write_etut audit skip: {_ae}")
 
@@ -3239,8 +3252,12 @@ class EyotekWrapper:
             }
         """)
 
-        # 25.43-AUDIT-V2: write_counsellor_note audit hook — KAYDET sonrası
-        # rehberlik notları listesinde bugün kaydı görünüyor mu Vision teyit.
+        # 25.43-AUDIT-V3 (Neo direktif — stratejik tetikleme):
+        # Audit yalnızca BELİRSİZ durumda. Net success/error mesajı varsa Eyotek
+        # zaten cevap veriyor, Vision'a tekrar baktırmaya gerek yok.
+        # Tetikleyici:
+        #   - result_info None (toast/alert hiç görünmedi)         → audit ŞART
+        #   - sel'de "success/error" içermez (belirsiz tip)         → audit
         async def _audit_counsellor():
             try:
                 from eyotek_self_audit import audit_write_counsellor, AUDIT_ENABLED
@@ -3258,6 +3275,8 @@ class EyotekWrapper:
 
         if result_info:
             is_error = any(w in result_info["sel"] for w in ["danger", "error"])
+            is_clear_success = any(w in result_info["sel"]
+                                    for w in ["success", "alert-success"])
             logger.info(f"  Sonuç: {result_info['msg']}")
             ret = {
                 "success": not is_error,
@@ -3266,16 +3285,17 @@ class EyotekWrapper:
                 "meeting_type": meeting_type_val,
                 "save_btn": saved,
             }
-            if not is_error:
+            # Audit sadece success ama belirsiz mesaj tipinde
+            if not is_error and not is_clear_success:
                 ai = await _audit_counsellor()
                 if ai and ai.get("audited"):
                     ret["_audit"] = ai
                     v = ai.get("vision_result") or {}
-                    logger.info(f"[AUDIT] write_counsellor verdict={v.get('verdict')} "
-                                f"obs='{(v.get('observation') or '')[:80]}'")
+                    logger.info(f"[AUDIT] write_counsellor (ambiguous) verdict={v.get('verdict')} "
+                                f"obs='{(v.get('observation') or '')[:60]}'")
             return ret
 
-        # Toast yok — screenshot al ve metni döndür
+        # Toast hiç gelmedi → durum belirsiz, audit gerekli
         await self._page.screenshot(path="counsellor_note_result.png")
         page_text = await self._page.evaluate("() => document.body.innerText.slice(0,400)")
         has_error = any(w in page_text.lower() for w in ["hata", "error", "başarısız"])
@@ -3287,6 +3307,7 @@ class EyotekWrapper:
             "save_btn": saved,
         }
         if not has_error:
+            # No-toast = belirsiz, audit ZORUNLU
             ai = await _audit_counsellor()
             if ai and ai.get("audited"):
                 ret["_audit"] = ai

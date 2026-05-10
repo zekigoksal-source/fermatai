@@ -638,3 +638,68 @@ if __name__ == "__main__":
     elif len(sys.argv) > 1 and sys.argv[1] == "cleanup":
         n = cleanup_old_screenshots()
         print(f"Cleaned {n} old day directories")
+    elif len(sys.argv) > 1 and sys.argv[1] == "stats":
+        # Audit istatistikleri — bot ne kadar mantıklı tetikliyor?
+        from dotenv import load_dotenv
+        env_path = Path(__file__).resolve().parent.parent / ".env"
+        if env_path.exists():
+            load_dotenv(env_path)
+
+        async def show_stats():
+            from db_pool import db_fetch
+            print("=" * 70)
+            print("AUDIT İSTATİSTİKLERİ — Bot Tetikleme Mantığı")
+            print("=" * 70)
+
+            # Son 24 saat
+            rows = await db_fetch("""
+                SELECT action, verdict, COUNT(*) as cnt
+                FROM audit_log
+                WHERE created_at > NOW() - INTERVAL '24 hours'
+                GROUP BY action, verdict
+                ORDER BY action, verdict
+            """) or []
+            print(f"\nSon 24 saat — toplam: {sum(r.get('cnt', 0) for r in rows)} audit")
+            print(f"{'action':<35} {'verdict':<12} {'count':>5}")
+            print("-" * 60)
+            for r in rows:
+                print(f"  {r['action']:<33} {(r['verdict'] or '?'):<12} {r['cnt']:>5}")
+
+            # Verdict dağılımı (toplam)
+            vd = await db_fetch("""
+                SELECT verdict, COUNT(*) as cnt
+                FROM audit_log
+                WHERE created_at > NOW() - INTERVAL '24 hours'
+                GROUP BY verdict
+                ORDER BY cnt DESC
+            """) or []
+            print(f"\nVerdict dağılımı (24 saat):")
+            for r in vd:
+                print(f"  {(r['verdict'] or '?'):<12} {r['cnt']:>5}")
+
+            # Anomaly tespit edilenler (önemli!)
+            anom = await db_fetch("""
+                SELECT created_at, action, verdict, anomaly,
+                       LEFT(observation, 100) as obs_short
+                FROM audit_log
+                WHERE created_at > NOW() - INTERVAL '24 hours'
+                  AND verdict IN ('FALSE', 'KISMEN')
+                ORDER BY created_at DESC LIMIT 10
+            """) or []
+            if anom:
+                print(f"\nSon 10 ŞÜPHELI/YANLIŞ verdict (bot fark etti):")
+                for r in anom:
+                    ts = str(r.get('created_at', ''))[:19]
+                    print(f"  [{ts}] {r['action']:<25} {r['verdict']:<8}")
+                    if r.get('observation'):
+                        print(f"     obs: {r.get('obs_short', '')}")
+                    if r.get('anomaly'):
+                        print(f"     anomaly: {(r['anomaly'] or '')[:120]}")
+
+            # Maliyet tahmini
+            total_24h = sum(r.get('cnt', 0) for r in rows)
+            cost_per = 0.01  # ~$0.01/audit (Sonnet Vision)
+            print(f"\nMaliyet tahmini: ~${total_24h * cost_per:.2f}/24h "
+                  f"(${total_24h * cost_per * 30:.2f}/ay tahmin)")
+
+        asyncio.run(show_stats())
