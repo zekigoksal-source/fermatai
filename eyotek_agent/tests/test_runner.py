@@ -107,7 +107,7 @@ async def _run_single_test(test: dict, concurrency_sem: asyncio.Semaphore, idx: 
         return result
 
 
-async def run_corpus(limit: int = None, concurrency: int = 3, out_dir: str = None, batch_size: int = 50) -> dict:
+async def run_corpus(limit: int = None, concurrency: int = 3, out_dir: str = None, batch_size: int = 20) -> dict:
     """Tum corpus'u calistir, BATCH bazli — her batch sonunda diske kaydet
     (progressive save — bridge crash ederse sonuclar kaybolmaz)."""
     corpus = get_corpus()
