@@ -44,6 +44,20 @@ _REDIS_ACTIVE = bool(os.getenv("REDIS_URL", "").strip())
 _my_pid = os.getpid()
 _is_leader_cache: bool | None = None  # cache result, refresh updates it
 
+# 25.43-BUG1-FIX (Neo bot self-critique 10 May, 11 May verified):
+# Takeover olunca eski follower'da SKIP edilmis singleton task'ler (nightly,
+# session_keeper, scheduler, telafi vb.) BAŞLATILMIYORDU. Hook ile bridge
+# kendi _start_singleton_tasks fonksiyonunu register eder, takeover sirasinda
+# otomatik tetiklenir — manual systemctl restart gerekmez.
+_takeover_callback = None  # async callable, bridge lifespan'da set edilir
+
+
+def set_takeover_callback(fn) -> None:
+    """Bridge takeover callback'i register eder. fn() async olmali."""
+    global _takeover_callback
+    _takeover_callback = fn
+    logger.info(f"  👑  Takeover callback registered: {getattr(fn, '__name__', 'anonymous')}")
+
 
 async def is_leader() -> bool:
     """Bu worker leader mi? Redis SETNX ile claim dener.
@@ -129,11 +143,19 @@ async def start_leader_refresh():
                     was_follower = (_is_leader_cache is False)
                     logger.warning(f"  👑  Leader takeover: PID={_my_pid} (eski leader olmus, follower={was_follower})")
                     _is_leader_cache = True
-                    # Singleton task'leri yeniden baslat — bridge restart'tan sonra
-                    # cunku eski leader oldugunda follower'da SKIP edilmislerdi.
-                    # NOT: Bu otomatik degil — manual restart gerekecek (uyari atalim)
-                    logger.warning(f"  ⚠️  Leadership takeover sonrasi singleton task'ler bu worker'da BASLATILMADI. "
-                                   f"Manual restart gerekir: sudo systemctl restart fermatai-bridge")
+                    # 25.43-BUG1-FIX: Takeover sonrasi singleton task'leri OTOMATIK yeniden baslat.
+                    # was_follower=True ise bu worker oncesinde SKIP etmisti — simdi calistirmali.
+                    if was_follower and _takeover_callback:
+                        try:
+                            logger.warning(f"  ⚡  Takeover hook calistiriliyor — singleton task'ler baslatilacak")
+                            asyncio.create_task(_takeover_callback())
+                        except Exception as _cb_err:
+                            logger.error(f"  ❌  Takeover callback hata: {_cb_err}")
+                            logger.warning(f"  ⚠️  Manual restart gerekebilir: sudo systemctl restart fermatai-bridge")
+                    elif was_follower:
+                        # Callback register edilmemis (eski kod) — eski uyari kalsin
+                        logger.warning(f"  ⚠️  Leadership takeover sonrasi singleton task'ler bu worker'da BASLATILMADI. "
+                                       f"Callback yok, manual restart: sudo systemctl restart fermatai-bridge")
                 else:
                     # Yarista kaybettik (baska follower hizli davrandi) — sessizce follower kal
                     _is_leader_cache = False

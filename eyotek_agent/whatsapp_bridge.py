@@ -1027,6 +1027,80 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"  Todo scheduler baslatilamadi: {e}")
 
+    # ── 25.43-BUG1-FIX (11 May, bot self-critique): Takeover hook ─────────
+    # Multi-worker'da bu worker follower iken, eski leader düşerse takeover
+    # eder ama singleton task'ler (nightly/session_keeper/scheduler/telafi/
+    # briefing/todo) BAŞLATILMIYORDU → "manual restart gerekir" warning.
+    # Şimdi callback ile otomatik başlat.
+    try:
+        from singleton_leader import set_takeover_callback
+
+        async def _start_singleton_tasks_on_takeover():
+            """Takeover sonrası eksik singleton task'leri başlat (idempotent)."""
+            nonlocal _session_keeper_task, _scheduler_task, _html_task, _telafi_task
+            nonlocal _briefing_task, _todo_task, _nightly_task
+            logger.warning("  🚀  Takeover sonrası singleton task'ler başlatılıyor...")
+            # Session keeper
+            try:
+                if not _session_keeper_task or _session_keeper_task.done():
+                    from session_keeper import session_keeper_loop as _sk_loop
+                    _session_keeper_task = asyncio.create_task(_sk_loop())
+                    logger.info("  🔐  [takeover] Session Keeper aktif")
+            except Exception as _e:
+                logger.error(f"  [takeover] Session keeper fail: {_e}")
+            # Scheduler + HTML
+            try:
+                if not _scheduler_task or _scheduler_task.done():
+                    _scheduler_task = asyncio.create_task(_run_scheduled_tasks())
+                    logger.info("  ⏰  [takeover] Scheduler aktif")
+                if not _html_task or _html_task.done():
+                    _html_task = asyncio.create_task(_run_conversation_html_updater())
+                    logger.info("  📄  [takeover] HTML updater aktif")
+            except Exception as _e:
+                logger.error(f"  [takeover] Scheduler fail: {_e}")
+            # Telafi
+            try:
+                if not _telafi_task or _telafi_task.done():
+                    async def _telafi_loop_inner():
+                        from frustration_telafi import check_and_send_telafi
+                        while True:
+                            await asyncio.sleep(1800)
+                            try:
+                                result = await check_and_send_telafi(send_wa_func=send_wa_message)
+                                if result.get("sent", 0) > 0:
+                                    logger.info(f"✨ [takeover] Telafi: {result['sent']} mesaj")
+                            except Exception:
+                                pass
+                    _telafi_task = asyncio.create_task(_telafi_loop_inner())
+                    logger.info("  ✨  [takeover] Telafi aktif")
+            except Exception as _e:
+                logger.error(f"  [takeover] Telafi fail: {_e}")
+            # Briefing + Todo
+            try:
+                if not _briefing_task or _briefing_task.done():
+                    from teacher_briefing import briefing_scheduler_loop
+                    _briefing_task = asyncio.create_task(briefing_scheduler_loop())
+                    logger.info("  📋  [takeover] Briefing aktif")
+                if not _todo_task or _todo_task.done():
+                    from todo_assignment import todo_scheduler_loop
+                    _todo_task = asyncio.create_task(todo_scheduler_loop())
+                    logger.info("  📌  [takeover] Todo aktif")
+            except Exception as _e:
+                logger.error(f"  [takeover] Briefing/Todo fail: {_e}")
+            # Nightly
+            try:
+                if '_nightly_task' not in dir() or not _nightly_task or _nightly_task.done():
+                    from precompute_nightly import nightly_scheduler_loop
+                    _nightly_task = asyncio.create_task(nightly_scheduler_loop())
+                    logger.info("  🌙  [takeover] Nightly aktif")
+            except Exception as _e:
+                logger.error(f"  [takeover] Nightly fail: {_e}")
+            logger.warning("  ✅  Takeover singleton task'ler başlatıldı (otomatik)")
+
+        set_takeover_callback(_start_singleton_tasks_on_takeover)
+    except Exception as _hook_err:
+        logger.warning(f"  Takeover callback register fail: {_hook_err}")
+
     yield  # Uygulama çalışıyor
 
     # ── Kapanış ────────────────────────────────────────────────────────────────

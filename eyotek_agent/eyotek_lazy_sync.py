@@ -40,7 +40,12 @@ from data_freshness_helper import mark_success, mark_failure
 PAGE_TO_MODULE = {
     "student/individual-lesson":   ("etut_history",   "_upsert_etut_history"),
     "student/exam-result":         ("student_exams",  "_upsert_student_exams"),
-    "student/attendance-report":   ("attendance",     "_upsert_attendance"),
+    # 25.43-BUG3-FIX (Neo bot self-critique 10 May, 11 May verified):
+    # attendance tablosu ESKI (63 satir, olu). Canli veri yoklama_kontrol'de
+    # (7461 satir). attendance-report'u yoklama_kontrol'e yonlendir.
+    "student/attendance-report":   ("yoklama_kontrol", "_upsert_yoklama_kontrol"),
+    "reports/attendance-control":  ("yoklama_kontrol", "_upsert_yoklama_kontrol"),
+    "yoklama/kontrol":             ("yoklama_kontrol", "_upsert_yoklama_kontrol"),
     "student/student-exam-detail": ("student_exam_analysis", "_upsert_exam_analysis"),
     # 25.43-LAZY-EXTEND-V2 (Neo direktif 10 May): Tüm sorgular DB sync
     "counsellor/notes":            ("counsellor_notes", "_upsert_counsellor_notes"),
@@ -471,13 +476,139 @@ async def _upsert_attendance(rows: list[dict], columns: list[str]) -> int:
     return synced
 
 
-async def _upsert_exam_analysis(rows: list[dict], columns: list[str]) -> int:
-    """student_exam_analysis tablosuna upsert.
+async def _upsert_yoklama_kontrol(rows: list[dict], columns: list[str]) -> int:
+    """yoklama_kontrol tablosuna upsert (CANLI yoklama, 7461 satir).
 
-    Note: Tam upsert scrape_exam_analysis.py'da var (per-student detayli).
-    Lazy hook freshness icin yeterli — full sync periodic timer'da yapilir.
+    25.43-BUG3-FIX (Neo bot self-critique 10 May, 11 May verified):
+    attendance tablosu ESKI (63 satir, olu), canli veri yoklama_kontrol'de.
+    Page mapping `attendance-report → yoklama_kontrol`'e cevrildi, bu fonksiyon
+    sınıf-bazlı haftalık yoklamayı tutar.
+
+    Schema: gun, tarih (date), sinif, ders, ogretmen, ogretmen_id,
+            ders_baslangic, ders_bitis, yoklama
+    Dedupe: (tarih, sinif, ders, ders_baslangic) — ayni gun ders saati tek kayit.
     """
-    return len(rows)
+    from db_pool import db_execute, db_fetchval
+    from field_reconciler import find_field
+    from datetime import datetime as _dt
+    synced = 0
+    for r in rows:
+        try:
+            tarih_raw = find_field(r, columns, ["tarih", "date", "ders_tarihi"])
+            sinif = find_field(r, columns, ["sinif", "sınıf", "class", "sube"])
+            ders = find_field(r, columns, ["ders", "lesson", "subject"])
+            ogretmen = find_field(r, columns, ["ogretmen", "öğretmen", "teacher"])
+            ogretmen_id_raw = find_field(r, columns, ["ogretmen_id", "öğretmen id", "teacher_id"])
+            gun = find_field(r, columns, ["gun", "gün", "day"])
+            ders_bas = find_field(r, columns, ["ders_baslangic", "ders başlangıç", "baslangic", "saat"])
+            ders_bit = find_field(r, columns, ["ders_bitis", "ders bitiş", "bitis"])
+            yoklama = find_field(r, columns, ["yoklama", "durum", "attendance_status"])
+
+            if not tarih_raw or not sinif:
+                continue
+
+            # tarih parse (DD.MM.YYYY veya YYYY-MM-DD)
+            tarih_obj = None
+            if isinstance(tarih_raw, (int, float)):
+                continue
+            ts = str(tarih_raw).strip()
+            for fmt in ("%d.%m.%Y", "%Y-%m-%d", "%d/%m/%Y"):
+                try:
+                    tarih_obj = _dt.strptime(ts, fmt).date()
+                    break
+                except ValueError:
+                    continue
+            if not tarih_obj:
+                continue
+
+            # Dedupe
+            existing = await db_fetchval(
+                "SELECT 1 FROM yoklama_kontrol WHERE tarih = $1 AND sinif = $2 AND COALESCE(ders,'') = COALESCE($3,'') AND COALESCE(ders_baslangic,'') = COALESCE($4,'') LIMIT 1",
+                tarih_obj, str(sinif).strip(), str(ders or "").strip(),
+                str(ders_bas or "").strip(),
+            )
+            if existing:
+                continue
+
+            ogretmen_id = None
+            if ogretmen_id_raw and str(ogretmen_id_raw).strip().isdigit():
+                ogretmen_id = int(str(ogretmen_id_raw).strip())
+
+            await db_execute("""
+                INSERT INTO yoklama_kontrol
+                    (gun, tarih, sinif, ders, ogretmen_id, ogretmen,
+                     ders_baslangic, ders_bitis, yoklama)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            """, str(gun or "").strip(), tarih_obj, str(sinif).strip(),
+                str(ders or "").strip(), ogretmen_id, str(ogretmen or "").strip(),
+                str(ders_bas or "").strip(), str(ders_bit or "").strip(),
+                str(yoklama or "").strip())
+            synced += 1
+        except Exception as e:
+            logger.debug(f"  [LAZY_SYNC] yoklama_kontrol skip: {str(e)[:80]}")
+            continue
+    return synced
+
+
+async def _upsert_exam_analysis(rows: list[dict], columns: list[str]) -> int:
+    """student_exam_analysis tablosuna upsert (sinav birlestirme analizi).
+
+    25.43-BUG2-FIX (Neo bot self-critique 10 May, 11 May verified):
+    Eskiden stub'di — `return len(rows)` ile sessizce yutuyordu, lazy sync
+    cagrilan oldugu halde DB'ye HIC YAZMIYORDU. AYT puanlari sadece manual
+    scrape_exam_analysis.py kosumlariyla guncelleniyordu.
+
+    Schema: soz_no PK, eyotek_id, full_name, ham_puan, yerlesme_puani,
+            sinav_sayisi, katilan_sinav, ders_netleri (jsonb),
+            ham_puan_ayt, yerlesme_puani_ayt (AYT subset).
+
+    Lazy hook'tan gelen rows minimal alan iceriyor (soz_no, full_name,
+    ham_puan, yerlesme_puani vb.) — sadece bunlari upsert et.
+    Detayli ders_netleri JSON ise periodic scrape_exam_analysis.py'de.
+    """
+    from db_pool import db_execute
+    from field_reconciler import find_field
+    synced = 0
+    for r in rows:
+        try:
+            soz_no = find_field(r, columns, ["soz_no", "söz no", "soznumarasi", "soz numara"])
+            full_name = find_field(r, columns, ["full_name", "ad soyad", "adi soyadi", "ogrenci"])
+            ham_puan = find_field(r, columns, ["ham_puan", "ham puan", "ham"])
+            yerlesme = find_field(r, columns, ["yerlesme_puani", "yerlesme", "yerleşme puani"])
+            ham_sira = find_field(r, columns, ["ham_sira", "ham sira", "ham siralama"])
+            yerlesme_sira = find_field(r, columns, ["yerlesme_sirasi", "yerlesme sira"])
+            toplam_net = find_field(r, columns, ["toplam_net", "toplam net"])
+            sinav_sayisi = find_field(r, columns, ["sinav_sayisi", "sinav sayisi"])
+            katilan = find_field(r, columns, ["katilan_sinav", "katilan", "katildi"])
+
+            if not soz_no:
+                continue
+
+            # UPSERT — eski kayıt varsa sadece dolu alanları güncelle
+            await db_execute("""
+                INSERT INTO student_exam_analysis
+                    (soz_no, full_name, ham_puan, yerlesme_puani, ham_sira,
+                     yerlesme_sirasi, toplam_net, sinav_sayisi, katilan_sinav, last_sync)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                ON CONFLICT (soz_no) DO UPDATE SET
+                    full_name = COALESCE(EXCLUDED.full_name, student_exam_analysis.full_name),
+                    ham_puan = COALESCE(EXCLUDED.ham_puan, student_exam_analysis.ham_puan),
+                    yerlesme_puani = COALESCE(EXCLUDED.yerlesme_puani, student_exam_analysis.yerlesme_puani),
+                    ham_sira = COALESCE(EXCLUDED.ham_sira, student_exam_analysis.ham_sira),
+                    yerlesme_sirasi = COALESCE(EXCLUDED.yerlesme_sirasi, student_exam_analysis.yerlesme_sirasi),
+                    toplam_net = COALESCE(EXCLUDED.toplam_net, student_exam_analysis.toplam_net),
+                    sinav_sayisi = COALESCE(EXCLUDED.sinav_sayisi, student_exam_analysis.sinav_sayisi),
+                    katilan_sinav = COALESCE(EXCLUDED.katilan_sinav, student_exam_analysis.katilan_sinav),
+                    last_sync = NOW()
+            """, str(soz_no), full_name, ham_puan, yerlesme, ham_sira,
+                yerlesme_sira, toplam_net,
+                int(sinav_sayisi) if sinav_sayisi and str(sinav_sayisi).isdigit() else None,
+                int(katilan) if katilan and str(katilan).isdigit() else None)
+            synced += 1
+        except Exception as e:
+            logger.debug(f"  [LAZY_SYNC] exam_analysis skip ({e.__class__.__name__}): {str(e)[:80]}")
+            continue
+    return synced
 
 
 async def _upsert_counsellor_notes(rows: list[dict], columns: list[str]) -> int:
