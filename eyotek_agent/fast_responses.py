@@ -564,11 +564,17 @@ async def ogrenci_son_deneme(soz_no: int, name: str, exam_filter: str = "") -> s
         ""      → filtre yok (default — son herhangi deneme)
     """
     # 25.40s: Sinav turu filtresi
+    # 25.43-ITER3 FIX (Neo: "tyt netim" → [AYT] sonucu vakasi):
+    # Eskiden sadece exam_name ILIKE '%TYT%' kullaniyordu, ama exam_name
+    # "[AYT] BILGI SARMAL TG TYT-3" gibi ICINDE HEM AYT HEM TYT olabilir.
+    # Cozum: exam_type kolonu OR (exam_name '[AYT]' YOK + TYT VAR).
     where_extra = ""
     if exam_filter == "tyt":
-        where_extra = " AND exam_name ILIKE '%TYT%'"
+        # exam_type TYT olmalı VEYA exam_name TYT iceriyor ama [AYT] icermiyor
+        where_extra = " AND (exam_type = 'TYT' OR (exam_name ILIKE '%TYT%' AND exam_name NOT ILIKE '%[AYT]%'))"
     elif exam_filter == "ayt":
-        where_extra = " AND exam_name ILIKE '%AYT%'"
+        # exam_type AYT olmalı VEYA exam_name [AYT] iceriyor
+        where_extra = " AND (exam_type = 'AYT' OR exam_name ILIKE '%[AYT]%')"
     elif exam_filter == "sinif":
         where_extra = " AND (exam_name ILIKE '%sınıf%' OR exam_name ILIKE '%sinif%' OR exam_name ~* '\\m1[0-2][^0-9]')"
 
@@ -3294,7 +3300,9 @@ OGRENCI_PATTERNS = [
     (r"denem\w*\s*nas[iı]l", "son_deneme", "Deneme nasil"),
     # 25.41 (Neo QA): "son tyt nasıl", "tyt durumum", "netlerimi söyle"
     (r"son\s+tyt\s*(nas[iı]l|sonuc|durum)", "son_deneme", "Son TYT nasıl"),
-    (r"^tyt\s*(durum|nas[iı]l)", "son_deneme", "TYT durum"),
+    (r"^tyt\s*(durum|nas[iı]l|netim|sonucum)", "son_deneme", "TYT durum/netim"),
+    # 25.43-ITER3: "tyt netim" pattern eklendi (test 522'de bot AYT donduruyordu)
+    (r"^(tyt|ayt|ydt)\s*(netim|netlerim|sonuc)", "son_deneme", "TYT/AYT/YDT netim"),
     (r"^netlerim[iı]?\s*(s[oö]yle|g[oö]ster|s[oö]yler\s*misin)", "son_deneme", "Netlerimi söyle"),
     (r"^son\s*denmem?\b", "son_deneme", "Son denmem typo"),
     (r"denmem?\s*nas[iı]l", "son_deneme", "Denmem nasil typo"),

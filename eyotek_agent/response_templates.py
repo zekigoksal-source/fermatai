@@ -163,11 +163,12 @@ SELAMLAMA_VARYASYON = {
         "*Örsel Bey* hoş geldin — SGM gündemi ne?",
     ],
     "mudur_default": [
-        "Hoş geldiniz *{name}* 👋 Buyrun, dinliyorum.",
-        "Selam *{name}* — gündem sizde.",
-        "*{name}*, hazırım. Ne sormak istersiniz?",
-        "Hoş geldin *{name}* — bugün neye bakalım?",
-        "*{name}*, FermatAI emrinizde. Hangi konu?",
+        # 25.43-ITER3 (Neo: müdür için proaktif liderlik tonu, "pasif değil" judge feedback):
+        "Hoş geldiniz *{name}* 🎯 Kurum nabzı sizde — hangi raporu çekelim?",
+        "Selam *{name}* — bugün sınıf trendleri, öğretmen performansı veya öğrenci durumu hazır.",
+        "*{name}*, FermatAI yönetim modülü emrinizde. Akademik özet mi, finansal mı?",
+        "Hoş geldiniz *{name}* — kurum istatistikleri güncel, sınıf bazlı analiz hazır.",
+        "*{name}* 👔 size haftalık panorama veya kritik sinyal raporu sunabilirim.",
     ],
     "yonetim_bilge": [
         "Merhaba *Bilge Hanım* 👋 Hangi konuda analiz yapalım?",

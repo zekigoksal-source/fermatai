@@ -14,6 +14,7 @@ Mimari ilke: Brain centralized, Execution modular
 """
 from __future__ import annotations
 from typing import Any
+from loguru import logger
 
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -197,6 +198,30 @@ async def search_curriculum(query: str = "", ders: str = "", sinav_turu: str = "
                 if kr["id"] not in existing_ids:
                     results.insert(0, kr)
             results = results[:5]
+
+    # 25.43-ITER3 FIX (Neo RAG mismatch — turev→birim cember vakasi):
+    # Top result'un konu adi query keyword'unu icermiyorsa konu_eslesme_dusuk
+    # flag'i ekle. Cerebras bunu gorunce "Sordugun X konusunu yanit veremiyorum,
+    # bilgi bankamda yok" der; rastgele baska konuyu uydurmaz.
+    if results and query:
+        import re as _re
+        # Query'den anlamli kelimeleri cikar (stop word'leri at)
+        _stop = {"nedir", "ne", "demek", "anlat", "açıkla", "aciklа", "ne ise", "hakkinda",
+                 "bilgi", "ver", "izah", "tanim", "tanimla", "konu", "ne olur"}
+        q_words = [w for w in _re.findall(r'\w+', query.lower())
+                   if len(w) > 3 and w not in _stop]
+        if q_words:
+            top_konu = (results[0].get("konu") or "").lower()
+            top_icerik = (results[0].get("icerik") or results[0].get("content") or "")[:500].lower()
+            # En az 1 query keyword top result'un konu/icerik basinda olmali
+            match_konu = any(w in top_konu for w in q_words)
+            match_icerik = any(w in top_icerik for w in q_words)
+            if not match_konu and not match_icerik:
+                # Konu uyumsuz — sonuclari isaretle, Cerebras agnostik konussun
+                for r in results:
+                    r["_konu_eslesme_dusuk"] = True
+                results = []  # Bos donder, Cerebras "bilmiyorum" der
+                logger.info(f"  [RAG_GUARD] Konu uyumsuzlugu — sonuc bos donderildi (query='{query[:40]}', top_konu='{top_konu[:40]}')")
     # OGM konu özeti PDF link ekleme
     _global_ogm = None
     try:

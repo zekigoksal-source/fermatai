@@ -4938,18 +4938,23 @@ async def _get_caller_profile(phone: str) -> dict:
                     )
                     if stu_rows:
                         s = stu_rows[0]
-                        # Test kullanici: full_name TEST kalsin (loglarda ayirt edilebilir)
-                        # ama akademik context (soz_no, class) Berf'in olsun
+                        # 25.43-ITER3 FIX (Neo: production'da "Test Ogrenci" leak'i):
+                        # Test phone'lar (9059900020 vb) icin bot cevaplarda
+                        # "Test Ogrenci SAY1" yerine GERCEK student name (BERF) kullan.
+                        # Test izolasyonu zaten ContextVar ile saglandi (insights vb. skip).
+                        # full_name'i gercek students.full_name ile override et —
+                        # log'lar test_account notes ile zaten ayirt edilebilir.
+                        real_name = s.get("full_name") or ""
+                        if real_name:
+                            prof["full_name"] = real_name
+                            prof["first_name"] = s.get("first_name") or real_name.split()[0]
                         prof["soz_no"] = s.get("soz_no") or ey_id
                         prof["class_name"] = s.get("class_name") or s.get("sube") or ""
                         prof["sube"] = s.get("sube") or ""
                         prof["program"] = s.get("program") or ""
                         prof["devre"] = s.get("devre") or ""
                         prof["kur"] = s.get("kur") or ""
-                        if not prof.get("first_name"):
-                            prof["first_name"] = s.get("first_name") or ""
-                        # Real student name'i ayri tut (privacy: test phone log'larda Test name kullanilir)
-                        prof["real_student_name"] = s.get("full_name") or ""
+                        prof["real_student_name"] = real_name
                 except Exception as _stu_err:
                     logger.debug(f"  acl→students JOIN fail: {_stu_err}")
             # Orsel Koc — Sistem Gelistirme Muduru (ozel kademe, mudur yetkilerine ek)

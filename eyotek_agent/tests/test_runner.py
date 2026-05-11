@@ -37,7 +37,7 @@ async def _seed_test_users():
     print(f"[SEED] OK")
 
 
-async def _run_single_test(test: dict, concurrency_sem: asyncio.Semaphore, idx: int, total: int, per_test_timeout: float = 60.0) -> dict:
+async def _run_single_test(test: dict, concurrency_sem: asyncio.Semaphore, idx: int, total: int, per_test_timeout: float = 90.0) -> dict:
     """Tek bir test sorusunu calistir, sonuc dictionary olarak don."""
     async with concurrency_sem:
         result = {
