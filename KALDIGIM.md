@@ -5,13 +5,15 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.44)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `fe6585f` fix(25.44-iter4c): eyotek_id placeholder pattern
+> - **HEAD:** `09ddfc9` fix(25.44-SENTRY-29x): tool_use/tool_result chain integrity
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, disk %6 (272G free), RAM 11Gi free
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama 23.6s/test
 > - **Eyotek DB sync:** lazy_sync her sorguda otomatik (40 yeni sezon kayıt DB'de)
+> - **Sentry self-awareness:** SENTRY_API_TOKEN aktif, `get_sentry_errors` Claude tool, admin/mudur ACL
+> - **Sentry BadRequestError 29× (en yoğun):** root cause fix'lendi — tool_use/tool_result chain integrity (full history scan + gather guard)
 > - **Test pass rate (522 corpus):** B+ %92.3, A++/A %78.2, F=0 (Oturum 25.43'ten devam)
-> - **Production ready:** ✅ Tüm okuma fonksiyonları kusursuz, DB güncellik otomatik
+> - **Production ready:** ✅ Tüm okuma fonksiyonları kusursuz, DB güncellik otomatik, Sentry self-aware
 >
 > ## 🎯 Bu Oturumda (25.44) Yapılanlar (11 May)
 >
@@ -53,6 +55,35 @@
 > - "📅 Sezon: 2026.27 · Eyotek'ten az önce alındı: HH:MM" timestamp
 > - Yanlış sayfa seçerse re-plan ile düzeltir
 > - Önceki testten kalan sezon state'i tarih filter ile otomatik override
+>
+> ## 📊 25.44-SENTRY — Self-Awareness + 29× BadRequestError fix (12 May 00:15)
+>
+> Neo direktif: "Sentry mail alıyorum, bot da görsün, sorduğumda anlık raporlasın."
+>
+> **A. Sentry Self-Awareness Modülü** (yeni dosya YOK, mevcut SDK wrap'lenmedi — REST API ayrı):
+> - `sentry_monitor.py` — REST API client (httpx, 5dk cache, EU region detect)
+> - DSN'den org_id + project_id + region otomatik parse
+> - `get_sentry_issues(hours=24, limit=10)` — frekans desc sıralı issue listesi
+> - `get_summary_for_prompt()` — LLM-uygun compact metin
+> - SENTRY_API_TOKEN `sntryu_...` .env'ye eklendi (User Auth Token, sadece read scopes)
+> - `_tool_get_sentry_errors` — Claude tool, ACL admin/mudur only
+> - System prompt'ta admin pattern → tool çağrı yönergesi
+>
+> **B. BadRequestError 29× Root Cause Fix** (Sentry'den çekilen permalink ile):
+> ```
+> messages.39: `tool_use` ids were found without `tool_result` blocks immediately after
+> ```
+> Anthropic API: her assistant tool_use → hemen sonraki user mesajında tool_result olmak ZORUNDA.
+>
+> İki ayrı bug bulundu:
+>
+> 1. **History cleanup yarım** (Oturum 25.29'dan): SADECE son assistant mesajını kontrol ediyordu. Sentry 'messages.39' gösterdi ki history ORTASINDA dangling tool_use kalabiliyor.
+>    **Fix:** FULL HISTORY SCAN — her assistant tool_use için sonraki user mesajında matching tool_result var mı, eksikse placeholder araya enjekte et.
+>
+> 2. **asyncio.gather üst seviye exception**: paralel tool execution timeout/cancel/OOM fırlarsa tool_results üretilmez, history append çalışmaz, ama assistant tool_use zaten history'de → bir sonraki turda 400.
+>    **Fix:** try/except ile garanti placeholder — her tool_call için error result.
+>
+> Bu iki fix birlikte 29× BadRequestError'un kök sebebi. Bot kendi sorduğunda doğrulayabilir: `get_sentry_errors(hours=24)`.
 >
 > ## 🔄 25.44-iter4 — Pagination Dedupe + DB Lazy Sync (11 May 21:39–22:01)
 >
