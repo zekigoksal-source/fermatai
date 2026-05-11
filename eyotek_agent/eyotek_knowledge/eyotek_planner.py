@@ -600,7 +600,7 @@ async def execute_query(question: str, max_rows: Optional[int] = None) -> dict:
                 nav = nav2
                 plan_only = plan2_only
 
-    return {
+    final_result = {
         "success": nav.get("success", False),
         "plan": plan_only,
         "page": (plan_only.get("page_path") or plan["page_path"]),
@@ -622,6 +622,25 @@ async def execute_query(question: str, max_rows: Optional[int] = None) -> dict:
         "error_code": nav.get("error_code"),
         "error":      nav.get("error"),
     }
+
+    # 25.44 iter4 (Neo 11 May 21:51): execute_query path'inde de lazy_sync çağır.
+    # Önceden sadece fermat_core_agent._tool_eyotek_query'de vardı — manuel direct
+    # çağrılarda (test/CLI) hook atlanıyordu, DB güncellenmiyordu.
+    if final_result.get("success") and final_result.get("rows"):
+        try:
+            import sys as _sys
+            from pathlib import Path as _Path
+            _agent_root = _Path(__file__).resolve().parent.parent
+            if str(_agent_root) not in _sys.path:
+                _sys.path.insert(0, str(_agent_root))
+            from eyotek_lazy_sync import lazy_sync_after_query
+            sync_info = await lazy_sync_after_query(final_result)
+            if sync_info.get("synced"):
+                final_result["_lazy_synced"] = sync_info
+        except Exception as _le:
+            logger.debug(f"[execute_query] lazy_sync skip: {_le}")
+
+    return final_result
 
 
 # ─── CLI ─────────────────────────────────────────────────────────────────────
