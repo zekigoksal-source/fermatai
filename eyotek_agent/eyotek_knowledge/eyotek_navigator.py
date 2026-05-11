@@ -424,6 +424,156 @@ async def _fill_text_input(page, candidates: list[str], value: str) -> Optional[
         return None
 
 
+async def change_global_season(page, target: str) -> dict:
+    """Eyotek navbar'daki global sezon dropdown'unu değiştir — site-wide aktif sezonu set eder.
+
+    25.44 (Neo direktif 11 May 19:07): Sezon `#cmbSezonlar` Select2 widget'ı vardı ama
+    onun change event'i SAYFA İÇİ tabloyu etkilemiyor — gerçek site mantığı navbar'daki
+    `#BtnShowSeasons` dropdown menüsünden ASP.NET `__doPostBack(
+    'HeaderMain$RptChangeSeason$ctl{XX}$BtnSezonSec', '')` çağırmak. PostBack server-side
+    session'da aktif sezonu set eder, sayfa reload olur, TÜM sayfalar yeni sezona göre
+    veri çeker.
+
+    Args:
+        page: Playwright Page (Eyotek sayfasında olmalı)
+        target: sezon code ("22627") veya label ("2026.27") veya "latest"/"auto"
+
+    Returns:
+        {
+          "changed": bool,
+          "from": "<eski label>",
+          "to":   "<yeni label>",
+          "reason": "noop" | "switched" | "not_found" | "error"
+        }
+    """
+    try:
+        # 1. Mevcut sezonu oku
+        current = await page.evaluate("""
+            () => {
+                const btn = document.querySelector('#BtnShowSeasons');
+                if (!btn) return null;
+                const txt = (btn.innerText || '').trim();
+                const m = txt.match(/(20\\d{2}\\.\\d{2})/);
+                return m ? m[1] : txt.slice(0, 20);
+            }
+        """)
+        if not current:
+            return {"changed": False, "reason": "not_found",
+                    "error": "BtnShowSeasons yok (sezon değiştirilemez sayfa?)"}
+
+        # 2. Available sezonları çıkar (menüyü açmadan DOM'dan)
+        avail = await page.evaluate("""
+            () => {
+                const items = document.querySelectorAll(
+                    "a[href*='RptChangeSeason'][href*='BtnSezonSec']"
+                );
+                const out = [];
+                for (const a of items) {
+                    const txt = (a.innerText || '').trim();
+                    const m = txt.match(/(20\\d{2}\\.\\d{2})/);
+                    if (m) {
+                        // __doPostBack arg çıkar
+                        const href = a.getAttribute('href') || '';
+                        const am = href.match(/__doPostBack\\(['"]([^'"]+)['"]/);
+                        out.push({ label: m[1], postback_arg: am ? am[1] : null });
+                    }
+                }
+                return out;
+            }
+        """)
+        if not avail:
+            return {"changed": False, "reason": "not_found",
+                    "error": "Sezon menü itemleri DOM'da yok"}
+
+        # 3. Target normalize
+        t = str(target).strip().lower()
+        target_label = None
+        if t in ("latest", "auto", "yeni", "yeni sezon", "aktif", "su an", "şu an"):
+            # En yüksek yılı bul
+            def _year(label):
+                m = re.search(r'(20\d{2})', label or '')
+                return int(m.group(1)) if m else 0
+            target_label = max(avail, key=lambda o: _year(o["label"]))["label"]
+        else:
+            # code'dan label'a (22627 → 2026.27) veya label match
+            t_norm = t.replace(".", "").replace(" ", "")
+            for o in avail:
+                lbl = o["label"]
+                lbl_no_dot = lbl.replace(".", "")
+                # Tam match
+                if lbl == target or lbl_no_dot == t_norm:
+                    target_label = lbl; break
+                # Code formatı (22627 = 2026.27 → "20{ilk2}.{son2}")
+                if t.startswith("2") and len(t) == 5:
+                    # 22627 = 2(skip) 26(yıl1) 27(yıl2) → "2026.27"
+                    yy1, yy2 = t[1:3], t[3:5]
+                    if lbl == f"20{yy1}.{yy2}":
+                        target_label = lbl; break
+                # Substring fallback (örn "2026" → "2026.27")
+                if t in lbl.lower():
+                    target_label = lbl; break
+
+        if not target_label:
+            return {"changed": False, "reason": "not_found",
+                    "from": current, "available": [o["label"] for o in avail],
+                    "error": f"Hedef sezon '{target}' available'da yok"}
+
+        # 4. Mevcut sezon == target ise no-op
+        if current == target_label:
+            return {"changed": False, "reason": "noop",
+                    "from": current, "to": target_label}
+
+        # 5. PostBack arg'ı bul ve çağır
+        postback_arg = None
+        for o in avail:
+            if o["label"] == target_label:
+                postback_arg = o["postback_arg"]
+                break
+        if not postback_arg:
+            return {"changed": False, "reason": "not_found",
+                    "error": "PostBack argümanı çözülemedi", "to": target_label}
+
+        # __doPostBack çağır + sayfa reload bekle
+        await page.evaluate(f"""
+            () => {{
+                if (typeof __doPostBack === 'function') {{
+                    __doPostBack('{postback_arg}', '');
+                }} else if (window.theForm) {{
+                    window.theForm.__EVENTTARGET.value = '{postback_arg}';
+                    window.theForm.__EVENTARGUMENT.value = '';
+                    window.theForm.submit();
+                }}
+            }}
+        """)
+        # Reload bekle
+        try:
+            await page.wait_for_load_state("networkidle", timeout=10000)
+        except Exception:
+            pass
+        await page.wait_for_timeout(1500)
+
+        # 6. Doğrula
+        new_current = await page.evaluate("""
+            () => {
+                const btn = document.querySelector('#BtnShowSeasons');
+                if (!btn) return null;
+                const txt = (btn.innerText || '').trim();
+                const m = txt.match(/(20\\d{2}\\.\\d{2})/);
+                return m ? m[1] : txt.slice(0, 20);
+            }
+        """)
+        if new_current == target_label:
+            return {"changed": True, "reason": "switched",
+                    "from": current, "to": new_current,
+                    "postback": postback_arg}
+        else:
+            return {"changed": False, "reason": "postback_no_effect",
+                    "from": current, "to_target": target_label, "actual": new_current,
+                    "postback": postback_arg}
+    except Exception as e:
+        return {"changed": False, "reason": "error", "error": f"{type(e).__name__}: {str(e)[:200]}"}
+
+
 async def _fill_dropdown(page, candidates: list[str], value: str) -> Optional[str]:
     """Dropdown'da label veya value matchle. Select2 wrapper destekli.
 
@@ -1018,33 +1168,69 @@ async def navigate(
         except Exception as _e:
             logger.debug(f"[NAV] dropdown enum skip: {_e}")
 
-        # 25.44: Sezon filter auto-resolve — filter'da "latest"/"auto"/yıl-string gelirse
-        # dropdown'dan gerçek code'a çevir
-        if filters and result.get("season"):
+        # 25.44 (Neo bug 11 May): Sezon filter ÖZEL — Eyotek'in #cmbSezonlar Select2'si
+        # tabloyu yenilemiyor. Gerçek mekanik: navbar #BtnShowSeasons + ASP.NET PostBack
+        # 'HeaderMain$RptChangeSeason$ctl{XX}$BtnSezonSec'. Bu PostBack server-side aktif
+        # sezonu set eder ve TÜM sayfaları yenisine göre render eder.
+        if filters and "sezon" in filters:
             req_sezon = filters.get("sezon")
             if req_sezon:
-                avail = result["season"]["available"]
-                req_l = str(req_sezon).strip().lower()
-                resolved = None
-                if req_l in ("latest", "auto", "yeni", "yeni sezon", "aktif", "su an", "şu an"):
-                    # En yeni sezon = ilk option (Eyotek genelde DESC sıralı) veya max yıl
-                    def _year_of(label):
-                        m = re.search(r'(20\d{2})', label or '')
-                        return int(m.group(1)) if m else 0
-                    if avail:
-                        latest = max(avail, key=lambda o: _year_of(o["label"]))
-                        resolved = latest["code"]
-                        result["debug"]["sezon_resolved"] = f"latest → {latest['label']} ({resolved})"
-                else:
-                    # Verilen değer code mu, label mı? Hem code hem label match dene
-                    for o in avail:
-                        if (o["code"] == str(req_sezon) or
-                                str(req_sezon).lower() in (o["label"] or "").lower()):
-                            resolved = o["code"]
-                            result["debug"]["sezon_resolved"] = f"{req_sezon} → {o['label']} ({resolved})"
-                            break
-                if resolved:
-                    filters = {**filters, "sezon": resolved}
+                change_result = await change_global_season(page, str(req_sezon))
+                result["debug"]["season_change"] = change_result
+                if change_result.get("changed") or change_result.get("reason") == "noop":
+                    # Sezon değiştirildi (veya zaten doğru) — filter dict'inden çıkar
+                    filters = {k: v for k, v in filters.items() if k != "sezon"}
+                    # PostBack reload sonrası sezon dropdown re-enumerate (DOM yenilendi)
+                    try:
+                        page_dropdowns2 = await page.evaluate("""
+                            () => {
+                                const sels = Array.from(document.querySelectorAll('select')).filter(s => {
+                                    const r = s.getBoundingClientRect();
+                                    return r.width>0 && r.height>0;
+                                });
+                                return sels.map(el => ({
+                                    id: el.id||'', name: el.name||'',
+                                    current_value: el.value||'',
+                                    current_text: el.options[el.selectedIndex] ? (el.options[el.selectedIndex].innerText||'').trim() : '',
+                                    options: Array.from(el.options).slice(0,100).map(o => ({v:o.value, t:(o.innerText||'').trim()}))
+                                }));
+                            }
+                        """)
+                        for d in (page_dropdowns2 or []):
+                            did = (d.get("id") or "").lower()
+                            if "sezon" in did:
+                                result["season"] = {
+                                    "current_code": d.get("current_value", ""),
+                                    "current_label": d.get("current_text", ""),
+                                    "available": [{"code": o["v"], "label": o["t"]}
+                                                  for o in d["options"] if o.get("v") and o["v"] != "0"],
+                                }
+                                break
+                        # Final URL/sezon güncelle
+                        result["final_url"] = page.url
+                    except Exception as _e:
+                        logger.debug(f"[NAV] sezon re-enum skip: {_e}")
+                    result["debug"]["sezon_resolved"] = f"{req_sezon} → {change_result.get('to') or change_result.get('to_target')}"
+                elif change_result.get("reason") == "not_found":
+                    # BtnShowSeasons yok — bu sayfa sezon değiştirme desteklemiyor
+                    # Fallback: eski yöntem (sayfa içi dropdown'a yaz)
+                    avail = (result.get("season") or {}).get("available") or []
+                    req_l = str(req_sezon).strip().lower()
+                    resolved = None
+                    if req_l in ("latest", "auto", "yeni", "yeni sezon", "aktif"):
+                        def _year_of(label):
+                            m = re.search(r'(20\d{2})', label or '')
+                            return int(m.group(1)) if m else 0
+                        if avail:
+                            resolved = max(avail, key=lambda o: _year_of(o["label"]))["code"]
+                    else:
+                        for o in avail:
+                            if (o["code"] == str(req_sezon) or
+                                    str(req_sezon).lower() in (o["label"] or "").lower()):
+                                resolved = o["code"]; break
+                    if resolved:
+                        filters = {**filters, "sezon": resolved}
+                        result["debug"]["sezon_resolved"] = f"{req_sezon} → {resolved} (fallback page-level)"
 
         # URL params ile gelmissek (?sezon=&tarihBas= gibi) sayfa zaten filtreyi
         # otomatik calistirdi — modal acma + search click YAPMA. Tabloyu direkt oku.
