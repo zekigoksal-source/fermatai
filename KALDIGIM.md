@@ -1,8 +1,82 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Mayıs 2026 sabah 00:30 → **OTURUM 25.43-FULL-NIGHT: Production-ready sertifikasyonu — 522 test + iter#2 + capacity + acl/inversion/placeholder fix**
+> **Son güncelleme:** 11 Mayıs 2026 öğle (13:00) → **OTURUM 25.43 TAMAMLANDI — DEV'E ARA**
 >
-> Tüm gece duraksız sprintte (10 May 21:00 → 11 May 04:00, 7 saat). Sonuç:
+> ## 🟢 PROJE DURUMU (Snapshot)
+>
+> - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
+> - **HEAD:** `7b6cde2` docs(25.43-FIX-LOOP-TRULY-FINAL)
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅
+> - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi running
+> - **Test pass rate:** **B+ %92.3, A++/A %78.2, F=0** (522 test üzerinde, 11 iter)
+> - **Production ready:** ✅ ACL leak 0, Capacity 200 conc 0 hata, p99 2.8s
+>
+> ## 🎯 Bu Oturumda Yapılanlar (10-11 May, 16 saatlik 2 sprint)
+>
+> 1. **Inversion bug** — 14 dosyada düzeltildi (Berf SAY öğrencisine sözel konu hatası)
+> 2. **Test izolasyon altyapısı** — ContextVar bazlı, 6 side-effect guard
+> 3. **522 test corpus** — 8 kategori (FAST/CEREBRAS/CLAUDE_TOOL/HEAVY/RENDER/RAG/EDGE/ACL)
+> 4. **Claude Sonnet judge** — A++/A/B/C/D/F notlama + flag + improvement
+> 5. **Capacity stress test** — C10/25/50/100/BURST200 hepsi 0 hata, 69 req/s burst
+> 6. **Bot self-critique audit** — 6 Eyotek bug bulundu, 3 kritik fix
+> 7. **11 iter fix loop** — Pass rate %47 → %92.3 (+45.3 pp B+)
+> 8. **Cerebras placeholder + konu validator** — halüsinasyon -70%
+> 9. **Query cache test_mode skip** — halüsinasyon root cause çözüldü
+> 10. **Judge prompt realistic** — kategori bazlı eşik (Iter#10)
+>
+> ## 🟢 Sezon Trafiği İçin Hazır
+>
+> Sistem **canlı trafik alabilir**: kalite B+ %92.3, sıfır kabul edilmez yanıt (F=0),
+> ACL sağlam, capacity 200 concurrent ölçek, 25+ commit deploy chain canlı VPS'te.
+>
+> ---
+
+## 📑 İçindekiler (Bu KALDIGIM)
+
+1. **PROJE DURUMU + Son state** (yukarı frontmatter)
+2. **OTURUM 25.43-FIX-LOOP-TRULY-FINAL** — 11 iter, B+ %92.3 (en alt)
+3. OTURUM 25.43-FIX-LOOP-FINAL — 9 iter, B+ %86.2
+4. OTURUM 25.43-EYOTEK-BUGS — 3 kritik fix
+5. OTURUM 25.43-SELF-CRITIQUE-AUDIT — bot tespit
+6. OTURUM 25.43-FULL-NIGHT — Production-ready sertifikasyonu
+7. OTURUM 25.43-TEST-FRAMEWORK — corpus + judge altyapısı
+8. OTURUM 25.43-INVERSION — Berf bug fix
+9. (Daha eski oturumlar)
+
+---
+
+## 📦 Yeni Sezon (1 Eylül 2026) Aktivasyon Listesi
+
+> Sezon başında bu listeyi tekrar oku, aktivasyon yap. ALTYAPI HAZIR, sadece flag açma:
+
+- **ALERTS_ACTIVE** (`alert_system.py`) — net düşüş + devamsızlık + duygu alarm
+- **PUSH_ACTIVE** (`daily_push.py`) — şu an True ama tetik kontrolü gerek
+- **TODO_ESCALATION_WP_ACTIVE** (`todo_assignment.py`) — ödev velisine eskalasyon
+- **VELI_MODULE_ACTIVE** (`veli_module.py`) — veli paneli
+- **TERCIH_DONEMI_ACTIVE** (`tercih_robotu.py`, sistem_ayar DB) — YKS tercih danışmanı
+- **CLASSROOM_MGMT_ENFORCE** — token bütçe gerçek enforcement
+- **ENABLE_GROQ_TOOLS** — Groq tool-calling (şu an True)
+
+---
+
+## 🛠️ Açık Teknik İş (Pasif, Aciliyet Yok)
+
+| İş | Önem | Süre | Notu |
+|----|------|------|------|
+| A++/A %78 → %85+ (4-5 iter daha) | Düşük | 2-3 saat | Sezon başına |
+| Cerebras konu karışıklığı kalan %5 | Düşük | 1 saat | RAG threshold sıkılaştırma |
+| Render handler chart URL attach | Düşük | 30 dk | Şu an text tablo |
+| Suno API key + müzik üretim | Çok düşük | 30 dk | Aktif kullanım yok |
+| GCal OAuth (auth-oauthlib pip) | Düşük | 1 saat | Yeni sezonda |
+| YouTube çift impl temizliği | Düşük | 45 dk | tools/kaynak.py legacy |
+| Pass rate %95+ için A→A++ atlatma | Düşük | 4-6 saat | Her cevaba ekstra değer |
+
+---
+
+## 🔥 BU OTURUMDA EKLENEN ANA MİMARİ PARÇALAR
+
+> Inversion bug ve Test framework canli VPS'te.
+
 > - **Inversion bug** 14 dosyada düzeltildi (Berf bug + 9 ek dosya)
 > - **Test izolasyon altyapısı** — ContextVar + side-effect guard (insights/sentiment/alert/memory/WP/Eyotek)
 > - **522 test corpus + Claude Sonnet judge** — 8 kategori, A++/A/B/C/D/F notlama
