@@ -4187,19 +4187,123 @@ function rerender3D(el) {
           let mainObj;
           // Preset sahneler
           if (scene_name === "blackhole") {
-            // Olay ufku + accretion diski
-            const sphere = new THREE.Mesh(
-              new THREE.SphereGeometry(0.8, 32, 32),
+            // 25.44-fix (Neo bug 11 May): "mor küre + sarı düz halka + lacivert bg amatör"
+            // Fiziksel Sgr A* modeli — yıldızlı uzay + photon ring + accretion disk gradient + jets
+            scene.background = new THREE.Color(0x000003);
+
+            // Yıldızlı uzay (2500 nokta — küresel dağılım)
+            const starGeoBH = new THREE.BufferGeometry();
+            const starPosBH = [];
+            for (let i = 0; i < 2500; i++) {
+              const rs = 40 + Math.random() * 40;
+              const ts = Math.random() * Math.PI * 2;
+              const ps = Math.acos(2 * Math.random() - 1);
+              starPosBH.push(
+                rs * Math.sin(ps) * Math.cos(ts),
+                rs * Math.sin(ps) * Math.sin(ts),
+                rs * Math.cos(ps)
+              );
+            }
+            starGeoBH.setAttribute("position", new THREE.Float32BufferAttribute(starPosBH, 3));
+            const starsBH = new THREE.Points(starGeoBH, new THREE.PointsMaterial({
+              color: 0xffffff, size: 0.13, transparent: true, opacity: 0.85, sizeAttenuation: true
+            }));
+            scene.add(starsBH);
+
+            const bh = new THREE.Group();
+
+            // Olay ufku — mutlak siyah küre (ışık kaçamaz)
+            const horizon = new THREE.Mesh(
+              new THREE.SphereGeometry(0.55, 48, 48),
               new THREE.MeshBasicMaterial({ color: 0x000000 })
             );
-            scene.add(sphere);
-            const ring = new THREE.Mesh(
-              new THREE.TorusGeometry(1.5, 0.18, 16, 100),
-              new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.85 })
+            bh.add(horizon);
+
+            // Photon ring — Einstein halkası (parlak, ince)
+            const photonRing = new THREE.Mesh(
+              new THREE.TorusGeometry(0.72, 0.045, 24, 96),
+              new THREE.MeshBasicMaterial({
+                color: 0xfff5cc, transparent: true, opacity: 0.95,
+                blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+              })
             );
-            ring.rotation.x = Math.PI / 2.5;
-            scene.add(ring);
-            mainObj = ring;
+            photonRing.rotation.x = Math.PI / 2;
+            bh.add(photonRing);
+
+            // İkincil photon ring (lensing illüzyonu — eğik)
+            const photonRing2 = new THREE.Mesh(
+              new THREE.TorusGeometry(0.78, 0.022, 16, 96),
+              new THREE.MeshBasicMaterial({
+                color: 0xffd966, transparent: true, opacity: 0.55,
+                blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+              })
+            );
+            photonRing2.rotation.x = Math.PI / 2;
+            photonRing2.rotation.y = Math.PI / 6;
+            bh.add(photonRing2);
+
+            // Accretion disk — 8 katmanlı sıcaklık gradient (iç beyaz → dış kırmızı)
+            const diskLayers = [
+              { rIn: 0.95, rOut: 1.15, color: 0xffffff, opacity: 0.95 },
+              { rIn: 1.15, rOut: 1.35, color: 0xfff0a0, opacity: 0.85 },
+              { rIn: 1.35, rOut: 1.55, color: 0xfbbf24, opacity: 0.78 },
+              { rIn: 1.55, rOut: 1.78, color: 0xf59e0b, opacity: 0.68 },
+              { rIn: 1.78, rOut: 2.05, color: 0xea580c, opacity: 0.58 },
+              { rIn: 2.05, rOut: 2.35, color: 0xc2410c, opacity: 0.45 },
+              { rIn: 2.35, rOut: 2.65, color: 0x9a3412, opacity: 0.32 },
+              { rIn: 2.65, rOut: 2.95, color: 0x7c2d12, opacity: 0.20 }
+            ];
+            const disk = new THREE.Group();
+            diskLayers.forEach(function (L) {
+              const ring = new THREE.Mesh(
+                new THREE.RingGeometry(L.rIn, L.rOut, 96),
+                new THREE.MeshBasicMaterial({
+                  color: L.color, transparent: true, opacity: L.opacity,
+                  side: THREE.DoubleSide, blending: THREE.AdditiveBlending
+                })
+              );
+              ring.rotation.x = Math.PI / 2;
+              disk.add(ring);
+            });
+            disk.rotation.x = -0.45; // M87/Sgr A* benzeri eğik perspektif
+            bh.add(disk);
+
+            // Relativistik polar jets (kutuplardan, mavi/beyaz)
+            for (let d = -1; d <= 1; d += 2) {
+              const jet = new THREE.Mesh(
+                new THREE.ConeGeometry(0.08, 1.6, 12, 1, true),
+                new THREE.MeshBasicMaterial({
+                  color: 0x88ccff, transparent: true, opacity: 0.32,
+                  blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+                })
+              );
+              jet.position.y = d * 0.9;
+              jet.rotation.x = d === 1 ? 0 : Math.PI;
+              bh.add(jet);
+            }
+
+            // Disk yörüngesinde dönen sıcak nokta (hot spot — gözlemsel Sgr A* özelliği)
+            const hotSpot = new THREE.Mesh(
+              new THREE.SphereGeometry(0.06, 16, 16),
+              new THREE.MeshBasicMaterial({
+                color: 0xffffff, transparent: true, opacity: 0.95,
+                blending: THREE.AdditiveBlending
+              })
+            );
+            disk.add(hotSpot);
+            hotSpot.userData.r = 1.45;
+
+            scene.add(bh);
+            mainObj = bh;
+
+            // Animasyon: disk + photon ring döner, hot spot yörüngede
+            bh.userData.update = function (t) {
+              disk.rotation.z = t * 0.00028;
+              photonRing.rotation.z = t * 0.00015;
+              photonRing2.rotation.z = -t * 0.00011;
+              const a = t * 0.0011;
+              hotSpot.position.set(Math.cos(a) * hotSpot.userData.r, 0, Math.sin(a) * hotSpot.userData.r);
+            };
           } else if (scene_name === "lattice") {
             // Kristal yapı (NaCl benzeri)
             const grp = new THREE.Group();
@@ -4411,15 +4515,10 @@ function rerender3D(el) {
               '</div>';
             return; // sphere ÇİZME
           }
-          // (mainObj burada tanımlı kalır, aşağıdaki rotate döngüsü için)
-          {
-            const m = new THREE.Mesh(
-              new THREE.SphereGeometry(config.radius || 1, 32, 32),
-              new THREE.MeshStandardMaterial({ color: 0xa78bfa })
-            );
-            scene.add(m);
-            mainObj = m;
-          }
+          // 25.44-fix (Neo bug 11 May): Buradaki unconditional MOR SFER (0xa78bfa)
+          // her preset'in ÜZERİNE bir mor küre ekleyip mainObj'i ezerek mor sphere'a
+          // yazıyordu — "blackhole" sahnesi bile mor küre+sarı halka gözüküyordu.
+          // Tüm preset'ler kendi mainObj'ini set ediyor, ek sphere'a gerek yok.
 
           const rotate = config.rotate !== false;
           // Animation loop
