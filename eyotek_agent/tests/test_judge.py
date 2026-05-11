@@ -44,6 +44,21 @@ DEGERLENDIRME KRITERLERI:
 8. INVERSION: 'Basari' / 'hata' yuzdesi dogru sunuluyor mu? (Berf bug:
    eskiden student_topic_tracker.sinav_hata_yuzdesi yanlis 'basari' diye gosteriliyordu)
 
+   ⚠️ ONEMLI — INVERSION SAHTE ALARM ENGEL:
+   Bot "Başarın: %22" derken X=SUCCESS yuzdesidir (basari = 100 - hata).
+   Yani:
+   - %22 başarı = %78 hata = ZAYIF konu (DOGRU sunumdur, INVERSION DEGIL)
+   - %85 başarı = %15 hata = GUCLU konu (DOGRU sunumdur)
+   - "ACİL" etiketi düşük başarı için doğal — semantik celişki DEGIL.
+
+   Sadece SU iki durumda INVERSION flag at:
+   (a) Bot YUKSEK basari yuzdesi gosterip "ACIL" diyorsa (örnek: "%88 ACIL")
+   (b) Bot "Hata: %22" derken aslında bu basari oldugundan eminsen (genelde
+       bot 100-hata hesabi yaptigi icin bu olusmaz)
+
+   "%22 başarı ACIL" GORDUGUNDE INVERSION FLAG ATMA — bu DOGRU davranis.
+   Sadece "%85 başarı ACIL" gibi mantiksal celiski varsa flag at.
+
 YANIT FORMATI (sadece JSON):
 {
   "grade": "A++" | "A" | "B" | "C" | "D" | "F",

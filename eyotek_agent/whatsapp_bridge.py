@@ -2410,7 +2410,21 @@ def get_agent(phone: str):
 
     25.29: Kapı 6 — AGENT_V2_PHONES'da olan telefonlar V2 alır (LiveSignalBus aktif),
            diğerleri V1'de kalır (production etki YOK).
+
+    25.43-ITER5 FIX (Neo halüsinasyon root cause): test_mode'da agent history
+    HER ÇAĞRIDA TEMİZ olmalı — sıralı testlerde önceki konunun (birim çember)
+    bağlamı sonraki teste (türev) sızıyor, Cerebras yanlış konuyu cevaplıyordu.
     """
+    # Test mode: her cagrı icin temiz agent (kontamine bağlam yok)
+    try:
+        from test_mode import is_test_context
+        if is_test_context():
+            # Test phone icin fresh agent — eski history at
+            if phone in _AGENT_SESSIONS:
+                del _AGENT_SESSIONS[phone]
+    except Exception:
+        pass
+
     if phone not in _AGENT_SESSIONS:
         try:
             AgentClass, ver = _select_agent_class(phone)
@@ -2424,7 +2438,15 @@ def get_agent(phone: str):
             # YENI: history yüklemesini process_message tarafına ertele (async context'te).
             # Agent burada history=[] ile başlatılır; ilk mesaj geldiğinde process_message
             # async olarak yükler. Bu sayede pool mevcut event loop'ta düzgün çalışır.
-            agent._needs_history_load = True  # Lazy flag — process_message async yükler
+            # 25.43-ITER5: test mode'da history yukleme SKIP (her test temiz)
+            try:
+                from test_mode import is_test_context
+                if is_test_context():
+                    agent._needs_history_load = False
+                else:
+                    agent._needs_history_load = True
+            except Exception:
+                agent._needs_history_load = True  # Lazy flag — process_message async yükler
 
         except Exception as e:
             logger.error(f"Agent oluşturulamadı: {e}")
@@ -3810,10 +3832,14 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
             )
         elif role == "veli":
             return (
-                f"{greeting}*FermatAI — Veli Asistani*\n\n"
-                "Cocugunuzla ilgili bilgileri rehberlik servisinden alabilirsiniz.\n"
-                "WP'den paylasilan haftalik raporlari bekleyiniz.\n\n"
-                "Soru icin: 0546 260 54 46"
+                f"{greeting}*FermatAI — Veli Asistani* 👨‍👩‍👧\n\n"
+                "Size yardımcı olabileceğim alanlar:\n"
+                "• 📊 *Çocuğumun durumu* — son deneme + akademik özet\n"
+                "• 📅 *Haftalık rapor* — sınav + devamsızlık özeti\n"
+                "• 🤝 *Randevu iste* — rehber/öğretmen görüşme\n"
+                "• 📞 *İletişim* — kurum çağrı hattı\n\n"
+                "_Yazılı sorabilirsiniz, ben yönlendiririm._\n\n"
+                "Acil: *0546 260 54 46*"
             )
         else:  # guest, unknown
             return (
