@@ -4143,6 +4143,33 @@ class FermatCoreAgent:
                             _needs_escalation = True
                             logger.info("  [ESKALASYON] Cerebras placeholder yanit (kontrol ediyorum/veritabanı) — Claude'a geciliyor")
 
+                    # 25.43-ITER7 KONU UYUMU VALIDATOR (Neo halusilasyon 41 vaka):
+                    # Cerebras kavramsal cevapta YANLIS konu anlatabiliyor.
+                    # Ornek: "türev nedir" → "Birim Çember — Temel Kavram" cevabi.
+                    # Fix: Yanitin ILK 200 char'inda kullanici sorusundaki ANLAMLI
+                    # KELIME varsa OK; yoksa konu uyumsuz → Claude'a eskale.
+                    if not _needs_escalation and len(answer) > 50:
+                        import re as _re
+                        # Sadece KAVRAMSAL sorular icin (data sorularinda zaten kontrol var)
+                        _is_kavramsal = bool(_re.search(
+                            r'\b(nedir|ne\s*demek|aç[ıi]kla|anlat|nas[ıi]l|formul|tan[ıi]m|kim|hangi|neden)\b',
+                            user_input.lower()
+                        ))
+                        if _is_kavramsal:
+                            # Query'den anlamli kelimeleri cikar (stop word'leri at)
+                            _stop_kavramsal = {"nedir", "ne", "demek", "aç[ıi]kla", "acikla", "anlat",
+                                               "nas[ıi]l", "formul", "formül", "tan[ıi]m", "tanim",
+                                               "ben", "biz", "bu", "su", "hangi", "neden",
+                                               "konu", "konusu", "hakk[ıi]nda", "hakkinda"}
+                            q_words = [w for w in _re.findall(r'\w+', user_input.lower())
+                                       if len(w) > 3 and w not in _stop_kavramsal]
+                            if q_words:
+                                # Yanitin ilk 300 char'inda en az 1 query keyword'u olmali
+                                first_part = answer.lower()[:300]
+                                if not any(w in first_part for w in q_words):
+                                    _needs_escalation = True
+                                    logger.info(f"  [ESKALASYON] Cerebras konu uyumsuz (q={q_words[:3]}, baslik≠soru) — Claude'a geciliyor")
+
                 if _needs_escalation:
                     # Claude akışına düş (aşağıdaki for loop)
                     logger.info("  [ESKALASYON] Claude API'ye yönlendiriliyor...")
