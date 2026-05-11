@@ -891,7 +891,6 @@ async def _upsert_students_list(rows: list[dict], columns: list[str]) -> int:
                     ("devre", devre),
                     ("phone", phone),
                     ("veli_phone", veli_phone),
-                    ("last_sync", None),  # NOW()
                 ]:
                     if val:
                         updates.append(f"{col} = ${idx}")
@@ -906,22 +905,31 @@ async def _upsert_students_list(rows: list[dict], columns: list[str]) -> int:
                     )
                     synced += 1
             else:
-                # INSERT yeni kayit
-                await db_execute(
-                    """INSERT INTO students (soz_no, full_name, first_name, last_name,
-                                              class_name, devre, phone, veli_phone,
-                                              status, last_sync)
-                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', NOW())""",
-                    soz_no_str, full_name,
-                    str(ad).strip().upper() if ad else None,
-                    str(soyad).strip().upper() if soyad else None,
-                    str(sinif).strip() if sinif else None,
-                    str(devre).strip() if devre else None,
-                    str(phone).strip() if phone else None,
-                    str(veli_phone).strip() if veli_phone else None,
-                )
-                synced += 1
-                logger.info(f"  [LAZY_SYNC] students YENI kayit: soz_no={soz_no_str} {full_name}")
+                # 25.44 iter4c (Neo bug 11 May): Yeni soz_no için eyotek_id placeholder
+                # (eyotek_id PK NOT NULL, list-students'ta yok). Placeholder format:
+                # "list_{soz_no}" — sonraki tam scrape (eyotek_agent.py) bunu gerçek
+                # eyotek_id ile UPDATE eder.
+                placeholder_id = f"list_{soz_no_str}"
+                try:
+                    await db_execute(
+                        """INSERT INTO students (eyotek_id, soz_no, full_name, first_name, last_name,
+                                                  class_name, devre, phone, veli_phone,
+                                                  status, last_sync)
+                           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', NOW())
+                           ON CONFLICT (eyotek_id) DO NOTHING""",
+                        placeholder_id, soz_no_str, full_name,
+                        str(ad).strip().upper() if ad else None,
+                        str(soyad).strip().upper() if soyad else None,
+                        str(sinif).strip() if sinif else None,
+                        str(devre).strip() if devre else None,
+                        str(phone).strip() if phone else None,
+                        str(veli_phone).strip() if veli_phone else None,
+                    )
+                    synced += 1
+                    logger.info(f"  [LAZY_SYNC] students YENI kayit: soz_no={soz_no_str} {full_name} (eyotek_id={placeholder_id} placeholder)")
+                except Exception as ie:
+                    logger.debug(f"  [LAZY_SYNC] students INSERT skip soz_no={soz_no_str}: {str(ie)[:100]}")
+                    continue
         except Exception as e:
             logger.debug(f"  [LAZY_SYNC] students_list row skip: {e}")
             continue
