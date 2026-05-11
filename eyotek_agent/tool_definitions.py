@@ -527,6 +527,33 @@ TOOLS: list[dict] = [
             "required": ["question"],
         },
     },
+    # 25.44 (Neo direktif 12 May) — Sentry self-awareness
+    # Bot kendi gönderdiği Sentry event'lerini admin'e raporlayabilir
+    {
+        "name": "get_sentry_errors",
+        "description": (
+            "Sentry'den son N saat içindeki aktif (unresolved) hata özetini çek. "
+            "Bot self-awareness — kullanici 'sentry'de ne var', 'sistem hata aliyor mu', "
+            "'son 24 saat hatalar', 'kaç error gitti' gibi sorduğunda kullan. "
+            "SADECE admin/mudur erişebilir. Free tier rate limit nazik, 5dk cache var. "
+            "Sonuç: {ok, issues:[{title, level, count, user_count, last_seen, permalink}], "
+            "total, stats_period}. SENTRY_API_TOKEN .env'de yoksa ok=false döner."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "hours": {
+                    "type": "number",
+                    "description": "Son N saat (default 24). 1, 24, 168(7d), 720(30d) destekli.",
+                },
+                "limit": {
+                    "type": "number",
+                    "description": "Max issue (default 10, max 100). Frekansa göre desc sıralı.",
+                },
+            },
+            "required": [],
+        },
+    },
     # C3 (Oturum 22) — Puan tahmin + Yokatlas üniversite önerisi
     {
         "name": "ogrenci_nereye_girebilir",

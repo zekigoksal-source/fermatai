@@ -780,6 +780,29 @@ async def _tool_eyotek_query(question: str, max_rows: float = 0,
     return result
 
 
+async def _tool_get_sentry_errors(hours: float = 24, limit: float = 10,
+                                    _caller_role: str = "admin") -> dict:
+    """Sentry'den son N saat içindeki aktif hata özetini çek (self-awareness).
+
+    25.44 (Neo direktif 12 May): Bot kendi gönderdiği Sentry event'lerinden
+    haberdar olmalı. Mail sadece Neo'ya gidiyor; bot da görebilsin diye
+    REST API ile çekiliyor.
+
+    🔒 ACL: SADECE admin (Neo) ve mudur. Diğer rolleri reddet.
+
+    Args:
+        hours: 1/24/168(7d)/720(30d)
+        limit: 1-100 (default 10)
+    """
+    if _caller_role not in ("admin", "mudur"):
+        return {
+            "ok": False,
+            "error": "Sentry hata raporu sadece admin/mudur için.",
+        }
+    from sentry_monitor import get_sentry_issues
+    return await get_sentry_issues(hours=int(hours), limit=int(limit), use_cache=True)
+
+
 async def _tool_calculate_yks_score(
     turkce_net: float = 0, sosyal_net: float = 0,
     matematik_net: float = 0, fen_net: float = 0,
@@ -1381,6 +1404,7 @@ TOOL_DISPATCH = {
     "calculate_yks_score":      lambda p: _tool_calculate_yks_score(**p),
     "eyotek_read":              lambda p: _tool_eyotek_read(**p),
     "eyotek_query":             lambda p: _tool_eyotek_query(**p),
+    "get_sentry_errors":        lambda p: _tool_get_sentry_errors(**p),
     "ogrenci_drilldown":        lambda p: _tool_ogrenci_drilldown(**p),
     "sinav_sonuclari":          lambda p: _tool_sinav_sonuclari(**p),
     # C3 (Oturum 22) — Yokatlas tabanli puan tahmin

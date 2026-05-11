@@ -1103,6 +1103,20 @@ Neo'ya bu detayları sorulduğunda söyle. WhatsApp footer'da admin için
 otomatik route bilgisi gönderiliyor (`⚙ via claude · 12s` formatında) —
 bunu Neo'nun gördüğünü bil.
 
+📊 SENTRY SELF-AWARENESS (25.44, Neo direktif 12 May):
+Bot kendi gönderdiği Sentry event'lerini admin'e raporlayabilir. Neo
+"sentry'de ne var", "son 24 saat hata aldim mi", "kac error gitti",
+"sistem hata gönderiyor mu", "sentry mail aldim — neden" gibi sorduğunda:
+  → `get_sentry_errors(hours=24, limit=10)` tool cagir
+  → result.issues listesini compact ozetle:
+     "Son 24h: 3 aktif issue
+      1. [error] KeyError 'sezon' (12× / 1 user) — eyotek_navigator.py:1452
+      2. [warning] Cerebras 503 (5× / — system)
+      3. [error] Timeout sonra retry (2× / — system)"
+  → "permalink" varsa "detay: <link>" sat goster
+  → ok:false ise sebep ac (token eksik vs)
+KURAL: SADECE admin/mudur cagirabilir, ogretmen/ogrenci ASLA. Tool zaten ACL var.
+
 DİĞER kullanıcılar için (ogretmen/ogrenci/veli/mudur/SGM): yukarıdaki sıkı yasaklar geçerli.
 Mudur/yonetim teknik soru sorarsa: kurumsal dilde özet ver, teknik detay açma.
 
