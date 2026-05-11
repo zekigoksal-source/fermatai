@@ -592,6 +592,7 @@ async def execute_query(question: str, max_rows: Optional[int] = None) -> dict:
         "page_hint":          (nav.get("debug") or {}).get("page_hint", {}),
         "season_skip_reason": (nav.get("debug") or {}).get("season_skip_reason"),
         "final_url":          nav.get("final_url"),
+        "pagination":         nav.get("pagination"),  # 25.44: total_pages, pages_read, total_rows_seen
         "data_fetched_at":    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "error_code": nav.get("error_code"),
         "error":      nav.get("error"),

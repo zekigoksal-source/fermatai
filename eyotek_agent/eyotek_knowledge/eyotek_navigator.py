@@ -825,6 +825,122 @@ async def _click_search(page) -> Optional[str]:
         return None
 
 
+async def _detect_pagination(page) -> dict:
+    """Eyotek GridView pagination'unu tespit et.
+
+    Returns:
+      {
+        "total_pages": int,   # tespit edilen toplam sayfa (1 = pagination yok)
+        "current_page": int,
+        "postback_target": str,  # __doPostBack('GridView1','Page$N') → "GridView1"
+        "page_links": [{page:N, postback:"GridView1"}]
+      }
+    """
+    try:
+        info = await page.evaluate("""
+            () => {
+                // Eyotek pattern: a[href*="Page$"] icinde __doPostBack('GridView1','Page$N')
+                const links = Array.from(document.querySelectorAll('a[href*="Page$"]'));
+                if (!links.length) return {total_pages: 1, current_page: 1, postback_target: null, page_links: []};
+                let max_page = 1;
+                let target = null;
+                const page_links = [];
+                for (const a of links) {
+                    const href = a.getAttribute('href') || '';
+                    const m = href.match(/__doPostBack\\(['"]([^'"]+)['"]\\s*,\\s*['"]Page\\$(\\d+)['"]\\)/);
+                    if (m) {
+                        const pageNum = parseInt(m[2]);
+                        if (pageNum > max_page) max_page = pageNum;
+                        if (!target) target = m[1];
+                        page_links.push({page: pageNum, postback: m[1], text: (a.innerText||'').trim()});
+                    }
+                }
+                // Mevcut sayfa: span (link DEGIL — aktif sayfa span'a donusur)
+                let current = 1;
+                const pagerEl = document.querySelector('tr.pagination, .pagination, .pager');
+                if (pagerEl) {
+                    const spans = pagerEl.querySelectorAll('span');
+                    for (const s of spans) {
+                        const n = parseInt((s.innerText||'').trim());
+                        if (n && !isNaN(n)) { current = n; break; }
+                    }
+                }
+                return {total_pages: max_page, current_page: current, postback_target: target, page_links};
+            }
+        """)
+        return info or {"total_pages": 1, "current_page": 1, "postback_target": None, "page_links": []}
+    except Exception as e:
+        logger.debug(f"[NAV] _detect_pagination fail: {e}")
+        return {"total_pages": 1, "current_page": 1, "postback_target": None, "page_links": []}
+
+
+async def _read_table_paginated(page, max_rows: int, max_pages: int = 50) -> tuple[list[str], list[dict], dict]:
+    """Tablo + tüm sayfalar (Eyotek ASP.NET pagination).
+
+    Args:
+      max_rows: toplam max satır (paginated)
+      max_pages: emniyet sınırı (sonsuz döngü önlemi)
+
+    Returns:
+      (columns, rows, pagination_info)
+      pagination_info = {total_pages, pages_read, total_rows_seen, hit_limit}
+    """
+    # Pagination detect
+    pag = await _detect_pagination(page)
+    total_pages = pag.get("total_pages", 1)
+    target = pag.get("postback_target")
+
+    # 1. sayfayı oku
+    cols, rows = await _read_table(page, max_rows)
+    pages_read = 1
+
+    # Tek sayfa varsa direkt dön
+    if total_pages <= 1 or not target:
+        return cols, rows, {
+            "total_pages": total_pages,
+            "pages_read": pages_read,
+            "total_rows_seen": len(rows),
+            "hit_limit": False,
+            "pagination_target": target,
+        }
+
+    # Çok sayfa — döngü
+    eff_max_pages = min(total_pages, max_pages)
+    while pages_read < eff_max_pages and len(rows) < max_rows:
+        next_page_num = pages_read + 1
+        try:
+            await page.evaluate(f"__doPostBack('{target}','Page${next_page_num}')")
+            # ASP.NET partial postback — 3sn server render
+            try:
+                await page.wait_for_load_state("networkidle", timeout=6000)
+            except Exception:
+                pass
+            await page.wait_for_timeout(1500)
+            # Yeni sayfanın tablosu
+            remaining = max_rows - len(rows)
+            _, new_rows = await _read_table(page, remaining)
+            if not new_rows:
+                # Sayfa boş — durmadan dur (son sayfa aşılmış olabilir)
+                break
+            rows.extend(new_rows)
+            pages_read += 1
+            # Detect tekrar — total_pages güncellenmiş olabilir
+            pag2 = await _detect_pagination(page)
+            if pag2.get("total_pages", 0) > total_pages:
+                total_pages = pag2["total_pages"]
+        except Exception as e:
+            logger.debug(f"[NAV] paginate Page${next_page_num} fail: {e}")
+            break
+
+    return cols, rows, {
+        "total_pages": total_pages,
+        "pages_read": pages_read,
+        "total_rows_seen": len(rows),
+        "hit_limit": len(rows) >= max_rows,
+        "pagination_target": target,
+    }
+
+
 async def _read_table(page, max_rows: int) -> tuple[list[str], list[dict]]:
     """Sayfadaki ilk anlamli tabloyu oku (en cok satira sahip olan).
 
@@ -1315,10 +1431,11 @@ async def navigate(
         if has_url_params and not filters:
             # Sadece tablo oku, hicbir aksiyon yapma
             await page.wait_for_timeout(2500)  # Server filter render bekle
-            cols, rows_data = await _read_table(page, max_rows)
+            cols, rows_data, pag_info = await _read_table_paginated(page, max_rows)
             result["columns"] = cols
             result["rows"] = rows_data
             result["row_count"] = len(rows_data)
+            result["pagination"] = pag_info
             result["success"] = True
             result["debug"]["mode"] = "url_params_only"
             if not rows_data:
@@ -1404,11 +1521,12 @@ async def navigate(
                 # Tablo render icin bekle
                 await page.wait_for_timeout(wait_after_search_ms)
 
-        # TABLO OKU
-        cols, rows_data = await _read_table(page, max_rows)
+        # TABLO OKU + PAGINATION (25.44 Neo bug 20:04 — list-students 20'de kesiyordu)
+        cols, rows_data, pag_info = await _read_table_paginated(page, max_rows)
         result["columns"] = cols
         result["rows"] = rows_data
         result["row_count"] = len(rows_data)
+        result["pagination"] = pag_info
 
         # DRILL (opsiyonel)
         if drill and rows_data:
