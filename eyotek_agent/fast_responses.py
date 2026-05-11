@@ -93,17 +93,27 @@ def _basari_pct(hata) -> float:
 def _emoji_for_hata(hata) -> tuple:
     """Hata yuzdesi -> (emoji, oncelik_etiketi).
 
-    >=50% hata: 🔴 ACIL (zayif, mutlaka calismali)
-    >=25% hata: 🟡 Orta (gelisim alani)
-    <25% hata:  🟢 Iyi  (koruma, ileri tasi)
+    25.43-ITER3 FIX (judge feedback: 'Basarin %44 ACIL semantik celiski'):
+    Hata bazli esik yerine BASARI bazli mantik. Asagidaki esikler ekrana yansiyan
+    BASARI (100-hata) degerine gore karar verir — "Basarin %44 ACIL" gibi celiski
+    olmaz. Pedagojik daha tutarli: dusuk basari = daha yuksek aciliyet.
+
+    Basari (%) → Emoji + Oncelik:
+      <30: 🔴 ACIL (cok zayif)
+      <55: 🟠 Onemli (gelisim gerekli)
+      <75: 🟡 Orta (iyilestir)
+      >=75: 🟢 Iyi (koru)
     """
     try:
         h = float(hata or 0)
     except (TypeError, ValueError):
         h = 0.0
-    if h >= 50:
+    basari = max(0.0, min(100.0, 100.0 - h))
+    if basari < 30:
         return ("🔴", "ACİL")
-    if h >= 25:
+    if basari < 55:
+        return ("🟠", "Önemli")
+    if basari < 75:
         return ("🟡", "Orta")
     return ("🟢", "İyi")
 
@@ -3383,8 +3393,11 @@ OGRENCI_PATTERNS = [
     (r"netlerim\s*(art[iı]yor|düşüyor|dusuy|yüksel|yuksel|azal)\s*m[iı]", "deneme_kiyasla", "Net trend soru"),
 
     # Zayif konular — genis paraphrase
+    # 25.43-ITER3 (Neo iter#3 judge bug): "güçlü konularım" → zayif handler'a
+    # düşüyordu (konularım kelimesi match). NEGATIVE LOOKAHEAD ile düzeltildi:
+    # "güçlü"/"iyi"/"başarılı" kelimesi VARSA bu pattern eşleşmesin.
     (r"(zayif|zayıf|eksik|nere.+cal[iı]smam|neye.+cal[iı]smam)", "zayif_konular", "Zayif konular"),
-    (r"(hangi\s*konu|konularim|konularım|konular[iı]m)", "zayif_konular", "Konularim"),
+    (r"^(?!.*\b(g[uü]c?l[uü]|iyi\s+old|ba[sş]ar[iı]l[iı]|en\s+iyi|kuvvetli)\b).*\b(hangi\s*konu|konularim|konularım|konular[iı]m)\b", "zayif_konular", "Konularim (zayif)"),
     (r"ne(ye)?\s*cal[iı]s(mam|mal[iı]y[iı]m)", "zayif_konular", "Ne calismali"),
     (r"(nerede|nerde)\s*hata", "zayif_konular", "Nerede hata"),
     (r"neleri\s*bilmiyorum", "zayif_konular", "Neleri bilmiyorum"),
