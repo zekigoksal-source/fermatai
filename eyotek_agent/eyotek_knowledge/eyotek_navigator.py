@@ -523,7 +523,7 @@ async def change_global_season(page, target: str) -> dict:
             return {"changed": False, "reason": "noop",
                     "from": current, "to": target_label}
 
-        # 5. PostBack arg'ı bul ve çağır
+        # 5. PostBack arg'ı bul
         postback_arg = None
         for o in avail:
             if o["label"] == target_label:
@@ -533,21 +533,41 @@ async def change_global_season(page, target: str) -> dict:
             return {"changed": False, "reason": "not_found",
                     "error": "PostBack argümanı çözülemedi", "to": target_label}
 
-        # __doPostBack çağır + sayfa reload bekle
-        await page.evaluate(f"""
-            () => {{
-                if (typeof __doPostBack === 'function') {{
-                    __doPostBack('{postback_arg}', '');
-                }} else if (window.theForm) {{
-                    window.theForm.__EVENTTARGET.value = '{postback_arg}';
-                    window.theForm.__EVENTARGUMENT.value = '';
-                    window.theForm.submit();
-                }}
-            }}
-        """)
+        # Sezon değişimi için gerçek link'e tıkla (page.evaluate strict mode'da
+        # __doPostBack 'arguments' access ile fail ediyor — click bypass eder).
+        # Önce BtnShowSeasons'a tıklayıp menüyü aç, sonra target link'i tıkla.
+        try:
+            await page.click("#BtnShowSeasons", timeout=3000)
+            await page.wait_for_timeout(500)
+        except Exception:
+            pass  # Menü zaten açıksa veya direkt click bypass
+        # Target link selector — href ile match
+        # postback_arg = "HeaderMain$RptChangeSeason$ctl00$BtnSezonSec"
+        link_selector = f"a[href*=\"{postback_arg}\"]"
+        clicked = False
+        try:
+            await page.click(link_selector, timeout=3000)
+            clicked = True
+        except Exception as ce:
+            # Fallback: programmatic click via JS (non-strict context)
+            try:
+                clicked = await page.evaluate("""
+                    (sel) => {
+                        const a = document.querySelector(sel);
+                        if (!a) return false;
+                        a.click();
+                        return true;
+                    }
+                """, link_selector)
+            except Exception:
+                clicked = False
+        if not clicked:
+            return {"changed": False, "reason": "click_failed",
+                    "error": "Sezon link click başarısız",
+                    "postback": postback_arg, "to_target": target_label}
         # Reload bekle
         try:
-            await page.wait_for_load_state("networkidle", timeout=10000)
+            await page.wait_for_load_state("networkidle", timeout=12000)
         except Exception:
             pass
         await page.wait_for_timeout(1500)
