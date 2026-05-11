@@ -335,6 +335,32 @@ def _get_page_hint(page_path: str) -> dict:
     return _PAGE_HINTS.get(key, {})
 
 
+def _date_to_season(date_str: str) -> Optional[str]:
+    """dd.MM.yyyy formatlı tarihi sezon koduna çevir.
+
+    Sezon kuralı: Eylül-Aralık = O yılın sezon (örn 09.2025 → 22526)
+                  Ocak-Ağustos = Bir önceki yılın sezon (örn 04.2026 → 22526)
+    Returns: "22526" gibi 5-haneli kod veya None
+    """
+    if not date_str:
+        return None
+    m = re.match(r'(\d{1,2})\.(\d{1,2})\.(\d{4})', date_str.strip())
+    if not m:
+        return None
+    try:
+        day, month, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        # Eylül (09) - Aralık (12) → o yıl başlar
+        if month >= 9:
+            y1, y2 = year, year + 1
+        else:
+            # Ocak (01) - Ağustos (08) → önceki yıl başlar
+            y1, y2 = year - 1, year
+        # Kod formatı: 2 + son2(y1) + son2(y2) → örn 2025+2026 = 22526
+        return f"2{str(y1)[-2:]}{str(y2)[-2:]}"
+    except Exception:
+        return None
+
+
 def _load_cookies() -> list[dict]:
     if not _SESSION_FILE.exists():
         return []
@@ -1355,6 +1381,18 @@ async def navigate(
         season_changed_globally = False
         page_hint = _get_page_hint(page_path)
         result["debug"]["page_hint"] = page_hint
+
+        # 25.44 GUVENLIK AGI (Neo bug 11 May 20:25): Planner sezon eklemeden tarih filter
+        # gönderirse PostBack'ten kalan eski sezon state'inde sorgu yapılır → boş döner.
+        # Tarih bazlı sezon auto-detect: filter'da sezon YOK ama date_from VAR ise,
+        # tarihin dahil olduğu sezonu otomatik filter'a ekle.
+        if filters and "sezon" not in filters:
+            dt = filters.get("date_from") or filters.get("date_to")
+            if dt:
+                auto_season = _date_to_season(str(dt))
+                if auto_season:
+                    filters = {**filters, "sezon": auto_season}
+                    result["debug"]["sezon_auto_from_date"] = f"{dt} → {auto_season}"
         # Multi-season aggregate sayfalarda header sezon değişimi etkisiz —
         # planner yanlış sayfa seçmiş. Bot'a uyarı ver, sezon filter'ı atla.
         if filters and "sezon" in filters and page_hint.get("type") == "multi_season_aggregate":

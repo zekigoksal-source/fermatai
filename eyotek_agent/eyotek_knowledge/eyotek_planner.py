@@ -232,12 +232,37 @@ A: {"page_path":"Student/homework-search","filters":{"date_from":"<bu_hafta_basl
 Q: "bu sezon aylik kayit sayilari"
 A: {"page_path":"Reports/monthly-enrollment-by-number-general","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"2025.26 sezonu aylik kayit sayilari.","confidence":0.90}
 
-Q: "yeni sezonda kaç öğrencim var" / "yeni sezon kayıtları" / "şu anki sezonda" / "2026-27 kayıtları"
-A: {"page_path":"Reports/monthly-enrollment-by-number-general","filters":{"sezon":"latest"},"max_rows":50,"explain":"En yeni sezon (auto-detect via dropdown) kayıt sayıları.","confidence":0.92}
-NOT: "latest" → navigator dropdown'dan en yeni sezonu otomatik bulur ve seçer. Spesifik yıl bilinmiyorsa "latest" kullan, kod tahmin etme.
+🔴 KRITIK KURAL (25.44 — Neo bug fix 11 May): "kaç öğrenci" sorularinda ZORUNLU
+list-students sayfasi sec. Reports/monthly-enrollment-by-number-general MULTI-SEZON
+AGREGE bir AYLIK tablo, KAYIT SAYISINI vermez — "kaç" sorusu icin DEGIL.
+
+Q: "yeni sezonda kaç öğrencim var" / "yeni sezon kayıtları" / "kaç öğrenci kaydoldu" /
+   "şu anki sezonda kaç" / "2026-27 kaç kayıt"
+A: {"page_path":"Student/list-students","filters":{"sezon":"latest"},"max_rows":100,"explain":"Yeni sezon ogrenci sayisi — list-students sayfasi pagination ile tam sayi.","confidence":0.94}
+NOT: "kaç öğrenci" → SADECE list-students. Multi-season agrege sayfa DEGIL.
 
 Q: "yeni sezonda öğrenci listesi kim kaydoldu"
-A: {"page_path":"Student/list-students","filters":{"sezon":"latest"},"max_rows":80,"explain":"Yeni sezon öğrenci kayıt listesi — sezon auto-detect.","confidence":0.90}
+A: {"page_path":"Student/list-students","filters":{"sezon":"latest"},"max_rows":100,"explain":"Yeni sezon öğrenci kayıt listesi — sezon auto-detect.","confidence":0.92}
+
+🔴 KRITIK TARIH KURALI: "bu hafta" → date_from=PAZARTESI, date_to=BUGUN.
+ASLA "bu hafta" → tek bir gun (date_from=date_to=bugun) YAPMA.
+Prompt'ta BU_HAFTA range veriliyor — onu KULLAN.
+
+Q: "bu hafta etutler" (BU_HAFTA: 11.05.2026 - 11.05.2026 olsa bile)
+A: {"page_path":"Student/individual-lesson","filters":{"date_from":"<bu_hafta_basla>","date_to":"<bugun_veya_pazar>"},"max_rows":50,"explain":"Bu haftanin etutleri.","confidence":0.92}
+GERCEK CIKARIM: BU_HAFTA prompt'ta gosterilir, ornek format dd.MM.yyyy - dd.MM.yyyy. Iki tarih FARKLI olabilir.
+
+🔴 KRITIK SEZON KURALI: Tarih bazli filter varsa (date_from / date_to / ay+yil), tarihin
+DAHIL OLDUGU sezonu OTOMATIK sezon filter olarak EKLE:
+  - Nisan 2026 → sezon: "2025.26" (Eylul 2025-Agu 2026 araliginda)
+  - Kasim 2025 → sezon: "2025.26"
+  - Ekim 2026 → sezon: "2026.27"
+  - Mart 2026 → sezon: "2025.26"
+Bu olmadan, navigator onceki testten kalan sezon state'inde sorgu yapar → BOS doner.
+
+Q: "Nisan ayinda yazilan rehberlik notlari"
+A: {"page_path":"Student/counsellor-note-list","filters":{"date_from":"01.04.2026","date_to":"30.04.2026","sezon":"2025.26"},"max_rows":80,"explain":"Nisan 2026 rehberlik notlari, sezon 2025.26 araliginda.","confidence":0.92}
+NOT: Sezon filter MUTLAKA tarihle uyumlu olmali, yoksa sayfa bos doner.
 
 Q: "kayit cirolari sezon karsilastirma"
 A: {"page_path":"Reports/monthly-enrollment-by-contract-fee-general","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"Aylik kayit ciro raporu — sezon ve gecen sezon karsilastirma birlikte gelir.","confidence":0.88}
