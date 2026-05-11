@@ -3817,40 +3817,59 @@ class FermatCoreAgent:
 
         system = _role_aware_prompt + dynamic_context
 
-        # ─── Oturum 25.29: Dangling tool_use cleanup ─────────────────────────
-        # Onceki turda timeout/iptal yaptiysa history'de tool_use var ama
-        # tool_result YOK. Yeni user mesaji eklendiginde Anthropic API
-        # `tool_use ids were found without tool_result blocks` 400 dondurur.
-        # FIX: Son assistant mesajini kontrol et, dangling tool_use varsa
-        # ya placeholder tool_result enjekte et ya da bu assistant'i sok.
+        # ─── 25.44 (Sentry BadRequestError 29× fix): FULL HISTORY tool_use → tool_result validation
+        # Eski (Oturum 25.29) cleanup sadece SON assistant mesajını kontrol ediyordu.
+        # Sentry messages.39 hatası gösterdi ki history'nin ORTASINDA dangling tool_use
+        # kalabiliyor (truncation, recap, partial fail vs.). Her assistant tool_use için
+        # hemen sonraki user mesajında tool_result olduğunu doğrula, eksikse placeholder
+        # araya enjekte et.
         _pruned = 0
-        while self.history and self.history[-1].get("role") == "assistant":
-            _last = self.history[-1]
-            _content = _last.get("content")
-            if isinstance(_content, list):
-                _tool_use_ids = [
-                    b.get("id") for b in _content
-                    if isinstance(b, dict) and b.get("type") == "tool_use"
+        _i = 0
+        while _i < len(self.history):
+            _msg = self.history[_i]
+            if _msg.get("role") != "assistant" or not isinstance(_msg.get("content"), list):
+                _i += 1
+                continue
+            _tool_use_ids = [
+                b.get("id") for b in _msg["content"]
+                if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("id")
+            ]
+            if not _tool_use_ids:
+                _i += 1
+                continue
+            # Sonraki mesaj user mı, tool_result_id'leri ne?
+            _next = self.history[_i + 1] if _i + 1 < len(self.history) else None
+            _existing_result_ids = set()
+            if (_next and _next.get("role") == "user"
+                    and isinstance(_next.get("content"), list)):
+                _existing_result_ids = {
+                    b.get("tool_use_id") for b in _next["content"]
+                    if isinstance(b, dict) and b.get("type") == "tool_result"
+                }
+            _missing = [tid for tid in _tool_use_ids if tid not in _existing_result_ids]
+            if _missing:
+                _placeholder_blocks = [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": tid,
+                        "content": "[ABORTED — tool_result eksik (timeout/iptal/truncate)]",
+                        "is_error": True,
+                    }
+                    for tid in _missing
                 ]
-                if _tool_use_ids:
-                    # Dangling tool_use'lar icin placeholder tool_result inject
-                    _placeholder_blocks = [
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": tid,
-                            "content": "[ABORTED — onceki turda zaman asimi/iptal]",
-                            "is_error": True,
-                        }
-                        for tid in _tool_use_ids
-                    ]
-                    self.history.append({"role": "user", "content": _placeholder_blocks})
-                    _pruned += len(_tool_use_ids)
-                    break
-            break  # Tek pass yeterli — assistant son ise zincirde derinlik yok
+                if (_next and _next.get("role") == "user"
+                        and isinstance(_next.get("content"), list)):
+                    # Mevcut user mesajının BAŞINA ekle (tool_result'lar text'ten önce)
+                    _next["content"] = _placeholder_blocks + list(_next["content"])
+                else:
+                    # Araya yeni user mesajı enjekte et (assistant'ın hemen ardına)
+                    self.history.insert(_i + 1, {"role": "user", "content": _placeholder_blocks})
+                _pruned += len(_missing)
+            _i += 1
         if _pruned:
             logger.warning(
                 f"[HISTORY-CLEAN] {_pruned} dangling tool_use icin placeholder "
-                f"tool_result enjekte edildi (onceki turda timeout/iptal)"
+                f"tool_result enjekte edildi (full history scan, Sentry 25.44 fix)"
             )
 
         self.history.append({"role": "user", "content": user_input})
@@ -4735,11 +4754,30 @@ class FermatCoreAgent:
                     pass
 
             # Paralel calistir (1 tool varsa overhead yok, gather hizli geri doner)
-            if len(tool_calls) == 1:
-                tool_results = [await _run_one_tool(tool_calls[0])]
-            else:
-                logger.info(f"🚀 {len(tool_calls)} tool PARALEL calistiriliyor")
-                tool_results = await asyncio.gather(*[_run_one_tool(tc) for tc in tool_calls])
+            # 25.44 (Sentry BadRequestError 29× fix): GATHER üst seviye exception
+            # fırlatırsa (timeout, cancel, OOM) tool_results üretilmez ve history'e
+            # tool_use ekli ama tool_result eklenmez → bir sonraki turda 400.
+            # Defensive: try/except ile her tool_call için placeholder garanti.
+            try:
+                if len(tool_calls) == 1:
+                    tool_results = [await _run_one_tool(tool_calls[0])]
+                else:
+                    logger.info(f"🚀 {len(tool_calls)} tool PARALEL calistiriliyor")
+                    tool_results = await asyncio.gather(*[_run_one_tool(tc) for tc in tool_calls])
+            except Exception as _gather_err:
+                logger.error(f"🛑 Tool gather üst-seviye exception: {_gather_err}")
+                tool_results = [
+                    {
+                        "type":        "tool_result",
+                        "tool_use_id": tc.id,
+                        "content":     json.dumps(
+                            {"error": f"gather_fail: {type(_gather_err).__name__}: {str(_gather_err)[:150]}"},
+                            ensure_ascii=False,
+                        ),
+                        "is_error":    True,
+                    }
+                    for tc in tool_calls
+                ]
 
             # Streaming: tool bitti
             # Oturum 25.31 — make_render_link sonucu (URL) frontend'e iletilir
