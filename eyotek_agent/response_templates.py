@@ -507,7 +507,27 @@ def get_yetenekler(role: str, name: str = "") -> str:
             f"_Emrinizdeyim Reis._ ⚡"
         )
 
-    # Default / veli / guest
+    # 25.43-ITER6 (Neo veli kabiliyetlerin C grade): veli icin spesifik liste
+    if role == "veli":
+        return (
+            f"*Sayın Velim* 👨‍👩‍👧 size sunabileceğim hizmetler:\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n"
+            "📊 *Çocuğunuzun Akademik Durumu*\n"
+            "  • Son deneme sonuçları (TYT/AYT net)\n"
+            "  • Zayıf ve güçlü konular özeti\n"
+            "  • Devamsızlık takibi\n\n"
+            "📅 *Haftalık Rapor*\n"
+            "  Her hafta otomatik akademik bülten\n\n"
+            "🤝 *Rehberlik & İletişim*\n"
+            "  • Rehber öğretmenle randevu talebi\n"
+            "  • Branş öğretmeniyle iletişim\n\n"
+            "📞 *Acil İletişim*\n"
+            "  0546 260 54 46\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "_Sorularınızı yazmanız yeterli — sizi yönlendiririm._ ✨"
+        )
+
+    # Default / guest
     return (
         "Merhaba! Ben *FermatAI* — Fermat Egitim Kurumlari'nin "
         "dijital egitim asistaniyim 🚀\n\n"
