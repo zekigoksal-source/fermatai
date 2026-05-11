@@ -6,16 +6,17 @@
 >
 > | Metrik | Değer |
 > |--------|-------|
-> | **VPS HEAD** | `28e41b3` (36+ commit chain canlı, branch claude/sweet-jemison-99ea7e) |
+> | **VPS HEAD** | `fe6585f` (40+ commit chain canlı, branch claude/sweet-jemison-99ea7e) |
 > | **Bridge Status** | HTTP 200, 3 systemd servis active |
 > | **VPS sağlık** | Disk %6 (272G free), RAM 11Gi free |
 > | **Eyotek fix loop** | **14/14 PASS (%100)**, ortalama 23.6s/test |
+> | **Eyotek DB lazy_sync** | Her sorguda otomatik — list-students/etut/yoklama/rehberlik/sınav/borçlu mapped |
 > | **Test Pass Rate (522 corpus)** | B+ %92.3, A++/A %78.2, F=0 (Oturum 25.43'ten) |
 > | **Capacity** | 200 concurrent → 69 req/s, p99 2.8s, 0 hata |
 > | **ACL gerçek leak** | 0 |
 > | **Inversion bug** | 14 dosyada düzeltildi |
-> | **Eyotek bug** | Tüm okuma fonksiyonları %100 PASS (sezon + pagination + filter) |
-> | **DB sağlık** | students 123 active / etut 2561 / counsellor 1632 / yoklama_kontrol 7481 / RAG 5985 |
+> | **Eyotek bug** | Tüm okuma fonksiyonları %100 PASS (sezon + pagination + dedupe + filter) |
+> | **DB sağlık** | students max söz_no 318 (40 yeni sezon kayıt), etut 2597, counsellor 1632, yoklama_kontrol 7482, RAG 5985 |
 >
 > ## 🆕 OTURUM 25.44 — Eyotek Site Bilinci Mimarisi (11 commit)
 >

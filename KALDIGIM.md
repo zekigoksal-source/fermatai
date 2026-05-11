@@ -5,12 +5,13 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.44)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `28e41b3` test(25.44): S04 esigi gevsetildi
+> - **HEAD:** `fe6585f` fix(25.44-iter4c): eyotek_id placeholder pattern
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, disk %6 (272G free), RAM 11Gi free
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama 23.6s/test
+> - **Eyotek DB sync:** lazy_sync her sorguda otomatik (40 yeni sezon kayıt DB'de)
 > - **Test pass rate (522 corpus):** B+ %92.3, A++/A %78.2, F=0 (Oturum 25.43'ten devam)
-> - **Production ready:** ✅ Tüm okuma fonksiyonları kusursuz
+> - **Production ready:** ✅ Tüm okuma fonksiyonları kusursuz, DB güncellik otomatik
 >
 > ## 🎯 Bu Oturumda (25.44) Yapılanlar (11 May)
 >
@@ -52,6 +53,23 @@
 > - "📅 Sezon: 2026.27 · Eyotek'ten az önce alındı: HH:MM" timestamp
 > - Yanlış sayfa seçerse re-plan ile düzeltir
 > - Önceki testten kalan sezon state'i tarih filter ile otomatik override
+>
+> ## 🔄 25.44-iter4 — Pagination Dedupe + DB Lazy Sync (11 May 21:39–22:01)
+>
+> Neo bot konuşması canlı test sonrası 4 ek bug bulundu:
+>
+> 1. **Pagination duplikasyon** (`fe6585f` öncesi): "Mehmet Ali 2x, Ayaz Karaçelik 2x" — PostBack race condition. **Fix:** bekleme 2500ms + pager active span verify + post-aggregation stable hash dedupe. `duplicates_removed` result'a eklendi.
+>
+> 2. **list-students DB sync yoktu** (max soz_no 314 ↔ Eyotek 318, 4 yeni kayıt): `student/list-students` PAGE_TO_MODULE'da yoktu. **Fix:** `_upsert_students_list` + `eyotek_id="list_{soz_no}"` placeholder pattern (PK NOT NULL constraint için). Nightly scrape gerçek ID ile UPDATE eder.
+>
+> 3. **execute_query path'inde lazy_sync hook yoktu** (sadece `_tool_eyotek_query`'de vardı): Test/CLI direct çağrılar DB sync atlıyordu. **Fix:** execute_query sonuna hook eklendi.
+>
+> 4. **counsellor-note-list mapping yoktu**: Rehberlik notları 11 gün eski idi. **Fix:** PAGE_TO_MODULE'a eklendi.
+>
+> **Canlı doğrulama:**
+> - Önce: DB max soz_no 314, count 13 (yeni sezon)
+> - Şimdi: DB max soz_no **318**, count **40** ✅ (Neo'nun belirttiği gerçek değer)
+> - lazy_sync log: `students_list: 40 kayit upsert` ✅
 >
 > ---
 
