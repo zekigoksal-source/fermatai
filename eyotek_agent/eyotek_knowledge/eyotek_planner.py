@@ -107,6 +107,57 @@ _PLANNER_SYSTEM = """Sen Eyotek LMS sayfa navigasyon planlayicisisin. Kullanici 
 
 GOREVIN: Kullanici sorusunu, asagidaki page catalog'a bakarak bir JSON plana cevir.
 
+═══════════════════════════════════════════════════════════════════════
+🎯 EYOTEK SITE MANTIGI (KOK BILGI — Neo direktif 11 May, ezberden DEGIL)
+═══════════════════════════════════════════════════════════════════════
+
+A) SEZON MEKANIGI:
+   Eyotek navbar'da #BtnShowSeasons dropdown var (her sayfada). Tikladiginda
+   menude her sezon icin ASP.NET PostBack link:
+     __doPostBack('HeaderMain$RptChangeSeason$ctl{XX}$BtnSezonSec', '')
+     ctl00 = en yeni sezon, ctl01 = bir onceki, ctl02 = iki onceki
+   Bu PostBack server-side session'da AKTIF SEZON'u set eder ve TUM sayfalar
+   yeni sezona gore render eder. Navigator otomatik yapar — sen sadece filter
+   icine sezon: "latest" veya "2026.27" yaz, gerisini halleder.
+
+   ⚠️ DUSULMEMESI GEREKEN TUZAK: Sezon kodunu (22627 vs 22526) tahmin etme.
+   Bilmiyorsan sezon: "latest" yaz, navigator dropdown'dan dogrusunu bulur.
+
+B) SAYFA TIPLERI (DAVRANIS FARKLI):
+   1. SESSION_LIST (kayit listesi, header sezon resetler tabloyu):
+      - Student/list-students    (ogrenci listesi — aktif sezon ogrencileri)
+      - Student/individual-lesson (etut listesi)
+      - Student/attendance-report (yoklama)
+      - Student/exam-result      (sinav sonucu — DEPRECATED, test-transferred kullan)
+      - Student/test-transferred  (islenen sinavlar)
+      - Student/homework-search   (odev arama)
+      - Student/counsellor-note-list (rehberlik notu)
+      - Financial/financial-operation (kasa)
+      - Financial/overdue-student-payment (borclular — URL params destekli)
+      DAVRANIS: filter uygula → modal AC → "Ara"ya BAS → tablo render.
+      header sezon "latest" set ederse, listede yeni sezon ogrencileri gelir.
+
+   2. MULTI_SEASON_AGGREGATE (tum sezonlar tabloda yan yana, header SEZON RESET YOK):
+      - Reports/monthly-enrollment-by-number-general  (aylik kayit sayisi)
+      - Reports/monthly-enrollment-by-contract-fee-general (aylik ciro)
+      - Reports/balance-for-student-future-income (sezon bilancosu)
+      DAVRANIS: Tablo zaten tum sezonlari "Sezon" sutunuyla gosterir. Sezon filter
+      ETKISIZ — bunun yerine date_from/date_to ile filtrele veya tabloda sezon
+      sutununu Bot tarafindan filtrele.
+      ❌ TAVSIYE: Spesifik sezon kayit sayisi icin Student/list-students KULLAN.
+
+   3. URL_PARAMS_PAGE (querystring filter destekli):
+      - Financial/overdue-student-payment?sube=1086&sezon=22526&tarihBas=...&tarihBit=...
+      DAVRANIS: URL'e direkt params goM, navigator modal/search atlar, tabloyu direkt
+      okur. EN HIZLI yontem.
+
+C) NAVIGATOR'DAN GELEN GERI BILDIRIM (re-plan icin):
+   Eger onceki denemen "error_code: NO_DATA / FILTER_BAD / FILTER_FAILED" dondurduyse
+   yeni bir denemeyi planla. result.dropdowns_summary'de mevcut secimleri gor:
+   - Yanlis sayfa secmis olabilirsin → SESSION_LIST tipi sayfa dene
+   - Filter ismi sayfada yok → daha basit filter veya tarih kullan
+   - Sezon match etmedi → sezon: "latest" + spesifik tarih kullan
+
 JSON CIKTI FORMATI (sadece JSON, baska metin YOK):
 {
   "page_path": "Student/individual-lesson",
@@ -447,7 +498,7 @@ async def execute_query(question: str, max_rows: Optional[int] = None) -> dict:
             "error": "Sorgu icin uygun Eyotek sayfasi bulunamadi (confidence dusuk).",
         }
 
-    # Navigate
+    # Navigate (1. deneme)
     from eyotek_knowledge.eyotek_navigator import navigate
     eff_max = max_rows or plan["max_rows"] or 30
     nav = await navigate(
@@ -457,10 +508,78 @@ async def execute_query(question: str, max_rows: Optional[int] = None) -> dict:
         tab=plan.get("tab") or None,
     )
 
+    attempts = [{
+        "plan": plan_only,
+        "error_code": nav.get("error_code"),
+        "row_count": nav.get("row_count", 0),
+    }]
+
+    # 25.44 (Neo direktif): Re-plan loop — navigator yetersiz cevap dondurduyse
+    # planner'a DOM ozetiyle geri sor, max 1 retry (toplam 2 deneme).
+    needs_replan = False
+    nav_err = nav.get("error_code")
+    if nav_err in ("NO_DATA", "FILTER_BAD") or (nav.get("success") and nav.get("row_count", 0) == 0):
+        needs_replan = True
+
+    if needs_replan:
+        # Planner'a DOM özeti + hata bilgisini ver, yeni plan iste
+        replan_context = {
+            "previous_plan": plan_only,
+            "previous_page": plan["page_path"],
+            "previous_error": nav.get("error_code"),
+            "previous_row_count": nav.get("row_count", 0),
+            "available_season": (nav.get("season") or {}).get("available", []),
+            "current_season": (nav.get("season") or {}).get("current_label"),
+            "dropdowns_summary": nav.get("dropdowns_summary", []),
+            "page_hint": (nav.get("debug") or {}).get("page_hint", {}),
+            "filters_failed": nav.get("filters_failed", []),
+            "final_url": nav.get("final_url"),
+        }
+        # Replan: original soruyu + context'i tek bir prompt'a koy
+        retry_question = (
+            f"{question}\n\n"
+            f"[ONCEKI DENEME YETERSIZ — yeniden planla]\n"
+            f"Onceki sayfa: {plan['page_path']}\n"
+            f"Hata: {nav.get('error_code')} (row_count={nav.get('row_count', 0)})\n"
+            f"Sayfa tipi (hint): {replan_context['page_hint'].get('type', 'unknown')}\n"
+            f"Sayfadaki mevcut sezon: {replan_context['current_season']}\n"
+            f"Available sezonlar: {[s.get('label') for s in replan_context['available_season']]}\n"
+            f"Kayan filter'lar (sayfada yok): {replan_context['filters_failed']}\n\n"
+            f"FIX KURALI:\n"
+            f"  - Onceki sayfa multi_season_aggregate ise spesifik sezon icin "
+            f"Student/list-students KULLAN.\n"
+            f"  - Filter'lar fail oldu ise daha sade filter (sadece tarih veya sezon) dene.\n"
+            f"  - Tablo bos ise sezon: 'latest' veya tarihi degistir."
+        )
+        plan2 = await plan_query(retry_question)
+        plan2_only = {k: v for k, v in plan2.items() if k != "raw_response"}
+        # Yeni plan onceki ile aynıysa retry'a gerek yok
+        same_plan = (
+            plan2.get("page_path") == plan["page_path"]
+            and plan2.get("filters", {}) == plan["filters"]
+        )
+        if not same_plan and plan2.get("page_path") and plan2.get("confidence", 0) >= 0.4:
+            nav2 = await navigate(
+                page_path=plan2["page_path"],
+                filters=plan2["filters"],
+                max_rows=eff_max,
+                tab=plan2.get("tab") or None,
+            )
+            attempts.append({
+                "plan": plan2_only,
+                "error_code": nav2.get("error_code"),
+                "row_count": nav2.get("row_count", 0),
+            })
+            # 2. deneme daha iyiyse onu kullan
+            if nav2.get("success") and nav2.get("row_count", 0) > nav.get("row_count", 0):
+                nav = nav2
+                plan_only = plan2_only
+
     return {
         "success": nav.get("success", False),
         "plan": plan_only,
-        "page": plan["page_path"],
+        "page": (plan_only.get("page_path") or plan["page_path"]),
+        "attempts": attempts,
         "filters_applied": nav.get("filters_applied", {}),
         "filters_failed":  nav.get("filters_failed", []),
         "columns": nav.get("columns", []),
@@ -470,6 +589,8 @@ async def execute_query(question: str, max_rows: Optional[int] = None) -> dict:
         "season":             nav.get("season"),
         "dropdowns_summary":  nav.get("dropdowns_summary", []),
         "sezon_resolved":     (nav.get("debug") or {}).get("sezon_resolved"),
+        "page_hint":          (nav.get("debug") or {}).get("page_hint", {}),
+        "season_skip_reason": (nav.get("debug") or {}).get("season_skip_reason"),
         "final_url":          nav.get("final_url"),
         "data_fetched_at":    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "error_code": nav.get("error_code"),

@@ -291,6 +291,50 @@ _MODAL_OPEN_CANDIDATES = [
 ]
 
 
+# 25.44 (Neo direktif 11 May): SAYFA HINTLERI — site bilinci ezbersiz
+# Eyotek'in sayfalari farkli davraniyor. Bu dict navigator'a SOFT hint verir:
+#   type:
+#     - "session_list"          → header sezon resetler tabloyu + modal+search gerek
+#     - "multi_season_aggregate" → tablo tum sezonlari gosterir, header sezon ETKISIZ
+#     - "url_params"            → ?sezon=&tarih= ile direkt query, modal/search atla
+#     - "direct_read"           → sayfa acilinca tablo dolu, hicbir aksiyon gerekmez
+#   season_resets_table: header sezon degisiminde tablo otomatik reset olur mu?
+#   skip_modal: modal acma adimini atla (sayfada modal yok veya gereksiz)
+#   skip_search: ARA butonuna basma atla (sayfa otomatik render)
+_PAGE_HINTS = {
+    # SESSION_LIST — header sezon → tablo reset, modal+search lazim
+    "student/list-students":        {"type": "session_list", "season_resets_table": True},
+    "student/individual-lesson":    {"type": "session_list", "season_resets_table": True},
+    "student/attendance-report":    {"type": "session_list", "season_resets_table": True},
+    "student/test-transferred":     {"type": "session_list", "season_resets_table": True},
+    "student/exam-combine":         {"type": "session_list", "season_resets_table": True},
+    "student/homework-search":      {"type": "session_list", "season_resets_table": True},
+    "student/homework-reports":     {"type": "session_list", "season_resets_table": True},
+    "student/counsellor-note-list": {"type": "session_list", "season_resets_table": True},
+    "student/timetable-class-list": {"type": "session_list", "season_resets_table": True},
+    "student/timetable-teacher-list": {"type": "session_list", "season_resets_table": True},
+    "financial/financial-operation": {"type": "session_list", "season_resets_table": True},
+    "staff/list-staff":             {"type": "session_list", "season_resets_table": False},
+
+    # MULTI_SEASON_AGGREGATE — Sezon column tabloda, header sezon etkisiz
+    "reports/monthly-enrollment-by-number-general":      {"type": "multi_season_aggregate", "season_resets_table": False},
+    "reports/monthly-enrollment-by-contract-fee-general": {"type": "multi_season_aggregate", "season_resets_table": False},
+    "reports/balance-for-student-future-income":          {"type": "multi_season_aggregate", "season_resets_table": False},
+
+    # URL_PARAMS — querystring ile direkt
+    "financial/overdue-student-payment": {"type": "url_params", "skip_modal": True, "skip_search": True},
+
+    # DIRECT_READ — sayfa acilinca tablo dolu
+    "home/dashboard":  {"type": "direct_read", "skip_modal": True, "skip_search": True},
+}
+
+
+def _get_page_hint(page_path: str) -> dict:
+    """Sayfa path'inden hint çek — fuzzy lookup (?  param'ları temizle)."""
+    key = (page_path or "").lower().split("?")[0].strip("/")
+    return _PAGE_HINTS.get(key, {})
+
+
 def _load_cookies() -> list[dict]:
     if not _SESSION_FILE.exists():
         return []
@@ -1193,7 +1237,18 @@ async def navigate(
         # 'HeaderMain$RptChangeSeason$ctl{XX}$BtnSezonSec'. Bu PostBack server-side aktif
         # sezonu set eder ve TÜM sayfaları yenisine göre render eder.
         season_changed_globally = False
-        if filters and "sezon" in filters:
+        page_hint = _get_page_hint(page_path)
+        result["debug"]["page_hint"] = page_hint
+        # Multi-season aggregate sayfalarda header sezon değişimi etkisiz —
+        # planner yanlış sayfa seçmiş. Bot'a uyarı ver, sezon filter'ı atla.
+        if filters and "sezon" in filters and page_hint.get("type") == "multi_season_aggregate":
+            result["debug"]["season_skip_reason"] = (
+                "multi_season_aggregate sayfada header sezon etkisiz — tablo zaten "
+                "Sezon sutununu icerir. Spesifik sezon icin session_list sayfasi sec "
+                "(orn Student/list-students)."
+            )
+            filters = {k: v for k, v in filters.items() if k != "sezon"}
+        elif filters and "sezon" in filters:
             req_sezon = filters.get("sezon")
             if req_sezon:
                 change_result = await change_global_season(page, str(req_sezon))
@@ -1284,11 +1339,24 @@ async def navigate(
         #    Ara'ya basmadan liste boş kalıyor. Bu yüzden DEFAULT: modal/search çalış.
         # Sezon zaten globally ayarlandı → filter dict'inden çıkardık, modal'a yazma yok.
 
-        # MODAL ac (gerekiyorsa) — URL params yoksa
-        modal_opened = await _open_search_modal(page)
-        result["modal_opened"] = modal_opened
-        if modal_opened:
-            await page.wait_for_timeout(1200)  # Inputs interactable olsun
+        # 25.44: PAGE_HINT skip_modal/skip_search desteği
+        skip_modal = page_hint.get("skip_modal", False)
+        skip_search = page_hint.get("skip_search", False)
+        # Multi-season aggregate veya direct_read → modal/search atla
+        if page_hint.get("type") in ("multi_season_aggregate", "direct_read"):
+            skip_modal = True
+            skip_search = True
+
+        # MODAL ac (gerekiyorsa) — URL params yoksa, hint izin veriyorsa
+        if skip_modal:
+            modal_opened = False
+            result["modal_opened"] = False
+            result["debug"]["skip_modal"] = "page_hint"
+        else:
+            modal_opened = await _open_search_modal(page)
+            result["modal_opened"] = modal_opened
+            if modal_opened:
+                await page.wait_for_timeout(1200)  # Inputs interactable olsun
 
         # FILTRELERI UYGULA
         for raw_key, raw_value in filters.items():
@@ -1324,7 +1392,11 @@ async def navigate(
                 result["filters_failed"].append(canon)
 
         # SEARCH (25.44: sezon global değişti ama filter boşsa da search lazım — listeler için)
-        if filters or modal_opened or season_changed_globally:
+        # PAGE_HINT skip_search izin veriyorsa atla
+        if skip_search:
+            search_used = None
+            result["debug"]["skip_search"] = "page_hint"
+        elif filters or modal_opened or season_changed_globally:
             search_used = await _click_search(page)
             if search_used:
                 result["search_clicked"] = True
