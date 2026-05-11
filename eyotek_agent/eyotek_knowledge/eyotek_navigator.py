@@ -1192,6 +1192,7 @@ async def navigate(
         # tabloyu yenilemiyor. Gerçek mekanik: navbar #BtnShowSeasons + ASP.NET PostBack
         # 'HeaderMain$RptChangeSeason$ctl{XX}$BtnSezonSec'. Bu PostBack server-side aktif
         # sezonu set eder ve TÜM sayfaları yenisine göre render eder.
+        season_changed_globally = False
         if filters and "sezon" in filters:
             req_sezon = filters.get("sezon")
             if req_sezon:
@@ -1200,6 +1201,7 @@ async def navigate(
                 if change_result.get("changed") or change_result.get("reason") == "noop":
                     # Sezon değiştirildi (veya zaten doğru) — filter dict'inden çıkar
                     filters = {k: v for k, v in filters.items() if k != "sezon"}
+                    season_changed_globally = True
                     # PostBack reload sonrası sezon dropdown re-enumerate (DOM yenilendi)
                     try:
                         page_dropdowns2 = await page.evaluate("""
@@ -1275,6 +1277,23 @@ async def navigate(
             result["tab_clicked"] = tab_used
             if tab_used:
                 await page.wait_for_timeout(800)
+
+        # 25.44: Sezon globally değiştirildiyse + başka filter yoksa → sayfa zaten
+        # yeni sezona göre render oldu, modal/search açma (PostBack ile filtre çakışır)
+        if season_changed_globally and not filters:
+            modal_opened = False
+            result["modal_opened"] = False
+            result["debug"]["skip_modal_search"] = "season_global_postback_applied"
+            # Sayfa PostBack reload yaptı, hedef sayfaya zaten döndü — tabloyu direkt oku
+            cols, rows_data = await _read_table(page, max_rows)
+            result["columns"] = cols
+            result["rows"] = rows_data
+            result["row_count"] = len(rows_data)
+            result["success"] = True
+            if not rows_data:
+                result["error_code"] = "NO_DATA"
+                result["error"] = f"Sezon {result.get('season',{}).get('current_label')} için kayıt yok."
+            return result
 
         # MODAL ac (gerekiyorsa) — URL params yoksa
         modal_opened = await _open_search_modal(page)
