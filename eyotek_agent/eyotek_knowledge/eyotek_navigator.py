@@ -905,6 +905,10 @@ async def navigate(
         "filters_applied": {}, "filters_failed": [],
         "modal_opened": False, "search_clicked": False, "drill": None,
         "tab_clicked": None,
+        # 25.44 (Neo direktif): bot dropdown'larda hangi sezon/öğretmen var göremiyordu —
+        # her navigate çağrısı şimdi sayfadaki dropdown'ları enumerate eder
+        "season": None,           # {current_code, current_label, available:[{code,label}]}
+        "dropdowns_summary": [],  # [{id, label, current, option_count, sample}] — bot için debug
         "error_code": None, "error": None, "debug": {},
     }
 
@@ -944,6 +948,103 @@ async def navigate(
                 f"Neo: 'eyotek baglan' yaz."
             )
             return result
+
+        # 25.44 (Neo direktif): Dropdown enumeration — sezon/öğretmen/sınıf vs.
+        # Header'daki sezon dropdown'u (#cmbSezonlar / #cmbSezon / select[id*='Sezon'])
+        # her zaman okunur; bot bilmediği sezon kodu yerine option listesini görür.
+        try:
+            page_dropdowns = await page.evaluate("""
+                () => {
+                    function vis(el){ const r=el.getBoundingClientRect(); return r.width>0 && r.height>0; }
+                    const sels = Array.from(document.querySelectorAll('select')).filter(vis);
+                    return sels.map(el => {
+                        const label = (function(){
+                            if (el.id) {
+                                const lbl = document.querySelector(`label[for="${el.id}"]`);
+                                if (lbl) return (lbl.innerText || '').trim();
+                            }
+                            const fg = el.closest('.form-group, .col, td, div');
+                            if (fg) {
+                                const lbl = fg.querySelector('label');
+                                if (lbl) return (lbl.innerText || '').trim();
+                            }
+                            return '';
+                        })();
+                        const opts = Array.from(el.options).slice(0, 100).map(o => ({
+                            v: o.value, t: (o.innerText || o.text || '').trim()
+                        }));
+                        return {
+                            id: el.id || '',
+                            name: el.name || '',
+                            label: label,
+                            current_value: el.value || '',
+                            current_text: el.options[el.selectedIndex] ? (el.options[el.selectedIndex].innerText || '').trim() : '',
+                            options: opts,
+                            option_count: el.options.length
+                        };
+                    });
+                }
+            """)
+            # Compact summary — bot için (her dropdown 50 char özet)
+            summary = []
+            for d in (page_dropdowns or []):
+                key = d.get("id") or d.get("name") or d.get("label") or "?"
+                # Bot için en yararlı 3 örnek option
+                sample = [f"{o['t']}({o['v']})" for o in d["options"][:3] if o.get("v")]
+                summary.append({
+                    "id": d.get("id", ""),
+                    "label": (d.get("label") or "")[:40],
+                    "current": d.get("current_text") or d.get("current_value", ""),
+                    "option_count": d.get("option_count", 0),
+                    "sample": sample,
+                })
+            result["dropdowns_summary"] = summary
+
+            # Sezon dropdown'ını özel olarak çıkar
+            for d in (page_dropdowns or []):
+                did = (d.get("id") or "").lower()
+                dnm = (d.get("name") or "").lower()
+                if "sezon" in did or "sezon" in dnm:
+                    opts_clean = [
+                        {"code": o["v"], "label": o["t"]}
+                        for o in d["options"] if o.get("v") and o["v"].strip() not in ("0", "")
+                    ]
+                    result["season"] = {
+                        "current_code": d.get("current_value", ""),
+                        "current_label": d.get("current_text", ""),
+                        "available": opts_clean,
+                    }
+                    break
+        except Exception as _e:
+            logger.debug(f"[NAV] dropdown enum skip: {_e}")
+
+        # 25.44: Sezon filter auto-resolve — filter'da "latest"/"auto"/yıl-string gelirse
+        # dropdown'dan gerçek code'a çevir
+        if filters and result.get("season"):
+            req_sezon = filters.get("sezon")
+            if req_sezon:
+                avail = result["season"]["available"]
+                req_l = str(req_sezon).strip().lower()
+                resolved = None
+                if req_l in ("latest", "auto", "yeni", "yeni sezon", "aktif", "su an", "şu an"):
+                    # En yeni sezon = ilk option (Eyotek genelde DESC sıralı) veya max yıl
+                    def _year_of(label):
+                        m = re.search(r'(20\d{2})', label or '')
+                        return int(m.group(1)) if m else 0
+                    if avail:
+                        latest = max(avail, key=lambda o: _year_of(o["label"]))
+                        resolved = latest["code"]
+                        result["debug"]["sezon_resolved"] = f"latest → {latest['label']} ({resolved})"
+                else:
+                    # Verilen değer code mu, label mı? Hem code hem label match dene
+                    for o in avail:
+                        if (o["code"] == str(req_sezon) or
+                                str(req_sezon).lower() in (o["label"] or "").lower()):
+                            resolved = o["code"]
+                            result["debug"]["sezon_resolved"] = f"{req_sezon} → {o['label']} ({resolved})"
+                            break
+                if resolved:
+                    filters = {**filters, "sezon": resolved}
 
         # URL params ile gelmissek (?sezon=&tarihBas= gibi) sayfa zaten filtreyi
         # otomatik calistirdi — modal acma + search click YAPMA. Tabloyu direkt oku.

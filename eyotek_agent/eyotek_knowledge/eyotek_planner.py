@@ -181,6 +181,13 @@ A: {"page_path":"Student/homework-search","filters":{"date_from":"<bu_hafta_basl
 Q: "bu sezon aylik kayit sayilari"
 A: {"page_path":"Reports/monthly-enrollment-by-number-general","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"2025.26 sezonu aylik kayit sayilari.","confidence":0.90}
 
+Q: "yeni sezonda kaç öğrencim var" / "yeni sezon kayıtları" / "şu anki sezonda" / "2026-27 kayıtları"
+A: {"page_path":"Reports/monthly-enrollment-by-number-general","filters":{"sezon":"latest"},"max_rows":50,"explain":"En yeni sezon (auto-detect via dropdown) kayıt sayıları.","confidence":0.92}
+NOT: "latest" → navigator dropdown'dan en yeni sezonu otomatik bulur ve seçer. Spesifik yıl bilinmiyorsa "latest" kullan, kod tahmin etme.
+
+Q: "yeni sezonda öğrenci listesi kim kaydoldu"
+A: {"page_path":"Student/list-students","filters":{"sezon":"latest"},"max_rows":80,"explain":"Yeni sezon öğrenci kayıt listesi — sezon auto-detect.","confidence":0.90}
+
 Q: "kayit cirolari sezon karsilastirma"
 A: {"page_path":"Reports/monthly-enrollment-by-contract-fee-general","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"Aylik kayit ciro raporu — sezon ve gecen sezon karsilastirma birlikte gelir.","confidence":0.88}
 
@@ -459,6 +466,12 @@ async def execute_query(question: str, max_rows: Optional[int] = None) -> dict:
         "columns": nav.get("columns", []),
         "rows":    nav.get("rows", []),
         "row_count": nav.get("row_count", 0),
+        # 25.44 (Neo direktif): bot artık sayfadaki sezon listesini görür + taze veri timestamp
+        "season":             nav.get("season"),
+        "dropdowns_summary":  nav.get("dropdowns_summary", []),
+        "sezon_resolved":     (nav.get("debug") or {}).get("sezon_resolved"),
+        "final_url":          nav.get("final_url"),
+        "data_fetched_at":    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "error_code": nav.get("error_code"),
         "error":      nav.get("error"),
     }

@@ -3049,6 +3049,33 @@ QUERY_ANALYTICS HATALI → "kesin sayi cikmadi" de, uydurma!
       → eyotek_query("bu sezon bilancosu aylik dagilim")
       → planner: Reports/balance-for-student-future-income
 
+   D. YENI/AKTIF SEZON SORGULARI (25.44 — Neo direktif 11 May):
+      "yeni sezonda kac ogrencim var" / "su an aktif sezonda" / "2026-27 kayitlari" /
+      "yeni sezonda kim kaydoldu" / "erken kayit ogrenci listesi"
+      → eyotek_query("yeni sezon ogrenci sayisi/kayit listesi")
+      → planner sezon="latest" filter koyar
+      → navigator dropdown'dan en yeni sezonu otomatik bulur (sezon kodunu tahmin
+         etme — dropdown'dan oku). result.season.current_label + sezon_resolved
+         alanlari cevapta gosterilir.
+
+   📋 EYOTEK_QUERY CEVAP RESULT ZENGIN ICERIGI (25.44):
+   Result ek alanlar:
+     - "season": {current_code, current_label, available:[{code,label}]} →
+       Sayfadaki aktif sezon + secilebilir tum sezonlar (dropdown'dan)
+     - "sezon_resolved": "latest → 2026.27 (22627)" → navigator sezon nasil cozdu
+     - "dropdowns_summary": [{id, label, current, option_count, sample}] →
+       Sayfadaki diger dropdown'lar (öğretmen, ders, sınıf vs)
+     - "data_fetched_at": "2026-05-11 19:35:00" → Eyotek'ten taze cekildigi an
+   Bot CEVAP KURALLARI:
+     a) Sezon belirsizse user'a sezon kodlarini SORMA — result.season.available
+        zaten elinde, gerekirse "Hangi sezon? 2024.25 / 2025.26 / 2026.27 var"
+        diye DOGRU listeyi göster, tahmin etme.
+     b) Yeni sezon sorgusunda cevabin BASINA su satiri koy:
+        "📅 *Sezon:* {season.current_label} · *Eyotek'ten az önce alindi:* {data_fetched_at}"
+     c) "sezon_resolved" doluysa kullan: "✅ Yeni sezon otomatik secildi: {label}"
+     d) Bot ASLA "sezon kodunu bilmiyorum, soyleyin" demez — dropdown enumeration
+        result.season.available'da hazir.
+
    ❌ ESKI YANLIS YOL (yapma): geciken_taksit_ozet tablosundan
    toplam_ucret/taksit_sayisi formuluyle TAHMIN URETME.
    Bot 19:40 Neo konusmasi: tahmini sayi verdi, Neo "hata" dedi.
