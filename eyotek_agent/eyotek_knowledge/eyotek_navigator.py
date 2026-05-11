@@ -932,16 +932,35 @@ async def _read_table_paginated(page, max_rows: int, max_pages: int = 50) -> tup
 
     # Çok sayfa — döngü
     eff_max_pages = min(total_pages, max_pages)
+    duplicates_seen = 0
     while pages_read < eff_max_pages and len(rows) < max_rows:
         next_page_num = pages_read + 1
         try:
             await page.evaluate(f"__doPostBack('{target}','Page${next_page_num}')")
-            # ASP.NET partial postback — 3sn server render
+            # ASP.NET partial postback — daha uzun bekle (Neo bug 11 May 21:40: duplikasyon)
             try:
-                await page.wait_for_load_state("networkidle", timeout=6000)
+                await page.wait_for_load_state("networkidle", timeout=8000)
             except Exception:
                 pass
-            await page.wait_for_timeout(1500)
+            await page.wait_for_timeout(2500)  # 1500 → 2500: race condition önlemi
+            # Sayfa değişiminin gerçekten olduğunu doğrula (active pager span)
+            try:
+                actual_page = await page.evaluate("""
+                    () => {
+                        const pagerEl = document.querySelector('tr.pagination, .pagination, .pager');
+                        if (!pagerEl) return null;
+                        for (const s of pagerEl.querySelectorAll('span')) {
+                            const n = parseInt((s.innerText||'').trim());
+                            if (n && !isNaN(n)) return n;
+                        }
+                        return null;
+                    }
+                """)
+                if actual_page and actual_page != next_page_num:
+                    # PostBack hala render etmedi — bir kez daha bekle
+                    await page.wait_for_timeout(2000)
+            except Exception:
+                pass
             # Yeni sayfanın tablosu
             remaining = max_rows - len(rows)
             _, new_rows = await _read_table(page, remaining)
@@ -958,10 +977,28 @@ async def _read_table_paginated(page, max_rows: int, max_pages: int = 50) -> tup
             logger.debug(f"[NAV] paginate Page${next_page_num} fail: {e}")
             break
 
+    # 25.44 (Neo bug 11 May 21:40): POST-AGGREGATION DEDUPE
+    # PostBack race condition'da bazı satırlar iki sayfada birden parse oluyordu
+    # ("Mehmet Ali Karpuz 2x", "Ayaz Karaçelik 2x"). Tüm satırı serialize edip
+    # set ile dedupe et — gerçek duplicate kayıtlar (aynı öğrenci farklı tablo
+    # satırında) zaten Eyotek'te olmaz, bu güvenli.
+    deduped = []
+    seen_keys = set()
+    for r in rows:
+        # Sözlük → sıralı tuple (stable hash)
+        key = tuple(sorted((k, str(v)[:50]) for k, v in r.items() if v))
+        if not key or key in seen_keys:
+            duplicates_seen += 1
+            continue
+        seen_keys.add(key)
+        deduped.append(r)
+    rows = deduped
+
     return cols, rows, {
         "total_pages": total_pages,
         "pages_read": pages_read,
         "total_rows_seen": len(rows),
+        "duplicates_removed": duplicates_seen,
         "hit_limit": len(rows) >= max_rows,
         "pagination_target": target,
     }

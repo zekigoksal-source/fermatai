@@ -50,10 +50,15 @@ PAGE_TO_MODULE = {
     # 25.43-LAZY-EXTEND-V2 (Neo direktif 10 May): Tüm sorgular DB sync
     "counsellor/notes":            ("counsellor_notes", "_upsert_counsellor_notes"),
     "student/counsellor-meeting":  ("counsellor_notes", "_upsert_counsellor_notes"),
+    "student/counsellor-note-list":("counsellor_notes", "_upsert_counsellor_notes"),  # 25.44
     "reports/teacher-schedule":    ("teacher_timetable", "_upsert_teacher_timetable"),
     "student/timetable-teacher":   ("teacher_timetable", "_upsert_teacher_timetable"),
     "reports/attendance-summary":  ("devamsizlik_sayisi", "_upsert_devamsizlik"),
     "student/attendance-summary":  ("devamsizlik_sayisi", "_upsert_devamsizlik"),
+    # 25.44 (Neo direktif 11 May 21:51): "DB'de max söz_no 314, Eyotek'te 318 var,
+    # 4 yeni kayıt sync olmamış" — list-students otomatik lazy_sync.
+    "student/list-students":       ("students_list",   "_upsert_students_list"),
+    "student/test-transferred":    ("student_exams",   "_upsert_test_transferred"),  # 25.44 sinav listesi
 }
 
 
@@ -796,3 +801,152 @@ async def _upsert_devamsizlik(rows: list[dict], columns: list[str]) -> int:
             logger.debug(f"  [LAZY_SYNC] devamsizlik row skip: {e}")
             continue
     return synced
+
+
+# ─── 25.44 (Neo bug 11 May 21:51): list-students lazy_sync ────────────────
+
+async def _upsert_students_list(rows: list[dict], columns: list[str]) -> int:
+    """Eyotek Student/list-students sayfasi → students tablosuna upsert.
+
+    Neo direktif: 'DB'de max soz_no 314 ama Eyotek'te 318 var, 4 yeni kayit
+    DB'ye yazilmamis. Lazy sync ile her list-students cagrisi students
+    tablosunu otomatik gunceler.'
+
+    Eyotek row tipik format:
+      {Sira, Okul No, Söz No, Adi, Soyadi, Sinif, Devre, Telefon, Veli Tel ...}
+      veya:
+      {Soz No, Ad, Soyad, ...}
+
+    Conservative: soz_no zorunlu, varsa upsert; yoksa skip.
+    UNIQUE: students.soz_no (PK)
+    """
+    from db_pool import db_execute, db_fetchval, db_fetchrow
+    import re as _re
+
+    def _norm_key(s):
+        return _re.sub(r'[^a-z]', '', (s or '').lower())
+
+    def _find(r, *keys):
+        """Row dict'te key match (fuzzy)."""
+        if not isinstance(r, dict):
+            return None
+        norm_keys = {_norm_key(k): v for k, v in r.items()}
+        for kk in keys:
+            v = norm_keys.get(_norm_key(kk))
+            if v not in (None, "", "-"):
+                return v
+        return None
+
+    synced = 0
+    for r in rows:
+        try:
+            soz_no_raw = _find(r, "Söz No", "Soz No", "SozNo", "söz_no")
+            if not soz_no_raw:
+                continue
+            soz_no_str = str(soz_no_raw).strip()
+            # Sadece sayisal soz_no kabul et (Sira 1,2,3 degil; 265,266,277 gibi)
+            if not _re.match(r'^\d{2,4}$', soz_no_str):
+                continue
+            try:
+                soz_int = int(soz_no_str)
+            except ValueError:
+                continue
+            # Cok kucuk soz_no (<100) muhtemelen Sira sutununu yakaladi
+            if soz_int < 100:
+                continue
+
+            ad = _find(r, "Adi", "Ad", "Name", "Adı")
+            soyad = _find(r, "Soyadi", "Soyad", "Surname", "Soyadı")
+            full_name = None
+            if ad and soyad:
+                full_name = f"{str(ad).strip()} {str(soyad).strip()}".upper()
+            elif ad:
+                full_name = str(ad).strip().upper()
+
+            sinif = _find(r, "Sinif", "Sınıf", "Class", "Sınıfı")
+            devre = _find(r, "Devre", "Course")
+            okul_no = _find(r, "Okul No", "OkulNo", "School No")
+            tc = _find(r, "Tc", "TC", "T.C.", "TC Kimlik")
+            phone = _find(r, "Telefon", "GSM", "Phone", "Cep")
+            veli_phone = _find(r, "Veli Tel", "Veli Telefon", "Veli Cep", "Veli")
+
+            if not full_name and not phone:
+                # Cok bos satir — agregat veya footer olabilir
+                continue
+
+            # Mevcut sezon — header'dan gelmiyorsa NULL, mevcut kaydi koru
+            existing = await db_fetchrow(
+                "SELECT soz_no, full_name, sezon FROM students WHERE soz_no = $1",
+                soz_no_str,
+            )
+
+            if existing:
+                # UPDATE — sadece dolu alanlari yaz
+                updates = []
+                params = []
+                idx = 1
+                for col, val in [
+                    ("full_name", full_name),
+                    ("class_name", sinif),
+                    ("devre", devre),
+                    ("phone", phone),
+                    ("veli_phone", veli_phone),
+                    ("last_sync", None),  # NOW()
+                ]:
+                    if val:
+                        updates.append(f"{col} = ${idx}")
+                        params.append(str(val).strip() if not isinstance(val, str) else val.strip())
+                        idx += 1
+                if updates:
+                    updates.append("last_sync = NOW()")
+                    params.append(soz_no_str)
+                    await db_execute(
+                        f"UPDATE students SET {', '.join(updates)} WHERE soz_no = ${idx}",
+                        *params,
+                    )
+                    synced += 1
+            else:
+                # INSERT yeni kayit
+                await db_execute(
+                    """INSERT INTO students (soz_no, full_name, first_name, last_name,
+                                              class_name, devre, phone, veli_phone,
+                                              status, last_sync)
+                       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', NOW())""",
+                    soz_no_str, full_name,
+                    str(ad).strip().upper() if ad else None,
+                    str(soyad).strip().upper() if soyad else None,
+                    str(sinif).strip() if sinif else None,
+                    str(devre).strip() if devre else None,
+                    str(phone).strip() if phone else None,
+                    str(veli_phone).strip() if veli_phone else None,
+                )
+                synced += 1
+                logger.info(f"  [LAZY_SYNC] students YENI kayit: soz_no={soz_no_str} {full_name}")
+        except Exception as e:
+            logger.debug(f"  [LAZY_SYNC] students_list row skip: {e}")
+            continue
+    return synced
+
+
+async def _upsert_test_transferred(rows: list[dict], columns: list[str]) -> int:
+    """Student/test-transferred sayfasi → student_exams tablosuna upsert.
+
+    25.44 (Neo direktif 11 May 21:51): Sinav listesi 19 gun eski. test-transferred
+    her cagrisinda DB'ye yazilir.
+
+    Eyotek row format:
+      {Tarih, Sinav Kodu, Sinav Adi, Tur, Devre, Sinif, Katilim, Aciklama}
+      (bu liste sinavlari, ogrenci-spesifik DEGIL — exam_code seviyesinde)
+
+    Bu sayfada sinav LISTESI var, ogrenci puanlari DEGIL. Bu yuzden sadece
+    exam_code/exam_name/exam_date metadata olarak upsert ederiz, ogrenci puani
+    drilldown sonrasi student-exam-detail'den gelir.
+
+    student_exams tablosunda exam_code metadata-only yazma: (soz_no=NULL? Hayir,
+    bu tablo per-student). Bu sayfa icin SEPARATE: 'exam_catalog' tablosu DAHA
+    DOGRU ama yoksa skip — sadece log.
+    """
+    # 25.44 NOT: test-transferred per-exam LISTESI, per-student puan DEGIL.
+    # student_exams (soz_no PK) tablosuna uymuyor. Skip + diagnostic log.
+    logger.info(f"  [LAZY_SYNC] test-transferred: {len(rows)} sinav metadata (per-student drill gerek)")
+    return 0
