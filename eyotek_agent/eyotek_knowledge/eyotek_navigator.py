@@ -1278,22 +1278,11 @@ async def navigate(
             if tab_used:
                 await page.wait_for_timeout(800)
 
-        # 25.44: Sezon globally değiştirildiyse + başka filter yoksa → sayfa zaten
-        # yeni sezona göre render oldu, modal/search açma (PostBack ile filtre çakışır)
-        if season_changed_globally and not filters:
-            modal_opened = False
-            result["modal_opened"] = False
-            result["debug"]["skip_modal_search"] = "season_global_postback_applied"
-            # Sayfa PostBack reload yaptı, hedef sayfaya zaten döndü — tabloyu direkt oku
-            cols, rows_data = await _read_table(page, max_rows)
-            result["columns"] = cols
-            result["rows"] = rows_data
-            result["row_count"] = len(rows_data)
-            result["success"] = True
-            if not rows_data:
-                result["error_code"] = "NO_DATA"
-                result["error"] = f"Sezon {result.get('season',{}).get('current_label')} için kayıt yok."
-            return result
+        # 25.44: Sezon global PostBack sonrası — TABLO sayfalarda iki davranış:
+        # A) Reports/* multi-sezon agrege → tablo zaten render, search gereksiz
+        # B) Student/list-students gibi listeler → header sezon ayarlı ama
+        #    Ara'ya basmadan liste boş kalıyor. Bu yüzden DEFAULT: modal/search çalış.
+        # Sezon zaten globally ayarlandı → filter dict'inden çıkardık, modal'a yazma yok.
 
         # MODAL ac (gerekiyorsa) — URL params yoksa
         modal_opened = await _open_search_modal(page)
@@ -1334,8 +1323,8 @@ async def navigate(
             else:
                 result["filters_failed"].append(canon)
 
-        # SEARCH
-        if filters or modal_opened:
+        # SEARCH (25.44: sezon global değişti ama filter boşsa da search lazım — listeler için)
+        if filters or modal_opened or season_changed_globally:
             search_used = await _click_search(page)
             if search_used:
                 result["search_clicked"] = True
