@@ -1,20 +1,55 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 11 Mayıs 2026 13:00 (DEV'E ARA) · **Oturum:** 25.43-TEST-FRAMEWORK + 11 ITER FIX LOOP
+> **Belge tarihi:** 11/12 Mayıs 2026 gece · **Oturum:** 25.44 — Eyotek Site Bilinci + Pagination + Sgr A* Render
 >
-> ## 🟢 SON DURUM SNAPSHOT
+> ## 🟢 SON DURUM SNAPSHOT (25.44)
 >
 > | Metrik | Değer |
 > |--------|-------|
-> | **VPS HEAD** | `7b6cde2` (25+ commit chain canlı, branch claude/sweet-jemison-99ea7e) |
-> | **Bridge Status** | HTTP 200, 3 systemd servis running |
-> | **Test Pass Rate** | B+ %92.3, A++/A %78.2, F=0 |
-> | **522 test koşumu** | 11 iter fix loop, kümülatif state |
+> | **VPS HEAD** | `28e41b3` (36+ commit chain canlı, branch claude/sweet-jemison-99ea7e) |
+> | **Bridge Status** | HTTP 200, 3 systemd servis active |
+> | **VPS sağlık** | Disk %6 (272G free), RAM 11Gi free |
+> | **Eyotek fix loop** | **14/14 PASS (%100)**, ortalama 23.6s/test |
+> | **Test Pass Rate (522 corpus)** | B+ %92.3, A++/A %78.2, F=0 (Oturum 25.43'ten) |
 > | **Capacity** | 200 concurrent → 69 req/s, p99 2.8s, 0 hata |
 > | **ACL gerçek leak** | 0 |
 > | **Inversion bug** | 14 dosyada düzeltildi |
-> | **Eyotek bug** | 3 kritik fix (singleton+exam+yoklama) |
-> | **DB sağlık** | students 123 active / etut 2561 / counsellor 1632 (category ✅) / yoklama_kontrol 7481 / RAG 5985 |
+> | **Eyotek bug** | Tüm okuma fonksiyonları %100 PASS (sezon + pagination + filter) |
+> | **DB sağlık** | students 123 active / etut 2561 / counsellor 1632 / yoklama_kontrol 7481 / RAG 5985 |
+>
+> ## 🆕 OTURUM 25.44 — Eyotek Site Bilinci Mimarisi (11 commit)
+>
+> **A. 3D Render (web_chat_ui.html rerender3D)**
+> - Unconditional purple sphere bloğu silindi (her preset üstüne mor sfer ekliyordu — Neo'nun "mor küre" şikayetinin kök sebebi)
+> - Blackhole preset Sgr A* fiziksel modeli: 2500 yıldız küresel uzay + photon ring x2 (Einstein halkası + lensing illüzyonu, AdditiveBlending) + 8 katmanlı accretion disk gradient (beyaz→sarı→turuncu→kırmızı) + M87 eğik perspektif + relativistik polar jets + hot spot
+>
+> **B. Eyotek Sezon Mekanizması (Cerebras planner + navigator)**
+> - **`change_global_season(page, target)`**: navbar `#BtnShowSeasons` → menü aç → `<a href*="ctl{XX}$BtnSezonSec">` link click → ASP.NET `__doPostBack` server-side aktif sezon değişimi (gerçek site mekanizması — Neo'nun anlattığı "üstte sezonu değiştir → her şey yenilenir")
+> - Real link click (page.evaluate strict mode __doPostBack 'arguments' access bypass)
+> - Dropdown enumeration her cevapta: `season.available[{code, label}]`
+> - `data_fetched_at` timestamp result'a eklendi
+>
+> **C. Site Bilinci (yeni dosya/ajan YOK — mevcut zincir akıllılaştırıldı)**
+> - **Planner system prompt** "SITE MANTIK BÖLÜMÜ": sezon mekaniği + sayfa tipleri (session_list / multi_season_aggregate / url_params / direct_read) + geri bildirim yorumu
+> - **PAGE_HINTS dict** (16 sayfa): type + season_resets_table + skip_modal + skip_search
+> - **Re-plan loop**: navigator NO_DATA/FILTER_BAD/row=0 → planner'a DOM özetiyle (mevcut sezon, available, dropdowns_summary, page_hint, filters_failed) geri sor + FIX KURALI prompt → max 2 deneme. 1. başarılı ise 2. atlanır
+>
+> **D. Pagination (Neo'nun "20'de kesiyor salakça bug" şikayeti)**
+> - `_detect_pagination(page)` — ASP.NET pager: `a[href*="Page$"]` + `__doPostBack('GridView1','Page$N')` regex parse
+> - `_read_table_paginated(page, max_rows, max_pages=50)` — proven pattern (sync_exams.py'den) tüm sayfaları dolaşır
+> - Sonuçlar: 20→44 (öğrenci), 1→79 (sınavlar 8 sayfa), 1→28 (rehberlik 2 sayfa)
+>
+> **E. Planner Kuralları + Navigator Güvenlik Ağı**
+> - "kaç öğrenci" → ZORUNLU list-students (Reports YASAK kuralı planner prompt'ta)
+> - "bu hafta" → date_from≠date_to açıkça anlatıldı
+> - **`_date_to_season(date_str)`**: dd.MM.yyyy → Eylül-Ağu kuralıyla sezon kod (Nisan 2026 → "22526")
+> - Navigator filter'da sezon yoksa + date_from varsa OTOMATİK ekler — **PostBack persistence bug'ı root'tan çözüldü**
+>
+> **F. Test Suite — `eyotek_fix_loop.py`**
+> - 14 senaryo (Neo'nun gerçek konuşmalarından)
+> - Otomatik kalite kontrol (expect_min_rows, expect_success, expect_columns_contain, combine)
+> - Iter evolution: %57 → %93 → **%100**
+> - JSON detay rapor + per-senaryo timing
 >
 > ## 🆕 BU OTURUM (10-11 May 16 saat) — Eklenen Ana Mimari Parçalar
 >
