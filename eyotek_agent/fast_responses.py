@@ -3397,7 +3397,7 @@ OGRENCI_PATTERNS = [
     # düşüyordu (konularım kelimesi match). NEGATIVE LOOKAHEAD ile düzeltildi:
     # "güçlü"/"iyi"/"başarılı" kelimesi VARSA bu pattern eşleşmesin.
     (r"(zayif|zayıf|eksik|nere.+cal[iı]smam|neye.+cal[iı]smam)", "zayif_konular", "Zayif konular"),
-    (r"^(?!.*\b(g[uü]c?l[uü]|iyi\s+old|ba[sş]ar[iı]l[iı]|en\s+iyi|kuvvetli)\b).*\b(hangi\s*konu|konularim|konularım|konular[iı]m)\b", "zayif_konular", "Konularim (zayif)"),
+    (r"^(?!.*\b(g[uü][cç]?l[uü]|iyi\s+old|ba[sş]ar[iı]l[iı]|en\s+iyi|kuvvetli)\b).*\b(hangi\s*konu|konularim|konularım|konular[iı]m)\b", "zayif_konular", "Konularim (zayif)"),
     (r"ne(ye)?\s*cal[iı]s(mam|mal[iı]y[iı]m)", "zayif_konular", "Ne calismali"),
     (r"(nerede|nerde)\s*hata", "zayif_konular", "Nerede hata"),
     (r"neleri\s*bilmiyorum", "zayif_konular", "Neleri bilmiyorum"),
@@ -3406,7 +3406,7 @@ OGRENCI_PATTERNS = [
     (r"^nereye\s*cal[iı][sş](malıyım|mal[iı]y[iı]m|mam)", "zayif_konular", "Nereye çalış"),
 
     # Güçlü konular — genis paraphrase
-    (r"(iyi\s*oldug|güçlü|guclu|g[uü]cl[uü]|bas[aə]r[iı]l[iı]\s*oldug|iyi\s*konular)", "guclu_konular", "Guclu konular"),
+    (r"(iyi\s*oldug|güçlü|guclu|g[uü][cç]?l[uü]|bas[aə]r[iı]l[iı]\s*oldug|iyi\s*konular)", "guclu_konular", "Guclu konular"),
     (r"en\s*iyi\s*oldug", "guclu_konular", "En iyi oldugum"),
     (r"en\s*iyi.*ders", "guclu_konular", "En iyi dersler"),
     (r"(iyi\s*oldug|guclu|güçlü).*konu\w*\s*(ozetle|özetle|listele)", "guclu_konular", "Guclu konulari ozetle"),
