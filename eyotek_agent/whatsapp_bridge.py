@@ -4515,7 +4515,16 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
         # OTURUM 23.2 (21 Nisan) — exc_info=True, traceback log'a yazilir.
         # Bugünkü UnboundLocalError sessizce yutulduguiçin 4 saat kimse fark etmemisti.
         # Artik logda tam stacktrace var — debug hizlanir.
-        logger.error(f"Agent hatasi [{phone}]: {err_str}", exc_info=True)
+        #
+        # 25.44 BUG FIX (bot dev meeting #5, 12 May 19:31): Loguru curly-brace KeyError
+        # Sentry/journal'da gozuktu — Claude SDK exception'inda err_str icinde
+        # `{'type': 'text', ...}` dict repr olunca loguru `{type}` format key
+        # sanip KeyError: 'type' atti. HTTP 500 — orijinal hata maskelenmisti.
+        # Cozum: loguru positional binding (opt(raw=True) yerine — opt API
+        # eski surumlerde stable degil). Brace'leri escape et.
+        safe_err = err_str.replace("{", "{{").replace("}", "}}")
+        safe_phone = str(phone).replace("{", "{{").replace("}", "}}")
+        logger.error(f"Agent hatasi [{safe_phone}]: {safe_err}", exc_info=True)
 
         # Anthropic API 500 / 529 (overloaded) — bu teknik sorun, kullanici suclu degil
         # Bir kere retry dene (genelde gecici)
