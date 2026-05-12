@@ -620,8 +620,18 @@ class EyotekWrapper:
                 await self._browser.close()
             except Exception:
                 pass
+        # 25.44 BUG FIX (bot dev meeting #5, Sentry #118940375 — 12 May 12:34):
+        # "Future exception was never retrieved" — TargetClosedError asyncio
+        # default handler'a dusuyordu. Sebep: _pw.stop() try/except disindaydi.
+        # Playwright internal transport/heartbeat task'leri stop()
+        # esnasinda zaten kapali bir page/browser'a referans tutuyorsa
+        # TargetClosedError firlatip Future'i exception-state'te birakir.
+        # Asagisi defensive: stop() de yutulur — caller'a clean exit verir.
         if self._pw:
-            await self._pw.stop()
+            try:
+                await self._pw.stop()
+            except Exception as _e:
+                logger.debug(f"[EYOTEK] playwright stop sirasinda yutuldu: {type(_e).__name__}")
 
     # ── Navigasyon ──────────────────────────────────────────────────────────
 
