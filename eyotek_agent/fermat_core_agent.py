@@ -2305,6 +2305,24 @@ async def run_tool(name: str, input_data: dict,
     except Exception:
         pass
 
+    # 25.44 BUG FIX (bot dev meeting #6, Sentry #119329109 — 12 May 11:00):
+    # Tool 'list_exam_questions' invalid byte sequence 0x00 — Claude/kullanici
+    # input'undan gelen string parametre 0x00 iceriyordu, asyncpg parametre
+    # validation rejected. DB temiz (taradim), kaynak: tool input.
+    # Defensive sanitize: tum string parametreleri 0x00 ve diger illegal kontrol
+    # karakterlerinden temizle. Tek yer = tum tool'lar korunur (list_exam_questions,
+    # search_curriculum, query_analytics dahil).
+    def _sanitize_tool_input(v):
+        if isinstance(v, str):
+            return ''.join(ch for ch in v if ch in '\t\n\r' or ord(ch) >= 0x20)
+        if isinstance(v, dict):
+            return {k: _sanitize_tool_input(vv) for k, vv in v.items()}
+        if isinstance(v, list):
+            return [_sanitize_tool_input(x) for x in v]
+        return v
+    if isinstance(input_data, dict):
+        input_data = _sanitize_tool_input(input_data)
+
     fn = TOOL_DISPATCH.get(name)
     if not fn:
         return json.dumps({"error": f"Bilinmeyen araç: {name}"}, ensure_ascii=False)
