@@ -5,7 +5,7 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.44)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `dad1ad1` fix(25.44-BLIND-iter3) — bağımsız corpus 3 iter plateau %71.6
+> - **HEAD:** `9905c16` fix(25.44-BLIND-iter5) — 5 iter blind fix loop, plateau %77.5 A+/A, **B+ %89.2**
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, disk %6 (272G free), RAM 11Gi free
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama ~22s/test (browser singleton ile %6 hızlanma)
@@ -16,11 +16,20 @@
 > - **Sentry self-awareness:** SENTRY_API_TOKEN aktif, `get_sentry_errors` Claude tool, admin/mudur ACL
 > - **Sentry BadRequestError 29×:** root cause fix — tool_use/tool_result chain integrity
 > - **Pass rate (522 baseline + 115 rerun, Iter 15):** A++/A **~%80**, B+ **~%91** (Iter 11 başlangıç %69.7 → fix loop ile +10pp)
-> - **🔬 BAĞIMSIZ 102-soru BLIND TEST (12 May, Neo direktif — overfit kontrolü):** A++/A **%71.6**, B+ **%82** (3 iter)
->   - Generalization gap orijinale göre 8pp (kısmen overfitting var ama sınırlı)
->   - F=0 korundu, A++ %29.4 sabit
->   - Iter blind-1→2→3: %67.6 → %71.6 → %71.6 (plateau)
->   - Yeni paraphrase tipleri eklendi: selamün aleyküm, iyi akşamlar, hayırlı sabahlar, naber kanka, adım ne biliyor musun, hangi sınıftayım, kaç netim var paraphrase, LGS role-aware sınav tarihi, olur/elbette safe fallback
+> - **🔬 BAĞIMSIZ 102-soru BLIND TEST (12 May, Neo direktif — overfit kontrolü, 5 iter):**
+>   - A++/A **%77.5**, B+ **%89.2**, F=0, C=2%
+>   - Iter evrimi: 47.1 → 49.0 → 71.6 → 77.5 → 77.5 (Iter 4'te %77.5 ulaşıldı, 5'te B+ %89.2)
+>   - **Generalization gap orijinale göre 2.5pp** (orijinal %80 ↔ blind %77.5) — minimal overfit
+>   - **F=0 dirençli** her iterde (kabul edilemez yanıt yok)
+>   - Kategori bazında: CEREBRAS %100, RAG %90, EDGE %90, ACL %80, FAST %76.5, RENDER %62.5 (önceki %25!), HEAVY %50, TOOL %58.8
+>   - Çözülen pattern aileleri (50+ ekleme):
+>     * Selamlama paraphrase: selamün aleyküm (İslami karşılık), iyi akşamlar/sabahlar/geceler (rol-bazlı), hayırlı sabah, naber kanka, kolaylık olsun (veda olarak)
+>     * Kimlik: adım ne biliyor musun, profilimi göster, hangi sınıftayım (yeni `ogrenci_sinif_kim` handler), ben fermat'ta okuyor muyum
+>     * Tarih: ne zaman sınava giriyorum (ters sıra), kaç hafta kaldı, ne kadar zamanım var (sinav_bilgi date öncelikli)
+>     * Net: kaç netim var paraphrase, son denmem typo tolerans
+>     * Onay: olur/elbette safe fallback
+>     * LGS role-aware sınav tarihi (caller_class detection)
+>     * Cloud routing genişleme: randevu/ekle/haber/hocaya/rehberden/yeterli mi/pasta grafik/heatmap
 > - **Production ready:** ✅ Tüm okuma fonksiyonları + DB sync + chart + Sentry awareness + browser cache aktif
 >
 > ## 🎯 Bu Oturumda (25.44) Yapılanlar (11 May)

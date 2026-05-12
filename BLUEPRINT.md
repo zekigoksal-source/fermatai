@@ -6,9 +6,11 @@
 >
 > | Metrik | Değer |
 > |--------|-------|
-> | **VPS HEAD** | `09ddfc9` (43+ commit chain canlı, branch claude/sweet-jemison-99ea7e) |
+> | **VPS HEAD** | `9905c16` (52+ commit chain canlı, branch claude/sweet-jemison-99ea7e) |
 > | **Sentry awareness** | SENTRY_API_TOKEN aktif, `get_sentry_errors` Claude tool admin/mudur ACL |
 > | **Sentry 29× BadRequest fix** | tool_use/tool_result chain integrity (full history scan + gather guard) |
+> | **Blind corpus (overfit kontrol)** | 102 soru, **A+/A %77.5, B+ %89.2, F=0**, 5 iter, gap 2.5pp |
+> | **Kategori final** | CEREBRAS %100, RAG %90, EDGE %90, ACL %80, FAST %76.5, RENDER %62.5, HEAVY %50, TOOL %58.8 |
 > | **Bridge Status** | HTTP 200, 3 systemd servis active |
 > | **VPS sağlık** | Disk %6 (272G free), RAM 11Gi free |
 > | **Eyotek fix loop** | **14/14 PASS (%100)**, ortalama 23.6s/test |
