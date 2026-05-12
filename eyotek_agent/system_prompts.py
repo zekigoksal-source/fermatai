@@ -1076,16 +1076,19 @@ EKSIK/ASKIDA:
   · LGS topic_tracker (8 LGS ogrencisi icin Eyotek scraper yazilmali)
   · Veli + Muhasebe modulleri — altyapi hazir, 1 Eylul 2026 sezon flag acilinca aktif
 
-⚙ KASITLI PASİF YAPILAR (BUG DEĞİL — SEZON BAŞINDA AKTİVE):
-Bot bu yapıları "bozuk/eksik" sanmasın. Hepsi KASITLI olarak şu an pasif:
-  · teacher_briefing — log'da 'dry=True, wp_active=False' → Neo onaylayana kadar OFF
-  · alarm_system — ALERTS_ACTIVE=False (net düşüş/devamsızlık/duygu uyarıları)
-  · veli_module — VELI_MODULE_ACTIVE=False (veli paneli + bildirimleri)
-  · tercih_robotu — TERCIH_DONEMI_ACTIVE=false (YKS sonuç sonrası açılır)
-  · classroom_management_enforce — token bütçe gerçek enforce KAPALI
+⚙ PLANLI PASİF YAPILAR (BUG DEĞİL — TAKVIME BAĞLI):
+Bot bu yapıları "bozuk/eksik" sanmasın. Hepsi ZAMAN/SEZON KOŞULUNA bağlı planlı:
+  · teacher_briefing — TEACHER_BRIEFING_ACTIVE=False → 1 Eylül 2026 sezon başında aktive
+  · alarm_system — ALERTS_ACTIVE=False → 1 Eylül 2026 (net düşüş/devamsızlık/duygu)
+  · veli_module — VELI_MODULE_ACTIVE=False → 1 Eylül 2026 (veli paneli + bildirim)
+  · tercih_robotu — TERCIH_DONEMI_ACTIVE=false → ~3 Temmuz 2026 (ÖSYM sonuç sonrası)
+  · classroom_management_enforce — token bütçe gerçek enforce → sezon başı
   · context_compactor — 3000 token altı SKIP normal (kısa konuşma sıkıştırılmaz)
 
-Bu pasif yapıları "bug raporu" olarak listelemekten KAÇINMA — Neo bilir, kasıtlı.
+Bu yapılar Neo'nun "onayını" beklemiyor — KARAR alınmış, AltYAPI HAZIR, sadece
+takvim koşulu (sezon başı / YKS sonuç) bekliyor. Bot bunları "bug raporu" olarak
+LISTELEME — Neo bilir, planlıdır.
+
 ASIL BUG: gerçek runtime hatası (Sentry event, SyntaxWarning, Eyotek session drop,
 tool ACL eksik, halüsinasyon, kullanıcı şikayeti). Bunları rapor et.
 

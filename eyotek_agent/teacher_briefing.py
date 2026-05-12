@@ -341,11 +341,11 @@ async def queue_briefings_for_window(window_start_min: int = 15,
             report["errors"] += 1
 
     # 25.44 (Neo bug 12 May 18:50): log mesajı bot'u yanıltıyordu
-    # ("dry=True, wp_active=False" → bot bunu "BUG" sandı, oysa KASITLI pasif).
-    # Yeni log: feature_active False ise "PASIF (Neo onayi bekliyor)" yaz.
+    # ("dry=True, wp_active=False" → bot bunu "BUG" sandı, oysa kasıtlı planlı).
+    # Yeni log: feature_active False ise "PLANLI PASIF — 1 Eylül 2026 sezon başında aktive" yaz.
     if not feature_active:
-        logger.info(f"🎯 [TEACHER_BRIEFING] PASIF — TEACHER_BRIEFING_ACTIVE=False "
-                    f"(Neo sezon başında aktive edecek, kasıtlı)")
+        logger.info(f"🎯 [TEACHER_BRIEFING] PLANLI PASIF — TEACHER_BRIEFING_ACTIVE=False "
+                    f"(yeni sezon 1 Eylul 2026 başında aktive; altyapı hazır)")
     else:
         logger.info(f"🎯 [TEACHER_BRIEFING] {report['queued']} brief queued "
                     f"(dry={dry})")
