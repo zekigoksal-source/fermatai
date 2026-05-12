@@ -4186,32 +4186,70 @@ class FermatCoreAgent:
                             _needs_escalation = True
                             logger.info("  [ESKALASYON] Cerebras placeholder yanit (kontrol ediyorum/veritabanı) — Claude'a geciliyor")
 
-                    # 25.43-ITER7 KONU UYUMU VALIDATOR (Neo halusilasyon 41 vaka):
+                    # 25.43-ITER7 + 25.44-ITER12 KONU UYUMU VALIDATOR (halusilasyon %5 → ~%0):
                     # Cerebras kavramsal cevapta YANLIS konu anlatabiliyor.
                     # Ornek: "türev nedir" → "Birim Çember — Temel Kavram" cevabi.
-                    # Fix: Yanitin ILK 200 char'inda kullanici sorusundaki ANLAMLI
-                    # KELIME varsa OK; yoksa konu uyumsuz → Claude'a eskale.
+                    # 25.44 GÜÇLENDİRME: 3 katmanlı validator
+                    #   1) İlk 100 char başlık match (yanıtın 'konusu')
+                    #   2) Total keyword density (en az 2 occurrence veya 1/300char)
+                    #   3) Çok kısa cevap (< 80 char) + keyword yok → eskale
                     if not _needs_escalation and len(answer) > 50:
                         import re as _re
                         # Sadece KAVRAMSAL sorular icin (data sorularinda zaten kontrol var)
                         _is_kavramsal = bool(_re.search(
-                            r'\b(nedir|ne\s*demek|aç[ıi]kla|anlat|nas[ıi]l|formul|tan[ıi]m|kim|hangi|neden)\b',
+                            r'\b(nedir|ne\s*demek|aç[ıi]kla|acikla|anlat|nas[ıi]l|nasil|formul|tan[ıi]m|tanim|kim|hangi|neden|niye|niçin|nicin|fark|fark[ıi]|ornek|örnek)\b',
                             user_input.lower()
                         ))
                         if _is_kavramsal:
                             # Query'den anlamli kelimeleri cikar (stop word'leri at)
-                            _stop_kavramsal = {"nedir", "ne", "demek", "aç[ıi]kla", "acikla", "anlat",
-                                               "nas[ıi]l", "formul", "formül", "tan[ıi]m", "tanim",
-                                               "ben", "biz", "bu", "su", "hangi", "neden",
-                                               "konu", "konusu", "hakk[ıi]nda", "hakkinda"}
+                            _stop_kavramsal = {"nedir", "ne", "demek", "açıkla", "acikla", "anlat",
+                                               "nasıl", "nasil", "formul", "formül", "tanım", "tanim",
+                                               "ben", "biz", "bu", "şu", "su", "hangi", "neden",
+                                               "konu", "konusu", "hakkında", "hakkinda",
+                                               "fark", "farkı", "farki", "örnek", "ornek",
+                                               "niye", "niçin", "nicin", "kim", "için", "icin",
+                                               "olur", "olabilir", "olur"}
                             q_words = [w for w in _re.findall(r'\w+', user_input.lower())
                                        if len(w) > 3 and w not in _stop_kavramsal]
                             if q_words:
-                                # Yanitin ilk 300 char'inda en az 1 query keyword'u olmali
-                                first_part = answer.lower()[:300]
-                                if not any(w in first_part for w in q_words):
+                                ans_lower = answer.lower()
+                                # KATMAN 1: İlk 100 char'da en az 1 keyword (başlık match)
+                                first_100 = ans_lower[:100]
+                                kw_in_title = sum(1 for w in q_words if w in first_100)
+                                # KATMAN 2: Total keyword count — yanıtın tamamında
+                                total_kw_count = sum(ans_lower.count(w) for w in q_words)
+                                # KATMAN 3: Keyword density (uzun cevaplarda en az 2 occurrence)
+                                expected_min_total = max(1, len(answer) // 400)  # 400char başına min 1
+
+                                fail_reason = None
+                                if kw_in_title == 0:
+                                    fail_reason = f"baslikta keyword yok (q={q_words[:3]}, ilk100c)"
+                                elif total_kw_count < expected_min_total:
+                                    fail_reason = f"keyword density dusuk (kw={total_kw_count}, beklenen>={expected_min_total})"
+                                elif len(answer) < 80 and total_kw_count < 2:
+                                    fail_reason = f"cevap cok kisa + keyword yok ({len(answer)}c)"
+
+                                if fail_reason:
                                     _needs_escalation = True
-                                    logger.info(f"  [ESKALASYON] Cerebras konu uyumsuz (q={q_words[:3]}, baslik≠soru) — Claude'a geciliyor")
+                                    logger.info(f"  [ESKALASYON] Cerebras konu uyumsuz: {fail_reason} — Claude'a geciliyor")
+
+                    # 25.44 NUMERIC CLAIM VALIDATOR — formul/sayı içeren kavramsal cevaplar
+                    # "TYT 120 soru" gibi sayısal iddialar Cerebras'tan yanlış gelebilir.
+                    # Kullanıcı "kaç" sorduysa ve cevap basit sayı içeriyorsa Claude'a eskale.
+                    if not _needs_escalation and len(answer) > 30:
+                        import re as _re
+                        _user_lower = user_input.lower()
+                        _is_numeric_q = bool(_re.search(
+                            r'\bkac\b|\bkaç\b|\bnumber\b|\bsoru\s*say[ıi]s[ıi]\b|\bsure\b|\bsüre\b',
+                            _user_lower
+                        ))
+                        # Sadece TEK sayı içeren ve <120 char olan cevaplar (sade rakam = halüsinasyon riski)
+                        if _is_numeric_q and len(answer) < 150:
+                            _nums = _re.findall(r'\b\d{1,4}\b', answer)
+                            if len(_nums) >= 1 and len(_nums) <= 2:
+                                # Tek başına bir sayısal iddia → Claude doğrulasın
+                                _needs_escalation = True
+                                logger.info(f"  [ESKALASYON] Numeric claim ({_nums}) — Claude'a doğrulamaya")
 
                 if _needs_escalation:
                     # Claude akışına düş (aşağıdaki for loop)
