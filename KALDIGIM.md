@@ -1,13 +1,16 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11/12 Mayıs 2026 gecesi → **OTURUM 25.44 TAMAMLANDI — DEV'E ARA**
+> **Son güncelleme:** 12 Mayıs 2026 akşam → **OTURUM 25.44-DEV-MEETING TAMAMLANDI — DEV'E ARA, KULLANICI SERVE EDİLİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `3f08308` fix(25.44-iter3-self-analysis) — Ollama yalan log + arbiter 404 + financial limitation not
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, disk %6 (272G free), RAM 11Gi free
+> - **HEAD:** `90fcf44` fix(run_tool): sanitize control chars in all tool input parameters
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `/agent` endpoint çalışıyor, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
+> - **Dev Meeting:** Bot ile 7 iterasyonluk fix loop tamamlandı — 10 production fix canlı
+> - **Bot self-criticism:** Meeting #4'ten sonra her cevapta Sentry ID + dosya:satır verdi; #5-#6'da yanlış teori önerdiğinde Sentry mechanism + DB doğrulama ile düzelttim
+> - **Sentry temizlik:** 4 issue koddan fix'lendi (#116911596 db_pool, #118940375 TargetClosed, #119329109 null byte, #116927926 velicep); status hâlâ unresolved (token scope write yok — manuel close gerek)
 > - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama ~22s/test (browser singleton ile %6 hızlanma)
 > - **Eyotek DB sync:** lazy_sync her sorguda otomatik (40 yeni sezon kayıt DB'de)
 > - **Browser context cache:** module-level singleton, ilk init sonra reuse
@@ -118,6 +121,52 @@
 > - Önce: DB max soz_no 314, count 13 (yeni sezon)
 > - Şimdi: DB max soz_no **318**, count **40** ✅ (Neo'nun belirttiği gerçek değer)
 > - lazy_sync log: `students_list: 40 kayit upsert` ✅
+>
+> ---
+>
+> ## 🛠 25.44-DEV-MEETING — Bot ile Fix Loop (12 May, 19:00–20:15)
+>
+> Neo direktifi: *"Botla senin bir dev toplantısı yapmanızı istiyorum. Sen admin olarak benim adıma claude code olarak konuş, fix loop içinde sorunları belirleyin ve çözene kadar toplantıya devam edin. Bittiğinde dev arası."*
+>
+> Bot `/agent` endpoint üzerinden 7 iterasyon — gerçek Sentry/DB/code çapraz doğrulama ile **10 production fix** canlı.
+>
+> ### Iter-by-iter Fix Tablosu
+>
+> | # | Iter | Dosya:satır | Bug | Doğrulama | Commit |
+> |---|------|-------------|-----|-----------|--------|
+> | 1 | #1 | `precompute_nightly.py:58` | `column s.velicep does not exist` — kolon yok, schema `veli_phone/anne_phone/baba_phone` | Sentry #116927926 + `\d students` | `7dde7dd` |
+> | 2 | #1 | `finans_tools.py:374-381` | Aynı kolon hatası + `veli_adi/anne_adi/baba_adi` yok → `parent_name` kolonu | DB schema scan | `7dde7dd` |
+> | 3 | #1 | `web_chat.py:1043` | Aynı `veliCep/anneCep/babaCep` snake_case fix | DB schema scan | `7dde7dd` |
+> | 4 | #3 | `web_chat.py:1723` | Numeric CAST asimetri — `1340` satırında `REPLACE(',','.')` var, `1723`'te yok → Türkçe virgüllü puanlar fail | sed satır karşılaştırma | `50385af` |
+> | 5 | #2 | `rag_engine.py:add_content` | NULL byte INSERT path — `_clean()` helper tüm string'lere uygulandı | Önceki Sentry analizi | `c5d86e8` |
+> | 6 | #2 | `split_multi_question_rag.py:185` | Aynı pattern, inline `_c()` helper | Aynı | `c5d86e8` |
+> | 7 | #2 | `static/web_chat.py` | Stale 1 May duplicate, git'te yok | `ls -la` + git ls-files | `c5d86e8` |
+> | 8 | #4 | `db_pool.py` (full refactor) | Race condition + `_closed` private API + exception sonrası bozuk pool — workers=3 hazırlığı | Sentry #116911596 `Connection.init: Connection closed while reading` | `5fde9c6` |
+> | 9 | #5 | `whatsapp_bridge.py:4518` | Loguru `_log()` her zaman `.format()` çağırıyor; agent exception içinde `{'type': 'text'}` dict repr → `KeyError: 'type'` → HTTP 500. Asıl agent hatası maskelendi. | journalctl traceback + `process_message:4518` | `be7f702` |
+> | 10 | #6 | `eyotek_wrapper.py:__aexit__` | `await self._pw.stop()` çıplaktı; Playwright transport task'leri zaten kapalı page/browser referansında TargetClosedError → asyncio default handler → "Future exception was never retrieved" Sentry spam | Sentry #118940375 (`handled=yes`, `mechanism=logging`, `stacktrace:null` → asyncio Future leak teorisi) | `ac96cdf` |
+> | 11 | #6 | `fermat_core_agent.py:run_tool` | `list_exam_questions` `0x00` byte fail. DB tarandı temiz çıktı (rag_content/students/agent_conversations → 0 dirty row) — kaynak Claude tool args. Dispatch entry'ye recursive sanitize → 30+ tool tek seferde korunur. | Sentry #119329109 breadcrumbs + DB `position(bytea '\\x00' IN convert_to(...,'UTF8'))` | `90fcf44` |
+>
+> ### Bot Self-Criticism Eğrisi
+>
+> - **Meeting #1-#3:** Bot tahmin yapıyordu (`velicep`, `content` kolon adı uydurması). Schema/DB doğrulamasıyla düzeltildi.
+> - **Meeting #4 (kırılım anı):** Bot kendi durdu: *"tahmin yapıyorum, gerçek tool çağırmıyorum, döngüyü durdurun"* → ben "selfdev_runtime_errors / get_sentry_errors gerçek tool kullan" dedikten sonra her cevapta Sentry ID + dosya:satır + breadcrumb verdi.
+> - **Meeting #5:** Bot Sentry #118940375'i doğru buldu ama mekanizma teorisi yanlıştı (`kullanıcıya 500 dönüyor`). Gerçek event detayında `mechanism.handled=true`, `mechanism.type=logging`, message: `"Future exception was never retrieved"` — yani user-facing değil asyncio Future leak. Bot teorisini correction'la kabul etti.
+> - **Meeting #6:** Bot Sentry #119329109'u doğru buldu ama Adım 1 (UPDATE migration) gereksizdi — DB'de zaten 0 dirty row. Tek noktada (run_tool dispatch) sanitize ettim — bot'un önerdiği knowledge_service:349 tek-tool fix yerine 30+ tool koruyan merkezi çözüm.
+> - **Meeting #7:** Bot Sentry'de zaten fix'lenmiş zombie issue (#116927926) önerdi → "hours=12 filtrele veya 'yok' de" deyince dürüst yanıt verdi: *"Yeni actionable bug yok. Dev arası."*
+>
+> ### Pattern Öğretileri (sonraki meeting'lerde uygulanacak)
+>
+> 1. **Bot suggested fix → schema doğrula:** Bot kolon/tablo adı önerirse `information_schema.columns` ile teyit. (Meeting #1-#2'de bot 2x kolon adı uydurdu.)
+> 2. **Bot Sentry önerirse → mechanism kontrol:** `exception.mechanism.handled` ve `mechanism.type` mutlaka oku. `handled=yes` + `mechanism=logging` = user-facing değil background. Bot meeting #5'te bu ayrımı yapmadı.
+> 3. **Bot migration önerirse → DB tara:** Bot meeting #6'da UPDATE migration önerdi, oysa `position(bytea '\\x00' IN convert_to(...,'UTF8'))` ile DB temiz çıktı. **Migration kararı her zaman gerçek scan'a dayanmalı.**
+> 4. **Sentry zombie issues:** Status `unresolved` ama `lastSeen` fix commit'inden önce → zaten fix'li, listede görmemek için manuel close. SENTRY_API_TOKEN bizde sadece read scope (`event:read`/`project:read`/`org:read`), PUT/write yok. Neo dashboard'dan veya yeni token (`event:write`) ile temizlenmeli.
+>
+> ### Production Durum
+>
+> - Bridge HTTP 200, `/agent` çalışıyor (loguru KeyError fix sonrası 500 sona erdi)
+> - Bot WP/web kullanıcılarına cevap veriyor — meeting süresince kesinti **yok** (her commit hot reload, restart 4s)
+> - Sentry tarafında 4 issue gerçekten fix'lendi (kod tarafında), sadece dashboard'da resolved işaretlenmesi gerek
+> - Bir sonraki sabah 03:00 cron'unda `precompute_study_plans` başarılı çalışmalı (eski velicep hatası bitmiş olmalı) — yarın doğrulanacak
 >
 > ---
 
