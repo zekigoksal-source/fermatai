@@ -174,7 +174,8 @@ async def diff_with_db(eyotek_exams: list[dict]) -> dict:
                 ON CONFLICT (exam_code, exam_date) DO UPDATE SET last_seen = NOW()
             """,
                 e['exam_code'], e['exam_name'], e['exam_date_obj'],
-                e.get('exam_type', ''), '2025.26',
+                e.get('exam_type', ''),
+                __import__('sinav_takvimi').aktif_sezon(),  # 25.44: hardcoded kaldırıldı
             )
             inserted += 1
         except Exception as ex:

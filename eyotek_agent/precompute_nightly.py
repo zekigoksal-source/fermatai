@@ -192,9 +192,10 @@ async def run_nightly():
     # 4. Finans snapshot sync (28 Nisan eklendi — Neo "snapshot 7gun eski" buldu)
     try:
         from finans_eyotek_reader import sync_all_seasons
-        # Sadece aktif sezon (2025.26) — diger sezonlar manuel
+        # 25.44 (Neo bug 14:25): sezon HARDCODED kaldırıldı — aktif sezon dinamik
+        from sinav_takvimi import aktif_sezon
         finans_report = await sync_all_seasons(
-            sezonlar=["2025.26"], dry_run=False, skip_past_students=True
+            sezonlar=[aktif_sezon()], dry_run=False, skip_past_students=True
         )
         ok_count = sum(
             1 for s in finans_report.get("sezonlar", {}).values()

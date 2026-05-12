@@ -134,9 +134,12 @@ SEZON BAZLI TAHSILAT (aylik kirilimli):
   ORDER BY sezon, ay;
 
 GECIKEN ODEMELER (sadece aktif sezon):
+  -- ⚠️ AKTIF SEZON DİNAMİK: from sinav_takvimi import aktif_sezon
+  -- WHERE sezon = aktif_sezon() — '2025.26' / '2026.27' otomatik
   SELECT soz_no, full_name, borc, en_son_gort,
          (CURRENT_DATE - en_son_gort) AS gecikme_gun
   FROM geciken_snapshot WHERE sezon = '2025.26' ORDER BY borc DESC;
+  -- Yeni sezon (1 Eylül 2026 sonrası): aktif_sezon() → '2026.27'
 
 ROUTING P50/P95:
   SELECT response_source, COUNT(*) AS n,

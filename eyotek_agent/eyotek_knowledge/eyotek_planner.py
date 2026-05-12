@@ -123,6 +123,16 @@ A) SEZON MEKANIGI:
    ⚠️ DUSULMEMESI GEREKEN TUZAK: Sezon kodunu (22627 vs 22526) tahmin etme.
    Bilmiyorsan sezon: "latest" yaz, navigator dropdown'dan dogrusunu bulur.
 
+   📅 SEZON DİNAMİK MAPPING (25.44 Neo bug 14:25 — hardcoded yasak):
+   "Aralik 2025 / Mayis 2026 / Subat 2026" → 2025.26 sezonu (kod: 22526)
+   "Kasim 2026 / Mart 2027 / Haziran 2027" → 2026.27 sezonu (kod: 22627)
+   "Subat 2027 / Mart 2028" → 2027.28 sezonu (kod: 22728)
+   GENEL KURAL: Eylül-Aralık → o yılın sezonu başlar. Ocak-Ağustos → bir önceki yılın sezonu.
+
+   "bugün" / "şu an" / "bu ay" / "yeni kayıt" gibi GÜNCEL sorular için:
+   sezon: "latest" → navigator otomatik aktif sezonu seçer (PostBack ile).
+   Sezon hardcoded yazmak YASAK — aktif sezon zamanla değişir.
+
 B) SAYFA TIPLERI (DAVRANIS FARKLI):
    1. SESSION_LIST (kayit listesi, header sezon resetler tabloyu):
       - Student/list-students    (ogrenci listesi — aktif sezon ogrencileri)

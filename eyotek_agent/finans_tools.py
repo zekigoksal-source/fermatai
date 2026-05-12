@@ -27,16 +27,9 @@ from finans_access import (
 
 
 def _latest_sezon_code_simple() -> str:
-    """Bugünün tarihine göre aktif sezon kodu (Eylül-Ağustos).
-
-    25.44: ogrenci_borc_detay için fallback sezon. Eyotek format: '2026.27'.
-    """
-    from datetime import date
-    today = date.today()
-    if today.month >= 9:  # Eylül-Aralık
-        return f"{today.year}.{(today.year + 1) % 100:02d}"
-    else:  # Ocak-Ağustos
-        return f"{today.year - 1}.{today.year % 100:02d}"
+    """Bugünün tarihine göre aktif sezon kodu — tek doğruluk noktası sinav_takvimi.py."""
+    from sinav_takvimi import aktif_sezon
+    return aktif_sezon()
 
 
 def _unauth_response() -> dict:
@@ -91,8 +84,9 @@ async def finans_ozet(_caller_phone: str = "") -> dict:
         return err
 
     try:
-        # 22.1n-neo bugfix: view 'student_financial_summary' artik ogrenci_odeme_snapshot'tan.
-        # AKTIF sezon (2025.26) ozet — diger sezonlar sezon_kiyasla ile goruluyor.
+        # 25.44 (Neo bug 12 May 14:25): sezon HARDCODED kaldırıldı — sinav_takvimi.aktif_sezon
+        from sinav_takvimi import aktif_sezon
+        _aktif = aktif_sezon()
         row = await db_fetchrow("""
             SELECT
                 COUNT(DISTINCT soz_no) FILTER (WHERE kalan_borc > 0) AS borclu_ogrenci,
@@ -102,15 +96,15 @@ async def finans_ozet(_caller_phone: str = "") -> dict:
                 COALESCE(SUM(toplam_odenen), 0) AS kurum_toplam_tahsilat,
                 COALESCE(SUM(kalan_borc), 0) AS kurum_kalan_borc
             FROM student_financial_summary
-            WHERE sezon = '2025.26'
-        """)
+            WHERE sezon = $1
+        """, _aktif)
 
         # Geciken bilgisi geciken_snapshot'tan (Eyotek canli veri, ay bazli)
         geciken_row = await db_fetchrow("""
             SELECT COUNT(*) AS geciken_ogrenci_sayisi,
                    COALESCE(SUM(borc), 0) AS kurum_geciken_tutar
-            FROM geciken_snapshot WHERE sezon = '2025.26'
-        """)
+            FROM geciken_snapshot WHERE sezon = $1
+        """, _aktif)
 
         ozet = dict(row) if row else {}
         if geciken_row:
@@ -119,7 +113,7 @@ async def finans_ozet(_caller_phone: str = "") -> dict:
 
         result = {
             "basarili": True,
-            "sezon": "2025.26 (aktif)",
+            "sezon": f"{_aktif} (aktif)",
             "ozet": _serialize_row(ozet),
         }
 
@@ -272,8 +266,8 @@ async def geciken_odemeler(min_gun: int = 0, limit: int = 50,
     try:
         min_gun = max(0, int(min_gun))
         limit = max(1, min(500, int(limit)))
-        # 22.1n-neo bugfix: geciken_snapshot tablosundan (Eyotek canli veri)
-        # min_gun hesabi: CURRENT_DATE - en_son_gort / soz_verme_tarihi
+        # 25.44 (Neo bug 14:25): sezon HARDCODED kaldırıldı
+        from sinav_takvimi import aktif_sezon
         rows = await db_fetch(
             f"""SELECT
                     soz_no, full_name, devre, borc AS geciken_tutar,
@@ -284,13 +278,13 @@ async def geciken_odemeler(min_gun: int = 0, limit: int = 50,
                     ) AS max_gecikme_gun,
                     veli_adi, veli_cep, odeme_tipi
                 FROM geciken_snapshot
-                WHERE sezon = '2025.26'
+                WHERE sezon = $2
                   AND GREATEST(0,
                       CURRENT_DATE - COALESCE(soz_verme_tarihi, en_son_gort, CURRENT_DATE)
                   ) >= $1
                 ORDER BY borc DESC, max_gecikme_gun DESC
                 LIMIT {limit}""",
-            min_gun
+            min_gun, aktif_sezon()
         )
         result = {
             "basarili": True,
@@ -547,6 +541,8 @@ async def aylik_borc_detay(ay: str = "", _caller_phone: str = "") -> dict:
     if err:
         return err
     try:
+        # 25.44 (Neo bug 14:25): sezon HARDCODED kaldırıldı
+        from sinav_takvimi import aktif_sezon
         if ay:
             rows = await db_fetch(
                 "SELECT * FROM geciken_ay_bazli WHERE ay = $1",
@@ -557,10 +553,10 @@ async def aylik_borc_detay(ay: str = "", _caller_phone: str = "") -> dict:
                 """SELECT soz_no, full_name, devre, borc, veli_adi, veli_cep,
                           odeme_tipi, en_son_gort, soz_verme_tarihi
                    FROM geciken_snapshot
-                   WHERE sezon = '2025.26'
+                   WHERE sezon = $2
                      AND TO_CHAR(COALESCE(en_son_gort, soz_verme_tarihi, CURRENT_DATE), 'YYYY-MM') = $1
                    ORDER BY borc DESC""",
-                ay
+                ay, aktif_sezon()
             )
         else:
             rows = await db_fetch("SELECT * FROM geciken_ay_bazli")

@@ -24,8 +24,8 @@ async def build_student_push(soz_no, full_name, class_name) -> str | None:
         from db_pool import db_fetch, db_fetchrow, db_fetchval
         fname = full_name.split()[0] if full_name else ""
 
-        # YKS geri sayım
-        yks = date(2026, 6, 13)
+        # 25.44 (Neo bug 14:25): YKS tarihi sinav_takvimi.py'dan (sezon başında otomatik 2027'ye geçer)
+        from sinav_takvimi import TYT_DATE as yks
         gun = (yks - date.today()).days
         if gun < 0:
             return None  # YKS geçmiş

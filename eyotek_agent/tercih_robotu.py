@@ -783,14 +783,16 @@ async def tercih_donemi_durum() -> dict:
     today = date.today()
     aktif = await is_tercih_modu_aktif()
 
+    # 25.44 (Neo bug 14:25): Sınav tarihleri sinav_takvimi.py'dan (sezon değişiminde otomatik)
+    from sinav_takvimi import TYT_DATE, AYT_DATE
     # Bilgi: TYT/AYT/Sonuç/Tercih/Yaz Kampı
     kilometrelar = [
-        ("TYT Sınavı", date(2026, 6, 13)),
-        ("AYT Sınavı", date(2026, 6, 14)),
-        ("ÖSYM Sonuç Açıklama", date(2026, 7, 3)),
+        ("TYT Sınavı", TYT_DATE),
+        ("AYT Sınavı", AYT_DATE),
+        ("ÖSYM Sonuç Açıklama", date(TYT_DATE.year, 7, 3)),
         ("Tercih Dönemi Başlangıç", TERCIH_DONEMI_BASLANGIC),
         ("Tercih Dönemi Bitiş", TERCIH_DONEMI_BITIS),
-        ("Yaz Kampı Öncesi", date(2026, 9, 1)),
+        ("Yaz Kampı Öncesi", date(TYT_DATE.year, 9, 1)),
     ]
 
     timeline = []

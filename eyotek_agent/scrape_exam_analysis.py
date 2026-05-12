@@ -342,14 +342,16 @@ async def save_to_db(parsed: dict) -> None:
         return
     conn = await (await _get_pool()).acquire()
     try:
-        await conn.execute("""
+        from sinav_takvimi import aktif_sezon as _aktif_sezon_fn
+        _AKTIF = _aktif_sezon_fn()  # 25.44: hardcoded '2025.26' kaldırıldı
+        await conn.execute(f"""
             INSERT INTO student_exam_analysis
             (eyotek_id, soz_no, full_name, sezon, diploma_notu,
              ham_puan, yerlesme_puani,
              osym_2025_ham, osym_2024_ham, osym_2023_ham,
              ders_netleri, oncelikli_konular,
              sinav_sayisi, katilan_sinav)
-            VALUES ($1,$2,$3,'2025.26',95,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)
+            VALUES ($1,$2,$3,'{_AKTIF}',95,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)
             ON CONFLICT DO NOTHING
         """,
             parsed["soz_no"], parsed["soz_no"], parsed["full_name"],
@@ -392,14 +394,16 @@ async def save_ayt_to_db(parsed: dict) -> None:
                 existing_id,
             )
         else:
-            # INSERT — TYT verisi yoksa AYT-only kayit
-            await conn.execute("""
+            # INSERT — TYT verisi yoksa AYT-only kayit (25.44: sezon dinamik)
+            from sinav_takvimi import aktif_sezon as _aktif_fn_ayt
+            _AKTIF_AYT = _aktif_fn_ayt()
+            await conn.execute(f"""
                 INSERT INTO student_exam_analysis
                   (eyotek_id, soz_no, full_name, sezon, diploma_notu,
                    ham_puan_ayt, yerlesme_puani_ayt,
                    ders_netleri_ayt, oncelikli_konular_ayt,
                    sinav_sayisi_ayt, katilan_sinav_ayt, last_sync)
-                VALUES ($1,$2,$3,'2025.26',95,$4,$5,$6::jsonb,$7::jsonb,$8,$9,NOW())
+                VALUES ($1,$2,$3,'{_AKTIF_AYT}',95,$4,$5,$6::jsonb,$7::jsonb,$8,$9,NOW())
             """,
                 parsed["soz_no"], parsed["soz_no"], parsed["full_name"],
                 parsed["ham_puan"], parsed["yerlesme_puani"],
@@ -466,24 +470,26 @@ async def main():
         await pw.stop()
         return
 
-    # Header'dan sezon 2025.26'ya gecis
-    logger.info("Sezon 2025.26 seciliyor (header dropdown)...")
+    # 25.44 (Neo bug 14:25): Header sezon — aktif sezon dinamik
+    from sinav_takvimi import aktif_sezon
+    _AKTIF_SEZON_STR = aktif_sezon()
+    logger.info(f"Sezon {_AKTIF_SEZON_STR} seciliyor (header dropdown)...")
     current_season = await page.evaluate("() => document.getElementById('BtnShowSeasons')?.innerText?.trim() || ''")
-    if "2025.26" not in current_season:
+    if _AKTIF_SEZON_STR not in current_season:
         # Once sezon dropdown'u ac
         await page.evaluate("() => document.getElementById('BtnShowSeasons')?.click()")
         await asyncio.sleep(1)
-        # 2025.26 linkine tikla
-        await page.evaluate("""() => {
+        # Aktif sezon linkine tikla
+        await page.evaluate(f"""() => {{
             const links = document.querySelectorAll('a');
-            for (const a of links) {
-                if (a.innerText.trim() === '2025.26' && a.id.includes('BtnSezonSec')) {
+            for (const a of links) {{
+                if (a.innerText.trim() === '{_AKTIF_SEZON_STR}' && a.id.includes('BtnSezonSec')) {{
                     a.click();
                     return true;
-                }
-            }
+                }}
+            }}
             return false;
-        }""")
+        }}""")
         await asyncio.sleep(4)
         # Sayfa yeniden yuklenir — ogrenci listesine tekrar git
         await page.goto(f"{BASE_URL}/Pages/Student/student", wait_until="domcontentloaded")

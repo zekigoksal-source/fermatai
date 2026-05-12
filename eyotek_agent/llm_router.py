@@ -1062,13 +1062,11 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
         today = date.today()
         gun_adi = TR_GUNLER[today.weekday()]
         ay_adi = TR_AYLAR[today.month]
-        # YKS 2026: TYT 13 Haziran, AYT 14 Haziran
-        tyt = date(2026, 6, 13)
-        ayt = date(2026, 6, 14)
+        # 25.44 (Neo bug 14:25): sınav tarihleri sinav_takvimi.py tek doğruluk noktası
+        # Sezon başında (Eylül 2026) tarihler 2027'ye geçer, otomatik güncellenir.
+        from sinav_takvimi import TYT_DATE as tyt, AYT_DATE as ayt, LGS_DATE as lgs
         tyt_kalan = (tyt - today).days
         ayt_kalan = (ayt - today).days
-        # LGS 2026: 7 Haziran
-        lgs = date(2026, 6, 7)
         lgs_kalan = (lgs - today).days
         return (
             f"[BUGUNUN TARIHI: {today.day} {ay_adi} {today.year} — {gun_adi}]\n"

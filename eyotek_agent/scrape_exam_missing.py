@@ -225,12 +225,15 @@ async def main():
 
             _pool = await _get_pool()
             async with _pool.acquire() as db:
-                await db.execute("""
+                # 25.44 (Neo bug 14:25): sezon dinamik
+                from sinav_takvimi import aktif_sezon as _aktif_fn
+                _AKTIF = _aktif_fn()
+                await db.execute(f"""
                     INSERT INTO student_exam_analysis
                     (eyotek_id,soz_no,full_name,sezon,diploma_notu,ham_puan,yerlesme_puani,
                      osym_2025_ham,osym_2024_ham,osym_2023_ham,ders_netleri,oncelikli_konular,
                      sinav_sayisi,katilan_sinav)
-                    VALUES ($1,$2,$3,'2025.26',95,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)
+                    VALUES ($1,$2,$3,'{_AKTIF}',95,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)
                     ON CONFLICT DO NOTHING
                 """, soz_no, soz_no, name,
                     ham.group(1) if ham else "", yer.group(1) if yer else "",
