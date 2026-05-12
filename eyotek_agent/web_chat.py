@@ -1718,9 +1718,12 @@ async def student_dashboard(
         days_tyt = (yks_tyt - today).days
         days_ayt = (yks_ayt - today).days
 
-        # AYT puanı (text tipi — numeric cast)
+        # 25.44 BUG FIX (bot dev meeting #3, 12 May 19:30):
+        # yerlesme_puani_ayt TEXT formatı '305,348' (TR virgül decimal)
+        # Eski: direkt CAST → 'invalid input syntax for type numeric' crash
+        # Fix: REPLACE(',','.') önce uygulanır (satır 1340 ile asimetri vardı)
         ayt = await db_fetchrow(
-            """SELECT CAST(NULLIF(yerlesme_puani_ayt,'') AS numeric) as yer_puan
+            """SELECT CAST(NULLIF(REPLACE(yerlesme_puani_ayt, ',', '.'), '') AS numeric) as yer_puan
                FROM student_exam_analysis WHERE soz_no::text = $1""",
             str(soz_no)
         )
