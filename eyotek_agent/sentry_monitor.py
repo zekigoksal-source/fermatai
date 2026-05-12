@@ -28,11 +28,69 @@ from __future__ import annotations
 import os
 import asyncio
 import re
+import subprocess
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import httpx
 from loguru import logger
+
+
+# ─── Git HEAD awareness (25.44-dev-meeting-2 konuşma analiz bulgusu) ─────────
+# Bot meeting #7'de zombie Sentry issue önerdi (zaten fix'li olanı). Sebep:
+# Sentry status 'unresolved' diye listede gözüküyor ama lastSeen fix commit'inden
+# ÖNCE. Çözüm: her issue için HEAD commit zamanı ile karşılaştır, lastSeen
+# eskisi ise 'fixed_likely=True' flag bırak.
+
+_GIT_HEAD_CACHE = {"sha": None, "time": None, "fetched_at": None}
+_GIT_CACHE_TTL = 60  # saniye
+
+
+def _get_head_commit() -> tuple[Optional[str], Optional[datetime]]:
+    """VPS'te git HEAD commit (sha kısa + UTC datetime). 60sn cache."""
+    now = datetime.now(timezone.utc)
+    if (_GIT_HEAD_CACHE["fetched_at"]
+            and (now - _GIT_HEAD_CACHE["fetched_at"]).total_seconds() < _GIT_CACHE_TTL):
+        return _GIT_HEAD_CACHE["sha"], _GIT_HEAD_CACHE["time"]
+    try:
+        # Repo root /opt/fermatai (VPS) veya local working dir
+        repo_root = os.getenv("FERMATAI_REPO_ROOT", "/opt/fermatai")
+        if not os.path.isdir(os.path.join(repo_root, ".git")):
+            # Local dev (worktree) — bu dosyanın 2 üst dizini
+            repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        r = subprocess.run(
+            ["git", "log", "-1", "--format=%h|%ct"],
+            cwd=repo_root, capture_output=True, text=True, timeout=2,
+        )
+        if r.returncode == 0 and "|" in r.stdout:
+            sha, ts = r.stdout.strip().split("|", 1)
+            commit_time = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+            _GIT_HEAD_CACHE.update({"sha": sha, "time": commit_time, "fetched_at": now})
+            return sha, commit_time
+    except Exception as e:
+        logger.debug(f"git HEAD lookup fail: {e}")
+    _GIT_HEAD_CACHE["fetched_at"] = now  # negatif cache (5dk değil 60s)
+    return None, None
+
+
+def _is_likely_fixed(issue_last_seen: str, head_time: Optional[datetime]) -> bool:
+    """Issue lastSeen'i HEAD commit zamanından önce ise muhtemelen fix'li.
+
+    NOT: %100 garanti değil — sadece "Sentry dashboard'da resolved işaretle"
+    önerisi için flag. Yanlış pozitif olabilir (issue tekrar tetiklenmeden
+    günler geçmişse).
+    """
+    if not issue_last_seen or not head_time:
+        return False
+    try:
+        # Sentry ISO: "2026-05-12T03:00:30Z" veya "...+00:00"
+        s = issue_last_seen.replace("Z", "+00:00")
+        last_dt = datetime.fromisoformat(s)
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=timezone.utc)
+        return last_dt < head_time
+    except Exception:
+        return False
 
 
 # ─── DSN → Org/Project çözümleme ─────────────────────────────────────────────
@@ -182,8 +240,11 @@ async def get_sentry_issues(
             return {"ok": False, "issues": [], "error": f"API call fail: {e}"}
 
     # Issue'ları compact'la
+    head_sha, head_time = _get_head_commit()
     issues = []
     for it in raw:
+        last_seen = it.get("lastSeen", "")
+        fixed_likely = _is_likely_fixed(last_seen, head_time)
         issues.append({
             "id":          it.get("id"),
             "title":       (it.get("title") or "")[:200],
@@ -192,10 +253,13 @@ async def get_sentry_issues(
             "status":      it.get("status", "unresolved"),
             "count":       int(it.get("count", 0) or 0),
             "user_count":  int(it.get("userCount", 0) or 0),
-            "last_seen":   it.get("lastSeen", ""),
+            "last_seen":   last_seen,
             "first_seen":  it.get("firstSeen", ""),
             "permalink":   it.get("permalink", ""),
             "metadata":    it.get("metadata", {}),
+            # 25.44-dev-meeting-2 (13 May, konuşma analiz): fix commit'ten
+            # önce tetiklenmiş ise zombie issue olabilir.
+            "fixed_likely": fixed_likely,
         })
 
     result = {
@@ -206,6 +270,8 @@ async def get_sentry_issues(
         "org_slug": org_slug,
         "project_id": dsn_info["project_id"],
         "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "head_commit": head_sha or "",
+        "head_commit_time": head_time.isoformat() if head_time else "",
     }
     _CACHE["data"] = result
     _CACHE["fetched_at"] = datetime.now(timezone.utc)
@@ -223,14 +289,98 @@ async def get_summary_for_prompt(hours: int = 24, limit: int = 5) -> str:
     issues = r.get("issues") or []
     if not issues:
         return f"📊 Sentry son {r.get('stats_period')}: temiz, hata yok ✅"
-    lines = [f"📊 Sentry son {r.get('stats_period')} — {len(issues)} aktif issue (en çok tekrar):"]
+    # 25.44-dev-meeting-2: fix'li görünen zombie issue'ları ayrı say
+    zombies = [it for it in issues if it.get("fixed_likely")]
+    actives = [it for it in issues if not it.get("fixed_likely")]
+    lines = [f"📊 Sentry son {r.get('stats_period')} — {len(actives)} aktif"
+             + (f" + {len(zombies)} muhtemelen koddan fix'li (resolved işaretle)" if zombies else "")
+             + ":"]
     for i, it in enumerate(issues[:limit], 1):
         title = it["title"][:80]
         cnt = it["count"]
         usr = it["user_count"]
         lvl = it["level"]
-        lines.append(f"  {i}. [{lvl}] {title} ({cnt}× / {usr} user)")
+        flag = " ⚠ZOMBIE" if it.get("fixed_likely") else ""
+        lines.append(f"  {i}. [{lvl}] {title} ({cnt}× / {usr} user){flag}")
+    if zombies:
+        lines.append("  💡 ZOMBIE = lastSeen < HEAD commit zamanı, koddan fix'li olabilir, "
+                     "Sentry dashboard'dan resolved işaretle (veya resolve_issue tool çağır).")
     return "\n".join(lines)
+
+
+# ─── Issue Resolve (25.44-dev-meeting-2 — event:write scope gerekli) ────────
+
+async def resolve_issue(issue_id: str, reason: str = "Auto-resolved by bot") -> dict:
+    """Sentry issue status'unu resolved'a çek. Token'ın event:write scope'u olmalı.
+
+    Args:
+        issue_id: Sentry numeric issue ID (str veya int kabul eder)
+        reason: Activity log için yorum (opsiyonel)
+
+    Returns:
+        {ok: bool, issue_id, status, error}
+    """
+    token = os.getenv("SENTRY_API_TOKEN", "").strip()
+    dsn = os.getenv("SENTRY_DSN", "").strip()
+    if not token:
+        return {"ok": False, "error": "SENTRY_API_TOKEN yok"}
+    if not dsn:
+        return {"ok": False, "error": "SENTRY_DSN yok"}
+    dsn_info = _parse_sentry_dsn(dsn)
+    if not dsn_info.get("base_url"):
+        return {"ok": False, "error": f"DSN parse fail"}
+    base = dsn_info["base_url"]
+    iid = str(issue_id).strip()
+    async with httpx.AsyncClient(timeout=10) as client:
+        try:
+            r = await client.put(
+                f"{base}/api/0/issues/{iid}/",
+                headers={"Authorization": f"Bearer {token}",
+                         "Content-Type": "application/json"},
+                json={"status": "resolved"},
+            )
+            if r.status_code == 200:
+                # Cache invalide et — bir sonraki get_sentry_issues fresh okusun
+                _CACHE["fetched_at"] = None
+                return {"ok": True, "issue_id": iid, "status": "resolved"}
+            if r.status_code == 403:
+                return {"ok": False, "issue_id": iid,
+                        "error": "403 Forbidden — token event:write scope'u yok. "
+                                 "Yeni token oluştur: de.sentry.io/settings/account/api/auth-tokens/"}
+            return {"ok": False, "issue_id": iid,
+                    "error": f"Sentry API {r.status_code}: {r.text[:200]}"}
+        except Exception as e:
+            return {"ok": False, "issue_id": iid, "error": f"PUT fail: {e}"}
+
+
+async def resolve_zombie_issues(hours: int = 168, dry_run: bool = True) -> dict:
+    """fixed_likely=True olan tüm issue'ları topluca resolved'a çek.
+
+    Args:
+        hours: tarama penceresi (default 7 gün)
+        dry_run: True ise sadece listeler, kapatmaz
+
+    Returns:
+        {ok, attempted, resolved, failed, items: [{id, title, result}]}
+    """
+    r = await get_sentry_issues(hours=hours, limit=100, use_cache=False)
+    if not r.get("ok"):
+        return {"ok": False, "error": r.get("error")}
+    zombies = [it for it in r.get("issues", []) if it.get("fixed_likely")]
+    out = {"ok": True, "attempted": len(zombies), "resolved": 0,
+           "failed": 0, "dry_run": dry_run, "items": []}
+    for z in zombies:
+        if dry_run:
+            out["items"].append({"id": z["id"], "title": z["title"][:80],
+                                 "last_seen": z["last_seen"], "would_resolve": True})
+            continue
+        res = await resolve_issue(z["id"], reason=f"Auto: lastSeen={z['last_seen']} < HEAD")
+        if res.get("ok"):
+            out["resolved"] += 1
+        else:
+            out["failed"] += 1
+        out["items"].append({"id": z["id"], "title": z["title"][:80], "result": res})
+    return out
 
 
 # ─── CLI test ────────────────────────────────────────────────────────────────
