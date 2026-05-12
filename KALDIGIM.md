@@ -5,7 +5,7 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.44)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `777009b` fix(25.44-BOT-SELF-ANALYSIS) — Sentry ACL + SyntaxWarning + CDP recovery + self-awareness prompt
+> - **HEAD:** `6954501` fix(25.44-iter2) — system_prompts SyntaxWarning + briefing log mesajı (bot self-analysis iter 2)
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, disk %6 (272G free), RAM 11Gi free
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama ~22s/test (browser singleton ile %6 hızlanma)
