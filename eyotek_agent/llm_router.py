@@ -182,6 +182,17 @@ _PERSONAL_KEYWORDS = [
     "beni nasil g", "beni nasıl g",  # goruyorsun/görüyorsun varyantları
     "yorumlar misin", "yorumlar mısın",
     "yorumla", "yorumlar", "degerlendir", "değerlendir",
+    # 25.44 (Ada vakasi 11 May 19:15): Akademik calisma raporu kelimeleri.
+    # Ada "1 saat kimya calistim 30 soru cozdum kaydet" dedi, Cerebras 230B
+    # 'kaydet' gorunce user_feedback_kaydet tool'unu cagirdi (yanlis tool).
+    # Bu mesajlari Claude'a yonlendir — system_prompts'taki "CALISMA KAYDI"
+    # durust kalibi devreye girer (ben kaydedemiyorum, uygulamadan ekle).
+    "calistim", "çalıştım", "calisdim", "çalışdım",
+    "soru cozdum", "soru çözdüm", "soru coz", "soru çöz",
+    "dakika surdu", "dakika sürdü", "dakika cozdum", "dakika çözdüm",
+    "saat kimya", "saat mat", "saat fizik", "saat turkce", "saat türkçe",
+    "saat biyo", "saat tarih", "saat cografya", "saat coğrafya",
+    "saat geometri", "saat edebiyat", "saat felsefe", "saat din",
     "taha", "ecrin", "damla", "ada", "yiğit", "mehmet alp",  # isim bazli (kisisel veri)
     "hoca\b", "öğretmen\b", "kardelen", "orhan", "emin",
     "sinif", "sınıf", "12 say", "11 say", "mezun",
