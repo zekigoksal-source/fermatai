@@ -3314,6 +3314,10 @@ OGRENCI_PATTERNS = [
     # 25.43-ITER3: "tyt netim" pattern eklendi (test 522'de bot AYT donduruyordu)
     (r"^(tyt|ayt|ydt)\s*(netim|netlerim|sonuc)", "son_deneme", "TYT/AYT/YDT netim"),
     (r"^netlerim[iı]?\s*(s[oö]yle|g[oö]ster|s[oö]yler\s*misin)", "son_deneme", "Netlerimi söyle"),
+    # 25.44 (Neo direktif): "kaç netim var" → son deneme cevabı (bot ismini sormasın, context'te var)
+    (r"ka[cç]\s+net\w*\s*(var|aldim|yapt[iı]m|oldu)", "son_deneme", "Kac netim var"),
+    (r"net\w*\s+nedir", "son_deneme", "Netim nedir"),
+    (r"^netim\b", "son_deneme", "Netim"),
     (r"^son\s*denmem?\b", "son_deneme", "Son denmem typo"),
     (r"denmem?\s*nas[iı]l", "son_deneme", "Denmem nasil typo"),
     (r"denme+m?\s*nas[iı]l", "son_deneme", "Denmeem typo"),  # denmeem
