@@ -1,16 +1,16 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 12 Mayıs 2026 akşam → **OTURUM 25.44-DEV-MEETING TAMAMLANDI — DEV'E ARA, KULLANICI SERVE EDİLİYOR**
+> **Son güncelleme:** 13 Mayıs 2026 sabah → **OTURUM 25.44-DEV-MEETING-2 TAMAMLANDI (KONUŞMA ANALİZ + 4 İŞ) — KULLANICI SERVE EDİLİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-2)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `90fcf44` fix(run_tool): sanitize control chars in all tool input parameters
+> - **HEAD:** `ae6f5b7` feat(sentry): fix_commit awareness + optional auto-resolve
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `/agent` endpoint çalışıyor, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
-> - **Dev Meeting:** Bot ile 7 iterasyonluk fix loop tamamlandı — 10 production fix canlı
-> - **Bot self-criticism:** Meeting #4'ten sonra her cevapta Sentry ID + dosya:satır verdi; #5-#6'da yanlış teori önerdiğinde Sentry mechanism + DB doğrulama ile düzelttim
-> - **Sentry temizlik:** 4 issue koddan fix'lendi (#116911596 db_pool, #118940375 TargetClosed, #119329109 null byte, #116927926 velicep); status hâlâ unresolved (token scope write yok — manuel close gerek)
+> - **Dev Meeting:** 7 iter (dev-meeting-1) + 4 iş (dev-meeting-2 konuşma analiz) = 11 production fix toplam canlı
+> - **Bot Sentry awareness:** ZOMBIE flag aktif — bot artık `lastSeen < HEAD_commit_time` olan issue'lara "muhtemelen koddan fix'li" diyebilir; eski hata bilgi vermek tarihe geçti
+> - **Sentry token:** Neo `event:write` scope'lu yeni token oluşturuyor; eski 4 zombie issue + birikmiş ~30 eski issue `resolve_zombie_issues(dry_run=False)` ile tek seferde temizlenecek
 > - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama ~22s/test (browser singleton ile %6 hızlanma)
 > - **Eyotek DB sync:** lazy_sync her sorguda otomatik (40 yeni sezon kayıt DB'de)
 > - **Browser context cache:** module-level singleton, ilk init sonra reuse
@@ -167,6 +167,33 @@
 > - Bot WP/web kullanıcılarına cevap veriyor — meeting süresince kesinti **yok** (her commit hot reload, restart 4s)
 > - Sentry tarafında 4 issue gerçekten fix'lendi (kod tarafında), sadece dashboard'da resolved işaretlenmesi gerek
 > - Bir sonraki sabah 03:00 cron'unda `precompute_study_plans` başarılı çalışmalı (eski velicep hatası bitmiş olmalı) — yarın doğrulanacak
+>
+> ---
+>
+> ## 💬 25.44-DEV-MEETING-2 — Konuşma Analiz + A/B/C/D İşleri (13 May sabah)
+>
+> Neo direktifi: *"botla konuşmama bak"* → son 36 saat (11–12 May) bot+Neo etkileşimleri okundu, 4 iş tanımlandı, hepsi canlı.
+>
+> ### Konuşma Analiz Bulgular
+>
+> 1. **12 May 14:09** — Neo: *"bugün alınan kayıtlar hangi fiyatlara"* — bot `Financial/financial-operation` seçti, sayfa öğrenci adı arama desteklemiyor → kafası karıştı, dürüstçe "navigator öğrenemedi, planner kör tahmin" dedi. Neo iter güncellemelerinde planner'a kural ekledi (`eyotek_planner.py:286-293`: "bugün alınan kayıtlar" → `Financial/overdue-student-payment?sezon=latest&tarihBas=<bugun>&tarihBit=<bugun>`).
+> 2. **12 May 18:39-19:08** — Neo self-check serisi 5 iter, bot `selfdev_*` ile 4 bug tespit etti, hepsi Neo tarafından düzeltildi (Sentry ACL, SyntaxWarning, agent session, briefing log). 19:14'te Claude Code'a (bana) geçti.
+> 3. **12 May 19:14-19:52** — Dev meeting #1-#7 (yukarı bölüm), 10 fix.
+> 4. **12 May 20:02 (KRİTİK BOT-UX BUG)** — Neo: *"problem var mı sistemde"* → bot `#116927926 (velicep)` için "fix bekliyor, yarın 03:00 yine patlayacak" dedi (oysa meeting #1'de düzeltildi 19:18, commit `7dde7dd`). Aynı cevapta `#118940375` için "ac96cdf fix'inden SONRA 12:34'te yine geldi" dedi (oysa 12:34 < 19:36, fix'ten ÖNCE). **Bot Sentry status'una bakıp `unresolved` görünce "açık" sanıyor; `lastSeen < commit_time` mantığı yoktu.** Bu KALDIGIM Pattern Öğretisi #4'ün tam aynısı, dev meeting #7'de "zombie issue" olarak tanımladığım sorun.
+>
+> ### Yapılan İşler (A/B/C/D)
+>
+> | İş | Açıklama | Etki | Commit/Durum |
+> |----|----------|------|--------------|
+> | **A** | `Financial/financial-operation` arama yapısı zaten OTURUM 25.44 iter güncellemelerinde planner kuralı olarak eklenmiş (Neo `25.44 KRITIK Neo bug 12 May 14:09` yorumu satır 286-293). Doğrulandı, ek kod gerekmedi. | Bot artık "yeni kayıt fiyatı" sorgusunu `Financial/overdue-student-payment` ile yapar | ✅ önceki commit'lerde mevcut |
+> | **B** | `sentry_monitor.py`: `_get_head_commit()` (VPS git HEAD sha+time, 60s cache), `_is_likely_fixed()` (lastSeen<HEAD), her issue'ya `fixed_likely` flag, summary'de ZOMBIE etiketi, `resolve_issue()` ve `resolve_zombie_issues(dry_run)` async helper'lar. Bot tool tarafı `_tool_get_sentry_errors` direkt aynı çıktıyı döndürüyor → otomatik fixed_likely görüyor. Smoke test VPS'te: HEAD `ae6f5b7` 21:35, son 7 günde 33 issue zombie işaretlendi (dry-run safe). | Bot artık zombie issue önermez/yanlış "fix bekliyor" demez. Token gelince toplu kapatma 1 komut. | ✅ `ae6f5b7` |
+> | **C** | KALDIGIM.md güncelleme: yeni dev-meeting-2 bölümü + Pattern Öğretisi #5 (planner kural eklendi mi canlı doğrula) + #6 (bot Sentry analiz: fixed_likely flag prensibi) | Session continuity, sonraki Claude Code oturumu için referans | ✅ bu commit |
+> | **D** | Sentry yeni token (`event:write` scope) — Neo `de.sentry.io/settings/account/api/auth-tokens/` üzerinden oluşturuyor. **Seçilecek scope: `event:read`+`event:write`+`project:read`+`org:read`** (4 kutu, fazlasını verme). Eski token değiştirilecek `.env` `SENTRY_API_TOKEN=`. | Bot zombie issue'ları otomatik resolved'a çekebilir; meeting sonrasında 4 fixed issue manuel close gerek kalkar | 🟡 Neo paralelde |
+>
+> ### Yeni Pattern Öğretileri (Session Continuity için)
+>
+> - **#5 — Planner kural eklendi mi canlı doğrula:** Konuşma analizinde "şu sayfa kör" gibi şikayetler için planner'da özel kural yazıldıysa (`eyotek_planner.py` few-shot örnek), Neo o kuralı sonradan eklemiş olabilir. Açık "teknik borç" diye listelemeden önce ŞU AN planner ne diyor bak (`grep "25.44 KRITIK" eyotek_planner.py`).
+> - **#6 — Sentry zombie issue tespiti:** Bot Sentry rapor verirken `lastSeen < HEAD_commit_time` ise issue koddan fix'lenmiş olabilir (yanlış pozitif var, kesin değil). `sentry_monitor.py` artık `fixed_likely` flag ile bunu otomatik işaretliyor — bot summary'de ZOMBIE etiketi görüyor. Bota "bu issue açık" derken zaten ZOMBIE flag'ini iletmeli.
 >
 > ---
 
