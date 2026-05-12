@@ -733,7 +733,9 @@ _Bugun ne uzerine calismayi planliyorsun?_ 🎯"""
     # WP icin kisa cevap iyi (bekleme suresi UX). Web icin farkli — kullanici
     # hizli akar, daha detay+akademik+RAG entegre cevap istiyor.
     # Bu addon WEB kanalinda _LOCAL_SYSTEM uzerine append edilir.
-    _LOCAL_SYSTEM_WEB_ADDON = """
+    # 25.44 (Neo bug 18:39 — bot self-analysis): raw string (LaTeX sembolleri \to,
+    # \implies, \lambda Python 3.12+ SyntaxWarning verir; r""" kullanmak temizler)
+    _LOCAL_SYSTEM_WEB_ADDON = r"""
 
 ═══════════════════════════════════════════════════════════════════════
 🌐 WEB KANALI ZENGINLESTIRME (Oturum 25.29 — Neo karari)

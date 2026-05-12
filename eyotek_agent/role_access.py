@@ -104,6 +104,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "crossref_search", "osm_lookup",
         # 25.43-INT-FIX1: Eyotek tek doğruluk health check (admin/mudur/yonetim)
         "eyotek_health",
+        # 25.44 (Neo bug 12 May 18:39 — bot self-analysis):
+        # get_sentry_errors admin'in ACL'sinde değildi → 'YETKİ HATASI' alıyordu
+        "get_sentry_errors",
     },
     # Yönetim üyesi (Bilge): müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     # Oturum 25.40: get_blueprint_section kaldırıldı (admin-özel mimari iç bilgi)
@@ -191,6 +194,8 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "crossref_search", "osm_lookup",
         # 25.43-INT-FIX1: Eyotek tek doğruluk health check (admin/mudur/yonetim)
         "eyotek_health",
+        # 25.44 (Neo bug 12 May 18:39): müdür Sentry self-awareness için
+        "get_sentry_errors",
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)

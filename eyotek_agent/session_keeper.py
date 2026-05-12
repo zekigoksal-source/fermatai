@@ -205,8 +205,32 @@ async def _cdp_keep_alive() -> bool:
                 break
 
         if not eyotek_page:
-            logger.debug("CDP: Eyotek tab bulunamadi")
-            return False
+            # 25.44 (Neo bug 12 May 18:41 — bot self-analysis):
+            # Eski: log + return False (otomatik recovery yok)
+            # Yeni: yeni tab aç, Eyotek'e git, cookie inject — otomatik recovery
+            logger.warning("CDP: Eyotek tab kayıp — otomatik yeniden açılıyor...")
+            try:
+                eyotek_page = await ctx.new_page()
+                # Önce session dosyasından cookie'leri inject et
+                try:
+                    from pathlib import Path
+                    import json as _json
+                    sess_file = Path(__file__).parent / "session.json"
+                    if sess_file.exists():
+                        cookies = _json.loads(sess_file.read_text(encoding="utf-8"))
+                        if isinstance(cookies, list):
+                            await ctx.add_cookies(cookies)
+                            logger.info(f"CDP: {len(cookies)} cookie inject edildi (recovery)")
+                except Exception as _ce:
+                    logger.debug(f"CDP recovery cookie inject skip: {_ce}")
+                # Eyotek'e git
+                await eyotek_page.goto("https://fermat.eyotek.com/v1/Pages/Staff/home",
+                                        timeout=15000, wait_until="domcontentloaded")
+                await eyotek_page.wait_for_timeout(2000)
+                logger.info("CDP: Eyotek tab yeniden açıldı")
+            except Exception as _re:
+                logger.warning(f"CDP: Tab recovery fail: {_re}")
+                return False
 
         # Login sayfasina dusmus mu kontrol et
         has_login = await eyotek_page.evaluate(

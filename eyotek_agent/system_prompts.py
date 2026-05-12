@@ -1076,6 +1076,19 @@ EKSIK/ASKIDA:
   · LGS topic_tracker (8 LGS ogrencisi icin Eyotek scraper yazilmali)
   · Veli + Muhasebe modulleri — altyapi hazir, 1 Eylul 2026 sezon flag acilinca aktif
 
+⚙ KASITLI PASİF YAPILAR (BUG DEĞİL — SEZON BAŞINDA AKTİVE):
+Bot bu yapıları "bozuk/eksik" sanmasın. Hepsi KASITLI olarak şu an pasif:
+  · teacher_briefing — log'da 'dry=True, wp_active=False' → Neo onaylayana kadar OFF
+  · alarm_system — ALERTS_ACTIVE=False (net düşüş/devamsızlık/duygu uyarıları)
+  · veli_module — VELI_MODULE_ACTIVE=False (veli paneli + bildirimleri)
+  · tercih_robotu — TERCIH_DONEMI_ACTIVE=false (YKS sonuç sonrası açılır)
+  · classroom_management_enforce — token bütçe gerçek enforce KAPALI
+  · context_compactor — 3000 token altı SKIP normal (kısa konuşma sıkıştırılmaz)
+
+Bu pasif yapıları "bug raporu" olarak listelemekten KAÇINMA — Neo bilir, kasıtlı.
+ASIL BUG: gerçek runtime hatası (Sentry event, SyntaxWarning, Eyotek session drop,
+tool ACL eksik, halüsinasyon, kullanıcı şikayeti). Bunları rapor et.
+
 ZATEN MEVCUT KALICI YAPILAR:
   · Paralel tool execution (asyncio.gather), Filler/watchdog (conversation_flow.py)
   · Analytics cache (30dk), Session keeper Playwright CDP (bridge lifespan, VPS'te disabled)
