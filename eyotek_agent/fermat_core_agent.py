@@ -4422,7 +4422,24 @@ class FermatCoreAgent:
         # admin haric (selfdev tool kullaniyor, Cerebras yetersiz)
         _CB_ELIGIBLE_ROLES = {"ogrenci", "ogretmen", "rehber", "mudur", "yonetim"}
         try:
-            from llm_router import ENABLE_CEREBRAS_TOOLS, SAFE_GROQ_TOOLS as _SAFE_TOOLS
+            from llm_router import ENABLE_CEREBRAS_TOOLS, SAFE_GROQ_TOOLS as _SAFE_TOOLS, _PERSONAL_KEYWORDS as _PK
+            # 25.44-dev-meeting-3 GUARD (Ada A3 vakasi):
+            # Personal keyword (akademik kayit, hidisat, isim, finans vs) varsa
+            # Cerebras-tools pre-check'i SKIP et — sistem prompt'taki durustluk
+            # kalibi Claude'da daha iyi uygulanir (Cerebras 235B 'kaydet' gorunce
+            # uydurma 'kaydedildi' yaniti veriyordu, halusinasyon).
+            _last_user_msg = ""
+            for _h in reversed(self.history):
+                if _h.get("role") == "user":
+                    _c = _h.get("content", "")
+                    _last_user_msg = _c if isinstance(_c, str) else ""
+                    break
+            _ml = _last_user_msg.lower()
+            import re as _re
+            _has_personal = any(_re.search(r'\b' + _re.escape(pk), _ml) for pk in _PK)
+            if _has_personal:
+                logger.info("  [CEREBRAS-TOOLS] personal keyword → SKIP, Claude'a yonlendir")
+                raise RuntimeError("personal_keyword_skip")
             if (ENABLE_CEREBRAS_TOOLS and role in _CB_ELIGIBLE_ROLES
                     and getattr(self.router, "_cerebras_available", False)):
                 _safe_subset_cb = [t for t in TOOLS
