@@ -273,6 +273,22 @@ def decide_route(
         # NOT: security guard yukarıda zaten yakaladı, burada güvenli intent'ler kalır.
         if complexity == "cloud":
             if role in ("ogrenci", "ogretmen", "rehber"):
+                # 25.44-dev-meeting-3 GUARD (Ada A3 vakasi):
+                # Cloud + personal keyword match → Cerebras override YASAK.
+                # Ada'nin "1 saat kimya calistim kaydet" mesaji burada
+                # text_only_safe_intents (kavram_aciklama vs)'a duserek
+                # Cerebras'a gitti, oradan user_feedback_kaydet tool'unu yanlis
+                # cagirdi. Personal keyword'ler Claude'da kalmali — durust kalip
+                # uygula (system_prompts CALISMA KAYDI bolumu).
+                try:
+                    from llm_router import _PERSONAL_KEYWORDS
+                    import re as _re
+                    if any(_re.search(r'\b' + _re.escape(pk), msg_lower)
+                           for pk in _PERSONAL_KEYWORDS):
+                        return "claude"
+                except Exception:
+                    pass
+
                 # Tool gerektirmeyen kavramsal/yardımcı intent'ler → local (Cerebras 235b)
                 text_only_safe_intents = {
                     "kavram_aciklama", "ornek_iste", "cozum_iste",
