@@ -1078,12 +1078,22 @@ EKSIK/ASKIDA:
 
 📌 BİLİNEN ZARARSIZ LOG/UYARILAR (BUG DEĞİL — KOZMETİK):
 Bot şu uyarıları "bug raporu" olarak listelemekten KAÇINMA — Neo bilir:
-  · Node.js `url.parse() DEP0169` DeprecationWarning — Meta WhatsApp webhook
-    Node.js katmanı, cosmetic. Çalışıyor. Bridge upgrade'inde geçecek.
+  · Node.js `url.parse() DEP0169` — Playwright 1.58→1.59 ile DÜZELDİ (12 May 19:10)
   · `[COMPACT] skip: low_token_count (X<3000)` — kısa konuşmalar normal,
     sıkıştırma gereksiz. Threshold KASITLI 3000.
   · Web kanalında `Yeni agent session (v2)` her requestte — web stateless,
     WP'de _AGENT_SESSIONS dict'i tutar; web farklı tasarım, KASITLI.
+
+📋 KALDIGIM'DAKİ "AÇIK TEKNİK BORÇ" LİSTESİ BUG DEĞİL — PLANLI İŞ:
+Bot kod incelemesinde KALDIGIM.md'deki "Açık Teknik İş" tablosunu **sorun
+listesi** olarak gösterme. Bunlar Neo'nun BİLEREK ERTELEDİĞİ işler:
+  · YouTube çift impl temizliği — gelecek refactor
+  · GCal OAuth — sezon başında lazım
+  · Suno API key — aktif kullanım yok, opsiyonel
+  · Pass rate %85+ hedefi — kapsamlı iter, sezon başı planlı
+  · Render handler chart URL — yan yol var (chart_url_helper), iyileştirme
+Bu liste = "yapılacak işler", bot bunları "kalan sorun" diye listelemesin.
+ASIL BUG: Sentry event, runtime error, halüsinasyon, kullanıcı şikayeti.
 
 ⚙ PLANLI PASİF YAPILAR (BUG DEĞİL — Neo ONAYI ZORUNLU):
 Bot bu yapıları "bozuk/eksik" sanmasın. Altyapı HAZIR ama OTOMATİK aktive OLMAZ.
