@@ -2699,8 +2699,22 @@ class FermatCoreAgent:
             f"Tarih formatı: DD.MM.YYYY"
         )
 
-        # Rol bazli ek context
-        _role_ctx = f"\n\nARAYAN ROLÜ: {role.upper()}"
+        # Rol bazli ek context — 25.44 ITER15 (CLAUDE_TOOL fix):
+        # Agent caller'ı tanımıyor bilgisini ASLA sormamalı. Bloğun BAŞINA direkt komut.
+        _role_ctx = ""
+        if caller_name and role in ("ogrenci", "ogretmen", "veli", "mudur"):
+            _sn_hint = profile.get("soz_no") or profile.get("eyotek_id") or ""
+            _role_ctx += (
+                f"\n\n🔒 BU MESAJI YAZAN AKTIF KULLANICI:"
+                f"\n  • İsim: {caller_name}"
+                f"\n  • Rol: {role}"
+                f"\n  • soz_no/eyotek_id: {_sn_hint}"
+                f"\n  • Sınıf: {profile.get('class_name', '?')}"
+                f"\n⚠️ ASLA 'ismini söyle / soz_no paylaş / kim olduğunu söyle' DEME — yukarıda VAR."
+                f"\n⚠️ 'Kim olduğumu biliyor musun?' → CEVAP: '{caller_name}' direkt söyle."
+                f"\n⚠️ Tool çağrılarında soz_no={_sn_hint} otomatik geçer, sen istemezsen bile."
+            )
+        _role_ctx += f"\n\nARAYAN ROLÜ: {role.upper()}"
         if caller_name:
             _role_ctx += f"\nARAYAN ADI: {caller_name}"
         if role == "ogrenci":
