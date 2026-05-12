@@ -5148,7 +5148,18 @@ async def try_fast_response(
 
     # "Not et" / "Kaydet" / "Bildir" mekanizması — güvenlik filtreli
     # Tüm roller dahil (admin, mudur, ogretmen, ogrenci) — DB'ye yazma + bilgi
-    if re.search(r"(not\s*et|kaydet|bildir|önemli.*not|problemi?\s*kaydet|yetkiliye\s*bildir|sistem.*bildir|bunu\s*kaydet|bunu\s*not|dikkat.*çek|ilet.*yönetim)", msg_lower):
+    #
+    # 25.44 EXCLUSION (Ada vakasi 11 May): "1 saat kimya calistim 30 soru
+    # matematik kaydet" gibi AKADEMIK CALISMA RAPORLARI feedback DEGIL.
+    # Mesajda sure/soru/dakika gibi akademik olcum varsa SKIP — Claude'a dussun,
+    # system_prompts'taki "CALISMA KAYDI" durust kalibi tetiklenir.
+    _is_study_log = re.search(
+        r"\b(\d+\s*(saat|sa|dakika|dk|soru|dakkika))\b",
+        msg_lower
+    )
+    if _is_study_log:
+        pass  # feedback DEGIL — Claude'a yonlendir
+    elif re.search(r"(not\s*et|kaydet|bildir|önemli.*not|problemi?\s*kaydet|yetkiliye\s*bildir|sistem.*bildir|bunu\s*kaydet|bunu\s*not|dikkat.*çek|ilet.*yönetim)", msg_lower):
         feedback_text = message
         for prefix in ["not et:", "not et ", "kaydet:", "kaydet ", "bildir:", "bildir "]:
             if msg_lower.startswith(prefix):
