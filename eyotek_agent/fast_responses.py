@@ -3293,7 +3293,7 @@ OGRENCI_PATTERNS = [
     (r"^(selam[uü]n\s*aleyk[uü]m|aleyk[uü]m\s*selam)[.!,\s]*$", "selamlama", "İslami selam"),
     (r"^(iyi\s*ak[şs]amlar|iyi\s*geceler|iyi\s*sabahlar|hay[ıi]rl[ıi]\s*(sabah|akşam|gün))[.!,\s]*$", "selamlama", "Zaman selamı"),
     (r"^(naber|nbr|ne\s*haber|naber\s+kanka|naber\s+la|nab[ıi]yon)[.!?\s]*$", "selamlama", "Naber paraphrase"),
-    (r"^(kolayl[ıi]k\s*olsun|kolay\s*gelsin|hay[ıi]rl[ıi]\s*olsun)[.!?\s]*$", "selamlama", "İş kolaylığı"),
+    # 25.44 BLIND-iter4: 'kolaylık olsun' VEDA — selamlama değil. Pattern kaldırıldı.
     # Selam + hal hatir ("merhaba nasilsin")
     (r"^(merhaba|selam)[\s,]+(nasilsin|nasılsın|nbr|naber)[.!?\s]*$", "selamlama", "Selam + hal"),
 
@@ -3482,7 +3482,8 @@ OGRENCI_PATTERNS = [
     (r"(etut|etüt).*(ne\s*zaman|var\s*mi|program)", "etutlerim", "Etut programi"),
 
     # Sinif bilgisi
-    (r"(hangi\s*s[iı]n[iı]f|ben\s*hangi|s[iı]n[iı]f[iı]m\s*ne)", "ders_programi", "Hangi siniftayim"),
+    # 25.44 BLIND-iter4: "hangi sınıftayım" → sinif_kim intent (eski 'ders_programi' yanlıştı)
+    (r"(hangi\s*s[iı]n[iı]f|ben\s*hangi\s*s[iı]n[iı]f|s[iı]n[iı]f[iı]m\s*ne)", "sinif_kim", "Hangi siniftayim"),
 
     # Calisma plani yap/olustur → Claude'a (analiz gerektirir)
     # "ne calismali" zaten zayif_konular'da (satir 1183)
@@ -4976,9 +4977,10 @@ async def try_fast_response(
 
         # "yok sağ ol" / "hayır teşekkürler"
         # "bye", "hoşçakal", "görüşürüz", "iyi geceler" — veda
-        if re.match(r'^.*(bye|hosca|hoşça|gorusuruz|görüşürüz|iyi\s*geceler|iyi\s*gunler|kendine\s*iyi\s*bak).*$', msg_lower):
+        # 25.44 BLIND-iter4: 'kapatıyorum', 'tamamdır görüşürüz', 'kolaylık olsun' eklendi
+        if re.match(r'^.*(bye|hosca|hoşça|gorusuruz|görüşürüz|iyi\s*geceler|iyi\s*gunler|kendine\s*iyi\s*bak|kapat[iı]yorum|kolayl[iı]k\s*olsun|kolay\s*gelsin|gorus[uü]r[uü]z|tamamd[iı]r\s+g[oö]r).*$', msg_lower):
             hitap = name.split()[0] if name else ""
-            return f"Görüşmek üzere *{hitap}*! 😊 Iyi çalışmalar!\n\n_İhtiyacın olursa her zaman buradayım._ 🎯"
+            return f"Görüşmek üzere *{hitap}*! 😊 İyi çalışmalar!\n\n_İhtiyacın olursa her zaman buradayım._ 🎯"
 
         # "yok sağ ol canım", "yok sağol", "hayır teşekkürler" + SAĞ OL
         if re.search(r'(yok\s*(sag|sağ)|sag\s*ol\s*can|sağ\s*ol\s*can|gerek\s*yok)', msg_lower):
@@ -5642,6 +5644,9 @@ async def try_fast_response(
                     return await ogrenci_devamsizlik(soz_no, name)
                 elif intent == "ders_programi":
                     return await ogrenci_ders_programi(soz_no, name)
+                elif intent == "sinif_kim":
+                    # 25.44 BLIND-iter4: 'hangi sınıftayım' spesifik kısa cevap
+                    return await ogrenci_sinif_kim(soz_no, name)
                 elif intent == "sinav_bilgi":
                     # 25.44 BLIND-1: caller_class iletildi → LGS öğrencisine doğru tarih
                     _cls = ""
@@ -5670,8 +5675,18 @@ async def try_fast_response(
                 elif intent in ("kapanis", "kapanış"):
                     return f"Rica ederim *{name.split()[0] if name else ''}*! 😊\n\n_Baska bir sorun olursa her zaman yazabilirsin._ 🎯"
                 elif intent == "selamlama":
+                    # 25.44 BLIND-iter4: rol-bazlı selamlama, fallback ogrenci
                     from response_templates import SELAMLAMA
-                    return SELAMLAMA["ogrenci"].replace("{name}", name or "")
+                    nm = name or ""
+                    role_key = role if role in SELAMLAMA else (
+                        "mudur" if role in ("mudur", "yonetim") else
+                        "admin" if role == "admin" else
+                        "ogretmen" if role == "ogretmen" else
+                        "rehber" if role == "rehber" else
+                        "ogrenci"
+                    )
+                    tpl = SELAMLAMA.get(role_key) or SELAMLAMA["ogrenci"]
+                    return tpl.replace("{name}", nm)
                 # Guvenlik intent'leri
                 elif intent == "jailbreak":
                     return (

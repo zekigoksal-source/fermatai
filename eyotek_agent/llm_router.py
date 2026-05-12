@@ -126,6 +126,14 @@ _CLOUD_KEYWORDS = [
     "plan yap", "plan istiyorum", "plan yapsana", "plan yarat",
     "haftalik plan", "haftalık plan", "gunluk plan", "günlük plan",
     "programa ekle", "calismama ekle", "çalışmama ekle", "panele ekle",
+    # 25.44 BLIND-iter4: Tool çağrısı bekleyen aksiyon talepleri
+    "ekle", "haber ver", "randevu", "rica et", "ilet", "yolla",
+    "hocaya", "hocadan", "ogretmen", "öğretmen", "rehberden", "rehbere",
+    "yeterli mi", "girer mi", "yetiyor mu", "yetiyor mu", "yetiyor",
+    "saat fizik", "saat mat", "saat kimya", "saat bio", "saat geo", "saat türkçe",
+    "dakika fizik", "dakika mat", "dakika kimya", "yarın saat", "yarına",
+    "trendini grafikle", "grafiğe dök", "pasta grafik", "pie chart", "heatmap",
+    "haritasını çıkar", "haritası çıkar", "ısı haritası",
     # 5. HASSAS / KRİZ (Claude daha güvenli, hassas dil)
     "intihar", "olum", "ölüm", "kendime zarar",
     "depresyon", "bunalim", "bunalım", "vazgeçtim",
