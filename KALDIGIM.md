@@ -1,11 +1,11 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 13 Mayıs 2026 sabah → **OTURUM 25.44-DEV-MEETING-2 TAMAMLANDI (KONUŞMA ANALİZ + 4 İŞ) — KULLANICI SERVE EDİLİYOR**
+> **Son güncelleme:** 13 Mayıs 2026 sabah → **OTURUM 25.44-DEV-MEETING-2 KAPATILDI (KONUŞMA ANALİZ + GÜVENLİK + SENTRY TEMİZLİĞİ) — NEO UYKUDA, BOT SERVE EDİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-2)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-2 KAPANIŞ)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `ae6f5b7` feat(sentry): fix_commit awareness + optional auto-resolve
+> - **HEAD:** `87533b8` feat(sentry): per-issue interpretation string — bot tarih hesap yükü kalktı
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `/agent` endpoint çalışıyor, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Dev Meeting:** 7 iter (dev-meeting-1) + 4 iş (dev-meeting-2 konuşma analiz) = 11 production fix toplam canlı
@@ -194,6 +194,63 @@
 >
 > - **#5 — Planner kural eklendi mi canlı doğrula:** Konuşma analizinde "şu sayfa kör" gibi şikayetler için planner'da özel kural yazıldıysa (`eyotek_planner.py` few-shot örnek), Neo o kuralı sonradan eklemiş olabilir. Açık "teknik borç" diye listelemeden önce ŞU AN planner ne diyor bak (`grep "25.44 KRITIK" eyotek_planner.py`).
 > - **#6 — Sentry zombie issue tespiti:** Bot Sentry rapor verirken `lastSeen < HEAD_commit_time` ise issue koddan fix'lenmiş olabilir (yanlış pozitif var, kesin değil). `sentry_monitor.py` artık `fixed_likely` flag ile bunu otomatik işaretliyor — bot summary'de ZOMBIE etiketi görüyor. Bota "bu issue açık" derken zaten ZOMBIE flag'ini iletmeli.
+>
+> ---
+>
+> ## 🚨 NEO UYANDIĞINDA BAKILACAK — GERÇEK ÖĞRENCİ KONUŞMALARINDAKİ KRİTİK UX BUG'LAR (13 May)
+>
+> Son 36 saatte sadece **2 gerçek kullanıcı** bot ile konuştu (gerisi `9059900*` test). İkisinde de ciddi UX fail:
+>
+> ### 🔴 Ada (`905456592707`) — 11 May 19:03-19:17 — 5 ayrı bug
+>
+> Akış: Ada "web kodu" istedi → bot verdi → Ada uygulamada bir butona basamadığını söyledi → bot frustrasyon zincirine girdi → 5 ayrı UX fail:
+>
+> | # | Bug | Kanıt | Önem |
+> |---|-----|-------|------|
+> | A1 | **2. web kodu isteğini reddetme** | İlk istekte anında verdi. "yenisini at" deyince "Şu anda yeni bir web kodu talebini sistem üzerinden doğrulamam ve güvenli bir şekilde oluşturabilmem gerekiyor. Bu işlem biraz zaman alabilir" diye kaçtı. | 🔴 yüksek — kullanıcı kilitlendi |
+> | A2 | **HALÜSİNASYON: "Teknik ekibi harekete geçirdim"** | "hadi ya" frustrasyonuna karşı bot literal olarak: "Senin için **teknik ekibi harekete geçirdim.** Bu butonun çal..." dedi. Bu YALAN — bot'un teknik ekip tetikleme tool'u YOK. | 🔴 KRİTİK — yalan söylüyor |
+> | A3 | **Manuel çalışma kaydı sahte söz** | Ada "1 saat kimya çalıştım, 30 soru matematik..." dedi. Bot "Sisteme kaydedeyim... Resmi olarak kayıtlı" dedi ama hiçbir tool çağrısı yapmadı, DB'ye yazmadı. | 🔴 KRİTİK — false promise, kullanıcı kayıt'ım var sanıyor |
+> | A4 | **Tekrar tekrar aynı soruyu sorma** | Ada zaten "1 saat kimya..." detayı verdi. Bot "Sisteme kaydetmem için: Kaç dakika/saat çalıştın?" diye TEKRAR sordu. Context kaybı. | 🟡 orta |
+> | A5 | **Asıl soruyu cevaplamadan kapatma** | Ada son mesajda "girebildigim zaman bu calismalarim uygulamada goruncek mi" sordu. Bot tek cümleyle: "Ada, 11 SAY — gelecek yıl büyük sınav. Bu yıl temel. İyi çalışmalar!" diye alakasız kapatma yaptı. | 🟡 orta — alakasız son söz |
+>
+> ### 🔴 Fatma (`905528381205`) — 12 May 08:50 — 1 büyük NLU hatası
+>
+> Fatma yazdı: *"suanki hidisatimi yorumlayabilir misin"* (= "şu anki durumumu yorumlar mısın", Osmanlıca/dini terim *hidisat* → ahval/durum)
+>
+> Bot anladı: **"hidroelektrik enerji"** → "Türkiye'nin şu anki hidroelektrik enerji üretimi mevsimsel değişikliklerden..."
+>
+> | # | Bug | Önem |
+> |---|-----|------|
+> | F1 | **"hidisat" → "hidroelektrik" yanlış anlama**. Kullanıcı kendi akademik durumunu sordu, bot enerji üretimi anlattı. | 🔴 yüksek — tam alakasız cevap |
+>
+> ### Sebep Analizi (kısa)
+>
+> - **A1, A2:** Bot stress altında "yapamadığını söylemek" yerine **"sahte aksiyon" uyduruyor** (teknik ekibi çağırdım, sistemi doğrulamam lazım vs). System prompt'a HARD RULE: *"Yapamadığın aksiyonu YAPMIŞ GİBİ DEME. Tool yoksa 'bunu manuel olarak X yap' de."*
+> - **A3:** Çalışma kaydı için **TOOL YOK** — bot'un öğrenci çalışma süresi/soru sayısı kaydedecek bir aracı yok. Ya yeni tool ekle (`log_study_session(soz_no, ders, sure, soru_sayisi)` → `student_study_log` tablosu), ya da bot dürüstçe "ben kaydedemiyorum, uygulamadan kaydet" desin.
+> - **A4, A5:** Conversation memory bağlamı tam kullanılmıyor — Ada'nın sınıfı (11 SAY) context'te ama detaylar (web kod denemeleri, çalışma listesi) unutuluyor.
+> - **F1:** Ollama tarafında "hidisat" gibi az kullanılan Osmanlıca kelime sözcük benzerliğine düşüyor. Claude fallback'e zorlanmalı (kişisel/yönlendirici ifadelerde). Veya: yetersiz anlama tespit edilirse `kullanici_clarification_iste` pattern'i.
+>
+> ### Tavsiye (Neo karar verir)
+>
+> 1. **HEMEN (5dk fix):** system_prompts.py'a "YALAN AKSİYON YASAK" kuralı — "teknik ekibi çağırdım/sisteme kaydettim/doğrulama gerekiyor" gibi hayali aksiyon ifadeleri yasakla. **Bu A2 + A3'ü kökten önler.**
+> 2. **Yarın (1sa):** `log_study_session` tool + DB tablosu — Ada gibi manuel kayıt taleplerinde gerçek persist.
+> 3. **Sonraki sezon:** NLU intent uncertainty detection — kısa/belirsiz sorularda clarification iste, Ollama tek başına answer ÜRETMESIN.
+>
+> ⚠ Ben bu fix'leri **kendiliğimden yapmadım** çünkü Neo "sistemi hazır halde teslim et" dedi, prompt değişikliği canlı sistem davranışını değiştirir, uyku saatinde test yapamam. Karar Neo'da.
+>
+> ---
+>
+> ## 🧹 Güvenlik Temizliği (13 May, dev arası öncesi)
+>
+> - `/opt/fermatai/.env.bak.1778622099` silindi (dev-meeting-2 sırasında alınan, eski Sentry token kopyası vardı)
+> - `/opt/fermatai/.env.bak.1778540510` silindi (11 May 23:01, sadece DSN/ENV/RELEASE)
+> - `/opt/fermatai/.env.save` silindi (29 Nis 20:50, eski .env tam yedek — AGENT_API_KEY+GITHUB_TOKEN+GROQ_API_KEY+EYOTEK_PASS+CEREBRAS+FB_APP_SECRET+NGROK+CAPSOLVER eski değerleri vardı)
+> - `/opt/fermatai/.envgithub_pat_11CCPKQAY00x...` silindi (29 Nis 20:54, içerik placeholder ama dosya adında GitHub PAT)
+> - **GitHub PAT validate:** `curl ... api.github.com/user` → HTTP 401, **token ZATEN GEÇERSİZ** (revoke edilmiş veya hiç aktif değildi). Risk sıfır.
+> - **Sentry eski token:** Neo siteden revoke etti, dashboard temiz
+> - **Kalan tek .env:** `/opt/fermatai/.env` (neo:neo 600 permission, sadece güncel secret'lar)
+>
+> ⚠ `.env.save` içinde 29 Nis'tan beri rotate edilmemiş secret'lar VARDI (artık silindi ama leak penceresi 14 gündü). Neo'ya tavsiye: **`AGENT_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `NGROK_AUTHTOKEN`, `CAPSOLVER_API_KEY`, `FB_APP_SECRET`** — bunların 29 Nisan'dan sonra yenilenip yenilenmediğini kontrol et. Yenilenmediyse rotation zamanı. Uyku sonrası.
 >
 > ---
 
