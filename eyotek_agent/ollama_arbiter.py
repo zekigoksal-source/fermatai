@@ -105,6 +105,15 @@ def classify_intent(message: str, caller_name: str = "", recent_context: str = "
     if _re.search(r'([a-e]\s*[sş][iı]k|do[gğ]ru\s*cevap|yanl[iı][sş]\s*cevap|cevap\s*[a-e])', msg_lower):
         return {"intent": "claude_gerekli", "confidence": 1.0}
 
+    # 25.44 (Neo bug 12 May 18:57 — bot self-analysis iter3):
+    # VPS'te qwen2.5:7b kurulu DEĞİL — her çağrı 404 alıyordu. OLLAMA_MODEL env
+    # boşsa veya model yoksa arbiter atla (Claude/Cerebras zaten yakalar).
+    import os as _os
+    _arb_model = _os.getenv('OLLAMA_ARBITER_MODEL', _os.getenv('OLLAMA_MODEL', '')).strip()
+    if not _arb_model:
+        # LLM yok — arbiter çağırma, "belirsiz" döndür (hard rules zaten karar verdi)
+        return {"intent": "belirsiz", "confidence": 0.0, "skip_reason": "no_llm_model"}
+
     try:
         import ollama
 
@@ -116,7 +125,7 @@ def classify_intent(message: str, caller_name: str = "", recent_context: str = "
 
         start = time.time()
         response = ollama.chat(
-            model="qwen2.5:7b",
+            model=_arb_model,
             messages=[
                 {"role": "system", "content": ARBITER_PROMPT},
                 {"role": "user", "content": user_prompt}

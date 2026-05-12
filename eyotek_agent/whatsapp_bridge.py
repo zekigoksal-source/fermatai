@@ -810,21 +810,42 @@ async def lifespan(app: FastAPI):
     except Exception as _dep_err:
         logger.debug(f"  Deployment kayit hatasi: {_dep_err}")
 
-    # ── Ollama Warmup + Keep-Alive (cold start onleme + idle eviction'a karsi) ─
-    # 22.1n-neo: boot'ta 1 kere warmup + her 5dk periyodik keep-alive
-    # Sebep: Ollama default 5dk inactive sonra model bosaltir (cold start 9.5s)
+    # ── Ollama Warmup + Keep-Alive ──
+    # 25.44 (Neo bug 12 May 18:57 — bot self-analysis iter3):
+    # VPS'te Ollama SADECE embedding (bge-m3, nomic-embed-text) kurulu.
+    # qwen2.5:7b YOK — eski warmup her 5dk yok olan modeli yüklemeye çalışıp
+    # "RAM'da" diye YALAN log atıyordu. Şimdi: önce modelin var olduğunu
+    # doğrula, yoksa "embedding-only" mesajıyla atla.
     try:
         async def _ollama_ping(tag: str = "warmup"):
+            model = os.getenv('OLLAMA_MODEL', '').strip()
+            if not model:
+                # LLM yok, embedding-only VPS — warmup gereksiz
+                logger.info(f"  💤  Ollama {tag} ATLANDI: LLM model env tanımsız, embedding-only mod")
+                return
             try:
                 async with httpx.AsyncClient(timeout=30) as client:
-                    await client.post('http://localhost:11434/api/chat', json={
-                        'model': os.getenv('OLLAMA_MODEL', 'qwen2.5:7b'),
+                    # Önce model var mı kontrol et
+                    r_tags = await client.get('http://localhost:11434/api/tags')
+                    available = []
+                    if r_tags.status_code == 200:
+                        available = [m.get('name','') for m in (r_tags.json() or {}).get('models', [])]
+                    if model not in available and f"{model}:latest" not in available:
+                        logger.info(f"  💤  Ollama {tag} ATLANDI: '{model}' kurulu değil "
+                                    f"(mevcut: {available})")
+                        return
+                    # Gerçek warmup
+                    r = await client.post('http://localhost:11434/api/chat', json={
+                        'model': model,
                         'messages': [{'role':'user','content':'ok'}],
                         'stream': False,
                         'options': {'num_predict': 2},
-                        'keep_alive': '15m',  # 15 dk RAM'da tut (default 5dk)
+                        'keep_alive': '15m',
                     })
-                logger.info(f"  🔥  Ollama {tag} tamamlandi (qwen2.5:7b RAM'da)")
+                    if r.status_code == 200:
+                        logger.info(f"  🔥  Ollama {tag} tamamlandi ({model} RAM'da)")
+                    else:
+                        logger.warning(f"  ⚠️  Ollama {tag} fail {r.status_code}: {r.text[:100]}")
             except Exception as _ee:
                 logger.debug(f"Ollama {tag} atlandi: {_ee}")
 

@@ -415,7 +415,16 @@ _PAGE_HINTS = {
     "student/counsellor-note-list": {"type": "session_list", "season_resets_table": True},
     "student/timetable-class-list": {"type": "session_list", "season_resets_table": True},
     "student/timetable-teacher-list": {"type": "session_list", "season_resets_table": True},
-    "financial/financial-operation": {"type": "session_list", "season_resets_table": True},
+    # 25.44 (Neo bug 12 May 18:57 — bot self-analysis):
+    # financial-operation öğrenci-spesifik arama için ZAYIF (form ID'leri Eyotek'te
+    # öğrenci adıyla aranma desteklemiyor). Bot bu sayfayı seçerse fallback YOK.
+    # GÜVENLİ ROUTE: Financial/overdue-student-payment URL params (sezon+tarih).
+    # Bu nedenle financial-operation İYİ SADECE: tarihli kasa hareketi listesi,
+    # öğrenci ÖZEL fiyat sorgusu DEĞİL. Planner zaten yeni kayıt fiyatları için
+    # overdue-student-payment'a yönlendiriyor (eyotek_planner.py).
+    "financial/financial-operation": {"type": "session_list", "season_resets_table": True,
+                                       "limitation": "Öğrenci adıyla arama desteklemiyor; "
+                                                     "yeni kayıt fiyatı için overdue-payment kullan"},
     "staff/list-staff":             {"type": "session_list", "season_resets_table": False},
 
     # MULTI_SEASON_AGGREGATE — Sezon column tabloda, header sezon etkisiz

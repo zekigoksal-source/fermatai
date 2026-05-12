@@ -1076,6 +1076,15 @@ EKSIK/ASKIDA:
   · LGS topic_tracker (8 LGS ogrencisi icin Eyotek scraper yazilmali)
   · Veli + Muhasebe modulleri — altyapi hazir, 1 Eylul 2026 sezon flag acilinca aktif
 
+📌 BİLİNEN ZARARSIZ LOG/UYARILAR (BUG DEĞİL — KOZMETİK):
+Bot şu uyarıları "bug raporu" olarak listelemekten KAÇINMA — Neo bilir:
+  · Node.js `url.parse() DEP0169` DeprecationWarning — Meta WhatsApp webhook
+    Node.js katmanı, cosmetic. Çalışıyor. Bridge upgrade'inde geçecek.
+  · `[COMPACT] skip: low_token_count (X<3000)` — kısa konuşmalar normal,
+    sıkıştırma gereksiz. Threshold KASITLI 3000.
+  · Web kanalında `Yeni agent session (v2)` her requestte — web stateless,
+    WP'de _AGENT_SESSIONS dict'i tutar; web farklı tasarım, KASITLI.
+
 ⚙ PLANLI PASİF YAPILAR (BUG DEĞİL — Neo ONAYI ZORUNLU):
 Bot bu yapıları "bozuk/eksik" sanmasın. Altyapı HAZIR ama OTOMATİK aktive OLMAZ.
 Aktivasyon akışı: SEZON BAŞLAR → Neo liste ister → test sonuçları → Neo manuel
