@@ -59,6 +59,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from loguru import logger
+from playwright.async_api import async_playwright  # 25.44: module-level (singleton kullanır)
 
 # Module config
 _ROOT = Path(__file__).resolve().parent.parent.parent
