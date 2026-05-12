@@ -182,6 +182,12 @@ async def process_chunk(row: dict, apply: bool = False) -> dict:
             logger.warning(f"Embed yok, atlandi: id={row['id']} soru={b['soru_no']}")
             continue
 
+        # 25.44 BUG FIX (bot dev meeting #2): NULL byte sanitize — PDF/Vision
+        # text bazen \x00 içeriyor, PostgreSQL UTF8 reddeder.
+        def _c(s):
+            if not isinstance(s, str): return s
+            return ''.join(ch for ch in s if ch in '\t\n\r' or ord(ch) >= 0x20)
+
         # pgvector insert
         emb_str = "[" + ",".join(str(x) for x in emb) + "]"
         try:
@@ -190,11 +196,11 @@ async def process_chunk(row: dict, apply: bool = False) -> dict:
                    (sinav_turu, ders, konu, baslik, icerik, embedding,
                     zorluk, soru_sayisi, kaynak, icerik_turu)
                    VALUES ($1, $2, $3, $4, $5, $6::vector, $7, $8, $9, $10)""",
-                b["sinav"], ders, b["konu"],
-                f"SORU {b['soru_no']} | {b['yil']}-{b['sinav']}",
-                b["icerik"], emb_str,
+                _c(b["sinav"]), _c(ders), _c(b["konu"]),
+                _c(f"SORU {b['soru_no']} | {b['yil']}-{b['sinav']}"),
+                _c(b["icerik"]), emb_str,
                 "orta", 1,
-                row["kaynak"] + f" (split Q{b['soru_no']})",
+                _c(row["kaynak"] + f" (split Q{b['soru_no']})"),
                 "cikmis_soru",
             )
             added.append(b)

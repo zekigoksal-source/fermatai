@@ -118,7 +118,34 @@ async def add_content(
     alt_konu: str = "",
     anahtar_kelimeler: list[str] = None,
 ) -> int:
-    """İçerik ekle + otomatik embedding üret."""
+    """İçerik ekle + otomatik embedding üret.
+
+    25.44 BUG FIX (bot dev meeting #2, 12 May 19:20):
+    Sentry #119329109 → 'invalid byte sequence for encoding UTF8: 0x00'
+    PDF text extraction / OGM Vision import bazen NULL byte (\\x00) içeren
+    string dönüyor. PostgreSQL UTF8 text bunu reddediyor → INSERT crash.
+    Defensive sanitize: tüm text inputlardan \\x00 strip et.
+    """
+    def _clean(s):
+        """NULL byte ve diğer kontrol karakterlerini temizle."""
+        if not isinstance(s, str):
+            return s
+        # \x00 (NULL) PostgreSQL UTF8 reddeder
+        # \x01-\x08, \x0b, \x0c, \x0e-\x1f kontrol karakterleri (TAB/LF/CR hariç)
+        return ''.join(ch for ch in s if ch == '\t' or ch == '\n' or ch == '\r'
+                       or ord(ch) >= 0x20)
+
+    sinav_turu = _clean(sinav_turu)
+    ders = _clean(ders)
+    konu = _clean(konu)
+    icerik_turu = _clean(icerik_turu)
+    baslik = _clean(baslik)
+    icerik = _clean(icerik)
+    kaynak = _clean(kaynak)
+    alt_konu = _clean(alt_konu)
+    if anahtar_kelimeler:
+        anahtar_kelimeler = [_clean(k) for k in anahtar_kelimeler if k]
+
     # Embedding için: başlık + konu + ders + içerik özeti
     embed_input = f"{ders} {konu} {alt_konu} {baslik} {icerik[:500]}"
     vector = embed_text(embed_input)
