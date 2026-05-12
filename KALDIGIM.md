@@ -1,11 +1,11 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 13 Mayıs 2026 sabah → **OTURUM 25.44-DEV-MEETING-2 KAPATILDI (KONUŞMA ANALİZ + GÜVENLİK + SENTRY TEMİZLİĞİ) — NEO UYKUDA, BOT SERVE EDİYOR**
+> **Son güncelleme:** 13 Mayıs 2026 sabah → **OTURUM 25.44-DEV-MEETING-3 KAPATILDI (ADA+FATMA UX BUG LOOP %100 ÇÖZÜLDÜ) — NEO UYKUDA, BOT SERVE EDİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-2 KAPANIŞ)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-3 KAPANIŞ)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `87533b8` feat(sentry): per-issue interpretation string — bot tarih hesap yükü kalktı
+> - **HEAD:** `b5b8a03` fix(fermat_core_agent): Cerebras-tools personal keyword SKIP guard (A3 son katman)
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `/agent` endpoint çalışıyor, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Dev Meeting:** 7 iter (dev-meeting-1) + 4 iş (dev-meeting-2 konuşma analiz) = 11 production fix toplam canlı
@@ -194,6 +194,56 @@
 >
 > - **#5 — Planner kural eklendi mi canlı doğrula:** Konuşma analizinde "şu sayfa kör" gibi şikayetler için planner'da özel kural yazıldıysa (`eyotek_planner.py` few-shot örnek), Neo o kuralı sonradan eklemiş olabilir. Açık "teknik borç" diye listelemeden önce ŞU AN planner ne diyor bak (`grep "25.44 KRITIK" eyotek_planner.py`).
 > - **#6 — Sentry zombie issue tespiti:** Bot Sentry rapor verirken `lastSeen < HEAD_commit_time` ise issue koddan fix'lenmiş olabilir (yanlış pozitif var, kesin değil). `sentry_monitor.py` artık `fixed_likely` flag ile bunu otomatik işaretliyor — bot summary'de ZOMBIE etiketi görüyor. Bota "bu issue açık" derken zaten ZOMBIE flag'ini iletmeli.
+>
+> ---
+>
+> ## ✅ 25.44-DEV-MEETING-3 — ADA+FATMA UX BUG LOOP TAMAMLANDI (13 May 22:00-22:30)
+>
+> Neo direktifi: *"bunları fix loop bitir ve oturumu öyle teslim et"* — KALDIGIM'da raporladığım 5+1 UX bug'ı tek loop'ta canlıya alındı.
+>
+> ### Yapılan 8 Commit + 1 Cache Temizlik
+>
+> | # | Sorun | Fix Yeri | Commit |
+> |---|-------|----------|--------|
+> | 1 | A1: "yenisini at" fast_response pattern miss → Claude'a düşüp halüsinasyon | `fast_responses.py:3255` — 4 yeni paraphrase pattern (yenisini/yeni at/yolla/gonder) | `cc42ed0` |
+> | 2 | A2+A3+A4+A5: yalan aksiyon/sahte söz/context kaybı/asıl soru unutma | `system_prompts.py:462` — `AKSIYON HALUSINASYON ONLEME — DURUSTLUK KURALLARI` bloğu (5 alt-kural, 4 senaryo kalıbı) | `cc42ed0` |
+> | 3 | F1: "hidisat" → "hidroelektrik" NLU fail | `llm_router.py:_PERSONAL_KEYWORDS` (hidisat/ahval/halim) + `_LOCAL_SYSTEM` "anlamadığın kelime sor" kuralı | `cc42ed0` |
+> | 4 | F1 ek: Türkçe ş/ı varyantları | `llm_router.py` — `görüyorsun`/`yorumlar mısın`/`değerlendir` ASCII+Türkçe | `4f36210` |
+> | 5 | A3: feedback handler "kaydet" yutuyordu | `fast_responses.py:5151` — akademik çalışma raporu exclusion (`\d+\s*(saat\|sa\|dakika\|dk\|soru)`) | `3418ee4` |
+> | 6 | A3: Cerebras "calistim/saat kimya" görünce yanlış tool | `llm_router.py:_PERSONAL_KEYWORDS` — akademik çalışma raporu kelimeleri | `3639155` |
+> | 7 | A3: routing_engine intent override Cerebras'a yolluyor | `routing_engine.py:275` — personal keyword check intent override öncesi | `06332ca` |
+> | 8 | A3 SON KATMAN: fermat_core_agent.py Cerebras-tools pre-check kendini override ediyor | `fermat_core_agent.py:4427` — personal keyword regex check, match varsa SKIP | `b5b8a03` |
+> | + | Query cache temizliği | DB: `query_cache id=594` ("hidroelektrik" cached) silindi | DB DELETE |
+>
+> ### Routing Mimarisi (Keşfedilen 4 Katman)
+>
+> Neo'nun gözüne göre tek "fix" gibi gelen bu sorun, **4 ayrı katmanda override** yapan derin bir mimari sorundu:
+>
+> 1. **fast_responses.py** — Regex pattern match (en hızlı, ms-ölçek)
+> 2. **routing_engine.decide_route()** — complexity bazlı (fast/local/claude)
+> 3. **llm_router.classify_complexity()** — keyword bazlı (_PERSONAL/_CLOUD/_LOCAL)
+> 4. **fermat_core_agent.run()** — Cerebras-tools pre-check override (3.'yi bypass edebilir)
+>
+> A3 fix'i sırayla her katmanda **personal keyword check** eklenerek tamamlandı. Önceki katmanlar haklı dediği halde sonraki katman override ediyordu.
+>
+> ### Canlı E2E Test (3/3 Başarılı)
+>
+> **A1 — Ada "yenisini at":** Anlık fast_response web kodu (1ms), halüsinasyon yok ✅
+>
+> **A3 — Ada "1 saat kimya çalıştım kaydet":** Bot artık DÜRÜST:
+> > "Bu çalışmaları ben sisteme *kaydedemiyorum*. Henüz öyle bir aracım yok. **Az önceki 'kaydedildi' mesajı hataydı, özür dilerim.** Uygulamaya girince adımlar: 1) fermategitimkurumlari.com/fermatai → giriş 2) 'Çalışmam' panelinden manuel ekle: Kimya 1sa, Mat 30 soru 40dk. Web kodun lazımsa 'web kodu' yaz."
+>
+> Tam istenen davranış: dürüstlük + detay hatırlama + doğru yönlendirme + motivasyon en sonda.
+>
+> **F1 — Fatma "hidisatımı yorumla":** Bot Fatma'nın **GERÇEK akademik verisine** bakıp analiz yaptı:
+> > "📊 Genel Tablo. Güçlü: Türkçe 27-35 net, Kimya 8 (yükseliyor). Dikkat: Son 2 deneme düşüş (73.75→66.5→65.75), Fizik dalgalı."
+>
+> "hidroelektrik enerji" tarzı NLU hatası tamamen bitti.
+>
+> ### Açık Edge Case (Düşük Öncelik, Sezon Başı İçin)
+>
+> - **log_study_session tool eksik:** Bot çalışma kaydını DB'ye yazamıyor. Şimdilik kullanıcıya "uygulamadan ekle" diyor (dürüst). Sonraki sezon: `student_study_log` tablosu + `log_study_session` tool eklenebilir. Bot prompt'u zaten hazır (system_prompts a) kalıbı uygulayacak).
+> - **Cerebras 235B prompt fidelity:** Cerebras `kaydet` görünce halen "kaydedildi" yanıtı vermeye yatkın. Çözüm yolu: personal keyword bypass eklendi (bu commit), Cerebras'a hiç gitmiyor artık. Eğer farklı senaryolarda Cerebras hâlâ uyduruyorsa, system_prompts'un Cerebras path'ine ayrıca aktarımı incelenmeli.
 >
 > ---
 >
