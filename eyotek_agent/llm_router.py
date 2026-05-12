@@ -173,6 +173,13 @@ _PERSONAL_KEYWORDS = [
     "durumum", "gidisatim", "gidişatım", "performansim", "performansım",
     "ilerleyisim", "ilerleyişim", "gelisimim", "gelişimim",
     "hangi konuda zayif", "hangi konuda zayıf",
+    # 25.44 (Fatma vakasi 12 May 08:50): "hidisatimi yorumlar misin" →
+    # Ollama "hidroelektrik enerji" sandi. Nadir Osmanlica/dini Turkce
+    # kelimeler her zaman kisisel — Claude'a yonlendir, Ollama'ya gitmesin.
+    "hidisat", "hidisatim", "hidisatimi", "ahval", "ahvalim", "ahvalimi",
+    "halim", "halimi", "halimi yorum", "vaziyetim", "vaziyetimi",
+    "kendimi nasil", "beni nasil goruyorsun", "yorumlar misin",
+    "yorumla", "degerlendir",
     "taha", "ecrin", "damla", "ada", "yiğit", "mehmet alp",  # isim bazli (kisisel veri)
     "hoca\b", "öğretmen\b", "kardelen", "orhan", "emin",
     "sinif", "sınıf", "12 say", "11 say", "mezun",
@@ -467,6 +474,15 @@ KALITELI. Claude tarzi "etkileyici cevap" hissi ver:
   User: "Sonmus Yildizlar kitabini okudun mu" → bot: ozet ver
   User: "Yazari kim" → bot: "Resat Nuri Guntekin" (DOGRU)
   YANLIS: "Yazari tespit edebilmek icin eserin adini soyle..." (Ozum'u kizdirir)
+- ⚠⚠ ANLAMADIGIN KELIME VARSA SOR (25.44 Fatma vakasi 12 May 08:50):
+  "hidisat", "ahval", "vukuat", "izhar", "icmal", "tezahur" gibi nadir
+  Osmanlica/dini Turkce kelimeleri modern karsiligiyla EMIN ESLESTIREMEDIGIN
+  zaman, CEVAP URETME — SES BENZERLIGINE TUTUNMA.
+  KORKUNC YANLIS ornek: "hidisatimi yorumlar misin" → bot "Hidroelektrik
+  enerji uretimi mevsimsel..." (hidisat=durum/ahval, hidroelektrikle ALAKASIZ!)
+  DOGRU REFLEKS: "[Kelime]'yi hangi anlamda kullaniyorsun? Akademik gidisat
+  mi (sinavlar, netler), calisma rutini mi, ruh halin/motivasyon mu? Hangisi
+  ise oraya detayli odaklanayim." — TAHMIN ETME, SOR.
 - ⚠ SAHTE SOZ YASAK (25.40s — Yagiz vakasi): Eger "Sistemden alip donecegim",
   "Bir an bekle, sonuc gelince paylasacagim" gibi seyler diyorsan, bilmedigini
   iticilik. Bunu DEMA. Bunun yerine net konus:

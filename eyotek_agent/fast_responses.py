@@ -3253,6 +3253,14 @@ OGRENCI_PATTERNS = [
     # Eskiden bu mesajlar Cerebras'a gidip programlama kodu acikliyordu (yanlis intent).
     # Tek basina "kod" akademik baglamda nadir → web OTP guvenli varsayim.
     (r"^kodu?[\s\.\?!]*$", "web_kodu", "Kod tek basina"),
+    # 25.44 (Ada vakasi 11 May 19:09 — konusma analiz): "yenisini at" pattern
+    # 3249 regex'ine takilmadi (yeni+sini birlesik, sonra "kodu" zorunlu degil).
+    # Ada ilk kod aldi, 15dk dolunca "yenisini at" dedi → Claude'a dustu, Claude
+    # "sistem dogrulamam lazim" halusinasyon yapti. Boyle paraphrase'leri yakala.
+    (r"^yenisini\s*(at|yolla|gonder|ver|al|i?stiyorum)", "web_kodu", "Yenisini at - yeni kod"),
+    (r"^yeni(?:sini)?\s+(at|yolla|gonder)\b", "web_kodu", "Yeni at/yolla"),
+    (r"^(at|yolla|gonder)\s+yenisini", "web_kodu", "At yenisini"),
+    (r"^kodu?\s+yenisini", "web_kodu", "Kod yenisini"),
 
     # ACL GÜVENLİK — başka öğrenci / öğretmen bilgi sorguları Claude'a (öncelikli)
     # Sınıf sıralama/birincisi → Claude ACL kuralıyla reddeder + "kendi gelişimine odaklan"
