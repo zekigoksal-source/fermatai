@@ -93,6 +93,50 @@ def _is_likely_fixed(issue_last_seen: str, head_time: Optional[datetime]) -> boo
         return False
 
 
+def _humanize_delta(seconds: float) -> str:
+    """Saniye → 'X saat/gün/dakika' Türkçe okunabilir."""
+    s = abs(seconds)
+    if s < 60:
+        return f"{int(s)}sn"
+    if s < 3600:
+        return f"{int(s/60)}dk"
+    if s < 86400:
+        return f"{int(s/3600)}sa"
+    return f"{int(s/86400)}g"
+
+
+def _interpret_issue(last_seen: str, head_time: Optional[datetime],
+                     fixed_likely: bool) -> str:
+    """Bot yorum yükünü kaldırmak için her issue'ya açıklayıcı string.
+
+    Bot 25.44-dev-meeting-2 #116927926 yorumunda 'bu sabah 03:00 hala
+    tetiklendi' dedi — yanlış. Gerçek: lastSeen fix'ten ÖNCEYDİ, fix
+    sonrası tetiklenmedi. Bu interpretation tool çıktısına direkt yazılır,
+    bot kopyalayabilir.
+    """
+    if not last_seen or not head_time:
+        return ""
+    try:
+        s = last_seen.replace("Z", "+00:00")
+        last_dt = datetime.fromisoformat(s)
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=timezone.utc)
+    except Exception:
+        return ""
+    now = datetime.now(timezone.utc)
+    age_now = (now - last_dt).total_seconds()
+    delta_to_head = (head_time - last_dt).total_seconds()
+    if fixed_likely:
+        # lastSeen < head_time → fix öncesi
+        return (f"Son tetik: {_humanize_delta(age_now)} önce "
+                f"(HEAD commit'ten {_humanize_delta(delta_to_head)} ÖNCE). "
+                f"Fix sonrası YENİDEN tetiklenmedi — koddan fix'li, dashboard'dan resolved işaretle.")
+    else:
+        return (f"Son tetik: {_humanize_delta(age_now)} önce "
+                f"(HEAD commit'ten {_humanize_delta(-delta_to_head)} SONRA). "
+                f"AKTİF — kod değişikliğine rağmen tetiklenmeye devam ediyor.")
+
+
 # ─── DSN → Org/Project çözümleme ─────────────────────────────────────────────
 
 def _parse_sentry_dsn(dsn: str) -> dict:
@@ -260,6 +304,7 @@ async def get_sentry_issues(
             # 25.44-dev-meeting-2 (13 May, konuşma analiz): fix commit'ten
             # önce tetiklenmiş ise zombie issue olabilir.
             "fixed_likely": fixed_likely,
+            "interpretation": _interpret_issue(last_seen, head_time, fixed_likely),
         })
 
     result = {
