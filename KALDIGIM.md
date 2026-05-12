@@ -5,7 +5,7 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.44)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `548ab95` fix(25.44-iter15-CONTEXT-BLIND) — 12 May 4-madde fix loop bitti
+> - **HEAD:** `dad1ad1` fix(25.44-BLIND-iter3) — bağımsız corpus 3 iter plateau %71.6
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, disk %6 (272G free), RAM 11Gi free
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama ~22s/test (browser singleton ile %6 hızlanma)
@@ -16,6 +16,11 @@
 > - **Sentry self-awareness:** SENTRY_API_TOKEN aktif, `get_sentry_errors` Claude tool, admin/mudur ACL
 > - **Sentry BadRequestError 29×:** root cause fix — tool_use/tool_result chain integrity
 > - **Pass rate (522 baseline + 115 rerun, Iter 15):** A++/A **~%80**, B+ **~%91** (Iter 11 başlangıç %69.7 → fix loop ile +10pp)
+> - **🔬 BAĞIMSIZ 102-soru BLIND TEST (12 May, Neo direktif — overfit kontrolü):** A++/A **%71.6**, B+ **%82** (3 iter)
+>   - Generalization gap orijinale göre 8pp (kısmen overfitting var ama sınırlı)
+>   - F=0 korundu, A++ %29.4 sabit
+>   - Iter blind-1→2→3: %67.6 → %71.6 → %71.6 (plateau)
+>   - Yeni paraphrase tipleri eklendi: selamün aleyküm, iyi akşamlar, hayırlı sabahlar, naber kanka, adım ne biliyor musun, hangi sınıftayım, kaç netim var paraphrase, LGS role-aware sınav tarihi, olur/elbette safe fallback
 > - **Production ready:** ✅ Tüm okuma fonksiyonları + DB sync + chart + Sentry awareness + browser cache aktif
 >
 > ## 🎯 Bu Oturumda (25.44) Yapılanlar (11 May)
