@@ -36,6 +36,11 @@ SELECT TO_CHAR(exam_date, 'YYYY-MM') AS ay,
        AVG(turkce) AS turkce, AVG(matematik) AS matematik, AVG(fizik) AS fizik,
        AVG(kimya) AS kimya, AVG(biyoloji) AS biyoloji
 FROM student_exams
+-- 25.44: aktif sezon başlangıcı DİNAMİK (Eylül-Ağu kuralı):
+-- Eylül-Aralık → today.year - 0 - 09-01 / Ocak-Ağu → today.year - 1 - 09-01
+-- Üretimde: WHERE exam_date >= (CASE WHEN EXTRACT(month FROM CURRENT_DATE) >= 9
+--                                    THEN make_date(EXTRACT(year FROM CURRENT_DATE)::int, 9, 1)
+--                                    ELSE make_date(EXTRACT(year FROM CURRENT_DATE)::int - 1, 9, 1) END)
 WHERE exam_type = 'TYT' AND exam_date >= '2025-09-01'
   AND status NOT ILIKE '%katilmadi%'
 GROUP BY ay ORDER BY ay
