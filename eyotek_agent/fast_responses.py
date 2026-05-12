@@ -473,8 +473,12 @@ async def ogm_yonlendir_response(message: str, name: str = "") -> str:
     return "\n".join(lines)
 
 
-async def sinav_bilgi(name: str, message: str) -> str:
-    """TYT/AYT/LGS soru sayısı, dağılımı, tarih ve geri sayım bilgisi."""
+async def sinav_bilgi(name: str, message: str, caller_class: str = "") -> str:
+    """TYT/AYT/LGS soru sayısı, dağılımı, tarih ve geri sayım bilgisi.
+
+    25.44 BLIND-1: caller_class param eklendi — LGS öğrencisine YKS tarihi
+    vermemek için (örn: 'LGS A' sınıfı → LGS tarihi).
+    """
     msg_lower = message.lower()
     from datetime import date
 
@@ -483,11 +487,19 @@ async def sinav_bilgi(name: str, message: str) -> str:
     from sinav_takvimi import TYT_DATE as yks_date, LGS_DATE as lgs_date
     today = date.today()
 
+    # 25.44 BLIND-1: LGS öğrencisi tespit (sınıf adında 'lgs')
+    is_lgs_student = caller_class and 'lgs' in caller_class.lower()
+
     # "ne zaman", "kaç gün kaldı", "tarih" soruları
-    is_date_question = any(w in msg_lower for w in ['ne zaman', 'kac gun', 'kaç gün', 'tarih', 'kaldi', 'kaldı', 'gun kald', 'gün kald'])
+    is_date_question = any(w in msg_lower for w in [
+        'ne zaman', 'kac gun', 'kaç gün', 'tarih', 'kaldi', 'kaldı',
+        'gun kald', 'gün kald', 'sinava ne', 'sınava ne', 'sınava giriyor',
+        'zaman.*var', 'kaç hafta'
+    ])
 
     if is_date_question:
-        if 'lgs' in msg_lower:
+        # Mesajda spesifik 'lgs' geçiyorsa veya caller LGS öğrencisiyse LGS ver
+        if 'lgs' in msg_lower or is_lgs_student:
             days = (lgs_date - today).days
             return (
                 f"📅 *LGS 2026 Tarihi*\n\n"
@@ -3259,6 +3271,11 @@ OGRENCI_PATTERNS = [
     # Selamlama — SADECE saf selam (soru YOKSA)
     # NOT: Handler icinde zaten len<30 kontrolu var (satir 1573), bu pattern yedek guvenlik
     (r"^(merhaba|selam|iyi\s*g[uü]n|hey|slm|sa$|selamun)[.!,\s]*$", "selamlama", "Saf selam"),
+    # 25.44 BLIND-1: yeni selamlama paraphrase'leri (selamün aleyküm, iyi akşamlar, hayırlı sabahlar, naber kanka)
+    (r"^(selam[uü]n\s*aleyk[uü]m|aleyk[uü]m\s*selam)[.!,\s]*$", "selamlama", "İslami selam"),
+    (r"^(iyi\s*ak[şs]amlar|iyi\s*geceler|iyi\s*sabahlar|hay[ıi]rl[ıi]\s*(sabah|akşam|gün))[.!,\s]*$", "selamlama", "Zaman selamı"),
+    (r"^(naber|nbr|ne\s*haber|naber\s+kanka|naber\s+la|nab[ıi]yon)[.!?\s]*$", "selamlama", "Naber paraphrase"),
+    (r"^(kolayl[ıi]k\s*olsun|kolay\s*gelsin|hay[ıi]rl[ıi]\s*olsun)[.!?\s]*$", "selamlama", "İş kolaylığı"),
     # Selam + hal hatir ("merhaba nasilsin")
     (r"^(merhaba|selam)[\s,]+(nasilsin|nasılsın|nbr|naber)[.!?\s]*$", "selamlama", "Selam + hal"),
 
@@ -4576,7 +4593,14 @@ async def try_fast_response(
                             f"_Foto göndereceğin sorunun *en zor* sorun olduğundan emin ol._ 🎯"
                         )
                     elif handler == "sinav_bilgi":
-                        return await sinav_bilgi(name, message)
+                        # 25.44 BLIND-1: caller_class iletildi → LGS öğrencisine doğru tarih
+                        _cls = ""
+                        try:
+                            _row = await _q1("SELECT class_name FROM students WHERE soz_no = $1", str(soz_no))
+                            _cls = (_row['class_name'] or '') if _row else ''
+                        except Exception:
+                            pass
+                        return await sinav_bilgi(name, message, caller_class=_cls)
                     elif handler == "son_deneme":
                         # 25.40s — Ali vakasi: TYT/11.SINIF filtresi
                         # "TYT denemelerimi" → exam_filter="tyt"; "11. sınıf" → "sinif"
@@ -4807,7 +4831,11 @@ async def try_fast_response(
         return _r.choice(varyasyon)
 
     # "Ben kimim" / "beni taniyor musun" — kimlik sorulari
-    if re.search(r"^(ben\s*kimim|beni\s*tan[iı]|kimim\s*ben|lakab|ismi?m\s*ne)", msg_lower):
+    # 25.44 BLIND-1: yeni paraphrase'ler eklendi (adım ne biliyor musun, profilimi göster,
+    # hangi sınıftayım, ben fermat'ta okuyor muyum)
+    if re.search(r"^(ben\s*kimim|beni\s*tan[iı]|kimim\s*ben|lakab|ismi?m\s*ne|"
+                 r"ad[ıi]m\s*ne\s*biliyor|profilim[iı]?\s*g[oö]ster|"
+                 r"hangi\s*s[ıi]n[ıi]ftay[ıi]m|ben\s*ferma|nerelisin)", msg_lower):
         from response_templates import KIMLIK
         if role == "admin":
             return KIMLIK["admin"]
@@ -4936,14 +4964,16 @@ async def try_fast_response(
         if role in ("yonetim", "mudur", "admin") and re.match(r'^(tabi|tabii|evet|olur|olur\s*derim|hadi|devam|peki|bakal[iı]m)$', msg_lower):
             return None  # Baglam korusun
 
-        # "goster/göster/evet/olur/hadi/devam" gibi kelimeler BAGLAM BAGIMLI
+        # "goster/göster/evet/hadi/devam" gibi kelimeler BAGLAM BAGIMLI
         # Onceki mesajda cikmis soru listesi, soru oneri vb. olabilir
         # → Claude'a birak, fast response YAKALAMAMALI
-        if re.match(r'^(goster|göster|evet|olur|hadi|devam|gonder|gönder|at|yolla|bakal[iı]m)$', msg_lower):
+        # 25.44 BLIND-1 FIX: "olur" listeden çıkarıldı, alt handler safe fallback verecek
+        if re.match(r'^(goster|göster|evet|hadi|devam|gonder|gönder|at|yolla|bakal[iı]m)$', msg_lower):
             return None  # Claude context'ten anlasin
 
-        # Sadece gercek belirsiz onaylar: ok/tamam/hm/he (aksiyon icermeyen)
-        if re.match(r'^(ok|oke|okey|tamam|tmm|tm|anladim|anladım|he|hee|hm+|aha|tabi|tabii|peki)$', msg_lower):
+        # Sadece gercek belirsiz onaylar: ok/tamam/hm/he/olur (aksiyon icermeyen)
+        # 25.44 BLIND-1: "olur" eklendi — tek başına gelirse safe fallback
+        if re.match(r'^(ok|oke|okey|tamam|tmm|tm|anladim|anladım|he|hee|hm+|aha|tabi|tabii|peki|olur|elbette)$', msg_lower):
             if role == "ogrenci":
                 return (
                     f"Tamam *{name}*! 😊\n\n"
@@ -5583,7 +5613,14 @@ async def try_fast_response(
                 elif intent == "ders_programi":
                     return await ogrenci_ders_programi(soz_no, name)
                 elif intent == "sinav_bilgi":
-                    return await sinav_bilgi(name, message)
+                    # 25.44 BLIND-1: caller_class iletildi → LGS öğrencisine doğru tarih
+                    _cls = ""
+                    try:
+                        _row = await _q1("SELECT class_name FROM students WHERE soz_no = $1", str(soz_no))
+                        _cls = (_row['class_name'] or '') if _row else ''
+                    except Exception:
+                        pass
+                    return await sinav_bilgi(name, message, caller_class=_cls)
                 elif intent == "rehberlik":
                     return await ogrenci_rehberlik(soz_no, name)
                 elif intent == "hedef":
