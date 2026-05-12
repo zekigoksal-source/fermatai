@@ -202,6 +202,24 @@ def _is_ders_irrelevant_for_track(ders: str, sinav_turu: str, track: Optional[st
 # Her fonksiyon: soz_no alir, string dondurur. None donerse → Claude'a git.
 
 
+async def ogrenci_sinif_kim(soz_no: int, name: str) -> str:
+    """'Hangi sınıftayım' — spesifik kısa cevap (Iter blind-2 fix)."""
+    try:
+        row = await _q1("SELECT class_name, devre FROM students WHERE soz_no::text = $1", str(soz_no))
+        if not row or not row.get('class_name'):
+            return f"{name.split()[0] if name else 'Sen'}, sınıf bilgini sistemde bulamadım — yöneticiyle iletişime geçebilirsin."
+        cls = row['class_name']
+        devre = row.get('devre', '')
+        nm = name.split()[0] if name else "Sen"
+        line = f"📚 *{nm}*, sen *{cls}* sınıfındasın"
+        if devre:
+            line += f" _(devre: {devre})_"
+        line += ".\n\n_Bilmek istediğin başka bir şey var mı?_ 🎯"
+        return line
+    except Exception:
+        return f"Sınıf bilgini şu an çekemiyorum. Lütfen tekrar dene."
+
+
 async def ogrenci_kimligin(soz_no: int, name: str) -> str:
     """Öğrenci 'Ben kimim' / 'beni tanıyor musun' dediğinde zengin profil özeti.
 
@@ -3387,6 +3405,10 @@ OGRENCI_PATTERNS = [
     (r"ka[cç]\s*soru\s*(var|cik|çık)", "sinav_bilgi", "Kac soru var"),
     (r"(tyt|ayt|yks|lgs).*(ne\s*zaman|tarih|ka[cç]\s*g[uü]n|kald[iı])", "sinav_bilgi", "Sinav tarihi"),
     (r"(sinav|sınav)\w*\s*(ne\s*zaman|tarih)", "sinav_bilgi", "Sinav ne zaman"),
+    # 25.44 BLIND-2: "ne zaman sınava giriyorum/var", "kac hafta kaldi" — ters sıra
+    (r"\bne\s*zaman.*(s[ıi]nav|tyt|ayt|yks|lgs)", "sinav_bilgi", "Ne zaman sınav (ters)"),
+    (r"ka[cç]\s*(hafta|ay|g[uü]n)\s*(kald[iı]|var)\s*(.*?(s[ıi]nav|tyt|ayt|yks|lgs))?", "sinav_bilgi", "Kac hafta kaldı"),
+    (r"\bzaman[ıi]?m\s*var\s*(.*?(s[ıi]nav|tyt|ayt|yks|lgs))", "sinav_bilgi", "Zamanım var sınava"),
     (r"ka[cç]\s*g[uü]n\s*kald[iı]", "sinav_bilgi", "Kac gun kaldi"),
     # 25.21 (Bot konuşmasından): "AYT sayısal hangi dersler" gibi statik müfredat soruları
     # Eskiden Claude'a gidiyordu (~6sn), artik fast (~5ms) — token tasarrufu
@@ -4830,12 +4852,20 @@ async def try_fast_response(
         ]
         return _r.choice(varyasyon)
 
+    # 25.44 BLIND-2: "hangi sınıftayım" → spesifik kısa cevap (sınıf adı)
+    if re.search(r"^(hangi\s*s[ıi]n[ıi]ftay[ıi]m|hangi\s*s[ıi]n[ıi]ftay[iı]z|hangi\s*sinif|sinif[ıi]m\s*ne)\b", msg_lower):
+        if role == "ogrenci" and soz_no:
+            try:
+                return await ogrenci_sinif_kim(soz_no, name)
+            except Exception:
+                pass
+
     # "Ben kimim" / "beni taniyor musun" — kimlik sorulari
     # 25.44 BLIND-1: yeni paraphrase'ler eklendi (adım ne biliyor musun, profilimi göster,
-    # hangi sınıftayım, ben fermat'ta okuyor muyum)
+    # ben fermat'ta okuyor muyum)
     if re.search(r"^(ben\s*kimim|beni\s*tan[iı]|kimim\s*ben|lakab|ismi?m\s*ne|"
                  r"ad[ıi]m\s*ne\s*biliyor|profilim[iı]?\s*g[oö]ster|"
-                 r"hangi\s*s[ıi]n[ıi]ftay[ıi]m|ben\s*ferma|nerelisin)", msg_lower):
+                 r"ben\s*ferma|nerelisin)", msg_lower):
         from response_templates import KIMLIK
         if role == "admin":
             return KIMLIK["admin"]
