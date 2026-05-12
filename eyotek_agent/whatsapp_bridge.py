@@ -1890,6 +1890,15 @@ async def send_wa_message(to: str, text: str, *, _outreach: bool = False, _reaso
     if _outreach and not _outreach_allowed(to):
         return await _block_outreach(to, text, _reason)
 
+    # 25.44 (Neo direktif 12 May): ```chart {json}``` blokları → QuickChart image URL
+    # Text'ten chart bloklarını çıkar, sonra her birini image olarak ekstra mesaj gönder.
+    _chart_image_urls = []
+    try:
+        from chart_url_helper import process_text_for_chart_images
+        text, _chart_image_urls = await process_text_for_chart_images(text)
+    except Exception as _chart_err:
+        logger.debug(f"chart→image skip: {_chart_err}")
+
     # Duplicate guard — Neo'yu etkilemez (admin zaten kısa uyarılar gönderir, nadir dup)
     if _is_duplicate_send(to, text):
         return False  # Sessizce bloke — log zaten düştü
@@ -1915,6 +1924,12 @@ async def send_wa_message(to: str, text: str, *, _outreach: bool = False, _reaso
             )
             if r.status_code == 200:
                 logger.success(f"✅ WA mesaj gönderildi → {to}")
+                # 25.44: chart bloklarından üretilen image URL'leri ardından gönder
+                for _chart_url in _chart_image_urls:
+                    try:
+                        await send_wa_image(to, _chart_url, caption="📊")
+                    except Exception as _ce:
+                        logger.debug(f"chart image send skip: {_ce}")
                 return True
             elif r.status_code == 401:
                 logger.warning(f"⚠️ WA Token expired! Otomatik yenileme deneniyor...")
