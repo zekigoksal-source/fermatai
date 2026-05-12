@@ -5,15 +5,18 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.44)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `09ddfc9` fix(25.44-SENTRY-29x): tool_use/tool_result chain integrity
+> - **HEAD:** `548ab95` fix(25.44-iter15-CONTEXT-BLIND) — 12 May 4-madde fix loop bitti
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, disk %6 (272G free), RAM 11Gi free
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
-> - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama 23.6s/test
+> - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama ~22s/test (browser singleton ile %6 hızlanma)
 > - **Eyotek DB sync:** lazy_sync her sorguda otomatik (40 yeni sezon kayıt DB'de)
+> - **Browser context cache:** module-level singleton, ilk init sonra reuse
+> - **Render chart URL:** QuickChart.io otomatik attachment (WP image), web Chart.js paralel
+> - **Cerebras validator v2:** 3 katman (başlık match + density + kısa) + numeric claim guard
 > - **Sentry self-awareness:** SENTRY_API_TOKEN aktif, `get_sentry_errors` Claude tool, admin/mudur ACL
-> - **Sentry BadRequestError 29× (en yoğun):** root cause fix'lendi — tool_use/tool_result chain integrity (full history scan + gather guard)
-> - **Test pass rate (522 corpus):** B+ %92.3, A++/A %78.2, F=0 (Oturum 25.43'ten devam)
-> - **Production ready:** ✅ Tüm okuma fonksiyonları kusursuz, DB güncellik otomatik, Sentry self-aware
+> - **Sentry BadRequestError 29×:** root cause fix — tool_use/tool_result chain integrity
+> - **Pass rate (522 baseline + 115 rerun, Iter 15):** A++/A **~%80**, B+ **~%91** (Iter 11 başlangıç %69.7 → fix loop ile +10pp)
+> - **Production ready:** ✅ Tüm okuma fonksiyonları + DB sync + chart + Sentry awareness + browser cache aktif
 >
 > ## 🎯 Bu Oturumda (25.44) Yapılanlar (11 May)
 >
