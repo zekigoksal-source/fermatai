@@ -1104,6 +1104,14 @@ async def lifespan(app: FastAPI):
     yield  # Uygulama çalışıyor
 
     # ── Kapanış ────────────────────────────────────────────────────────────────
+    # 25.44 (Neo direktif): Browser context singleton cleanup
+    try:
+        from eyotek_knowledge.eyotek_navigator import cleanup_navigator_singleton
+        await cleanup_navigator_singleton()
+        logger.info("  Browser singleton cleanup tamamlandı")
+    except Exception as _nav_cleanup_err:
+        logger.debug(f"Navigator singleton cleanup skip: {_nav_cleanup_err}")
+
     if _scheduler_task:
         _scheduler_task.cancel()
     if _html_task:

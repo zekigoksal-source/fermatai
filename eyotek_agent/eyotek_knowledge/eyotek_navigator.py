@@ -71,11 +71,112 @@ _CDP_URL = f"http://localhost:{_CDP_PORT}"
 # 25.41 (Neo bug 7 May): Chrome cleanup → CDP regression fix.
 # eski: connect_over_cdp(localhost:9333) → Chrome kapandı → bağlantı kopyu
 # yeni: önce CDP dene, fail olursa headless launch + cookie inject (helper pattern)
-async def _navigator_browser(pw):
-    """Navigator için browser+context döner — CDP fail'da headless launch.
+#
+# 25.44 (Neo direktif 12 May): Browser SINGLETON cache.
+# Önce her query'de yeni pw+browser+context açılıyordu (~3-5s overhead/query).
+# Şimdi module-level singleton — ilk çağrıda init, sonraki çağrılarda reuse.
+# Beklenen kazanç: 23s/query → ~10s/query (3-5s startup eliminasyonu).
+_NAV_PW_SINGLETON = None
+_NAV_BROWSER_SINGLETON = None
+_NAV_CTX_SINGLETON = None
+_NAV_BMODE_SINGLETON = None
+_NAV_BROWSER_LOCK = None  # asyncio.Lock — lazy init (event loop yokken oluşturma)
 
-    Returns: (browser, ctx) — caller browser.close() yapmalı.
+
+async def _get_navigator_singleton():
+    """Singleton browser+context döndürür. Connected değilse yeniden açar.
+
+    Returns: (pw, browser, ctx, mode) — caller pw.stop() / browser.close() ASLA çağırmaz.
+                                         Sadece page.close() yapar.
+    Cleanup için: cleanup_navigator_singleton()
     """
+    global _NAV_PW_SINGLETON, _NAV_BROWSER_SINGLETON, _NAV_CTX_SINGLETON, _NAV_BMODE_SINGLETON, _NAV_BROWSER_LOCK
+    if _NAV_BROWSER_LOCK is None:
+        _NAV_BROWSER_LOCK = asyncio.Lock()
+    async with _NAV_BROWSER_LOCK:
+        # Playwright runtime — yoksa veya stopped ise yeniden başlat
+        if _NAV_PW_SINGLETON is None:
+            _NAV_PW_SINGLETON = await async_playwright().start()
+        # Browser — yoksa veya disconnected ise yeniden bağlan
+        need_new_browser = False
+        if _NAV_BROWSER_SINGLETON is None:
+            need_new_browser = True
+        else:
+            try:
+                if not _NAV_BROWSER_SINGLETON.is_connected():
+                    need_new_browser = True
+            except Exception:
+                need_new_browser = True
+        if need_new_browser:
+            # Önce CDP dene
+            try:
+                _NAV_BROWSER_SINGLETON = await _NAV_PW_SINGLETON.chromium.connect_over_cdp(_CDP_URL)
+                _NAV_CTX_SINGLETON = _NAV_BROWSER_SINGLETON.contexts[0]
+                _NAV_BMODE_SINGLETON = "cdp"
+                logger.info("[NAV-SINGLETON] CDP'ye bağlandı")
+            except Exception:
+                # Headless launch
+                _NAV_BROWSER_SINGLETON = await _NAV_PW_SINGLETON.chromium.launch(
+                    headless=True,
+                    args=["--no-sandbox", "--disable-dev-shm-usage",
+                          "--disable-setuid-sandbox", "--disable-gpu"],
+                )
+                _NAV_CTX_SINGLETON = await _NAV_BROWSER_SINGLETON.new_context(
+                    user_agent=(
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                    ),
+                    viewport={"width": 1366, "height": 768},
+                    locale="tr-TR",
+                )
+                # Cookie inject — kez kez
+                try:
+                    cookies = _load_cookies()
+                    if cookies:
+                        await _NAV_CTX_SINGLETON.add_cookies(cookies)
+                        logger.info(f"[NAV-SINGLETON] Headless launch + {len(cookies)} cookie inject")
+                    else:
+                        logger.warning("[NAV-SINGLETON] Headless launch, cookie YOK")
+                except Exception as ce:
+                    logger.warning(f"[NAV-SINGLETON] Cookie inject fail: {ce}")
+                _NAV_BMODE_SINGLETON = "headless"
+        return _NAV_PW_SINGLETON, _NAV_BROWSER_SINGLETON, _NAV_CTX_SINGLETON, _NAV_BMODE_SINGLETON
+
+
+async def cleanup_navigator_singleton():
+    """Bridge shutdown'da çağrılır. Singleton'ı temizler."""
+    global _NAV_PW_SINGLETON, _NAV_BROWSER_SINGLETON, _NAV_CTX_SINGLETON, _NAV_BMODE_SINGLETON
+    try:
+        if _NAV_BROWSER_SINGLETON:
+            try:
+                await _NAV_BROWSER_SINGLETON.close()
+            except Exception:
+                pass
+        if _NAV_PW_SINGLETON:
+            try:
+                await _NAV_PW_SINGLETON.stop()
+            except Exception:
+                pass
+    finally:
+        _NAV_PW_SINGLETON = None
+        _NAV_BROWSER_SINGLETON = None
+        _NAV_CTX_SINGLETON = None
+        _NAV_BMODE_SINGLETON = None
+
+
+async def _navigator_browser(pw):
+    """LEGACY entry point — pw parametresi yok sayılır, singleton döner.
+    Geri uyumluluk için korundu. Yeni kod _get_navigator_singleton() kullansın.
+
+    Returns: (browser, ctx, mode)
+    """
+    _, browser, ctx, mode = await _get_navigator_singleton()
+    return browser, ctx, mode
+
+
+# ESKİ FALLBACK (artık kullanılmıyor ama referans):
+async def _navigator_browser_legacy(pw):
+    """Eski isolated browser açma — sadece debugging için."""
     # 1. CDP'ye dene (eski kod uyumlu)
     try:
         browser = await pw.chromium.connect_over_cdp(_CDP_URL)
@@ -1142,7 +1243,9 @@ async def inspect_page_form(page_path: str, mode: str = "auto") -> dict:
     pw = None
     page = None
     try:
-        pw = await async_playwright().start()
+        # 25.44 (singleton): pw lokal eski. _navigator_browser singleton döndürür.
+
+        pw = None  # singleton
         # 25.41: CDP fail'da headless launch + cookie inject
         browser, ctx, _bmode = await _navigator_browser(pw)
         page = await ctx.new_page()
@@ -1315,7 +1418,9 @@ async def navigate(
     pw = None
     page = None
     try:
-        pw = await async_playwright().start()
+        # 25.44 (singleton): pw lokal eski. _navigator_browser singleton döndürür.
+
+        pw = None  # singleton
         # 25.41: CDP fail'da headless launch + cookie inject
         browser, ctx, _bmode = await _navigator_browser(pw)
 
@@ -1792,7 +1897,9 @@ async def sinav_drilldown(
     page = None
     try:
         from playwright.async_api import async_playwright
-        pw = await async_playwright().start()
+        # 25.44 (singleton): pw lokal eski. _navigator_browser singleton döndürür.
+
+        pw = None  # singleton
         browser, ctx, _bmode = await _navigator_browser(pw)
         page = await ctx.new_page()
 
@@ -2122,7 +2229,9 @@ async def student_drilldown(
 
     try:
         from playwright.async_api import async_playwright
-        pw = await async_playwright().start()
+        # 25.44 (singleton): pw lokal eski. _navigator_browser singleton döndürür.
+
+        pw = None  # singleton
         # 25.41: CDP fail'da headless launch + cookie inject
         browser, ctx, _bmode = await _navigator_browser(pw)
         page = await ctx.new_page()
