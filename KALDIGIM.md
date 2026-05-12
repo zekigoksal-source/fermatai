@@ -5,7 +5,7 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.44)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `9905c16` fix(25.44-BLIND-iter5) — 5 iter blind fix loop, plateau %77.5 A+/A, **B+ %89.2**
+> - **HEAD:** `fb9a5b4` fix(25.44-NEW-REG-PRICE) — yeni kayıt fiyat çekimi (Neo bug 14:09)
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, disk %6 (272G free), RAM 11Gi free
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama ~22s/test (browser singleton ile %6 hızlanma)
