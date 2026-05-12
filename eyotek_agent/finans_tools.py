@@ -26,6 +26,19 @@ from finans_access import (
 )
 
 
+def _latest_sezon_code_simple() -> str:
+    """Bugünün tarihine göre aktif sezon kodu (Eylül-Ağustos).
+
+    25.44: ogrenci_borc_detay için fallback sezon. Eyotek format: '2026.27'.
+    """
+    from datetime import date
+    today = date.today()
+    if today.month >= 9:  # Eylül-Aralık
+        return f"{today.year}.{(today.year + 1) % 100:02d}"
+    else:  # Ocak-Ağustos
+        return f"{today.year - 1}.{today.year % 100:02d}"
+
+
 def _unauth_response() -> dict:
     """Neo degilse standard hata — 22.1n-neo (iş2): bilgi leak korumali.
 
@@ -135,8 +148,14 @@ async def finans_ozet(_caller_phone: str = "") -> dict:
 # 2. OGRENCI BAZLI BORC DETAYI
 # ═══════════════════════════════════════════════════════════════════════════════
 
-async def ogrenci_borc_detay(soz_no: int = 0, _caller_phone: str = "") -> dict:
-    """Tek ogrenci borc dokumanu: taksit listesi, yapilan odemeler, kalan."""
+async def ogrenci_borc_detay(soz_no: int = 0, sezon: str = "", _caller_phone: str = "") -> dict:
+    """Tek ogrenci borc dokumanu: taksit listesi, yapilan odemeler, kalan.
+
+    25.44 BUG FIX (Neo 12 May 14:09): sezon HARDCODED '2025.26' idi —
+    yeni sezon (2026.27) kayıtları için 'aktif sezonda kayıt yok' fail.
+    Şimdi: en yeni snapshot sezonu otomatik bulunur; param ile override edilebilir.
+    DB'de YOKSA Eyotek live'dan Financial/overdue-student-payment çekilir.
+    """
     err = await _pre_check(_caller_phone, "ogrenci_borc_detay", f"soz_no={soz_no}")
     if err:
         return err
@@ -146,17 +165,64 @@ async def ogrenci_borc_detay(soz_no: int = 0, _caller_phone: str = "") -> dict:
 
     try:
         soz_no = int(soz_no)
-        # 22.1n-neo bugfix: ogrenci_odeme_snapshot'tan — AKTIF sezon
+
+        # 25.44 fix: sezon dinamik — bu öğrencinin EN YENİ snapshot sezonu
+        if not sezon:
+            sezon_row = await db_fetchrow("""
+                SELECT sezon FROM ogrenci_odeme_snapshot
+                WHERE soz_no = $1
+                ORDER BY snapshot_date DESC LIMIT 1
+            """, soz_no)
+            sezon = (sezon_row['sezon'] if sezon_row else None) or _latest_sezon_code_simple()
+
         ozet = await db_fetchrow("""
             SELECT oos.*,
                    CASE WHEN oos.son_taksit_tarihi < CURRENT_DATE AND oos.kalan > 0
                         THEN (CURRENT_DATE - oos.son_taksit_tarihi) ELSE 0 END AS gecikme_gun
             FROM ogrenci_odeme_snapshot oos
-            WHERE oos.soz_no = $1 AND oos.sezon = '2025.26'
+            WHERE oos.soz_no = $1 AND oos.sezon = $2
             ORDER BY oos.snapshot_date DESC LIMIT 1
-        """, soz_no)
+        """, soz_no, sezon)
+
+        # 25.44 fix: DB'de yoksa Eyotek live'dan çek (yeni kayıt, snapshot henüz yok)
         if not ozet:
-            return {"error": f"Ogrenci bulunamadi (soz_no={soz_no}, aktif sezonda kayit yok)"}
+            try:
+                from eyotek_knowledge.eyotek_planner import execute_query
+                live = await execute_query(
+                    f"söz no {soz_no} öğrencinin ödeme detayı bu sezonda borç",
+                    max_rows=10,
+                )
+                rows = live.get("rows") or []
+                # söz_no eşleşen satır (overdue-student-payment sayfasında soz_no kolonu var)
+                match = None
+                for r in rows:
+                    for v in r.values():
+                        if str(soz_no) == str(v).strip():
+                            match = r
+                            break
+                    if match:
+                        break
+                if match:
+                    # Eyotek satırından özet çıkar
+                    name = " ".join(str(v) for k, v in match.items()
+                                    if any(t in k.lower() for t in ('ad', 'isim'))
+                                    and v and str(v).strip()).strip()
+                    return {
+                        "basarili": True,
+                        "kaynak": "eyotek_live",
+                        "soz_no": soz_no,
+                        "sezon_aranan": sezon,
+                        "ogrenci_adi": name or "(isim yok)",
+                        "eyotek_satiri": match,
+                        "not": (
+                            f"Bu öğrenci için DB snapshot henüz yok (yeni kayıt). "
+                            f"Eyotek'ten canlı çekildi. Tam taksit detayı için "
+                            f"Financial/overdue-student-payment sayfasında manuel bak."
+                        ),
+                    }
+            except Exception as _live_err:
+                pass
+            return {"error": f"Ogrenci bulunamadi (soz_no={soz_no}, sezon={sezon}). DB snapshot ve Eyotek live ikisi de fail."}
 
         # Gecmis sezonlardaki kayitlari getir
         sezonlar = await db_fetch("""
@@ -166,15 +232,15 @@ async def ogrenci_borc_detay(soz_no: int = 0, _caller_phone: str = "") -> dict:
             ORDER BY sezon, snapshot_date DESC
         """, soz_no)
 
-        # Geciken varsa detay
+        # Geciken varsa detay — 25.44 fix: sezon dinamik (yukarıda set edildi)
         geciken = await db_fetchrow("""
             SELECT borc, en_son_gort, soz_verme_tarihi, veli_adi, veli_cep, odeme_tipi,
                    GREATEST(0,
                        CURRENT_DATE - COALESCE(soz_verme_tarihi, en_son_gort, CURRENT_DATE)
                    ) AS gecikme_gun_geciken
             FROM geciken_snapshot
-            WHERE soz_no = $1 AND sezon = '2025.26'
-        """, soz_no)
+            WHERE soz_no = $1 AND sezon = $2
+        """, soz_no, sezon)
 
         result = {
             "basarili": True,

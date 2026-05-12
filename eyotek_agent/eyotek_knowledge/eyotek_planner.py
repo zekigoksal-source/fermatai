@@ -273,6 +273,15 @@ A: {"page_path":"Financial/overdue-student-payment?sube=1086&sezon=22526&tarihBa
 Q: "Mayis 2026 ayinda kim borclu"
 A: {"page_path":"Financial/overdue-student-payment?sube=1086&sezon=22526&tarihBas=01.05.2026&tarihBit=31.05.2026","filters":{},"max_rows":50,"explain":"Mayis 2026 borclu ogrenciler — URL filtresi ile gercek liste.","confidence":0.92}
 
+🔴 25.44 KRITIK (Neo bug 12 May 14:09): "Bugün alınan kayıtlar hangi fiyatlara"
+   YENI kayıtlar (bugün/dün) için Financial/overdue-student-payment URL params
+   ile o gun aralığında borçlu listesi al — yeni kayıtların ödeme planı zaten
+   borçlu listesinde gözükür (henüz tahsilat yapmadıkları için).
+Q: "bugün alınan kayıtlar hangi fiyatlara"
+A: {"page_path":"Financial/overdue-student-payment?sube=1086&sezon=latest&tarihBas=<bugun>&tarihBit=<bugun>","filters":{},"max_rows":30,"explain":"Bugün kayıt alınan öğrencilerin ödeme tutarları — overdue sayfası URL params, borçlular listesinde yeni kayıt zaten gözükür.","confidence":0.95}
+Q: "yeni öğrencilerin fiyatları"
+A: {"page_path":"Financial/overdue-student-payment?sube=1086&sezon=latest","filters":{},"max_rows":50,"explain":"Yeni sezon tüm borçlu öğrenciler — kayıt fiyatları+kalan borç. soz_no üst tarafta yeni kayıtlar.","confidence":0.92}
+
 Q: "bilanco aylik tablo"
 A: {"page_path":"Reports/balance-for-student-future-income","filters":{"sezon":"2025.26"},"max_rows":30,"explain":"Sezon bilancosu: aylik ciro/tahsilat/kalan dagilimi.","confidence":0.90}
 
