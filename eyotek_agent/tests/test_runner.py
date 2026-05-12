@@ -107,10 +107,23 @@ async def _run_single_test(test: dict, concurrency_sem: asyncio.Semaphore, idx: 
         return result
 
 
-async def run_corpus(limit: int = None, concurrency: int = 3, out_dir: str = None, batch_size: int = 20) -> dict:
+async def run_corpus(limit: int = None, concurrency: int = 3, out_dir: str = None, batch_size: int = 20,
+                     corpus_module: str = "test_corpus") -> dict:
     """Tum corpus'u calistir, BATCH bazli — her batch sonunda diske kaydet
-    (progressive save — bridge crash ederse sonuclar kaybolmaz)."""
-    corpus = get_corpus()
+    (progressive save — bridge crash ederse sonuclar kaybolmaz).
+
+    25.44: corpus_module ile blind test corpus seçilebilir.
+    """
+    if corpus_module == "blind":
+        try:
+            from tests.test_corpus_blind import get_blind_corpus
+        except ModuleNotFoundError:
+            from test_corpus_blind import get_blind_corpus
+        corpus = get_blind_corpus()
+        print(f"[CORPUS] BLIND (bağımsız) corpus seçildi")
+    else:
+        corpus = get_corpus()
+        print(f"[CORPUS] DEFAULT (test_corpus.py) corpus seçildi")
     if limit:
         corpus = corpus[:limit]
     total = len(corpus)
@@ -253,12 +266,14 @@ async def main():
     p.add_argument("--limit", type=int, default=None, help="ilk N testi calistir (smoke)")
     p.add_argument("--concurrency", type=int, default=3, help="paralel goruv sayisi (default 3 — Cerebras rate limit)")
     p.add_argument("--out", type=str, default=None, help="cikti dizini")
+    p.add_argument("--corpus", type=str, default="test_corpus", help="corpus modülü: test_corpus (default) veya blind")
     args = p.parse_args()
 
     result = await run_corpus(
         limit=args.limit,
         concurrency=args.concurrency,
         out_dir=args.out,
+        corpus_module=args.corpus,
     )
     return result
 
