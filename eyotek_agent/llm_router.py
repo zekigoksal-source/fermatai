@@ -178,8 +178,10 @@ _PERSONAL_KEYWORDS = [
     # kelimeler her zaman kisisel — Claude'a yonlendir, Ollama'ya gitmesin.
     "hidisat", "hidisatim", "hidisatimi", "ahval", "ahvalim", "ahvalimi",
     "halim", "halimi", "halimi yorum", "vaziyetim", "vaziyetimi",
-    "kendimi nasil", "beni nasil goruyorsun", "yorumlar misin",
-    "yorumla", "degerlendir",
+    "kendimi nasil", "kendimi nasıl",
+    "beni nasil g", "beni nasıl g",  # goruyorsun/görüyorsun varyantları
+    "yorumlar misin", "yorumlar mısın",
+    "yorumla", "yorumlar", "degerlendir", "değerlendir",
     "taha", "ecrin", "damla", "ada", "yiğit", "mehmet alp",  # isim bazli (kisisel veri)
     "hoca\b", "öğretmen\b", "kardelen", "orhan", "emin",
     "sinif", "sınıf", "12 say", "11 say", "mezun",
