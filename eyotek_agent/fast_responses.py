@@ -509,10 +509,12 @@ async def sinav_bilgi(name: str, message: str, caller_class: str = "") -> str:
     is_lgs_student = caller_class and 'lgs' in caller_class.lower()
 
     # "ne zaman", "kaç gün kaldı", "tarih" soruları
+    # 25.44 BLIND-iter5: "zamanım var" / "ne kadar zamanım" / "kaç hafta kaldı" eklendi
     is_date_question = any(w in msg_lower for w in [
         'ne zaman', 'kac gun', 'kaç gün', 'tarih', 'kaldi', 'kaldı',
         'gun kald', 'gün kald', 'sinava ne', 'sınava ne', 'sınava giriyor',
-        'zaman.*var', 'kaç hafta'
+        'zamanım var', 'zamanim var', 'ne kadar zaman',
+        'kac hafta', 'kaç hafta'
     ])
 
     if is_date_question:
@@ -5675,9 +5677,47 @@ async def try_fast_response(
                 elif intent in ("kapanis", "kapanış"):
                     return f"Rica ederim *{name.split()[0] if name else ''}*! 😊\n\n_Baska bir sorun olursa her zaman yazabilirsin._ 🎯"
                 elif intent == "selamlama":
-                    # 25.44 BLIND-iter4: rol-bazlı selamlama, fallback ogrenci
-                    from response_templates import SELAMLAMA
+                    # 25.44 BLIND-iter5: özel selamlama paraphrase'leri için doğru ton
+                    # selamün aleyküm → Ve aleykümselam + isim
+                    # iyi akşamlar/sabahlar/geceler → karşılık + isim
+                    # naber → kısa samimi
                     nm = name or ""
+                    nm_first = nm.split()[0] if nm else ""
+                    msg_low = message.lower().strip() if message else ""
+
+                    # İslami selam — rol-bağımsız doğru karşılık
+                    if re.search(r'selam[uü]n\s*aleyk[uü]m|aleyk[uü]m\s*selam', msg_low):
+                        suffix = (
+                            "Sayın Müdürüm" if role in ("mudur", "yonetim")
+                            else "Hocam" if role == "ogretmen"
+                            else "Hocam" if role == "rehber"
+                            else nm_first if nm_first else ""
+                        )
+                        return f"Ve aleykümselam *{suffix}* 🌟\n\n_Size nasıl yardımcı olabilirim?_"
+
+                    # Zaman bazlı selam (iyi akşamlar/sabahlar/geceler/hayırlı...)
+                    if re.search(r'iyi\s*(ak[şs]am|sabah|gece|gün)|hay[ıi]rl[ıi]\s*(sabah|ak[şs]am|gün)', msg_low):
+                        m = re.search(r'(ak[şs]am|sabah|gece|gün)', msg_low)
+                        period = m.group(1) if m else "günler"
+                        period_norm = {"akşam": "akşamlar", "aksam": "akşamlar", "sabah": "sabahlar",
+                                       "gece": "geceler", "gün": "günler"}.get(period, "günler")
+                        if role in ("mudur", "yonetim"):
+                            return f"İyi {period_norm} *Sayın Müdürüm* 👔\n\n_Bugün ne yapalım?_"
+                        elif role == "ogretmen":
+                            return f"İyi {period_norm} *{nm_first} Hocam* 👨‍🏫\n\n_Bugün hangi konuda yardımcı olabilirim?_"
+                        elif role == "rehber":
+                            return f"İyi {period_norm} *{nm_first} Hocam* 🤝\n\n_Yardımcı olabileceğim bir konu var mı?_"
+                        elif role == "admin":
+                            return f"İyi {period_norm} *Neo* ⚙️\n\n_Sistem hazır, ne yapalım?_"
+                        else:
+                            return f"İyi {period_norm} *{nm_first}* 😊\n\n_Sana nasıl yardımcı olabilirim?_"
+
+                    # Naber paraphrase — samimi kısa
+                    if re.search(r'^(naber|nbr|ne\s*haber|naber\s*kanka)', msg_low):
+                        return f"Selam *{nm_first}*! 😊 İyiyim, sen nasılsın?\n\n_Bugün neye odaklanalım?_"
+
+                    # Default — SELAMLAMA template
+                    from response_templates import SELAMLAMA
                     role_key = role if role in SELAMLAMA else (
                         "mudur" if role in ("mudur", "yonetim") else
                         "admin" if role == "admin" else
