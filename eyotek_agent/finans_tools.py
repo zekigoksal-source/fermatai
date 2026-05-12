@@ -369,17 +369,19 @@ async def veli_borc_bildirim_taslak(soz_no: int = 0, mesaj_tipi: str = "nazik",
         if not ogr["kalan_borc"] or float(ogr["kalan_borc"]) <= 0:
             return {"error": "Bu ogrencinin kalan borcu yok"}
 
-        # Veli telefonu — students tablosundan
+        # 25.44 BUG FIX (bot dev meeting 12 May 19:15): kolon adları yanlıştı
+        # Eski: veliCep/anneCep/babaCep + veli_adi/anne_adi/baba_adi (hiçbiri YOK)
+        # Gerçek schema: veli_phone, anne_phone, baba_phone, parent_name
         veli = await db_fetchrow(
-            """SELECT veliCep, anneCep, babaCep, veli_adi, anne_adi, baba_adi
+            """SELECT veli_phone, anne_phone, baba_phone, parent_name
                FROM students WHERE soz_no = $1""",
             str(soz_no)
         )
         veli_tel = ""
         veli_isim = ""
         if veli:
-            veli_tel = veli["velicep"] or veli["annecep"] or veli["babacep"] or ""
-            veli_isim = veli["veli_adi"] or veli["anne_adi"] or veli["baba_adi"] or "Sayin Veli"
+            veli_tel = veli["veli_phone"] or veli["anne_phone"] or veli["baba_phone"] or ""
+            veli_isim = veli["parent_name"] or "Sayin Veli"
 
         isim = ogr["full_name"]
         sinif = ogr["class_name"] or ""

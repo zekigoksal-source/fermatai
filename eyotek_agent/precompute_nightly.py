@@ -51,9 +51,14 @@ async def precompute_study_plans(limit: int = 50) -> int:
         for r in rows:
             phone = r["phone"]
             # Phone → soz_no
+            # 25.44 BUG FIX (bot dev meeting 12 May 19:15): kolon adları yanlıştı
+            # Eski: velicep/annecep/babacep (lowercase, kolon yok)
+            # Sentry: column s.velicep does not exist — her gece 03:00 patlıyordu
+            # Gerçek schema: veli_phone, anne_phone, baba_phone (snake_case)
             soz = await db_fetch(
                 """SELECT s.soz_no::int AS soz_no FROM students s
-                   WHERE s.phone = $1 OR s.velicep = $1 OR s.annecep = $1 OR s.babacep = $1
+                   WHERE s.phone = $1 OR s.veli_phone = $1
+                      OR s.anne_phone = $1 OR s.baba_phone = $1
                    LIMIT 1""",
                 phone
             )

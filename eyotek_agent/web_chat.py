@@ -1037,10 +1037,12 @@ async def _dashboard_veli(phone: str) -> dict:
 
     try:
         from db_pool import db_fetch, db_fetchrow
-        # Veli telefonu → hangi ogrenci(ler)?
+        # 25.44 BUG FIX (bot dev meeting 12 May 19:15): kolon adları yanlıştı
+        # Eski: veliCep/anneCep/babaCep — PostgreSQL'de kolon yok
+        # Gerçek schema: veli_phone, anne_phone, baba_phone (snake_case)
         ogr_list = await db_fetch(
             """SELECT soz_no, full_name, class_name FROM students
-               WHERE (veliCep = $1 OR anneCep = $1 OR babaCep = $1) AND status='active'
+               WHERE (veli_phone = $1 OR anne_phone = $1 OR baba_phone = $1) AND status='active'
                LIMIT 3""",
             phone
         )
