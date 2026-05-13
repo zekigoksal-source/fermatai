@@ -3890,20 +3890,14 @@ async def _dispatch_registry_handler(
             return _handler_bolum_generic(msg_lower, name)
 
         if handler == "user_feedback_kaydet":
-            # 25.44-dev-meeting-7 (Neo direktif 14 May): Ogrencinin akademik
-            # calisma kaydi istegi feedback DEGIL — ayri handler. "X saat/
-            # dakika/soru ... kaydet" gibi akademik sinyal varsa direkt
-            # ogrenci_calisma_kaydi_yonlendirme cagir. Aksi halde alt akisa
-            # birak (genel feedback handler).
+            # 25.44-dev-meeting-7 (Neo direktif 14 May): Ogrencinin "kaydet"
+            # demesi feedback DEGIL — akademik calisma kaydi niyeti.
+            # Bot "Notunuz Neo Bey'e ulasacak" deyip 4 kez tekrar etmisti —
+            # baglamdan uzak robotik salakca. Ogrenci rolunde HER "kaydet"
+            # mesaji → durust calisma kaydi yonlendirme handler.
+            # Admin/mudur/ogretmen rolu = legit feedback (eski davranis).
             if role == "ogrenci" and soz_no:
-                _academic_signal = bool(re.search(
-                    r"\b(\d+\s*(saat|sa|dk|dakika|soru))\b|"
-                    r"\b(calistim|çalıştım|cozdum|çözdüm|yaptim|yaptım|"
-                    r"calismam|çalışmam|calistigim|çalıştığım)\b",
-                    msg_lower,
-                ))
-                if _academic_signal:
-                    return await ogrenci_calisma_kaydi_yonlendirme(soz_no, name, message)
+                return await ogrenci_calisma_kaydi_yonlendirme(soz_no, name, message)
             # Mevcut inline kod detayli hack filtresi icerir — alt akisa birak
             return None
 
