@@ -4286,10 +4286,29 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 r'compton|dalga.*g[iı]ri[sş]im)',
                 (text or "").lower(),
             ))
+            # 25.44-dev-meeting-5: expand_row_details Eyotek tool'u uzun surer
+            # (8-10 etut x 2sn popup = ekstra 20sn). "kim katiliyor / hangi ogrenci"
+            # gibi sorgular tetikler. Bot agent_api 90s'i ASIYOR — bu admin/dev path.
+            _q = (text or "").lower()
+            _is_etut_expand = (
+                ("etut" in _q or "etüt" in _q) and
+                any(t in _q for t in (
+                    "kim katiliyor", "kim katılıyor", "hangi ogrenci",
+                    "hangi öğrenci", "ogrenci listesi", "öğrenci listesi",
+                    "kimler katiliyor", "kimler katılıyor", "katilimci", "katılımcı",
+                ))
+            )
             if channel == "web":
                 _agent_timeout = 480.0 if _is_complex_render else 300.0
+            elif channel == "agent_api":
+                # Admin/dev path: WP UX kisitlamasi gecerli degil, expand_etut
+                # gibi uzun tool'lara izin ver.
+                _agent_timeout = 240.0 if (_is_complex_render or _is_etut_expand) else 150.0
             else:
-                _agent_timeout = 120.0 if _is_complex_render else 90.0
+                # WhatsApp UX: kisa tutmak gerek, expand_etut 150s'e cek
+                _agent_timeout = 150.0 if _is_etut_expand else (
+                    120.0 if _is_complex_render else 90.0
+                )
             response = await asyncio.wait_for(
                 agent.run(text, caller_phone=phone, channel=channel, _stream_queue=_stream_queue),
                 timeout=_agent_timeout
