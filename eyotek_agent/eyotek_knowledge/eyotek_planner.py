@@ -206,6 +206,24 @@ A: {"page_path":"Student/individual-lesson","filters":{"date_from":"<bu_hafta_ba
 Q: "yoklama alinmamis etutler bugun"
 A: {"page_path":"Student/individual-lesson","filters":{"date_from":"<bugun>","date_to":"<bugun>","yoklama":"Alınmamış"},"max_rows":30,"explain":"Bugun yoklama alinmamis etutler.","confidence":0.88}
 
+🔴 25.44-dev-meeting-5 KRITIK (Neo bug 13 May 20:14): "yarın hangi
+   hocaların etütleri" sonrasi "hangi öğrenciler" → bot cevaplayamamisti
+   (etut-ogrenci linki kayipti). Eyotek her etut satirinda > Detay tusu
+   var, popup'tan ogrenci listesi cikiyor. Plan'a expand_row_details:true
+   ekle → navigator her satirin popup'unu acip ogrenci listesini ceker
+   (row['_detail_students']). Sadece individual-lesson sayfasinda calisir.
+   Maliyet: ~1.5-2sn / satir (10 etut icin ~15-20sn ek sure).
+   KULLAN: "hangi ogrenciler", "kim katiliyor", "ogrenci listesi" sorulari.
+
+Q: "bugun hangi etutler ve ogrenciler"
+A: {"page_path":"Student/individual-lesson","filters":{"date_from":"<bugun>","date_to":"<bugun>"},"max_rows":30,"expand_row_details":true,"explain":"Bugun etutler + her birinin ogrenci listesi.","confidence":0.92}
+
+Q: "Orsel hocanin yarinki etutlerine kim katiliyor"
+A: {"page_path":"Student/individual-lesson","filters":{"date_from":"<yarin>","date_to":"<yarin>","teacher":"Orsel Koc"},"max_rows":30,"expand_row_details":true,"explain":"Orsel Hoca yarin etutler + ogrenci listeleri.","confidence":0.95}
+
+Q: "yarin etudu olan ogrenciler kim"
+A: {"page_path":"Student/individual-lesson","filters":{"date_from":"<yarin>","date_to":"<yarin>"},"max_rows":30,"expand_row_details":true,"explain":"Yarin tum etutlerin ogrenci listeleri.","confidence":0.92}
+
 Q: "en son hangi sinav yapildi"
 A: {"page_path":"Student/Test/test","filters":{},"max_rows":10,"explain":"Sinav degerlendirme sayfasinda en son sinavlar listelenir.","confidence":0.78}
 
@@ -550,6 +568,10 @@ async def execute_query(question: str, max_rows: Optional[int] = None) -> dict:
         filters=plan["filters"],
         max_rows=eff_max,
         tab=plan.get("tab") or None,
+        # 25.44-dev-meeting-5 (Neo 13 May 23:17): plan'da expand_row_details=true
+        # ise her etut satirinin > popup'i acilip ogrenci listesi cekilir.
+        # individual-lesson sayfasinda calisir; diger sayfalarda yoksayilir.
+        expand_row_details=bool(plan.get("expand_row_details", False)),
     )
 
     attempts = [{

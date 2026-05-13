@@ -1115,6 +1115,101 @@ async def _read_table_paginated(page, max_rows: int, max_pages: int = 50) -> tup
     }
 
 
+async def _expand_individual_lesson_details(page, rows_data: list, result: dict) -> None:
+    """Her etut satiri icin > Detay popup'ini ac, ogrenci listesini cek, kapat.
+
+    DOM yapisi (25.44-dev-meeting-5 inspection):
+      > Ok tusu: <a id="GridView1_BtnIndividualLessonDetail_{idx}"
+                   href="javascript:__doPostBack('GridView1$ctl{02+idx}$BtnIndividualLessonDetail','')">
+      Modal:    #MdlIndividualLessonDetail
+      Ogrenci tab (default active): #ogrenciTab
+      KAPAT:    #MdlIndividualLessonDetail [data-dismiss="modal"]
+
+    Her satira row['_detail_students'] = [{devre, sinif, soz_no, ogrenci, yoklama}, ...]
+    Tum hatalarda silently SKIP — caller mevcut row data'sini yine alir.
+
+    Maliyet: ~1.5-2sn / satir (PostBack + AJAX). 10 etut icin ~15-20sn.
+    """
+    expanded_count = 0
+    failed_count = 0
+    for idx, row in enumerate(rows_data):
+        try:
+            # > tusuna tikla — JS evaluate ile (Playwright click visibility
+            # check'ine takilmasin)
+            clicked = await page.evaluate(f"""(() => {{
+                const a = document.getElementById('GridView1_BtnIndividualLessonDetail_{idx}');
+                if (!a) return false;
+                a.click();
+                return true;
+            }})()""")
+            if not clicked:
+                failed_count += 1
+                continue
+
+            # Modal'in render olmasini bekle (PostBack AJAX ~1-2sn)
+            try:
+                await page.wait_for_selector(
+                    '#MdlIndividualLessonDetail #ogrenciTab table tbody tr',
+                    timeout=4000, state='attached',
+                )
+            except Exception:
+                # Bos popup veya yavas — bir bekle daha
+                await asyncio.sleep(1.0)
+
+            # Ogrenci tablosunu cek
+            students = await page.evaluate("""(() => {
+                const tbl = document.querySelector('#MdlIndividualLessonDetail #ogrenciTab table');
+                if (!tbl) return [];
+                // Tablo header bul (Devre/Sinif/Soz No/Ogrenci/Yoklama)
+                const headers = [...tbl.querySelectorAll('thead th, thead td')].map(x => x.textContent.trim());
+                const trs = [...tbl.querySelectorAll('tbody tr')];
+                return trs.map(tr => {
+                    const tds = [...tr.querySelectorAll('td')].map(td => td.textContent.trim());
+                    // Heuristic: 5+ kolon varsa kanonik mapping
+                    if (tds.length >= 5) {
+                        return {
+                            devre: tds[0],
+                            sinif: tds[1],
+                            soz_no: tds[2],
+                            ogrenci: tds[3],
+                            yoklama: tds[4],
+                        };
+                    }
+                    // Fallback: header bazli mapping
+                    const obj = {};
+                    headers.forEach((h, i) => { if (h && tds[i] !== undefined) obj[h] = tds[i]; });
+                    return obj;
+                });
+            })()""")
+
+            if students:
+                row['_detail_students'] = students
+                expanded_count += 1
+
+            # KAPAT — modal'i hemen kapat ki sonraki satirla cakismasin
+            await page.evaluate("""(() => {
+                const btn = document.querySelector('#MdlIndividualLessonDetail [data-dismiss="modal"]');
+                if (btn) btn.click();
+            })()""")
+            # Modal kapanma animasyonu
+            await asyncio.sleep(0.4)
+        except Exception as e:
+            failed_count += 1
+            logger.debug(f"[ROW_EXPAND] row={idx} fail: {str(e)[:120]}")
+            # Modal acik kalmissa zorla kapat
+            try:
+                await page.evaluate("""(() => {
+                    const btn = document.querySelector('#MdlIndividualLessonDetail [data-dismiss="modal"]');
+                    if (btn) btn.click();
+                })()""")
+                await asyncio.sleep(0.3)
+            except Exception:
+                pass
+    result['row_details_expanded'] = expanded_count
+    if failed_count > 0:
+        result['row_details_failed'] = failed_count
+
+
 async def _read_table(page, max_rows: int) -> tuple[list[str], list[dict]]:
     """Sayfadaki ilk anlamli tabloyu oku (en cok satira sahip olan).
 
@@ -1374,6 +1469,7 @@ async def navigate(
     custom_selectors: Optional[dict] = None,
     wait_after_search_ms: int = 4500,
     tab: Optional[str] = None,
+    expand_row_details: bool = False,
 ) -> dict:
     """Generic Eyotek page navigator.
 
@@ -1717,6 +1813,16 @@ async def navigate(
         result["rows"] = rows_data
         result["row_count"] = len(rows_data)
         result["pagination"] = pag_info
+
+        # EXPAND ROW DETAILS (25.44-dev-meeting-5, Neo 13 May 23:17):
+        # individual-lesson sayfasinda her satirin > tusu var, popup'tan
+        # ogrenci listesi cikiyor. Neo'nun ekran goruntusu + konusma analizi:
+        # 20:14 'yarin hangi hocalar' → bot etutleri buldu / 20:14:47 'hangi
+        # ogrenciler' → bot cevaplayamadi (etut-ogrenci linki kayipti).
+        # Bu blok her satira > tusu tiklar, popup ogrenci tablosunu okur,
+        # row dict'e '_detail_students' alani ekler, popup kapatir.
+        if expand_row_details and rows_data and "individual-lesson" in page_path.lower():
+            await _expand_individual_lesson_details(page, rows_data, result)
 
         # DRILL (opsiyonel)
         if drill and rows_data:
