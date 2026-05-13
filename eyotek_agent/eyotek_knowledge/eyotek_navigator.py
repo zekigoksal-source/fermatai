@@ -1896,7 +1896,12 @@ async def navigate(
             from eyotek_self_audit import audit_navigate_query, AUDIT_ENABLED
             should_audit = (
                 AUDIT_ENABLED and
-                result.get("error_code") in ("NO_DATA", "FILTER_BAD")
+                result.get("error_code") in ("NO_DATA", "FILTER_BAD") and
+                # 25.44-dev-meeting-5: expand_row_details modunda audit SKIP.
+                # Audit Vision sayfayi okur, ama expand sirasinda modal'lar
+                # acilip kapaniyor — vision yanlis pozitif veriyor (canli
+                # test 13 May: '6 satir' dedi gerçekte 7'ydi, +60sn ekledi).
+                not expand_row_details
             )
             if should_audit:
                 audit_res = await audit_navigate_query(
