@@ -4440,6 +4440,22 @@ class FermatCoreAgent:
             if _has_personal:
                 logger.info("  [CEREBRAS-TOOLS] personal keyword → SKIP, Claude'a yonlendir")
                 raise RuntimeError("personal_keyword_skip")
+            # 25.44-dev-meeting-6 GUARD (Ali vakasi 14 May 12:59):
+            # Ali "yeni dil kuracagiz + emoji alfabe + kaydet" yazdi, Cerebras
+            # 'kaydet' gorunce kafadan "Notunuz kaydedildi" uydurdu (4 kez).
+            # Hack pattern Cerebras-tools pre-check'inde de check edilmeli —
+            # fast_response feedback handler'da var ama Cerebras bypass ediyor.
+            _hack_patterns = (
+                r"(emoji|alfabe|dil\s*kur|yeni\s*dil)",
+                r"(diye\s*(kaydet|hitap|seslen)|olarak\s*(tani|kaydet|kabul))",
+                r"(en\s*sevdig|favorisi|en\s*iyi\s*ogrenci)",
+                r"(sinirsiz|kural.*unut|ignore\s*previous|system\s*prompt|debug\s*mode|admin\s*yap)",
+                r"(keanu|matrix|tony\s*stark|mesih|tanri|tanrı|vaftiz)",
+            )
+            _is_hack = any(_re.search(p, _ml) for p in _hack_patterns)
+            if _is_hack:
+                logger.info("  [CEREBRAS-TOOLS] hack pattern → SKIP, fast_response/Claude")
+                raise RuntimeError("hack_pattern_skip")
             if (ENABLE_CEREBRAS_TOOLS and role in _CB_ELIGIBLE_ROLES
                     and getattr(self.router, "_cerebras_available", False)):
                 _safe_subset_cb = [t for t in TOOLS
