@@ -4548,8 +4548,45 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
         # Anthropic API 500 / 529 (overloaded) — bu teknik sorun, kullanici suclu degil
         # Bir kere retry dene (genelde gecici)
         is_api_transient = any(code in err_str for code in ['500', '529', 'Internal server error', 'overloaded'])
-        if is_api_transient:
-            logger.warning(f"  [API-RETRY] 2sn sonra tekrar deniyoruz [{phone}]")
+        # 25.44-dev-meeting-9 (Neo bug 14 May 22:32): 400 history corruption
+        # 'tool_use ids were found without tool_result' — dev-meeting-4'te fix
+        # vardi ama yeterli olmadi (native stream + tool fragmentleri yakalanmadi).
+        # Retry'i tetikle + history'i SADECE TEXT'e sanitize et (tool block'lari at).
+        is_history_corrupted = (
+            '400' in err_str
+            and 'tool_use' in err_str.lower()
+            and 'tool_result' in err_str.lower()
+        )
+        if is_history_corrupted:
+            try:
+                _cleaned = 0
+                for _msg in (agent.history or []):
+                    _content = _msg.get("content")
+                    if not isinstance(_content, list):
+                        continue
+                    _filtered = []
+                    for _b in _content:
+                        if isinstance(_b, dict) and _b.get("type") in ("tool_use", "tool_result"):
+                            _cleaned += 1
+                            continue
+                        _filtered.append(_b)
+                    if not _filtered:
+                        # Tüm content tool block idi — minimal placeholder
+                        _msg["content"] = "[önceki tool sonucu — temizlendi]"
+                    elif all(isinstance(b, dict) and b.get("type") == "text" for b in _filtered):
+                        # Sadece text kaldı — string'e çevir (Claude için temiz format)
+                        _msg["content"] = "\n".join(b.get("text", "") for b in _filtered)
+                    else:
+                        _msg["content"] = _filtered
+                logger.warning(
+                    f"  [HISTORY-CORRUPT-CLEANUP] {_cleaned} tool block silindi, retry oncesi text-only"
+                )
+            except Exception as _ch:
+                logger.error(f"  [HISTORY-CLEANUP] fail: {_ch}")
+
+        if is_api_transient or is_history_corrupted:
+            _retry_label = "[API-RETRY]" if is_api_transient else "[HISTORY-RETRY]"
+            logger.warning(f"  {_retry_label} 2sn sonra tekrar deniyoruz [{phone}]")
             await asyncio.sleep(2)
             try:
                 response = await asyncio.wait_for(
@@ -4557,10 +4594,10 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                     timeout=60.0
                 )
                 if response:
-                    logger.success(f"  [API-RETRY] Basarili [{phone}]")
+                    logger.success(f"  {_retry_label} Basarili [{phone}]")
                     return response
             except Exception as retry_err:
-                logger.error(f"  [API-RETRY] Ikinci deneme de basarisiz [{phone}]: {retry_err}")
+                logger.error(f"  {_retry_label} Ikinci deneme de basarisiz [{phone}]: {retry_err}")
 
         # Hata mesaji — kullanici odakli, suclu hissettirmeyen
         if is_api_transient:
