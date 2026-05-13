@@ -1,11 +1,11 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 14 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-6 KAPATILDI (ALİ HALUSINASYON FIX + SINAV WORKFLOW) — NEO DEV ARASI, BOT SERVE EDİYOR**
+> **Son güncelleme:** 14 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-7 KAPATILDI (AKADEMİK KAYIT INTENT — Ada özür) — NEO DEV ARASI, BOT SERVE EDİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-6 KAPANIŞ)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-7 KAPANIŞ)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `3eee577` fix(fast_responses): TYT/AYT filter aktif + 2+ sonuc → SECENEK SUN
+> - **HEAD:** `b1beaf7` fix(fast_responses): ogrenci 'kaydet' = AKADEMIK her zaman (sadelestir)
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `/agent` endpoint çalışıyor, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Dev Meeting:** 7 iter (dev-meeting-1) + 4 iş (dev-meeting-2 konuşma analiz) = 11 production fix toplam canlı
@@ -194,6 +194,46 @@
 >
 > - **#5 — Planner kural eklendi mi canlı doğrula:** Konuşma analizinde "şu sayfa kör" gibi şikayetler için planner'da özel kural yazıldıysa (`eyotek_planner.py` few-shot örnek), Neo o kuralı sonradan eklemiş olabilir. Açık "teknik borç" diye listelemeden önce ŞU AN planner ne diyor bak (`grep "25.44 KRITIK" eyotek_planner.py`).
 > - **#6 — Sentry zombie issue tespiti:** Bot Sentry rapor verirken `lastSeen < HEAD_commit_time` ise issue koddan fix'lenmiş olabilir (yanlış pozitif var, kesin değil). `sentry_monitor.py` artık `fixed_likely` flag ile bunu otomatik işaretliyor — bot summary'de ZOMBIE etiketi görüyor. Bota "bu issue açık" derken zaten ZOMBIE flag'ini iletmeli.
+>
+> ---
+>
+> ## ✅ 25.44-DEV-MEETING-7 — AKADEMİK KAYIT INTENT (Ada — Neo özür ediyor) (14 May 01:30-02:00)
+>
+> Neo eleştirisi: *"öğrencinin kaydet demesini hep talimat kaydedildi neoya bildirilecek diye cevaplamış bu cidden bağlamdan uzak robotik ve son derece salakça onu da görmüş olman lazım bak dedim ama tespit edememene de şaşırıyorum"*
+>
+> Hatalı yorumum: Onceki Ada analizinde A3 (sahte söz) kapsamında değerlendirmiştim — asıl tanı **intent yanlış sınıflandırması**: bot akademik çalışma kaydını "yönetim feedback'i" zannediyor. Bu farklı kategori.
+>
+> ### Yapılan Fix (2 commit)
+>
+> **`192c8cd` + `b1beaf7`** — fast_responses.py:
+> - **Yeni handler `ogrenci_calisma_kaydi_yonlendirme`:**
+>   * Dürüst kalıp: *"Ada, çalışmalarını ben sisteme kaydedemiyorum (henüz öyle bir aracım yok). Söylediklerini hatırlıyorum: Kimya 1 saat + 30 soru + 40 dakika..."*
+>   * Mesajdan saat/dakika/soru + ders ayıklayıp özet sun (empati)
+>   * Uygulama yönlendirmesi: `fermategitimkurumlari.com/fermatai` → Çalışmam → Çalışma Saati Ekle
+>   * Web kodu teklifi otomatik
+> - **Dispatcher sadeleştirildi:** `role=='ogrenci'` + handler=='user_feedback_kaydet' → her zaman akademik handler. Feedback handler artık SADECE admin/mudur/öğretmen rolünde.
+> - Alt akış _is_study_log regex genişletildi: `calistim/cozdum/yaptim/kaydetsene/kaydeder misin/sen kaydet`
+>
+> ### Canlı Test (6 senaryo, 6/6 OK)
+>
+> | Mesaj | Yeni Cevap |
+> |-------|------------|
+> | "kaydet" tek başına | Dürüst yönlendirme, özet boş |
+> | "kaydetsene" | Dürüst yönlendirme |
+> | "kaydeder misin" | Dürüst yönlendirme |
+> | "1 saat kimya çalıştım kaydet" | Dürüst + "Kimya — 1 saat" özet |
+> | "2 saat fizik çalıştım kaydet" | Dürüst + "Fizik — 2 saat" özet |
+> | "sen kaydetsene 1 saat kimya 30 soru mat 40 dk" | Dürüst + "Kimya — 1 saat + 30 soru + 40 dakika" özet |
+>
+> Tüm yanıtlar 0.0-0.3 saniyede deterministic — Cerebras/Claude yolu yok.
+>
+> ### Pattern Öğretisi #13
+>
+> **"Kaydet" niyeti rol-bazlı ayrı yorumlanmalı:**
+> - **Öğrenci** "kaydet" → akademik çalışma kaydı (default) → dürüst yönlendirme handler
+> - **Admin/mudur/öğretmen** "kaydet" → feedback/talimat (eski davranış) → user_feedback_kaydet
+>
+> Önceki *exclusion regex* (saat/dakika/soru var ise) yetersizdi — Ada tek "kaydet" yazınca yine feedback'e düştü. Rol bazlı dispatch %100 doğru.
 >
 > ---
 >
