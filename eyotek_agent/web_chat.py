@@ -2812,6 +2812,36 @@ async def stream_message(
             QUEUE_POLL_SEC = 0.05  # C16: 0.1 → 0.05 (2x agresif, ilk chunk daha erken)
             _start_ts = _aio.get_event_loop().time()
 
+            # 25.44-dev-meeting-4 (Neo 13 May): TOOL_FRIENDLY map
+            # Tool ismi yerine kullanici icin anlamli aciklama + tahmini sure.
+            # Bekleme bilinmeyen suresizden, "tolere edilebilir, 20sn" hissine doner.
+            # NOT: Frontend UI (gradyen animasyonlu dikdortgen) ayni event yapisini
+            # alir ({thinking: "..."}), sadece icerik dolu/aciklayici.
+            _TOOL_FRIENDLY = {
+                "eyotek_query": "🌐 Eyotek'e baglanip veri cekiyorum (~15-25sn)",
+                "execute_eyotek_action": "🌐 Eyotek'te islem yapiyorum (~20sn)",
+                "query_analytics": "📊 Veritabanindan analiz cikariyorum (~3-5sn)",
+                "search_curriculum": "📚 Mufredat icinde ariyorum (~2sn)",
+                "get_class_plan": "📅 Ders programini cekiyorum (~3sn)",
+                "get_daily_etut": "📅 Gunluk etut listesini cekiyorum (~3sn)",
+                "list_exam_questions": "📝 Cikmis sorulari listeliyorum (~3sn)",
+                "build_study_plan_context": "🧮 Calisma plani icin verilerini topluyorum (~10sn)",
+                "get_student_analytics": "📈 Akademik durumunu inceliyorum (~5sn)",
+                "get_student_profile": "👤 Profilini cekiyorum (~3sn)",
+                "send_exam_image": "🖼 Soru gorseli hazirliyorum (~5sn)",
+                "make_render_link": "🎨 Interaktif gorsel hazirliyorum (~30sn)",
+                "get_sentry_errors": "🔍 Hata loglarini tariyorum (~3sn)",
+                "selfdev_read_file": "📄 Kod dosyasini okuyorum (~2sn)",
+                "selfdev_grep_repo": "🔍 Kodda ariyorum (~3sn)",
+                "selfdev_read_logs": "📜 Servis loglarini okuyorum (~2sn)",
+                "selfdev_git_log": "🌳 Git gecmisini cekiyorum (~2sn)",
+                "selfdev_git_diff": "🔀 Git diff aliyorum (~2sn)",
+                "selfdev_list_dir": "📂 Dizin icerigini listeliyorum (~1sn)",
+            }
+            def _friendly_tool_msg(tool_name: str) -> str:
+                base = _TOOL_FRIENDLY.get(tool_name, f"🔍 Veri cekiyorum ({tool_name})")
+                return base + "..."
+
             try:
                 while True:
                     # Agent task bittiyse + queue boşsa çık
@@ -2824,23 +2854,33 @@ async def stream_message(
                     except _aio.TimeoutError:
                         elapsed = _aio.get_event_loop().time() - _start_ts
                         # 25.41 (Neo bug 6 May): Render 170sn sürdü, kullanıcı 3dk
-                        # boş gördü. Multi-stage heartbeat — her ~25sn'de yenile.
+                        # boş gördü. Multi-stage heartbeat.
+                        # 25.44-dev-meeting-4 (Neo 13 May): Heartbeat interval
+                        # 25s → 12s (daha sik) + ILK heartbeat 3s'de
+                        # (eski mantik: ilk heartbeat 25s sonra, kullanici 25sn
+                        # sessizlik gormesini onler). Mevcut stage threshold'lari
+                        # daha sik mesaj icin asagi cekildi.
                         if not thinking_cleared:
                             _last_hb = getattr(stream_message, '_last_hb', {}).get(id(stream_q), 0)
-                            if elapsed - _last_hb >= 25 or _last_hb == 0:
-                                # Stage'e göre mesaj
-                                if elapsed < 15:
-                                    msg_text = "Düşünüyorum..."
-                                elif elapsed < 40:
+                            # Ilk heartbeat 3sn'de, sonrakiler 12sn arayla
+                            _hb_due = (
+                                (_last_hb == 0 and elapsed >= 3.0)
+                                or (_last_hb > 0 and (elapsed - _last_hb) >= 12)
+                            )
+                            if _hb_due:
+                                # Stage'e göre mesaj (esiklar 25.44 daha agresif)
+                                if elapsed < 8:
+                                    msg_text = "🤔 Hazirliyorum..."
+                                elif elapsed < 25:
                                     msg_text = "🔍 Veriyi inceliyorum, biraz daha..."
-                                elif elapsed < 80:
-                                    msg_text = "🎨 Detaylı görsel/cevap hazırlıyorum (~1dk)..."
-                                elif elapsed < 140:
-                                    msg_text = "⏳ Karmaşık üretim — biraz daha sabır (~2dk)..."
-                                elif elapsed < 200:
-                                    msg_text = "🔍 İnce ayar yapıyorum, neredeyse hazır..."
+                                elif elapsed < 60:
+                                    msg_text = "🎨 Detayli cevap hazirliyorum (~1dk)..."
+                                elif elapsed < 120:
+                                    msg_text = "⏳ Karmasik uretim — biraz daha sabir (~2dk)..."
+                                elif elapsed < 180:
+                                    msg_text = "🔍 Ince ayar yapiyorum, neredeyse hazir..."
                                 else:
-                                    msg_text = "⚙️ Hala çalışıyorum, vazgeçme..."
+                                    msg_text = "⚙️ Hala calisiyorum, vazgecme..."
                                 yield f"data: {json.dumps({'thinking': msg_text}, ensure_ascii=False)}\n\n"
                                 if not hasattr(stream_message, '_last_hb'):
                                     stream_message._last_hb = {}
@@ -2862,8 +2902,10 @@ async def stream_message(
                         if ev_data == "make_render_link":
                             yield f"data: {json.dumps({'render_pending': True})}\n\n"
                         else:
-                            # Diger tool'lar icin klasik thinking
-                            yield f"data: {json.dumps({'thinking': f'🔍 Veri çekiyorum ({ev_data})...'}, ensure_ascii=False)}\n\n"
+                            # 25.44-dev-meeting-4: Tool-ad yerine aciklayici mesaj
+                            # + tahmini sure. UI degismez (ayni {thinking: "..."}
+                            # event'i), sadece icerik daha bilgilendirici.
+                            yield f"data: {json.dumps({'thinking': _friendly_tool_msg(ev_data)}, ensure_ascii=False)}\n\n"
                             thinking_cleared = False
                     elif ev_type == "tool_done":
                         # ev_data tuple olabilir: (tool_name, result_dict)
