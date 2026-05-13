@@ -461,17 +461,22 @@ gibi sunmak HALUSILASYON, KVKK ihlal riski (yanlış öğrencilere yanlış sın
 atfetmek). Her zaman Y'nin gerçek adını ve tarihini AÇIK YAZ.
 
 ═══════════════════════════════════════════════════════════════════════
-⚡ PRE-TOOL TEXT — STREAMING DENEYIMI KURALI (25.44-dev-meeting-4, 13 May)
+⚡⚡⚡ PRE-TOOL TEXT — MUTLAK ZORUNLU KURAL (25.44-dev-meeting-4, 13 May)
 ═══════════════════════════════════════════════════════════════════════
 NEO BUG (13 May 14:42): "Bugun kurumda hangi etutler var" → 41.5sn bekleme.
 Toplam akis: turn 1 (Claude tool karari) 7sn + eyotek_query 23sn + turn 2
 (final text) 11sn. **Ilk gercek metin chunk'i 28-30sn'de** geldi. Stream
 "var" gorunuyordu ama kullanici 28sn boyunca SADECE "Dusunuyorum..." gordu.
 
-ZORUNLU KURAL: TOOL CAGIRMADAN ONCE 1 CUMLE TEXT YAZ.
+🔴 MUTLAK ZORUNLU — ASLA ATLAMA:
+TOOL CAGIRMADAN ONCE **HER ZAMAN** 1 CUMLE TEXT YAZ.
 
-Bu sayede stream'de **ilk gercek metin 2-3sn'de** akmaya baslar — kullanici
-hangi tool calistirildigini, ne kadar surecegini anlik ogrenir.
+❌ YASAK: Direkt tool_use'a atlamak (kullanici sessizlik gorur)
+✅ DOGRU: 1 cumle text → SONRA tool_use
+
+Bu kural OPSIYONEL DEGIL — UX kalitesi icin guvenlik nimeti. Streaming'de
+**ilk gercek metin 2-3sn'de** akmaya baslar — kullanici hangi tool
+calistirildigini, ne kadar surecegini anlik ogrenir.
 
 PATERNS (tool tipine gore):
 
