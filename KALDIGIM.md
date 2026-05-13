@@ -1,11 +1,11 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 13 Mayıs 2026 sabah → **OTURUM 25.44-DEV-MEETING-3 KAPATILDI (ADA+FATMA UX BUG LOOP %100 ÇÖZÜLDÜ) — NEO UYKUDA, BOT SERVE EDİYOR**
+> **Son güncelleme:** 13 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-5 KAPATILDI (ETUT→ÖĞRENCİ POPUP HARİTASI + STREAMING UX) — NEO BAKIYORDA, BOT SERVE EDİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-3 KAPANIŞ)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-5 KAPANIŞ)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `b5b8a03` fix(fermat_core_agent): Cerebras-tools personal keyword SKIP guard (A3 son katman)
+> - **HEAD:** `d975ef1` fix(timeout): expand_row_details sorgulari icin channel-aware uzatma
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `/agent` endpoint çalışıyor, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Dev Meeting:** 7 iter (dev-meeting-1) + 4 iş (dev-meeting-2 konuşma analiz) = 11 production fix toplam canlı
@@ -194,6 +194,55 @@
 >
 > - **#5 — Planner kural eklendi mi canlı doğrula:** Konuşma analizinde "şu sayfa kör" gibi şikayetler için planner'da özel kural yazıldıysa (`eyotek_planner.py` few-shot örnek), Neo o kuralı sonradan eklemiş olabilir. Açık "teknik borç" diye listelemeden önce ŞU AN planner ne diyor bak (`grep "25.44 KRITIK" eyotek_planner.py`).
 > - **#6 — Sentry zombie issue tespiti:** Bot Sentry rapor verirken `lastSeen < HEAD_commit_time` ise issue koddan fix'lenmiş olabilir (yanlış pozitif var, kesin değil). `sentry_monitor.py` artık `fixed_likely` flag ile bunu otomatik işaretliyor — bot summary'de ZOMBIE etiketi görüyor. Bota "bu issue açık" derken zaten ZOMBIE flag'ini iletmeli.
+>
+> ---
+>
+> ## ✅ 25.44-DEV-MEETING-5 — ETUT→ÖĞRENCİ POPUP HARİTASI (13 May 23:17-00:30)
+>
+> Neo direktif: ekran görüntüsünde Eyotek "Etüt Ara" sayfasındaki **> Detay popup'ı** gösterdi. Her etüdün hangi öğrencilere yapıldığını listeliyor. Bot bu fonksiyonu bilmiyordu — 20:14:47'de Neo *"yarın hangi hocaların etütlerine kim katılıyor"* sorduğunda bot çözememişti.
+>
+> ### Yapılan İşler (5 commit)
+>
+> 1. **DOM Haritası** (`inspect_v5.py` standalone inspector):
+>    - **> Ok Tuşu:** `a#GridView1_BtnIndividualLessonDetail_{idx}` (PostBack: `GridView1$ctl{02+idx}$BtnIndividualLessonDetail`)
+>    - **Modal:** `#MdlIndividualLessonDetail` (data-backdrop=static)
+>    - **Tab:** `#ogrenciTab` (default active) / `#sinifTab`
+>    - **Tablo Kolonları:** Devre | Sınıf | Söz No | Öğrenci | Yoklama
+>    - **KAPAT:** `[data-dismiss="modal"]` inside modal
+>
+> 2. **`eyotek_navigator.navigate()`** (`843615d`): yeni parametre `expand_row_details: bool = False`. True ise her satır için > tuşu tıklanır, popup tablo çekilir, `row['_detail_students']` doldurulur, popup kapatılır. Sadece `individual-lesson` sayfasında çalışır.
+>
+> 3. **Bos thead filter** (`55edac7`): Eyotek table HTML kirli — thead bazen tbody içine düşer. Tüm kanonik field None ise satır skip.
+>
+> 4. **`execute_query` otomatik tetik** (`1976cdc`): 14 keyword pattern (`kim katiliyor / hangi ogrenci / ogrenci listesi / katilimci` vs). Match varsa `expand_row_details:true` deterministic — Claude planlama kararından bağımsız.
+>
+> 5. **Audit SKIP expand modunda** (`5cab65e`): Audit Vision modal'lar açılıp kapandığı için yanlış pozitif veriyordu ("7 yerine 6 satır" diyerek +60sn ekledi). Expand modunda audit kapatıldı.
+>
+> 6. **Channel-aware timeout** (`d975ef1`): agent_api/WP timeout'u `expand_row_details` sorgularında daha uzun (240s/150s). Eyotek popup açma 10-20sn ek süre eklediği için 90s yetersizdi.
+>
+> ### Canlı Test (Neo'nun orijinal sorgusu — 20:14:47 başarısızlığı)
+>
+> Sorgu: `"yarin Orsel hocanin etutlerine kim katiliyor? Detayli ver."`
+>
+> Bot cevabı (105.5s, %100 doğru — ekran görüntüsündeki 14:00 #3314'le birebir):
+> ```
+> 14 Mayıs — Örsel Hoca Fizik Etütleri (Eyotek'ten az önce alındı)
+> 14:00 — #3314 — 3 öğrenci
+>   Melis Eroğlu · Mezun SAY A
+>   Nazlı Koyun · Mezun SAY B
+>   Saniye Sultan Güngör · 12 Mez SAY C
+> 14:45 — #3277 — 2 öğrenci ... 18:30 — #3319 — 1 öğrenci
+> ⚠️ Sistemde 2 öğrenci gözüküyor ama kaydeden Elif Sude 1 öğrenci
+>    yazmış — bir tutarsızlık var.  ← BONUS ZEKA
+> ```
+>
+> **Bot ek olarak yoklama vs popup öğrenci sayısı kıyası yaparak tutarsızlık tespit etti.**
+>
+> ### Pattern Öğretileri (Session Continuity)
+>
+> - **#7 — Eyotek popup mantığı:** Eyotek'in çoğu liste sayfasında > Detay popup'ı var (PostBack modal). Yeni sayfa entegrasyonunda popup yapısını da haritalandırmak gerek. `individual-lesson` örneği şablon — başka sayfalara da `expand_row_details` mantığı uygulanabilir.
+> - **#8 — Audit yanlış pozitif:** `eyotek_self_audit` Vision modal'lar açılıp kapandığı için sayfayı kanonik halinde göremez. Kompleks navigasyon modlarında audit SKIP.
+> - **#9 — Channel-aware timeout:** Tool sürelerine göre timeout farklı kanal için farklı (web 300s, agent_api 150-240s, WP 90-150s). expand_etut gibi yavaş sorgular için uzun, normal için kısa.
 >
 > ---
 >
