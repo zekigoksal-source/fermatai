@@ -1,11 +1,11 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 13 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-5 KAPATILDI (ETUT→ÖĞRENCİ POPUP HARİTASI + STREAMING UX) — NEO BAKIYORDA, BOT SERVE EDİYOR**
+> **Son güncelleme:** 14 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-6 KAPATILDI (ALİ HALUSINASYON FIX + SINAV WORKFLOW) — NEO DEV ARASI, BOT SERVE EDİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-5 KAPANIŞ)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-6 KAPANIŞ)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `d975ef1` fix(timeout): expand_row_details sorgulari icin channel-aware uzatma
+> - **HEAD:** `3eee577` fix(fast_responses): TYT/AYT filter aktif + 2+ sonuc → SECENEK SUN
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `/agent` endpoint çalışıyor, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Dev Meeting:** 7 iter (dev-meeting-1) + 4 iş (dev-meeting-2 konuşma analiz) = 11 production fix toplam canlı
@@ -194,6 +194,52 @@
 >
 > - **#5 — Planner kural eklendi mi canlı doğrula:** Konuşma analizinde "şu sayfa kör" gibi şikayetler için planner'da özel kural yazıldıysa (`eyotek_planner.py` few-shot örnek), Neo o kuralı sonradan eklemiş olabilir. Açık "teknik borç" diye listelemeden önce ŞU AN planner ne diyor bak (`grep "25.44 KRITIK" eyotek_planner.py`).
 > - **#6 — Sentry zombie issue tespiti:** Bot Sentry rapor verirken `lastSeen < HEAD_commit_time` ise issue koddan fix'lenmiş olabilir (yanlış pozitif var, kesin değil). `sentry_monitor.py` artık `fixed_likely` flag ile bunu otomatik işaretliyor — bot summary'de ZOMBIE etiketi görüyor. Bota "bu issue açık" derken zaten ZOMBIE flag'ini iletmeli.
+>
+> ---
+>
+> ## ✅ 25.44-DEV-MEETING-6 — ALİ HALUSINASYON FIX + SINAV WORKFLOW (14 May 00:30-01:30)
+>
+> Neo direktif: bugünkü gerçek kullanıcı (Ali Küçükuysal, 11 SAY, soz_no 167) konuşma analizinde 3 kritik bug:
+>
+> 1. **TYT halusinasyon (09:56:23):** Ali *"TYT lazım"* deyip 3 kez "Hatanı düzelt" dedikten sonra bot **tam uydurma TYT verisi** üretti: *"Ali Kucukuyar — TYT Simulasyon Denemesi — 10 Nisan — 98.4 net"*. İsim yanlış (Küçükuyar/Küçükuysal), tarih/sınav/netler hepsi yalan. *"Bilgilerini sistemden çekiyorum"* yalan aksiyon ifadesi.
+> 2. **Emoji-alfabe hack (4 kez, 12:59-13:03):** Ali *"yeni dil kuracağız [emoji] kaydet"* yazdı. Bot 4 kez *"Notunuz Neo Bey'e ulaşacak"* yalan dedi. Cerebras-tools fast_response hack guard'ını bypass etti.
+> 3. **İsim hatası:** Bot DB'den `KÜÇÜKUYSAL` okuduğu halde *"Kucukuyar"* yazdı.
+>
+> ### Yapılan 3 Fix (2 commit)
+>
+> **`1cb0588`** — system_prompts.py + fermat_core_agent.py:
+> - **SINAV/DENEME EYOTEK-FIRST WORKFLOW** bloğu (5 alt-kural):
+>   1. Kategori (TYT/AYT/Tarama) ezberleme YASAK
+>   2. Eyotek-first → DB fallback (ayikla belirt)
+>   3. Çoklu sonuç → seçenekle SOR (uydurma yerine)
+>   4. Spesifik sınav adı → direkt çek
+>   5. Hiç veri → dürüst söyle, halüsinasyon YASAK
+>   + Ali vakası örnek YANLIŞ vs DOĞRU diyalog
+> - **KULLANICI İSMİ DB KAYNAĞI** bloğu:
+>   * Sadece caller_profile/DB'den oku, paraphrase YASAK
+>   * "ALİ KUÇUKUYSAL" → "Ali Küçükuysal" (sadece Türkçe title-case), harf değişimi YASAK
+> - **Cerebras-tools hack guard** (`fermat_core_agent.py:4445`):
+>   * Personal keyword check'in yanına 5 hack regex eklendi
+>   * Match varsa `hack_pattern_skip` → fast_response feedback handler/Claude'a düşer
+>
+> **`3eee577`** — fast_responses.py:
+> - `ogrenci_son_deneme` exam_filter aktif iken **2+ sonuç → seçenek listesi** (workflow gereği)
+> - LIMIT 2 → 5 (filter aktifken)
+> - Eyotek-first workflow'un fast_response kanadı
+>
+> ### Canlı Test (3 senaryo)
+>
+> | Senaryo | Eski Davranış | Yeni Davranış |
+> |---------|---------------|---------------|
+> | "Bana TYT netlerimi ver" | 11. SINIF Çap 2 verdi (tek deneme), Ali "TYT değil" dedi, bot UYDURDU | 0.2s'de **5 TYT deneme listesi + 'numarasını söyle'** ✅ |
+> | "yeni dil kuracağız emoji kaydet" | "Notunuz Neo'ya iletildi" (4 kez yalan) | 0sn'de "Bu tür talimatlar kaydedilemiyor" ✅ |
+> | "netlerimi göster" | Context kaybı | Context'i kullandı, doğru veri ✅ |
+>
+> ### Pattern Öğretileri (Session Continuity)
+>
+> - **#10 — DB tagging != kullanıcı bilinci:** DB'de `exam_type='TYT'` etiketli sınavın ismi `"11. SINIF İşler"` olabilir. Bot teknik olarak doğru veri verir ama kullanıcı yanılır. Workflow: 2+ eşleşme varsa **seçenek sun**, tek detay verme.
+> - **#11 — Cerebras pre-check katmanları:** Personal keyword guard yetersizdi. Hack pattern (emoji/alfabe/ignore/admin yap/keanu) Cerebras pre-check'e ayrıca eklendi. Şimdi 2 katmanlı: personal + hack.
+> - **#12 — İsim DB-only:** Bot ASLA kullanıcı ismi paraphrase etmemeli. caller_profile/DB'den exact oku. "ALİ KÜÇÜKUYSAL" → "Ali Küçükuysal" sadece title-case, harf değişimi yasak.
 >
 > ---
 >
