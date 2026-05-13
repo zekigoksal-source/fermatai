@@ -1,11 +1,11 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 14 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-8 KAPATILDI (LAZY SYNC TARİH NULL + MOBİL UI) — NEO DEV ARASI, BOT SERVE EDİYOR**
+> **Son güncelleme:** 14 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-9 KAPATILDI (400 HISTORY CORRUPTION RETRY) — NEO DEV ARASI, BOT SERVE EDİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-8 KAPANIŞ)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-9 KAPANIŞ)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `971d854` fix(web_ui): mobile bekleme gradient kart text dikey hizalama
+> - **HEAD:** `f0ae2ac` fix(25.44-dev-meeting-9): 400 history corruption retry + agresif sanitize
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `/agent` endpoint çalışıyor, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Dev Meeting:** 7 iter (dev-meeting-1) + 4 iş (dev-meeting-2 konuşma analiz) = 11 production fix toplam canlı
@@ -194,6 +194,51 @@
 >
 > - **#5 — Planner kural eklendi mi canlı doğrula:** Konuşma analizinde "şu sayfa kör" gibi şikayetler için planner'da özel kural yazıldıysa (`eyotek_planner.py` few-shot örnek), Neo o kuralı sonradan eklemiş olabilir. Açık "teknik borç" diye listelemeden önce ŞU AN planner ne diyor bak (`grep "25.44 KRITIK" eyotek_planner.py`).
 > - **#6 — Sentry zombie issue tespiti:** Bot Sentry rapor verirken `lastSeen < HEAD_commit_time` ise issue koddan fix'lenmiş olabilir (yanlış pozitif var, kesin değil). `sentry_monitor.py` artık `fixed_likely` flag ile bunu otomatik işaretliyor — bot summary'de ZOMBIE etiketi görüyor. Bota "bu issue açık" derken zaten ZOMBIE flag'ini iletmeli.
+>
+> ---
+>
+> ## ✅ 25.44-DEV-MEETING-9 — 400 HISTORY CORRUPTION RETRY (14 May 22:32-22:45)
+>
+> Neo bildirdi: *"botla mesajlarımı oku arada hata alıyorum"*
+>
+> Bulgu (14 May 22:32 + 22:40): Neo akademik fizik soruları sordu (ince yapı sabiti analizi), bot iki kez `"Mesajini islerken bir sorun olustu. 😕 Biraz daha kisa veya net bir sekilde tekrar yazar misin?"` generic hata mesajı verdi. Tekrar yazınca düzeldi.
+>
+> ### Kök Neden — Anthropic API 400 BadRequest
+>
+> ```
+> Error code: 400 - messages.12: tool_use ids were found without
+> tool_result blocks immediately after: toolu_01Fp54VYnaE1pCvE7LcDqAz3.
+> Each `tool_use` block must have a corresponding `tool_result` block.
+> ```
+>
+> Dev-meeting-4'teki history-clean fix (`fermat_core_agent.py:3866-3913`) mevcuttu ama **yetersiz kaldı**:
+> 1. Native stream tool fragment kısmi yakalandığında dangling kalıyor
+> 2. `process_message` exception path'inde `is_api_transient` listesi sadece 500/529/overloaded içeriyor — 400 yakalanmıyordu
+> 3. Retry tetiklenmedi → kullanıcıya generic mesaj
+>
+> ### Fix (`f0ae2ac`)
+>
+> `whatsapp_bridge.py:4548` retry logic'i genişletildi:
+>
+> 1. **`is_history_corrupted` bayrağı:** `'400' + 'tool_use' + 'tool_result'` keyword'leri err_str'de ise corruption tespit
+> 2. **AGRESİF SANITIZE — retry öncesi:**
+>    - `agent.history` taranır, tüm `tool_use` + `tool_result` block'lar SİLİNİR
+>    - Sadece text block'lar kalır
+>    - Tüm content tool ise minimal placeholder (`[önceki tool sonucu — temizlendi]`)
+>    - Multi text block'lar string'e birleştirilir
+> 3. **Retry tetiklenir** (60s timeout, log etiketi `[HISTORY-RETRY]`)
+> 4. Generic "islerken sorun" mesajı SADECE retry de fail ederse görünür
+>
+> ### Canlı Test
+>
+> Neo'nun orijinal sorgusu (history derinliği yüksek):
+> > *"peki ince yapı sabiti nasıl ölçülmüş o halde hesaplanamıyorsa bunu da açarmısın yani birimsiz birşey olması matematiksel bir sonuç ama daha derinde ne ifade ediyor"*
+>
+> Sonuç: 0.5s'de HTTP 200, doğru akademik cevap (QED g-faktör formülü + ölçüm yöntemleri). Generic error YOK ✅.
+>
+> ### Pattern Öğretisi #15
+>
+> **API hata kodları transient listesi geniş tutulmalı:** Sadece 500/529 değil, **400 BadRequest** de retry'a layıktır eğer **history corruption** sinyali varsa (tool_use/tool_result keyword'leri err_str'de). Bu durumda **history'i sade text'e indirgemek + retry** kullanıcıya kayıpsız cevap döndürür. Generic error mesajları SADECE retry de fail ederse gösterilmeli.
 >
 > ---
 >
