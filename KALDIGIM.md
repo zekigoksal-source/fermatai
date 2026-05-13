@@ -1,11 +1,11 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 14 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-7 KAPATILDI (AKADEMİK KAYIT INTENT — Ada özür) — NEO DEV ARASI, BOT SERVE EDİYOR**
+> **Son güncelleme:** 14 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-8 KAPATILDI (LAZY SYNC TARİH NULL + MOBİL UI) — NEO DEV ARASI, BOT SERVE EDİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-7 KAPANIŞ)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-8 KAPANIŞ)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `b1beaf7` fix(fast_responses): ogrenci 'kaydet' = AKADEMIK her zaman (sadelestir)
+> - **HEAD:** `971d854` fix(web_ui): mobile bekleme gradient kart text dikey hizalama
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `/agent` endpoint çalışıyor, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
 > - **Dev Meeting:** 7 iter (dev-meeting-1) + 4 iş (dev-meeting-2 konuşma analiz) = 11 production fix toplam canlı
@@ -194,6 +194,48 @@
 >
 > - **#5 — Planner kural eklendi mi canlı doğrula:** Konuşma analizinde "şu sayfa kör" gibi şikayetler için planner'da özel kural yazıldıysa (`eyotek_planner.py` few-shot örnek), Neo o kuralı sonradan eklemiş olabilir. Açık "teknik borç" diye listelemeden önce ŞU AN planner ne diyor bak (`grep "25.44 KRITIK" eyotek_planner.py`).
 > - **#6 — Sentry zombie issue tespiti:** Bot Sentry rapor verirken `lastSeen < HEAD_commit_time` ise issue koddan fix'lenmiş olabilir (yanlış pozitif var, kesin değil). `sentry_monitor.py` artık `fixed_likely` flag ile bunu otomatik işaretliyor — bot summary'de ZOMBIE etiketi görüyor. Bota "bu issue açık" derken zaten ZOMBIE flag'ini iletmeli.
+>
+> ---
+>
+> ## ✅ 25.44-DEV-MEETING-8 — LAZY SYNC TARİH NULL + MOBİL UI (14 May 01:12-02:30)
+>
+> Neo'nun ekran görüntüsü 14 May 01:12 — bot kendisi self-diagnose etti:
+> - `SIFIR POZİTİF TG TYT` (5 May): Eyotek 55 öğrenci → DB **41 kayıt + 14 eksik + `exam_date=NULL`**
+> - Mobile bekleme gradient kart: "Cevap — neredeyse hazır" yazısı **yukarı kaymış**
+>
+> ### Yapılan 2 Fix (2 commit)
+>
+> **`b0fab21`** — `fermat_core_agent.py:631` lazy_sync sinav_meta kademeli extract:
+> - Eski mantık: `if len(sinav_meta) > 6` koşulu — kısa diziler tümden skip
+> - Yeni: kademeli `len > 2` (tarih), `len > 3` (sinav_kodu), `len > 6` (sinav_adi)
+> - **Kanıt:** Yeni sınav `SIFIR POZİTİF TG YKS-1` re-sync sonrası **20/20 tarih dolu (2026-05-05)** ✅
+>
+> **`971d854`** — `web_chat_ui.html:475` mobile (max-width: 540px) media query:
+> - `.render-pending-card` padding 18→14, gap 16→12
+> - `align-items: center` → `stretch` (text dikey full kapla)
+> - `.render-pending-text`: flex column + justify-content:center + min-height:44px
+> - Font: title 15→13.5, sub 12.5→11.5
+> - Spinner 42→36
+> - Desktop davranışı KORUNDU (mobile-only override)
+>
+> ### Canlı Test Sonuçları
+>
+> | Test | Önce | Sonra |
+> |------|------|-------|
+> | SIFIR POZİTİF TG YKS-1 (yeni çekim) | 0 kayıt | **20 kayıt + 20 tarih dolu** ✅ |
+> | Bot lazy sync trigger | sinav_meta skip | sinav_meta extract OK |
+> | Mobil bekleme kart text | Yukarı kayma | (Neo test edecek) |
+>
+> ### ⚠ Kısmi — Eski Sınavlar İçin Yapılacak
+>
+> Sınavlar `SIFIR POZİTİF TG TYT` (41 kayıt) + `APOTEMİ TG TYT-3` (32 kayıt): **exam_date hâlâ NULL.**
+> - Sebep: Bu sınavlar fix'ten ÖNCE Eyotek'ten çekildi. Sinav_meta path'i farklı (bazı sınavlarda `sinav_drilldown` farklı format döner).
+> - UPSERT COALESCE: eski kayıt UPDATE, ama yeni veri de tarih NULL → ne yapsa boş
+> - Sonraki iş: Navigator'a tarih extract path'lerini derinlemesine incele — alt log mevcut (`[NAV] sinav_drilldown: SIFIR POZİTİF TG TYT → 4 devre satırı`). Bu özel formatın sinav_meta dönmediği gözüküyor.
+>
+> ### Pattern Öğretisi #14
+>
+> **Lazy sync UPSERT COALESCE yetersiz:** ON CONFLICT COALESCE NULL'u override etmez, sadece NULL yerine yenisini koyar. Yeni veri de NULL ise eski kayıt asla düzelmez. **Backfill için ayrı script gerek** — `student_exams WHERE exam_date IS NULL` için sinav_resync v2 yazılmalı.
 >
 > ---
 >
