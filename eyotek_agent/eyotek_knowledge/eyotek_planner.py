@@ -560,6 +560,30 @@ async def execute_query(question: str, max_rows: Optional[int] = None) -> dict:
             "error": "Sorgu icin uygun Eyotek sayfasi bulunamadi (confidence dusuk).",
         }
 
+    # 25.44-dev-meeting-5 OTOMATIK EXPAND (Neo 13 May 23:17):
+    # individual-lesson sayfasinda + question'da "kim katiliyor / hangi
+    # ogrenciler / ogrenci listesi" gecerse, planner LLM bunu sezmemis bile
+    # olsa expand_row_details:True yap. Claude'a guvenmek yerine deterministic.
+    if "individual-lesson" in plan["page_path"].lower():
+        q_lower = question.lower()
+        _expand_triggers = [
+            "kim katiliyor", "kim katılıyor", "kim katiliyor",
+            "hangi ogrenci", "hangi öğrenci",
+            "ogrenci listesi", "öğrenci listesi",
+            "ogrenciler kim", "öğrenciler kim",
+            "ogrencileri kim", "öğrencileri kim",
+            "kimler katiliyor", "kimler katılıyor",
+            "ogrencileri ver", "öğrencileri ver",
+            "kim var",  # "yarın etutte kim var"
+            "etudune kim", "etüdüne kim",
+            "etudunde kim", "etüdünde kim",
+            "katilimci", "katılımcı",
+        ]
+        if any(t in q_lower for t in _expand_triggers):
+            plan["expand_row_details"] = True
+            plan_only["expand_row_details"] = True
+            logger.info(f"[PLANNER] expand_row_details OTO-True (keyword match)")
+
     # Navigate (1. deneme)
     from eyotek_knowledge.eyotek_navigator import navigate
     eff_max = max_rows or plan["max_rows"] or 30
