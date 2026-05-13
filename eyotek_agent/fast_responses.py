@@ -1817,6 +1817,81 @@ async def ogrenci_etutlerim(soz_no: int, name: str) -> str:
     return "\n".join(lines)
 
 
+async def ogrenci_calisma_kaydi_yonlendirme(soz_no: int, name: str, message: str = "") -> str:
+    """'1 saat kimya calistim 30 soru matematik cozdum kaydet' / 'sen kaydet'
+       / 'kaydetsene' — AKADEMIK CALISMA KAYDI intent'i.
+
+    25.44-dev-meeting-7 (Neo direktif 14 May 01:30): Ada vakasi (11 May 16:12+
+    ve 12 May 19:14+) tekrarladi — bot ogrencinin akademik calisma kaydi
+    istegini *"yonetim feedback'i"* zannedip "Notunuz Neo Bey'e ulasacak"
+    diye **baglamdan uzak robotik sallakca cevap** verdi. Veya "sisteme
+    kaydedeyim" yalanladi.
+
+    DOGRU davranis (Neo: "uygulamaya yonlendirme cok mantikli ama 'talimat
+    kaydedildi' demek baglamdan uzak salakca"):
+    - Bu intent **akademik kayit** — sistem feedback'i DEGIL
+    - Bot durustce soyle "ben yazamiyorum (tool YOK), uygulamadan ekle"
+    - Bana soylediklerini OZETLE — empati + hatirlama
+    - Hizli uygulama linki + buton adi
+
+    Pattern (registry/handler dispatcher tarafindan tetiklenir):
+    - "X saat/dakika/dk Y ders calistim"
+    - "X soru cozdum/yaptim"
+    - "sen kaydet[sene]" + "calistim/cozdum"
+    - "kaydet" + akademik sinyal (saat/dakika/soru/calistim/cozdum/yaptim)
+    """
+    import re as _re
+    msg = (message or "").lower()
+    first = name.split()[0] if name else ""
+    if not first:
+        first = "kardes"
+
+    # Ozet cikar — saat/dakika/soru bilgisini yakala
+    _ozet_lines = []
+    # Pattern: "<sayi> <birim> <ders>"
+    _sayi_pat = _re.compile(r'(\d+)\s*(saat|sa|dk|dakika|soru)', _re.IGNORECASE)
+    # Ders kelimeleri yakala
+    _ders_kw = ['kimya', 'matematik', 'mat', 'fizik', 'biyoloji', 'bio',
+                'turkce', 'türkçe', 'paragraf', 'tarih', 'cografya',
+                'coğrafya', 'geometri', 'felsefe', 'edebiyat', 'tde', 'din']
+    # Mesaji noktalama bazli parcala, her parcadan saat+soru+ders cifti çek
+    _segments = _re.split(r'[,.;]|\s+sonra\s+|\s+birde\s+|\s+ve\s+', msg)
+    for seg in _segments:
+        _nums = _sayi_pat.findall(seg)
+        _dersler = [d for d in _ders_kw if d in seg]
+        if _nums or _dersler:
+            ders_label = (_dersler[0].title() if _dersler else 'Calisma').capitalize()
+            ders_label = {'mat': 'Matematik', 'bio': 'Biyoloji', 'tde': 'TDE',
+                          'turkce': 'Türkçe'}.get(ders_label.lower(), ders_label)
+            _num_str = ' + '.join(f'{n[0]} {n[1]}' for n in _nums)
+            if _num_str:
+                _ozet_lines.append(f"  • *{ders_label}* — {_num_str}")
+            elif _dersler:
+                _ozet_lines.append(f"  • *{ders_label}*")
+
+    lines = [
+        f"{first}, dürüst olmalıyım —",
+        "",
+        "Çalışmalarını ben sisteme *kaydedemiyorum* (henüz öyle bir aracım yok). "
+        "Ama söylediklerini *hatırlıyorum*:",
+    ]
+    if _ozet_lines:
+        lines.append("")
+        lines.extend(_ozet_lines[:6])
+        lines.append("")
+    else:
+        lines.append("")
+    lines.extend([
+        "📲 *Uygulamadan kaydetmek için:*",
+        "1. 🌐 *fermategitimkurumlari.com/fermatai* → giriş yap",
+        "2. *Çalışmam* sekmesi → *'Çalışma Saati Ekle'* butonu",
+        "3. Ders + süre + soru sayısını gir",
+        "",
+        "_Web kodun lazımsa 'web kodu' yaz, anında atarım._ 🎯",
+    ])
+    return "\n".join(lines)
+
+
 async def ogrenci_calisma_plani(soz_no: int, name: str) -> str:
     """'Bana calisma programi yap', 'ne calismam lazim'"""
     # Zayif konulari al
@@ -3815,6 +3890,20 @@ async def _dispatch_registry_handler(
             return _handler_bolum_generic(msg_lower, name)
 
         if handler == "user_feedback_kaydet":
+            # 25.44-dev-meeting-7 (Neo direktif 14 May): Ogrencinin akademik
+            # calisma kaydi istegi feedback DEGIL — ayri handler. "X saat/
+            # dakika/soru ... kaydet" gibi akademik sinyal varsa direkt
+            # ogrenci_calisma_kaydi_yonlendirme cagir. Aksi halde alt akisa
+            # birak (genel feedback handler).
+            if role == "ogrenci" and soz_no:
+                _academic_signal = bool(re.search(
+                    r"\b(\d+\s*(saat|sa|dk|dakika|soru))\b|"
+                    r"\b(calistim|çalıştım|cozdum|çözdüm|yaptim|yaptım|"
+                    r"calismam|çalışmam|calistigim|çalıştığım)\b",
+                    msg_lower,
+                ))
+                if _academic_signal:
+                    return await ogrenci_calisma_kaydi_yonlendirme(soz_no, name, message)
             # Mevcut inline kod detayli hack filtresi icerir — alt akisa birak
             return None
 
@@ -5183,11 +5272,21 @@ async def try_fast_response(
     # Mesajda sure/soru/dakika gibi akademik olcum varsa SKIP — Claude'a dussun,
     # system_prompts'taki "CALISMA KAYDI" durust kalibi tetiklenir.
     _is_study_log = re.search(
-        r"\b(\d+\s*(saat|sa|dakika|dk|soru|dakkika))\b",
+        r"\b(\d+\s*(saat|sa|dakika|dk|soru|dakkika))\b|"
+        r"\b(calistim|çalıştım|cozdum|çözdüm|yaptim|yaptım|"
+        r"kaydetsene|kaydeder\s*misin|sen\s*kaydet)\b",
         msg_lower
     )
+    if _is_study_log and role == "ogrenci" and soz_no:
+        # 25.44-dev-meeting-7: Akademik calisma kaydi DIREKT durust handler.
+        # Once Claude'a yonlendirip duzgun cevaplamayi bekliyorduk ama:
+        # 1) Claude bazen Cerebras tool fallback'a duser, halusinasyon
+        # 2) Yavas (5-15sn)
+        # 3) Determinizm yok
+        # Fast_response ile 0.2sn'de durust + saygi + uygulama yonlendirmesi.
+        return await ogrenci_calisma_kaydi_yonlendirme(soz_no, name, message)
     if _is_study_log:
-        pass  # feedback DEGIL — Claude'a yonlendir
+        pass  # ogrenci disi roller — feedback DEGIL, Claude'a yonlendir
     elif re.search(r"(not\s*et|kaydet|bildir|önemli.*not|problemi?\s*kaydet|yetkiliye\s*bildir|sistem.*bildir|bunu\s*kaydet|bunu\s*not|dikkat.*çek|ilet.*yönetim)", msg_lower):
         feedback_text = message
         for prefix in ["not et:", "not et ", "kaydet:", "kaydet ", "bildir:", "bildir "]:
