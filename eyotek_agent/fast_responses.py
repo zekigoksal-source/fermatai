@@ -620,12 +620,41 @@ async def ogrenci_son_deneme(soz_no: int, name: str, exam_filter: str = "") -> s
     elif exam_filter == "sinif":
         where_extra = " AND (exam_name ILIKE '%sınıf%' OR exam_name ILIKE '%sinif%' OR exam_name ~* '\\m1[0-2][^0-9]')"
 
+    # 25.44-dev-meeting-6 (Ali vakasi): Filter aktif iken LIMIT 5 — coklu varsa
+    # secenek sun (Eyotek-first workflow). Tek varsa eski davranis (detay).
+    _has_filter = bool(exam_filter)
+    _limit = 5 if _has_filter else 2
     sql = (
-        "SELECT exam_name, exam_date, turkce, matematik, geometri, fizik, kimya, biyoloji, toplam "
+        "SELECT exam_name, exam_date, turkce, matematik, geometri, fizik, biyoloji, kimya, toplam "
         f"FROM student_exams WHERE soz_no=$1{where_extra} "
-        "ORDER BY exam_date DESC NULLS LAST LIMIT 2"
+        f"ORDER BY exam_date DESC NULLS LAST LIMIT {_limit}"
     )
     rows = await _q(sql, soz_no)
+    # 25.44-dev-meeting-6: Filter aktif + 2+ sonuc → SECENEK SUN (workflow gereği)
+    # Ali 14 May "TYT netlerimi ver" → bot direkt en yeni TYT'yi gosterdi (Çap 2)
+    # ama Ali "11. sinif degil TYT lazim" dedi — DB exam_type='TYT' etiketli ama
+    # isim yaniltici. Coklu varsa kullaniciya liste + sec demek halusinasyon
+    # riskini bitirir.
+    if _has_filter and rows and len(rows) >= 2:
+        first = (name.split()[0] if name else "")
+        _filter_label = {"tyt": "TYT", "ayt": "AYT", "sinif": "Sınıf/Branş"}.get(exam_filter, "")
+        lines = [
+            f"{first}, sistemde *{len(rows)} adet {_filter_label} denemen* var.",
+            "Hangisinin detayını istersin?\n",
+        ]
+        for idx, r in enumerate(rows, 1):
+            _ed = r.get('exam_date')
+            _ed_str = str(_ed)[:10] if _ed else ''
+            try:
+                _tot = float(r.get('toplam') or 0)
+                _tot_str = f"{_tot:.1f} net"
+            except Exception:
+                _tot_str = ""
+            lines.append(f"  *{idx}.* {r['exam_name']} ({_ed_str}) — {_tot_str}")
+        lines.append("")
+        lines.append(f"💡 _Numarasını söyle (örn '1') veya 'son denemem' dersen en yenisini gösteririm._")
+        lines.append("_İstersen sınav adını da yazabilirsin._ 🎯")
+        return "\n".join(lines)
     if not rows:
         first = name.split()[0] if name else ""
         return (
