@@ -473,6 +473,40 @@ html[data-theme="dark"] .msg.bot .render-pending-card.chunk-pause-card {
   line-height: 1.45;
 }
 
+/* 25.44-dev-meeting-8 (Neo bug 14 May 01:12): Mobile bekleme gradient kart
+   içindeki yazılar yukarı kayık görünüyor — title + sub iki satırlı text
+   align-items:center ile spinner'la hizalanırken text baseline'ı taşıyor.
+   Mobile için: padding küçült, font-size düşür, text container'a min-height
+   ver, justify-content:center ile dikey ortalama kuvvetlendir. */
+@media (max-width: 540px) {
+  .msg.bot.render-pending-card,
+  .msg.bot .render-pending-card {
+    padding: 14px 16px !important;
+    gap: 12px;
+    align-items: stretch !important;
+  }
+  .msg.bot .render-pending-text {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 44px;
+  }
+  .msg.bot .render-pending-title {
+    font-size: 13.5px;
+    line-height: 1.3;
+  }
+  .msg.bot .render-pending-sub {
+    font-size: 11.5px;
+    line-height: 1.35;
+    margin-top: 3px;
+  }
+  .msg.bot .render-spinner {
+    width: 36px; height: 36px;
+    flex-shrink: 0;
+    align-self: center;
+  }
+}
+
 /* HAZIR — tıklanabilir buton (smooth dönüşüm) */
 .msg.bot .render-ready-card {
   margin-top: 14px;
