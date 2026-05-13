@@ -628,13 +628,21 @@ async def _tool_sinav_sonuclari(sinav_adi: str, max_rows: float = 100,
             extracted_sinav_adi = sinav_adi  # caller param fallback
             extracted_tarih = ""
             extracted_sinav_kodu = ""  # 25.43 Görev 3: native exam_code priority
-            if isinstance(sinav_meta, list) and len(sinav_meta) > 6:
-                extracted_tarih = sinav_meta[2] if len(sinav_meta) > 2 else ""
-                extracted_sinav_kodu = sinav_meta[3] if len(sinav_meta) > 3 else ""
-                # Index 6: SınavAdı (eski 4 hatalıydı — Tür'e işaret ediyordu)
-                cand = sinav_meta[6] if len(sinav_meta) > 6 else ""
-                if cand and cand.strip():
-                    extracted_sinav_adi = cand.strip()
+            # 25.44-dev-meeting-8 (Neo bug 14 May 01:12): "Sıfır Pozitif TG TYT"
+            # sinav_found dizisi kısa gelirse (5 eleman) eski mantık `len > 6`
+            # koşulu ile TÜM index'leri skip ediyordu → tarih + sinav_adi NULL
+            # → student_exams.exam_date = NULL + 14 row sinav_adi boş → SKIP.
+            # Düzeltme: her index için KADEMELI check, kısmi extract.
+            if isinstance(sinav_meta, list):
+                if len(sinav_meta) > 2:
+                    extracted_tarih = (sinav_meta[2] or "").strip()
+                if len(sinav_meta) > 3:
+                    extracted_sinav_kodu = (sinav_meta[3] or "").strip()
+                if len(sinav_meta) > 6:
+                    # Index 6: SınavAdı (eski 4 hatalıydı — Tür'e işaret ediyordu)
+                    cand = (sinav_meta[6] or "").strip()
+                    if cand:
+                        extracted_sinav_adi = cand
             elif isinstance(sinav_meta, dict):
                 extracted_sinav_adi = sinav_meta.get("sinav_adi") or sinav_meta.get("ad") or sinav_adi
                 extracted_tarih = sinav_meta.get("tarih") or ""
