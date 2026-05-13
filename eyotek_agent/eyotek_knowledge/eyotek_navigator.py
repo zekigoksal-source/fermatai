@@ -1182,6 +1182,12 @@ async def _expand_individual_lesson_details(page, rows_data: list, result: dict)
                 });
             })()""")
 
+            # Bos satirlari filtrele (thead bazen tbody icine duser → tum field None)
+            if students:
+                students = [
+                    s for s in students
+                    if any((s.get(k) for k in ('soz_no', 'ogrenci', 'sinif')))
+                ]
             if students:
                 row['_detail_students'] = students
                 expanded_count += 1
