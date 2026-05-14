@@ -1,16 +1,19 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 14 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-9 KAPATILDI (400 HISTORY CORRUPTION RETRY) — NEO DEV ARASI, BOT SERVE EDİYOR**
+> **Son güncelleme:** 14 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-10 KAPATILDI (WEBHOOK TIMEOUT + WIX SSS + SENTRY TEMİZ) — NEO DEV ARASI, BOT SERVE EDİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-9 KAPANIŞ)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-10 KAPANIŞ)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `f0ae2ac` fix(25.44-dev-meeting-9): 400 history corruption retry + agresif sanitize
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `/agent` endpoint çalışıyor, bot kullanıcıya cevap veriyor
+> - **HEAD:** `b2d6def` fix(25.44-dev-meeting-10): webhook timeout — mesaj islemeyi background'a al
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `b2d6def` deployed, daemon-reload yapıldı, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
-> - **Dev Meeting:** 7 iter (dev-meeting-1) + 4 iş (dev-meeting-2 konuşma analiz) = 11 production fix toplam canlı
-> - **Bot Sentry awareness:** ZOMBIE flag aktif — bot artık `lastSeen < HEAD_commit_time` olan issue'lara "muhtemelen koddan fix'li" diyebilir; eski hata bilgi vermek tarihe geçti
-> - **Sentry token:** Neo `event:write` scope'lu yeni token oluşturuyor; eski 4 zombie issue + birikmiş ~30 eski issue `resolve_zombie_issues(dry_run=False)` ile tek seferde temizlenecek
+> - **Sentry:** **0 unresolved issue** — 2 gerçek bug fix (webhook timeout #116905082, Playwright chromium #119498281) + 1 sahte alarm + 7 zombie temizlendi (10 issue resolve)
+> - **Sentry token:** Neo eski token'ı revoke etti, yeni `event:write` scope'lu token (`...2f60c039`) VPS `.env`'de aktif — `resolve_zombie_issues(dry_run=False)` çalışıyor
+> - **Webhook timeout fix:** `_handle_webhook_data` artık `_safe_background_task` ile background'da — Meta anında 200 alıyor (önce 25.7s bloke ediyordu, Meta limiti 20s)
+> - **Playwright chromium:** `PLAYWRIGHT_BROWSERS_PATH=/opt/fermatai/.playwright-browsers` ile chromium-1217 + headless-shell-1217 doğru path'e kuruldu (gece cron'u için)
+> - **Wix SSS:** 13 kategori SEO+GEO optimize, ODTÜ söylemi düzeltildi (kurucular ODTÜ — Zeki Göksal/Murathan Şarvan), Türkiye 9.su verisi + FermatAI dikey ajan vurgusu — **Neo yayınladı**
+> - **Eyotek etüt-öğrenci popup:** `expand_row_details` navigator param + planner auto-trigger — "hangi öğrenciler katıldı" sorusu artık çalışıyor
 > - **Eyotek fix loop:** **14/14 PASS (%100)**, ortalama ~22s/test (browser singleton ile %6 hızlanma)
 > - **Eyotek DB sync:** lazy_sync her sorguda otomatik (40 yeni sezon kayıt DB'de)
 > - **Browser context cache:** module-level singleton, ilk init sonra reuse
@@ -34,6 +37,42 @@
 >     * LGS role-aware sınav tarihi (caller_class detection)
 >     * Cloud routing genişleme: randevu/ekle/haber/hocaya/rehberden/yeterli mi/pasta grafik/heatmap
 > - **Production ready:** ✅ Tüm okuma fonksiyonları + DB sync + chart + Sentry awareness + browser cache aktif
+>
+> ## 🎯 Bu Oturumda (25.44-DEV-MEETING-10) Yapılanlar (14 May gece)
+>
+> **A. Webhook Timeout Fix (Sentry #116905082 — gerçek bug)**
+> 1. `webhook_receive` → `_handle_webhook_data` senkron `await` ile çağrılıyordu, 25.7s bloke ediyordu (Meta webhook limiti 20s → mesaj kaybı riski)
+> 2. `_safe_background_task(_handle_webhook_data(data), label="webhook")` ile background'a alındı — Meta anında 200 alıyor, işlem arkada devam ediyor
+> 3. Commit `b2d6def`, VPS'e deploy edildi + daemon-reload
+>
+> **B. Playwright Chromium Path Fix (Sentry #119498281 — gerçek bug)**
+> 4. Gece cron'u chromium'u yanlış path'te arıyordu (`~/.cache/ms-playwright/`)
+> 5. `PLAYWRIGHT_BROWSERS_PATH=/opt/fermatai/.playwright-browsers .venv/bin/python -m playwright install chromium` → chromium-1217 + headless-shell-1217 doğru path'e kuruldu
+>
+> **C. Sentry Zombie Temizliği (yeni token + event:write)**
+> 6. Neo eski token'ı revoke etti, yeni `event:write` scope'lu token VPS `.env`'de aktif
+> 7. `resolve_zombie_issues(dry_run=False)` → 9/10 resolve, kalan 1 (#118940375 TargetClosedError) `resolve_issue` ile tekrar denenip resolve edildi
+> 8. **Toplam 10 issue resolve, 0 unresolved kaldı** — Neo'ya gelen hata mailleri kesildi
+> 9. `sentry_monitor` import edilirken `.env` yüklemiyor (sadece `__main__`'da) → çağrı öncesi `load_dotenv('/opt/fermatai/.env', override=True)` şart
+>
+> **D. Wix SSS — SEO/GEO İçerik (Neo direktifi, yayınlandı)**
+> 10. 13 kategori FAQ — Wix FAQ App API (categories v2 + question-entries v2)
+> 11. `Arama anahtar kelimesi (7).pdf` → 17 düşük Quality Score anahtar kelime FAQ sorularına doğal dille gömüldü
+> 12. Rakip analizi: maksimumvip.com — genel Google aramalarına yönelik soru tipleri eklendi
+> 13. ODTÜ söylemi düzeltildi: "ODTÜ mezunu öğretmen kadrosu" → "ODTÜ mezunu kurucular" (Zeki Göksal — ODTÜ Fizik, Murathan Şarvan — ODTÜ Endüstri Müh.); akademik kültür/vizyon vurgusu
+> 14. fermatvip.com başarı verisi: Türkiye 9.su; FermatAI "dikey ajan" (vertical agent) benzersizliği akademik dille işlendi
+> 15. Wix update 400 fix: UNKNOWN status entry update edilemiyor → `status:"HIDDEN"` + fieldMask'e "status" eklendi
+>
+> **E. Eyotek Etüt-Öğrenci Popup Entegrasyonu**
+> 16. Etüt satırı başındaki ok → "hangi öğrenciler katıldı" detay popup'ı sistem kullanmıyordu
+> 17. `eyotek_navigator.py`: `expand_row_details` param + `_expand_individual_lesson_details()` — `#GridView1_BtnIndividualLessonDetail_{idx}` tıkla, `#MdlIndividualLessonDetail` tablosunu oku
+> 18. `eyotek_planner.py`: "kim katiliyor / hangi ogrenci" keyword'lerinde `expand_row_details=True` auto-trigger
+>
+> **F. Konuşma Analizi Fix'leri (Neo "botla konuşmama bak")**
+> 19. 400 history corruption retry (`f0ae2ac` — dev-meeting-9): `is_history_corrupted` flag + agresif sanitize (tüm tool_use/tool_result strip) + retry
+> 20. loguru curly-brace KeyError (`be7f702`): err_str içinde `{`/`}` escape — dict repr'ları `.format()` patlatıyordu (HTTP 500 kaynağı)
+> 21. Öğrenci "kaydet" intent fix: çalışma kaydı talebi yönetim feedback'i sanılıyordu → `ogrenci_calisma_kaydi_yonlendirme` handler
+> 22. Mobil bekleme animasyonu: `.render-pending-card` text dikey hizalama media query fix
 >
 > ## 🎯 Bu Oturumda (25.44) Yapılanlar (11 May)
 >
