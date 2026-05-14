@@ -185,61 +185,63 @@ async def auto_archive_stale(dry_run: bool = False) -> dict:
 
     25.40z3-ATLAS: Atlas her gece yeni öneriler üretiyor ama 'yeni' status'ta kalan
     eski öneriler ekranı şişiriyor. Severity'e göre yaşlandırma:
-    - info: 7 gün+ stale → archived (ilgilenilmedi, düşük öncelik)
-    - warning: 21 gün+ stale → archived (orta süre)
-    - critical: ASLA otomatik archive (Neo manuel karar verir)
+    - low: 7 gün+ stale → archived (ilgilenilmedi, düşük öncelik)
+    - medium: 21 gün+ stale → archived (orta süre)
+    - critical/high: ASLA otomatik archive (Neo manuel karar verir)
+
+    25.44-dm11: severity standardı normalize edildi (info→low, warning→medium).
 
     Args:
         dry_run: True ise sadece sayım, UPDATE yok
 
     Returns:
-        {info_archived, warning_archived, critical_skipped, total}
+        {low_archived, medium_archived, critical_skipped, total}
     """
     from db_pool import db_fetch, db_execute
 
     # Hangi öneriler aday?
-    info_candidates = await db_fetch("""
+    low_candidates = await db_fetch("""
         SELECT id, title, severity, last_seen_at, created_at
         FROM atlas_suggestions
-        WHERE status = 'yeni' AND severity = 'info'
+        WHERE status = 'yeni' AND severity = 'low'
           AND COALESCE(last_seen_at, created_at) < NOW() - INTERVAL '7 days'
     """)
-    warning_candidates = await db_fetch("""
+    medium_candidates = await db_fetch("""
         SELECT id, title, severity, last_seen_at, created_at
         FROM atlas_suggestions
-        WHERE status = 'yeni' AND severity = 'warning'
+        WHERE status = 'yeni' AND severity = 'medium'
           AND COALESCE(last_seen_at, created_at) < NOW() - INTERVAL '21 days'
     """)
     critical_open = await db_fetch("""
         SELECT id, title, COALESCE(last_seen_at, created_at) AS age
         FROM atlas_suggestions
-        WHERE status = 'yeni' AND severity = 'critical'
+        WHERE status = 'yeni' AND severity IN ('critical', 'high')
           AND COALESCE(last_seen_at, created_at) < NOW() - INTERVAL '7 days'
     """)
 
-    info_n = len(info_candidates)
-    warning_n = len(warning_candidates)
+    low_n = len(low_candidates)
+    medium_n = len(medium_candidates)
     critical_n = len(critical_open)
 
-    if not dry_run and (info_n + warning_n) > 0:
+    if not dry_run and (low_n + medium_n) > 0:
         await db_execute("""
             UPDATE atlas_suggestions
             SET status = 'archived',
                 neo_note = COALESCE(neo_note, '') || ' [auto-archived: stale]'
             WHERE status = 'yeni'
-              AND ((severity = 'info' AND COALESCE(last_seen_at, created_at) < NOW() - INTERVAL '7 days')
-                OR (severity = 'warning' AND COALESCE(last_seen_at, created_at) < NOW() - INTERVAL '21 days'))
+              AND ((severity = 'low' AND COALESCE(last_seen_at, created_at) < NOW() - INTERVAL '7 days')
+                OR (severity = 'medium' AND COALESCE(last_seen_at, created_at) < NOW() - INTERVAL '21 days'))
         """)
         logger.info(
-            f"🗄️ Atlas auto-archive: {info_n} info + {warning_n} warning archived. "
-            f"{critical_n} critical Neo'nun manuel kararına bırakıldı."
+            f"🗄️ Atlas auto-archive: {low_n} low + {medium_n} medium archived. "
+            f"{critical_n} critical/high Neo'nun manuel kararına bırakıldı."
         )
 
     return {
-        "info_archived": info_n,
-        "warning_archived": warning_n,
+        "low_archived": low_n,
+        "medium_archived": medium_n,
         "critical_skipped": critical_n,
-        "total": info_n + warning_n,
+        "total": low_n + medium_n,
         "dry_run": dry_run,
     }
 

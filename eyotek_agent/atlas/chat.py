@@ -61,7 +61,8 @@ async def cmd_list(channel: str = "terminal") -> str:
             FROM atlas_suggestions
             WHERE status='yeni'
             ORDER BY
-              CASE severity WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END,
+              CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1
+                            WHEN 'medium' THEN 2 ELSE 3 END,
               created_at DESC
             LIMIT 20
         """)
@@ -70,7 +71,7 @@ async def cmd_list(channel: str = "terminal") -> str:
 
         lines = ["📋 *BEKLEYEN ÖNERİLER*", ""]
         for r in rows:
-            sev_icon = {"critical": "🔴", "warning": "🟡", "info": "🔵"}.get(r['severity'], "⚪")
+            sev_icon = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🔵"}.get(r['severity'], "⚪")
             lines.append(f"{sev_icon} #{r['id']} [{r['category']}] {r['title']}")
         lines.append("")
         lines.append("_'detay <ID>' ile aç, 'onayla <ID>' / 'reddet <ID>' ile karar ver_")
@@ -91,7 +92,7 @@ async def cmd_detail(suggestion_id: int, channel: str = "terminal") -> str:
         if not r:
             return f"❌ Öneri #{suggestion_id} bulunamadı."
 
-        sev_icon = {"critical": "🔴", "warning": "🟡", "info": "🔵"}.get(r['severity'], "⚪")
+        sev_icon = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🔵"}.get(r['severity'], "⚪")
         lines = [
             f"{sev_icon} *ÖNERİ #{r['id']}* — {r['title']}",
             f"_Kategori: {r['category']} | Statü: {r['status']}_",

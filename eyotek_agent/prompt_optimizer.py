@@ -8,7 +8,8 @@ Akış:
   1. Her gece 02:00 (cron) — analyze_and_suggest()
   2. Son 24h konusmalarda problem tespit (frustration, baglam_kaybi,
      yanlis_data, halusinasyon, eksik_pattern)
-  3. Groq 70B'ye sorulur — somut prompt degisikligi onerisi
+  3. Claude Opus 4.7'ye sorulur — somut prompt degisikligi onerisi
+     (Cerebras qwen-235b + Groq 70B fallback)
   4. prompt_suggestions tablosuna kaydedilir (status='pending')
   5. Sabah Neo dashboard'da gorur, "approve" tikalar
   6. Approved oldugunda → otomatik git patch + commit + VPS sync + restart
@@ -25,6 +26,7 @@ import json
 import os
 import re
 import subprocess
+import time
 from datetime import datetime, date, timedelta
 from typing import Optional
 
@@ -116,30 +118,32 @@ async def _detect_problems(hours: int = 24) -> list[dict]:
 async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
     """LLM'den problem ornekleri ile prompt iyilestirme onerisi sor.
 
-    25.22 (Bot Atlas-2 bulgu): Groq daily limit dolup duruyor → 0 oneri uretiyor.
-    Cerebras'a geciyoruz (gpt-oss-120b — 436ms, kaliteli, paid tier sinirsiz).
-    Groq fallback olarak korunur.
+    25.44-dm11 (Neo direktifi): Atlas önerileri KRİTİK — yanlış öneri sistemi
+    bozar. Birincil model **Claude Opus 4.7** (en üst kalite öz-farkındalık +
+    hata tespiti + çözüm önerisi). Cerebras qwen-235b + Groq 70B fallback olarak
+    korunur (Anthropic API down ise gece üretimi tamamen durmasın).
+    Model env ile değiştirilebilir: ATLAS_LLM_MODEL (default: claude-opus-4-7).
     """
     if not problems:
         return []
 
-    # Cerebras-first (paid tier, sınırsız)
+    # ── Model zinciri için client init — hepsi bağımsız, fallback sağlam ──
+    cerebras = None
     use_cerebras = bool(os.getenv("CEREBRAS_API_KEY"))
     if use_cerebras:
         try:
             from cerebras_handler import CerebrasClient
             cerebras = CerebrasClient()
         except Exception as e:
-            logger.warning(f"Cerebras client init fail: {e}, Groq'a dusuyor")
+            logger.warning(f"[ATLAS-2] Cerebras client init fail: {e}")
             use_cerebras = False
 
-    if not use_cerebras:
-        try:
-            from groq_handler import GroqClient
-            client = GroqClient()
-        except Exception as e:
-            logger.warning(f"Groq client init fail: {e}")
-            return []
+    client = None  # Groq fallback — her zaman dene (use_cerebras'tan bağımsız)
+    try:
+        from groq_handler import GroqClient
+        client = GroqClient()
+    except Exception as e:
+        logger.warning(f"[ATLAS-2] Groq client init fail: {e}")
 
     # Problem ozeti hazirla
     problem_summary = []
@@ -211,7 +215,7 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
         "[\n"
         "  {\n"
         '    "category": "bug|improvement|pattern",\n'
-        '    "severity": "high|medium|low",\n'
+        '    "severity": "critical|high|medium|low",\n'
         '    "title": "TÜRKÇE kısa başlık (örn: \'Bot bazen cevabi yarim kesiyor\')",\n'
         '    "description": "TÜRKÇE — sorunun ne, neden olusuyor (1-2 cumle)",\n'
         '    "affected_pattern": "TÜRKÇE — hangi tip mesaj kalibinda olusuyor",\n'
@@ -235,9 +239,39 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
     )
     text = ""
     used_model = None
-    # 25.40z3-ATLAS2 MIMARI: Cerebras qwen-3-235b ASIL, Groq YEDEK (Neo prensibi)
-    # Önce Cerebras dene (sınırsız paid tier, üst kalite), runtime hata olursa Groq'a düş.
-    if use_cerebras:
+
+    # ── 1) BİRİNCİL: Claude Opus 4.7 (25.44-dm11 Neo direktifi) ──────────────
+    # Atlas önerileri sistem promptunu değiştirir → en üst kalite şart.
+    # Hata olursa (key yok / API down / model id yanlış) sessizce Cerebras'a düşer.
+    ATLAS_MODEL = os.getenv("ATLAS_LLM_MODEL", "claude-opus-4-7")
+    if os.getenv("ANTHROPIC_API_KEY"):
+        try:
+            from anthropic import Anthropic
+            _cl = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"),
+                            max_retries=3, timeout=120.0)
+            _t0 = time.time()
+            _resp = _cl.messages.create(
+                model=ATLAS_MODEL,
+                max_tokens=2500,
+                temperature=0.3,
+                system=sys_prompt,
+                messages=[{"role": "user", "content": user_prompt}],
+            )
+            text = "".join(
+                getattr(b, "text", "") for b in _resp.content
+                if getattr(b, "type", "") == "text"
+            )
+            if text:
+                used_model = f"claude_{ATLAS_MODEL}"
+                logger.info(
+                    f"[ATLAS-2] Claude {ATLAS_MODEL} yaniti: {(time.time()-_t0):.1f}s, "
+                    f"in={_resp.usage.input_tokens} out={_resp.usage.output_tokens}"
+                )
+        except Exception as _cae:
+            logger.warning(f"[ATLAS-2] Claude exception ({_cae}), Cerebras'a duşuyor")
+
+    # ── 2) FALLBACK: Cerebras qwen-3-235b (paid tier, sınırsız) ─────────────
+    if not text and use_cerebras:
         try:
             r = cerebras.complete(
                 messages=[{"role": "user", "content": user_prompt}],
@@ -255,7 +289,7 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
         except Exception as _ce:
             logger.warning(f"[ATLAS-2] Cerebras exception ({_ce}), Groq'a duşuyor")
 
-    # Groq fallback (Cerebras yok VEYA Cerebras runtime fail)
+    # ── 3) FALLBACK: Groq Llama 3.3 70B (son çare) ─────────────────────────
     if not text and client:
         try:
             response = client.chat(
@@ -270,7 +304,7 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
             logger.warning(f"[ATLAS-2] Groq fallback exception: {_ge}")
 
     if not text:
-        logger.warning("[ATLAS-2] Hicbir LLM yanit veremedi (Cerebras + Groq fail)")
+        logger.warning("[ATLAS-2] Hicbir LLM yanit veremedi (Claude + Cerebras + Groq fail)")
         return []
 
     try:

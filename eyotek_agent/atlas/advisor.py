@@ -31,6 +31,23 @@ from db_pool import get_pool as _get_pool
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SEVERITY NORMALIZASYON (25.44-dm11 Neo): tek standart — critical/high/medium/low
+# Eski karışık değerler (yuksek/orta/warning/info/normal — Türkçe-İngilizce karışık)
+# tek noktadan normalize edilir. atlas_suggestions'a yazılan her severity buradan geçer.
+# ─────────────────────────────────────────────────────────────────────────────
+_SEVERITY_MAP = {
+    "critical": "critical", "kritik": "critical",
+    "high": "high", "yuksek": "high", "yüksek": "high",
+    "medium": "medium", "orta": "medium", "warning": "medium",
+    "low": "low", "info": "low", "normal": "low", "düşük": "low", "dusuk": "low",
+}
+
+def _norm_sev(sev: str) -> str:
+    """Herhangi bir severity değerini standart 4-seviye skalaya çevir."""
+    return _SEVERITY_MAP.get((sev or "").strip().lower(), "medium")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # RULE-BASED ADVISORS — her observation kategorisi için suggestion üretir
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -126,7 +143,7 @@ def advise_sentiment(obs: dict) -> Dict[str, Any]:
     is_crisis = 'crisis' in types
     return {
         "category": "sentiment",
-        "severity": "critical" if is_crisis else "warning",
+        "severity": "critical" if is_crisis else "medium",
         "title": f"{name} — duygu sinyali alarmı ({cnt} negatif {'+ KRİZ' if is_crisis else ''})",
         "rationale": (
             f"Öğrenci {name} son 24h'te {cnt} kez negatif sinyal verdi: {', '.join(types)}. "
@@ -240,10 +257,10 @@ async def run_advise(hours: int = 24) -> int:
                             + "\n\n💡 ALTERNATIF YAKLASIM ONERILIR — ayni patern tekrar etmedin!"
                         )
                         # Severity'i bir kademe düşür (önceden adres edildi)
-                        if sug['severity'] == 'critical':
-                            sug['severity'] = 'warning'
-                        elif sug['severity'] == 'warning':
-                            sug['severity'] = 'info'
+                        _sev = _norm_sev(sug['severity'])
+                        sug['severity'] = {
+                            'critical': 'high', 'high': 'medium', 'medium': 'low',
+                        }.get(_sev, 'low')
                 except Exception as _ca_err:
                     print(f"  ⚠ completion_awareness hatası ({cat}): {_ca_err}")
 
@@ -295,7 +312,7 @@ async def run_advise(hours: int = 24) -> int:
                     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'yeni',$9,NOW(),NOW(),1)
                     RETURNING id
                     """,
-                    [o['id']], sug['category'], sug['severity'], sug['title'],
+                    [o['id']], sug['category'], _norm_sev(sug['severity']), sug['title'],
                     sug['rationale'], sug.get('estimated_impact', ''),
                     sug.get('suggested_change', ''), sug.get('target_files', []),
                     signature,
@@ -309,12 +326,13 @@ async def run_advise(hours: int = 24) -> int:
         sugs = await conn.fetch("""
             SELECT id, severity, title FROM atlas_suggestions
             WHERE status='yeni' ORDER BY
-              CASE severity WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END,
+              CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1
+                            WHEN 'medium' THEN 2 ELSE 3 END,
               created_at DESC
             LIMIT 15
         """)
         for s in sugs:
-            sev_icon = {"critical": "🔴", "warning": "🟡", "info": "🔵"}.get(s['severity'], "⚪")
+            sev_icon = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🔵"}.get(s['severity'], "⚪")
             print(f"  {sev_icon} #{s['id']} {s['title']}")
         return inserted
 
