@@ -1,13 +1,15 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 14 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-10 KAPATILDI (WEBHOOK TIMEOUT + WIX SSS + SENTRY TEMİZ) — NEO DEV ARASI, BOT SERVE EDİYOR**
+> **Son güncelleme:** 15 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-11 KAPATILDI (ATLAS LLM → OPUS 4.7 + SEVERITY NORMALIZE + UI FIX) — NEO DEV ARASI, BOT SERVE EDİYOR**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-10 KAPANIŞ)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-11 KAPANIŞ)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `b2d6def` fix(25.44-dev-meeting-10): webhook timeout — mesaj islemeyi background'a al
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `b2d6def` deployed, daemon-reload yapıldı, bot kullanıcıya cevap veriyor
+> - **HEAD:** `4229fc6` feat(25.44-dev-meeting-11): Atlas LLM → Opus 4.7 + severity standardı normalize
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `4229fc6` deployed, bot kullanıcıya cevap veriyor
 > - **Servisler:** fermatai-bridge, fermat-chrome-cdp, fermat-session-keeper — hepsi active
+> - **Atlas-2 LLM:** **Claude Opus 4.7 birincil** (öneri-üretme) — Cerebras qwen-235b + Groq 70B fallback; `ATLAS_LLM_MODEL` env ile değiştirilebilir
+> - **Atlas severity:** tek standart skala `critical/high/medium/low` — DB 50 satır + 4 kod dosyası normalize edildi (`_norm_sev()` helper)
 > - **Sentry:** **0 unresolved issue** — 2 gerçek bug fix (webhook timeout #116905082, Playwright chromium #119498281) + 1 sahte alarm + 7 zombie temizlendi (10 issue resolve)
 > - **Sentry token:** Neo eski token'ı revoke etti, yeni `event:write` scope'lu token (`...2f60c039`) VPS `.env`'de aktif — `resolve_zombie_issues(dry_run=False)` çalışıyor
 > - **Webhook timeout fix:** `_handle_webhook_data` artık `_safe_background_task` ile background'da — Meta anında 200 alıyor (önce 25.7s bloke ediyordu, Meta limiti 20s)
@@ -37,6 +39,32 @@
 >     * LGS role-aware sınav tarihi (caller_class detection)
 >     * Cloud routing genişleme: randevu/ekle/haber/hocaya/rehberden/yeterli mi/pasta grafik/heatmap
 > - **Production ready:** ✅ Tüm okuma fonksiyonları + DB sync + chart + Sentry awareness + browser cache aktif
+>
+> ## 🎯 Bu Oturumda (25.44-DEV-MEETING-11) Yapılanlar (15 May gece)
+>
+> Neo bot konuşması analizi (14 May 22:40–22:55 — Atlas double-confirm bug + Atlas LLM brainstorm) + mobil screenshot bug raporu.
+>
+> **A. UI Fix'ler (commit `8942027`)**
+> 1. **Atlas çift-onay bug** (`dashboard_ui.html`): yönetici panelinde Atlas önerisi onayı 2 tıklama gerektiriyordu. Bot'un teşhisi (`await loadAtlas()`) eksikti — `await` tek başına fark yaratmaz. Gerçek kök neden: tarayıcı GET cache'i. `api()` helper'a `cache:'no-store'` eklendi + `await loadAtlas()` (correctness).
+> 2. **İnce bekleme pili kaldırıldı** (`web_chat_ui.html`): mobilde `.msg.thinking` ince pilinin yazıları küçük/asimetrik duruyordu. `showThinking()` artık doğrudan büyük zengin `render-pending-card` oluşturuyor (3sn→büyük geçişindeki ince ara faz silindi). Foto akışı da aynı karta geçti. Dead code temizlendi (`_THINKING_EVOLUTIONS`/`_autoEvolveThinking`/`upgradeToRichCard`).
+>
+> **B. Atlas LLM → Claude Opus 4.7 (commit `4229fc6`, Neo direktifi)**
+> 3. `prompt_optimizer._ask_groq_for_suggestion`: birincil model artık **Claude Opus 4.7**. Gerekçe (Neo): Atlas önerileri sistem promptunu değiştirir → en üst kalite öz-farkındalık + hata tespiti şart, Neo güvenle onaylayabilsin.
+> 4. Cerebras qwen-235b + Groq 70B **fallback olarak korundu** (Anthropic API down ise gece üretimi durmasın). Sıra: Claude → Cerebras → Groq.
+> 5. Model `ATLAS_LLM_MODEL` env ile değiştirilebilir (default `claude-opus-4-7`) — Neo ileride maliyet analizine göre revize edebilir.
+> 6. Latent bug fix: Cerebras runtime fail olunca Groq fallback `NameError` veriyordu (`client` sadece `if not use_cerebras` ile init ediliyordu) → artık her zaman init.
+>
+> **C. Severity Standardı Normalize (commit `4229fc6`)**
+> 7. İki ayrı skala vardı (observer: critical/warning/info + eski junk yuksek/orta/normal; prompt_optimizer: high/medium/low). Tek standart: **`critical/high/medium/low`**.
+> 8. `atlas/advisor.py`: merkezi `_norm_sev()` helper + INSERT boundary'de normalize + CASE sıralama + ikon haritası güncellendi.
+> 9. `atlas/chat.py` + `atlas_lifecycle.py`: CASE/ikon/stale-archive SQL güncellendi (info→low, warning→medium).
+> 10. `prompt_optimizer.py` prompt enum: `critical` eklendi.
+> 11. DB: 50 satır normalize edildi → dağılım critical:4 / high:28 / medium:42 / low:35.
+>
+> **D. Atlas Veri Triyajı (Neo'nun bot gözlemlerine yanıt)**
+> 12. **"4 critical hiç uygulanmamış"** → İncelendi: 4'ü de `observer` source, hepsi `archived` (kapalı). Bunlar prompt-değişikliği değil **operasyonel alarm** (frustration sinyalleri + Ollama halüsinasyon, Nisan). #7/8/9 → B7 telafi mekanizmasına işaret ediyor (bilinçli roadmap'te, ertelendi). #13 → Ollama VPS'te yok, konu geçersiz. **Uygulanacak bir şey yok, doğru arşivlenmiş.**
+> 13. **"108 öneriden hiçbiri reddedilmemiş"** → YANLIŞ. 12 rejected öneri var (5 high + 4 medium + 3 low). Bot'un sorgu hatası. **Reject akışı çalışıyor.**
+> 14. **"Neo'nun onayladığı öneriler"** → 37 öneri `status='uygulandi'` ama `applied_at=NULL` (onaylanmış, git-patch uygulanmamış). 37'sinin de içeriği okundu — 7 temaya kümeleniyor (frustration/KVKK/şablon-varyasyon/tekrar-önleme/netleştirme/teknik-hata/tutarsızlık). **Hepsinin sistemde mevcut olduğu doğrulandı** (system_prompts.py + fast_responses.py + conversation_flow.py + sentiment_tracker.py grep ile). Atlas-2 çözülmüş pattern'i yeniden tespit etmiş. 37 satır `applied_at` + açıklayıcı `neo_note` ile işaretlendi → limbo temizlendi (0 kaldı).
 >
 > ## 🎯 Bu Oturumda (25.44-DEV-MEETING-10) Yapılanlar (14 May gece)
 >
