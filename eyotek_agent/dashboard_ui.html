@@ -304,7 +304,10 @@ async function api(path, opts={}) {
   if (URL_TOKEN) {
     url += (path.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(URL_TOKEN);
   }
-  const r = await fetch(url, {credentials:'include', ...opts});
+  // 25.44-dev-meeting-11 (Neo bug): Atlas önerisi onayı 2 tıklama gerektiriyordu.
+  // Kök neden — tarayıcı GET yanıtını cache'liyor, approve sonrası loadAtlas()
+  // bayat liste çekiyordu. cache:'no-store' ile her API çağrısı taze veri alır.
+  const r = await fetch(url, {credentials:'include', cache:'no-store', ...opts});
   if (!r.ok) throw new Error(r.status);
   return r.json();
 }
@@ -521,7 +524,7 @@ async function loadAtlas() {
 async function approveSug(id) {
   if (!confirm('Onaylıyor musun? (uygulanmaz, sadece status güncellenir)')) return;
   await api('/admin/api/atlas-suggestions/'+id+'/approve', {method:'POST'});
-  loadAtlas();
+  await loadAtlas();   // 25.44-dev-meeting-11: await — liste tam yenilensin
 }
 
 async function rejectSug(id) {
@@ -531,7 +534,7 @@ async function rejectSug(id) {
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({note}),
   });
-  loadAtlas();
+  await loadAtlas();   // 25.44-dev-meeting-11: await — liste tam yenilensin
 }
 
 async function loadStudent() {

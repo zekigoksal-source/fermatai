@@ -7913,10 +7913,15 @@ async function sendPhotoWithCaption(caption) {
   clearPhoto();
   sendBtn.disabled = true;
 
-  // Thinking bubble
+  // 25.44-dev-meeting-11 (Neo): büyük zengin bekleme kartı — ince pil kaldırıldı
   const thinkingMsg = document.createElement("div");
-  thinkingMsg.className = "msg bot thinking";
-  thinkingMsg.textContent = "📸 Fotoğrafı okuyorum...";
+  thinkingMsg.className = "msg bot render-pending-card";
+  thinkingMsg.innerHTML = `
+    <div class="render-spinner"></div>
+    <div class="render-pending-text">
+      <div class="render-pending-title">📸 Fotoğraf okunuyor</div>
+      <div class="render-pending-sub">Soru görseli analiz ediliyor, çözüm hazırlanıyor...</div>
+    </div>`;
   messages.appendChild(thinkingMsg);
   smartScroll();
 
@@ -8180,16 +8185,10 @@ async function doSend() {
   let thinkingStart = 0;
   let thinkingTimer = null;
   let thinkingCustomTxt = null; // backend'den gelen ozel mesaj varsa
-  const _THINKING_EVOLUTIONS = [
-    { delay: 0,     txt: "🤔 Düşünüyor..." },
-    { delay: 5000,  txt: "✍️ Cevap hazırlanıyor..." },
-    { delay: 15000, txt: "📚 Müfredat banka taranıyor, içerik üretiliyor..." },
-    { delay: 30000, txt: "🎨 Detaylı analiz + görseller hazırlanıyor — beklemeye değer..." },
-    { delay: 60000, txt: "⚡ Kapsamlı içerik üretiliyor — neredeyse hazır, lütfen bekle..." },
-    { delay: 90000, txt: "🚀 Çok kapsamlı bir cevap üretiliyor — sayfa bozulmuş değil, sürüyor..." },
-  ];
 
-  // 25.37 (Neo direktifi) — uzun işlemlerde küçük pill 5sn sonra büyük zengin karta evrim
+  // 25.44-dev-meeting-11 (Neo): ince ".msg.thinking" pili kaldırıldı — mobilde
+  // yazıları küçük/asimetrik duruyordu. Artık doğrudan büyük zengin render-pending-card
+  // gösteriliyor (Neo: "diğer çalışan versiyonları kullan, bu ince adam olmadı").
   // Bu kart hem genel (analitik) hem render (make_render_link) için kullanılır.
   const _RICH_PROCESS_EVOLUTIONS = [
     { delay: 0,      icon: "🤔", title: "Düşünüyor",                            sub: "Soru analiz ediliyor..." },
@@ -8209,13 +8208,20 @@ async function doSend() {
       if (richUpgradeTimer) { clearInterval(richUpgradeTimer); richUpgradeTimer = null; }
       return;
     }
+    const titleEl = richThinkingCard.querySelector('.render-pending-title');
+    const subEl = richThinkingCard.querySelector('.render-pending-sub');
+    // Backend özel mesaj gönderdiyse onu koru — zaman bazlı evrimi atla
+    if (thinkingCustomTxt) {
+      if (titleEl && titleEl.textContent !== thinkingCustomTxt) {
+        titleEl.textContent = thinkingCustomTxt;
+      }
+      return;
+    }
     const elapsed = Date.now() - thinkingStart;
     let chosen = _RICH_PROCESS_EVOLUTIONS[0];
     for (const ev of _RICH_PROCESS_EVOLUTIONS) {
       if (elapsed >= ev.delay) chosen = ev;
     }
-    const titleEl = richThinkingCard.querySelector('.render-pending-title');
-    const subEl = richThinkingCard.querySelector('.render-pending-sub');
     if (titleEl && titleEl.textContent !== `${chosen.icon} ${chosen.title}`) {
       titleEl.style.transition = "opacity 0.3s";
       subEl.style.transition = "opacity 0.3s";
@@ -8227,77 +8233,40 @@ async function doSend() {
     }
   }
 
-  function upgradeToRichCard() {
-    // Eğer zaten büyük kart varsa (render_pending önce geldi) skip
-    if (richThinkingCard) return;
-    if (!thinkingMsg) return;
-    // 25.40 (Neo bug fix): DUPLICATE engelle — herhangi bir chunk-pause-card varsa sil
-    try {
-      document.querySelectorAll('.chunk-pause-card').forEach(c => {
-        try { if (c._evolveTimer) clearInterval(c._evolveTimer); c.remove(); } catch (_) {}
-      });
-      // chunk pause timer'i da iptal et
-      if (window._chunkPauseTimer) { clearTimeout(window._chunkPauseTimer); window._chunkPauseTimer = null; }
-    } catch (_) {}
-    // Küçük pili kaldır
-    try { thinkingMsg.remove(); } catch(_) {}
-    thinkingMsg = null;
-    if (thinkingTimer) { clearInterval(thinkingTimer); thinkingTimer = null; }
-    // Büyük kart oluştur (render-pending-card aynı CSS — kalitesi var)
-    richThinkingCard = document.createElement('div');
-    richThinkingCard.className = 'msg bot render-pending-card';
-    richThinkingCard.innerHTML = `
-      <div class="render-spinner"></div>
-      <div class="render-pending-text">
-        <div class="render-pending-title">🔍 Veriler taranıyor</div>
-        <div class="render-pending-sub">Akademik kayıtlar + müfredat bankası kontrol ediliyor...</div>
-      </div>`;
-    messages.appendChild(richThinkingCard);
-    smartScroll();
-    // Auto-evolve başlat
-    if (richUpgradeTimer) clearInterval(richUpgradeTimer);
-    richUpgradeTimer = setInterval(_evolveRichCard, 1500);
-  }
-
-  function _autoEvolveThinking() {
-    if (!thinkingMsg) return;
-    const elapsed = Date.now() - thinkingStart;
-    // Backend'den ozel mesaj geldiyse onu kullan
-    if (thinkingCustomTxt) {
-      thinkingMsg.textContent = thinkingCustomTxt;
-    } else {
-      // En son eşiği aşan evrim mesajı
-      let chosen = _THINKING_EVOLUTIONS[0].txt;
-      for (const ev of _THINKING_EVOLUTIONS) {
-        if (elapsed >= ev.delay) chosen = ev.txt;
-      }
-      thinkingMsg.textContent = chosen;
-    }
-  }
   function showThinking(txt) {
-    if (!thinkingMsg && !richThinkingCard) {
+    // 25.44-dev-meeting-11 (Neo): ince ".msg.thinking" pili kaldırıldı —
+    // doğrudan büyük zengin render-pending-card gösteriliyor (mobilde ince
+    // versiyonun yazıları küçük/asimetrik duruyordu).
+    if (!richThinkingCard) {
       const welcome = messages.querySelector(".msg-welcome");
       if (welcome) welcome.remove();
-      thinkingMsg = document.createElement("div");
-      thinkingMsg.className = "msg bot thinking";
-      messages.appendChild(thinkingMsg);
+      // DUPLICATE engelle — varsa chunk-pause-card temizle (25.40 Neo bug fix)
+      try {
+        document.querySelectorAll('.chunk-pause-card').forEach(c => {
+          try { if (c._evolveTimer) clearInterval(c._evolveTimer); c.remove(); } catch (_) {}
+        });
+        if (window._chunkPauseTimer) { clearTimeout(window._chunkPauseTimer); window._chunkPauseTimer = null; }
+      } catch (_) {}
       thinkingStart = Date.now();
-      // Her 1.5 saniyede bir mesaj kontrol et — evrim kaçırma
-      if (thinkingTimer) clearInterval(thinkingTimer);
-      thinkingTimer = setInterval(_autoEvolveThinking, 1500);
-      // 25.37 (Neo): 5 saniye sonra otomatik büyük zengin karta upgrade et
-      // (kullanıcı küçük pile bakıp tutukluk sanmasın, görsel kalite hızlı gelsin)
-      setTimeout(() => {
-        if (thinkingMsg && !richThinkingCard) {
-          upgradeToRichCard();
-        }
-      }, 5000);
+      // Büyük zengin kart — render-pending-card CSS'i (kaliteli, çalışan versiyon)
+      richThinkingCard = document.createElement('div');
+      richThinkingCard.className = 'msg bot render-pending-card';
+      richThinkingCard.innerHTML = `
+        <div class="render-spinner"></div>
+        <div class="render-pending-text">
+          <div class="render-pending-title">🤔 Düşünüyor</div>
+          <div class="render-pending-sub">Soru analiz ediliyor...</div>
+        </div>`;
+      messages.appendChild(richThinkingCard);
+      // Auto-evolve başlat — süre uzadıkça mesaj evrim eder
+      if (richUpgradeTimer) clearInterval(richUpgradeTimer);
+      richUpgradeTimer = setInterval(_evolveRichCard, 1500);
     }
-    // Backend ozel mesaj gönderdiyse store et (override)
+    // Backend özel mesaj gönderdiyse store et (override)
     if (txt && txt.trim().length > 0) {
       thinkingCustomTxt = txt;
     }
-    _autoEvolveThinking();
+    _evolveRichCard();
     smartScroll();
   }
   function clearThinking() {
@@ -8323,7 +8292,7 @@ async function doSend() {
   // Oturum 25.31 — Watchdog: 3 saniye sonra hala chunk gelmezse thinking göster
   // (backend chunk yerine direkt JSON dönerse fast path; yoksa Claude'a düştü)
   const _watchdogTimer = setTimeout(() => {
-    if (!botMsg && !thinkingMsg) {
+    if (!botMsg && !richThinkingCard) {
       showThinking("");  // boş = auto-evolve devreye girer
     }
   }, 3000);
