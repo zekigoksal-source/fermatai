@@ -4717,21 +4717,25 @@ async def webhook_receive(request: Request):
     except json.JSONDecodeError:
         return Response(status_code=200)
 
-    # Meta her zaman 200 bekler — hata olsa bile
+    # 25.44-dev-meeting-10 (Neo bug 14 May, Sentry #116905082):
+    # Eski kod `await _handle_webhook_data(data)` ile mesaj islemeyi SENKRON
+    # bekliyordu. process_message (LLM + tool) 25s surunce Meta'nin 20s
+    # webhook timeout'u asiliyor → Meta dup mesaj / retry gonderiyor.
+    # FIX: isi background task'a at, Meta'ya ANINDA 200 don. _safe_background_task
+    # exception'i log'lar, fire-and-forget guvenli.
     try:
-        await _handle_webhook_data(data)
+        _safe_background_task(_handle_webhook_data(data), label="webhook")
     except Exception as e:
-        logger.error(f"Webhook işleme hatası: {e}", exc_info=True)
+        logger.error(f"Webhook task baslatma hatasi: {e}", exc_info=True)
 
-    # OTURUM 23.3: Sure olcumu — Meta timeout yakalama
+    # OTURUM 23.3 → 25.44: Sure olcumu artik SADECE sync kismi (imza+parse+task
+    # baslatma) olcer — bu <100ms olmali. 1s ustu anormal, loglanir.
     _wh_dur = _wh_time.time() - _wh_start
-    if _wh_dur > 20:
-        logger.error(
-            f"🚨 WEBHOOK TIMEOUT RISK: {_wh_dur:.1f}s (Meta 20s timeout asildi, "
-            f"muhtemelen dup mesaj/retry gelecek)"
+    if _wh_dur > 1.0:
+        logger.warning(
+            f"⚠ Webhook sync kismi yavas: {_wh_dur:.2f}s "
+            f"(imza/parse/task-baslatma — normalde <100ms)"
         )
-    elif _wh_dur > 18:
-        logger.warning(f"⚠ Webhook yavas: {_wh_dur:.1f}s (Meta timeout yakin)")
 
     return Response(status_code=200)
 
