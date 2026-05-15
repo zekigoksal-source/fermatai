@@ -2944,6 +2944,56 @@ ssh vps "cd /opt/fermatai && git fetch && git reset --hard origin/main && sudo s
 - system_prompt.py 11 yeni kural eklendi (28 Nisan kuralları)
 - BLUEPRINT.md kapsamlı güncelleme (bu belge)
 
+### Oturum 25.28 – 25.45 (29 Nisan – 14 Mayıs): Tarihçe penceresi
+**Bu pencere KALDIGIM.md'de tam belgelenmiştir; BLUEPRINT'e satır-satır işlenmedi.**
+Ana başlıklar (KALDIGIM ayrıntısı için bakın):
+- Cerebras 235B + ToolUseBlock cleaning + **pre-tool text + heartbeat (TTFT 28s → 2-3s)**
+- Atlas LLM Triage + dashboard (öneri/onay döngüsü, severity standardı, Opus 4.7 upgrade)
+- Tercih Robotu altyapı (YÖK Atlas 35.584 kayıt) — bayrak KAPALI, 1 Tem aktivasyon
+- Branş öğretmen yetki refactor (eyotek-write yasak, rehbere öneri kuyruğu)
+- Streaming + renderer enrichment dispatcher (28 renderer, INTENT_RENDERER_MAP 18→26)
+- Ali halüsinasyon fix, Ada akademik kayıt intent, expand_row_details popup
+- `db_pool` race condition refactor, BadRequestError 29× cleanup, Playwright leak fix
+- Atlas çift-onay bug fix, ince bekleme pili kaldırıldı, mobile UI hizalama
+
+### Oturum 25.46 (15 Mayıs): Foto stats + Topic enricher + Streaming UX
+**Tek commit'te 6 fix yığını (`f7e2e26`):**
+
+1. **Foto istatistik halüsinasyonu** (Neo dev konuşma bulgu)
+   - Sorun: Bot `agent_conversations ILIKE foto` → 366 satır saydı, gerçek 3.
+   - Kök sebep: dev sohbetinde "foto" kelimesi geçen tüm mesajlar foto upload sayılıyordu.
+   - Fix: `format_foto_stats()` "Gerçek Kullanım (DB)" vs "Teorik Maksimum" ayrı bölüm.
+   - `system_prompts.py` CRITICAL kural: foto stat için TEK kaynak `foto_questions` tablosu.
+
+2. **Vision halüsinasyon "en yakın şık"** (Ahmet Fatih foto soru analizi)
+   - `whatsapp_bridge.py:2320` "ASLA göremiyorum deme" kuralı KALDIRILDI.
+   - 12 satır yeni `ŞIK UYUŞMAZLIĞI KURALI`: hesabı göster, dürüstçe yaz, foto net çek iste.
+
+3. **Brief #24: `topic_tool_enricher.py` (YENİ MODÜL, 264 satır)**
+   - 15 konu kategorisi (modern_fizik, klasik_fizik, kimya_*, biyoloji_*, tarih, coğrafya, edebiyat)
+   - Her kategori → APIs (arxiv/wolfram/pubchem/nasa/wiki) + Renderers (mol3d/formula/kgraph/sim/timeline/map)
+   - `fermat_core_agent.py` inject point: renderer_hint sonrası system prompt'a hint ekler.
+   - `conversation_flow.py`: `detect_long_intent()` topic_enrich pre-check + 6 yeni filler.
+
+4. **WhatsApp progressive text send** (feature flag `WA_PROGRESSIVE_TEXT=true`)
+   - Tool döngüsünde tool_use ile gelen text bloklarını ANINDA WP'ye atar (60s boş ekran yok).
+   - `_wa_progressive_send` callback agent.run() parametresi olarak eklendi.
+   - Geri alma: env `false` → 0 etki.
+
+5. **Web UI loading bar overflow fix** (Neo dünkü SS bug)
+   - `.render-pending-title` → `flex-wrap: wrap` + `min-width: 0`.
+   - `.render-pending-text` → `overflow-wrap: break-word` + `word-break`.
+   - Mobile (≤540px): `max-width` 80%→**92%**, sub `white-space: normal` zorla.
+
+6. **Topic enricher hint v3 — Neo "MAX kullan" direktifi** (gece 01:47 eleştirisi)
+   - v2 hint "tool atla, render az kullan" diyordu — Neo'nun aslında istediği TERSİ.
+   - v3 hint: "Tüm kapasiteyi kullan, akışı kompozisyonla parçala" + 5 adım kompozisyon kuralı:
+     1. Açılış text (streaming) 2. Render block (inline) 3. Tool call 4. Tool sonucu → ek text + render 5. Kapanış: özet + soru.
+   - HEDEF: HEM hız (text streaming) HEM kalite (tüm tool/render) — Neo "bütün-bir-deneyim" vizyonu.
+
+**Etkilenen dosyalar:** `KALDIGIM.md`, `conversation_flow.py`, `fermat_core_agent.py`, `foto_solver_v2.py`, `system_prompts.py`, `web_chat_ui.html`, `whatsapp_bridge.py` (M) + `topic_tool_enricher.py` (A).
+**Etki:** 583 satır eklendi, 15 silindi.
+
 ---
 
 ## 📞 İletişim & Sahiplik
@@ -2961,6 +3011,7 @@ ssh vps "cd /opt/fermatai && git fetch && git reset --hard origin/main && sudo s
 
 - **v1.0** — 28 Nisan 2026, Oturum 25.22 sonrası (Cerebras paid tier canlı)
 - **v2.0** — 28 Nisan 2026 gece, Oturum 25.27 sonrası (Agentic Eyotek + 9 borç + bug maratonu)
+- **v2.1** — 15 Mayıs 2026 gece, Oturum 25.46 sonrası (Foto stats + Topic enricher + Streaming UX + Web UI fix)
 - **Yazar:** Claude Sonnet 4.6 (Anthropic, Claude Code üzerinden)
 - **Doğrulama:** 138/138 test PASS + 33/33 agentic test PASS, 4/4 endpoint 200, 3 LLM provider hibrit aktif
 - **Güncelleme politikası:** Her büyük oturum sonrası bu belge KALDIGIM.md ile birlikte güncellenir. Belgenin canlı kalması, dış LLM/ortak referansı için kritik.
