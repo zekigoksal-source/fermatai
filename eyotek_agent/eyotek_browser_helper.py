@@ -149,6 +149,66 @@ async def open_eyotek_browser(
             pass
 
 
+# ─── 25.46.9 (Neo direktif): connect_over_cdp YERINE TEK NOKTA — fallback'li ───
+async def connect_eyotek_or_fallback(pw, cdp_url: str = None) -> tuple:
+    """Once CDP dene, yoksa headless launch (cookies inject).
+
+    Eski batch scripts'lerin tek satirla migrasyonu icin:
+        OLD: browser = await pw.chromium.connect_over_cdp(CDP_URL)
+             page = browser.contexts[0].pages[0]
+        NEW: browser, page, is_cdp = await connect_eyotek_or_fallback(pw, CDP_URL)
+
+    Args:
+        pw: Playwright instance (caller olusturmus)
+        cdp_url: CDP URL (default: env CDP_URL veya http://localhost:9222)
+
+    Returns: (browser, page, is_cdp)
+        is_cdp=True ise CDP modu (page = mevcut tab), close ETME (laptop Chrome'a dokunma)
+        is_cdp=False ise headless mod (yeni browser), browser.close() caller'da
+    """
+    import os
+    cdp_url = cdp_url or os.getenv("CDP_URL") or f"http://localhost:{os.getenv('CDP_PORT', '9222')}"
+
+    # 1) CDP dene
+    try:
+        browser = await pw.chromium.connect_over_cdp(cdp_url, timeout=3000)
+        ctx = browser.contexts[0] if browser.contexts else await browser.new_context()
+        page = ctx.pages[0] if ctx.pages else await ctx.new_page()
+        logger.info(f"[CONNECT] CDP modu: {cdp_url}")
+        return browser, page, True
+    except Exception as e:
+        logger.info(f"[CONNECT] CDP yok ({str(e)[:60]}), headless fallback")
+
+    # 2) Cookie + headless fallback
+    from eyotek_wrapper import session_is_valid, save_session
+    cookies = await _read_session_file()
+    if not cookies or not await session_is_valid(cookies):
+        logger.info("[CONNECT] Cookie expire/yok, auto-login")
+        from eyotek_auto_login import try_auto_login
+        result = await try_auto_login()
+        if not result.get("success"):
+            raise RuntimeError(f"Eyotek login fail: {result.get('message', '?')}")
+        cookies = await _read_session_file()
+    if not cookies:
+        raise RuntimeError("Eyotek cookie alinamadi")
+
+    browser = await pw.chromium.launch(
+        headless=True,
+        args=["--no-sandbox", "--disable-dev-shm-usage",
+              "--disable-setuid-sandbox", "--disable-gpu"],
+    )
+    ctx = await browser.new_context(
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                   "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        viewport={"width": 1366, "height": 768},
+        locale="tr-TR",
+    )
+    await ctx.add_cookies(cookies)
+    page = await ctx.new_page()
+    logger.info("[CONNECT] Headless mod (cookie inject)")
+    return browser, page, False
+
+
 # ─── Backward-compatible wrapper for legacy CDP code ──────────────────
 async def get_eyotek_page() -> tuple:
     """Tek seferlik authenticated page döndürür (caller close etmeli).

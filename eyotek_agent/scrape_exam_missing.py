@@ -31,12 +31,17 @@ async def main():
         return
 
     pw = await async_playwright().start()
-    browser = await pw.chromium.connect_over_cdp("http://localhost:9222")
-    ctx = browser.contexts[0]
-    with open(".eyotek_session.json", "r") as f:
-        await ctx.add_cookies(json.load(f))
-
-    page = await ctx.new_page()
+    # 25.46.9 (Neo direktif): connect_over_cdp -> helper fallback (CDP yoksa headless)
+    from eyotek_browser_helper import connect_eyotek_or_fallback
+    browser, page, _is_cdp = await connect_eyotek_or_fallback(pw, "http://localhost:9222")
+    ctx = page.context
+    # 25.46.9: helper zaten cookie inject ediyor — manuel ekleme gerekmiyor.
+    # Eski davranis korumak icin .eyotek_session.json'dan EK cookie varsa ekle:
+    try:
+        with open(".eyotek_session.json", "r") as f:
+            await ctx.add_cookies(json.load(f))
+    except Exception as _ce:
+        pass  # helper'in cookie'leri yeterli
     success = 0
     skipped = 0
     errors = 0

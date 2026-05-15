@@ -189,20 +189,31 @@ async def keep_session_warm():
 
 
 async def _cdp_keep_alive() -> bool:
-    """Chrome CDP uzerinden Eyotek tab'ini yenileyerek session'i canli tut."""
+    """Eyotek tab'ini yenileyerek session'i canli tut.
+
+    25.46.9 (Neo direktif): connect_over_cdp -> helper fallback.
+    VPS'te CDP yok, headless+cookie ile aynı keep-warm islemi yapilir.
+    """
     from playwright.async_api import async_playwright
 
     pw = await async_playwright().start()
     try:
-        browser = await pw.chromium.connect_over_cdp(CDP_URL)
-        ctx = browser.contexts[0]
+        # 25.46.9: helper fallback ile — CDP varsa kullanir, yoksa headless launch
+        try:
+            from eyotek_browser_helper import connect_eyotek_or_fallback
+            browser, _initial_page, is_cdp = await connect_eyotek_or_fallback(pw, CDP_URL)
+            ctx = browser.contexts[0] if browser.contexts else _initial_page.context
+        except Exception as _conn_e:
+            logger.debug(f"CDP keep-alive connect fail: {_conn_e}")
+            return False
 
-        # Eyotek tab'ini bul
+        # Eyotek tab'ini bul (sadece CDP modunda mevcut tab'lar var)
         eyotek_page = None
-        for page in ctx.pages:
-            if "eyotek" in page.url.lower():
-                eyotek_page = page
-                break
+        if is_cdp:
+            for page in ctx.pages:
+                if "eyotek" in page.url.lower():
+                    eyotek_page = page
+                    break
 
         if not eyotek_page:
             # 25.44 (Neo bug 12 May 18:41 — bot self-analysis):

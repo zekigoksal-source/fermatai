@@ -202,8 +202,9 @@ async def main():
     logger.info(f"{len(missing)} eksik sınav bulundu")
 
     pw = await async_playwright().start()
-    browser = await pw.chromium.connect_over_cdp(CDP_URL)
-    page = browser.contexts[0].pages[0]
+    from eyotek_browser_helper import connect_eyotek_or_fallback
+
+    browser, page, _is_cdp = await connect_eyotek_or_fallback(pw, CDP_URL)
 
     total_updated = 0
     total_exams = 0

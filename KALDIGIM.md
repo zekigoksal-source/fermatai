@@ -12593,3 +12593,54 @@ artik veremiyor — eyotek_health gercek API testi ile karar veriyor.
 **Sonraki:** Eski connect_over_cdp kalintilari (smart_sync.py, sync_exams.py,
 fill_missing_nets.py) hala duruyor — bunlar BATCH script'ler, scheduler ile
 çalışıyor, acil değil. Daha sonra navigator'a tasinabilir.
+
+## Oturum 25.46.9 -- 16 Mayis 2026 (Neo direktif: connect_over_cdp kalintilarini temizle)
+**Neo direktif:** "bunlari da tasi eksik bir teknik borc kalmasin hersey bitsin
+sistemin guncel oldugunu ve calistigini teyit et"
+
+**Migrate edilen 8 dosya:**
+1. fill_missing_nets.py — connect_over_cdp -> connect_eyotek_or_fallback
+2. incremental_exam_check.py — connect_over_cdp -> helper
+3. scrape_ayt_exams.py — connect_over_cdp -> helper (context var korundu)
+4. scrape_exam_analysis.py — connect_over_cdp -> helper (ctx var korundu)
+5. scrape_exam_missing.py — connect_over_cdp -> helper (manuel cookie ekleme korundu)
+6. scrape_exam_stats.py — connect_over_cdp -> helper
+7. sync_missing_students.py — connect_over_cdp -> helper
+8. session_keeper.py:_cdp_keep_alive — VPS production'da ECONNREFUSED spam'i bitti
+
+**Yeni utility:** eyotek_browser_helper.connect_eyotek_or_fallback(pw, cdp_url)
+- 1) CDP dene (laptop)
+- 2) CDP yoksa headless launch + cookie inject (VPS)
+- 3) Cookie expire ise try_auto_login otomatik
+- Return: (browser, page, is_cdp)
+- is_cdp=True ise CDP modu, browser.close() YAPMA (laptop tab'i korunsun)
+- is_cdp=False ise headless mod, caller browser.close() yapar
+
+**Migrate sonrasi durum:**
+- 7 batch scripts: CDP varsa kullanir, yoksa headless ile sorunsuz calisir
+- session_keeper: artik 3dk'da bir ECONNREFUSED loglamiyor; SUCCESS Eyotek session ONLINE
+- Bot live test: PASS (Zeki Bey karsilamasi, fast_response 5ms)
+- Health: bridge active, session_keeper active
+
+**Scope DISI (yine de calisiyor):**
+- ogm_calibrate.py, ogm_say_calibrate.py, ogm_puan_test.py — MEB OGM site
+  calibration (Eyotek degil!), laptop-only, farkli browser context.
+  Bunlar admin tarafindan rarely run edilen calibration script'leri.
+- eyotek_mobile_tunnel.py — mobile tunnel ayri feature
+- session_keeper.check_session — CDP dener AMA HTTP fallback zaten var, hizli fail OK
+- eyotek_wrapper.py / eyotek_browser_helper.py — connect_over_cdp INTERNAL kullanim,
+  her ikisinde de headless fallback ZATEN VAR (correct pattern, dokunma)
+
+**Bot tutarliligi:**
+- "CDP kapali = Eyotek bagli degil" yanlis cevap artik yok (25.46.8)
+- Bot ders programi soru -> refresh_class_timetable -> fresh veri + DB upsert (25.46.7)
+- Bot eyotek_read soru -> eyotek_query redirect (25.46.8)
+- Eyotek session degil olunca, headless fallback otomatik (25.46.9 — bu fix)
+
+**Test sonuclari:**
+- /agent merhaba: 5ms PASS
+- refresh_class_timetable('11 SAY NXT'): 22sn, 60 slot scrape, 10 row dondu
+- eyotek_health: status=online ("navigator headless ile calisiyor")
+- session_keeper: SUCCESS Eyotek session ONLINE
+
+Sistem stabil, kullanici etkilesimine hazir. Dev arasi verilebilir.

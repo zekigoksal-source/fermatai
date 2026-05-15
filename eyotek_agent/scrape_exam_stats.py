@@ -143,9 +143,9 @@ async def main():
         target_tur = None
 
     pw = await async_playwright().start()
-    browser = await pw.chromium.connect_over_cdp(CDP_URL)
-    ctx = browser.contexts[0]
-    page = ctx.pages[0]
+    from eyotek_browser_helper import connect_eyotek_or_fallback
+    browser, page, _is_cdp = await connect_eyotek_or_fallback(pw, CDP_URL)
+    ctx = page.context  # 25.46.9: helper kullanimi sonrasi ctx
 
     if target_code:
         # Tek sınav

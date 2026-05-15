@@ -442,10 +442,10 @@ async def main():
                     pass
 
     pw = await async_playwright().start()
-    browser = await pw.chromium.connect_over_cdp(CDP_URL)
-    ctx = browser.contexts[0]
-
-    # Session cookies — AYT modunda mevcut Chrome cookie'leri kullan, override etme
+    from eyotek_browser_helper import connect_eyotek_or_fallback
+    browser, page, _is_cdp = await connect_eyotek_or_fallback(pw, CDP_URL)
+    ctx = page.context  # 25.46.9: helper kullanimi sonrasi ctx
+# Session cookies — AYT modunda mevcut Chrome cookie'leri kullan, override etme
     if not ayt_mode:
         try:
             with open(".eyotek_session.json", "r") as f:

@@ -295,9 +295,10 @@ async def main():
     limit = int(sys.argv[1]) if len(sys.argv) > 1 else 9999
 
     p = await async_playwright().start()
-    browser = await p.chromium.connect_over_cdp(CDP_URL)
-    context = browser.contexts[0]
-    page = context.pages[0]  # Mevcut acik sayfa
+    # 25.46.9 (Neo direktif): connect_over_cdp -> helper fallback (CDP yoksa headless)
+    from eyotek_browser_helper import connect_eyotek_or_fallback
+    browser, page, _is_cdp = await connect_eyotek_or_fallback(p, CDP_URL)
+    context = page.context  # backward-compat icin
 
     # 1. Ogrenci listesini ac
     logger.info("Ogrenci listesi aciliyor...")
