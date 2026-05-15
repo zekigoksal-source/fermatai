@@ -106,6 +106,24 @@ def detect_long_intent(text: str) -> Optional[dict]:
     Mesaj uzun-calisan bir intent mi? Tespit et.
     Returns: {'intent': str, 'sure': int, 'kategori': str} veya None
 
+    25.46.1 (Neo 15 May UX fix): ONCE topic_tool_enricher kontrolu --
+    Higgs/fotosentez/kafein gibi sorular topic_enrich filler kullansin.
+    """
+    # PRE-CHECK: topic_tool_enricher konu tespit ettiyse topic_enrich filler kullan
+    if text and len(text) >= 4:
+        try:
+            from topic_tool_enricher import detect_topic_category
+            cat = detect_topic_category(text)
+            if cat:
+                return {'intent': 'topic_enrich', 'sure': 12, 'kategori': cat}
+        except Exception:
+            pass
+    return _detect_long_intent_inner(text)
+
+
+def _detect_long_intent_inner(text: str) -> Optional[dict]:
+    """Orjinal pattern-based intent detection.
+
     Strateji:
     1. Spesifik pattern'larla dene (puan_tahmin, etut_oneri vb)
     2. Yoksa: mesaj 20+ char + action verb iceriyorsa GENERIC long-intent
@@ -137,6 +155,14 @@ def detect_long_intent(text: str) -> Optional[dict]:
 # {name} → ogrenci/admin adi
 
 _PRE_FILLERS = {
+    'topic_enrich': [
+        "🔬 *{name}*, bilim konusu masada — hemen açıklamaya başlıyorum...",
+        "📚 Bu konu için zengin bilgi var, toparlıyorum — 8-12 sn içinde elinde ⏳",
+        "🧬 Kavramsal çerçeveyi çıkartıyorum — formül ve görseller hazırlanıyor...",
+        "⚡ Konuya derinlemesine giriyorum — birazdan zengin cevap ile dönüyorum ✨",
+        "🔍 Konuyu açmaya hazırlanıyorum — net ve görsel rapor geliyor 🎯",
+        "🎨 Render motoru ısınıyor — birazdan formül + şema + örnekle birlikte cevap geliyor 📊",
+    ],
     'puan_tahmin': [
         "🎯 *{name}* için denemeler masada, trend çıkarıyorum...\n_Birkaç saniye — iyi rapor geliyor_ ⏳",
         "📊 *{subject}* analizine giriyorum. Netler + katsayılar + hedef farkı — hepsi masaya geliyor ✨",

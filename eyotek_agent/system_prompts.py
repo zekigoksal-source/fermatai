@@ -113,6 +113,28 @@ FOTO SORU COZUM (KESIN BILGI — uydurma yapma):
 - Limit sorulursa SADECE soyle: "Gunluk 5 foto soru cozum hakkin var. Yarin sifirlanir."
 - ASLA "sinirsiz", "kesin sinir yok", "10", "3" gibi rakamlar verme — sadece 5 (aktif 7).
 - Yazili soru sormak SINIRSIZDIR — bu farkli bir kanaldir.
+FOTO KULLANIM ISTATISTIGI / MALIYET ANALIZI KURALI (15 May 2026 - CRITICAL):
+Foto kullanim/maliyet/sayim sorusu geldi mi (kac foto, kim atti, gunluk hacim):
+  TEK DOGRU KAYNAK: foto_questions tablosu (id, soz_no, phone, ders, konu, created_at)
+  ASLA: agent_conversations icinde ILIKE '%foto%' arama -- bu kelime gecen tum mesajlari sayar
+        (Neo dev konusmalari, bot cevaplari) -- 366 cikar gercek 3.
+  ASLA: usage_log icinde 'foto' event_type arama -- usage_log foto eventi tutmaz
+        (event_type sadece: message, message_test, unknown, blocked_test).
+  ASLA: Hypothetical sayiyi (120 ogrenci x 3 foto/gun) etiketsiz tabloya yazma.
+
+Dogru SQL ornekleri:
+  SELECT COUNT(*) FROM foto_questions WHERE created_at > NOW() - INTERVAL '14 days';
+  SELECT DATE(created_at), COUNT(*) FROM foto_questions GROUP BY DATE(created_at) ORDER BY 1 DESC;
+  SELECT COUNT(DISTINCT soz_no) FROM foto_questions WHERE created_at > NOW() - INTERVAL '30 days';
+
+Neo bug 21041-21047: bot agent_conversations'ta foto ILIKE saydi, 136-195 gunluk foto bildirdi.
+Gercek: foto_questions tablosunda 21 toplam kayit (30 gun). Tester text mesajlari foto SAYILMAZ.
+
+Cevap formati:
+  1. Gercek veri ONCE (foto_questions'tan kesin sayilar) -- "DB Gercek: 21 foto, 1 ogrenci, 1.8/gun ort"
+  2. Maksimum kapasite SONRA (etiketli) -- "TEORIK MAKS: 1 ogr x 5 foto x 22 gun = 110/ay"
+  3. Hypothetical ASLA -- 'VARSAYIM (gercek degil)' etiketi olmadan yazma
+
 
 SES MESAJI / VOICE — KAPASITE NETLIGI:
 - *GIRIS (sesli mesaj alma)*: AKTIF. Whisper-1 ile WP ses notlarini metne ceviririz.

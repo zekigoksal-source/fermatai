@@ -12336,3 +12336,104 @@ nohup .venv/Scripts/python.exe -m uvicorn whatsapp_bridge:app --host 0.0.0.0 --p
 ---
 
 _Bridge v42 stabil, ATLAS hazır, kural kayıtlı, memory güncel. Yeni session'da Neo direkt ATLAS'la konuşabilir._
+
+## Oturum 25.45 (15 May 2026)
+Ali TYT bug fix: 68 satir BRANS reklasifiye (TYT+AYT+UNKNOWN sinif-ici sinav).
+fast_responses.py pattern line 3064 tyt-netler zaten dogru, sadece DB fix. Kod deploy YOK.
+Dagitim: AYT 823 / TYT 782 / UNKNOWN 351 / BRANS 149 / NULL 36 / LGS 12 / YKS 11
+
+## Oturum 25.46 -- 15 Mayis 2026 (foto istatistik duzeltmesi)
+**Tamamlanan:**
+- Ali TYT filtre bug: 68 kayit TYT/AYT/UNKNOWN -> BRANS reclassify (student_exams)
+- Vision hallucination fix: whatsapp_bridge.py line 2320 "en iyi tahmini yap" KALDIRILDI
+  -> SIK UYUSMAZLIGI KURALI eklendi (YASAK: en yakin sik, DOGRU: hesabi goster + durustce yaz)
+- "Abartili sayilar" root cause: ID 21061 -- "Gunluk 200 foto" hypothetical etiketsiz.
+  Gercek: 1.8 foto/gun (21 kayit, 1 ogrenci, 10 aktif gun / 30 gun)
+- format_foto_stats() yenilendi: "Gercek Kullanim (DB)" vs "Teorik Maksimum" ayri bolumler
+  -> gunluk ort, aktif gun, kapasite % gosteriliyor. foto istatistik komutu artik net.
+- system_prompts.py: FOTO KULLANIM ISTATISTIGI MALIYET ANALIZI KURALI eklendi
+  -> maliyet analizi yapmadan once ONCE query_analytics ile gercek veri zorunlu
+- Bridge restart -> health OK
+
+**Sonraki:**
+- Mathpix API key (free tier 200req/ay, 0$) -- Ahmet Fatih kullanimi ~55/ay -> ucretsiz kapi
+- Wolfram verification wire-up (foto_solver_v2.py icinde wolfram_query tool baglantisi)
+
+## Oturum 25.46+ -- 15 Mayis 2026 (foto stats fix + topic enricher)
+**Tamamlanan ek:**
+- foto stats bug confirmed: agent_conversations ILIKE foto = 366 (yanlis), foto_questions = 3 (gercek)
+- system_prompts.py KURALI guclendirildi (CRITICAL): TEK kaynak foto_questions; agent_conversations ILIKE foto YASAK
+- Brief #24 dev work: topic_tool_enricher.py YAZILDI ve aktif
+  - 15 konu kategorisi: modern_fizik, klasik_fizik, elektromanyetik, dalga_optik,
+    kimya_molekul/tepkime/element, matematik_kavram, geometri,
+    biyoloji_hucre/sistem/genetik, tarih, cografya, edebiyat
+  - Her kategori: APIs (arxiv, wolfram, pubchem, nasa, wikipedia) + Renderers (mol3d, formula, kgraph, sim, timeline, map)
+  - fermat_core_agent.py'a wire edildi: renderer_hint_inject sonrasi inject
+  - Smoke test 6/6: Higgs->modern_fizik, kafein->kimya_molekul, kuvvet->klasik_fizik vb.
+- Bridge restart OK, health 200
+
+**Sonraki:**
+- Canli test: Ogrenci "Higgs bozonu nedir" sorsun, hint Claude system prompt'a giriyor mu logla
+- API tool integration: arxiv_search, pubchem_lookup gibi tool'lar Claude tool listesinde mi kontrol
+- Mathpix API key (free tier) ve Wolfram verification wire-up halen bekliyor
+
+## Oturum 25.46.1 -- 15 Mayis 2026 (UX fix: Higgs 60s bekleme)
+**Sorun:** Neo Higgs bozonu nedir sordu, bot 5 tool cagirdi (CERN+arXiv+wiki+NIST+NASA), 60sn bekletti, canli yazma hissi kayboldu.
+
+**Tamamlanan:**
+- topic_tool_enricher.py hint v2: tool atla / render INLINE / 8-12 sn ilk cevap zorunlu
+  - ASLA 3+ tool birden cagirma kurali
+  - Tool sadece spesifik guncel veri lazimsa cagirilir
+  - Kendi bilginle yetebiliyor musun? -> tool atla
+- conversation_flow.py: detect_long_intent wrap edildi
+  - PRE-CHECK: topic_tool_enricher konu tespit ederse topic_enrich filler
+  - 6 yeni filler: bilim/kavram/render/formul tonunda, isimli/isimsiz
+- Test: Higgs/fotosentez/kafein -> topic_enrich (12sn beklenen)
+- etut/puan tahmin pattern'leri korundu (regresyon yok)
+- Bridge restart OK
+
+**Sonraki canli test:** Higgs sorusu artik <15sn cevap vermeli (tool barrage YOK).
+
+## Oturum 25.46.2 -- 15 Mayis 2026 (WA progressive text send)
+**Neo direktif (mobilden):** "bot mesaja yazıyla başlasın, ilk bekleme süresini gidersin. Render cağırırsa orada beklesin, devamında text, sonra API. Büyük degisiklik gerekmiyor."
+
+**Tamamlanan:**
+- fermat_core_agent.py:2610 — run() parametresine _wa_progressive_send callback eklendi
+- fermat_core_agent.py:4823 oncesi — tool dongusunde tool_use ile gelen text bloklari ANINDA callback ile WP'ye gonderiliyor
+- whatsapp_bridge.py:4324 — async callback _wa_prog_callback tanimlandi (send_wa_message + cancel filler)
+- .env: WA_PROGRESSIVE_TEXT=true (flag ACIK)
+- Bridge restart OK, 4 worker
+
+**Davranis:**
+- Eskiden: Higgs sorusu -> 60sn boş ekran -> 1 buyuk mesaj
+- Simdi: T+5s ilk text bloku, T+15s ikinci text bloku, T+25s final (formul+render dahil)
+- Feature flag: WA_PROGRESSIVE_TEXT=false yapinca eski davranis donmesi mumkun
+
+**Risk:** Dusuk. ~20 satir, feature flag, mevcut tool dongusu degismedi. Final answer hala gidiyor (regresyon yok).
+
+**Test:** Neo Higgs/fotosentez/kafein sorabilir -> 60s tek mesaj YERINE kademeli akis.
+
+## Oturum 25.46.3 -- 15 Mayis 2026 (Neo gece 01:47 elestirisi)
+**Neo elestirisi:**
+1. Yanlis odak — WP progressive text yaptim, ama Neo asil web arayuzunu istiyor
+2. Loading bar overflow bug dunden beri devam ediyor, fix edilmemis
+3. Meta-elestiri: is sirasinda Neo mesaj atinca okuyup pivot etmiyorum
+4. topic_tool_enricher hint'i ters yon — Neo MAX tool/render istiyor, ben "atla" demistim
+
+**Tamamlanan:**
+- web_chat_ui.html .render-pending-title flex-wrap: wrap + min-width: 0
+- web_chat_ui.html .render-pending-text overflow-wrap + word-break
+- Mobile (≤540px) max-width 80%→92%, sub white-space normal zorla
+- topic_tool_enricher v3: hint TERS CEVRILDI
+  - Eski: "tool atla, render az kullan, 8-12sn"
+  - Yeni: "MAX kullan, ama PRE-TOOL TEXT zorunlu, akisi kompozisyonla parcala"
+  - 5 adim kompozisyon: acilis text -> render -> tool -> ek text -> kapanis
+- Bridge restart OK
+
+**Onceden mevcut altyapi (kontrol edildi, calisiyor):**
+- system_prompts.py: pre-tool text MUTLAK ZORUNLU kurali var (commit c7cede5)
+- fermat_core_agent.py: web kanalinda Claude streaming aktif (line 4676-4682)
+- TTFT 28s -> 2-3s commit a671b97 ile zaten saglandi
+
+**WP progressive text durumu:** flag ACIK kalsin (Neo: zararsiz ise kalsin)
+**Web UI bug fix:** deploy edildi, Neo cache temizleyince gormesi gerek

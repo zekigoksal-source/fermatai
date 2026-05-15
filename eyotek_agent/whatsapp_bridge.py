@@ -2317,7 +2317,18 @@ async def _solve_photo_question(image_bytes: bytes, user_prompt: str = "") -> st
         "- Cozum sonunda: 'Bu konudan YKS'de sık çıkar — benzer soru ister misin?' sor\n"
         "- Sekil/grafik varsa: koordinat, ölçü, etiket hepsini oku ve çözümde kullan\n"
         "- Birim hatası yapma — her adımda birim takibi\n"
-        "- ASLA 'göremiyorum/net değil' deme — en iyi tahmini yap, sonra teyit iste\n"
+        "- Fotograf bulaniksa: tahmin YAPMA, fotografi daha net cek\n"
+        "\n"
+        "SIK UYUSMAZLIGI KURALI (KRITIK GUVENLIK KURALI):\n"
+        "Hesabin hicbir sikla uyusmadiginda KESINLIKLE YASAK:\n"
+        "  YASAK: En yakin sik X demek\n"
+        "  YASAK: Siklarda yok ama X olabilir demek\n"
+        "  YASAK: Supheyi gizleyerek yine sik gostermek\n"
+        "  YASAK: Cevabi bulamayin tahmin uretip DOGRU isaretlemek\n"
+        "DOGRU DAVRANIS (hesap siklara uymuyorsa):\n"
+        "  1. Hesabini goster (orn: 7x7x6x5=1470 cikti)\n"
+        "  2. Durustce yaz: Bu sonuc siklarda gorulmuyor, foto net olmayabilir\n"
+        "  3. Fotografi daha net cek, veya siklari yazar misin?\n"
         "- *Tarih/Cografya*: donem bilgisi, harita yorumlama, neden-sonuc iliskisi\n"
         "- *Geometri*: ucgen, dortgen, daire, kati cisim. Alan/cevre/hacim formulleri. "
         "Sekildeki acilari ve kenarlari dogru oku\n"
@@ -4309,8 +4320,31 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 _agent_timeout = 150.0 if _is_etut_expand else (
                     120.0 if _is_complex_render else 90.0
                 )
+
+            # 25.46.2 (Neo 15 May): WhatsApp progressive text send callback
+            # Tool dongusunde tool_use ile gelen text bloklarini ANINDA WP'ye at.
+            # Feature flag: WA_PROGRESSIVE_TEXT=true (default false) — guvenli rollout.
+            _wa_prog_send = None
+            if channel == "whatsapp" and os.getenv("WA_PROGRESSIVE_TEXT", "false").lower() == "true":
+                _wa_prog_sent_ref = {"any": False}
+                async def _wa_prog_callback(intermediate_text):
+                    """Ara text bloklarini WP'ye yolla — filler iptal et."""
+                    try:
+                        # Filler/progress watchdog'unu iptal et — ara text geldi
+                        try:
+                            cancel_token.set()
+                        except Exception:
+                            pass
+                        # Mesaji yolla (best-effort, hata kullaniciyi bozmaz)
+                        await send_wa_message(phone, intermediate_text)
+                        _wa_prog_sent_ref["any"] = True
+                    except Exception as _wpc_e:
+                        logger.debug(f"  [WA-PROG-CB] hata: {_wpc_e}")
+                _wa_prog_send = _wa_prog_callback
+
             response = await asyncio.wait_for(
-                agent.run(text, caller_phone=phone, channel=channel, _stream_queue=_stream_queue),
+                agent.run(text, caller_phone=phone, channel=channel,
+                          _stream_queue=_stream_queue, _wa_progressive_send=_wa_prog_send),
                 timeout=_agent_timeout
             )
         except asyncio.TimeoutError:

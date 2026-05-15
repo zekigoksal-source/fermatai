@@ -299,37 +299,66 @@ async def get_foto_stats(soz_no: str = None, days: int = 30) -> dict:
             ORDER BY cnt DESC LIMIT 8
         """)
 
+        # Aktif gun sayisi ve gunluk ortalama
+        gunluk_data = await conn.fetch(f"""
+            SELECT DATE(created_at) as gun, COUNT(*) as cnt
+            FROM foto_questions {where}
+            GROUP BY DATE(created_at)
+            ORDER BY gun DESC
+        """)
+        aktif_gun = len(gunluk_data)
+        gunluk_ort = round(stats['toplam'] / max(aktif_gun, 1), 1) if aktif_gun else 0
+
         return {
             'toplam': stats['toplam'],
             'ogrenci_sayisi': stats['ogrenci_sayisi'],
             'zayif_konu_eslesti': stats['zayif_konu_eslesti'],
             'cikmis_eslesti': stats['cikmis_eslesti'],
             'ders_dagilim': [dict(r) for r in by_ders],
+            'aktif_gun': aktif_gun,
+            'gunluk_ort': gunluk_ort,
+            'donem_gun': days,
         }
 
 
 def format_foto_stats(stats: dict, soz_no: str = None) -> str:
-    """WhatsApp formatli foto istatistik."""
-    lines = ["📷 *FOTO COZUM ISTATISTIKLERI*\n"]
+    """WhatsApp formatli foto istatistik — gercek vs. teorik AYRI gosterilir."""
+    donem = stats.get("donem_gun", 30)
+    lines = ["📷 *FOTO SORU COZUM — Gercek Kullanim (son %d gun)*" % donem, ""]
     if soz_no:
-        lines.append(f"_Ogrenci: {soz_no} (son 30 gun)_\n")
+        lines.append("_Ogrenci: %s_" % soz_no)
+        lines.append("")
     else:
-        lines.append("_Kurum geneli (son 30 gun)_\n")
+        lines.append("_Kurum geneli_")
+        lines.append("")
 
-    lines.append(f"📊 Toplam cozulen soru: *{stats['toplam']}*")
+    lines.append("*📊 Gercek Kullanim (DB veritabani — kesin rakamlar):*")
+    lines.append("  Toplam cozulen: *%d* soru" % stats["toplam"])
     if not soz_no:
-        lines.append(f"👥 Aktif ogrenci: *{stats['ogrenci_sayisi']}*")
-    lines.append(f"⚠️ Zayif konu eslesti: *{stats['zayif_konu_eslesti']}*")
-    lines.append(f"📚 Cikmis soru eslesti: *{stats['cikmis_eslesti']}*")
+        lines.append("  Aktif ogrenci: *%d* kisi" % stats["ogrenci_sayisi"])
+    aktif = stats.get("aktif_gun", 0)
+    ort = stats.get("gunluk_ort", 0)
+    lines.append("  Aktif gun: *%d* gun / %d gunluk donem" % (aktif, donem))
+    lines.append("  Gunluk ortalama: *%.1f* foto/gun  ← GERCEK VERI (veritabanindan)" % ort)
+    lines.append("  Zayif konu eslesti: *%d*" % stats["zayif_konu_eslesti"])
+    lines.append("  Cikmis soru eslesti: *%d*" % stats["cikmis_eslesti"])
     lines.append("")
 
-    if stats['ders_dagilim']:
+    ogrenci = max(stats.get("ogrenci_sayisi", 1) or 1, 1)
+    toplam = stats["toplam"] or 0
+    max_aylik = ogrenci * 5 * 22
+    kullanim_pct = round(toplam / max(max_aylik, 1) * 100, 1)
+    lines.append("*⚠️ Kapasite Analizi (ASAGISI TEORIK — gercek yukarda):*")
+    lines.append("  Teorik maks: %d ogr x 5foto x 22gun = *%d* foto/ay" % (ogrenci, max_aylik))
+    lines.append("  Gercek kullanim: teorik maksimumun *%%%s'i*" % kullanim_pct)
+    lines.append("")
+
+    if stats["ders_dagilim"]:
         lines.append("*Ders Dagilimi:*")
-        for d in stats['ders_dagilim']:
-            lines.append(f"  • {d['ders']}: {d['cnt']}")
+        for d in stats["ders_dagilim"]:
+            lines.append("  • %s: %d" % (d["ders"], d["cnt"]))
 
     return "\n".join(lines)
-
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")

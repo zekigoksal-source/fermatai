@@ -2608,7 +2608,7 @@ class FermatCoreAgent:
         self.last_prompt_blocks:  list[str] = []
 
     async def run(self, user_input: str, caller_phone: str = "", channel: str = "whatsapp",
-                  _stream_queue=None) -> str:
+                  _stream_queue=None, _wa_progressive_send=None) -> str:
         """
         Kullanıcı girdisini işle, araçları çalıştır ve yanıt döndür.
 
@@ -2619,11 +2619,16 @@ class FermatCoreAgent:
             _stream_queue: asyncio.Queue — web native streaming için internal param.
                            Verilirse Claude text delta'ları ('chunk', text) tuple olarak queue'ya
                            yazılır, tool olayları ('tool_start'/'tool_done', name) olarak.
+            _wa_progressive_send: async callable(text) — WhatsApp progressive text send
+                           (25.46.2 Neo direktif). Tool döngüsünde tool_use ile birlikte
+                           gelen text bloklarini ANINDA WP'ye gönder; user 60sn boş
+                           ekrana bakmasin. WA_PROGRESSIVE_TEXT=true ile aktif olur.
         """
         # Kullanici profilini al
         self._caller_phone = caller_phone
         self._channel = channel
         self._stream_queue = _stream_queue
+        self._wa_progressive_send = _wa_progressive_send
         # ── Decision trace reset (Oturum 25.29) ───────────────────────
         # Her run() cagrisi temiz baslar. Bridge sonra okur, routing_stats'a yazar.
         self.last_decision_trace = {"route": "unknown", "context_signals": []}
@@ -3855,6 +3860,19 @@ class FermatCoreAgent:
         except Exception as _rh_e:
             logger.debug(f"renderer_hint inject hata: {_rh_e}")
 
+        # 25.46 (Brief #24, Neo 15 May) — TOPIC TOOL ENRICHER
+        # detect_subject + enrichment_dispatcher koprusu. Konuya gore proaktif
+        # API/renderer hint injection. Higgs sorusunda CERN/arxiv hint, kimya
+        # molekulunde mol3d/pubchem hint, fotosentez'de kgraph+wiki hint vs.
+        try:
+            from topic_tool_enricher import get_enrichment_hint
+            _topic_hint = get_enrichment_hint(user_input)
+            if _topic_hint:
+                _role_aware_prompt += _topic_hint
+                logger.info(f"  [TOPIC-ENRICH] Inject: {_topic_hint[:90].strip()}...")
+        except Exception as _te_e:
+            logger.debug(f"topic_tool_enricher inject hata: {_te_e}")
+
         system = _role_aware_prompt + dynamic_context
 
         # ─── 25.44 (Sentry BadRequestError 29× fix): FULL HISTORY tool_use → tool_result validation
@@ -4799,6 +4817,30 @@ class FermatCoreAgent:
                     except Exception as _qcw_e:
                         logger.debug(f"Query cache yaz hatasi: {_qcw_e}")
                 return answer
+
+            # ── 25.46.2 (Neo 15 May): WhatsApp progressive text send ──
+            # Tool çağrıları başlamadan ÖNCE Claude'un bu turda ürettiği text
+            # blokları varsa, anında WP'ye gönder. Kullanıcı 60sn boş ekrana
+            # bakmasin — text okurken arka planda tool çalışsın.
+            # Feature flag: WA_PROGRESSIVE_TEXT=true (default false).
+            if (self._wa_progressive_send is not None
+                and getattr(self, "_channel", "whatsapp") == "whatsapp"
+                and text_blocks):
+                try:
+                    intermediate = "\n".join(
+                        b.text for b in text_blocks if hasattr(b, "text") and b.text
+                    ).strip()
+                    if intermediate and len(intermediate) > 10:
+                        # Async callback — text'i WP'ye yolla
+                        _intermediate_clean = _clean_response(intermediate)
+                        if _intermediate_clean and len(_intermediate_clean) > 10:
+                            await self._wa_progressive_send(_intermediate_clean)
+                            logger.info(
+                                f"  [WA-PROGRESSIVE] Ara metin gonderildi "
+                                f"({len(_intermediate_clean)} char, turn {turn+1})"
+                            )
+                except Exception as _wp_e:
+                    logger.debug(f"WA progressive send hata (atlanir): {_wp_e}")
 
             # Araçları çalıştır — PARALEL (asyncio.gather)
             # Aynı turdaki tool_call'lar bağımsız → eş zamanlı çalıştır → 2-4x hızlanma
