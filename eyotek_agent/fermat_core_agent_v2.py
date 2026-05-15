@@ -377,11 +377,15 @@ class FermatCoreAgentV2(FermatCoreAgent):
     # ─── ANA RUN OVERRIDE ─────────────────────────────────────────────────
 
     async def run(self, user_input: str, caller_phone: str = "",
-                   channel: str = "whatsapp", _stream_queue=None) -> str:
+                   channel: str = "whatsapp", _stream_queue=None,
+                   _wa_progressive_send=None) -> str:
         """V1 run'ını sarar — pre/post flight ekler.
 
         v1 davranışı 100% korunur (super().run() çağırılır).
         v2 sadece etrafına bus emit ekler.
+
+        25.46.4 (Neo bug 15 May 18:34): _wa_progressive_send pass-through eklendi.
+        V1'e eklediğim parametre V2 wrapper'da yoktu → bridge çağrısı patlıyordu.
         """
         self.v2_run_count += 1
         t0 = time.time()
@@ -398,6 +402,7 @@ class FermatCoreAgentV2(FermatCoreAgent):
             caller_phone=caller_phone,
             channel=channel,
             _stream_queue=_stream_queue,
+            _wa_progressive_send=_wa_progressive_send,
         )
 
         # Post-flight (cevap üretildikten sonra)
