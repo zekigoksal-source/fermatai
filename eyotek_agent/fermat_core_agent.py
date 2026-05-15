@@ -1558,6 +1558,8 @@ TOOL_DISPATCH = {
     "wolfram_step_by_step":        lambda p: _tool_wolfram_step_by_step(**p),
     # 25.43-INT-FIX1 (Neo bug 9 May 20:09-20:14): Eyotek 3 zit cevap fix
     "eyotek_health":               lambda p: _tool_eyotek_health(**p),
+    # 25.46.7 (Neo bug 16 May): ders programı fresh Eyotek + lazy_sync
+    "refresh_class_timetable":     lambda p: _tool_refresh_class_timetable(**p),
     # 25.43 (Neo: 12 yeni dis API)
     "tdk_sozluk":                  lambda p: _tool_tdk_sozluk(**p),
     "nist_constant":               lambda p: _tool_nist_constant(**p),
@@ -1731,6 +1733,78 @@ async def _tool_student_heatmap(soz_no_list: list = None, ders: str = "",
         soz_no_list=soz_no_list, ders=ders, weeks=weeks,
         _caller_role=_caller_role, _caller_phone=_caller_phone, **_extra
     )
+
+
+# ════════════════════════════════════════════════════════════════════
+# 25.46.7 (Neo bug 16 May): refresh_class_timetable — ders programı fresh
+# ════════════════════════════════════════════════════════════════════
+async def _tool_refresh_class_timetable(class_name: str = "", **_extra) -> dict:
+    """Eyotek'ten sinif ders programini FRESH cek + class_timetable DB'ye yaz.
+
+    Neo bug (15 May 22:00-22:12): ders programi degistiginde bot DB'den cevap
+    veriyor → stale veri. Neo "Eyotek'e git, fresh al, hem cevapla hem DB'ye yaz".
+
+    Args:
+        class_name: Hedef sinif (orn "11 SAY NXT"). Bos -> TUM siniflar (~60s).
+
+    Returns: {success, mode, slots, rows, error}
+        mode: "single" veya "all"
+        slots: yazilan slot sayisi
+        rows: class_timetable'den fresh okunan rows (filter: class_name verildiyse)
+    """
+    try:
+        from db_pool import get_pool
+        from eyotek_wrapper import get_eyotek
+        from scrape_timetables import scrape_class_timetables
+        import asyncio
+
+        pool = await get_pool()
+        ew = await get_eyotek()
+        if ew is None:
+            return {"success": False, "error": "Eyotek baglantisi yok (CDP off)"}
+
+        # Full scrape (tek-sinif variant simdilik yok, full ~60s ama
+        # zaten lazy_sync ile DB upsert ediyor)
+        async with pool.acquire() as conn:
+            slots = await scrape_class_timetables(conn, ew)
+
+            # Fresh rows oku (filter varsa)
+            if class_name and class_name.strip():
+                rows = await conn.fetch(
+                    """SELECT sinif, gun, saat, ders, ogretmen, derslik
+                       FROM class_timetable
+                       WHERE sinif ILIKE $1 OR sinif ILIKE $2
+                       ORDER BY
+                         CASE gun
+                           WHEN 'Pazartesi' THEN 1 WHEN 'Sali' THEN 2 WHEN 'Carsamba' THEN 3
+                           WHEN 'Persembe' THEN 4 WHEN 'Cuma' THEN 5 WHEN 'Cumartesi' THEN 6
+                           WHEN 'Pazar' THEN 7 ELSE 8 END,
+                         saat""",
+                    f"%{class_name.strip()}%", f"%[{class_name.strip()}]%"
+                )
+            else:
+                rows = await conn.fetch(
+                    """SELECT sinif, gun, saat, ders, ogretmen, derslik
+                       FROM class_timetable
+                       ORDER BY sinif, gun, saat LIMIT 200"""
+                )
+
+            return {
+                "success": True,
+                "mode": "single" if class_name else "all",
+                "slots_total": slots,
+                "rows_found": len(rows),
+                "class_name": class_name or "TUM",
+                "rows": [dict(r) for r in rows],
+                "note": "Fresh Eyotek scrape + class_timetable DB upsert tamamlandi",
+            }
+    except Exception as e:
+        import traceback
+        return {
+            "success": False,
+            "error": f"refresh_class_timetable hata: {e}",
+            "trace": traceback.format_exc()[:500],
+        }
 
 
 # ════════════════════════════════════════════════════════════════════

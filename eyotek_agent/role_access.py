@@ -31,6 +31,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "calculate_yks_score",
         "eyotek_read",
         "eyotek_query", "ogrenci_drilldown", "sinav_sonuclari",
+        "refresh_class_timetable",  # 25.46.7 — ders programı fresh fetch + lazy_sync
         # Oturum 22 (C3 + 22.1) — Yokatlas + Atlas + System awareness
         "ogrenci_nereye_girebilir", "hedef_bolum_ara", "puan_tahmin", "hedef_puan_analiz",
         "plan_kaydet", "plan_getir", "plan_gun_guncelle",
@@ -144,6 +145,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "build_study_plan_context",
         "search_curriculum", "send_exam_image", "list_exam_questions",
         "calculate_yks_score", "eyotek_read", "eyotek_query", "ogrenci_drilldown", "sinav_sonuclari",
+        "refresh_class_timetable",  # 25.46.7 — mudur ders programı fresh fetch
         # Hedef + tercih analizi
         "ogrenci_nereye_girebilir", "hedef_bolum_ara", "puan_tahmin", "hedef_puan_analiz",
         "plan_kaydet", "plan_getir", "plan_gun_guncelle",
@@ -233,6 +235,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "eyotek_query",          # Eyotek query (agentic) → Vedat'in sinifi filtre
         "ogrenci_drilldown",     # Tek ogrenci → onceden ogrenci kontrol gerek (sonra)
         "eyotek_read",           # Eyotek sayfa okuma → filtre uygulanir
+        "refresh_class_timetable", # 25.46.7 — kendi sinifi icin ders programı fresh fetch
         # ── 25.31 — Render endpoint ──
         "make_render_link", "make_3d_template",
         # ── 25.32 — External APIs (egitim destekli) ──

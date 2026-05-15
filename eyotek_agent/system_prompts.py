@@ -3553,6 +3553,38 @@ Cache varsa SQL YAZMA, use_cache kullan. Cache yoksa veya ozel bir filtreleme ge
 - Bu ikisi FARKLI şeyler! Ders = haftalık sabit program, Etüt = ek çalışma. KARISTIRMA.
 - "kaç saat ders" → teacher_timetable, "kaç etüt" → etut_history
 
+🔥 DERS PROGRAMI TAZELIK KURALI (25.46.7 — Neo bug 16 May)
+═══════════════════════════════════════════════════════════════
+NEO BUG (15 May 22:00-22:12): Kullanici "ders programim ne", "yarin hangi
+sinifa dersim var", "cumartesi guncel programda hangi ders" sordu. Bot DB'den
+(class_timetable) STALE cevap verdi -> Neo "DB'den BAKMA, Eyotek'e bak!" demek
+zorunda kaldi 3 KEZ.
+
+🔴 KURAL: "ders programı" sorusu ASLA query_analytics DB'den DOGRUDAN cevaplama.
+
+TRIGGER kelimeler (HEPSI refresh_class_timetable cagirir):
+  - "ders programi" + (degisti / yeni / guncel / fresh / Eyotek'ten bak)
+  - "yarin/cumartesi/pazartesi (gun) hangi sinifa/dersim/hocaya"
+  - "X sinifinin haftalik programi" / "11 SAY NXT programi"
+  - "guncel programda" / "yeni programa gore" / "son hali"
+  - "Eyotek'e gir bak ders programi"
+
+ZORUNLU AKIS:
+  1. refresh_class_timetable(class_name=...) çağır (~30-60sn ama DB de güncellenir)
+  2. Sonuç rows'unu user'a sun (fresh = guvenilir)
+  3. Tool basaramazsa (Eyotek session yok vb), o ZAMAN DB'ye düs ve "DB cache
+     son sync: X" diyerek tarih belirt — kullanici stale veri olabilecegini bilsin
+
+DB DOGRUDAN KULLANIMI:
+  - SADECE refresh_class_timetable başarısız olduğunda (Eyotek offline)
+  - VEYA kullanici "DB'den hızlı bak" diye ÖZEL belirttiyse
+  - VEYA istatistik analizi (ortalama, toplam, dagılım) icin (haftalik ders sayim)
+
+ASLA:
+  - "ders programim" sorgusunda direkt class_timetable SQL → STALE veri riski
+  - refresh_class_timetable çağırmadan "fresh" iddia etme
+  - Eyotek başarılı oldu ama "DB'de göremiyorum" diye cevap verme (tool sonucu use et)
+
 KRİTİK KURAL — HALÜSİNASYON YASAK:
 - Veritabanından veri çekmeden ASLA sayısal bilgi verme.
 - "Orhan Hoca 443 etüt verdi" gibi bilgileri SADECE query_analytics sonucundan al.

@@ -12518,3 +12518,35 @@ bos/stale kalıyor → kart kisa goruyor mobilde. Neo direktif: "boyutu duzelt".
 + alt satirda dinamik sub text ile DOLGUN gorunuyor, ince bar bug bitti.
 
 **Neo Eylem:** Hard refresh (Ctrl+Shift+R) telefondan -> SW v25.46e aktif olur.
+
+## Oturum 25.46.7 -- 16 Mayis 2026 (Neo bug: ders programı DB stale)
+**Neo bug (15 May 22:00-22:12):** Bot ders programı sorularına DB'den stale
+cevap veriyordu. Neo "DB'den BAKMA, Eyotek'e bak!" demek zorunda kaldı 3 kez.
+Direktif: "Eyotek'e girip bakıp o anda hem cevap verip hemde lazy sync
+yapıp güncel durumu db'sine de kaydetmeli."
+
+**Tespit:**
+- eyotek_query Student/timetable-class-list → class LIST geliyor ama class
+  DETAIL drill-down navigator'da YOK → bot DB'ye düşüyordu
+- DB class_timetable son güncelleme 8 May → STALE
+- scrape_class_timetables (scrape_timetables.py) zaten var, batch tool ama
+  Claude'a expose edilmemis
+
+**Fix (4 dosya):**
+1. fermat_core_agent.py: _tool_refresh_class_timetable wrapper eklendi
+   - scrape_class_timetables çağırır (~30-60s, tum sınıflar)
+   - class_name parametresi: hedef sınıf filter ile rows döner
+   - Lazy_sync zaten INSERT/UPSERT yapıyor scrape sırasında
+2. tool_definitions.py: refresh_class_timetable tool schema
+   - description: "ders programı değişti / yeni / güncel" trigger
+   - input: class_name (optional)
+3. role_access.py: admin + mudur + ogretmen icin ACL allow
+4. system_prompts.py: DERS PROGRAMI TAZELIK KURALI (3550 satir civari)
+   - TRIGGER kelimeler listesi (degisti/yeni/guncel/yarin hangi sinif)
+   - Akis: refresh_class_timetable FIRST -> rows sun
+   - DB SADECE: tool fail / "DB'den hizli bak" / istatistik analizi
+
+**Test:** Bridge restart OK, sanity test PASS. Canli class-refresh testi
+Neo bir sonraki "ders programi" sorgusunda dogal olarak tetiklenecek.
+
+**Commit:** Sonraki commit'te c93dfdb...

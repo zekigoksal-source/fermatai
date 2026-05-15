@@ -2568,6 +2568,37 @@ TOOLS.append({
 
 
 # ════════════════════════════════════════════════════════════════════
+# 25.46.7 (Neo bug 16 May): Ders programı FRESH refresh + lazy_sync
+# ════════════════════════════════════════════════════════════════════
+TOOLS.append({
+    "name": "refresh_class_timetable",
+    "description": (
+        "Eyotek'ten sınıf ders programını FRESH çek + class_timetable DB'sini "
+        "güncelle. KULLAN: kullanıcı 'ders programı değişti', 'yeni program', "
+        "'güncel ders programı', 'Eyotek'ten bak ders programına', 'cumartesi "
+        "(veya başka gün) dersleri ne' DEDIĞINDE. Hatta 'hangi sınıflara dersim "
+        "var bugün/yarın' sorularında DA kullan — query_analytics yerine "
+        "BU TOOL'u tercih et çünkü DB stale olabilir. "
+        "Eyotek'ten Pages/Student/timetable-class-list açar, her sınıfa drill-down "
+        "ile gerçek haftalık program çeker, class_timetable tablosuna upsert eder. "
+        "Sonuç: fresh rows. ⚠️ Tam scrape ~30-60sn sürer ama sonraki sorgular hızlı."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "class_name": {
+                "type": "string",
+                "description": (
+                    "Hedef sınıf adı (kısaltma kabul, orn: '11 SAY NXT', '12 SAY A'). "
+                    "Boş → tüm sınıflar refresh + LIMIT 200 row döner."
+                )
+            }
+        }
+    }
+})
+
+
+# ════════════════════════════════════════════════════════════════════
 # 25.43 (Neo: 12 yeni dis API tool tanimi)
 # ════════════════════════════════════════════════════════════════════
 TOOLS.extend([
