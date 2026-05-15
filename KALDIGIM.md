@@ -12437,3 +12437,26 @@ Dagitim: AYT 823 / TYT 782 / UNKNOWN 351 / BRANS 149 / NULL 36 / LGS 12 / YKS 11
 
 **WP progressive text durumu:** flag ACIK kalsin (Neo: zararsiz ise kalsin)
 **Web UI bug fix:** deploy edildi, Neo cache temizleyince gormesi gerek
+
+## Oturum 25.46.4 -- 15 Mayis 2026 (Neo bug 18:34: V2 wrapper sig mismatch)
+**Neo bug:** "bota yaziyorum hata veriyor, sen stabil diyorsun" — 5 ardisik
+"Mesajini islerken bir sorun olustu" fallback.
+
+**Kok sebep:** 25.46.2'de FermatCoreAgent.run() V1'e _wa_progressive_send
+parametresini ekledim AMA FermatCoreAgentV2.run() wrapper'i imza guncel degildi.
+Bridge `agent.run(_wa_progressive_send=...)` cagirinca V2 TypeError firladi:
+  "got an unexpected keyword argument '_wa_progressive_send'"
+
+**Fix (2 satir):** fermat_core_agent_v2.py
+- run() signature + _wa_progressive_send=None
+- super().run() forward _wa_progressive_send=_wa_progressive_send
+
+**Live test (sorun degisikligi sonrasi):**
+- /agent "merhaba" -> fast_response, 5ms PASS
+- /agent "Higgs bozonu hakkinda" -> 633 char zengin cevap PASS
+
+**Ders ogrenildi:** "health endpoint 200" != "stabil". Inheritance/wrapper'li
+yapilarda parametre eklerken HER ALTSINIFI dene. Live agent test minimum
+zorunlu — health curl yetersiz.
+
+**Commit:** ba48e4b
