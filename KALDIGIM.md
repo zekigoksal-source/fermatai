@@ -12460,3 +12460,33 @@ yapilarda parametre eklerken HER ALTSINIFI dene. Live agent test minimum
 zorunlu — health curl yetersiz.
 
 **Commit:** ba48e4b
+
+## Oturum 25.46.5 -- 15 Mayis 2026 (Neo bug 18:40: text-only Higgs + Graviton)
+**Neo bug:** Bot Higgs ve Graviton sorularini SADECE text + bullet yanitladi.
+Neo "Sadece text cok zayif bir mesaj" uyarisiyla bot manuel olarak duzeltti.
+Ayrica web UI bar overflow Neo cache'te eski CSS goruyor.
+
+**Tespit:**
+- graviton kelimesi topic_tool_enricher keyword'lerinde YOKtu -> hint hic
+  tetiklenmedi -> Claude default text-only davraniyordu
+- Higgs icin hint TETIKLENDI ama v3 hint dili soft "MUTLAKA en az 1-2" → Claude
+  yine ignore etti, text-only verdi
+- Web UI CSS fix deploy edildi ama Service Worker eski VERSION (25.40b) ile
+  browser cache'te eski CSS tutuyordu
+
+**Fix:**
+1. topic_tool_enricher.py keywords genisleme:
+   modern_fizik = +35 yeni keyword (graviton, lepton, kuark, neutrino, mermaid,
+   LIGO, LHC, kara delik, gravitasyon dalga, bilim adamlari, sicim teori vs.)
+2. v3 -> v4 hint: 🚨 sirenler + "MUTLAK ZORUNLU" + neo bug context + "RENDER
+   BLOCK KULLANMADAN CEVABI TAMAMLAMA" + alternatif blok listesi (compare2,
+   timeline, steps, sim, 3d, chart)
+3. service-worker.js VERSION 25.40b -> 25.46d (browser cache reset zorla)
+4. mermaid renderer modern_fizik kategorisine eklendi
+
+**Canli test (fresh question, cache bypass):**
+- "Pauli dislama ilkesi" -> formula + compare2 + tablo + mermaid CALISTI ✅
+- "Graviton nedir" -> cache hit (5 dk once cevap), prompt cache aynı geldi
+  (fresh test gerek)
+
+**Neo Eylem:** Hard refresh (Ctrl+Shift+R) -> SW v25.46d aktif, yeni CSS gelir.

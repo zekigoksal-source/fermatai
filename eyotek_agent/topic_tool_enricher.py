@@ -30,16 +30,33 @@ from typing import Optional
 # keywords: tespit icin (text ILIKE match)
 
 TOPIC_ENRICHMENT_MAP = {
-    # MODERN FIZIK / KUANTUM / GORELI
+    # MODERN FIZIK / KUANTUM / GORELI / PARCACIK FIZIGI
     "modern_fizik": {
         "apis": ["arxiv_search", "nasa_image_search"],
-        "renderers": ["formula", "sim", "steps"],
+        "renderers": ["formula", "sim", "steps", "mermaid"],
         "keywords": [
-            "higgs", "kuantum", "kuvant", "foton", "fotoelektrik",
-            "compton", "planck", "belirsizlik", "tunel", "tunel",
-            "schrodinger", "heisenberg", "einstein",
-            "goreceli", "relativite", "spin", "kara delik",
-            "evren", "big bang", "atom alti", "atomalti",
+            # Bozonlar / temel parcaciklar
+            "higgs", "graviton", "boson", "bozon", "kuark", "quark",
+            "lepton", "elektron", "muon", "tau ", "notrino", "nötrino",
+            "neutrino", "foton", "gluon", "w bozonu", "z bozonu",
+            # Kuvvetler + standart model
+            "standart model", "kuvant", "kuantum", "spin",
+            "fotoelektrik", "compton", "planck",
+            "belirsizlik", "tunelleme", "tünelleme", "tunel etk", "tünel etk",
+            # Bilim adamlari
+            "schrodinger", "schrödinger", "heisenberg", "einstein",
+            "dirac", "feynman", "pauli", "bohr",
+            # Goreceli / yercekimi kuantizasyon
+            "goreceli", "göreceli", "relativite", "relativistik",
+            "kuantum yercekim", "kuantum yerçekim", "sicim teori", "string teori",
+            "loop kuantum", "supersimetri", "süpersimetri",
+            # Kozmoloji
+            "kara delik", "evren", "big bang", "buyuk patlama",
+            "karanlik madde", "karanlık madde", "karanlik enerji",
+            "gravitasyon dalga", "gravitasyonel dalga", "ligo",
+            # Detektorler / deneyler
+            "lhc", "cern", "atlas", "cms detektor",
+            "atom alti", "atomalti", "atom-alti",
         ],
     },
     # KLASIK FIZIK / MEKANIK
@@ -211,12 +228,10 @@ def get_enrichment_config(category: str) -> Optional[dict]:
 
 
 def get_enrichment_hint(text, channel="wp"):
-    """Hint v3 (25.46.3 Neo): MAX tool+render kullan, ama pre-tool TEXT zorunlu.
+    """Hint v4 (25.46.5 Neo bug): Text-only cevap TESPIT EDILDI, kural sertlestirildi.
 
-    Vizyon: kullanici F5 atmasin, butun-bir-deneyim hissetsin.
-    Text streaming hizli akar, tool/render beklenirken kullanici text okur.
-    Az kullan = eksik cevap. Tum kapasiteyi kullan ama akisi kompozisyonla
-    parcalara bol.
+    Neo direktif 18:40: 'Sadece text cok zayif bir mesaj'. v3 hinti soft kaldi.
+    v4: MUTLAK ZORUNLU dil + render block YAZMADAN cevap GONDERMEK YASAK.
     """
     cat = detect_topic_category(text)
     if not cat:
@@ -229,35 +244,46 @@ def get_enrichment_hint(text, channel="wp"):
     NL = chr(10)
     parts = [
         "",
-        "[TOPIC ENRICHMENT HINT] (Brief #24 v3 25.46.3 — Neo direktif)",
+        "=================================================================",
+        "🚨🚨🚨 [TOPIC ENRICHMENT v4 — MUTLAK ZORUNLU] (Neo bug 15 May 18:40)",
+        "=================================================================",
         f"Mesajda konu: *{cat}*",
         "",
-        "HEDEF: HEM hiz HEM kalite. Tum kapasiteyi kullan, akisi kompozisyonla parcala.",
+        "🚨 NEO BUG (18:40): Sen Higgs sorusuna SADECE TEXT cevap verdin -- ",
+        "   Neo 'Sadece text cok zayif bir mesaj' diye uyardi. BU BUG'I TEKRAR ETME!",
         "",
-        "RENDERER (inline, tool_call YOK -- her zaman uret):",
-        f"  Uygun blocklar: {rens}",
-        f"  Cevapta MUTLAKA en az 1-2 render block kullan -- kod blogu icinde {first_renderer}.",
-        "  Render API beklemez, streaming sirasinda yazilir, ekstra zaman almaz.",
-        "  Tek metin yetersizdir -- gorsel/formul/timeline/mermaid ile zenginlestir.",
+        "🔴🔴🔴 RENDER BLOCK MUTLAK ZORUNLU 🔴🔴🔴",
+        f"   Bu kategori icin DOGRU blocklar: {rens}",
+        "   CEVAPTA EN AZ 2 RENDER BLOCK KULLANMADAN CEVABI TAMAMLAMA.",
+        f"   En basit: kod blogu icinde {first_renderer} ile sembol/formul/sema goster.",
+        "   ALTERNATIF blocklar: mermaid (akis), compare2 (vs tablosu), steps (adim adim),",
+        "   timeline (tarihce), sim (interaktif), 3d (model), chart (veri).",
         "",
-        "TOOL/API (her biri 5-15s ekler -- AMA STREAMING ARASINDA KULLAN):",
-        f"  Mevcut: {apis}",
-        "  Neo direktif: 'her cevabinda bunlari MAX seviyede kullan, bosuna eklemedik'.",
-        "  TOOL CAGIR ama PRE-TOOL TEXT ZORUNLU (system_prompt'taki MUTLAK kurali oku).",
-        "  Akis: 2-3 cumle text → tool_call → tool sonucu sonrasi devam text + render → kapanis.",
-        "  Kullanici beklerken TEXT OKUR -- 60sn bos ekran YASAK, ama az tool YASAK.",
-        "  3+ tool cagiracaksan: aralarinda text uret (her tur 1 cumle min).",
+        "   ❌ YASAK: Sadece markdown metin + bullet point (cevap KURU kalir)",
+        "   ❌ YASAK: Render kullanmadan 'devam edelim mi?' diye bitirmek",
+        "   ❌ YASAK: 'Daha derine gitmek istersen' diye USTUNU ortmek -- DERINE GIR",
         "",
-        "KOMPOZISYON KURALI (Neo 'butun-bir-deneyim' vizyonu):",
-        "  1. Acilis text (2-3 cumle, streaming akar)",
-        "  2. Render block (formula/sim/timeline -- inline)",
-        "  3. Tool call (api veri cek)",
-        "  4. Tool sonucu sonrasi: ek text + render + ek tool gerekiyorsa",
-        "  5. Kapanis: ozet + soru sor (etkilesim devam)",
+        "   ✅ DOGRU: Kavramsal text → ```formula → mermaid akis → kapanis",
+        "   ✅ DOGRU: compare2 ile farkliliklari net vurgu",
+        "   ✅ DOGRU: timeline ile tarihsel surec",
         "",
-        "ASLA: tek mesajda HER SEY (uzun bekleme), kullanici F5 atar.",
-        "ASLA: pre-tool text atla (kullanici sessizlik gorur).",
-        "ASLA: render kullanma (cevap kuru, eksik kalir).",
+        "🔧 TOOL/API (her biri 5-15s ekler -- DOGRU KULLANIRSAN MUTHIS):",
+        f"   Mevcut: {apis}",
+        "   PRE-TOOL TEXT MUTLAK (system_prompt'taki kurali oku). Kompozisyon:",
+        "   1. Acilis text (2-3 cumle, streaming hizli akar)",
+        "   2. Render block #1 (inline, beklemez)",
+        "   3. Tool call gerekiyorsa cagir (text okuyor user, sikilmiyor)",
+        "   4. Tool sonucu sonrasi: ek text + render #2",
+        "   5. Kapanis: ozet + alternatif daldan devam onerisi",
+        "",
+        "   3+ tool: aralarinda text uret (her tur 1 cumle min).",
+        "",
+        "📐 NEO 'BUTUN-BIR-DENEYIM' VIZYONU:",
+        "   Hedef: kullanici F5 atmasin, text streaming akarken render+tool araya",
+        "   girer, kompozisyon olusur. Az render = eksik cevap, az tool = eksik veri.",
+        "   Tum kapasite kullanilmali -- ama akis parcalara bolunmus olmali.",
+        "",
+        "=================================================================",
         "",
     ]
     return NL.join(parts)
