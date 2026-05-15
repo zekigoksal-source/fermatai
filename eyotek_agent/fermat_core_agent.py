@@ -567,12 +567,37 @@ from role_access import (
 
 # (22.1n-split: 219 satir ACL bloku role_access.py ye tasindi - import yukarida)
 async def _tool_eyotek_read(page_key: str = "etut_ara", max_rows: float = 20) -> dict:
-    """Eyotek'ten anlık veri oku — CDP ile (basit, sabit kaynak)."""
+    """Eyotek'ten anlık veri oku.
+
+    25.46.8 (Neo bug 15 May 22:17): eyotek_read ESKI sistemdi (eyotek_reader.py
+    direkt CDP). Neo direktif: "navigator tüm bu işlemleri yapmalı eski
+    sistemin neden hala kalıntısı var". Şimdi eyotek_query'ye (agentic) redirect
+    ediyoruz. page_key → natural language question çevirisi.
+
+    Eski reader fallback olarak duruyor — eyotek_query başarısız olursa devreye girer.
+    """
+    # 25.46.8: ONCE eyotek_query'ye redirect (agentic navigator, CDP+headless ikisini destekler)
+    page_to_question = {
+        "etut_ara":     "bugun ve son 7 gunluk etut listesi",
+        "etut_giris":   "son etut girisleri listesi",
+        "yoklama":      "bugunku yoklama raporu",
+        "sinav":        "son sinav sonuclari listesi",
+    }
+    question = page_to_question.get(str(page_key).lower())
+    if question:
+        try:
+            qresult = await _tool_eyotek_query(question=question, max_rows=int(max_rows))
+            if qresult and qresult.get("success"):
+                return qresult
+            logger.info(f"[EYOTEK_READ] eyotek_query fail ({qresult.get('error', '?')[:60]}), reader fallback")
+        except Exception as _qe:
+            logger.warning(f"[EYOTEK_READ] eyotek_query exception, reader fallback: {_qe}")
+
+    # FALLBACK: eski reader (CDP gerek)
     from eyotek_knowledge.eyotek_reader import read_eyotek_page
     result = await read_eyotek_page(page_key, max_rows=int(max_rows))
 
     # 25.43-LAZY-SYNC-EXTEND: Neo direktif — eyotek_read da DB sync etmeli
-    # page_key → page_path eslesmesi (etut_ara → student/individual-lesson)
     page_map = {
         "etut_ara":     "student/individual-lesson",
         "etut_giris":   "student/individual-lesson",
@@ -1754,19 +1779,31 @@ async def _tool_refresh_class_timetable(class_name: str = "", **_extra) -> dict:
     """
     try:
         from db_pool import get_pool
-        from eyotek_wrapper import get_eyotek
+        from eyotek_wrapper import EyotekWrapper, session_is_valid
+        from eyotek_browser_helper import _read_session_file
         from scrape_timetables import scrape_class_timetables
-        import asyncio
 
+        # Cookie al + expire'ysa auto-login (scrape_timetables.main pattern)
+        cookies = await _read_session_file()
+        if not cookies or not await session_is_valid(cookies):
+            try:
+                from eyotek_auto_login import try_auto_login
+                result = await try_auto_login()
+                if result.get("success"):
+                    cookies = await _read_session_file()
+            except Exception as e:
+                return {"success": False, "error": f"Auto-login fail: {e}",
+                        "user_message": "Eyotek session yenilenemedi, admin'in 'eyotek tamam' demesi gerek"}
+
+        if not cookies:
+            return {"success": False, "error": "Cookie yok ve auto-login basarisiz",
+                    "user_message": "Eyotek session kurulamadi"}
+
+        # EyotekWrapper context manager — CDP varsa kullanir, yoksa headless launch
         pool = await get_pool()
-        ew = await get_eyotek()
-        if ew is None:
-            return {"success": False, "error": "Eyotek baglantisi yok (CDP off)"}
-
-        # Full scrape (tek-sinif variant simdilik yok, full ~60s ama
-        # zaten lazy_sync ile DB upsert ediyor)
         async with pool.acquire() as conn:
-            slots = await scrape_class_timetables(conn, ew)
+            async with EyotekWrapper(cookies) as ew:
+                slots = await scrape_class_timetables(conn, ew)
 
             # Fresh rows oku (filter varsa)
             if class_name and class_name.strip():

@@ -173,21 +173,25 @@ async def eyotek_health_check(use_cache: bool = True, auto_relogin: bool = True)
         cached["_cached"] = True
         return cached
 
-    # 1. CDP port check (hızlı)
+    # 1. CDP port check (sadece bilgi amacli — karar live API)
     cdp_ok, cdp_detail = _check_cdp_port()
 
     # 2. Cookie file check (lokal, hızlı)
     cookie_ok, cookie_detail, cookie_info = _check_cookie_file()
 
-    # 3. Live API (yavas ama en guvenilir) — sadece CDP+cookie OK ise dene
+    # 3. Live API (yavas ama en guvenilir) — 25.46.8 (Neo bug 16 May):
+    # ESKI: sadece cdp_ok AND cookie_ok ise dene
+    # YENI: cookie var ise her zaman dene (open_eyotek_browser headless launch
+    # destekler, CDP gerektirmez). Boylece CDP kapali ama navigator calisiyor
+    # durumlarda "cdp_down" yanlis cevabi engellenir.
     live_ok = False
-    live_detail = "Atlandi (CDP veya cookie eksik)"
-    if cdp_ok and cookie_ok:
+    live_detail = "Atlandi (cookie yok)"
+    if cookie_ok:
         try:
-            live_ok, live_detail = await asyncio.wait_for(_check_live_api(), timeout=12.0)
+            live_ok, live_detail = await asyncio.wait_for(_check_live_api(), timeout=15.0)
         except asyncio.TimeoutError:
             live_ok = False
-            live_detail = "Live API timeout (>12s)"
+            live_detail = "Live API timeout (>15s)"
         except Exception as e:
             live_ok = False
             live_detail = f"Live API exception: {str(e)[:80]}"
@@ -195,8 +199,9 @@ async def eyotek_health_check(use_cache: bool = True, auto_relogin: bool = True)
     # 25.43-EYOTEK-LAZY: session_drop tespit edilirse INLINE AUTO-RELOGIN dene
     # Eski "her zaman ulaşılabilir" sistem böyle çalışıyordu — bot çağrısı sırasında
     # cookie expire olunca otomatik refresh, kullanıcı farkı görmez.
+    # 25.46.8: cdp_ok kosulu kaldirildi — CDP off olsa bile cookie var + auto-relogin denesin
     relogin_attempted = False
-    if auto_relogin and cdp_ok and cookie_ok and not live_ok:
+    if auto_relogin and cookie_ok and not live_ok:
         relogin_attempted = True
         try:
             from eyotek_auto_login import try_auto_login
@@ -221,23 +226,28 @@ async def eyotek_health_check(use_cache: bool = True, auto_relogin: bool = True)
         except Exception as e:
             logger.warning(f"[HEALTH] auto_relogin exception: {e}")
 
-    # Karar matrisi (en güvenilir cevap)
+    # Karar matrisi (en güvenilir cevap) — 25.46.8 (Neo bug 16 May)
+    # KARAR: live API basariliysa "online" (CDP up/down fark etmez).
+    # Navigator headless launch CDP'siz çalışıyor — bot "cdp_down" yanlış mesaj
+    # vermesin. CDP info sadece teşhis amaçlı kalsın.
     if live_ok:
         status = "online"
         is_connected = True
-        msg = "✅ Eyotek bağlantısı CANLI — gerçek API doğrulandı"
+        if cdp_ok:
+            msg = "✅ Eyotek bağlantısı CANLI — CDP + canlı API her ikisi doğrulandı"
+        else:
+            msg = "✅ Eyotek bağlantısı CANLI — navigator headless ile çalışıyor (CDP kapalı ama veri akıyor)"
         if relogin_attempted:
             msg += " (auto-relogin sonrasi)"
-    elif cdp_ok and cookie_ok and not live_ok:
-        # Browser var, cookie var ama API fail → session düşmüş
-        # Auto-relogin denendi ama olmadi — capsolver bakiye bittiyse veya credential bozulduysa
+    elif cookie_ok and not live_ok:
+        # Cookie var ama API fail (CDP up veya down fark etmez)
+        # Auto-relogin denendi ama olmadi
         status = "session_drop"
         is_connected = False
-        msg = "⚠️ Eyotek geçici erişim sorunu — sistem otomatik düzeltiyor, birazdan tekrar dene"
-    elif not cdp_ok:
-        status = "cdp_down"
-        is_connected = False
-        msg = "❌ Eyotek bağlı DEĞİL — Chrome CDP portu kapalı, browser yeniden başlatılmalı"
+        if cdp_ok:
+            msg = "⚠️ Eyotek session düştü — cookie expired olabilir, admin 'eyotek tamam' gerek"
+        else:
+            msg = "⚠️ CDP kapalı + cookie expired — admin 'eyotek tamam' veya BASLAT_EYOTEK.bat gerek"
     elif not cookie_ok:
         status = "no_cookie"
         is_connected = False

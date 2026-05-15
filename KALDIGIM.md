@@ -12550,3 +12550,46 @@ yapıp güncel durumu db'sine de kaydetmeli."
 Neo bir sonraki "ders programi" sorgusunda dogal olarak tetiklenecek.
 
 **Commit:** Sonraki commit'te c93dfdb...
+
+## Oturum 25.46.8 -- 16 Mayis 2026 (Neo bug 22:00-22:21: eski sistem kalintilari + cdp tutarsizlik)
+**Neo bot analizi (21202-21231):**
+- Bot "CDP kapalı = Eyotek'e bağlı değil" dedi (yanlis), aynı anda eyotek_query
+  çalışıyordu → tutarsız cevap, kullanıcı güveni kırıldı
+- eyotek_read (eski CDP) ile eyotek_query (yeni navigator) 2 ayrı sistem,
+  Neo "saçma, eski kalıntı, navigator tüm bu işlemleri yapmalı"
+- 25.46.7 refresh_class_timetable tool'u get_eyotek import bug ile patladı
+  → "cannot import name 'get_eyotek'", live test fail
+
+**Fix (3 dosya):**
+
+1. fermat_core_agent.py:_tool_refresh_class_timetable
+   - get_eyotek (var olmayan) → EyotekWrapper async context manager
+   - Cookie auto-read + session_is_valid kontrol + auto-login fallback
+   - Pattern: scrape_timetables.py main() ile aynı (proven)
+
+2. fermat_core_agent.py:_tool_eyotek_read
+   - 25.46.8: ESKI sistem (eyotek_reader CDP direkt) deprecate
+   - ONCE eyotek_query'ye redirect (page_key → natural language soru)
+   - eyotek_query fail ise eski reader fallback (geriye dönük uyumluluk)
+   - Neo direktif: "navigator tüm bu işlemleri yapmalı"
+
+3. eyotek_health.py
+   - 25.46.8: live API check artik cdp_ok and cookie_ok gerektirmez
+   - SADECE cookie_ok ise live test dene (open_eyotek_browser headless launch)
+   - auto_relogin de cdp_ok kosulu kaldirildi
+   - Karar matrisi: live_ok=true → "online" (CDP up/down fark etmez)
+   - Yeni mesaj: "Eyotek bağlantısı CANLI — navigator headless ile çalışıyor"
+
+**Live test sonuclari:**
+- eyotek_health: status=online (CDP off + cookie 19h eski oldugu halde)
+- refresh_class_timetable('11 SAY NXT'): 60 slot scrape, 10 row dondu, 22sn
+- Bot test: "11 SAY NXT cumartesi guncel program" sordu, bot
+  refresh_class_timetable cagirdi → fresh veri (Zeki Göksal 15:30 fizik) +
+  "DB'ye yazildi" mesaji ile cevap verdi, 32sn
+
+**Bot tutarliligi onarildi:** "CDP kapali = Eyotek bagli degil" yanlis cevabi
+artik veremiyor — eyotek_health gercek API testi ile karar veriyor.
+
+**Sonraki:** Eski connect_over_cdp kalintilari (smart_sync.py, sync_exams.py,
+fill_missing_nets.py) hala duruyor — bunlar BATCH script'ler, scheduler ile
+çalışıyor, acil değil. Daha sonra navigator'a tasinabilir.
