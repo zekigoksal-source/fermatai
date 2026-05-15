@@ -12490,3 +12490,31 @@ Ayrica web UI bar overflow Neo cache'te eski CSS goruyor.
   (fresh test gerek)
 
 **Neo Eylem:** Hard refresh (Ctrl+Shift+R) -> SW v25.46d aktif, yeni CSS gelir.
+
+## Oturum 25.46.6 -- 15 Mayis 2026 (Neo SS bug 23:33+23:40: ince bar dert)
+**Neo cevap kalitesi:** ✅ "cevaplar enfes ve fazlasıyla tatmin edici cok begendim"
+Pauli + Graviton + De Broglie + Bing Bang -- hepsi formula+compare2+mermaid ile zengin.
+
+**Hala duran sorun:** render-pending-card BAZEN ince bar gibi gozukuyor — backend
+custom thinking mesaji geldiginde (orn "✓ Veriyi aldim, yazıyorum...") sub text
+bos/stale kalıyor → kart kisa goruyor mobilde. Neo direktif: "boyutu duzelt".
+
+**Fix (CSS + JS):**
+1. Mobile (≤540px) render-pending-card:
+   - min-height: 96px !important (her zaman dolgun gozuk)
+   - padding 14→16px, gap 12→14px, align-items center
+   - max-width 92→94%
+   - text container min-height 44→60px, gap 4px
+   - title 13.5→14.5px font, weight 700
+   - sub 11.5→12.5px font, min-height 18px, display block (kart sub yoksa bile yuksek)
+   - render-spinner 42→36px (kart yuksekligine orantili)
+2. _evolveRichCard() JS: backend custom mesaj geldiginde sub text de evrim yapar
+   - 5sn: "Kaynak taraniyor, az kaldi..."
+   - 12sn: "Veri toparlaniyor, anlik gorsellestirme..."
+   - 30sn: "Yogun islem — uzun cevap geliyor..."
+3. service-worker.js VERSION 25.46d → 25.46e (Neo browser cache bust)
+
+**Etki:** "✓ Veriyi aldim, yazıyorum" goruntulendiginde artik kart 96px min-height
++ alt satirda dinamik sub text ile DOLGUN gorunuyor, ince bar bug bitti.
+
+**Neo Eylem:** Hard refresh (Ctrl+Shift+R) telefondan -> SW v25.46e aktif olur.

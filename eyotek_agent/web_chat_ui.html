@@ -491,36 +491,49 @@ html[data-theme="dark"] .msg.bot .render-pending-card.chunk-pause-card {
 @media (max-width: 540px) {
   .msg.bot.render-pending-card,
   .msg.bot .render-pending-card {
-    padding: 14px 16px !important;
-    gap: 12px;
-    align-items: stretch !important;
-    /* 25.46.3 (Neo bug 15 May): genis card mobilde 80% max-width yetersizdi,
-       cok dar ekran (Galaxy ~360px) icin %92 yap, sub text 2 satira sigsin. */
-    max-width: 92% !important;
+    /* 25.46.6 (Neo SS 15 May 23:33-23:40): "ince kutucuk" sorunu — kart bazen
+       sub text bos/kisa oldugunda thin bar gibi gozukuyor. Cozum:
+       - min-height 96px (her zaman dolu/zengin gozuk)
+       - padding artirildi (cevre nefes alsin)
+       - text container min-height 60px (titel+sub vertical hizalandirma garanti) */
+    padding: 16px 18px !important;
+    gap: 14px;
+    align-items: center !important;
+    min-height: 96px !important;
+    max-width: 94% !important;
   }
   .msg.bot .render-pending-text {
     display: flex !important;
     flex-direction: column;
     justify-content: center;
-    min-height: 44px;
-    /* 25.46.3: word break + min-width 0 — uzun cumle wrap'le kirilsin */
+    min-height: 60px !important;
     min-width: 0;
     overflow-wrap: break-word;
     word-break: break-word;
+    gap: 4px;
   }
   .msg.bot .render-pending-title {
-    font-size: 13.5px;
-    line-height: 1.3;
+    font-size: 14.5px !important;
+    line-height: 1.35 !important;
     flex-wrap: wrap;
+    font-weight: 700 !important;
   }
   .msg.bot .render-pending-sub {
-    font-size: 11.5px;
-    line-height: 1.35;
-    margin-top: 3px;
-    /* 25.46.3: white-space normal + wrap zorla (display:block child of flex) */
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
+    margin-top: 2px;
     white-space: normal;
     overflow-wrap: break-word;
     word-break: break-word;
+    /* 25.46.6: sub bos kalsa bile dikey alan rezerve et — thin bar gozukmesin */
+    min-height: 18px;
+    display: block;
+  }
+  /* 25.46.6: spinner daha buyuk — kart yuksekligi ile orantili */
+  .msg.bot .render-pending-card .render-spinner {
+    width: 36px !important;
+    height: 36px !important;
+    flex-shrink: 0;
   }
   .msg.bot .render-spinner {
     width: 36px; height: 36px;
@@ -8236,6 +8249,18 @@ async function doSend() {
     if (thinkingCustomTxt) {
       if (titleEl && titleEl.textContent !== thinkingCustomTxt) {
         titleEl.textContent = thinkingCustomTxt;
+      }
+      // 25.46.6 (Neo SS bug): sub text bos kalmasin — kart thin/ince gorunmesin.
+      // Backend custom mesaj genelde tek satir, sub ile birlikte zenginlestir.
+      if (subEl) {
+        const _elapsed = Date.now() - thinkingStart;
+        let _subFiller = "Hazirliyorum, az kaldi...";
+        if (_elapsed > 30000) _subFiller = "Yogun islem — uzun cevap geliyor...";
+        else if (_elapsed > 12000) _subFiller = "Veri toparlaniyor, anlik gorsellestirme...";
+        else if (_elapsed > 5000) _subFiller = "Kaynak taraniyor, az kaldi...";
+        if (subEl.textContent !== _subFiller) {
+          subEl.textContent = _subFiller;
+        }
       }
       return;
     }
