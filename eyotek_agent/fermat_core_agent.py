@@ -4593,6 +4593,22 @@ class FermatCoreAgent:
             if _is_hack:
                 logger.info("  [CEREBRAS-TOOLS] hack pattern → SKIP, fast_response/Claude")
                 raise RuntimeError("hack_pattern_skip")
+            # 25.46+ BUG FIX (Neo 17 May — Duygu mudur vakasi 20:07-20:11):
+            # "Önümüzdeki hafta hangi etütler var eyotekten bak" → Cerebras qwen3
+            # "Eyotek'e baglanip cekiyorum (~20sn)..." YAZIYORDU ama tool_use
+            # EMITTEMIYORDU → kullanici beklemede kaldi, veri gelmedi.
+            # Eyotek/etut/yoklama/sinav gibi VERI CEKEN sorgular Claude'a gitsin —
+            # Claude tool-calling daha guvenilir.
+            _data_fetch_keywords = (
+                "eyotek", "etüt", "etut", "yoklama", "devamsizlik", "devamsızlık",
+                "rehberlik notu", "sinav", "sınav", "deneme",
+                "yarin etut", "yarın etüt", "bugun etut", "bugün etüt",
+                "haftanin etut", "haftanın etüt", "hangi etut", "hangi etüt",
+                "etutler var", "etütler var", "etut listesi", "etüt listesi",
+            )
+            if any(kw in _ml for kw in _data_fetch_keywords):
+                logger.info("  [CEREBRAS-TOOLS] data-fetch keyword (eyotek/etut/sinav) → SKIP, Claude tool-calling daha guvenilir")
+                raise RuntimeError("data_fetch_skip")
             if (ENABLE_CEREBRAS_TOOLS and role in _CB_ELIGIBLE_ROLES
                     and getattr(self.router, "_cerebras_available", False)):
                 _safe_subset_cb = [t for t in TOOLS
@@ -4616,6 +4632,28 @@ class FermatCoreAgent:
                     if _cb_r and _cb_r.get("text") and len(_cb_r["text"].strip()) >= 20:
                         answer = _cb_r["text"].strip()
                         _cb_model = _cb_r.get("model", "qwen-3-235b")
+                        # 25.46+ BUG FIX (Neo 17 May — kirik promise tespiti):
+                        # Eger Cerebras hicbir tool calistirmadan "cekiyorum / kontrol
+                        # ediyorum / topluyorum / hazirliyorum / bakiyorum" diyorsa
+                        # bu "kirik promise" — kullanici beklemede kalir veri gelmez.
+                        # Claude'a fallback yap.
+                        _has_tools = _cb_r.get("has_tool_calls", False)
+                        if not _has_tools:
+                            _promise_markers = (
+                                "çekiyorum", "cekiyorum", "kontrol ediyorum",
+                                "topluyorum", "inceliyorum",
+                                "araştırıyorum", "arastiriyorum",
+                                "hazırlıyorum", "hazirliyorum",
+                                "bakıyorum", "bakiyorum",
+                                "bağlanıp", "baglanip", "bağlanip",
+                                "tarıyorum", "tariyorum",
+                                "veriyi çek", "veriyi cek",
+                                "kontrol ediyim", "bakayım", "bakayim",
+                            )
+                            _ans_low = answer.lower()
+                            if any(p in _ans_low for p in _promise_markers):
+                                logger.warning(f"  [CEREBRAS-TOOLS] KIRIK PROMISE (no tool, promise text) → Claude fallback: {answer[:120]}")
+                                raise RuntimeError("broken_promise_skip")
                         logger.info(f"  [CEREBRAS-TOOLS] Basarili {_cb_ms}ms, model={_cb_model}, {len(answer)} char")
                         try:
                             from conversation_memory import strip_redundant_greeting
