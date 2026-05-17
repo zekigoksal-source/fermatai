@@ -17,10 +17,10 @@ html, body {
 .wrap {
     max-width: 480px;
     margin: 0 auto;
-    padding: 8px;
+    padding: 6px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
     height: 100vh;
 }
 .bar {
@@ -33,8 +33,18 @@ html, body {
     font-size: 12px;
     border: 1px solid #334155;
 }
-.brand { color: #F59E0B; font-weight: 800; letter-spacing: 0.3px; }
-.status { color: #CBD5E1; font-weight: 500; }
+.brand { color: #F59E0B; font-weight: 800; letter-spacing: 0.3px; font-size: 13px; }
+.engine-pill {
+    background: rgba(245,158,11,0.12);
+    color: #F59E0B;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 4px;
+    border: 1px solid rgba(245,158,11,0.3);
+}
+.status { color: #CBD5E1; font-weight: 500; font-size: 11px; }
 .status.thinking { color: #F59E0B; }
 .status.win { color: #10B981; }
 .status.lose { color: #EF4444; }
@@ -43,11 +53,12 @@ html, body {
     flex: 1;
     border-radius: 8px;
     overflow: hidden;
+    min-height: 320px;
 }
 .btns { display: flex; gap: 6px; }
 .btn {
     flex: 1;
-    padding: 8px;
+    padding: 9px;
     border: 1px solid #334155;
     background: #1E293B;
     color: #E2E8F0;
@@ -71,8 +82,8 @@ html, body {
 <body>
 <div class="wrap">
     <div class="bar">
-        <span class="brand">⚡ FermatAI ♟️</span>
-        <span class="status" id="status">Hamleni yap ⚪</span>
+        <span class="brand">⚡ FermatAI ♟️ <span class="engine-pill" id="engine-pill">YÜKLENİYOR</span></span>
+        <span class="status" id="status">Motor yükleniyor...</span>
     </div>
     <div id="board"></div>
     <div class="btns">
@@ -87,97 +98,123 @@ html, body {
 
 <script>
 // ════════════════════════════════════════════════════════════
-// FermatAI Satranç — Inline Minimax AI (NO external deps, %100 calisir)
+// FermatAI Satranç — Stockfish 11 (~3000 ELO) + Minimax fallback
 // ════════════════════════════════════════════════════════════
 
 const game = new Chess();
 let board = null;
 let aiThinking = false;
-const AI_DEPTH = 3;  // 3 = makul (~1500-1700 ELO), 4 = guclu ama yavas
+let useStockfish = false;
+let stockfish = null;
+let stockfishReady = false;
+const STOCKFISH_DEPTH = 20;          // Ultimate — neredeyse yenilmez
+const STOCKFISH_MOVETIME = 2500;     // Max 2.5 saniye düşünür
+const MINIMAX_DEPTH = 3;             // Fallback — orta seviye
 
 const statusEl = document.getElementById('status');
+const enginePill = document.getElementById('engine-pill');
 
-// ─── PIECE-SQUARE TABLES (basic positional evaluation) ───
-const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+function setStatus(text, cls) {
+    statusEl.textContent = text;
+    statusEl.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+// ─── STOCKFISH (PRIMARY, ~3000 ELO) ───
+function initStockfish() {
+    try {
+        // Lokal host (cross-origin SORUN YOK)
+        stockfish = new Worker('/static/games/lib/stockfish.js');
+        stockfish.onmessage = function(e) {
+            const line = (typeof e.data === 'string') ? e.data : '';
+            if (line === 'uciok') {
+                stockfish.postMessage('setoption name Skill Level value 20');
+                stockfish.postMessage('isready');
+            } else if (line === 'readyok') {
+                stockfishReady = true;
+                useStockfish = true;
+                enginePill.textContent = 'ULTIMATE 3000+';
+                setStatus('Hamleni yap — sen başlıyorsun ⚪', '');
+            } else if (line.startsWith('bestmove')) {
+                const move = line.split(' ')[1];
+                handleAIMove(move);
+            }
+        };
+        stockfish.onerror = function(err) {
+            console.warn('Stockfish hata, minimax fallback:', err);
+            stockfishFallback();
+        };
+        stockfish.postMessage('uci');
+        // 8 saniye içinde hazır olmazsa fallback
+        setTimeout(() => {
+            if (!stockfishReady) {
+                console.warn('Stockfish timeout, minimax fallback');
+                stockfishFallback();
+            }
+        }, 8000);
+    } catch (err) {
+        console.warn('Stockfish init fail, minimax fallback:', err);
+        stockfishFallback();
+    }
+}
+
+function stockfishFallback() {
+    if (useStockfish && stockfishReady) return;
+    useStockfish = false;
+    enginePill.textContent = 'GÜÇLÜ';
+    setStatus('Hamleni yap ⚪', '');
+}
+
+// ─── MINIMAX (FALLBACK ~1700 ELO) ───
+const PIECE_VALUES = { p:100, n:320, b:330, r:500, q:900, k:20000 };
 const PAWN_TABLE = [
-    [0,0,0,0,0,0,0,0],
-    [50,50,50,50,50,50,50,50],
-    [10,10,20,30,30,20,10,10],
-    [5,5,10,25,25,10,5,5],
-    [0,0,0,20,20,0,0,0],
-    [5,-5,-10,0,0,-10,-5,5],
-    [5,10,10,-20,-20,10,10,5],
-    [0,0,0,0,0,0,0,0]
+    [0,0,0,0,0,0,0,0],[50,50,50,50,50,50,50,50],[10,10,20,30,30,20,10,10],
+    [5,5,10,25,25,10,5,5],[0,0,0,20,20,0,0,0],[5,-5,-10,0,0,-10,-5,5],
+    [5,10,10,-20,-20,10,10,5],[0,0,0,0,0,0,0,0]
 ];
 const KNIGHT_TABLE = [
-    [-50,-40,-30,-30,-30,-30,-40,-50],
-    [-40,-20,0,0,0,0,-20,-40],
-    [-30,0,10,15,15,10,0,-30],
-    [-30,5,15,20,20,15,5,-30],
-    [-30,0,15,20,20,15,0,-30],
-    [-30,5,10,15,15,10,5,-30],
-    [-40,-20,0,5,5,0,-20,-40],
-    [-50,-40,-30,-30,-30,-30,-40,-50]
-];
-const BISHOP_TABLE = [
-    [-20,-10,-10,-10,-10,-10,-10,-20],
-    [-10,0,0,0,0,0,0,-10],
-    [-10,0,5,10,10,5,0,-10],
-    [-10,5,5,10,10,5,5,-10],
-    [-10,0,10,10,10,10,0,-10],
-    [-10,10,10,10,10,10,10,-10],
-    [-10,5,0,0,0,0,5,-10],
-    [-20,-10,-10,-10,-10,-10,-10,-20]
+    [-50,-40,-30,-30,-30,-30,-40,-50],[-40,-20,0,0,0,0,-20,-40],
+    [-30,0,10,15,15,10,0,-30],[-30,5,15,20,20,15,5,-30],
+    [-30,0,15,20,20,15,0,-30],[-30,5,10,15,15,10,5,-30],
+    [-40,-20,0,5,5,0,-20,-40],[-50,-40,-30,-30,-30,-30,-40,-50]
 ];
 
 function getPieceValue(piece, x, y) {
     if (!piece) return 0;
-    const baseVal = PIECE_VALUES[piece.type] || 0;
-    let posBonus = 0;
+    let val = PIECE_VALUES[piece.type] || 0;
     const row = piece.color === 'w' ? 7 - y : y;
     const col = piece.color === 'w' ? x : 7 - x;
-    if (piece.type === 'p') posBonus = PAWN_TABLE[row][col];
-    else if (piece.type === 'n') posBonus = KNIGHT_TABLE[row][col];
-    else if (piece.type === 'b') posBonus = BISHOP_TABLE[row][col];
-    const sign = piece.color === 'w' ? 1 : -1;
-    return sign * (baseVal + posBonus);
+    if (piece.type === 'p') val += PAWN_TABLE[row][col];
+    else if (piece.type === 'n') val += KNIGHT_TABLE[row][col];
+    return piece.color === 'w' ? val : -val;
 }
 
 function evaluateBoard(boardArr) {
     let total = 0;
-    for (let y = 0; y < 8; y++) {
-        for (let x = 0; x < 8; x++) {
+    for (let y = 0; y < 8; y++)
+        for (let x = 0; x < 8; x++)
             total += getPieceValue(boardArr[y][x], x, y);
-        }
-    }
     return total;
 }
 
-// Alpha-beta minimax — AI = BLACK (minimizing player when score = white perspective)
-function minimax(game, depth, alpha, beta, isMaximizing) {
-    if (depth === 0 || game.game_over()) {
-        return -evaluateBoard(game.board()); // AI is black, wants negative score
-    }
-    const moves = game.ugly_moves ? game.ugly_moves() : game.moves();
-
-    if (isMaximizing) {
+function minimax(game, depth, alpha, beta, isMax) {
+    if (depth === 0 || game.game_over()) return -evaluateBoard(game.board());
+    const moves = game.moves();
+    if (isMax) {
         let best = -Infinity;
-        for (const move of moves) {
-            game.move(move);
-            const score = minimax(game, depth - 1, alpha, beta, false);
+        for (const m of moves) {
+            game.move(m);
+            best = Math.max(best, minimax(game, depth-1, alpha, beta, false));
             game.undo();
-            if (score > best) best = score;
             alpha = Math.max(alpha, best);
             if (beta <= alpha) break;
         }
         return best;
     } else {
         let best = Infinity;
-        for (const move of moves) {
-            game.move(move);
-            const score = minimax(game, depth - 1, alpha, beta, true);
+        for (const m of moves) {
+            game.move(m);
+            best = Math.min(best, minimax(game, depth-1, alpha, beta, true));
             game.undo();
-            if (score < best) best = score;
             beta = Math.min(beta, best);
             if (beta <= alpha) break;
         }
@@ -185,57 +222,71 @@ function minimax(game, depth, alpha, beta, isMaximizing) {
     }
 }
 
-function findBestMove() {
+function findBestMoveMinimax() {
     const moves = game.moves();
-    if (moves.length === 0) return null;
-    // Shuffle for variety on equal scores
+    if (!moves.length) return null;
     moves.sort(() => Math.random() - 0.5);
-    let bestMove = moves[0];
-    let bestScore = -Infinity;
-    for (const move of moves) {
-        game.move(move);
-        const score = minimax(game, AI_DEPTH - 1, -Infinity, Infinity, false);
+    let best = moves[0], score = -Infinity;
+    for (const m of moves) {
+        game.move(m);
+        const s = minimax(game, MINIMAX_DEPTH - 1, -Infinity, Infinity, false);
         game.undo();
-        if (score > bestScore) {
-            bestScore = score;
-            bestMove = move;
-        }
+        if (s > score) { score = s; best = m; }
     }
-    return bestMove;
+    return best;
 }
 
-function setStatus(text, cls) {
-    statusEl.textContent = text;
-    statusEl.className = 'status' + (cls ? ' ' + cls : '');
-}
-
+// ─── AI HAMLE ORKESTRASYONU ───
 function aiTurn() {
     if (game.game_over() || aiThinking) return;
     aiThinking = true;
     setStatus('FermatAI düşünüyor 🧠', 'thinking');
-    // Async via setTimeout (UI freeze etmesin)
-    setTimeout(() => {
-        try {
-            const move = findBestMove();
-            if (move) {
-                game.move(move);
-                board.position(game.fen(), true);
+
+    if (useStockfish && stockfishReady) {
+        stockfish.postMessage('position fen ' + game.fen());
+        stockfish.postMessage('go depth ' + STOCKFISH_DEPTH + ' movetime ' + STOCKFISH_MOVETIME);
+    } else {
+        setTimeout(() => {
+            try {
+                const m = findBestMoveMinimax();
+                handleAIMove(m, true);
+            } catch (e) {
+                console.error('Minimax hata:', e);
+                aiThinking = false;
             }
-            checkEnd();
-            if (!game.game_over()) setStatus('Sıra sende ⚪', '');
-        } catch (err) {
-            console.error('AI hata:', err);
-            setStatus('AI hatası, yeniden başla', 'lose');
+        }, 200);
+    }
+}
+
+function handleAIMove(uciOrMove, isMinimax) {
+    aiThinking = false;
+    if (!uciOrMove || uciOrMove === '(none)') {
+        checkEnd();
+        return;
+    }
+    try {
+        if (isMinimax) {
+            game.move(uciOrMove);
+        } else {
+            // UCI format e2e4 or e7e8q
+            const from = uciOrMove.slice(0, 2);
+            const to = uciOrMove.slice(2, 4);
+            const promo = uciOrMove.length > 4 ? uciOrMove[4] : undefined;
+            game.move({ from, to, promotion: promo });
         }
-        aiThinking = false;
-    }, 200);
+        board.position(game.fen(), true);
+    } catch (e) {
+        console.error('Move apply hata:', e);
+    }
+    checkEnd();
+    if (!game.game_over()) setStatus('Sıra sende ⚪', '');
 }
 
 function checkEnd() {
     if (game.in_checkmate()) {
         const winner = game.turn() === 'w' ? 'FermatAI' : 'Sen';
         if (winner === 'Sen') {
-            setStatus('🏆 Kazandın!', 'win');
+            setStatus('🏆 KAZANDIN! İnanılmaz!', 'win');
             celebrate();
         } else {
             setStatus('♛ Mat — FermatAI kazandı', 'lose');
@@ -251,41 +302,35 @@ function celebrate() {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;';
     document.body.appendChild(overlay);
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 60; i++) {
         const dot = document.createElement('div');
-        dot.style.cssText = `position:absolute;width:8px;height:8px;background:#F59E0B;border-radius:50%;left:${Math.random()*100}%;top:-20px;animation:fall ${1+Math.random()*1.5}s linear forwards;`;
+        dot.style.cssText = `position:absolute;width:10px;height:10px;background:#F59E0B;border-radius:50%;left:${Math.random()*100}%;top:-20px;animation:fall ${1+Math.random()*2}s linear forwards;`;
         overlay.appendChild(dot);
     }
-    setTimeout(() => overlay.remove(), 3000);
+    setTimeout(() => overlay.remove(), 4000);
 }
+const fs = document.createElement('style');
+fs.textContent = '@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }';
+document.head.appendChild(fs);
 
-const fallStyle = document.createElement('style');
-fallStyle.textContent = '@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }';
-document.head.appendChild(fallStyle);
-
-// Chessboard handlers
+// ─── CHESSBOARD HANDLERS ───
 function onDragStart(source, piece) {
     if (game.game_over() || aiThinking) return false;
     if (piece.search(/^b/) !== -1) return false;
     if (game.turn() !== 'w') return false;
 }
-
 function onDrop(source, target) {
-    const move = game.move({ from: source, to: target, promotion: 'q' });
-    if (move === null) return 'snapback';
+    const m = game.move({ from: source, to: target, promotion: 'q' });
+    if (m === null) return 'snapback';
     setTimeout(aiTurn, 250);
     checkEnd();
 }
-
-function onSnapEnd() {
-    board.position(game.fen());
-}
+function onSnapEnd() { board.position(game.fen()); }
 
 document.getElementById('undo-btn').addEventListener('click', () => {
     if (aiThinking) return;
     if (game.history().length >= 2) {
-        game.undo();
-        game.undo();
+        game.undo(); game.undo();
         board.position(game.fen());
         setStatus('Geri alındı — hamleni yap ⚪', '');
     }
@@ -295,6 +340,10 @@ document.getElementById('new-btn').addEventListener('click', () => {
     game.reset();
     board.position('start');
     aiThinking = false;
+    if (useStockfish && stockfishReady) {
+        stockfish.postMessage('ucinewgame');
+        stockfish.postMessage('isready');
+    }
     setStatus('Hamleni yap ⚪', '');
 });
 
@@ -308,7 +357,7 @@ window.addEventListener('DOMContentLoaded', () => {
         pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
     });
     window.addEventListener('resize', () => board.resize());
-    setStatus('Hamleni yap ⚪', '');
+    initStockfish();
 });
 </script>
 </body>
