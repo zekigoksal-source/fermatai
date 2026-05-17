@@ -10712,8 +10712,14 @@ function openTopluluk() {
     `;
     document.head.appendChild(st);
   }
+  // 25.46+ (Neo 18 May, mobil iframe 401 fix): iOS/Android Chrome PWA mode
+  // iframe 3rd-party cookie blokluyor. Token'i parent localStorage'dan alıp
+  // URL'ye ?token= ile gönder — web_chat.py:_extract_token zaten destekliyor.
+  const _topluToken = localStorage.getItem("fermat_token") || "";
+  const _topluUrl = "/topluluk?_t=" + Date.now() +
+                    (_topluToken ? "&token=" + encodeURIComponent(_topluToken) : "");
   overlay.innerHTML = `
-    <iframe id="topluluk-iframe" src="/topluluk?_t=${Date.now()}"
+    <iframe id="topluluk-iframe" src="${_topluUrl}"
             style="border:0;width:100%;height:100%;background:var(--bg);" allow="clipboard-write">
     </iframe>
   `;

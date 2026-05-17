@@ -425,6 +425,38 @@ let lastMessageId = 0;
 let pollingInterval = null;
 const POLL_MS = 4000;
 
+// 25.46+ (Neo 18 May, mobil iframe 401 fix): iOS/Android PWA iframe
+// 3rd-party cookie blokluyor → parent URL'den token alıp Authorization
+// header ile yolla. localStorage da fallback olarak çalışır (aynı domain
+// olduğu için iframe'in kendi localStorage'i parent'tan ayrı OLABILIR).
+function _topluGetToken() {
+  // 1) URL ?token=
+  try {
+    const u = new URLSearchParams(window.location.search);
+    const t = u.get('token');
+    if (t) return t;
+  } catch (e) {}
+  // 2) Parent localStorage (same-origin iframe → cross-frame access OK)
+  try {
+    if (window.parent && window.parent !== window) {
+      const t = window.parent.localStorage.getItem('fermat_token');
+      if (t) return t;
+    }
+  } catch (e) {}
+  // 3) Kendi localStorage
+  try {
+    return localStorage.getItem('fermat_token') || '';
+  } catch (e) {
+    return '';
+  }
+}
+const _TOPLU_TOKEN = _topluGetToken();
+function _topluAuthHeaders(extra) {
+  const h = Object.assign({}, extra || {});
+  if (_TOPLU_TOKEN) h['Authorization'] = 'Bearer ' + _TOPLU_TOKEN;
+  return h;
+}
+
 const messagesEl = document.getElementById('messages');
 const emptyStateEl = document.getElementById('empty-state');
 const inputEl = document.getElementById('msg-input');
@@ -507,7 +539,7 @@ function renderMessage(m) {
 
 async function loadMessages() {
   try {
-    const res = await fetch(`${API}/messages?limit=50`, {credentials: 'include'});
+    const res = await fetch(`${API}/messages?limit=50`, {credentials: 'include', headers: _topluAuthHeaders()});
     if (!res.ok) {
       if (res.status === 401) {
         emptyStateEl.innerHTML = '<div class="empty-state-icon">🔒</div><div>Önce <a href="/chat" style="color:var(--accent);text-decoration:underline">sohbete giriş yap</a></div>';
@@ -549,7 +581,7 @@ async function sendMessage() {
   try {
     const res = await fetch(`${API}/send`, {
       method: 'POST', credentials: 'include',
-      headers: {'Content-Type': 'application/json'},
+      headers: _topluAuthHeaders({'Content-Type': 'application/json'}),
       body: JSON.stringify({message: text})
     });
     if (!res.ok) {
@@ -567,7 +599,7 @@ async function toggleReact(messageId, emoji) {
   try {
     const res = await fetch(`${API}/react`, {
       method: 'POST', credentials: 'include',
-      headers: {'Content-Type': 'application/json'},
+      headers: _topluAuthHeaders({'Content-Type': 'application/json'}),
       body: JSON.stringify({message_id: messageId, emoji})
     });
     if (res.ok) await loadMessages();
@@ -627,7 +659,7 @@ window.switchTab = switchTab;
 
 async function loadProfile() {
   try {
-    const res = await fetch(`${API}/me`, {credentials: 'include'});
+    const res = await fetch(`${API}/me`, {credentials: 'include', headers: _topluAuthHeaders()});
     if (!res.ok) {
       if (res.status === 401) {
         document.getElementById('profile-real-name').textContent = 'Giriş yapmadın';
@@ -683,7 +715,7 @@ async function saveNickname() {
   try {
     const res = await fetch(`${API}/nickname`, {
       method: 'POST', credentials: 'include',
-      headers: {'Content-Type': 'application/json'},
+      headers: _topluAuthHeaders({'Content-Type': 'application/json'}),
       body: JSON.stringify({nickname: nick})
     });
     const data = await res.json().catch(() => ({}));
@@ -706,7 +738,7 @@ window.saveNickname = saveNickname;
 async function resetNickname() {
   if (!confirm('Nickname kaldırılsın mı? "Ad S." formatına döneceksin.')) return;
   try {
-    const res = await fetch(`${API}/nickname`, {method: 'DELETE', credentials: 'include'});
+    const res = await fetch(`${API}/nickname`, {method: 'DELETE', credentials: 'include', headers: _topluAuthHeaders()});
     if (!res.ok) { showToast('Kaldırılamadı'); return; }
     const data = await res.json();
     showToast(`✓ Varsayılana döndün: ${data.display_name}`, 'success');
