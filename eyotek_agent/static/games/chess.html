@@ -23,41 +23,62 @@ html, body {
     gap: 5px;
     height: 100vh;
 }
-.bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    background: #1E293B;
-    border-radius: 8px;
-    font-size: 12px;
+/* Tekken/Street Fighter VS başlığı — 25.46+ Neo direktif */
+.vs-banner {
+    background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
     border: 1px solid #334155;
-    gap: 8px;
-    flex-wrap: nowrap;
-    min-width: 0;
-}
-.bar-left { display: flex; align-items: center; gap: 6px; min-width: 0; flex-shrink: 1; }
-.brand { color: #F59E0B; font-weight: 800; letter-spacing: 0.3px; font-size: 13px; white-space: nowrap; }
-.engine-pill {
-    background: rgba(245,158,11,0.12);
-    color: #F59E0B;
-    padding: 3px 8px;
     border-radius: 10px;
-    font-size: 10px;
-    font-weight: 700;
-    border: 1px solid rgba(245,158,11,0.3);
-    white-space: nowrap;
-    flex-shrink: 0;
+    padding: 12px 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
 }
-.status {
-    color: #CBD5E1; font-weight: 500; font-size: 11px;
-    text-align: right; white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; min-width: 0;
+.vs-banner::before, .vs-banner::after {
+    content: '';
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 30%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(245,158,11,0.4), transparent);
 }
+.vs-banner::before { left: 0; }
+.vs-banner::after { right: 0; transform: translateY(-50%) scaleX(-1); }
+.vs-row {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 17px; font-weight: 900; letter-spacing: 1px;
+    line-height: 1;
+}
+.fighter-fermat {
+    background: linear-gradient(135deg, #F59E0B 0%, #FCD34D 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(245,158,11,0.3);
+    font-family: -apple-system, Impact, 'Bebas Neue', sans-serif;
+    text-transform: uppercase;
+}
+.fighter-player {
+    color: #E2E8F0;
+    text-shadow: 0 0 10px rgba(226,232,240,0.2);
+    font-family: -apple-system, Impact, 'Bebas Neue', sans-serif;
+    text-transform: uppercase;
+}
+.vs-text {
+    font-size: 13px; font-weight: 900;
+    color: #EF4444; text-shadow: 0 0 8px rgba(239,68,68,0.6);
+    font-style: italic;
+    letter-spacing: 0;
+}
+.status-row {
+    margin-top: 6px;
+    font-size: 11px; color: #94A3B8;
+    font-weight: 500;
+    min-height: 14px;
+}
+.status-row.thinking { color: #F59E0B; }
+.status-row.win { color: #10B981; font-weight: 700; }
+.status-row.lose { color: #EF4444; font-weight: 700; }
 @media (max-width: 420px) {
-    .brand { font-size: 12px; }
-    .engine-pill { font-size: 9px; padding: 2px 6px; }
-    .status { font-size: 10px; }
+    .vs-row { font-size: 15px; gap: 8px; }
+    .vs-text { font-size: 11px; }
+    .status-row { font-size: 10px; }
 }
 .status.thinking { color: #F59E0B; }
 .status.win { color: #10B981; }
@@ -95,12 +116,13 @@ html, body {
 </head>
 <body>
 <div class="wrap">
-    <div class="bar">
-        <div class="bar-left">
-            <span class="brand">⚡ ♟️</span>
-            <span class="engine-pill" id="engine-pill">YÜKLENİYOR</span>
+    <div class="vs-banner">
+        <div class="vs-row">
+            <span class="fighter-fermat">FERMATAI</span>
+            <span class="vs-text">VS</span>
+            <span class="fighter-player" id="player-name">SEN</span>
         </div>
-        <span class="status" id="status">Hazırlanıyor...</span>
+        <div class="status-row" id="status">Hazırlanıyor...</div>
     </div>
     <div id="board"></div>
     <div class="btns">
@@ -129,11 +151,11 @@ const STOCKFISH_MOVETIME = 2500;     // Max 2.5 saniye düşünür
 const MINIMAX_DEPTH = 3;             // Fallback — orta seviye
 
 const statusEl = document.getElementById('status');
-const enginePill = document.getElementById('engine-pill');
+const enginePill = { textContent: '', style: {} }; // legacy stub (artık DOM'da yok)
 
 function setStatus(text, cls) {
     statusEl.textContent = text;
-    statusEl.className = 'status' + (cls ? ' ' + cls : '');
+    statusEl.className = 'status-row' + (cls ? ' ' + cls : '');
 }
 
 // ─── STOCKFISH (PRIMARY, ~3000 ELO) — ASYNC LOAD ───
@@ -382,6 +404,17 @@ document.getElementById('new-btn').addEventListener('click', () => {
 });
 
 window.addEventListener('DOMContentLoaded', () => {
+    // 25.46+ (Neo): URL ?name=Ali → fighter ismi (ilk ad sadece, KVKK)
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const nm = params.get('name');
+        if (nm) {
+            const first = nm.trim().split(/\s+/)[0].toUpperCase();
+            if (first && first.length < 12) {
+                document.getElementById('player-name').textContent = first;
+            }
+        }
+    } catch(e) {}
     board = Chessboard('board', {
         position: 'start',
         draggable: true,

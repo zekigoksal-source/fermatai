@@ -2228,6 +2228,15 @@ html[data-theme="dark"] .msg.bot.streaming::after {
   .chat-header .user .admin-dash-btn::before {
     content: "📊"; font-size: 15px;
   }
+  /* 25.46+ (Neo 17 May): Topluluk butonu mobilde ikon-only */
+  .chat-header .user .topluluk-btn {
+    font-size: 0 !important;
+    padding: 6px 9px !important;
+    margin-right: 4px !important;
+  }
+  .chat-header .user .topluluk-btn::before {
+    content: "💬"; font-size: 15px;
+  }
   /* Kullanıcı ismi mobilde gizli (Çıkış kalır, butona basınca çıkış) */
   .chat-header .user #userName { display: none; }
   /* Çıkış butonu kompakt */
@@ -3075,7 +3084,7 @@ html[data-theme="dark"] .msg.bot.streaming::after {
       <!-- Oturum 25.13: Öğrenci günlük takip linki (sadece öğrenci rolünde görünür) -->
       <button class="study-btn" id="studyBtn" onclick="openStudyDashboard()" title="Çalışmam — günlük program, soru, alışkanlık takibi" style="display:none;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;color:#1a0d00;cursor:pointer;font-size:13px;padding:6px 14px;margin-right:8px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(245,158,11,0.25);">📚 Çalışmam</button>
       <!-- 25.46+ (Neo 17 May): Topluluk sohbet (QuitNow tarzı, ortak alan) -->
-      <button class="topluluk-btn" id="topluluBtn" onclick="window.open('/topluluk', '_blank')" title="Topluluk — öğrenci ortak sohbet alanı" style="background:linear-gradient(135deg,#10B981,#059669);border:none;color:#fff;cursor:pointer;font-size:13px;padding:6px 14px;margin-right:8px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(16,185,129,0.25);">💬 Topluluk</button>
+      <button class="topluluk-btn" id="topluluBtn" onclick="openTopluluk()" title="Topluluk — öğrenci ortak sohbet alanı" style="background:linear-gradient(135deg,#10B981,#059669);border:none;color:#fff;cursor:pointer;font-size:13px;padding:6px 12px;margin-right:6px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(16,185,129,0.25);">💬 Topluluk</button>
       <!-- Oturum 25.14d: Admin/Mudur Dashboard (Cinema palette dashboard'a yönlendir) -->
       <button class="admin-dash-btn" id="adminDashBtn" onclick="openAdminDashboard()" title="Yönetim Paneli — bildirim, routing, sınıf/öğretmen analiz, Atlas-2" style="display:none;background:linear-gradient(135deg,#5E6AD2,#8B5CF6);border:none;color:#fff;cursor:pointer;font-size:13px;padding:6px 14px;margin-right:8px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(94,106,210,0.3);">📊 Yönetim Paneli</button>
       <!-- 22.1n-vizyon3: Admin/Mudur eski Insight Panel (modal — geriye uyum) -->
@@ -10587,6 +10596,60 @@ function openAdminDashboard() {
   if (token) url += "?token=" + encodeURIComponent(token);
   window.location.href = url;
 }
+
+// 25.46+ (Neo 17 May): Topluluk iframe overlay — yeni sekme yok, aynı sayfa overlay
+function openTopluluk() {
+  let overlay = document.getElementById("topluluk-overlay");
+  if (overlay) {
+    overlay.style.display = "block";
+    return;
+  }
+  overlay = document.createElement("div");
+  overlay.id = "topluluk-overlay";
+  overlay.style.cssText = `
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999; background: var(--bg);
+    display: flex; flex-direction: column;
+    animation: topluluk-slide-in 0.25s cubic-bezier(0.16,1,0.3,1);
+  `;
+  // Slide-in animasyonu
+  if (!document.getElementById("topluluk-anim-style")) {
+    const st = document.createElement("style");
+    st.id = "topluluk-anim-style";
+    st.textContent = `
+      @keyframes topluluk-slide-in {
+        from { transform: translateX(100%); opacity: 0.5; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes topluluk-slide-out {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0.3; }
+      }
+    `;
+    document.head.appendChild(st);
+  }
+  overlay.innerHTML = `
+    <iframe id="topluluk-iframe" src="/topluluk?_t=${Date.now()}"
+            style="border:0;width:100%;height:100%;background:var(--bg);" allow="clipboard-write">
+    </iframe>
+  `;
+  document.body.appendChild(overlay);
+  // iframe içindeki "back" tıklanırsa kapat
+  window.addEventListener("message", function topluHandler(e) {
+    if (e.data === "topluluk-close") {
+      closeTopluluk();
+      window.removeEventListener("message", topluHandler);
+    }
+  });
+}
+function closeTopluluk() {
+  const overlay = document.getElementById("topluluk-overlay");
+  if (!overlay) return;
+  overlay.style.animation = "topluluk-slide-out 0.2s ease-in";
+  setTimeout(() => overlay.remove(), 200);
+}
+window.openTopluluk = openTopluluk;
+window.closeTopluluk = closeTopluluk;
 
 
 // ═══════════════════════════════════════════════════════════════════════════

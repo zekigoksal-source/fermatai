@@ -341,6 +341,11 @@ window.addEventListener('storage', (e) => {
 window.toggleTheme = toggleTheme;
 
 function goBack() {
+  // Eger parent (chat overlay) icinde acildiysak — postMessage ile bildir
+  if (window.parent !== window) {
+    try { window.parent.postMessage('topluluk-close', '*'); return; } catch(e) {}
+  }
+  // Standalone modda — history veya /chat
   if (window.history.length > 1) history.back();
   else window.location.href = '/chat';
 }
