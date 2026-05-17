@@ -1314,15 +1314,19 @@ except Exception as _serr:
 
 # ── 25.46+ (Neo 17 May): /chess shortcut → /static/games/chess.html ──
 @app.get("/chess", include_in_schema=False)
-async def chess_shortcut(name: str = ""):
-    """FermatAI Satrancı kisa URL. Stockfish vs ogrenci, ultimate seviye."""
-    from fastapi.responses import FileResponse, RedirectResponse
-    if name:
-        return RedirectResponse(url=f"/static/games/chess.html?name={name}")
+async def chess_shortcut(name: str = "", v: str = ""):
+    """FermatAI Satrancı kisa URL. Minimax depth=3, no-cache (her zaman tazeleyecek)."""
+    from fastapi.responses import FileResponse, Response
     chess_path = _P(__file__).parent / "static" / "games" / "chess.html"
     if not chess_path.exists():
         raise HTTPException(404, "chess.html bulunamadi")
-    return FileResponse(path=str(chess_path), media_type="text/html")
+    # 25.46+ no-cache: minigame surekli geliyor, browser cache eskiyebilir
+    headers = {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    }
+    return FileResponse(path=str(chess_path), media_type="text/html", headers=headers)
 
 
 # ── Oturum 25.40 (Neo PWA): Service Worker ROOT scope serve ──

@@ -3026,7 +3026,7 @@ OYUN KATALOGU (sabit URL):
    Bot SADECE iframe HTML basar. HIC YAZI YOK, HIC GIRIS YOK, HIC ODUL YAZISI YOK.
    Sohbet baloncugunun TUM icerigi sudur (tek satir):
 
-   <iframe src="https://api.fermategitimkurumlari.com/chess?name=Ali" width="100%" height="540" frameborder="0" style="border-radius:12px;border:1px solid #334155;display:block;"></iframe>
+   <iframe src="https://api.fermategitimkurumlari.com/chess?name=Ali&v=2" width="100%" height="640" frameborder="0" style="border-radius:12px;border:1px solid #334155;display:block;min-height:600px;"></iframe>
 
    Bu iframe sohbet icinde inline satranc tahtasi olarak gorunur (PhET pattern).
    ❌ ASLA "Satranç tahtanız hazır" / "yenmek kolay olmayacak" / "ödül var" YAZMA
