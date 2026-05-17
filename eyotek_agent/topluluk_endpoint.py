@@ -26,13 +26,31 @@ from loguru import logger
 
 router = APIRouter(prefix="/topluluk", tags=["topluluk"])
 
-# ─── Moderasyon: kufur/spam ───
+# ─── KVKK: İsim maskeleme ───
+def mask_name(full_name: str) -> str:
+    """'Enes Karadaş' → 'Enes K.', 'Ahmet Mehmet Can' → 'Ahmet C.', tek ad → as-is."""
+    if not full_name:
+        return "Kullanıcı"
+    parts = full_name.strip().split()
+    if len(parts) == 1:
+        return parts[0]
+    first = parts[0]
+    last_initial = parts[-1][0].upper() if parts[-1] else ""
+    return f"{first} {last_initial}." if last_initial else first
+
+# ─── Moderasyon: kufur/spam/KVKK ───
 _BAD_WORDS = {
     "amk", "aq", "sg", "sik", "siktir", "orospu", "piç", "pic", "götveren",
     "ananı", "ananizi", "yarrak", "amına", "amına koyayım",
     # Spam patterns
     "casino", "bahis", "kumar", "tıkla kazan", "kazandın",
 }
+# KVKK koruma — mesajda gecmemesi gereken patternler
+_TC_KIMLIK = re.compile(r"\b[1-9]\d{10}\b")           # 11 haneli, ilk hane >0
+_PHONE_TR = re.compile(r"\b(0?5\d{2}[\s.-]?\d{3}[\s.-]?\d{2}[\s.-]?\d{2})\b")
+_EMAIL = re.compile(r"\b[\w._%+-]+@[\w.-]+\.[a-z]{2,}\b", re.IGNORECASE)
+_IBAN = re.compile(r"\bTR\d{2}[\s]?(?:\d{4}[\s]?){5}\d{2}\b")
+
 def _moderate(text: str) -> Optional[str]:
     """Mesajı filtrele. Sorun varsa hata string'i döner, temizse None."""
     if not text or len(text.strip()) < 1:
@@ -46,6 +64,15 @@ def _moderate(text: str) -> Optional[str]:
     # Spam: aynı karakter 10+ tekrarı
     if re.search(r"(.)\1{10,}", text):
         return "Spam algılandı (tekrar eden karakter)."
+    # KVKK: kişisel veri paylaşımı engelle
+    if _TC_KIMLIK.search(text):
+        return "🔒 KVKK: TC kimlik numarası paylaşma. Mesajını düzelt."
+    if _PHONE_TR.search(text):
+        return "🔒 KVKK: Telefon numarası paylaşma. Mesajını düzelt."
+    if _EMAIL.search(text):
+        return "🔒 KVKK: E-posta adresi paylaşma. Mesajını düzelt."
+    if _IBAN.search(text):
+        return "🔒 KVKK: IBAN paylaşma. Mesajını düzelt."
     return None
 
 # ─── Rate limit (per-phone, in-memory) ───
@@ -123,16 +150,20 @@ async def get_messages(request: Request, limit: int = 50, before_id: Optional[in
 
     msgs = []
     for r in rows:
+        is_me = (r["user_phone"] == caller_phone) if caller_phone else False
+        # KVKK: Baskalarinin tam ismini gosterme — sadece "Ad S." formati
+        # Kendi mesajinda is_me=True, frontend zaten isim gostermiyor (msg.me .msg-header gizli)
+        display_name = r["user_name"] if is_me else mask_name(r["user_name"])
         msgs.append({
             "id": r["id"],
-            "user_name": r["user_name"],
+            "user_name": display_name,
             "user_role": r["user_role"],
             "message": r["message"],
             "reply_to_id": r["reply_to_id"],
             "reactions": r["reactions"] or {},
             "is_pinned": r["is_pinned"],
             "created_at": r["created_at"].isoformat() if r["created_at"] else "",
-            "is_me": (r["user_phone"] == caller_phone) if caller_phone else False,
+            "is_me": is_me,
         })
     return {"messages": list(reversed(msgs)), "online_count": _online_count()}
 
@@ -175,7 +206,8 @@ async def send_message(request: Request, body: SendBody = Body(...)):
     return {
         "success": True,
         "id": row["id"],
-        "user_name": user_name,
+        "user_name": user_name,  # Kendi mesaj — tam isim (frontend zaten kendisi)
+        "user_name_masked": mask_name(user_name),  # KVKK: baskalarinin gorecegi format
         "user_role": user_role,
         "created_at": row["created_at"].isoformat(),
     }
