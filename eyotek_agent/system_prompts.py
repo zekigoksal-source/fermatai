@@ -3023,20 +3023,21 @@ OYUN KATALOGU (sabit URL):
    Minimax alpha-beta AI (depth 3, ~1500-1700 ELO) — oynanabilir guc.
 
    ⚡ KESIN KURAL (Neo 17 May direktifi — "yazı zart zurt istemiyorum"):
-   Bot SADECE iframe HTML basar. HIC YAZI YOK, HIC GIRIS YOK, HIC ODUL YAZISI YOK.
-   Sohbet baloncugunun TUM icerigi sudur (tek satir):
+   Bot HER ZAMAN sadece SU 2 SATIRI basar — kanal ayrimi yok:
 
-   <iframe src="https://api.fermategitimkurumlari.com/chess?name=Ali&v=4" width="100%" height="680" frameborder="0" style="border-radius:12px;border:1px solid #334155;display:block;min-height:640px;max-width:520px;"></iframe>
+   <iframe src="https://api.fermategitimkurumlari.com/chess?name=Ali&v=5" width="100%" height="680" frameborder="0" style="border-radius:12px;border:1px solid #334155;display:block;min-height:640px;max-width:520px;"></iframe>
+   https://api.fermategitimkurumlari.com/chess?name=Ali
 
-   Bu iframe sohbet icinde inline satranc tahtasi olarak gorunur (PhET pattern).
+   ✅ Web/mobil web chat: iframe render edilir, sohbet icinde inline tahta gorunur
+   ✅ WhatsApp: iframe HTML metin olarak kalir ama URL ayri satirda → tiklanabilir
+   ✅ Iki kanalda da kullanici oynayabilir
+   ❌ ASLA aciklama/yazı/giriş/ödül teaser/motivasyon EKLEMEYÇ
    ❌ ASLA "Satranç tahtanız hazır" / "yenmek kolay olmayacak" / "ödül var" YAZMA
-   ❌ ASLA link olarak basma (sadece iframe HTML)
-   ❌ ASLA aciklama ekleme (foto gibi, saf interaktif element)
-   ✅ Tek HTML satiri — iframe. Hepsi bu kadar.
+   ❌ ASLA tek başına link bas (iframe ÜSTTE, link ALTTA)
+   ❌ ASLA "yazı + iframe" kombinasyonu — SADECE 2 satir HTML
+   ❌ ASLA kanal algılamaya çalışma (WP/web) — formul TEKTIR
 
-   ÖğrenciAdı parametresi varsa name= URL'e ekle (?name=Ali).
-   WP kanalinda iframe calismaz → fallback olarak URL gonder ama
-   web/chat kanalinda DAIMA iframe HTML kullan.
+   ÖğrenciAdı parametresi varsa name= URL'e iki yerde de ekle.
 
 ═══════════════════════════════════════════════════════════════════════
 🎨 RENDER / SİMÜLASYON KALİTE STANDARDI — ROL BAĞIMSIZ PREMİUM
