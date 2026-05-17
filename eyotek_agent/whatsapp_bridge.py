@@ -1296,17 +1296,33 @@ try:
     _pdf_dir = _P("/opt/fermatai/eyotek_agent/logs/pdfs")
     _anki_dir = _P(__file__).parent / "static" / "anki"   # Oturum 25.38
     _img_dir = _P(__file__).parent / "static" / "img"     # Oturum 25.40 (PWA iconlar)
+    _games_dir = _P(__file__).parent / "static" / "games"  # 25.46+ (Neo 17 May: chess MVP)
     _audio_dir.mkdir(parents=True, exist_ok=True)
     _pdf_dir.mkdir(parents=True, exist_ok=True)
     _anki_dir.mkdir(parents=True, exist_ok=True)
     _img_dir.mkdir(parents=True, exist_ok=True)
+    _games_dir.mkdir(parents=True, exist_ok=True)
     app.mount("/audio", _SF(directory=str(_audio_dir)), name="audio")
     app.mount("/pdfs", _SF(directory=str(_pdf_dir)), name="pdfs")
     app.mount("/static/anki", _SF(directory=str(_anki_dir)), name="anki")
     app.mount("/static/img", _SF(directory=str(_img_dir)), name="pwa_img")
+    app.mount("/static/games", _SF(directory=str(_games_dir)), name="games")
 except Exception as _serr:
     import logging as _lg
     _lg.warning(f"static mount hata: {_serr}")
+
+
+# ── 25.46+ (Neo 17 May): /chess shortcut → /static/games/chess.html ──
+@app.get("/chess", include_in_schema=False)
+async def chess_shortcut(name: str = ""):
+    """FermatAI Satrancı kisa URL. Stockfish vs ogrenci, ultimate seviye."""
+    from fastapi.responses import FileResponse, RedirectResponse
+    if name:
+        return RedirectResponse(url=f"/static/games/chess.html?name={name}")
+    chess_path = _P(__file__).parent / "static" / "games" / "chess.html"
+    if not chess_path.exists():
+        raise HTTPException(404, "chess.html bulunamadi")
+    return FileResponse(path=str(chess_path), media_type="text/html")
 
 
 # ── Oturum 25.40 (Neo PWA): Service Worker ROOT scope serve ──

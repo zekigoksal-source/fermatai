@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FermatAI Satranç — Sen vs Ultimate AI</title>
+<link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+    background: #0F172A;
+    color: #E2E8F0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+.wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px 12px 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+.header {
+    text-align: center;
+    padding: 8px 0;
+    width: 100%;
+}
+.brand {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #F59E0B 0%, #FCD34D 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+}
+.tag {
+    font-size: 11px;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+.score-bar {
+    width: 100%;
+    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+.score-side { display: flex; flex-direction: column; gap: 2px; }
+.score-side .label { font-size: 10px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; }
+.score-side .name { font-weight: 700; color: #E2E8F0; }
+.score-side .name.ai { color: #F59E0B; }
+.vs { font-size: 12px; color: #64748B; font-weight: 700; }
+.status {
+    width: 100%;
+    text-align: center;
+    padding: 10px 16px;
+    background: #1E293B;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #CBD5E1;
+    font-weight: 500;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.status.thinking { color: #F59E0B; }
+.status.win { color: #10B981; background: rgba(16,185,129,0.1); border-color: #10B981; }
+.status.lose { color: #EF4444; background: rgba(239,68,68,0.1); border-color: #EF4444; }
+#board {
+    width: 100% !important;
+    max-width: 440px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(245,158,11,0.15), 0 2px 8px rgba(0,0,0,0.3);
+}
+.controls {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+}
+.btn {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid #334155;
+    background: #1E293B;
+    color: #E2E8F0;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn:hover { background: #334155; border-color: #F59E0B; }
+.btn.primary {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    color: #0F172A;
+    border-color: transparent;
+    font-weight: 700;
+}
+.btn.primary:hover { filter: brightness(1.1); }
+.depth-pill {
+    background: rgba(245,158,11,0.12);
+    color: #F59E0B;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 6px;
+    border: 1px solid rgba(245,158,11,0.3);
+}
+.reward-banner {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(217,119,6,0.05) 100%);
+    border: 1px solid rgba(245,158,11,0.4);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #FCD34D;
+    text-align: center;
+    line-height: 1.5;
+}
+.reward-banner strong { color: #F59E0B; }
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #94A3B8;
+    font-size: 14px;
+}
+/* Chessboard taşları için koyu temaya uyumlu */
+.white-1e1d7 { background: #F8FAFC !important; }
+.black-3c85d { background: #475569 !important; }
+.highlight-square { box-shadow: inset 0 0 0 3px #F59E0B !important; }
+
+@media (max-width: 380px) {
+    .wrap { padding: 8px 8px 60px; }
+    .brand { font-size: 19px; }
+    .btn { font-size: 12px; padding: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="header">
+        <div class="brand">⚡ FermatAI Satranç</div>
+        <div class="tag">Sen vs Ultimate AI</div>
+    </div>
+
+    <div class="reward-banner">
+        🏆 <strong>Yenen Öğrenciye Özel Ödül!</strong><br>
+        Ama uyarayım — FermatAI <strong>ultimate seviyede</strong> oynuyor 😏
+    </div>
+
+    <div class="score-bar">
+        <div class="score-side">
+            <span class="label">Sen (Beyaz)</span>
+            <span class="name" id="player-name">Öğrenci</span>
+        </div>
+        <span class="vs">VS</span>
+        <div class="score-side" style="text-align: right;">
+            <span class="label">FermatAI <span class="depth-pill" id="depth-pill">UltimaTE</span></span>
+            <span class="name ai">FermatAI 🤖</span>
+        </div>
+    </div>
+
+    <div class="status" id="status">Hamleni yap — sen başlıyorsun ⚪</div>
+
+    <div id="board" class="loading">⏳ Tahta yükleniyor...</div>
+
+    <div class="controls">
+        <button class="btn" id="undo-btn">↶ Geri Al</button>
+        <button class="btn primary" id="new-btn">🔄 Yeni Oyun</button>
+        <button class="btn" id="hint-btn">💡 İpucu</button>
+    </div>
+</div>
+
+<!-- Libraries (CDN) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+<script>
+// ────────────────────────────────────────────────────────
+// FermatAI Satranç — Ultimate AI (Stockfish via WebWorker)
+// ────────────────────────────────────────────────────────
+
+const game = new Chess();
+let board = null;
+let stockfish = null;
+let stockfishReady = false;
+const STOCKFISH_DEPTH = 18; // Ultimate seviye — nadiren yenilir
+let aiThinking = false;
+
+const statusEl = document.getElementById('status');
+const undoBtn = document.getElementById('undo-btn');
+const newBtn = document.getElementById('new-btn');
+const hintBtn = document.getElementById('hint-btn');
+
+// Stockfish init (CDN üzerinden Web Worker)
+function initStockfish() {
+    try {
+        // Lichess'in maintained stockfish.js (single-threaded, mobile-friendly)
+        stockfish = new Worker('https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js');
+        stockfish.onmessage = (e) => {
+            const line = e.data;
+            if (typeof line !== 'string') return;
+            if (line === 'uciok') {
+                stockfish.postMessage('isready');
+            } else if (line === 'readyok') {
+                stockfishReady = true;
+                setStatus('FermatAI hazır — hamleni yap ⚪', '');
+            } else if (line.startsWith('bestmove')) {
+                handleAIMove(line.split(' ')[1]);
+            }
+        };
+        stockfish.onerror = (err) => {
+            console.error('Stockfish hata:', err);
+            setStatus('AI yüklenemedi — yenile lütfen ⚠️', 'lose');
+        };
+        stockfish.postMessage('uci');
+    } catch (err) {
+        console.error('Worker oluşturulamadı:', err);
+        setStatus('Tarayıcın Web Worker desteklemiyor 😢', 'lose');
+    }
+}
+
+function setStatus(text, cls) {
+    statusEl.textContent = text;
+    statusEl.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function askAIMove() {
+    if (!stockfishReady || aiThinking || game.game_over()) return;
+    aiThinking = true;
+    setStatus('FermatAI düşünüyor... 🧠', 'thinking');
+    stockfish.postMessage('position fen ' + game.fen());
+    stockfish.postMessage('go depth ' + STOCKFISH_DEPTH);
+}
+
+function handleAIMove(uciMove) {
+    aiThinking = false;
+    if (!uciMove || uciMove === '(none)') {
+        setStatus('🏆 Kazandın! Şimdi ödül zamanı!', 'win');
+        return;
+    }
+    const from = uciMove.slice(0, 2);
+    const to = uciMove.slice(2, 4);
+    const promotion = uciMove.length > 4 ? uciMove[4] : undefined;
+    game.move({ from, to, promotion });
+    board.position(game.fen(), true);
+    checkGameEnd();
+    if (!game.game_over()) {
+        setStatus('Sıra sende ⚪', '');
+    }
+}
+
+function checkGameEnd() {
+    if (game.in_checkmate()) {
+        const winner = game.turn() === 'w' ? 'AI' : 'Sen';
+        if (winner === 'Sen') {
+            setStatus('🏆 KAZANDIN! Ödülün hazır — yöneticiye haber ver!', 'win');
+            // Konfeti efekti basit
+            celebrate();
+        } else {
+            setStatus('♛ MAT — FermatAI kazandı. Yeniden dene! 😏', 'lose');
+        }
+    } else if (game.in_draw() || game.in_stalemate() || game.in_threefold_repetition()) {
+        setStatus('🤝 Berabere — FermatAI seni hafife almamış!', '');
+    } else if (game.in_check()) {
+        setStatus(game.turn() === 'w' ? '⚠️ Şah! Savun.' : 'FermatAI şahta — kurtarmaya çalışıyor', game.turn() === 'w' ? 'thinking' : '');
+    }
+}
+
+function celebrate() {
+    // basit altın yağmuru
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;';
+    document.body.appendChild(overlay);
+    for (let i = 0; i < 50; i++) {
+        const dot = document.createElement('div');
+        dot.style.cssText = `position:absolute;width:10px;height:10px;background:#F59E0B;border-radius:50%;left:${Math.random()*100}%;top:-20px;animation:fall ${1+Math.random()*2}s linear forwards;`;
+        overlay.appendChild(dot);
+    }
+    setTimeout(() => overlay.remove(), 4000);
+}
+const style = document.createElement('style');
+style.textContent = '@keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }';
+document.head.appendChild(style);
+
+// Chessboard config
+function onDragStart(source, piece) {
+    if (game.game_over() || aiThinking) return false;
+    if (piece.search(/^b/) !== -1) return false; // Sadece beyazı oynat
+    if (game.turn() !== 'w') return false;
+}
+
+function onDrop(source, target) {
+    const move = game.move({ from: source, to: target, promotion: 'q' });
+    if (move === null) return 'snapback';
+    setTimeout(askAIMove, 250);
+    checkGameEnd();
+}
+
+function onSnapEnd() {
+    board.position(game.fen());
+}
+
+// Buton handlers
+undoBtn.addEventListener('click', () => {
+    if (aiThinking) return;
+    game.undo(); // AI hamlesi
+    game.undo(); // Oyuncu hamlesi
+    board.position(game.fen());
+    setStatus('Geri alındı — yeniden oyna ⚪', '');
+});
+
+newBtn.addEventListener('click', () => {
+    game.reset();
+    board.position('start');
+    setStatus('Yeni oyun — hamleni yap ⚪', '');
+});
+
+hintBtn.addEventListener('click', () => {
+    if (!stockfishReady || aiThinking || game.turn() !== 'w') return;
+    setStatus('FermatAI ipucu hesaplıyor... 💡', 'thinking');
+    const tempHandler = (e) => {
+        const line = e.data;
+        if (typeof line === 'string' && line.startsWith('bestmove')) {
+            const move = line.split(' ')[1];
+            if (move && move !== '(none)') {
+                setStatus(`💡 İpucu: ${move.slice(0,2).toUpperCase()} → ${move.slice(2,4).toUpperCase()}`, '');
+            }
+            stockfish.removeEventListener('message', tempHandler);
+            // Eski handler'i yeniden bağla
+            stockfish.addEventListener('message', originalHandler);
+        }
+    };
+    const originalHandler = stockfish.onmessage;
+    stockfish.removeEventListener('message', originalHandler);
+    stockfish.addEventListener('message', tempHandler);
+    stockfish.postMessage('position fen ' + game.fen());
+    stockfish.postMessage('go depth 12'); // hint için daha hızlı
+});
+
+// Init
+window.addEventListener('DOMContentLoaded', () => {
+    // URL'den isim okuma (opsiyonel)
+    const params = new URLSearchParams(window.location.search);
+    const playerName = params.get('name');
+    if (playerName) {
+        document.getElementById('player-name').textContent = decodeURIComponent(playerName);
+    }
+
+    document.getElementById('board').innerHTML = '';
+    board = Chessboard('board', {
+        position: 'start',
+        draggable: true,
+        onDragStart: onDragStart,
+        onDrop: onDrop,
+        onSnapEnd: onSnapEnd,
+        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+    });
+
+    // Responsive resize
+    window.addEventListener('resize', () => board.resize());
+
+    setStatus('⏳ FermatAI motor yükleniyor...', 'thinking');
+    initStockfish();
+});
+</script>
+</body>
+</html>
