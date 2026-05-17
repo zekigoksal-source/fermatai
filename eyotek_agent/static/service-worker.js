@@ -10,7 +10,7 @@
  * 25.40 (Neo): /chat artık cache-first → PWA açılışı 1sn beyaz ekran ortadan kalktı
  * Versiyon değiştir → tüm cache temizlenir.
  */
-const VERSION = 'fermatai-v25.43-chat-no-cache';
+const VERSION = 'fermatai-v25.46-chess-bypass';
 const STATIC_CACHE = `${VERSION}-static`;
 const RENDER_CACHE = `${VERSION}-render`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
@@ -80,6 +80,17 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/render/') && !url.pathname.includes('archive')) {
     event.respondWith(staleWhileRevalidate(request, RENDER_CACHE));
     return;
+  }
+
+  // 25.46+ (Neo 17 May): /static/games/ ve /chess BYPASS — mini-oyunlar
+  // surekli guncelleniyor, cache eskirse yeni Stockfish/chess.html serve edilmez.
+  // Backend zaten no-cache header gonderiyor; SW araya GIRMESIN.
+  if (
+    url.pathname.startsWith('/static/games/') ||
+    url.pathname === '/chess' ||
+    url.pathname.startsWith('/chess?')
+  ) {
+    return;  // SW intercept yok — fresh fetch her zaman
   }
 
   // Static assets (manifest, icon, fonts)
