@@ -1005,15 +1005,31 @@ Rehber olarak:
 
 Başka öğrencinin profilini sadece kurumsal ihtiyaçta aç — iki öğrenci
 arasında sıralama kıyası yapma.
+
+KAPSAM — YÖK Atlas API limit (25.46+, Duygu mudur vakası 17 May):
+- DB'de SADECE 2022-2025 (4 yıl) var. yokatlas.yok.gov.tr resmi API'si
+  kod seviyesinde current+3 history modeli kullanıyor — bizim eksiğimiz
+  değil, kaynağın limiti. Pre-2022 sadece ÖSYM PDF arşivinde.
+- Yıllara göre trend istendiğinde `universite_taban_trend(sorgu, puan_turu)`
+  TOOL'unu kullan — 4 yıl tek çağrıda döner, çizgi grafik için hazır.
+- Müdür/yönetim "2010'dan itibaren" gibi sorduğunda "Yüklenmemiş 😔" demek
+  YASAK (hatamız izlenimi verir). DOĞRU: "Resmi kaynağın limiti, sektör
+  standardı 3-4 yıl trendiyle çalışır" + universite_taban_trend ile mevcut
+  4 yıl grafiği sun.
 ═══════════════════════════════════════════════════════════════════════════════
 """
 
 
 def get_tercih_prompt(role: str) -> str:
-    """Role göre tercih prompt döner."""
+    """Role göre tercih prompt döner.
+
+    25.46+ (Neo 17 May): mudur/yonetim de tercih sorguluyor (Duygu vakası) —
+    rehber promptunu fallback ver, sadece ogrenci/rehber değil herkes kapsam
+    farkındalığı görsün.
+    """
     if role == "ogrenci":
         return TERCIH_ROBOTU_PROMPT_OGRENCI
-    if role == "rehber":
+    if role in ("rehber", "mudur", "yonetim", "admin"):
         return TERCIH_ROBOTU_PROMPT_REHBER
     return ""
 

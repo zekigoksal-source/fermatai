@@ -1,6 +1,93 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 15 Mayıs 2026 gece → **OTURUM 25.44-DEV-MEETING-11 KAPATILDI (ATLAS LLM → OPUS 4.7 + SEVERITY NORMALIZE + UI FIX) — NEO DEV ARASI, BOT SERVE EDİYOR**
+> **Son güncelleme:** 17 Mayıs 2026 → **OTURUM 25.46+ KAPATILDI (MOBİL HEADER + CEREBRAS KIRIK PROMISE + YÖK ATLAS TREND TOOL) — NEO DEV ARASI, BOT SAĞLIKLI SERVE EDİYOR**
+>
+> ## 🟢 PROJE DURUMU (Snapshot — 25.46+ KAPANIŞ, 17 May 20:36)
+>
+> - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync, +21 commit)
+> - **HEAD:** `c03a627` feat: universite_taban_trend tool + YOK Atlas 4-yil API limit farkindaligi
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, `c03a627` deployed, son konuşma 20:32 (4dk önce, aktif)
+> - **VPS donanım:** uptime 23 gün, load 0.09/0.12/0.09, RAM 12Gi free, disk %6 (272G free), swap=0 — **TERTEMİZ**
+> - **Servisler:** fermatai-bridge active (4 uvicorn worker) · fermat_postgres healthy 3w · fermat_redis healthy 3w · nginx active · session_keeper PID 442575
+> - **Bridge log son 30dk:** 0 ERROR · 35 WARNING (Groq TPM 12K limit + CDP tab recovery + yeni broken_promise_skip aktif çalışıyor — hepsi beklenen davranış)
+> - **DB durumu:** 167 öğrenci · 18 personel · 35.584 üniversite_taban · 2.229 student_exams · 2.669 etut_history · 5.985 RAG içerik · 21.183 konuşma · 3.410 routing kaydı
+> - **Routing son 24h:** Claude %78 (33 mesaj, ort 44s) · Cerebras %17 (5+2=7, ort 3.6s) · Fast %2 — Cerebras pre-check pay'ı düştü çünkü yeni guard'lar (data_fetch_skip + broken_promise_skip) data sorularını Claude'a çekti, doğru davranış
+>
+> ## 🎯 Bu Oturumda (25.46+) Yapılanlar (17 May 18:30-20:35, ~2 saat)
+>
+> Neo direktif: Duygu (müdür) mobilden bota bağlandı, 3 sorun bildirdi → tamamı düzeltildi + canlıda doğrulandı.
+>
+> **A. Mobil Header Sadeleştirme (commit `41d73b3`)**
+> 1. **FermatAI title "Fe..." kesiliyordu** — mobil CSS `font-size: 14px` + ellipsis vardı. Müdür ekranında topluluk butonu + Çalışmam + dişli ikonu yer kaplıyordu. `font-size: 13px`, `overflow: visible`, `text-overflow: clip` → tam görünür.
+> 2. **Online/offline pulse dot** (`.chat-header .title .dot`) — yeşil pulse default, kırmızı pulse offline. `startHealthPolling()` her 30sn `/health` ping, `navigator.onLine` + `visibilitychange` event'leri ile tazelenir. Hover tooltip "Sistem online/yanıt vermiyor".
+> 3. **Müdür ekranı sadeleştirme** — `studyBtn` (📚 Çalışmam) yalnız `ogrenci + admin` rolünde görünür (önce `mudur` da görüyordu, Neo dev için kullanıyor); `adminBtn` (⚙️) yalnız `admin` rolünde (önce `mudur` da görüyordu).
+> 4. **Tema toggle ikon-only mobil** — `::after` (`data-mode-label` = "Açık/Kapalı") gizli, 32px daire (≤600px) → 28px daire (≤400px). Eskiden 400px altında `display: none` idi, şimdi her zaman ikon olarak görünür.
+> 5. Service worker `VERSION = 'fermatai-v25.46-mobile-header'` → eski cache otomatik temizleniyor.
+>
+> **B. Cerebras Kırık Promise Bug Fix (commit `e00b7dc`) — Duygu müdür vakası 20:07-20:11**
+> 6. **Kök sebep:** Duygu "Yarın etüt var mı / Önümüzdeki hafta hangi etütler var eyotekten bak" sorduğunda bot "Eyotek'ten canlı veriyi kontrol ediyorum (~20sn)..." yazıp **tool çağrısı yapmadan duruyordu** → kullanıcı sonsuza dek bekledi, veri gelmedi. Streaming çok hızlı (1.2-1.7s) bittiği için sarı gradient bekleme pili de görünmedi.
+> 7. **`fermat_core_agent.py:4616`** Cerebras pre-check `text >= 20 char` ise hemen accept ediyordu, `has_tool_calls` kontrolü yoktu. Cerebras qwen3 235B promise text üretip arkasından tool_use block emit etmiyor (model davranış sınırı).
+> 8. **İki katmanlı fix:**
+>    - **`data_fetch_skip` guard:** mesaj `eyotek/etüt/yoklama/sınav/devamsızlık/deneme/rehberlik notu` gibi kelimeler içerirse Cerebras pre-check atlanır, doğrudan Claude (daha güvenilir tool-calling).
+>    - **`broken_promise_skip` safety net:** Cerebras response'da `has_tool_calls=False` AND text "çekiyorum/kontrol ediyorum/topluyorum/hazırlıyorum/bakıyorum/bağlanıp/inceliyorum" markerlarından biri varsa → RuntimeError raise → Claude fallback. Canlıda 2 kere ateşlendi 20:22-20:23 (PDR sorgusunda), doğru çalıştı.
+>
+> **C. YÖK Atlas Trend Tool + 4-Yıl API Limit Farkındalığı (commit `c03a627`) — Duygu müdür PDR vakası 20:22-20:24**
+> 9. **Neo talep:** "YÖK Atlas'ta biraz veri eksikliğin var, geçmişe yönelik çökmen gereken datalar varsa kendini doldur — tercih danışmanlığında hayati olacak."
+> 10. **Araştırma sonucu (yapılamayan):**
+>     - `yokatlas-py` library v3 kod seviyesinde `current + 3 history = 4 yıl` hard limit (models.py "3 previous years" string kanıt)
+>     - yokatlas.yok.gov.tr 2024-2025'te React SPA'ya çevrildi, eski deep linkler 945 byte boş shell dönüyor
+>     - `/api/lisans/*` endpoints 403 Forbidden (auth gerekli)
+>     - Wayback Machine: anasayfa snapshot var, program detay deep linkleri yakalanmamış (2018-2022 hepsi React shell)
+>     - ÖSYM PDF arşivleri var ama yıl başına 500+ sayfa OCR + 2010-2017 LYS dönemi farklı puan sistemi (Neo: "gerek yok, fazla ve gereksiz iş olur")
+> 11. **Uygulanan 3 katmanlı çözüm:**
+>     - **Yeni tool `universite_taban_trend`** — bir programın 4 yılını TEK ÇAĞRIDA döner, çizgi grafik (chart fence) için direkt hazır format. Live test Cerrahpaşa PDR EA → 2022/2023/2024/2025 puan+sıralama döndü.
+>     - **Tercih robotu prompt madde 9+10** — bot artık biliyor: "YÖK Atlas API kod seviyesinde 4 yıl tutar, sektör standardı" + "Yüklenmemiş 😔 demek YASAK (hatamız izlenimi verir), DOĞRU: 'Resmi kaynağın limiti'"
+>     - **`_YILLIK_KAPSAM_ACIKLA` constant** — her trend çağrısı bu açıklamayla geliyor, bot uydurmaz. ÖSYM PDF alternatifini belirtir.
+> 12. **ACL:** 7 role eklendi (admin/mudur/yonetim/ogretmen/rehber/ogrenci/veli).
+> 13. **Tool registry:** `fermat_core_agent.py` TOOL_DISPATCH + `tools/tercih.py` wrapper + `tool_definitions.py` schema — hepsi smoke test edildi.
+>
+> ## 📋 Bu Oturum Commit Zinciri (17 May 2026)
+>
+> ```
+> 41d73b3  fix: mobil header sadelestirme + rol bazli buton + online/offline dot
+> e00b7dc  fix: Cerebras kirik promise bug - mudur Eyotek sorgusu cevapsiz kaliyordu
+> c03a627  feat: universite_taban_trend tool + YOK Atlas 4-yil API limit farkindaligi
+> ```
+>
+> ## 🟢 SAĞLIK CHECK (17 May 20:36 — sonuç)
+>
+> | Katman | Durum | Detay |
+> |--------|-------|-------|
+> | VPS donanım | 🟢 TERTEMİZ | uptime 23g, load 0.09, RAM 12Gi free, disk %6, swap=0 |
+> | fermatai-bridge | 🟢 active | 4 uvicorn worker, son restart 20:34 (commit deploy) |
+> | fermat_postgres | 🟢 healthy 3w | pgvector/pg16, port 5432 |
+> | fermat_redis | 🟢 healthy 3w | port 6379, leader election TTL refresh OK |
+> | session_keeper | 🟢 PID 442575 | CDP tab recovery 3-5sn aralıkla (normal) |
+> | nginx | 🟢 active | HTTPS proxy api.fermategitimkurumlari.com |
+> | Bridge `/health` | 🟢 200 OK | localhost:8001 |
+> | Son konuşma | 🟢 20:32 (4dk önce) | bot aktif yanıt veriyor |
+> | Error log (30dk) | 🟢 0 ERROR | sadece 35 WARNING (Groq TPM + CDP recovery, hepsi beklenen) |
+> | DB conn | 🟢 OK | 8 tablo sorgulandı, hepsi cevap verdi |
+> | Yeni guard'lar canlı | 🟢 ÇALIŞIYOR | broken_promise_skip 2× ateşlendi PDR sorgusunda, data_fetch_skip 1× |
+>
+> **SONUÇ:** Sistem yazılım+donanım açısından **0 sorun**. Bir hafta önce kurulan optimizasyonlar (Cerebras pre-check, watchdog, leader election, CDP recovery) çalışıyor. Yeni guard'lar canlıda gerçek veriyle doğrulandı.
+>
+> ## ⚠️ İzlenmesi Gereken Bilinen Durumlar (kritik değil)
+>
+> 1. **Groq TPM 12K limit** — uzun konuşmalarda `413 Request too large` yiyoruz (~97K token istek vs 12K limit). Mevcut davranış: Claude'a sessiz fallback (working). Çözüm vakti gelirse: Dev Tier upgrade veya history truncation. Acil değil.
+> 2. **Session keeper CDP tab kayıp ~3dk'da bir** — Chrome instance bazen tab'ı kapatıyor, session_keeper otomatik yeniden açıyor, cookie'ler güncel kalıyor. Sorun yok.
+> 3. **Routing dengesi Cerebras lehine düşük** — son 24h Claude %78. Bu son 24h test trafiği (Duygu müdür Eyotek+PDR sorguları) data-heavy olduğu için. Hedef rotasyon (Fast %45 / Cerebras %30 / Claude %25) genel kullanımda; data-fetch yoğunlukta Claude'a doğru kayar (doğru davranış).
+>
+> ## 🔜 SONRAKİ OTURUM AÇILDIĞINDA
+>
+> - **Dev arası** — Neo "yine dev arası verelim" dedi. KALDIGIM + BLUEPRINT güncel, sistem sağlıklı.
+> - **Atlas-2 önerileri bekleyebilir** — Neo dönünce `decisions/` klasöründe yeni karar varsa uygula. Yoksa KALDIGIM sprint devam.
+> - **Tercih danışmanlığı altyapısı tamamlandı** — universite_taban_trend canlıda, prompt güncel. Sezon (1 Tem 2026) açıldığında ek aktivasyon bekleyen yok.
+> - **Bilinen takip:** Groq TPM monitor (sık 413 hatası alırsak Dev Tier).
+>
+> ---
+>
+> ## 📚 ÖNCEKİ OTURUMLAR (kronolojik, en yeni ↑)
 >
 > ## 🟢 PROJE DURUMU (Snapshot — 25.44-DEV-MEETING-11 KAPANIŞ)
 >

@@ -1,28 +1,55 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 11/12 Mayıs 2026 gece · **Oturum:** 25.44 — Eyotek Site Bilinci + Pagination + Sgr A* Render
+> **Belge tarihi:** 17 Mayıs 2026 · **Oturum:** 25.46+ — Mobil Header + Cerebras Kırık Promise Guard + YÖK Atlas Trend Tool
 >
-> ## 🟢 SON DURUM SNAPSHOT (25.44)
+> ## 🟢 SON DURUM SNAPSHOT (25.46+, 17 May 20:36)
 >
 > | Metrik | Değer |
 > |--------|-------|
-> | **VPS HEAD** | `9905c16` (52+ commit chain canlı, branch claude/sweet-jemison-99ea7e) |
-> | **Sentry awareness** | SENTRY_API_TOKEN aktif, `get_sentry_errors` Claude tool admin/mudur ACL |
-> | **Sentry 29× BadRequest fix** | tool_use/tool_result chain integrity (full history scan + gather guard) |
-> | **Blind corpus (overfit kontrol)** | 102 soru, **A+/A %77.5, B+ %89.2, F=0**, 5 iter, gap 2.5pp |
-> | **Kategori final** | CEREBRAS %100, RAG %90, EDGE %90, ACL %80, FAST %76.5, RENDER %62.5, HEAVY %50, TOOL %58.8 |
-> | **Bridge Status** | HTTP 200, 3 systemd servis active |
-> | **VPS sağlık** | Disk %6 (272G free), RAM 11Gi free |
-> | **Eyotek fix loop** | **14/14 PASS (%100)**, ortalama 23.6s/test |
-> | **Eyotek DB lazy_sync** | Her sorguda otomatik — list-students/etut/yoklama/rehberlik/sınav/borçlu mapped |
-> | **Test Pass Rate (522 corpus)** | B+ %92.3, A++/A %78.2, F=0 (Oturum 25.43'ten) |
+> | **VPS HEAD** | `c03a627` feat: universite_taban_trend + YOK Atlas 4-yil API farkindaligi |
+> | **Branch** | `claude/sweet-jemison-99ea7e` (main sync, +21 commit) |
+> | **Bridge Status** | HTTP 200, 4 uvicorn worker, son restart 20:34 (deploy) |
+> | **VPS donanım** | uptime 23g, load 0.09, RAM 12Gi free / 3.2Gi used (toplam 15Gi), disk %6 (272G free / 301G), swap=0 |
+> | **Servisler** | fermatai-bridge active · fermat_postgres healthy 3w · fermat_redis healthy 3w · nginx active · session_keeper PID 442575 |
+> | **Bridge log 30dk** | 0 ERROR · 35 WARNING (Groq TPM 12K + CDP recovery + yeni guard'lar — hepsi beklenen) |
+> | **Cerebras guard'lar (yeni)** | `data_fetch_skip` + `broken_promise_skip` canlıda doğrulandı (2× PDR sorgusunda ateşlendi) |
+> | **Mobil header** | FermatAI title + online/offline pulse dot · müdür studyBtn+adminBtn gizli · tema toggle ikon-only |
+> | **YÖK Atlas tool** | `universite_taban_trend` — 4 yıl tek çağrı, kapsam_acikla ile API limit dürüst açıklaması (7 role ACL) |
+> | **Routing 24h** | Claude %78 (33, 44s ort) · Cerebras %17 (7, 3.6s ort) · Fast %2 — data-heavy trafik nedeniyle Claude lehine |
+> | **Sentry** | 0 unresolved, get_sentry_errors tool aktif |
+> | **DB tabloları** | students 167 · staff 18 · universite_taban 35.584 · student_exams 2.229 · etut_history 2.669 · RAG 5.985 · conversations 21.183 · routing_stats 3.410 |
+> | **Son konuşma** | 2026-05-17 20:32 (4dk önce, sistem aktif) |
+> | **Test Pass Rate (522 corpus, baseline)** | B+ %92.3, A++/A %78.2, F=0 |
+> | **Blind corpus (overfit kontrol)** | 102 soru, **A+/A %77.5, B+ %89.2, F=0**, gap 2.5pp |
+> | **Eyotek fix loop** | 14/14 PASS (%100), ortalama 23.6s/test |
 > | **Capacity** | 200 concurrent → 69 req/s, p99 2.8s, 0 hata |
 > | **ACL gerçek leak** | 0 |
-> | **Inversion bug** | 14 dosyada düzeltildi |
-> | **Eyotek bug** | Tüm okuma fonksiyonları %100 PASS (sezon + pagination + dedupe + filter) |
-> | **DB sağlık** | students max söz_no 318 (40 yeni sezon kayıt), etut 2597, counsellor 1632, yoklama_kontrol 7482, RAG 5985 |
 >
-> ## 🆕 OTURUM 25.44 — Eyotek Site Bilinci Mimarisi (11 commit)
+> ## 🆕 OTURUM 25.46+ — Mobil + Cerebras Guard + YÖK Atlas Trend (3 commit)
+>
+> **A. Mobil Header Sadeleştirme (`41d73b3`)**
+> - `web_chat_ui.html` mobil CSS: title overflow:visible + 13px (eski 14px ellipsis "Fe..." kesiyor)
+> - Online/offline pulse dot — yeşil/kırmızı animasyonlu, `/health` 30sn polling + `navigator.onLine` + `visibilitychange`
+> - Role-based: `studyBtn` artık sadece `ogrenci+admin` · `adminBtn` (⚙️) artık sadece `admin` (müdür kaldırıldı)
+> - Theme toggle: mobil `::after` (Açık/Kapalı text) gizli, 32px daire (≤600px) / 28px (≤400px); 400px altında artık görünür (eskiden display:none)
+> - Service worker `VERSION = 'fermatai-v25.46-mobile-header'` (cache bust)
+>
+> **B. Cerebras Kırık Promise Guard (`e00b7dc`) — Duygu müdür vakası 17 May 20:07**
+> - **Bug:** Cerebras qwen3-235B "Eyotek'ten çekiyorum (~20sn)..." promise text üretip arkasından `tool_use` block emit etmiyor → kullanıcı sonsuz bekledi, veri gelmedi
+> - **`data_fetch_skip` guard:** mesaj `eyotek/etüt/yoklama/sınav/devamsızlık/deneme/rehberlik notu` kelimeleri içerirse Cerebras pre-check atlanır, doğrudan Claude (daha güvenilir tool-calling)
+> - **`broken_promise_skip` safety net:** `has_tool_calls=False` AND text "çekiyorum/kontrol ediyorum/topluyorum/hazırlıyorum/bakıyorum/bağlanıp/inceliyorum" markerlarından biri varsa → RuntimeError → Claude fallback
+> - Canlıda doğrulandı: 2× ateşlendi 20:22-20:23 PDR sorgusunda, doğru çalıştı
+>
+> **C. YÖK Atlas Trend Tool + Dürüstlük Katmanı (`c03a627`) — Duygu müdür PDR vakası 17 May 20:22**
+> - **Araştırma sonucu:** YÖK Atlas resmi API'si kod seviyesinde `current + 3 history = 4 yıl` hard limit (yokatlas-py library v3 models.py teyit). Pre-2022 veri RESMI KAYNAKTA YOK. Yalnız ÖSYM Tercih Kılavuzu PDF arşivlerinde (10-15 saat OCR + LYS puan sistemi mapping). **Neo iptal:** "gerek yok, fazla iş"
+> - **Yeni tool `universite_taban_trend(sorgu, puan_turu)`** — bir programın 4 yılını TEK ÇAĞRIDA döner, çizgi grafik için hazır format
+> - Dönen JSON: `eslesen_program` + `yillar[]` (4 yıl her birinde taban/sıralama/kontenjan/doluluk) + `alternatif_eslesmeler[]` + `kapsam_acikla` (API limit dürüst açıklama)
+> - **Tercih robotu prompt madde 9+10** — bot artık "Yüklenmemiş 😔" demez (hatamız izlenimi), "Resmi kaynağın limiti, sektör standardı" der
+> - **`_YILLIK_KAPSAM_ACIKLA` constant** — her trend çağrısı bu açıklamayla geliyor, bot uydurmaz
+> - ACL: 7 role eklendi (admin/mudur/yonetim/ogretmen/rehber/ogrenci/veli)
+> - Live test (VPS): Cerrahpaşa PDR EA → 4 yıl tam veri döndü (2022: 384.32/87.978 → 2025: 371.22/74.441)
+>
+> ## 🆕 OTURUM 25.44 — Eyotek Site Bilinci Mimarisi (11 commit, 11/12 May)
 >
 > **A. 3D Render (web_chat_ui.html rerender3D)**
 > - Unconditional purple sphere bloğu silindi (her preset üstüne mor sfer ekliyordu — Neo'nun "mor küre" şikayetinin kök sebebi)
