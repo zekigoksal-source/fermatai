@@ -115,7 +115,11 @@ async def _detect_problems(hours: int = 24) -> list[dict]:
     return problems[:30]   # En çok 30 örnek
 
 
-async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
+async def _ask_groq_for_suggestion(
+    problems: list[dict],
+    code_context: str = "",
+    focus_prompt: str = "",
+) -> list[dict]:
     """LLM'den problem ornekleri ile prompt iyilestirme onerisi sor.
 
     25.44-dm11 (Neo direktifi): Atlas önerileri KRİTİK — yanlış öneri sistemi
@@ -123,6 +127,10 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
     hata tespiti + çözüm önerisi). Cerebras qwen-235b + Groq 70B fallback olarak
     korunur (Anthropic API down ise gece üretimi tamamen durmasın).
     Model env ile değiştirilebilir: ATLAS_LLM_MODEL (default: claude-opus-4-7).
+
+    25.46+ (Neo 18 May): code_context (mevcut kod grep özeti) ve focus_prompt
+    (günün kategorisi odak metni) inject edilir → LLM "mevcut olanı tekrar
+    tanımlama" sorununu çözer.
     """
     if not problems:
         return []
@@ -145,21 +153,69 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
     except Exception as e:
         logger.warning(f"[ATLAS-2] Groq client init fail: {e}")
 
-    # Problem ozeti hazirla
+    # Problem ozeti hazirla — 25.46+ kategori-özel tipler de desteklenir
     problem_summary = []
     for p in problems[:15]:
-        if p['type'] == 'frustration':
+        t = p.get('type', '')
+        if t == 'frustration':
             problem_summary.append(
                 f"FRUSTRATION: User '{p['user_msg'][:100]}' — Onceki bot: '{p['prev_bot'][:200]}'"
             )
-        elif p['type'] == 'missed_intent':
+        elif t == 'missed_intent':
             problem_summary.append(
                 f"MISSED INTENT: User '{p['user_msg'][:100]}' — Bot: '{p['next_bot'][:100]}'"
             )
-        elif p['type'] == 'repeated_response':
+        elif t == 'repeated_response':
             problem_summary.append(
                 f"REPEAT: 2 ayri user sorusuna ayni cevap — '{p['repeated_bot'][:100]}'"
             )
+        # 25.46+ YENİ KATEGORI-OZEL PROBLEM TIPLERI
+        elif t == 'token_duplicate':
+            problem_summary.append(
+                f"TOKEN_DUPLICATE: {p.get('file','?')} icinde '{p.get('snippet','')[:80]}' "
+                f"{p.get('occurrences',0)} kez tekrar — token israfı"
+            )
+        elif t == 'prompt_size_warning':
+            problem_summary.append(
+                f"PROMPT_SIZE: {p.get('file','?')} = {p.get('chars',0)} char "
+                f"(~{p.get('estimated_tokens',0)} token, hedef <62K)"
+            )
+        elif t == 'routing_claude_overuse':
+            problem_summary.append(
+                f"ROUTING_CLAUDE_HIGH: %{p.get('percent','?')} Claude'a gidiyor "
+                f"(hedef %25), avg={p.get('avg_ms','?')}ms p95={p.get('p95_ms','?')}ms"
+            )
+        elif t == 'routing_fast_dominant':
+            problem_summary.append(
+                f"ROUTING_FAST_DOMINANT: %{p.get('percent','?')} fast_response — "
+                f"belki kompleks mesajlar yanlış routing'ten alınıyor"
+            )
+        elif t == 'routing_slow_avg':
+            problem_summary.append(
+                f"ROUTING_SLOW: {p.get('source','?')} ortalama {p.get('avg_ms','?')}ms (>30s)"
+            )
+        elif t == 'hallucination_risk_claim':
+            problem_summary.append(
+                f"HALUSINASYON_RISKI: '{p.get('snippet','')[:200]}' — historical iddia "
+                "(sezon boyunca/ilk kez/hep böyle gibi)"
+            )
+        elif t == 'db_stale_table':
+            problem_summary.append(
+                f"DB_STALE: {p.get('table','?')} son güncelleme {p.get('age_days',0)} gün önce"
+            )
+        elif t == 'db_table_huge':
+            problem_summary.append(
+                f"DB_HUGE: {p.get('table','?')} {p.get('row_count',0)} kayıt — "
+                f"{p.get('note','')}"
+            )
+        elif t == 'dead_function_candidate':
+            problem_summary.append(
+                f"DEAD_CODE_CANDIDATE: {p.get('file','?')}::{p.get('function','?')} "
+                "eyotek_agent içinde çağrı bulunamadı (false-positive riski var)"
+            )
+        else:
+            # Bilinmeyen tip — gen-dump
+            problem_summary.append(f"OTHER ({t}): {str(p)[:200]}")
 
     # 25.24 (Neo): Geçmiş 30 gün reddedilen öneriler ve sebepleri — bot bunlardan öğrensin
     # Sezgisellik için: aynı false positive pattern'leri tekrarlama
@@ -205,9 +261,20 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
     except Exception:
         pass
 
+    # 25.46+ ÖNCESİ kategori odak metni (LLM hedef alani anlasin)
+    focus_block = ""
+    if focus_prompt:
+        focus_block = (
+            "\n🎯 BUGÜNÜN KATEGORİSİ — Odakla:\n"
+            + focus_prompt
+            + "\n\n"
+        )
+
     user_prompt = (
-        "FermatAI bot konusmalarinda son 24 saatte tespit ettigim problem ornekleri:\n\n"
+        focus_block
+        + "FermatAI bot konusmalarinda son 24 saatte tespit ettigim problem ornekleri:\n\n"
         + "\n".join(f"{i+1}. {s}" for i, s in enumerate(problem_summary))
+        + code_context  # 25.46+ MEVCUT KOD CONTEXT (grep özeti)
         + past_rejections_block
         + past_approvals_block
         + "\n\nGOREVIN: Her problem icin SOMUT bir system_prompts.py iyilestirme "
@@ -323,21 +390,63 @@ async def _ask_groq_for_suggestion(problems: list[dict]) -> list[dict]:
         return []
 
 
-async def analyze_and_suggest(hours: int = 24) -> dict:
+async def analyze_and_suggest(hours: int = 24, category: str | None = None) -> dict:
     """Ana orchestration: problem tespit + Groq oneri + DB'ye kaydet.
 
+    25.46+ (Neo 18 May): GÜNLÜK KATEGORI ROTASYONU + CODE-AWARE INJECTION.
+    Atlas-2 her gün farklı boyutta tarama yapar (frustration/token/routing/
+    halüsinasyon/dead_code/db_health/quality_drift). LLM'e öneri sormadan
+    önce kod tabanından grep yaparak mevcut implementasyonlari context'e
+    enjekte eder → "mevcut olanı tekrar tanımla" sorununu çözer.
+
+    Args:
+      hours: bakılacak süre (default 24h, hafta-bazlı detector'lar 168 kullanır)
+      category: override (test için). None = bugünün rotasyon kategorisi
+
     Cron her gece 02:00 calistirir.
-    Returns: {"problems_found": N, "suggestions_saved": M}
+    Returns: {"category": str, "problems_found": N, "suggestions_saved": M,
+              "filtered_already_exists": K}
     """
-    logger.info(f"[ATLAS-2] Son {hours}h problem analizi basliyor...")
-    problems = await _detect_problems(hours)
-    logger.info(f"[ATLAS-2] {len(problems)} problem tespit edildi")
+    # ── KATEGORI SECIMI (rotasyon veya override) ─────────────────────────
+    from atlas.categories import (
+        get_today_category, get_category_focus_prompt, run_category_detector
+    )
+    if not category:
+        category = get_today_category()
+    focus_prompt = get_category_focus_prompt(category)
+    logger.info(f"[ATLAS-2] Bugünün kategorisi: '{category}' — {focus_prompt[:80]}")
+
+    # ── PROBLEM TESPIT ───────────────────────────────────────────────────
+    # Kategori-spesifik detector varsa onu kullan, yoksa default
+    # (_detect_problems = frustration_analizi pattern'leri)
+    if category in ("frustration_analizi", "response_quality_drift"):
+        # Mevcut detector — frustration + missed_intent + repeated_response
+        problems = await _detect_problems(hours)
+    else:
+        # Yeni kategori-özel detector (atlas/categories.py)
+        problems = await run_category_detector(category)
+    logger.info(f"[ATLAS-2] {len(problems)} problem tespit edildi (kategori: {category})")
 
     if not problems:
-        return {"problems_found": 0, "suggestions_saved": 0}
+        return {
+            "category": category,
+            "problems_found": 0,
+            "suggestions_saved": 0,
+            "filtered_already_exists": 0,
+        }
 
-    suggestions = await _ask_groq_for_suggestion(problems)
-    logger.info(f"[ATLAS-2] Groq {len(suggestions)} oneri uretti")
+    # ── CODE-AWARE CONTEXT — Atlas LLM'e mevcut kod özetini ver ──────────
+    code_context = ""
+    try:
+        from atlas.code_awareness import build_codebase_context
+        code_context = build_codebase_context(problems)
+        if code_context:
+            logger.info(f"[ATLAS-2] code_awareness context eklendi ({len(code_context)} char)")
+    except Exception as _ce:
+        logger.warning(f"[ATLAS-2] code_awareness fail: {_ce}")
+
+    suggestions = await _ask_groq_for_suggestion(problems, code_context, focus_prompt)
+    logger.info(f"[ATLAS-2] LLM {len(suggestions)} oneri uretti")
 
     # 25.40z3-ATLAS2 BIRLEŞIK MIMARI:
     # Atlas-1 ve Atlas-2 artık AYNI tabloyu (atlas_suggestions) kullanır.
@@ -360,6 +469,7 @@ async def analyze_and_suggest(hours: int = 24) -> dict:
     import hashlib
     saved = 0
     skipped_dup = 0
+    filtered_already_exists = 0  # 25.46+ code-aware verify ile filtrelenen
     for s in suggestions:
         # Critical pattern guard — koruma kurallari etkilenir mi
         change_text = (s.get('suggested_change') or '').lower()
@@ -374,6 +484,51 @@ async def analyze_and_suggest(hours: int = 24) -> dict:
             skipped_dup += 1
             logger.info(f"[ATLAS-2] DUP SKIP: '{title[:60]}' (90 gun icinde mevcut)")
             continue
+
+        # 25.46+ CODE-AWARE NOVELTY VERIFY (Neo direktif): öneriyi kaydetmeden
+        # önce codebase grep'le doğrula — büyük olasılıkla mevcut ise SKIP veya
+        # severity'i düşür + neo_note ile aciklayalim.
+        try:
+            from atlas.code_awareness import verify_suggestion_novelty
+            verdict_obj = verify_suggestion_novelty(s)
+            if verdict_obj["verdict"] == "definitely_exists":
+                filtered_already_exists += 1
+                logger.info(
+                    f"[ATLAS-2] ZATEN_MEVCUT SKIP: '{title[:60]}' — "
+                    f"{verdict_obj['match_count']} eşleşme @ "
+                    f"{verdict_obj['matched_files'][:3]}"
+                )
+                # DB'ye yine de kaydet ama status='archived' + neo_note
+                try:
+                    sig_raw = f"prompt_optimizer::{norm_title}::filtered"
+                    sig_filt = hashlib.md5(sig_raw.encode('utf-8')).hexdigest()[:16]
+                    await _exec(
+                        """INSERT INTO atlas_suggestions
+                           (category, severity, title, rationale, suggested_change,
+                            description, status, source, signature,
+                            first_seen_at, last_seen_at, occurrence_count, neo_note,
+                            applied_at, applied_by)
+                           VALUES ($1,'low',$2,$3,$4,$5,'archived','prompt_optimizer',
+                                   $6, NOW(), NOW(), 1, $7, NOW(), 'atlas-code-aware-filter')""",
+                        s.get('category', 'improvement')[:30],
+                        title,
+                        s.get('description', '')[:1000],
+                        s.get('suggested_change', '')[:2000],
+                        s.get('description', '')[:1000],
+                        sig_filt,
+                        (
+                            "O25.46+ CODE-AWARE FILTER: " + verdict_obj["note"][:500]
+                        ),
+                    )
+                except Exception:
+                    pass
+                continue
+            elif verdict_obj["verdict"] == "likely_exists":
+                # Severity düşür + neo_note ekle, ama DB'ye yine kaydet
+                s["severity"] = verdict_obj.get("severity_downgrade") or "low"
+                s["_novelty_note"] = verdict_obj["note"]
+        except Exception as _ve:
+            logger.warning(f"[ATLAS-2] verify_suggestion_novelty fail: {_ve}")
 
         # Signature compute (Atlas-1 ile uyumlu)
         sig_raw = f"prompt_optimizer::{norm_title}"
@@ -404,7 +559,11 @@ async def analyze_and_suggest(hours: int = 24) -> dict:
         except Exception as e:
             logger.warning(f"[ATLAS-2] suggestion save fail: {e}")
 
-    logger.info(f"[ATLAS-2] {saved} oneri atlas_suggestions'a kaydedildi (source=prompt_optimizer), {skipped_dup} duplicate atlandi")
+    logger.info(
+        f"[ATLAS-2] {saved} oneri atlas_suggestions'a kaydedildi "
+        f"(source=prompt_optimizer, kategori={category}), {skipped_dup} duplicate, "
+        f"{filtered_already_exists} mevcut-zaten filtreli"
+    )
 
     # Bildirime de ekle (Neo dashboard'da görsün)
     if saved > 0:
@@ -412,15 +571,29 @@ async def analyze_and_suggest(hours: int = 24) -> dict:
             await _exec(
                 """INSERT INTO notifications (severity, category, title, body, metadata)
                    VALUES ('info', 'atlas', $1, $2, $3)""",
-                f"Atlas-2: {saved} prompt iyilestirme onerisi hazir",
-                f"Son {hours}h analiz: {len(problems)} problem tespit, {saved} oneri uretildi. "
-                f"Dashboard'dan onayla.",
-                json.dumps({"problems_count": len(problems), "suggestions_count": saved}),
+                f"Atlas-2 [{category}]: {saved} yeni öneri (filtrelenen: {filtered_already_exists})",
+                (
+                    f"Kategori: {category} | Son {hours}h: {len(problems)} problem, "
+                    f"{saved} öneri kaydedildi, {filtered_already_exists} öneri "
+                    f"codebase'de zaten mevcut bulundu (otomatik arşiv). "
+                    f"Dashboard'dan onayla."
+                ),
+                json.dumps({
+                    "category": category,
+                    "problems_count": len(problems),
+                    "suggestions_count": saved,
+                    "filtered_already_exists": filtered_already_exists,
+                }),
             )
         except Exception:
             pass
 
-    return {"problems_found": len(problems), "suggestions_saved": saved}
+    return {
+        "category": category,
+        "problems_found": len(problems),
+        "suggestions_saved": saved,
+        "filtered_already_exists": filtered_already_exists,
+    }
 
 
 async def get_pending_suggestions(limit: int = 20) -> list[dict]:
