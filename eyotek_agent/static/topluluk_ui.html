@@ -427,10 +427,12 @@ const POLL_MS = 4000;
 
 // 25.46+ (Neo 18 May, mobil iframe 401 fix): iOS/Android PWA iframe
 // 3rd-party cookie blokluyor → parent URL'den token alıp Authorization
-// header ile yolla. localStorage da fallback olarak çalışır (aynı domain
-// olduğu için iframe'in kendi localStorage'i parent'tan ayrı OLABILIR).
+// header ile yolla.
+// BUG FIX (Neo 01:47 hala 401): web_chat_ui.html'da TOKEN_KEY =
+// 'fermat_token_v1' kullaniyor, 'fermat_token' DEGIL. 3 anahtar dene:
+// fermat_token_v1 (asıl) → fermat_token (legacy) → URL ?token (override).
 function _topluGetToken() {
-  // 1) URL ?token=
+  // 1) URL ?token= (en güvenilir, parent acik şekilde gonderdi)
   try {
     const u = new URLSearchParams(window.location.search);
     const t = u.get('token');
@@ -439,18 +441,22 @@ function _topluGetToken() {
   // 2) Parent localStorage (same-origin iframe → cross-frame access OK)
   try {
     if (window.parent && window.parent !== window) {
-      const t = window.parent.localStorage.getItem('fermat_token');
+      const t = window.parent.localStorage.getItem('fermat_token_v1') ||
+                window.parent.localStorage.getItem('fermat_token');
       if (t) return t;
     }
   } catch (e) {}
-  // 3) Kendi localStorage
+  // 3) Kendi localStorage (PWA mobilde iframe'in kendi storage'i olabilir)
   try {
-    return localStorage.getItem('fermat_token') || '';
+    return localStorage.getItem('fermat_token_v1') ||
+           localStorage.getItem('fermat_token') || '';
   } catch (e) {
     return '';
   }
 }
 const _TOPLU_TOKEN = _topluGetToken();
+// Debug: console'da görünür (Neo telefondan inspect ile bakabilir)
+try { console.log('[TOPLULUK] token kaynak:', _TOPLU_TOKEN ? 'OK (' + _TOPLU_TOKEN.length + ' char)' : 'YOK'); } catch(e){}
 function _topluAuthHeaders(extra) {
   const h = Object.assign({}, extra || {});
   if (_TOPLU_TOKEN) h['Authorization'] = 'Bearer ' + _TOPLU_TOKEN;

@@ -10715,7 +10715,12 @@ function openTopluluk() {
   // 25.46+ (Neo 18 May, mobil iframe 401 fix): iOS/Android Chrome PWA mode
   // iframe 3rd-party cookie blokluyor. Token'i parent localStorage'dan alıp
   // URL'ye ?token= ile gönder — web_chat.py:_extract_token zaten destekliyor.
-  const _topluToken = localStorage.getItem("fermat_token") || "";
+  // BUG FIX (Neo 01:47 hala 401): TOKEN_KEY 'fermat_token_v1', 'fermat_token'
+  // DEGIL — eski versiyondan kalma yanlis anahtar (openStudyDashboard +
+  // openAdminDashboard da TOKEN_KEY kullaniyor — aynı pattern).
+  const _topluToken = (typeof getToken === "function" ? getToken() :
+                       (localStorage.getItem("fermat_token_v1") ||
+                        localStorage.getItem("fermat_token") || ""));
   const _topluUrl = "/topluluk?_t=" + Date.now() +
                     (_topluToken ? "&token=" + encodeURIComponent(_topluToken) : "");
   overlay.innerHTML = `
