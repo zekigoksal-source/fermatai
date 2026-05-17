@@ -64,9 +64,19 @@ async def _tool_siralama_ile_bolumler(**kwargs):
     )
 
 
+# 25.46+ (Neo 17 May, Duygu mudur vakasi): bir programin 4 yilini tek cagri ile
+async def _tool_universite_taban_trend(**kwargs):
+    from tercih_robotu import universite_taban_trend
+    return await universite_taban_trend(
+        sorgu=kwargs.get("sorgu") or "",
+        puan_turu=kwargs.get("puan_turu") or "SAY",
+    )
+
+
 __all__ = [
     "_tool_tercih_profili_kaydet", "_tool_tercih_profili_getir",
     "_tool_tercih_listesi_uret", "_tool_bolum_karsilastir",
     "_tool_tercih_donemi_durum",
     "_tool_universite_taban_sorgu", "_tool_siralama_ile_bolumler",
+    "_tool_universite_taban_trend",
 ]

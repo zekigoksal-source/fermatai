@@ -61,7 +61,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
         "bolum_karsilastir", "tercih_donemi_durum",
         # 25.40k (Neo) — sezon-bagimsiz YOK Atlas
-        "universite_taban_sorgu", "siralama_ile_bolumler",
+        "universite_taban_sorgu", "siralama_ile_bolumler", "universite_taban_trend",
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
         # ── Oturum 25.29 — SELF-DEV PIPELINE (Evre 1: read + brief, ADMIN ONLY) ──
         # Bu araclar SADECE admin (Neo) icin. Diger rollere ASLA acmayin.
@@ -125,7 +125,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "tercih_profili_getir", "tercih_listesi_uret", "bolum_karsilastir",
         "tercih_donemi_durum",
         # 25.40k — sezon-bagimsiz YOK Atlas
-        "universite_taban_sorgu", "siralama_ile_bolumler",
+        "universite_taban_sorgu", "siralama_ile_bolumler", "universite_taban_trend",
         # ── 25.43 (Neo: 12 yeni dis API) — egitim odakli ──
         "tdk_sozluk", "nist_constant", "oeis_search", "open_meteo_climate",
         "wikidata_lookup", "cern_open_data", "huggingface_search_models",
@@ -162,7 +162,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
         "bolum_karsilastir", "tercih_donemi_durum",
         # 25.40k — sezon-bagimsiz YOK Atlas
-        "universite_taban_sorgu", "siralama_ile_bolumler",
+        "universite_taban_sorgu", "siralama_ile_bolumler", "universite_taban_trend",
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
         # Konu kaynak paketi
         "konu_kaynak_paketi",
@@ -251,7 +251,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "search_phet_simulation", "embed_phet_simulation",
         "find_youtube_lesson", "wolfram_step_by_step",
         # 25.40k (Neo) — sezon-bagimsiz YOK Atlas (ogretmen ogrenciye yonlendirir)
-        "universite_taban_sorgu", "siralama_ile_bolumler",
+        "universite_taban_sorgu", "siralama_ile_bolumler", "universite_taban_trend",
         "tercih_donemi_durum", "bolum_karsilastir",
         # ── 25.43 (Neo: 12 yeni dis API) — egitim odakli ──
         "tdk_sozluk", "nist_constant", "oeis_search", "open_meteo_climate",
@@ -284,7 +284,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
         "bolum_karsilastir", "tercih_donemi_durum",
         # 25.40k — sezon-bagimsiz YOK Atlas
-        "universite_taban_sorgu", "siralama_ile_bolumler",
+        "universite_taban_sorgu", "siralama_ile_bolumler", "universite_taban_trend",
         "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
         # 25.14h: rehber tum ogrencilerin programina ekleyebilir (override)
         "add_to_student_program",
@@ -332,7 +332,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 "tercih_profili_kaydet", "tercih_profili_getir", "tercih_listesi_uret",
                 "bolum_karsilastir", "tercih_donemi_durum",
                 # 25.40k (Neo direktif) — sezon-bagimsiz YOK Atlas (ogrenci her zaman sorgulayabilir)
-                "universite_taban_sorgu", "siralama_ile_bolumler",
+                "universite_taban_sorgu", "siralama_ile_bolumler", "universite_taban_trend",
                 "ders_konu_dagilimi_raporu", "get_lgs_konu_durumu",
                 # 25.14h: ogrenci kendi calismam paneline ekleyebilir
                 "add_to_student_program",
@@ -374,7 +374,7 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # Tanıtım amaçlı puan tahmin (öğrenci verisi olmadan)
         "calculate_yks_score",
         # Üniversite tanıtımı (kamu veri)
-        "universite_taban_sorgu", "siralama_ile_bolumler",
+        "universite_taban_sorgu", "siralama_ile_bolumler", "universite_taban_trend",
         # Genel kariyer bilgisi
         "get_career_info",
         # Sınav takvimi/format bilgisi

@@ -1479,6 +1479,41 @@ TOOLS: list[dict] = [
         },
     },
     {
+        # 25.46+ (Neo 17 May, Duygu mudur vakasi 20:22-20:24):
+        # "İstanbul Üniversitesi PDR yıllara göre sıralama grafiği" tarzi sorularda
+        # KULLAN. universite_taban_sorgu her seferinde 1 yıl döner — Claude 4
+        # ayrı çağrı yapmaktan vazgeçip yanlış cevap üretebiliyordu. Bu tool
+        # 4 yılın tamamını TEK ÇAĞRIDA döner, çizgi grafik (chart fence) için
+        # direkt hazır format.
+        # ÖNEMLI: YÖK Atlas resmi API'si sadece son 4 yıl tutar (kapsam_acikla
+        # alanında detay). Pre-2022 veri YOKTUR — bot kesinlikle uydurmasin.
+        "name": "universite_taban_trend",
+        "description": (
+            "Bir program için TÜM yılların verilerini TEK ÇAĞRIDA dön. "
+            "Çizgi grafik/trend analizi için ideal. Kullan: 'X bölümünün yıllara "
+            "göre sıralama grafiği', 'Y üniversitesi Z bölümü tarihsel trend', "
+            "'son N yılda nasıl değişti', 'puan trend grafiği'. YÖK Atlas API "
+            "limit: SADECE 2022-2025 mevcut, pre-2022 yok. Dönen 'kapsam_acikla' "
+            "alanını öğrenciye/müdüre AÇIKLAYARAK ilet — sektör standardı."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "sorgu": {
+                    "type": "string",
+                    "description": "Universite + bolum (ornek: 'Bogazici Elektrik', 'ITU Bilgisayar', 'Cerrahpasa PDR')",
+                },
+                "puan_turu": {
+                    "type": "string",
+                    "enum": ["SAY", "EA", "SOZ", "DIL"],
+                    "description": "Puan turu (varsayilan SAY)",
+                    "default": "SAY",
+                },
+            },
+            "required": ["sorgu"],
+        },
+    },
+    {
         "name": "siralama_ile_bolumler",
         "description": (
             "TERCİH ROBOTU tool'u. 'X siralama ile hangi bolumlere girerim' sorusu icin. "

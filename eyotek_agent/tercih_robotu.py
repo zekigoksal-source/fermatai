@@ -576,6 +576,109 @@ async def universite_taban_sorgu(
     }
 
 
+async def universite_taban_trend(
+    sorgu: str,
+    puan_turu: str = "SAY",
+) -> dict:
+    """25.46+ (Neo 17 May, Duygu mudur vakasi 20:22-20:24):
+    Bir program icin TUM yillarin verisini TEK CAGRIDA doner — Claude'un
+    yil bazli ardisik tool cagrisindan kacinmasi icin. Cizgi grafik
+    hazirlamaya direkt uygun format.
+
+    DONUS:
+      - sorgu, eslesen_program, puan_turu
+      - yillar: [{yil, taban_puan, siralama, kontenjan, doluluk_orani}, ...]
+      - kapsam_acikla: YÖK Atlas resmi API'sinin 4-yil limit aciklamasi
+
+    NOT: YÖK Atlas resmi API'si sadece son 4 yil veri tutar (2022-2025).
+    Pre-2022 (2010-2021) tarihsel veri ÖSYM Tercih Kilavuzu PDF
+    arsivlerinde mevcuttur, sistemimizde yoktur. Bu sektor standardidir:
+    profesyonel rehberlik 3-4 yil trendini referans alir.
+    """
+    from db_pool import db_fetch
+
+    puan_turu = _normalize_puan_turu(puan_turu)
+    sorgu_clean = (sorgu or "").strip().lower()
+    if not sorgu_clean:
+        return {"error": "Sorgu bos. Universite + bolum yaz (ornek: 'Bogazici Elektrik').",
+                "kapsam_acikla": _YILLIK_KAPSAM_ACIKLA}
+
+    # Once en iyi eslesmeyi bul (en guncel yil)
+    en_iyi = await db_fetch(
+        """
+        SELECT universite, bolum, sehir, tur, puan_turu, yil
+        FROM fermat.universite_taban
+        WHERE puan_turu = $1
+          AND (
+            unaccent(lower(universite)) ILIKE unaccent(lower($2))
+            OR unaccent(lower(bolum)) ILIKE unaccent(lower($2))
+            OR (unaccent(lower(universite || ' ' || bolum)) ILIKE unaccent(lower($2)))
+          )
+        ORDER BY yil DESC, taban_puan DESC
+        LIMIT 5
+        """,
+        puan_turu, f"%{sorgu_clean}%",
+    )
+    if not en_iyi:
+        return {
+            "sorgu": sorgu, "puan_turu": puan_turu, "bulundu": False,
+            "mesaj": f"'{sorgu}' icin {puan_turu} programi bulunamadi.",
+            "kapsam_acikla": _YILLIK_KAPSAM_ACIKLA,
+        }
+
+    # En cok eslesen ilk satiri al — universite + bolum sabit, tum yillarini cek
+    hedef = en_iyi[0]
+    yil_rows = await db_fetch(
+        """
+        SELECT yil, taban_puan, siralama, kontenjan, doluluk_orani
+        FROM fermat.universite_taban
+        WHERE universite = $1 AND bolum = $2 AND puan_turu = $3
+        ORDER BY yil ASC
+        """,
+        hedef["universite"], hedef["bolum"], puan_turu,
+    )
+
+    return {
+        "sorgu": sorgu,
+        "eslesen_program": {
+            "universite": hedef["universite"],
+            "bolum": hedef["bolum"],
+            "sehir": hedef["sehir"],
+            "tur": hedef["tur"],
+            "puan_turu": puan_turu,
+        },
+        "bulundu": True,
+        "yil_sayisi": len(yil_rows),
+        "yillar": [
+            {
+                "yil": r["yil"],
+                "taban_puan": float(r["taban_puan"]) if r["taban_puan"] else None,
+                "siralama": int(r["siralama"]) if r["siralama"] else None,
+                "kontenjan": int(r["kontenjan"]) if r["kontenjan"] else None,
+                "doluluk_orani": float(r["doluluk_orani"]) if r["doluluk_orani"] else None,
+            }
+            for r in yil_rows
+        ],
+        "alternatif_eslesmeler": [
+            {"universite": r["universite"], "bolum": r["bolum"]}
+            for r in en_iyi[1:5]
+        ] if len(en_iyi) > 1 else [],
+        "kapsam_acikla": _YILLIK_KAPSAM_ACIKLA,
+    }
+
+
+# 25.46+ (Neo 17 May): YOK Atlas API limit aciklamasi — bot KVKK gibi
+# "bizde yok" yerine "kaynak limiti" der. Duygu mudur "2010'a kadar" diye
+# sordugunda bot uydurma yapmasin.
+_YILLIK_KAPSAM_ACIKLA = (
+    "YÖK Atlas resmi API'si current yıl + son 3 yıl olmak üzere toplam 4 "
+    "yıl veri tutar (2022-2025). Pre-2022 (2010-2021) veriler resmi API "
+    "veya web sitesinde mevcut DEĞİL — sadece ÖSYM Tercih Kılavuzu PDF "
+    "arşivlerinde bulunabilir. Bu sektör standardıdır: profesyonel "
+    "rehberlik genelde 3-4 yıllık trend üzerinden çalışır."
+)
+
+
 async def siralama_ile_bolumler(
     siralama: int,
     puan_turu: str = "SAY",
@@ -862,6 +965,26 @@ KURALLAR:
 
 8. YÖK Atlas verileri (universite_taban, 35.584 kayıt) senin ana kaynağın.
    Uydurma yapma — her önerinde taban puan + sıralama + şehir net olsun.
+
+9. KAPSAM — YÖK Atlas API resmi limit (25.46+, Duygu mudur vakası 17 May):
+   • DB'de SADECE 2022-2025 (4 yıl) YÖK Atlas verisi var. Bu rastgele
+     değil — yokatlas.yok.gov.tr resmi API'si kod seviyesinde current+3
+     history modeli kullanıyor. yokatlas-py library v3+ teyit ediyor.
+   • Pre-2022 (2010-2021) veri RESMI API'DE YOK. Sadece ÖSYM Tercih
+     Kılavuzu PDF arşivlerinde mevcut. Sistemimizde DE yok, indirilebilir
+     yapısal kaynak DA yok.
+   • Kullanıcı "10 yıllık", "2010'dan beri", "2018-2025 trend" isterse
+     KESIN cevap: "YÖK Atlas resmi API sadece son 4 yıl tutar (2022-2025),
+     bu sektör standardıdır. Profesyonel tercih danışmanlığı genelde 3-4
+     yıllık trendle çalışır — eski yıllar müfredat+sistem değişiklikleri
+     nedeniyle güvenilir karşılaştırma vermez (2018 TYT/AYT, öncesi LYS)."
+   • Kullanıcıya alternatif: ÖSYM Tercih Kılavuzu PDF (yıl bazlı) →
+     osym.gov.tr arşiv sayfası. Manuel.
+   • Çoklu yıl sorulduğunda universite_taban_trend TOOL'unu KULLAN —
+     tek çağrıda 4 yıl döner, çizgi grafik için chart fence ile çiz.
+
+10. YANLIS YOL: "Veri sisteme yüklenmemiş 😔" — bu kullanıcıya hatamız
+    izlenimi verir. DOĞRU: "Resmi kaynağın limiti, sistem standartı."
 ═══════════════════════════════════════════════════════════════════════════════
 """
 

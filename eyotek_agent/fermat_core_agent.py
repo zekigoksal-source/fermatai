@@ -1506,6 +1506,8 @@ TOOL_DISPATCH = {
     # 25.40k (Neo) — sezon-bagimsiz YOK Atlas dispatch
     "universite_taban_sorgu":     lambda p: _tool_universite_taban_sorgu(**p),
     "siralama_ile_bolumler":      lambda p: _tool_siralama_ile_bolumler(**p),
+    # 25.46+ (Neo 17 May, Duygu mudur vakasi): tek programin 4 yil trendi
+    "universite_taban_trend":     lambda p: _tool_universite_taban_trend(**p),
     # ── Oturum 25.9 — ADAPTIVE INTELLIGENCE / PREDICTIVE / KG ──
     "predict_yks_score":          lambda p: _tool_predict_yks_score(**p),
     "get_adaptive_summary":       lambda p: _tool_get_adaptive_summary(**p),
@@ -2402,6 +2404,8 @@ from tools.tercih import (
     # 25.40k (Neo) — sezon-bagimsiz YOK Atlas
     _tool_universite_taban_sorgu,
     _tool_siralama_ile_bolumler,
+    # 25.46+ (Neo 17 May) — tek programin 4 yil trendi
+    _tool_universite_taban_trend,
 )
 
 
