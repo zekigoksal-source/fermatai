@@ -119,40 +119,54 @@ function setStatus(text, cls) {
     statusEl.className = 'status' + (cls ? ' ' + cls : '');
 }
 
-// ─── STOCKFISH (PRIMARY, ~3000 ELO) ───
+// ─── STOCKFISH (PRIMARY, ~3000 ELO) — ASYNC LOAD ───
+// 25.46+ (Neo screenshot 17 May): 8sn timeout yetersiz, mobile'da 15-25sn lazim.
+// Yeni mantik: minimax HEMEN aktif (kullanici beklemez), Stockfish hazir olunca
+// arka planda seamless gecis (engine pill ULTIMATE'a donusur).
 function initStockfish() {
+    // Minimax'i hemen baslat (kullanici hamle yapabilsin)
+    enginePill.textContent = 'YÜKLENİYOR';
+    setStatus('Hamleni yap ⚪ (motor arka planda hazırlanıyor)', '');
+
     try {
-        // Lokal host (cross-origin SORUN YOK)
+        console.log('[FermatAI] Stockfish init basliyor...');
         stockfish = new Worker('/static/games/lib/stockfish.js');
         stockfish.onmessage = function(e) {
             const line = (typeof e.data === 'string') ? e.data : '';
             if (line === 'uciok') {
+                console.log('[FermatAI] Stockfish uci OK');
                 stockfish.postMessage('setoption name Skill Level value 20');
                 stockfish.postMessage('isready');
             } else if (line === 'readyok') {
+                console.log('[FermatAI] Stockfish READY — Ultimate aktif');
                 stockfishReady = true;
                 useStockfish = true;
                 enginePill.textContent = 'ULTIMATE 3000+';
-                setStatus('Hamleni yap — sen başlıyorsun ⚪', '');
+                enginePill.style.background = 'rgba(16,185,129,0.15)';
+                enginePill.style.color = '#10B981';
+                enginePill.style.borderColor = 'rgba(16,185,129,0.4)';
+                if (!aiThinking && game.turn() === 'w' && !game.game_over()) {
+                    setStatus('Hamleni yap ⚪ — ULTIMATE motor hazır 🔥', '');
+                }
             } else if (line.startsWith('bestmove')) {
                 const move = line.split(' ')[1];
                 handleAIMove(move);
             }
         };
         stockfish.onerror = function(err) {
-            console.warn('Stockfish hata, minimax fallback:', err);
+            console.error('[FermatAI] Stockfish ERROR:', err);
             stockfishFallback();
         };
         stockfish.postMessage('uci');
-        // 8 saniye içinde hazır olmazsa fallback
+        // 30 saniye içinde hazır olmazsa fallback (mobile 3G icin)
         setTimeout(() => {
             if (!stockfishReady) {
-                console.warn('Stockfish timeout, minimax fallback');
+                console.warn('[FermatAI] Stockfish 30sn timeout, GÜÇLÜ modda devam');
                 stockfishFallback();
             }
-        }, 8000);
+        }, 30000);
     } catch (err) {
-        console.warn('Stockfish init fail, minimax fallback:', err);
+        console.error('[FermatAI] Stockfish init exception:', err);
         stockfishFallback();
     }
 }
@@ -161,7 +175,9 @@ function stockfishFallback() {
     if (useStockfish && stockfishReady) return;
     useStockfish = false;
     enginePill.textContent = 'GÜÇLÜ';
-    setStatus('Hamleni yap ⚪', '');
+    if (game.turn() === 'w' && !game.game_over() && !aiThinking) {
+        setStatus('Hamleni yap ⚪', '');
+    }
 }
 
 // ─── MINIMAX (FALLBACK ~1700 ELO) ───
@@ -242,7 +258,8 @@ function aiTurn() {
     aiThinking = true;
     setStatus('FermatAI düşünüyor 🧠', 'thinking');
 
-    if (useStockfish && stockfishReady) {
+    // Stockfish hazırsa onu kullan, değilse minimax (kullanıcı bekletme yok)
+    if (stockfishReady && stockfish) {
         stockfish.postMessage('position fen ' + game.fen());
         stockfish.postMessage('go depth ' + STOCKFISH_DEPTH + ' movetime ' + STOCKFISH_MOVETIME);
     } else {
