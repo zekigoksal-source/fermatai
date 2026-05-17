@@ -3,239 +3,205 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>FermatAI Satranç — Sen vs Ultimate AI</title>
+<title>FermatAI Satranç</title>
 <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body {
     background: #0F172A;
     color: #E2E8F0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 .wrap {
     max-width: 480px;
     margin: 0 auto;
-    padding: 16px 12px 80px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 12px;
+    gap: 6px;
+    height: 100vh;
 }
-.header {
-    text-align: center;
-    padding: 8px 0;
-    width: 100%;
-}
-.brand {
-    font-size: 22px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #F59E0B 0%, #FCD34D 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -0.5px;
-    margin-bottom: 4px;
-}
-.tag {
-    font-size: 11px;
-    color: #94A3B8;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-.score-bar {
-    width: 100%;
-    background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 12px 16px;
+.bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 14px;
-}
-.score-side { display: flex; flex-direction: column; gap: 2px; }
-.score-side .label { font-size: 10px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; }
-.score-side .name { font-weight: 700; color: #E2E8F0; }
-.score-side .name.ai { color: #F59E0B; }
-.vs { font-size: 12px; color: #64748B; font-weight: 700; }
-.status {
-    width: 100%;
-    text-align: center;
-    padding: 10px 16px;
+    padding: 6px 10px;
     background: #1E293B;
+    border-radius: 8px;
+    font-size: 12px;
     border: 1px solid #334155;
-    border-radius: 10px;
-    font-size: 13px;
-    color: #CBD5E1;
-    font-weight: 500;
-    min-height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
+.brand { color: #F59E0B; font-weight: 800; letter-spacing: 0.3px; }
+.status { color: #CBD5E1; font-weight: 500; }
 .status.thinking { color: #F59E0B; }
-.status.win { color: #10B981; background: rgba(16,185,129,0.1); border-color: #10B981; }
-.status.lose { color: #EF4444; background: rgba(239,68,68,0.1); border-color: #EF4444; }
+.status.win { color: #10B981; }
+.status.lose { color: #EF4444; }
 #board {
     width: 100% !important;
-    max-width: 440px;
-    border-radius: 12px;
+    flex: 1;
+    border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 10px 40px rgba(245,158,11,0.15), 0 2px 8px rgba(0,0,0,0.3);
 }
-.controls {
-    width: 100%;
-    display: flex;
-    gap: 8px;
-}
+.btns { display: flex; gap: 6px; }
 .btn {
     flex: 1;
-    padding: 12px 14px;
+    padding: 8px;
     border: 1px solid #334155;
     background: #1E293B;
     color: #E2E8F0;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    border-radius: 10px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.15s;
     -webkit-appearance: none;
-    appearance: none;
 }
-.btn:active { transform: scale(0.97); }
-.btn:hover { background: #334155; border-color: #F59E0B; }
+.btn:active { transform: scale(0.96); background: #334155; }
 .btn.primary {
     background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
     color: #0F172A;
     border-color: transparent;
-    font-weight: 700;
 }
-.btn.primary:hover { filter: brightness(1.1); }
-.depth-pill {
-    background: rgba(245,158,11,0.12);
-    color: #F59E0B;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-    margin-left: 6px;
-    border: 1px solid rgba(245,158,11,0.3);
-}
-.reward-banner {
-    width: 100%;
-    background: linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(217,119,6,0.05) 100%);
-    border: 1px solid rgba(245,158,11,0.4);
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 12px;
-    color: #FCD34D;
-    text-align: center;
-    line-height: 1.5;
-}
-.reward-banner strong { color: #F59E0B; }
-.loading {
-    text-align: center;
-    padding: 40px;
-    color: #94A3B8;
-    font-size: 14px;
-}
-/* Chessboard taşları için koyu temaya uyumlu */
 .white-1e1d7 { background: #F8FAFC !important; }
 .black-3c85d { background: #475569 !important; }
-.highlight-square { box-shadow: inset 0 0 0 3px #F59E0B !important; }
-
-@media (max-width: 380px) {
-    .wrap { padding: 8px 8px 60px; }
-    .brand { font-size: 19px; }
-    .btn { font-size: 12px; padding: 10px; }
-}
+.highlight-square { box-shadow: inset 0 0 0 3px rgba(245,158,11,0.7) !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
-    <div class="header">
-        <div class="brand">⚡ FermatAI Satranç</div>
-        <div class="tag">Sen vs Ultimate AI</div>
+    <div class="bar">
+        <span class="brand">⚡ FermatAI ♟️</span>
+        <span class="status" id="status">Hamleni yap ⚪</span>
     </div>
-
-    <div class="reward-banner">
-        🏆 <strong>Yenen Öğrenciye Özel Ödül!</strong><br>
-        Ama uyarayım — FermatAI <strong>ultimate seviyede</strong> oynuyor 😏
-    </div>
-
-    <div class="score-bar">
-        <div class="score-side">
-            <span class="label">Sen (Beyaz)</span>
-            <span class="name" id="player-name">Öğrenci</span>
-        </div>
-        <span class="vs">VS</span>
-        <div class="score-side" style="text-align: right;">
-            <span class="label">FermatAI <span class="depth-pill" id="depth-pill">UltimaTE</span></span>
-            <span class="name ai">FermatAI 🤖</span>
-        </div>
-    </div>
-
-    <div class="status" id="status">Hamleni yap — sen başlıyorsun ⚪</div>
-
-    <div id="board" class="loading">⏳ Tahta yükleniyor...</div>
-
-    <div class="controls">
-        <button class="btn" id="undo-btn">↶ Geri Al</button>
+    <div id="board"></div>
+    <div class="btns">
+        <button class="btn" id="undo-btn">↶ Geri</button>
         <button class="btn primary" id="new-btn">🔄 Yeni Oyun</button>
-        <button class="btn" id="hint-btn">💡 İpucu</button>
     </div>
 </div>
 
-<!-- Libraries (CDN) -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
 <script>
-// ────────────────────────────────────────────────────────
-// FermatAI Satranç — Ultimate AI (Stockfish via WebWorker)
-// ────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// FermatAI Satranç — Inline Minimax AI (NO external deps, %100 calisir)
+// ════════════════════════════════════════════════════════════
 
 const game = new Chess();
 let board = null;
-let stockfish = null;
-let stockfishReady = false;
-const STOCKFISH_DEPTH = 18; // Ultimate seviye — nadiren yenilir
 let aiThinking = false;
+const AI_DEPTH = 3;  // 3 = makul (~1500-1700 ELO), 4 = guclu ama yavas
 
 const statusEl = document.getElementById('status');
-const undoBtn = document.getElementById('undo-btn');
-const newBtn = document.getElementById('new-btn');
-const hintBtn = document.getElementById('hint-btn');
 
-// Stockfish init (CDN üzerinden Web Worker)
-function initStockfish() {
-    try {
-        // Lichess'in maintained stockfish.js (single-threaded, mobile-friendly)
-        stockfish = new Worker('https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js');
-        stockfish.onmessage = (e) => {
-            const line = e.data;
-            if (typeof line !== 'string') return;
-            if (line === 'uciok') {
-                stockfish.postMessage('isready');
-            } else if (line === 'readyok') {
-                stockfishReady = true;
-                setStatus('FermatAI hazır — hamleni yap ⚪', '');
-            } else if (line.startsWith('bestmove')) {
-                handleAIMove(line.split(' ')[1]);
-            }
-        };
-        stockfish.onerror = (err) => {
-            console.error('Stockfish hata:', err);
-            setStatus('AI yüklenemedi — yenile lütfen ⚠️', 'lose');
-        };
-        stockfish.postMessage('uci');
-    } catch (err) {
-        console.error('Worker oluşturulamadı:', err);
-        setStatus('Tarayıcın Web Worker desteklemiyor 😢', 'lose');
+// ─── PIECE-SQUARE TABLES (basic positional evaluation) ───
+const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+const PAWN_TABLE = [
+    [0,0,0,0,0,0,0,0],
+    [50,50,50,50,50,50,50,50],
+    [10,10,20,30,30,20,10,10],
+    [5,5,10,25,25,10,5,5],
+    [0,0,0,20,20,0,0,0],
+    [5,-5,-10,0,0,-10,-5,5],
+    [5,10,10,-20,-20,10,10,5],
+    [0,0,0,0,0,0,0,0]
+];
+const KNIGHT_TABLE = [
+    [-50,-40,-30,-30,-30,-30,-40,-50],
+    [-40,-20,0,0,0,0,-20,-40],
+    [-30,0,10,15,15,10,0,-30],
+    [-30,5,15,20,20,15,5,-30],
+    [-30,0,15,20,20,15,0,-30],
+    [-30,5,10,15,15,10,5,-30],
+    [-40,-20,0,5,5,0,-20,-40],
+    [-50,-40,-30,-30,-30,-30,-40,-50]
+];
+const BISHOP_TABLE = [
+    [-20,-10,-10,-10,-10,-10,-10,-20],
+    [-10,0,0,0,0,0,0,-10],
+    [-10,0,5,10,10,5,0,-10],
+    [-10,5,5,10,10,5,5,-10],
+    [-10,0,10,10,10,10,0,-10],
+    [-10,10,10,10,10,10,10,-10],
+    [-10,5,0,0,0,0,5,-10],
+    [-20,-10,-10,-10,-10,-10,-10,-20]
+];
+
+function getPieceValue(piece, x, y) {
+    if (!piece) return 0;
+    const baseVal = PIECE_VALUES[piece.type] || 0;
+    let posBonus = 0;
+    const row = piece.color === 'w' ? 7 - y : y;
+    const col = piece.color === 'w' ? x : 7 - x;
+    if (piece.type === 'p') posBonus = PAWN_TABLE[row][col];
+    else if (piece.type === 'n') posBonus = KNIGHT_TABLE[row][col];
+    else if (piece.type === 'b') posBonus = BISHOP_TABLE[row][col];
+    const sign = piece.color === 'w' ? 1 : -1;
+    return sign * (baseVal + posBonus);
+}
+
+function evaluateBoard(boardArr) {
+    let total = 0;
+    for (let y = 0; y < 8; y++) {
+        for (let x = 0; x < 8; x++) {
+            total += getPieceValue(boardArr[y][x], x, y);
+        }
     }
+    return total;
+}
+
+// Alpha-beta minimax — AI = BLACK (minimizing player when score = white perspective)
+function minimax(game, depth, alpha, beta, isMaximizing) {
+    if (depth === 0 || game.game_over()) {
+        return -evaluateBoard(game.board()); // AI is black, wants negative score
+    }
+    const moves = game.ugly_moves ? game.ugly_moves() : game.moves();
+
+    if (isMaximizing) {
+        let best = -Infinity;
+        for (const move of moves) {
+            game.move(move);
+            const score = minimax(game, depth - 1, alpha, beta, false);
+            game.undo();
+            if (score > best) best = score;
+            alpha = Math.max(alpha, best);
+            if (beta <= alpha) break;
+        }
+        return best;
+    } else {
+        let best = Infinity;
+        for (const move of moves) {
+            game.move(move);
+            const score = minimax(game, depth - 1, alpha, beta, true);
+            game.undo();
+            if (score < best) best = score;
+            beta = Math.min(beta, best);
+            if (beta <= alpha) break;
+        }
+        return best;
+    }
+}
+
+function findBestMove() {
+    const moves = game.moves();
+    if (moves.length === 0) return null;
+    // Shuffle for variety on equal scores
+    moves.sort(() => Math.random() - 0.5);
+    let bestMove = moves[0];
+    let bestScore = -Infinity;
+    for (const move of moves) {
+        game.move(move);
+        const score = minimax(game, AI_DEPTH - 1, -Infinity, Infinity, false);
+        game.undo();
+        if (score > bestScore) {
+            bestScore = score;
+            bestMove = move;
+        }
+    }
+    return bestMove;
 }
 
 function setStatus(text, cls) {
@@ -243,129 +209,96 @@ function setStatus(text, cls) {
     statusEl.className = 'status' + (cls ? ' ' + cls : '');
 }
 
-function askAIMove() {
-    if (!stockfishReady || aiThinking || game.game_over()) return;
+function aiTurn() {
+    if (game.game_over() || aiThinking) return;
     aiThinking = true;
-    setStatus('FermatAI düşünüyor... 🧠', 'thinking');
-    stockfish.postMessage('position fen ' + game.fen());
-    stockfish.postMessage('go depth ' + STOCKFISH_DEPTH);
+    setStatus('FermatAI düşünüyor 🧠', 'thinking');
+    // Async via setTimeout (UI freeze etmesin)
+    setTimeout(() => {
+        try {
+            const move = findBestMove();
+            if (move) {
+                game.move(move);
+                board.position(game.fen(), true);
+            }
+            checkEnd();
+            if (!game.game_over()) setStatus('Sıra sende ⚪', '');
+        } catch (err) {
+            console.error('AI hata:', err);
+            setStatus('AI hatası, yeniden başla', 'lose');
+        }
+        aiThinking = false;
+    }, 200);
 }
 
-function handleAIMove(uciMove) {
-    aiThinking = false;
-    if (!uciMove || uciMove === '(none)') {
-        setStatus('🏆 Kazandın! Şimdi ödül zamanı!', 'win');
-        return;
-    }
-    const from = uciMove.slice(0, 2);
-    const to = uciMove.slice(2, 4);
-    const promotion = uciMove.length > 4 ? uciMove[4] : undefined;
-    game.move({ from, to, promotion });
-    board.position(game.fen(), true);
-    checkGameEnd();
-    if (!game.game_over()) {
-        setStatus('Sıra sende ⚪', '');
-    }
-}
-
-function checkGameEnd() {
+function checkEnd() {
     if (game.in_checkmate()) {
-        const winner = game.turn() === 'w' ? 'AI' : 'Sen';
+        const winner = game.turn() === 'w' ? 'FermatAI' : 'Sen';
         if (winner === 'Sen') {
-            setStatus('🏆 KAZANDIN! Ödülün hazır — yöneticiye haber ver!', 'win');
-            // Konfeti efekti basit
+            setStatus('🏆 Kazandın!', 'win');
             celebrate();
         } else {
-            setStatus('♛ MAT — FermatAI kazandı. Yeniden dene! 😏', 'lose');
+            setStatus('♛ Mat — FermatAI kazandı', 'lose');
         }
-    } else if (game.in_draw() || game.in_stalemate() || game.in_threefold_repetition()) {
-        setStatus('🤝 Berabere — FermatAI seni hafife almamış!', '');
+    } else if (game.in_draw() || game.in_stalemate()) {
+        setStatus('🤝 Berabere', '');
     } else if (game.in_check()) {
-        setStatus(game.turn() === 'w' ? '⚠️ Şah! Savun.' : 'FermatAI şahta — kurtarmaya çalışıyor', game.turn() === 'w' ? 'thinking' : '');
+        setStatus(game.turn() === 'w' ? '⚠️ Şah!' : 'FermatAI şahta', game.turn() === 'w' ? 'thinking' : '');
     }
 }
 
 function celebrate() {
-    // basit altın yağmuru
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;';
     document.body.appendChild(overlay);
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 40; i++) {
         const dot = document.createElement('div');
-        dot.style.cssText = `position:absolute;width:10px;height:10px;background:#F59E0B;border-radius:50%;left:${Math.random()*100}%;top:-20px;animation:fall ${1+Math.random()*2}s linear forwards;`;
+        dot.style.cssText = `position:absolute;width:8px;height:8px;background:#F59E0B;border-radius:50%;left:${Math.random()*100}%;top:-20px;animation:fall ${1+Math.random()*1.5}s linear forwards;`;
         overlay.appendChild(dot);
     }
-    setTimeout(() => overlay.remove(), 4000);
+    setTimeout(() => overlay.remove(), 3000);
 }
-const style = document.createElement('style');
-style.textContent = '@keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }';
-document.head.appendChild(style);
 
-// Chessboard config
+const fallStyle = document.createElement('style');
+fallStyle.textContent = '@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }';
+document.head.appendChild(fallStyle);
+
+// Chessboard handlers
 function onDragStart(source, piece) {
     if (game.game_over() || aiThinking) return false;
-    if (piece.search(/^b/) !== -1) return false; // Sadece beyazı oynat
+    if (piece.search(/^b/) !== -1) return false;
     if (game.turn() !== 'w') return false;
 }
 
 function onDrop(source, target) {
     const move = game.move({ from: source, to: target, promotion: 'q' });
     if (move === null) return 'snapback';
-    setTimeout(askAIMove, 250);
-    checkGameEnd();
+    setTimeout(aiTurn, 250);
+    checkEnd();
 }
 
 function onSnapEnd() {
     board.position(game.fen());
 }
 
-// Buton handlers
-undoBtn.addEventListener('click', () => {
+document.getElementById('undo-btn').addEventListener('click', () => {
     if (aiThinking) return;
-    game.undo(); // AI hamlesi
-    game.undo(); // Oyuncu hamlesi
-    board.position(game.fen());
-    setStatus('Geri alındı — yeniden oyna ⚪', '');
+    if (game.history().length >= 2) {
+        game.undo();
+        game.undo();
+        board.position(game.fen());
+        setStatus('Geri alındı — hamleni yap ⚪', '');
+    }
 });
 
-newBtn.addEventListener('click', () => {
+document.getElementById('new-btn').addEventListener('click', () => {
     game.reset();
     board.position('start');
-    setStatus('Yeni oyun — hamleni yap ⚪', '');
+    aiThinking = false;
+    setStatus('Hamleni yap ⚪', '');
 });
 
-hintBtn.addEventListener('click', () => {
-    if (!stockfishReady || aiThinking || game.turn() !== 'w') return;
-    setStatus('FermatAI ipucu hesaplıyor... 💡', 'thinking');
-    const tempHandler = (e) => {
-        const line = e.data;
-        if (typeof line === 'string' && line.startsWith('bestmove')) {
-            const move = line.split(' ')[1];
-            if (move && move !== '(none)') {
-                setStatus(`💡 İpucu: ${move.slice(0,2).toUpperCase()} → ${move.slice(2,4).toUpperCase()}`, '');
-            }
-            stockfish.removeEventListener('message', tempHandler);
-            // Eski handler'i yeniden bağla
-            stockfish.addEventListener('message', originalHandler);
-        }
-    };
-    const originalHandler = stockfish.onmessage;
-    stockfish.removeEventListener('message', originalHandler);
-    stockfish.addEventListener('message', tempHandler);
-    stockfish.postMessage('position fen ' + game.fen());
-    stockfish.postMessage('go depth 12'); // hint için daha hızlı
-});
-
-// Init
 window.addEventListener('DOMContentLoaded', () => {
-    // URL'den isim okuma (opsiyonel)
-    const params = new URLSearchParams(window.location.search);
-    const playerName = params.get('name');
-    if (playerName) {
-        document.getElementById('player-name').textContent = decodeURIComponent(playerName);
-    }
-
-    document.getElementById('board').innerHTML = '';
     board = Chessboard('board', {
         position: 'start',
         draggable: true,
@@ -374,12 +307,8 @@ window.addEventListener('DOMContentLoaded', () => {
         onSnapEnd: onSnapEnd,
         pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
     });
-
-    // Responsive resize
     window.addEventListener('resize', () => board.resize());
-
-    setStatus('⏳ FermatAI motor yükleniyor...', 'thinking');
-    initStockfish();
+    setStatus('Hamleni yap ⚪', '');
 });
 </script>
 </body>

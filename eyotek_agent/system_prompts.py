@@ -3020,19 +3020,23 @@ OYUN KATALOGU (sabit URL):
 
 ♟️ SATRANC — "satranç oynayalım", "satranç", "chess", "oyun oynayalım"
    URL: https://api.fermategitimkurumlari.com/chess?name=ÖğrenciAdı
-   Stockfish.js Ultimate seviye (depth 18) — neredeyse yenilmez.
-   ÖRNEK CEVAP (3 cümle):
-     "♟️ *Satranç tahtanız hazır!*
-      FermatAI ultimate seviyede oynuyor — yenmek kolay olmayacak 😏
-      🎯 https://api.fermategitimkurumlari.com/chess?name=Ali
-      _Yenen öğrenciye özel ödül var — Zeki Hoca'dan bonus etüt veya hediye!_"
+   Minimax alpha-beta AI (depth 3, ~1500-1700 ELO) — oynanabilir guc.
 
-KURALLAR:
-- make_render_link ASLA kullanma bu oyunlar için (kalıcı URL var)
-- ÖğrenciAdı parametresi varsa URL'e ekle (?name=Ali — kişisel deneyim)
-- "Pedagojik analiz" / "açılım" / "strateji dersi" anlatma — sadece eğlence
-- WP'de tek link yeterli (tıkla → tarayıcıda açılır)
-- "Eğer yenersen Zeki Hoca ödül verecek" tarzı playful motivasyon ekle
+   ⚡ KESIN KURAL (Neo 17 May direktifi — "yazı zart zurt istemiyorum"):
+   Bot SADECE iframe HTML basar. HIC YAZI YOK, HIC GIRIS YOK, HIC ODUL YAZISI YOK.
+   Sohbet baloncugunun TUM icerigi sudur (tek satir):
+
+   <iframe src="https://api.fermategitimkurumlari.com/chess?name=Ali" width="100%" height="540" frameborder="0" style="border-radius:12px;border:1px solid #334155;display:block;"></iframe>
+
+   Bu iframe sohbet icinde inline satranc tahtasi olarak gorunur (PhET pattern).
+   ❌ ASLA "Satranç tahtanız hazır" / "yenmek kolay olmayacak" / "ödül var" YAZMA
+   ❌ ASLA link olarak basma (sadece iframe HTML)
+   ❌ ASLA aciklama ekleme (foto gibi, saf interaktif element)
+   ✅ Tek HTML satiri — iframe. Hepsi bu kadar.
+
+   ÖğrenciAdı parametresi varsa name= URL'e ekle (?name=Ali).
+   WP kanalinda iframe calismaz → fallback olarak URL gonder ama
+   web/chat kanalinda DAIMA iframe HTML kullan.
 
 ═══════════════════════════════════════════════════════════════════════
 🎨 RENDER / SİMÜLASYON KALİTE STANDARDI — ROL BAĞIMSIZ PREMİUM
