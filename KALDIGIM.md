@@ -1,6 +1,66 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 17 Mayıs 2026 → **OTURUM 25.46+ KAPATILDI (MOBİL HEADER + CEREBRAS KIRIK PROMISE + YÖK ATLAS TREND TOOL) — NEO DEV ARASI, BOT SAĞLIKLI SERVE EDİYOR**
+> **Son güncelleme:** 18 Mayıs 2026 → **OTURUM 25.46+ DEVAM (HALÜSİNASYON GUARD + ATLAS-2 TRİYAJ + SELF-AWARENESS UPGRADE) — NEO DEV ARASI**
+>
+> ## 🟢 PROJE DURUMU (Snapshot — 25.46+ EXT, 18 May)
+>
+> - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync, +25 commit)
+> - **HEAD:** `2bfdda9` atlas(25.46+): self-awareness + kategori rotasyonu + code-aware filter
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, son restart 18 May, code_awareness.py canlıda (15 dosya / 237 fonksiyon indexed)
+>
+> ## 🎯 18 Mayıs Yapılanlar (4 commit)
+>
+> **A. Halüsinasyon Guard (commit `374a8b0`)** — Neo denetim sonucu: bot 4 iddiadan 2'si halüsinasyon, 1 stale, 1 eksik
+> - system_prompts.py'a 4 yeni kural (58 satır):
+>   - KURAL 1 — Zaman penceresi aşımı yasak ("yarın" tool sonucu → "sezon boyunca" demek yasak)
+>   - KURAL 2 — Stale data etiketleme (last_sync > 7 gün → "son senkron X tarihli")
+>   - KURAL 3 — Tool↔DB count cross-check (Eyotek N, DB 2N+ → "scrape eksik olabilir")
+>   - KURAL 4 — Liste eksik bırakılmasın (5 satır döndüyse 5'i sunulacak)
+>
+> **B. Atlas-2 21 Pending Triaj (commit `bab9042`)** — Neo: "süzgecinden geçer mantıklı olanları yap"
+> - UYGULA (1): #111 critical — `atlas/observer.py` 3 detector'a `AND phone NOT LIKE '9059900%'` filtresi (test hesapları metrik kirletiyordu)
+> - REJECT (4): #114, #115, #117, #118 — hepsi mevcut sistemde zaten var, neo_note ile açıklandı
+> - ARCHIVE (16): Apr-May 3 dönemi observer alarmları, 25.41+ commitlerinde domain çözüldü
+> - DB: 21 pending → 0 pending
+>
+> **C. Atlas Self-Awareness Upgrade (commit `2bfdda9`, 937 satır)** — Neo: "Atlas verimli olsun, boş öneri yapmasın, self-awareness AI ajanlarında kritik"
+> - **`atlas/code_awareness.py` YENI (280 satır):**
+>   - 15 kritik dosyayı indexler (system_prompts/fast_responses/conversation_*/fermat_core/llm_router etc.)
+>   - `grep_codebase(keywords)` — 1 saat TTL cache ile keyword arama
+>   - `build_codebase_context(problems)` — Atlas LLM prompt'a "MEVCUT KOD" bloğu inject
+>   - `verify_suggestion_novelty(suggestion)` — INSERT öncesi grep verdict (novel/likely_exists/definitely_exists)
+>   - Test verdict: "Sabit mesajlarda baglam yok" önerisi → `definitely_exists` (62 matches, 14 files) ✓
+> - **`atlas/categories.py` YENI (290 satır):**
+>   - 7 günlük kategori rotasyonu (Pzt frustration → Sal token → Çar routing → Per halüsinasyon → Cum dead_code → Cmt db_health → Pzr quality_drift)
+>   - Her kategori için özel detector + LLM odak prompt
+> - **`prompt_optimizer.py` modify (+90 satır):**
+>   - `analyze_and_suggest(category=None)` — günün kategorisi otomatik seçim
+>   - LLM'e code_context + focus_prompt enjekte
+>   - INSERT öncesi `verify_suggestion_novelty` → `definitely_exists` ise SKIP + arşiv kaydı
+>   - 10 yeni problem tipi formatı (token_duplicate, routing_*, hallucination_risk, db_*, dead_function)
+>
+> **D. Önceki Oturum (17 May, kapatılmıştı — özet):**
+> - `41d73b3` Mobil header sadeleştirme (FermatAI title + online dot, müdürde Çalışmam/⚙️ yok, tema toggle ikon-only)
+> - `e00b7dc` Cerebras kırık promise bug fix (data_fetch_skip + broken_promise_skip guards)
+> - `c03a627` universite_taban_trend tool + YÖK Atlas 4-yıl API limit farkındalığı
+> - `db10c63` KALDIGIM + BLUEPRINT güncelleme
+>
+> ## 📋 18 May Commit Zinciri
+>
+> ```
+> 374a8b0  guard: VERI YORUM HALUSINASYONU - 4 kesin kural (Neo denetim 18 May)
+> bab9042  atlas(25.46+): test phone filter (Atlas-2 #111 critical) + 20 pending oneri triyaji
+> 2bfdda9  atlas(25.46+): self-awareness + kategori rotasyonu + code-aware filter
+> ```
+>
+> ## 🔜 Sonraki Oturum Açıldığında
+>
+> - Bugün (Pzt) Atlas-2 ilk kez self-awareness ile çalışacak — sabah 02:00 cron tetiklemesinde category=`frustration_analizi` + code_awareness verify
+> - Yarın (Sal) ilk `token_efficiency` taraması — system_prompts.py duplikasyon yakalanırsa Neo'ya rapor gidecek
+> - VPS sağlık check yapıldı, sistem tertemiz
+> - Atlas verimlilik metriği: önümüzdeki 1 hafta filtered_already_exists oranı izlenmeli (hedef: 0'a yakın, çünkü Atlas artık kod-aware)
+>
+> ## 📚 ÖNCEKİ OTURUMLAR (kronolojik)
 >
 > ## 🟢 PROJE DURUMU (Snapshot — 25.46+ KAPANIŞ, 17 May 20:36)
 >

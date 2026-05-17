@@ -1,12 +1,47 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 17 Mayıs 2026 · **Oturum:** 25.46+ — Mobil Header + Cerebras Kırık Promise Guard + YÖK Atlas Trend Tool
+> **Belge tarihi:** 18 Mayıs 2026 · **Oturum:** 25.46+ EXT — Halüsinasyon Guard + Atlas-2 Self-Awareness + Kategori Rotasyonu
 >
-> ## 🟢 SON DURUM SNAPSHOT (25.46+, 17 May 20:36)
+> ## 🟢 SON DURUM SNAPSHOT (25.46+ EXT, 18 May)
 >
 > | Metrik | Değer |
 > |--------|-------|
-> | **VPS HEAD** | `c03a627` feat: universite_taban_trend + YOK Atlas 4-yil API farkindaligi |
+> | **VPS HEAD** | `2bfdda9` atlas(25.46+): self-awareness + kategori rotasyonu + code-aware filter |
+> | **Atlas-2 v2** | code_awareness + categories + pre-INSERT verify — Test verdict "definitely_exists" 62 matches/14 files ✓ |
+> | **Halüsinasyon guard** | system_prompts.py +4 kural (zaman penceresi/stale data/cross-check/liste eksik) |
+> | **Atlas-2 pending** | 0 (21 → triaj sonrası temizlendi) |
+> | **Code awareness index** | 15 dosya / 237 fonksiyon / 1229 KB total indexed |
+> | **Kategori rotasyonu** | 7 günlük (Pzt frustration → Sal token → Çar routing → Per halüsinasyon → Cum dead_code → Cmt db_health → Pzr quality) |
+>
+> ## 🆕 OTURUM 25.46+ EXT — Self-Awareness & Halüsinasyon (3 commit, 18 May)
+>
+> **A. Halüsinasyon Guard (`374a8b0`)** — Neo denetim: 4 iddiadan 2 halüsinasyon (94 etüt yerine 47, "sezon boyunca sadece bireysel" yalan, 165 saat 40 gün eski sync, 5 etüt yerine 2 listeleme)
+> - system_prompts.py'a `VERI YORUM HALUSINASYONU` bölümü (58 satır, AKSIYON HALUSINASYON'dan sonra)
+> - 4 kural: zaman penceresi aşımı yasak, stale data etiketle, tool↔DB cross-check, liste eksik bırakılmasın
+> - META: "X için HEP böyle/İLK KEZ/SADECE" iddiaları historical query gerektirir
+>
+> **B. Atlas-2 Triaj (`bab9042`)** — 21 pending → 0
+> - UYGULA (1): #111 test phone filter — `atlas/observer.py` 3 detector'a `phone NOT LIKE '9059900%'`
+> - REJECT (4): #114/#115/#117/#118 — kod tabanında zaten mevcut, neo_note yazıldı
+> - ARCHIVE (16): Apr-May 3 eski observer alarmları
+>
+> **C. Atlas-2 Self-Awareness Mimari (`2bfdda9`, 937 satır)**
+> - **`atlas/code_awareness.py`** (280 satır YENI):
+>   - 15 kritik dosya indexer (system_prompts/fast_responses/conversation_*/fermat_core/llm_router/sentiment/context/intent/tool_def/role_access/tercih/observer/advisor/prompt_optimizer)
+>   - `grep_codebase()` — 1h TTL cache, regex search
+>   - `build_codebase_context()` — Atlas LLM prompt'a "MEVCUT KOD" inject
+>   - `verify_suggestion_novelty()` — pre-INSERT verdict (novel/likely_exists/definitely_exists), match >=10 + files >=4 → SKIP + arşiv
+> - **`atlas/categories.py`** (290 satır YENI):
+>   - 7 günlük rotasyon (Pzt-Pzr)
+>   - 5 kategori-özel detector: `detect_token_efficiency_issues` (duplicate sentence scan), `detect_routing_balance_issues` (Claude >%35 alarm), `detect_hallucination_audit_issues` (regex sezon boyunca/ilk kez), `detect_db_health_issues` (stale table + huge table), `detect_dead_code_issues` (function call graph heuristik)
+>   - Her kategori için `get_category_focus_prompt()` LLM yönlendirmesi
+> - **`prompt_optimizer.py` extend** (+90 satır):
+>   - `analyze_and_suggest(category=None)` — today_category seçer
+>   - `_ask_groq_for_suggestion(problems, code_context, focus_prompt)` — code-aware injection
+>   - 10 yeni problem tipi formatlama
+>   - Return dict'e `category` + `filtered_already_exists` eklendi
+>
+> ## 🆕 OTURUM 25.46+ — Mobil Header + Cerebras Guard + YÖK Atlas (3 commit, 17 May)
 > | **Branch** | `claude/sweet-jemison-99ea7e` (main sync, +21 commit) |
 > | **Bridge Status** | HTTP 200, 4 uvicorn worker, son restart 20:34 (deploy) |
 > | **VPS donanım** | uptime 23g, load 0.09, RAM 12Gi free / 3.2Gi used (toplam 15Gi), disk %6 (272G free / 301G), swap=0 |
