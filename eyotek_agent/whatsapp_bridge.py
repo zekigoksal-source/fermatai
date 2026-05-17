@@ -4337,17 +4337,41 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                     "kimler katiliyor", "kimler katılıyor", "katilimci", "katılımcı",
                 ))
             )
+            # 25.46+ (Neo 18 May): admin/mudur/yonetim icin timeout gevsetmesi.
+            # Neo: "benimle konusmalarda gevset cunku cok iyi isler cikariyor"
+            # Tipik Neo seansi: kompleks pedagojik aciklama + multi-tool +
+            # ardisik render denemeleri. 5dk web limiti yetersiz kaliyordu.
+            # Yeni hedef (premium pool — admin/mudur/yonetim):
+            #   web:        normal 600s / kompleks_render 900s (eski 300/480)
+            #   agent_api:  normal 300s / kompleks 480s (eski 150/240)
+            #   whatsapp:   normal 150s / kompleks 240s (eski 90/120)
+            _premium_role = False
+            try:
+                _r = (profile or {}).get("role", "") if profile else ""
+                _premium_role = _r in ("admin", "mudur", "yonetim")
+            except Exception:
+                _premium_role = False
+
             if channel == "web":
-                _agent_timeout = 480.0 if _is_complex_render else 300.0
+                if _premium_role:
+                    _agent_timeout = 900.0 if _is_complex_render else 600.0
+                else:
+                    _agent_timeout = 480.0 if _is_complex_render else 300.0
             elif channel == "agent_api":
                 # Admin/dev path: WP UX kisitlamasi gecerli degil, expand_etut
                 # gibi uzun tool'lara izin ver.
-                _agent_timeout = 240.0 if (_is_complex_render or _is_etut_expand) else 150.0
+                if _premium_role:
+                    _agent_timeout = 480.0 if (_is_complex_render or _is_etut_expand) else 300.0
+                else:
+                    _agent_timeout = 240.0 if (_is_complex_render or _is_etut_expand) else 150.0
             else:
                 # WhatsApp UX: kisa tutmak gerek, expand_etut 150s'e cek
-                _agent_timeout = 150.0 if _is_etut_expand else (
-                    120.0 if _is_complex_render else 90.0
-                )
+                if _premium_role:
+                    _agent_timeout = 240.0 if (_is_etut_expand or _is_complex_render) else 150.0
+                else:
+                    _agent_timeout = 150.0 if _is_etut_expand else (
+                        120.0 if _is_complex_render else 90.0
+                    )
 
             # 25.46.2 (Neo 15 May): WhatsApp progressive text send callback
             # Tool dongusunde tool_use ile gelen text bloklarini ANINDA WP'ye at.
