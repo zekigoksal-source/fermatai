@@ -1790,9 +1790,33 @@ html[data-theme="dark"] .login-box .trust-footer .badge + .badge {
   padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--panel);
   display: flex; align-items: center; justify-content: space-between;
 }
-.chat-header .header-left { display: flex; align-items: center; gap: 12px; }
-.chat-header .title { font-size: 15px; font-weight: 500; color: var(--fg); }
-.chat-header .title .dot { display: inline-block; width: 8px; height: 8px; background: #5A8F5A; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+.chat-header .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.chat-header .title { font-size: 15px; font-weight: 500; color: var(--fg); display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+/* 25.46+ (Neo 17 May): Title yanindaki status dot — yesil=online, kirmizi=offline.
+   /health 30sn periyodla ping atilir, JS .title .dot uzerine .offline class koyar. */
+.chat-header .title .dot {
+  display: inline-block; width: 9px; height: 9px;
+  background: #5A8F5A; border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(90,143,90,0.55);
+  animation: title-dot-pulse 2.4s ease-out infinite;
+  flex-shrink: 0;
+  transition: background 0.4s ease;
+}
+.chat-header .title .dot.offline {
+  background: #D9534F;
+  box-shadow: 0 0 0 0 rgba(217,83,79,0.55);
+  animation: title-dot-pulse-off 2.4s ease-out infinite;
+}
+@keyframes title-dot-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(90,143,90,0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(90,143,90,0); }
+  100% { box-shadow: 0 0 0 0 rgba(90,143,90,0); }
+}
+@keyframes title-dot-pulse-off {
+  0% { box-shadow: 0 0 0 0 rgba(217,83,79,0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(217,83,79,0); }
+  100% { box-shadow: 0 0 0 0 rgba(217,83,79,0); }
+}
 .chat-header .user { font-size: 13px; color: var(--fg-muted); }
 .chat-header .user .logout { background: transparent; border: none; color: var(--fg-muted); cursor: pointer; margin-left: 12px; font-size: 13px; padding: 0; }
 .chat-header .user .logout:hover { color: var(--error); }
@@ -2194,9 +2218,20 @@ html[data-theme="dark"] .msg.bot.streaming::after {
 
 @media (max-width: 600px) {
   .msg { max-width: 90%; font-size: 14px; }
-  .chat-header { padding: 10px 12px; gap: 4px; }
-  .chat-header .header-left { gap: 8px; min-width: 0; flex: 1 1 auto; }
-  .chat-header .title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-header { padding: 10px 10px; gap: 4px; }
+  .chat-header .header-left { gap: 6px; min-width: 0; flex: 0 1 auto; }
+  /* 25.46+ (Neo 17 May): Title TAM gozuksun. font-size kucult, ellipsis kaldir.
+     Neo: "fermatai yazisi sigmiyor... FermatAI yazsin istiyorum basinda online iken yesil nokta" */
+  .chat-header .title { font-size: 13px; white-space: nowrap; overflow: visible; text-overflow: clip; flex-shrink: 0; }
+  .chat-header .title .dot { width: 8px; height: 8px; margin-right: 0; }
+  /* 25.46+ (Neo 17 May): Theme toggle mobilde IKON-ONLY — "Acik/Kapali" yazisi yok */
+  .chat-header .user .theme-toggle::after { display: none !important; }
+  .chat-header .user .theme-toggle {
+    padding: 6px 9px !important;
+    border-radius: 50% !important;
+    width: 32px; height: 32px;
+    justify-content: center;
+  }
   .chat-header .user {
     font-size: 12px;
     display: flex; align-items: center; gap: 4px;
@@ -2282,8 +2317,13 @@ html[data-theme="dark"] .msg.bot.streaming::after {
   .msg { max-width: 95%; font-size: 13px; padding: 10px 12px; }
   .chart-container { height: 200px; }
   #dashboardCards > div { grid-template-columns: 1fr !important; }
-  /* Daha dar: tema + eski insight modal ikonlari gizle (history drawer'da zaten var) */
-  .chat-header .user .theme-toggle { display: none; }
+  /* 25.46+ (Neo 17 May): Tema toggle artik IKON ONLY duruyor — gizleme.
+     Eski kural display:none idi, Neo "gunes/ay isareti gorunsun" dedi. */
+  .chat-header .user .theme-toggle {
+    width: 28px; height: 28px;
+    padding: 4px !important;
+    font-size: 14px !important;
+  }
   .chat-header .user .admin-btn { display: none !important; }
   /* 25.14h: ikonlar daha sıkı, marginleri minimuma çek */
   .chat-header .user .new-chat-btn,
@@ -8120,14 +8160,17 @@ function showChat(name) {
   if (role === "ogrenci") {
     loadDashboard();
   }
-  // Oturum 25.13: Öğrenci/Admin/Mudur — Çalışmam butonu görünür (admin başka öğrenci görüntüleyebilir)
+  // 25.46+ (Neo 17 May): "Calismam" SADECE ogrenci + admin (Neo dev icin). Mudur GORMEZ.
+  // Neo: "mudur ekraninda neden sari buton var, ders calisma test ekrani onu ben dev icin kullaniyorum
+  //       benim disimda sadece ogrencilerde fonksiyon olarak olacak"
   const studyBtn = document.getElementById("studyBtn");
-  if (studyBtn && (role === "ogrenci" || role === "admin" || role === "mudur")) {
+  if (studyBtn && (role === "ogrenci" || role === "admin")) {
     studyBtn.style.display = "inline-block";
   }
-  // 22.1n-vizyon3: Admin/Mudur ise admin butonunu göster
+  // 25.46+ (Neo 17 May): Gear/ayar ikonu SADECE admin gorur. Mudur kaldirildi.
+  // Neo: "disli isareti o sadece admin paneline ait olmasi gereken birsey baska bir kullanicida olamaz"
   const adminBtn = document.getElementById("adminBtn");
-  if (adminBtn && (role === "admin" || role === "mudur")) {
+  if (adminBtn && role === "admin") {
     adminBtn.style.display = "inline-block";
   }
   // 25.40 (Neo direktif): Yönetim Paneli butonu SADECE admin (Neo) görür.
@@ -8142,6 +8185,47 @@ function showChat(name) {
       restoreChatSnapshot();
     }
   } catch (e) {}
+  // 25.46+ (Neo 17 May): Sistem durumu nokta — /health ping ile yesil/kirmizi toggle.
+  // Title yanindaki .dot bot online ise yesil, offline ise kirmizi olur.
+  try { startHealthPolling(); } catch (e) {}
+}
+
+// 25.46+ (Neo 17 May): Sistem online/offline status polling
+let _healthTimer = null;
+async function pingHealth() {
+  const dot = document.querySelector(".chat-header .title .dot");
+  if (!dot) return;
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(API_BASE + "/health", { method: "GET", signal: ctrl.signal, cache: "no-store" });
+    clearTimeout(tid);
+    if (r.ok && navigator.onLine !== false) {
+      dot.classList.remove("offline");
+      dot.title = "Sistem online";
+    } else {
+      dot.classList.add("offline");
+      dot.title = "Sistem yanit vermiyor";
+    }
+  } catch (e) {
+    dot.classList.add("offline");
+    dot.title = "Sistem yanit vermiyor (network/timeout)";
+  }
+}
+function startHealthPolling() {
+  if (_healthTimer) return;
+  pingHealth();
+  _healthTimer = setInterval(pingHealth, 30000); // 30sn
+  // Network durumu degisirse aninda kontrol et
+  window.addEventListener("online",  pingHealth);
+  window.addEventListener("offline", () => {
+    const dot = document.querySelector(".chat-header .title .dot");
+    if (dot) { dot.classList.add("offline"); dot.title = "Internet yok"; }
+  });
+  // Sayfa focus aldiginda da tazele
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) pingHealth();
+  });
 }
 
 // ─── A4 — Öğrenci Dashboard Kartları ──────────────────────
