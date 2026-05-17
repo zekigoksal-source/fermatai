@@ -3938,8 +3938,28 @@ function formatMsg(text) {
 
       // DOMPurify — tüm pending div'lerine izin ver
       if (typeof DOMPurify !== "undefined") {
+        // 25.46+ (Neo 17 May satranç): iframe izin ver (src whitelist'li, hook ile filtrelenecek)
+        // Whitelist: api.fermategitimkurumlari.com (chess vs mini-game) + phet.colorado.edu + youtube
+        if (!window.__iframeHookAdded) {
+          window.__iframeHookAdded = true;
+          DOMPurify.addHook('uponSanitizeAttribute', function (node, data) {
+            if (node.nodeName === 'IFRAME' && data.attrName === 'src') {
+              const src = (data.attrValue || '').toLowerCase();
+              const allowedHosts = [
+                'api.fermategitimkurumlari.com',
+                'phet.colorado.edu',
+                'www.youtube.com', 'youtube.com', 'youtu.be',
+                'www.youtube-nocookie.com', 'youtube-nocookie.com',
+              ];
+              const isAllowed = allowedHosts.some(h => src.includes('//' + h + '/'));
+              if (!isAllowed) {
+                data.keepAttr = false;
+              }
+            }
+          });
+        }
         html = DOMPurify.sanitize(html, {
-          ADD_TAGS: ["span", "details", "summary"],
+          ADD_TAGS: ["span", "details", "summary", "iframe"],
           ADD_ATTR: ["class", "data-chart", "data-chart-idx", "data-sim", "data-sim-idx",
                      "data-threed", "data-threed-idx", "data-formula", "data-formula-idx",
                      "data-calc", "data-calc-idx",
@@ -3960,7 +3980,9 @@ function formatMsg(text) {
                      "data-quiz", "data-quiz-idx",
                      "data-compare2", "data-compare2-idx",
                      "data-recall", "data-recall-idx",
-                     "data-compound", "data-compound-idx", "open"],
+                     "data-compound", "data-compound-idx", "open",
+                     // 25.46+ iframe attributes (mini-game embed)
+                     "src", "width", "height", "frameborder", "allowfullscreen", "sandbox", "style", "loading", "title"],
           ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
         });
       }
