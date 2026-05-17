@@ -27,24 +27,38 @@ html, body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 10px;
+    padding: 8px 12px;
     background: #1E293B;
     border-radius: 8px;
     font-size: 12px;
     border: 1px solid #334155;
+    gap: 8px;
+    flex-wrap: nowrap;
+    min-width: 0;
 }
-.brand { color: #F59E0B; font-weight: 800; letter-spacing: 0.3px; font-size: 13px; }
+.bar-left { display: flex; align-items: center; gap: 6px; min-width: 0; flex-shrink: 1; }
+.brand { color: #F59E0B; font-weight: 800; letter-spacing: 0.3px; font-size: 13px; white-space: nowrap; }
 .engine-pill {
     background: rgba(245,158,11,0.12);
     color: #F59E0B;
-    padding: 2px 8px;
+    padding: 3px 8px;
     border-radius: 10px;
     font-size: 10px;
     font-weight: 700;
-    margin-left: 4px;
     border: 1px solid rgba(245,158,11,0.3);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
-.status { color: #CBD5E1; font-weight: 500; font-size: 11px; }
+.status {
+    color: #CBD5E1; font-weight: 500; font-size: 11px;
+    text-align: right; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; min-width: 0;
+}
+@media (max-width: 420px) {
+    .brand { font-size: 12px; }
+    .engine-pill { font-size: 9px; padding: 2px 6px; }
+    .status { font-size: 10px; }
+}
 .status.thinking { color: #F59E0B; }
 .status.win { color: #10B981; }
 .status.lose { color: #EF4444; }
@@ -82,8 +96,11 @@ html, body {
 <body>
 <div class="wrap">
     <div class="bar">
-        <span class="brand">⚡ FermatAI ♟️ <span class="engine-pill" id="engine-pill">YÜKLENİYOR</span></span>
-        <span class="status" id="status">Motor yükleniyor...</span>
+        <div class="bar-left">
+            <span class="brand">⚡ ♟️</span>
+            <span class="engine-pill" id="engine-pill">YÜKLENİYOR</span>
+        </div>
+        <span class="status" id="status">Hazırlanıyor...</span>
     </div>
     <div id="board"></div>
     <div class="btns">

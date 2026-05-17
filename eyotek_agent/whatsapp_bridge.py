@@ -1287,6 +1287,14 @@ except Exception as _rerr:
     import logging as _lg
     _lg.warning(f"render_endpoint router yuklenemedi: {_rerr}")
 
+# ── 25.46+ (Neo 17 May): Topluluk sohbet (QuitNow tarzı) ──
+try:
+    from topluluk_endpoint import router as _topluluk_router
+    app.include_router(_topluluk_router)
+except Exception as _terr:
+    import logging as _lg
+    _lg.warning(f"topluluk router yuklenemedi: {_terr}")
+
 # ── Static endpoints — audio (TTS) + pdf + anki + img (Oturum 25.34/25.38/25.40) ──
 try:
     from fastapi import FastAPI as _F
