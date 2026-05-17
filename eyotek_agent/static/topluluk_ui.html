@@ -262,6 +262,92 @@ html[data-theme="dark"] .role-pill.admin { color: #34D399; }
 }
 .toast.show { opacity: 1; }
 .toast.success { background: #10B981; }
+
+/* ─── PROFIL TAB (25.46+ nickname) ─── */
+.profile-pane {
+  flex: 1; overflow-y: auto;
+  padding: 16px 12px 24px;
+  -webkit-overflow-scrolling: touch;
+}
+.profile-card {
+  max-width: 480px; margin: 0 auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.profile-avatar {
+  align-self: center;
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: #FFFFFF; font-size: 30px; font-weight: 800;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(199,111,62,0.3);
+  text-transform: uppercase;
+}
+.profile-label {
+  font-size: 11px; color: var(--fg-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  font-weight: 600; margin-bottom: 5px;
+}
+.profile-real-section,
+.profile-display-section {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.profile-real-name {
+  font-size: 15px; font-weight: 600; color: var(--fg);
+}
+.profile-display-name {
+  font-size: 17px; font-weight: 700; color: var(--accent);
+}
+.profile-hint {
+  font-size: 11px; color: var(--fg-muted); margin-top: 4px;
+}
+.profile-form { display: flex; flex-direction: column; gap: 8px; }
+#nick-input {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 15px; color: var(--fg);
+  outline: 0; font-family: inherit;
+  transition: border-color 0.15s;
+}
+#nick-input:focus { border-color: var(--accent); }
+.profile-rules {
+  font-size: 10.5px; color: var(--fg-muted);
+  line-height: 1.45; padding: 0 2px;
+}
+.profile-actions {
+  display: flex; gap: 8px; margin-top: 4px;
+}
+.btn-primary, .btn-secondary {
+  flex: 1; padding: 11px;
+  border: 0; border-radius: 10px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--accent); color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(199,111,62,0.25);
+}
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-secondary {
+  background: transparent; color: var(--fg-muted);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--bg); color: var(--fg); }
+.profile-cooldown {
+  font-size: 11px; color: #EF4444;
+  text-align: center; min-height: 14px; font-weight: 500;
+}
 </style>
 </head>
 <body>
@@ -279,9 +365,9 @@ html[data-theme="dark"] .role-pill.admin { color: #34D399; }
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Tema değiştir">🌙</button>
     </div>
     <div class="tabs">
-      <button class="tab active" data-tab="sohbet">Sohbet</button>
+      <button class="tab active" data-tab="sohbet" onclick="switchTab('sohbet')">Sohbet</button>
       <button class="tab" data-tab="mention" disabled>Mention'lar</button>
-      <button class="tab" data-tab="profil" disabled>Profil</button>
+      <button class="tab" data-tab="profil" onclick="switchTab('profil')">Profil</button>
     </div>
   </div>
 
@@ -289,6 +375,34 @@ html[data-theme="dark"] .role-pill.admin { color: #34D399; }
     <div class="empty-state" id="empty-state">
       <div class="empty-state-icon">💬</div>
       <div>Yükleniyor...</div>
+    </div>
+  </div>
+
+  <!-- Profil tab içeriği -->
+  <div class="profile-pane" id="profile-pane" style="display:none;">
+    <div class="profile-card">
+      <div class="profile-avatar" id="profile-avatar">?</div>
+      <div class="profile-real-section">
+        <div class="profile-label">Gerçek Adın (sadece sen görürsün)</div>
+        <div class="profile-real-name" id="profile-real-name">—</div>
+      </div>
+      <div class="profile-display-section">
+        <div class="profile-label">Toplulukta nasıl görünüyorsun</div>
+        <div class="profile-display-name" id="profile-display-name">—</div>
+        <div class="profile-hint" id="profile-hint"></div>
+      </div>
+      <div class="profile-form">
+        <label for="nick-input" class="profile-label">Nickname (kendi adını seç)</label>
+        <input type="text" id="nick-input" placeholder="örn: enes_2025, mat_canavari, fizik_pro" maxlength="30" autocomplete="off">
+        <div class="profile-rules">
+          3-30 karakter · Harf/rakam/_/. · Boşluk yok · Küfür yok · "admin/bot/fermat" rezerve
+        </div>
+        <div class="profile-actions">
+          <button class="btn-secondary" id="nick-reset-btn" onclick="resetNickname()">Varsayılana Dön</button>
+          <button class="btn-primary" id="nick-save-btn" onclick="saveNickname()">Kaydet</button>
+        </div>
+        <div class="profile-cooldown" id="profile-cooldown"></div>
+      </div>
     </div>
   </div>
 
@@ -477,8 +591,129 @@ loadMessages();
 pollingInterval = setInterval(loadMessages, POLL_MS);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { clearInterval(pollingInterval); }
-  else { loadMessages(); pollingInterval = setInterval(loadMessages, POLL_MS); }
+  else if (currentTab === 'sohbet') { loadMessages(); pollingInterval = setInterval(loadMessages, POLL_MS); }
 });
+
+// ════════════════════════════════════════════════════
+// 25.46+ PROFIL TAB (Nickname yönetimi)
+// ════════════════════════════════════════════════════
+let currentTab = 'sohbet';
+let myProfile = null;
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+  const messagesEl_ = document.getElementById('messages');
+  const inputBar = document.querySelector('.input-bar');
+  const profileEl = document.getElementById('profile-pane');
+  if (tab === 'profil') {
+    messagesEl_.style.display = 'none';
+    inputBar.style.display = 'none';
+    profileEl.style.display = 'flex';
+    profileEl.style.flexDirection = 'column';
+    clearInterval(pollingInterval);
+    loadProfile();
+  } else {
+    messagesEl_.style.display = '';
+    inputBar.style.display = '';
+    profileEl.style.display = 'none';
+    loadMessages();
+    pollingInterval = setInterval(loadMessages, POLL_MS);
+  }
+}
+window.switchTab = switchTab;
+
+async function loadProfile() {
+  try {
+    const res = await fetch(`${API}/me`, {credentials: 'include'});
+    if (!res.ok) {
+      if (res.status === 401) {
+        document.getElementById('profile-real-name').textContent = 'Giriş yapmadın';
+        return;
+      }
+      throw new Error('HTTP ' + res.status);
+    }
+    myProfile = await res.json();
+    // Avatar = nickname'in ilk harfi veya real_name first letter
+    const initial = (myProfile.nickname || myProfile.real_name_self || '?')[0].toUpperCase();
+    document.getElementById('profile-avatar').textContent = initial;
+    document.getElementById('profile-real-name').textContent = myProfile.real_name_self || '—';
+    document.getElementById('profile-display-name').textContent = myProfile.display_name || '—';
+    const hint = myProfile.nickname
+      ? `Nickname aktif: "${myProfile.nickname}"`
+      : `Otomatik: "${myProfile.real_name_masked}" (KVKK uyumlu masked ad)`;
+    document.getElementById('profile-hint').textContent = hint;
+    document.getElementById('nick-input').value = myProfile.nickname || '';
+    document.getElementById('nick-input').placeholder = myProfile.nickname
+      ? 'Yeni nickname...'
+      : 'örn: enes_2025, mat_canavari, fizik_pro';
+
+    // Cooldown gösterim
+    const cdEl = document.getElementById('profile-cooldown');
+    if (myProfile.can_change_at) {
+      const tick = () => {
+        const diff = Math.max(0, Math.floor((new Date(myProfile.can_change_at) - new Date()) / 1000));
+        if (diff > 0) {
+          cdEl.textContent = `⏳ ${diff} saniye sonra değiştirebilirsin`;
+          document.getElementById('nick-save-btn').disabled = true;
+          setTimeout(tick, 1000);
+        } else {
+          cdEl.textContent = '';
+          document.getElementById('nick-save-btn').disabled = false;
+        }
+      };
+      tick();
+    } else {
+      cdEl.textContent = '';
+      document.getElementById('nick-save-btn').disabled = false;
+    }
+  } catch (err) {
+    console.error('Profil yükleme hatası:', err);
+    showToast('Profil yüklenemedi');
+  }
+}
+
+async function saveNickname() {
+  const nick = document.getElementById('nick-input').value.trim();
+  if (!nick) { showToast('Nickname boş olamaz'); return; }
+  const btn = document.getElementById('nick-save-btn');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/nickname`, {
+      method: 'POST', credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({nickname: nick})
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showToast(data.detail || 'Kaydedilemedi');
+      return;
+    }
+    showToast(`✓ Nickname kaydedildi: ${data.nickname}`, 'success');
+    await loadProfile();
+    // Sohbet'e geri dön ki kullanıcı kendi yeni nickname'ini göredekisin
+    setTimeout(() => switchTab('sohbet'), 1200);
+  } catch (err) {
+    showToast('Bağlantı hatası');
+  } finally {
+    btn.disabled = false;
+  }
+}
+window.saveNickname = saveNickname;
+
+async function resetNickname() {
+  if (!confirm('Nickname kaldırılsın mı? "Ad S." formatına döneceksin.')) return;
+  try {
+    const res = await fetch(`${API}/nickname`, {method: 'DELETE', credentials: 'include'});
+    if (!res.ok) { showToast('Kaldırılamadı'); return; }
+    const data = await res.json();
+    showToast(`✓ Varsayılana döndün: ${data.display_name}`, 'success');
+    await loadProfile();
+  } catch (err) { showToast('Bağlantı hatası'); }
+}
+window.resetNickname = resetNickname;
 </script>
 </body>
 </html>
