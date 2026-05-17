@@ -32,13 +32,25 @@ from db_pool import get_pool as _get_pool, DB_URL
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 25.46+ (Neo 18 May, Atlas-2 oneri #111): Test kullanicilari metrik dislaması
+# Test phone'lar: 9059900001 (Test Admin), 9059900002 (Test Mudur),
+# 9059900003 (Test Yonetim). Bu hesaplar dev/regresyon icin kullanildigindan
+# observer metriklerinde frustration/latency anomalisi olarak gozukmemeli.
+# SQL filter: phone NOT LIKE '9059900%'
+# ─────────────────────────────────────────────────────────────────────────────
+_TEST_PHONE_FILTER = "AND (phone IS NULL OR phone NOT LIKE '9059900%')"
+
+# ─────────────────────────────────────────────────────────────────────────────
 # DETECTOR'lar — her biri (List[Observation]) döner
 # Observation = {"category", "severity", "metric_name", "metric_value", "metric_unit",
 #                "affected_phone", "affected_role", "context_jsonb", "rationale"}
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def detect_frustration_spike(conn, hours: int) -> List[Dict[str, Any]]:
-    """Bir kullanıcı son N saatte 3+ kez 'yanlış/anlamadın/hata' demişse uyar."""
+    """Bir kullanıcı son N saatte 3+ kez 'yanlış/anlamadın/hata' demişse uyar.
+
+    25.46+ (Neo 18 May, Atlas-2 #111): Test hesaplari (9059900%) HARIC.
+    """
     obs = []
     rows = await conn.fetch("""
         SELECT phone, role, COUNT(*) as cnt,
@@ -46,6 +58,7 @@ async def detect_frustration_spike(conn, hours: int) -> List[Dict[str, Any]]:
         FROM agent_conversations
         WHERE message_role='user'
           AND created_at > NOW() - ($1 || ' hours')::interval
+          AND (phone IS NULL OR phone NOT LIKE '9059900%')
           AND (
             LOWER(content) ~ '(yanl[ıi]ş|yanlis|anlamad[ıi]n|hata|saçma|sacma|kötü|kotu|berbat|aptal|salak)'
           )
@@ -70,7 +83,10 @@ async def detect_frustration_spike(conn, hours: int) -> List[Dict[str, Any]]:
 
 
 async def detect_latency_anomalies(conn, hours: int) -> List[Dict[str, Any]]:
-    """5 saniyeden uzun süren cevap rotalarını tespit et."""
+    """5 saniyeden uzun süren cevap rotalarını tespit et.
+
+    25.46+ (Neo 18 May, Atlas-2 #111): Test hesaplari (9059900%) HARIC.
+    """
     obs = []
     rows = await conn.fetch("""
         SELECT response_source,
@@ -81,6 +97,7 @@ async def detect_latency_anomalies(conn, hours: int) -> List[Dict[str, Any]]:
         FROM routing_stats
         WHERE created_at > NOW() - ($1 || ' hours')::interval
           AND response_ms > 5000
+          AND (phone IS NULL OR phone NOT LIKE '9059900%')
         GROUP BY response_source
         HAVING COUNT(*) >= 3
     """, str(hours))
@@ -142,6 +159,7 @@ async def detect_pattern_miss(conn, hours: int) -> List[Dict[str, Any]]:
     - Pattern VAR → "tetiklenmiyor, route/auth bug ihtimali" (warning, farklı kategori)
     """
     obs = []
+    # 25.46+ (Atlas-2 #111): Test hesaplari (9059900%) HARIC.
     rows = await conn.fetch("""
         SELECT LOWER(TRIM(message)) as norm_msg,
                COUNT(*) as cnt,
@@ -152,6 +170,7 @@ async def detect_pattern_miss(conn, hours: int) -> List[Dict[str, Any]]:
           AND response_source IN ('claude', 'ollama')
           AND LENGTH(TRIM(message)) BETWEEN 4 AND 30
           AND message NOT LIKE '%not et%'
+          AND (phone IS NULL OR phone NOT LIKE '9059900%')
         GROUP BY LOWER(TRIM(message))
         HAVING COUNT(*) >= 3
         ORDER BY cnt DESC
