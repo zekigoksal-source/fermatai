@@ -5194,7 +5194,11 @@ async def try_fast_response(
                 return CLARIFICATION_TEMPLATES["belirsiz_admin"]
 
     # "Ne yapabilirsin" / yeteneklerin — rol bazli tanitim (fast response ile aninda)
-    if re.search(r"(ne(ler)?\s*yapabil(irsin|iriz|iyorum|iyoruz)|kabiliyetlerin|yeteneklerin|neler\s*biliyorsun|ne\s*(iş|is)\s*yapars[iıİ]n|bana\s*ne\s*yapabilirsin|sen(in)?\s*ne\s*yapabilirsin|sende\s*ne\s*var|ne\s*(işe|ise)\s*yarar|ne\s*yapabiliyorsun|senin\s*(özellik|ozellik)|benim\s*i[cç]in\s*ne|i[cç]in\s*neler|sana\s*ne\s*sorabilirim|yapabileceklerin|ne\s*biliyorsun|seninle\s*ne|birlikte\s*ne|beraber\s*ne)", msg_lower):
+    # 25.46+ (16 May Berat vakasi): "neler yapabiliyorsun" suffix bug fix —
+    # eski regex `ne(ler)?\s*yapabil(irsin|iriz|iyorum|iyoruz)` "yapabiliyorsun"u kacirdi
+    # ve `ne\s*yapabiliyorsun` "neler" prefix'iyle eslesemedi (substring miss).
+    # Yeni suffix list: irsin/iriz/iyorum/iyoruz/iyorsun/iyorsunuz + iniz/irim.
+    if re.search(r"(ne(ler)?\s*yapabil(irsin|iriz|iyorum|iyoruz|iyorsun|iyorsunuz|iniz|irim)|ne(ler)?\s*yapars[iıİ](n|niz)|kabiliyetlerin|yeteneklerin|neler\s*biliyorsun|ne\s*(iş|is)\s*yapars[iıİ]n|bana\s*ne\s*yapabilirsin|sen(in)?\s*ne\s*yapabilirsin|sende\s*ne\s*var|ne\s*(işe|ise)\s*yarar|senin\s*(özellik|ozellik)|benim\s*i[cç]in\s*ne|i[cç]in\s*neler|sana\s*ne\s*sorabilirim|yapabileceklerin|ne\s*biliyorsun|seninle\s*ne|birlikte\s*ne|beraber\s*ne|ne\s*kadar\s*veri(ye|n)|hangi\s*ozellik|hangi\s*kapasite|kapasiten\s*ne|ne\s*tur\s*(şey|sey))", msg_lower):
         from response_templates import get_yetenekler
         return get_yetenekler(role, name)
 
