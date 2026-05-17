@@ -483,6 +483,17 @@ async def make_render_link(html: str = "", title: str = "FermatAI Görsel",
     except Exception:
         pre_score, pre_breakdown = 0, {}
 
+    # 25.46+ (17 May Neo vakasi — 4.5 dk bekleme): retry limit. 3.'sünde abort,
+    # bot metin cevap verir. Daha onceki sınırsız retry kullanıcıyı bekletiyordu.
+    import time as _time
+    _phone_key = (_caller_phone or "anon")
+    if not hasattr(make_render_link, "_retry_history"):
+        make_render_link._retry_history = {}
+    _now_ts = _time.time()
+    _hist = make_render_link._retry_history.get(_phone_key, [])
+    _hist = [t for t in _hist if _now_ts - t < 180]  # 3dk pencere
+    _retry_count = len(_hist)
+
     QUALITY_THRESHOLD = 70  # 70 alti -> retry. 70-100 sun.
     is_3d_request = any(k in (title or "").lower() for k in [
         "3d", "simul", "evrim", "yildiz", "yıldız", "galaksi", "kuantum",
@@ -513,12 +524,33 @@ async def make_render_link(html: str = "", title: str = "FermatAI Görsel",
 
     # Genel quality threshold
     if pre_score < QUALITY_THRESHOLD:
+        # 25.46+ retry limit guard: 3. denemede VAZGEC, metin cevap iste
+        _hist.append(_now_ts)
+        make_render_link._retry_history[_phone_key] = _hist
+        if _retry_count >= 2:  # 3. retry (0, 1, 2 = 3 deneme)
+            return {
+                "success": False,
+                "error": (
+                    f"🛑 Render kalite eşiğini 3 kez aşamadı (son skor {pre_score}/100). "
+                    f"ARTIK render denemekten VAZGEC — kullanici zaten bekliyor. "
+                    f"\n\n⚡ HEMEN ŞUNU YAP:\n"
+                    f"1) make_render_link DENEME — daha fazla retry yok.\n"
+                    f"2) Mevcut query_analytics/data sonuçlarını METIN olarak ÖZETLE.\n"
+                    f"3) WhatsApp uyumlu format: emoji + *bold* baslik + - liste + kisa paragraf.\n"
+                    f"4) Eger gorsel sart ise: ```chart preset ile basit bar chart dene.\n"
+                    f"5) ASLA kullaniciya 'render hazirlanamadi' deme — direkt sonucu sun."
+                ),
+                "abort_render": True,
+                "force_text_response": True,
+                "quality_score": pre_score,
+            }
         return {
             "success": False,
             "error": (
                 f"⚠️ HTML kalite skoru DUSUK ({pre_score}/100, esik {QUALITY_THRESHOLD}). "
                 f"Kullanicinin gormesi sakincalı — geri don, daha zengin uret. "
-                f"\n\nKalite breakdown: {pre_breakdown}\n\n"
+                f"\n\nKalite breakdown: {pre_breakdown}\n"
+                f"\n[Retry {_retry_count+1}/3 — 3.'sünde render iptal edilir, metin cevap istenir]\n\n"
                 f"⚡ HEMEN RETRY:\n"
                 f"1) Daha zengin DOM (heading + paragraf + canvas/svg + interaktif element)\n"
                 f"2) Inline CSS (renkli gradient, padding, border)\n"
@@ -528,6 +560,7 @@ async def make_render_link(html: str = "", title: str = "FermatAI Görsel",
             "quality_score": pre_score,
             "quality_breakdown": pre_breakdown,
             "retry_now": True,
+            "retry_remaining": 2 - _retry_count,
         }
 
     try:
