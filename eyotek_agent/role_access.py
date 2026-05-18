@@ -455,6 +455,17 @@ _FORBIDDEN_TABLES = {
                 "blocked_numbers", "overdue_payments", "teacher_performance",
                 "daily_stats", "admin_talimat", "etut_teacher_summary",
                 "teacher_timetable", "teacher_etut_onerileri",
+                # 25.46+ KVKK FIX (Neo 18 May): Rehberlik notlari + ic
+                # pedagojik veri ASLA ogrenciye verilmemeli. Branş ogretmen
+                # bile goremez (yukaridaki "ogretmen" listesinde var) — ogrenci
+                # KESINLIKLE goremez. Bunlar veli gorusmesi, hassas duygu
+                # sinyalleri, ic kurum yorumlari iceriyor.
+                "counsellor_notes",      # Rehberlik gorusme notlari (NEO direktifi)
+                "student_insights",      # Bot'un cikardigi pedagojik anlam (duygu, kaygi vs)
+                "student_signals",       # Otomatik tespit edilen davranis sinyalleri
+                "frustration_log",       # Frustration kayitlari
+                "hack_attempts",         # Guvenlik ihlali denemeleri
+                "user_feedback",         # Toplu geri bildirim (baska ogrenci)
                 # Oturum 23 ek: sistem/telemetri/Neo talimat tabloları — HEPSİ YASAK
                 *_SYSTEM_PRIVATE_TABLES,
                 # Başka öğrenci verisi genel (SQL guard ayrıca soz_no kısıtlar)

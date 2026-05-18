@@ -2050,76 +2050,85 @@ async def ogrenci_hedef(soz_no: int, name: str) -> str:
 
 
 async def ogrenci_rehberlik(soz_no: int, name: str) -> str:
-    """'Rehberlik gorusmelerim', 'kardelen hocayla gorusmem ne zaman' — A+++ visual.
+    """'Rehberlik gorusmelerim', 'kardelen hocayla gorusmem ne zaman'.
 
-    Eski: tek satır per kayıt, kuru liste
-    Yeni: tarih + öğretmen + not özeti card layout + kaç görüşme + son ne zaman
+    25.46+ KVKK FIX (Neo 18 May): Onceden bot ogrenciye not_metni + tum
+    gorusme tarihleri + ogretmen ismi + gorusme sayisini doruyordu. Bu KVKK
+    + kurum hiyerarsi ihlali — bras ogretmen bile bu notu goremez, yalniz
+    rehber/mudur/yonetim/admin. Neo: "Aksamlari aileyle yapilan gorusmeler
+    bunlarda, ogrenciye sunmak akilsizca veri acigi."
+    Yeni davranis: not_metni VE detaylar GIZLI. Sadece:
+      - "Rehberin var, gorusme yapilabilir" mesaji
+      - "Son gorusme TARIHI" (bulanik: 'Bu ay'/'Gecen ay'/'Onceki donem')
+      - Rehber adi (zaten ogrenci biliyor)
+      - Yeni gorusme talep yonlendirmesi
+    Not iceriklerini gormek ICIN: ogrenci rehber ogretmenine yuz yuze
+    danismali (uygun zaman ve baglamda).
     """
-    from fast_response_visuals import (
-        sep, header, action_block, hitap, fmt_tarih
-    )
+    from fast_response_visuals import header, action_block
+    from datetime import date
 
     rows = await _q(
-        "SELECT gorusme_tarihi, ogretmen, not_metni FROM counsellor_notes "
+        # 25.46+ KVKK: not_metni KESINLIKLE cekilmez (zaten history'ye yazilirsa
+        # sizinti riski var). Sadece tarih + ogretmen.
+        "SELECT gorusme_tarihi, ogretmen FROM counsellor_notes "
         "WHERE soz_no=$1 ORDER BY gorusme_tarihi DESC LIMIT 5", soz_no)
-
-    fname = hitap(name)
 
     if not rows:
         return (
-            f"{header('Rehberlik Geçmişin', name, '📋')}\n"
-            f"Henüz rehberlik görüşme kaydın yok. 🤝\n\n"
-            f"💡 *Bunun anlamı şu:*\n"
-            f"  • Henüz akut bir konu yaşamamışsın (iyi haber)\n"
-            f"  • Ama proaktif görüşme her zaman yararlı\n\n"
-            f"📌 *Rehberlik için iyi sebepler:*\n"
-            f"  🎯 Hedef belirleme + üniversite tercihi\n"
-            f"  📚 Çalışma stratejisi + zaman yönetimi\n"
-            f"  💪 Motivasyon + sınav stresi yönetimi\n\n"
-            f"_Herhangi birini konuşmak istersen yaz, organize edelim._ 🌟"
+            f"{header('Rehberlik', name, '🤝')}\n"
+            f"Henuz rehberlik gorusme kaydin yok.\n\n"
+            f"💡 *Rehberlik nicin yararlidir:*\n"
+            f"  🎯 Hedef belirleme + universite tercihi\n"
+            f"  📚 Calisma stratejisi + zaman yonetimi\n"
+            f"  💪 Motivasyon + sinav stresi yonetimi\n\n"
+            f"_Gorusme talep etmek istersen 'rehberlik istiyorum' yaz — "
+            f"rehber ogretmenine iletirim._ 🌟"
         )
 
-    # Görüşme istatistik
-    toplam = len(rows)
-    son = rows[0]
-    son_tarih = fmt_tarih(son.get('gorusme_tarihi'))
+    # Bulanik tarih hesapla (KVKK: kesin tarih degil, donem)
+    son_tarih = rows[0].get('gorusme_tarihi')
+    bulanik = "Yakin zamanda"
+    if son_tarih:
+        try:
+            today = date.today()
+            delta_days = (today - son_tarih).days if hasattr(son_tarih, 'year') else 999
+            if delta_days <= 14:
+                bulanik = "Bu hafta/onceki hafta"
+            elif delta_days <= 45:
+                bulanik = "Bu ay/gecen ay"
+            elif delta_days <= 120:
+                bulanik = "Son aylar icinde"
+            else:
+                bulanik = "Onceki donem"
+        except Exception:
+            pass
 
-    # Öğretmen bazlı dağılım
+    # Rehber ogretmen — sadece en sik konusulan (ogrenci zaten biliyor)
     ogretmen_count = {}
     for r in rows:
-        og = r.get('ogretmen', '?').strip()
+        og = (r.get('ogretmen') or '?').strip()
         ogretmen_count[og] = ogretmen_count.get(og, 0) + 1
     en_sik = max(ogretmen_count.items(), key=lambda x: x[1]) if ogretmen_count else (None, 0)
 
     lines = [
-        header('Rehberlik Geçmişin', name, '📋'),
-        f"📊 *Toplam görüşme:* {toplam}",
-        f"📅 *Son görüşme:* {son_tarih}",
+        header('Rehberlik', name, '🤝'),
+        f"🤝 *Rehber ogretmenin:* {en_sik[0][:30] if en_sik[0] else 'sistemde kayıtlı'}",
+        f"📅 *Son gorusme:* {bulanik}",
+        "",
+        "ℹ️ *Onemli:* Rehberlik gorusme icerikleri *gizlidir* — sadece rehber "
+        "ogretmenin ve kurum yonetimi gorur. Bot olarak bu icerikleri sana "
+        "iletmem dogru olmaz. Ihtiyacin oldugunda rehber ogretmeninle yuz yuze "
+        "gorusebilirsin — bu surec senin icin daha guvenli ve faydali.",
     ]
-    if en_sik[0] and en_sik[1] > 1:
-        lines.append(f"🎯 *En sık konuştuğun:* {en_sik[0][:25]} _({en_sik[1]} görüşme)_")
 
-    lines.extend(["", sep(), "📝 *Görüşme Notları:*", ""])
-
-    for r in rows:
-        tarih = fmt_tarih(r.get('gorusme_tarihi'))
-        ogretmen = (r.get('ogretmen') or '?')[:22]
-        not_metni = (r.get('not_metni') or '').strip()
-        lines.append(f"📌 *{tarih}* — {ogretmen}")
-        if not_metni:
-            # Notu 100 char'a böl
-            kisalt = not_metni[:100]
-            if len(not_metni) > 100:
-                kisalt += "..."
-            lines.append(f"   _{kisalt}_")
-        lines.append("")
-
+    lines.append("")
     lines.append(action_block(
-        "Şimdi ne yapalım?",
+        "Su an ne yapabiliriz?",
         [
-            ("🤝", '"rehberlik istiyorum" → yeni görüşme talep'),
-            ("🎯", '"hedef analizim" → yol haritası'),
-            ("💪", '"çalışma planı" → strateji'),
+            ("🤝", '"rehberlik istiyorum" → yeni gorusme talep'),
+            ("🎯", '"hedef analizim" → yol haritasi'),
+            ("💪", '"calisma plani" → strateji'),
         ],
     ))
     return "\n".join(lines)
