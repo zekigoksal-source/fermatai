@@ -3997,6 +3997,7 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 soz_no=_soz,
                 name=profile.get("full_name", ""),
                 staff_name=profile.get("full_name", "") if profile.get("role") in ("ogretmen", "rehber") else "",
+                channel=channel,  # 25.46+ kanal-aware fast_response (satranç guard'i web'de URL eklemiyor)
             )
             if fast:
                 logger.info(f"  [WP-FAST] Aninda yanitlandi (<100ms)")

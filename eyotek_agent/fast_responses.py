@@ -4034,6 +4034,7 @@ async def try_fast_response(
     soz_no: Optional[int] = None,
     name: str = "",
     staff_name: str = "",
+    channel: str = "whatsapp",  # 25.46+ (Neo 18 May): kanal-aware response
 ) -> Optional[str]:
     """
     Hizli yanit dene. Uygun kalip bulunursa string don, bulunamazsa None.
@@ -4141,13 +4142,17 @@ async def try_fast_response(
         if _name_q:
             _url += "?name=" + _name_q
         _iframe_src = _url + ("&" if "?" in _url else "?") + "v=7"
-        # 2 satır — kesin kural (system_prompts.py:3137 ile uyumlu)
-        return (
+        # 25.46+ (Neo 18 May screenshot): kanal-aware
+        # Web: iframe RENDER edilir, URL gereksiz (kullanici tahtayi gormekte)
+        # WhatsApp: iframe HTML metin gibi kalir → URL ayri satirda tiklanabilir
+        _iframe = (
             f'<iframe src="{_iframe_src}" width="100%" height="680" '
             f'frameborder="0" style="border-radius:12px;border:1px solid #334155;'
-            f'display:block;min-height:640px;max-width:520px;"></iframe>\n'
-            f'{_url}'
+            f'display:block;min-height:640px;max-width:520px;"></iframe>'
         )
+        if channel == "web":
+            return _iframe  # sadece iframe — URL gereksiz, ekran daha sade
+        return _iframe + "\n" + _url  # WhatsApp + diger kanallar
 
     # ══════════════════════════════════════════════════════════════════════
     import re as _re_renderer
