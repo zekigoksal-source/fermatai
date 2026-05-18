@@ -3988,17 +3988,8 @@ function formatMsg(text) {
       });
 
       // 25.46+ (Neo 18 May screenshot): defansif filtre — iframe satranç tahtasi
-      // sonrasi gelen CIPLAK /chess URL'ini gizle (eski mesajlar DB'de URL'li
-      // kayitli, web'de iframe zaten render edildigi icin URL gereksiz gorultu).
-      // Pattern: </iframe>\n<p><a ...chess...>...chess...</a></p>
-      try {
-        html = html.replace(
-          /(<\/iframe>\s*<p>)\s*<a [^>]*href="[^"]*\/chess[^"]*"[^>]*>[^<]*<\/a>\s*(<\/p>)/gi,
-          '$1$2'  // <a> kaldir, sadece bos <p></p> birak
-        );
-        // Bos <p></p> de temizle (sonraki adim)
-        html = html.replace(/(<\/iframe>\s*)<p>\s*<\/p>/gi, '$1');
-      } catch(e) {}
+      // sonrasi gelen CIPLAK /chess URL'ini gizle. Merkezi helper kullan.
+      try { html = _stripChessUrlAfterIframe(html); } catch(e) {}
 
       // DOMPurify — tüm pending div'lerine izin ver
       if (typeof DOMPurify !== "undefined") {
@@ -7734,6 +7725,60 @@ function addMsg(text, role, extraHtml = "") {
 const CHAT_SNAPSHOT_KEY = "fermat_chat_snapshot_v1";
 const CHAT_SNAPSHOT_MAX_AGE_MS = 6 * 60 * 60 * 1000;  // 6 saat
 
+// 25.46+ (Neo 18 May): Defansif chess URL temizleme (HTML string + DOM, ikisi)
+// Web chat'te iframe satranç tahtasi RENDER ediliyor, alttaki ciplak URL gereksiz.
+// Eski mesajlar (snapshot/DB) URL'li kayitli oldugu icin BOTH render path'inde
+// VE snapshot restore'da temizle.
+function _stripChessUrlAfterIframe(html) {
+  if (!html || html.indexOf('chess') === -1) return html;
+  try {
+    // 1. <a href="...chess...">...</a> linkleri (autolink dahil)
+    html = html.replace(/<a\b[^>]*href="[^"]*\/chess[^"]*"[^>]*>[^<]*<\/a>/gi, '');
+    // 2. </iframe> sonrasi 300 char icinde plain text chess URL (attribute degil!)
+    html = html.replace(
+      /(<\/iframe>[\s\S]{0,300}?)https?:\/\/[a-z0-9.-]+\/chess[^\s<"]*/gi, '$1');
+    // 3. Bos <p></p> ve gereksiz <br>
+    html = html.replace(/<p>\s*<\/p>/gi, '');
+    html = html.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, '<br>');
+  } catch(e) {}
+  return html;
+}
+function _cleanChessUrlInBubble(rootEl) {
+  if (!rootEl) return;
+  // Bubble'da iframe varsa, /chess linklerini temizle (iframe src etkilenmez)
+  if (!rootEl.querySelector('iframe[src*="/chess"]')) return;
+  // Tum <a href="...chess...">...</a> kaldir
+  rootEl.querySelectorAll('a[href*="/chess"]').forEach(a => {
+    const p = a.parentElement;
+    a.remove();
+    // Eger <p> bos kaldiysa onu da sil
+    if (p && p.tagName === 'P' && !p.textContent.trim() && !p.querySelector('img,iframe')) {
+      p.remove();
+    }
+  });
+  // Plain text URL: tum text node'lara bak
+  const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, null);
+  const toClean = [];
+  let node;
+  while ((node = walker.nextNode())) {
+    if (node.nodeValue && /https?:\/\/[a-z0-9.-]+\/chess/i.test(node.nodeValue)) {
+      toClean.push(node);
+    }
+  }
+  toClean.forEach(n => {
+    n.nodeValue = n.nodeValue.replace(
+      /https?:\/\/[a-z0-9.-]+\/chess[^\s<"]*/gi, ''
+    ).trim();
+    if (!n.nodeValue) {
+      const p = n.parentElement;
+      n.remove();
+      if (p && p.tagName === 'P' && !p.textContent.trim() && !p.querySelector('img,iframe')) {
+        p.remove();
+      }
+    }
+  });
+}
+
 function saveChatSnapshot() {
   try {
     const msgs = [];
@@ -7772,22 +7817,11 @@ function restoreChatSnapshot() {
     snap.msgs.forEach((m) => {
       const div = document.createElement("div");
       div.className = "msg " + m.role;
-      // 25.46+ (Neo 18 May): defansif filtre snapshot restore icin de uygula
-      // (eski mesaj snapshot'lari iframe + ciplak /chess URL iciyordu).
       let _h = m.html || "";
-      try {
-        _h = _h.replace(
-          /(<\/iframe>\s*<p>)\s*<a [^>]*href="[^"]*\/chess[^"]*"[^>]*>[^<]*<\/a>\s*(<\/p>)/gi,
-          '$1$2'
-        );
-        _h = _h.replace(/(<\/iframe>\s*)<p>\s*<\/p>/gi, '$1');
-        // Edge case: iframe + dogrudan <a> (paragrafsiz)
-        _h = _h.replace(
-          /(<\/iframe>\s*)<a [^>]*href="[^"]*\/chess[^"]*"[^>]*>[^<]*<\/a>/gi,
-          '$1'
-        );
-      } catch(e) {}
+      try { _h = _stripChessUrlAfterIframe(_h); } catch(e) {}
       div.innerHTML = _h;
+      // DOM-level safety net: iframe ile aynı bubble icindeki /chess link/text temizle
+      try { _cleanChessUrlInBubble(div); } catch(e) {}
       messages.appendChild(div);
     });
     // Restore sonrası chart/math rerender
@@ -7811,6 +7845,30 @@ function restoreChatSnapshot() {
 function clearChatSnapshot() {
   try { localStorage.removeItem(CHAT_SNAPSHOT_KEY); } catch (e) {}
 }
+
+// 25.46+ (Neo 18 May): Sayfa yuklenince + 1sn sonra + 3sn sonra defansif
+// sweep — hangi path'ten gelmis olursa olsun chat icindeki iframe'li bubble'larda
+// /chess URL'i temizle. Snapshot restore async olabilir, gec gelen mesajlari da yakala.
+function _chessUrlDefensiveSweep() {
+  try {
+    document.querySelectorAll('#messages .msg.bot').forEach(b => {
+      try { _cleanChessUrlInBubble(b); } catch(e) {}
+    });
+  } catch(e) {}
+}
+setTimeout(_chessUrlDefensiveSweep, 500);
+setTimeout(_chessUrlDefensiveSweep, 1500);
+setTimeout(_chessUrlDefensiveSweep, 3500);
+// MutationObserver — yeni eklenen mesajlari da yakala
+try {
+  if (typeof MutationObserver !== 'undefined') {
+    const _chessObs = new MutationObserver(_chessUrlDefensiveSweep);
+    document.addEventListener('DOMContentLoaded', () => {
+      const m = document.getElementById('messages');
+      if (m) _chessObs.observe(m, { childList: true, subtree: true });
+    });
+  }
+} catch(e) {}
 
 // 22.1m — Çalışma planını bot mesajından parse et (heuristik)
 // Bot plan formatinda: "📅 *PAZARTESİ* (3 saat)" vb. bloklar, her konu icin saat + ders + konu
