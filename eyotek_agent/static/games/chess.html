@@ -192,21 +192,39 @@ html, body {
 }
 .captured-balance {
     margin-left: auto;
-    padding: 2px 7px;
+    padding: 3px 9px;
     border-radius: 10px;
     font-weight: 700;
     font-size: 10px;
     flex-shrink: 0;
     background: rgba(100,116,139,0.15);
-    color: #64748B;
+    color: #94A3B8;
+    cursor: help;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
 }
 .captured-balance.lead {
-    background: rgba(16,185,129,0.15);
+    background: rgba(16,185,129,0.18);
     color: #10B981;
 }
 .captured-balance.behind {
-    background: rgba(239,68,68,0.15);
+    background: rgba(239,68,68,0.18);
     color: #EF4444;
+}
+/* 25.46+ Puanlama legend — mini hint avam oyuncuya */
+.captured-legend {
+    font-size: 9px;
+    color: #475569;
+    text-align: center;
+    padding-top: 4px;
+    border-top: 1px dashed #334155;
+    margin-top: 2px;
+    letter-spacing: 0.2px;
+    font-style: italic;
+}
+.captured-legend strong { color: #64748B; font-weight: 600; font-style: normal; }
+@media (max-width: 420px) {
+    .captured-legend { font-size: 8px; }
 }
 @media (max-width: 420px) {
     .captured-label { min-width: 64px; font-size: 9px; }
@@ -240,14 +258,17 @@ html, body {
             <span class="captured-pieces" id="captured-by-white">
                 <span class="captured-empty">henüz yok</span>
             </span>
-            <span class="captured-balance" id="balance-white">0</span>
+            <span class="captured-balance" id="balance-white">Berabere</span>
         </div>
         <div class="captured-row">
             <span class="captured-label">⚫ Fermat yedi</span>
             <span class="captured-pieces" id="captured-by-black">
                 <span class="captured-empty">henüz yok</span>
             </span>
-            <span class="captured-balance" id="balance-black">0</span>
+            <span class="captured-balance" id="balance-black">Berabere</span>
+        </div>
+        <div class="captured-legend">
+            <strong>Puan:</strong> Piyon 1 · At/Fil 3 · Kale 5 · Vezir 9
         </div>
     </div>
     <div class="btns">
@@ -343,15 +364,24 @@ function _renderBalance(elId, ownVal, oppVal) {
     const el = document.getElementById(elId);
     if (!el) return;
     const diff = ownVal - oppVal;
+    // Satranç standartında her taşın değeri var:
+    //   Piyon=1, At/Fil=3, Kale=5, Vezir=9
+    // Bu değerlere göre "material balance" hesaplanır.
+    // Pill metni avam oyuncuya direkt anlamlı: "+4 üstün" / "3 geride" / "Berabere"
+    const _TOOLTIP = 'Satranç puanlama — Piyon: 1, At: 3, Fil: 3, Kale: 5, Vezir: 9. '
+                   + 'Üstün: karşıdan daha değerli taş kazandın.';
     if (diff > 0) {
-        el.textContent = '+' + diff;
+        el.textContent = '+' + diff + ' üstün';
         el.className = 'captured-balance lead';
+        el.title = _TOOLTIP + ' Şu an ' + diff + ' puan değerinde fazla taş kazandın.';
     } else if (diff < 0) {
-        el.textContent = String(diff);
+        el.textContent = (-diff) + ' geride';
         el.className = 'captured-balance behind';
+        el.title = _TOOLTIP + ' Şu an ' + (-diff) + ' puan değerinde fazla taş kaybettin.';
     } else {
-        el.textContent = '=';
+        el.textContent = 'Berabere';
         el.className = 'captured-balance';
+        el.title = _TOOLTIP + ' İki taraf da eşit değerde taş kazandı.';
     }
 }
 
