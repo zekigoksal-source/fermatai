@@ -31,11 +31,67 @@ from typing import Any, Optional
 # ─────────────────────────────────────────────────────────────────────────
 
 async def get_student_analytics(student_id: str, include_sections: list[str] | None = None) -> dict:
-    """Öğrenci analytics — PostgreSQL'den çek."""
+    """Öğrenci analytics — PostgreSQL'den çek.
+
+    25.46+ KVKK FIX (Neo 18 May pentest): caller_role='ogrenci' ise istek
+    yapan öğrencinin KENDİ profili kontrolu. Aksi halde başka öğrencinin
+    verisi sızar. fermat_core_agent run_tool._current_phone ile caller
+    phone'u attribute olarak set ediyor — buradan caller_role + caller_soz_no
+    çekip eşleştir.
+    """
     from db_pool import db_fetch as _db_fetch
     sections = include_sections or ["all"]
     include_all = "all" in sections
     result: dict[str, Any] = {"student_id": student_id, "found": False}
+
+    # ── 25.46+ KVKK GUARD: ogrenci rolu KENDI verisi disini sorgulayamaz ──
+    try:
+        from fermat_core_agent import run_tool as _rt
+        _caller_phone = getattr(_rt, "_current_phone", "") or ""
+        _caller_soz_no = getattr(_rt, "_current_soz_no", None)
+        if _caller_phone:
+            # Caller'in role'unu acl_users'tan oku
+            _role_row = await _db_fetch(
+                "SELECT role FROM acl_users WHERE phone = $1 AND is_active = TRUE LIMIT 1",
+                _caller_phone,
+            )
+            _caller_role = _role_row[0]["role"] if _role_row else ""
+            if _caller_role == "ogrenci" and _caller_soz_no is not None:
+                # student_id parametresi caller'in kendi soz_no'su veya tam adi mi?
+                _self_row = await _db_fetch(
+                    "SELECT soz_no, full_name, first_name, last_name FROM students "
+                    "WHERE soz_no::text = $1 LIMIT 1",
+                    str(_caller_soz_no),
+                )
+                if _self_row:
+                    _self = _self_row[0]
+                    _self_keys = {
+                        str(_self.get("soz_no", "")).lower(),
+                        (_self.get("full_name") or "").lower().strip(),
+                        (_self.get("first_name") or "").lower().strip(),
+                    }
+                    _sid_lower = str(student_id or "").lower().strip()
+                    # Caller kendi verisini istiyorsa: student_id None/empty/kendi soz_no/kendi ad
+                    is_self = (not _sid_lower) or (_sid_lower in _self_keys) or (
+                        # ad parça araması — caller_name içeriyor mu?
+                        any(k and k in _sid_lower for k in _self_keys if k)
+                    )
+                    if not is_self:
+                        return {
+                            "student_id": student_id,
+                            "found": False,
+                            "error": (
+                                "KVKK GUVENLIK: Ogrenci rolundeki kullanicilar "
+                                "sadece KENDI verilerine erisebilir. Baska "
+                                "ogrencinin profili sorgulanamaz."
+                            ),
+                            "_acl_block": True,
+                            "_caller_role": _caller_role,
+                        }
+    except Exception as _gerr:
+        # ACL kontrol hatasi durumunda fail-OPEN olmamak icin loglamayalim,
+        # ama mevcut davranisi bozma (admin/mudur normal akis)
+        pass
 
     # Öğrenci temel bilgisi
     rows = await _db_fetch(

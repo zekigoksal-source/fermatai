@@ -437,6 +437,38 @@ async def _run_scheduled_tasks():
                 if hasattr(_run_scheduled_tasks, '_retention_done_today'):
                     delattr(_run_scheduled_tasks, '_retention_done_today')
 
+            # 25.46+ TOPLULUK 24h RETENTION (Neo 18 May direktif):
+            # "Topluluk mesajlari 24 saatlik periyotlarda korunuyor olsun —
+            # guvenlik kamerasi mantigi gibi. Ilk asamada guvenlik veya
+            # yanlis kullanim risklerini daha kolay kontrol ederiz."
+            # Her saatin :07 dakikasinda 24+ saat eski mesajlari sil.
+            if now.minute >= 5 and now.minute < 10:
+                _hkey = f"_topluluk_clean_h_{now.hour}"
+                if not getattr(_run_scheduled_tasks, _hkey, False):
+                    setattr(_run_scheduled_tasks, _hkey, True)
+                    # Diger saatleri sıfırla — yarinki saat tekrar tetiklensin
+                    for _h in range(24):
+                        if _h != now.hour:
+                            _kk = f"_topluluk_clean_h_{_h}"
+                            if hasattr(_run_scheduled_tasks, _kk):
+                                delattr(_run_scheduled_tasks, _kk)
+                    try:
+                        from db_pool import db_execute as _db_exec
+                        _del_res = await _db_exec(
+                            "DELETE FROM topluluk_messages "
+                            "WHERE created_at < NOW() - INTERVAL '24 hours'"
+                        )
+                        # asyncpg DELETE 'DELETE N' formatinda dondur
+                        _n = 0
+                        try:
+                            _n = int(str(_del_res).rsplit(" ", 1)[-1])
+                        except Exception:
+                            pass
+                        if _n > 0:
+                            logger.info(f"🗑️  Topluluk retention: {_n} eski mesaj silindi (24h+)")
+                    except Exception as _te:
+                        logger.warning(f"Topluluk retention hata: {_te}")
+
             # 25.23-final — Günde bir 09:00: Disk + DB doluluk monitoring
             # 120 ogrenci × 30K mesaj/ay → DB hizla buyur, log dosyalari taşar
             if now.hour == 9 and now.minute < 10 and not getattr(_run_scheduled_tasks, '_disk_today', False):

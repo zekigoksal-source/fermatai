@@ -195,11 +195,20 @@ class MessageOut(BaseModel):
 
 @router.get("/messages")
 async def get_messages(request: Request, limit: int = 50, before_id: Optional[int] = None):
-    """Son N mesajı çek (en yeni üstte)."""
+    """Son N mesajı çek (en yeni üstte).
+
+    25.46+ (Neo 18 May): role-gate eklendi — onceden AUTH check YOKTU,
+    anyone could view all messages without login. Simdi
+    admin/mudur/yonetim/rehber/ogrenci dışı 403 alir.
+    """
     from db_pool import db_fetch
-    caller_phone = await _get_caller_phone(request)
-    if caller_phone:
-        _mark_online(caller_phone)
+    # 25.46+ Topluluk role-gate (mesaj icerik gizliligi icin sart)
+    caller_phone, _topl_block = await _check_topluluk_access(request)
+    if not caller_phone:
+        raise HTTPException(401, _topl_block or "Giriş yapmalısın.")
+    if _topl_block:
+        raise HTTPException(403, _topl_block)
+    _mark_online(caller_phone)
 
     if before_id:
         sql = """
@@ -264,9 +273,12 @@ async def get_messages(request: Request, limit: int = 50, before_id: Optional[in
 async def get_my_profile(request: Request):
     """Kendi profil: nickname, real_name (masked), can_change_at."""
     from db_pool import db_fetchrow
-    caller_phone = await _get_caller_phone(request)
+    # 25.46+ Topluluk role-gate (whitelist: admin/mudur/yonetim/rehber/ogrenci)
+    caller_phone, _topl_block = await _check_topluluk_access(request)
     if not caller_phone:
-        raise HTTPException(401, "Giriş yapmalısın.")
+        raise HTTPException(401, _topl_block or "Giriş yapmalısın.")
+    if _topl_block:
+        raise HTTPException(403, _topl_block)
     real_name, role = await _get_user_info(caller_phone)
     nick_row = await db_fetchrow(
         "SELECT nickname, change_count, last_changed_at FROM topluluk_nicknames WHERE user_phone = $1",
@@ -301,9 +313,12 @@ class NicknameBody(BaseModel):
 async def set_nickname(request: Request, body: NicknameBody = Body(...)):
     """Nickname belirle/değiştir. 60sn cooldown, 24h içinde max 5 değişim."""
     from db_pool import db_fetchrow, db_fetch
-    caller_phone = await _get_caller_phone(request)
+    # 25.46+ Topluluk role-gate (whitelist: admin/mudur/yonetim/rehber/ogrenci)
+    caller_phone, _topl_block = await _check_topluluk_access(request)
     if not caller_phone:
-        raise HTTPException(401, "Giriş yapmalısın.")
+        raise HTTPException(401, _topl_block or "Giriş yapmalısın.")
+    if _topl_block:
+        raise HTTPException(403, _topl_block)
 
     nick = body.nickname.strip()
     err = validate_nickname(nick)
@@ -370,9 +385,12 @@ async def set_nickname(request: Request, body: NicknameBody = Body(...)):
 async def remove_nickname(request: Request):
     """Nickname kaldır → mask_name(real_name) default'a dön."""
     from db_pool import db_fetchrow
-    caller_phone = await _get_caller_phone(request)
+    # 25.46+ Topluluk role-gate (whitelist: admin/mudur/yonetim/rehber/ogrenci)
+    caller_phone, _topl_block = await _check_topluluk_access(request)
     if not caller_phone:
-        raise HTTPException(401, "Giriş yapmalısın.")
+        raise HTTPException(401, _topl_block or "Giriş yapmalısın.")
+    if _topl_block:
+        raise HTTPException(403, _topl_block)
     await db_fetchrow(
         "DELETE FROM topluluk_nicknames WHERE user_phone = $1 RETURNING user_phone",
         caller_phone
@@ -388,9 +406,12 @@ async def remove_nickname(request: Request):
 async def admin_reveal_identity(request: Request, message_id: int, reason: str = ""):
     """Sadece admin: mesajın gerçek sahibini gör (audit'li)."""
     from db_pool import db_fetchrow
-    caller_phone = await _get_caller_phone(request)
+    # 25.46+ Topluluk role-gate (whitelist: admin/mudur/yonetim/rehber/ogrenci)
+    caller_phone, _topl_block = await _check_topluluk_access(request)
     if not caller_phone:
-        raise HTTPException(401, "Giriş yapmalısın.")
+        raise HTTPException(401, _topl_block or "Giriş yapmalısın.")
+    if _topl_block:
+        raise HTTPException(403, _topl_block)
     _, role = await _get_user_info(caller_phone)
     if role not in ("admin", "mudur"):
         raise HTTPException(403, "Bu işlem sadece admin/müdür için.")
@@ -434,9 +455,12 @@ class SendBody(BaseModel):
 async def send_message(request: Request, body: SendBody = Body(...)):
     """Yeni mesaj gönder."""
     from db_pool import db_fetchrow
-    caller_phone = await _get_caller_phone(request)
+    # 25.46+ Topluluk role-gate (whitelist: admin/mudur/yonetim/rehber/ogrenci)
+    caller_phone, _topl_block = await _check_topluluk_access(request)
     if not caller_phone:
-        raise HTTPException(401, "Giriş yapmalısın.")
+        raise HTTPException(401, _topl_block or "Giriş yapmalısın.")
+    if _topl_block:
+        raise HTTPException(403, _topl_block)
 
     # Rate limit
     if not _rate_check(caller_phone):
@@ -482,9 +506,12 @@ class ReactBody(BaseModel):
 async def react_message(request: Request, body: ReactBody = Body(...)):
     """Mesaja reaksiyon ekle/çıkar."""
     from db_pool import db_fetchrow
-    caller_phone = await _get_caller_phone(request)
+    # 25.46+ Topluluk role-gate (whitelist: admin/mudur/yonetim/rehber/ogrenci)
+    caller_phone, _topl_block = await _check_topluluk_access(request)
     if not caller_phone:
-        raise HTTPException(401, "Giriş yapmalısın.")
+        raise HTTPException(401, _topl_block or "Giriş yapmalısın.")
+    if _topl_block:
+        raise HTTPException(403, _topl_block)
     if body.emoji not in {"👍", "❤️", "😂", "😮", "😢", "🔥", "🎯", "💪"}:
         raise HTTPException(400, "Sadece şu emojiler: 👍 ❤️ 😂 😮 😢 🔥 🎯 💪")
 
@@ -523,6 +550,17 @@ async def online_count(request: Request):
 
 # ─── HELPERS ───
 
+# 25.46+ (Neo 18 May): Topluluk role whitelist — sadece izinli rollerden
+# kullanicilar topluluğa girebilir. Neo direktif:
+#   IZINLI: admin (Neo), mudur (Duygu/Mahsum/Orsel), yonetim (Bilge/Murathan),
+#           rehber (kurum rehberi), ogrenci (asil hedef)
+#   YASAK:  ogretmen (simdilik kapali — sonra acabiliriz), veli (kesinlikle
+#           kapali — ic dialog), misafir/guest (test eden risk dogurabilir)
+# Neo: "Ogrenciler mesajlasiyor olacak, kontrolsuz dialog risk dogurabilir."
+TOPLULUK_ALLOWED_ROLES = {"admin", "mudur", "yonetim", "rehber", "ogrenci"}
+TOPLULUK_BLOCKED_ROLES = {"ogretmen", "veli", "misafir", "guest", "visitor"}
+
+
 async def _get_caller_phone(request: Request) -> Optional[str]:
     """Cookie/session'dan caller phone çek. web_chat token pattern ile."""
     try:
@@ -539,6 +577,37 @@ async def _get_caller_phone(request: Request) -> Optional[str]:
     except Exception as e:
         logger.warning(f"_get_caller_phone hata: {e}")
         return None
+
+
+async def _check_topluluk_access(request: Request) -> tuple[Optional[str], Optional[str]]:
+    """25.46+ Topluluk role-based access gate.
+
+    Returns: (caller_phone, error_message)
+      - (phone, None): erisim onayli
+      - (None, "Giris yapmalisin"): authentication eksik
+      - (phone, "Bu ozellik {role} rolu icin kapali"): role engellendi
+
+    Caller mutlaka TOPLULUK_ALLOWED_ROLES icinde olmali. Aksi halde 403.
+    """
+    caller_phone = await _get_caller_phone(request)
+    if not caller_phone:
+        return None, "Giris yapmalisin."
+    try:
+        _, role = await _get_user_info(caller_phone)
+    except Exception:
+        role = ""
+    role = (role or "").lower().strip()
+    if role in TOPLULUK_BLOCKED_ROLES:
+        return caller_phone, (
+            f"Bu ozellik '{role}' rolu icin kapali. Topluluk sadece "
+            "ogrenci, rehber ve yonetim icin acik."
+        )
+    if role not in TOPLULUK_ALLOWED_ROLES:
+        return caller_phone, (
+            f"Bu ozellik kullanima acik degil ('{role or 'tanimsiz'}' rolu). "
+            "Topluluk yalniz dogrulanmis kurum uyeleri icin."
+        )
+    return caller_phone, None
 
 
 async def _get_user_info(phone: str) -> tuple:
