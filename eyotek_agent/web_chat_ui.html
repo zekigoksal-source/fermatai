@@ -3987,6 +3987,19 @@ function formatMsg(text) {
           `<div class="manim-pending" data-manim="${escaped}"></div>`);
       });
 
+      // 25.46+ (Neo 18 May screenshot): defansif filtre — iframe satranç tahtasi
+      // sonrasi gelen CIPLAK /chess URL'ini gizle (eski mesajlar DB'de URL'li
+      // kayitli, web'de iframe zaten render edildigi icin URL gereksiz gorultu).
+      // Pattern: </iframe>\n<p><a ...chess...>...chess...</a></p>
+      try {
+        html = html.replace(
+          /(<\/iframe>\s*<p>)\s*<a [^>]*href="[^"]*\/chess[^"]*"[^>]*>[^<]*<\/a>\s*(<\/p>)/gi,
+          '$1$2'  // <a> kaldir, sadece bos <p></p> birak
+        );
+        // Bos <p></p> de temizle (sonraki adim)
+        html = html.replace(/(<\/iframe>\s*)<p>\s*<\/p>/gi, '$1');
+      } catch(e) {}
+
       // DOMPurify — tüm pending div'lerine izin ver
       if (typeof DOMPurify !== "undefined") {
         // 25.46+ (Neo 17 May satranç): iframe izin ver (src whitelist'li, hook ile filtrelenecek)
