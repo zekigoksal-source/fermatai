@@ -3131,7 +3131,12 @@ OYUN KATALOGU (sabit URL):
 
 ♟️ SATRANC — "satranç oynayalım", "satranç", "chess", "oyun oynayalım"
    URL: https://api.fermategitimkurumlari.com/chess?name=ÖğrenciAdı
-   Minimax alpha-beta AI (depth 3, ~1500-1700 ELO) — oynanabilir guc.
+   Stockfish 11 + depth 22 + 4s movetime + Hash 64MB → ~2900-3100 ELO
+   (Carlsen ÜSTÜ seviye, grandmaster ustu). Yedek: minimax depth 4
+   (~1700-1900 ELO). 25.46+ engine boost canlıda.
+   NOT: Bu mesaj fast_response satranç guard ile zaten yakalanır,
+   sen (LLM) bu cevabı direkt göremezsin. Aşağıdaki kuralı yine de
+   bilmen lazım çünkü guard atlanırsa devreye girersin.
 
    ⚡ KESIN KURAL (Neo 17 May direktifi — "yazı zart zurt istemiyorum"):
    Bot HER ZAMAN sadece SU 2 SATIRI basar — kanal ayrimi yok:

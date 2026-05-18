@@ -4113,6 +4113,43 @@ async def try_fast_response(
     # gitsin — orada renderer_hint_inject + INTENT_RENDERER_MAP fence üretir.
     # Aksi halde fast_response cevap üretir ama fence eklemez (renderer kayıp).
     # ══════════════════════════════════════════════════════════════════════
+    # ♟️ SATRANÇ GUARD (25.46+ Neo 18 May, Mahsum mudur vakası 15:36+17:16)
+    # Sebep: Cerebras "satranç oynama özelliğim yok" diye REDDETTI 3 kez,
+    # system_prompts.py'daki kalıcı URL kuralını görmedi/uygulamadı.
+    # Çözüm: ROL-BAĞIMSIZ fast_response — satranç kelimesi yakalanır yakalanmaz
+    # garantili iframe + URL döndür. LLM hiç çağrılmasın.
+    # KAPSAM: admin, mudur, yonetim, rehber, ogretmen, ogrenci — tüm roller
+    # ══════════════════════════════════════════════════════════════════════
+    import re as _re_chess
+    if _re_chess.search(
+        r"\b(satranc|satranç|chess|şah\s*mat|sah\s*mat)\b",
+        msg_lower
+    ) and _re_chess.search(
+        r"\b(oyna|oynayal[ıi]m|oynar\s*m[ıi]s[ıi]n|oynayabilirim|"
+        r"a[cç]|ba[şs]lat|kur|hadi|tahta|maç|mac|partisi|deneyelim|"
+        r"yapal[ıi]m|baslat|baslayalim|başlayalım)",
+        msg_lower
+    ):
+        try: _fr_last_handler.set('satranç_guard')
+        except: pass
+        # İsim parametresi — KVKK only first name
+        _first = (name or "").strip().split()[0] if name else ""
+        # Türkçe karakter URL-safe (encode)
+        from urllib.parse import quote as _urlq
+        _name_q = _urlq(_first) if _first else ""
+        _url = "https://api.fermategitimkurumlari.com/chess"
+        if _name_q:
+            _url += "?name=" + _name_q
+        _iframe_src = _url + ("&" if "?" in _url else "?") + "v=7"
+        # 2 satır — kesin kural (system_prompts.py:3137 ile uyumlu)
+        return (
+            f'<iframe src="{_iframe_src}" width="100%" height="680" '
+            f'frameborder="0" style="border-radius:12px;border:1px solid #334155;'
+            f'display:block;min-height:640px;max-width:520px;"></iframe>\n'
+            f'{_url}'
+        )
+
+    # ══════════════════════════════════════════════════════════════════════
     import re as _re_renderer
     _RENDERER_FENCES = (
         "chart", "timeline", "heatmap", "radar", "gauge", "compare2",
