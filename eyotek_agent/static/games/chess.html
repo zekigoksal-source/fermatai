@@ -167,6 +167,24 @@ html, body {
             drop-shadow(0 0 4px rgba(245,158,11,0.5));
     z-index: 2;
 }
+/* 25.46+ Unicode glyph fallback (CDN duser ise) */
+.captured-glyph {
+    font-size: 24px;
+    line-height: 1;
+    margin-left: -3px;
+    display: inline-block;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    filter: drop-shadow(0 0 2px rgba(245,158,11,0.3));
+}
+.captured-glyph:first-child { margin-left: 0; }
+.captured-glyph.glyph-w { color: #F8FAFC; }  /* beyaz taş */
+.captured-glyph.glyph-b { color: #1E293B; -webkit-text-stroke: 1px #94A3B8; }  /* siyah taş — koyu zeminde gorunsun diye outline */
+@media (min-width: 700px) {
+    .captured-glyph { font-size: 30px; margin-left: -5px; }
+}
+@media (max-width: 420px) {
+    .captured-glyph { font-size: 20px; margin-left: -2px; }
+}
 .captured-empty {
     color: #475569;
     font-style: italic;
@@ -270,13 +288,18 @@ function setStatus(text, cls) {
 // yendi. Her tarafın yediği taşları biriktir, paneli güncelle.
 // piece values: p=1, n=3, b=3, r=5, q=9 (standart Reti/Lasker)
 const _PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
-// Renk-ad → URL parçası (chessboard.js PNG'leriyle uyumlu)
+// 25.46+ FIX (Neo screenshot 18 May): chessboardjs.com Linux/case-sensitive
+// serve ediyor — dosya 'wP.png' (kucuk w + buyuk P), eski kodum 'WP.png'
+// uretiyordu → 404. Board chessboardjs lib uzerinden yukluyor bug yoktu,
+// benim direkt <img> taglarim broken cikariyor.
 function _pieceImgUrl(color, pieceType) {
-    // color: 'w' veya 'b'  (kayb eden tarafın rengi)
-    // pieceType: 'p','n','b','r','q'
     return 'https://chessboardjs.com/img/chesspieces/wikipedia/'
-         + color.toUpperCase() + pieceType.toUpperCase() + '.png';
+         + color.toLowerCase() + pieceType.toUpperCase() + '.png';
 }
+// Unicode chess glyph fallback — CDN duser ise veya yavas yuklenirse.
+// Black-filled glyphler (en gorunur). Renk CSS ile tinted: beyaz tas
+// (Fermat yedi) -> beyaz tint, siyah tas (sen yedin) -> slate-300 tint.
+const _UNICODE_GLYPH = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' };
 function updateCaptured() {
     const hist = game.history({ verbose: true });
     // capturedByWhite: beyaz oynadi, siyah tas yedi → kaybeden siyah
@@ -307,9 +330,14 @@ function _renderCapturedRow(elId, list) {
     // En değerli taş önce → daha mantıklı görsel düzen
     const order = { q:5, r:4, b:3, n:2, p:1 };
     list.sort((a, b) => (order[b.type] || 0) - (order[a.type] || 0));
-    el.innerHTML = list.map(p =>
-        `<img src="${_pieceImgUrl(p.color, p.type)}" alt="${p.type}" loading="lazy">`
-    ).join('');
+    // img + onerror Unicode glyph fallback (CDN duserse de calisir)
+    el.innerHTML = list.map(p => {
+        const url = _pieceImgUrl(p.color, p.type);
+        const glyph = _UNICODE_GLYPH[p.type] || '?';
+        const colorClass = p.color === 'w' ? 'glyph-w' : 'glyph-b';
+        return `<img src="${url}" alt="${p.type}" loading="lazy" `
+             + `onerror="this.outerHTML='<span class=&quot;captured-glyph ${colorClass}&quot;>${glyph}</span>'">`;
+    }).join('');
 }
 function _renderBalance(elId, ownVal, oppVal) {
     const el = document.getElementById(elId);
