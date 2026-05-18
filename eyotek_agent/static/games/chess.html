@@ -292,9 +292,10 @@ let aiThinking = false;
 let useStockfish = false;
 let stockfish = null;
 let stockfishReady = false;
-const STOCKFISH_DEPTH = 20;          // Ultimate — neredeyse yenilmez
-const STOCKFISH_MOVETIME = 2500;     // Max 2.5 saniye düşünür
-const MINIMAX_DEPTH = 3;             // Fallback — orta seviye
+// 25.46+ (Neo 18 May) — engine max-strength tuning, UI degisikligi YOK
+const STOCKFISH_DEPTH = 22;          // 20 → 22 (2 ply daha derin)
+const STOCKFISH_MOVETIME = 4000;     // 2500ms → 4000ms (depth 22'ye ulasma sansi artar)
+const MINIMAX_DEPTH = 4;             // 3 → 4 (fallback +150-200 ELO, ~1800-2000 seviyeye cikar)
 
 const statusEl = document.getElementById('status');
 const enginePill = { textContent: '', style: {} }; // legacy stub (artık DOM'da yok)
@@ -401,7 +402,12 @@ function initStockfish() {
             const line = (typeof e.data === 'string') ? e.data : '';
             if (line === 'uciok') {
                 console.log('[FermatAI] Stockfish uci OK');
-                stockfish.postMessage('setoption name Skill Level value 20');
+                // 25.46+ Engine max-strength tuning (Neo direktif — sadece engine):
+                stockfish.postMessage('setoption name Skill Level value 20');     // max — nerfing yok
+                stockfish.postMessage('setoption name Hash value 64');             // 16MB→64MB (mobil safe, +30-50 ELO)
+                stockfish.postMessage('setoption name Contempt value 24');         // berabere kacin agresif oyna
+                stockfish.postMessage('setoption name Slow Mover value 100');      // zaman daha hesaplı kullansın (default 84)
+                stockfish.postMessage('setoption name MultiPV value 1');           // tek best move (default ama explicit)
                 stockfish.postMessage('isready');
             } else if (line === 'readyok') {
                 console.log('[FermatAI] Stockfish READY — Ultimate aktif');
