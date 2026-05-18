@@ -145,17 +145,28 @@ html, body {
 .captured-pieces {
     display: flex;
     flex-wrap: wrap;
-    gap: 1px;
+    gap: 2px;
     align-items: center;
     flex: 1;
 }
 .captured-pieces img {
-    width: 18px;
-    height: 18px;
-    margin-left: -3px;  /* hafif overlap — kompakt görünüm */
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+    width: 26px;
+    height: 26px;
+    margin-left: -4px;  /* hafif overlap — kompakt ama net */
+    /* Kontrast: koyu zeminde hem beyaz hem siyah taş net gözüksün diye
+       outer glow + drop shadow. Beyaz tas zaten goz aliyor, siyah icin
+       hafif sari halo (amber palet ile uyumlu). */
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5))
+            drop-shadow(0 0 2px rgba(245,158,11,0.25));
+    transition: transform 0.15s;
 }
 .captured-pieces img:first-child { margin-left: 0; }
+.captured-pieces img:hover {
+    transform: translateY(-2px) scale(1.15);
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6))
+            drop-shadow(0 0 4px rgba(245,158,11,0.5));
+    z-index: 2;
+}
 .captured-empty {
     color: #475569;
     font-style: italic;
@@ -181,8 +192,15 @@ html, body {
 }
 @media (max-width: 420px) {
     .captured-label { min-width: 64px; font-size: 9px; }
-    .captured-pieces img { width: 16px; height: 16px; }
+    .captured-pieces img { width: 20px; height: 20px; margin-left: -3px; }
     .captured { padding: 5px 8px; }
+    .captured-row { min-height: 26px; }
+}
+@media (min-width: 700px) {
+    /* Geniş chat overlay'de daha sergileyici boyut */
+    .captured-pieces img { width: 30px; height: 30px; margin-left: -5px; }
+    .captured-row { min-height: 34px; }
+    .captured { padding: 8px 12px; }
 }
 </style>
 </head>
