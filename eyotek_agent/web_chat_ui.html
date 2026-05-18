@@ -7772,7 +7772,22 @@ function restoreChatSnapshot() {
     snap.msgs.forEach((m) => {
       const div = document.createElement("div");
       div.className = "msg " + m.role;
-      div.innerHTML = m.html;
+      // 25.46+ (Neo 18 May): defansif filtre snapshot restore icin de uygula
+      // (eski mesaj snapshot'lari iframe + ciplak /chess URL iciyordu).
+      let _h = m.html || "";
+      try {
+        _h = _h.replace(
+          /(<\/iframe>\s*<p>)\s*<a [^>]*href="[^"]*\/chess[^"]*"[^>]*>[^<]*<\/a>\s*(<\/p>)/gi,
+          '$1$2'
+        );
+        _h = _h.replace(/(<\/iframe>\s*)<p>\s*<\/p>/gi, '$1');
+        // Edge case: iframe + dogrudan <a> (paragrafsiz)
+        _h = _h.replace(
+          /(<\/iframe>\s*)<a [^>]*href="[^"]*\/chess[^"]*"[^>]*>[^<]*<\/a>/gi,
+          '$1'
+        );
+      } catch(e) {}
+      div.innerHTML = _h;
       messages.appendChild(div);
     });
     // Restore sonrası chart/math rerender
