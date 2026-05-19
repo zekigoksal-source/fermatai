@@ -100,10 +100,21 @@ async def finans_ozet(_caller_phone: str = "") -> dict:
         """, _aktif)
 
         # Geciken bilgisi geciken_snapshot'tan (Eyotek canli veri, ay bazli)
+        # 25.46+ FIX (Neo 19 May 18:52): COUNT(*) 288 satir donduyordu (her gecikmis
+        # taksit ayri satir), bot "geciken_ogrenci_sayisi: 288" diye yanlis sundu.
+        # Gercek: 35 distinct ogrenci. Her ogrencinin EN YENI snapshot satirini
+        # alip distinct say. Borc da o latest satirdan toplaniyor (eski snapshot
+        # duplikalari engellenir).
         geciken_row = await db_fetchrow("""
+            WITH latest AS (
+                SELECT DISTINCT ON (soz_no) soz_no, borc
+                FROM geciken_snapshot
+                WHERE sezon = $1
+                ORDER BY soz_no, snapshot_date DESC
+            )
             SELECT COUNT(*) AS geciken_ogrenci_sayisi,
                    COALESCE(SUM(borc), 0) AS kurum_geciken_tutar
-            FROM geciken_snapshot WHERE sezon = $1
+            FROM latest
         """, _aktif)
 
         ozet = dict(row) if row else {}

@@ -1540,6 +1540,31 @@ async def navigate(
         result["debug"]["cookies_injected"] = injected
 
         page = await ctx.new_page()
+
+        # 25.46+ (Neo 19 May 18:57): PRE-NAVIGATE SEZON DEGISIMI
+        # Neo'nun teşhisi: "ana sayfada ilk önce yukarıda o sezona geçersen iç
+        # menulerde hata oranı düşer". Eski akış: sayfayı aç → sezon değiştir →
+        # PostBack reload bekle. Sorun: bazı ASP.NET sayfaları (financial-operation
+        # gibi) PostBack sonrası ViewState'i eski sezon kalibinde tutuyor, tablo
+        # yenilenmiyor. ÇÖZÜM: filter['sezon'] varsa ÖNCE anasayfaya git, sezonu
+        # ayarla, SONRA hedef sayfaya git → sayfa direkt doğru sezon state'inde
+        # yüklenir, PostBack reload bug'ı bypass.
+        pre_season_set = False
+        if filters and "sezon" in filters and filters["sezon"]:
+            try:
+                await page.goto(f"{_BASE_URL}Home/dashboard",
+                                timeout=15000, wait_until="domcontentloaded")
+                await page.wait_for_timeout(1200)
+                if not await _is_login(page):
+                    cgs = await change_global_season(page, str(filters["sezon"]))
+                    result["debug"]["pre_season_change"] = cgs
+                    if cgs.get("changed") or cgs.get("reason") == "noop":
+                        pre_season_set = True
+                        # Sezon ayarlandı → filter'dan çıkar (downstream tekrar değiştirmesin)
+                        filters = {k: v for k, v in filters.items() if k != "sezon"}
+            except Exception as _pe:
+                result["debug"]["pre_season_error"] = f"{type(_pe).__name__}: {str(_pe)[:200]}"
+
         try:
             await page.goto(f"{_BASE_URL}{page_path}", timeout=20000, wait_until="domcontentloaded")
         except Exception as e:
@@ -1549,6 +1574,8 @@ async def navigate(
 
         await page.wait_for_timeout(2500)
         result["final_url"] = page.url
+        if pre_season_set:
+            result["debug"]["sezon_pre_set"] = True
 
         # AUTH check
         if await _is_login(page):
