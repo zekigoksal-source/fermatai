@@ -4120,16 +4120,50 @@ async def try_fast_response(
     # Çözüm: ROL-BAĞIMSIZ fast_response — satranç kelimesi yakalanır yakalanmaz
     # garantili iframe + URL döndür. LLM hiç çağrılmasın.
     # KAPSAM: admin, mudur, yonetim, rehber, ogretmen, ogrenci — tüm roller
+    #
+    # 25.46+ NEGATIF FILTRE (Neo 19 May, rok feedback vakasi):
+    # Neo "satranc oynayanlardan rok yapamadiklari geri bildirimini yazdim"
+    # yazinca guard tetiklendi (satranc + "oyna" eşleşti) → tahta atildi.
+    # Halbuki bu FEEDBACK/BUG raporu, oynama TALEBI degil. Feedback/sikayet/
+    # soru kelimeleri varsa SKIP et — Claude'a dussun, dogru tepki versin.
     # ══════════════════════════════════════════════════════════════════════
     import re as _re_chess
-    if _re_chess.search(
-        r"\b(satranc|satranç|chess|şah\s*mat|sah\s*mat)\b",
-        msg_lower
-    ) and _re_chess.search(
-        r"\b(oyna|oynayal[ıi]m|oynar\s*m[ıi]s[ıi]n|oynayabilirim|"
-        r"a[cç]|ba[şs]lat|kur|hadi|tahta|maç|mac|partisi|deneyelim|"
-        r"yapal[ıi]m|baslat|baslayalim|başlayalım)",
-        msg_lower
+    # Negatif filtre: bu kelimelerden biri varsa satranç guard atlanır.
+    # 25.46+ (Neo 19 May): rok feedback vakası sonrasi sıkılaştırıldı —
+    # yetersizlik suffix'i (oynayamıyor/yapamıyor/edemiyor), sorgu (neden/niye),
+    # şikayet/sorun + suffix'leri, izin vermedi vb. hepsi yakalanır.
+    _CHESS_FEEDBACK_KEYWORDS = (
+        # Satranç-spesifik terimler (rok/castling/şah)
+        r"\b(rok|castl|en\s*passant|şah\s*çek|sah\s*cek|piyon\s*ter[ıi])\b"
+        # Yetersizlik (yapamıyor, oynayamıyor, edemiyor, kullanamıyor vs)
+        r"|[a-zçğıöşüâî]+[ae]m[ıi]yor\w*"
+        r"|[a-zçğıöşüâî]+[ae]mad[ıi]\w*"
+        # Hata/sorun/şikayet (suffix wildcard)
+        r"|\b(hata|bug|sorun|sik[ıi]nt|sikinti|şikayet|sikayet|hatal[ıi]|bozuk|kirik|kırık)\w*"
+        # Geri bildirim / öneri / soru
+        r"|\b(bildir|geri\s*bildirim|oner|öner|tavsiye|fikir|gorus|görüş|sor(u[mn]?|du|dum)?)\b"
+        # Sorgu kelimeleri (neden/niye/niçin)
+        r"|\b(neden|niye|n[ıi]?[cç]in|sebep)\b"
+        # İzin/erişim sorunu
+        r"|\bizin\s*verm|\berisim|\berişim|\bgiremiyor|\bgiremedim|\bacm[ıi]yor|\baçm[ıi]yor"
+        # Nasıl/ne yapıyor sorusu (oyun-içi)
+        r"|\bnas[ıi]l\s*(oyn|yap|kull|cal|ca[lı]ş|hareket)"
+        # Hareket/tas davranis problemi
+        r"|\b(hareket\s*etm|tas\s*hareket|taş\s*hareket|gerçekleşm|gerceklesm|acilm|açılm|tutmu|kabul\s*etm|donmus|donmuş|tikan|tıkan|kilit)\w*"
+    )
+    _is_chess_feedback = bool(_re_chess.search(_CHESS_FEEDBACK_KEYWORDS, msg_lower))
+    if (
+        _re_chess.search(
+            r"\b(satranc|satranç|chess|şah\s*mat|sah\s*mat)\b",
+            msg_lower
+        )
+        and _re_chess.search(
+            r"\b(oyna|oynayal[ıi]m|oynar\s*m[ıi]s[ıi]n|oynayabilirim|"
+            r"a[cç]|ba[şs]lat|kur|hadi|tahta|maç|mac|partisi|deneyelim|"
+            r"yapal[ıi]m|baslat|baslayalim|başlayalım)",
+            msg_lower
+        )
+        and not _is_chess_feedback  # 25.46+ feedback/şikayet mesajlarını koru
     ):
         try: _fr_last_handler.set('satranç_guard')
         except: pass

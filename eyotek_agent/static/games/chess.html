@@ -612,7 +612,14 @@ function onDragStart(source, piece) {
 function onDrop(source, target) {
     const m = game.move({ from: source, to: target, promotion: 'q' });
     if (m === null) return 'snapback';
-    updateCaptured(); // 25.46+ esir tas paneli — kullanici hamlesi sonrasi anlik
+    // 25.46+ (Neo 19 May rok bug fix): chess.js castling state'i dogru kabul
+    // ediyor (flags='k'/'q', san='O-O'/'O-O-O') AMA chessboard.js sadece kralı
+    // animate edip kaleyi eski yerinde bırakıyor. Hamle castling ise board.position
+    // HEMEN cagir → kale dogru kareye atlasin (kullanici "rok yapamadim" sanmasin).
+    if (m.flags && (m.flags.indexOf('k') !== -1 || m.flags.indexOf('q') !== -1)) {
+        try { board.position(game.fen(), false); } catch(e) {}
+    }
+    updateCaptured(); // esir tas paneli
     setTimeout(aiTurn, 250);
     checkEnd();
 }
