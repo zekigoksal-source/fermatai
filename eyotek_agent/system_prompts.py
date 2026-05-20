@@ -971,8 +971,10 @@ Aşağıdaki kafa karıştırıcı durumları kontrol et:
 | etut_history | COUNT(*) | Toplam etüt sayısı |
 | etut_history | SUM(ogrenci_sayisi) | ÖĞRENCİ × ETÜT (mantıklı yorum: "öğrenci-saat") |
 | student_topic_tracker | sinav_hata_yuzdesi | **HATA YÜZDESİ** 0-100 (yüksek=zayıf konu) — başarı için (100 − hata) hesapla |
+| student_topic_tracker | sinav_basari_yuzdesi | **BAŞARI YÜZDESİ** = 100 − hata (yüksek=güçlü) — generated kolon, doğrudan kullanılabilir |
 | student_topic_tracker | sinav_hata_sayisi | TAM SAYI hata adedi |
-| student_topic_tracker | status='metadata' veya konu LIKE 'Ortalama %' | METADATA satır — bu durumda kolon BASARI%'yi tutar; her zaman FİLTRELE |
+| student_topic_tracker | status='metadata' veya konu LIKE 'Ortalama %' | METADATA satır (ders ortalaması) — analiz/zayıf-konu sorgularında her zaman FİLTRELE (kolon yine HATA% tutar, 25.47'den beri tüm satırlar tutarlı) |
+| student_exam_analysis | oncelikli_konular JSON `yuzde` | **BAŞARI (doğru) oranı** = (soru−yanlis−bos)/soru, HATA DEĞİL. Örn `yuzde:"%80"` → konuyu %80 DOĞRU yapıyor (güçlü). `yanlis` alanı = yanlış adedi. |
 | devamsizlik_sayisi | toplam_saat | Devamsızlık saati (0-300+) |
 
 ⚠️ INVERSION GUARD — student_topic_tracker.sinav_hata_yuzdesi:
@@ -980,6 +982,18 @@ Aşağıdaki kafa karıştırıcı durumları kontrol et:
 - ZAYIF konu listesi: ORDER BY sinav_hata_yuzdesi DESC + filtre `>= 25` (az hata göstermeyi atla).
 - GÜÇLÜ konu listesi: ORDER BY sinav_hata_yuzdesi ASC + filtre `<= 20`.
 - Görüntüde HER ZAMAN "Başarın: %{100−hata}" sun (öğrenciye hata gösterme kafasını karıştırır).
+- 25.47 (Zeynep vakası): tüm satırlar HATA% olacak şekilde migrate edildi; sinav_basari_yuzdesi = 100−hata generated kolonu eklendi. İkisinden birini kullanabilirsin ama ANLAMINI karıştırma.
+
+🛡️ ÇAPRAZ DOĞRULAMA — ders neti ↔ konu zayıflığı TUTARLILIK (KRİTİK, güven kaybı önler):
+- Bir öğrencinin bir derste NETİ/BAŞARISI yüksekse (örn. TYT Türkçe 37/40 ≈ %93), o dersin alt
+  konularını "zayıf / kör nokta / acil / %X hata" diye SUNMA. Bu MANTIKSAL OLARAK İMKANSIZ:
+  paragraf soruları Türkçe'nin büyük kısmıdır; 37/40 yapan biri paragrafta %78 hata yapamaz.
+- Konu zayıflığı raporlamadan ÖNCE ders_netleri ile çapraz doğrula:
+  • Konu "zayıf" görünüyor AMA o dersin neti yüksek → VERİ ÇELİŞKİSİ. O konuyu zayıf diye RAPORLAMA;
+    ya sessizce atla ya da "veri tutarsız, kontrol gerek" de. ASLA güçlü dersi "kötü" gösterme.
+  • Gerçek zayıf konu, dersin DÜŞÜK netiyle TUTARLI olmalı (örn. Kimya neti düşük + Kimya konuları yüksek hata → tutarlı, raporla).
+- Sayılar "uçuk" görünüyorsa (hata adedi 500+, tek konuda imkansız rakam) → ham sayıyı OLDUĞU GİBİ
+  yazma; oran/yüzde kullan ve makullüğü sorgula.
 
 KURAL: Aggregate sorgu öncesi:
 1. Bu kolon NE ÖLÇER? (kolon adı yanıltıcı olabilir)

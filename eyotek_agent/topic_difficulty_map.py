@@ -62,12 +62,14 @@ async def get_ogretmen_oneri(konu: str, ders: str) -> list:
 
 async def get_konu_basari_dagilimi(ders: str, konu: str) -> dict:
     """Belirli bir konuda başarı dağılımı (kim iyi, kim zayıf)."""
+    # sinav_hata_yuzdesi = HATA % → basari = 100 - hata. Dusuk hata = iyi → ASC = en iyiden.
     rows = await db_fetch("""
         SELECT t.soz_no, s.full_name, s.class_name,
-               t.sinav_hata_yuzdesi as basari, t.sinav_hata_sayisi as hata
+               (100 - t.sinav_hata_yuzdesi) as basari, t.sinav_hata_sayisi as hata
         FROM student_topic_tracker t
         LEFT JOIN students s ON s.soz_no::text = t.soz_no::text
         WHERE t.ders ILIKE $1 AND t.konu ILIKE $2
+          AND t.sinav_hata_yuzdesi IS NOT NULL
         ORDER BY t.sinav_hata_yuzdesi ASC
     """, f"%{ders}%", f"%{konu}%")
     return {

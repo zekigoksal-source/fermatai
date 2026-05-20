@@ -60,15 +60,15 @@ async def build_profile(soz_no: int) -> dict:
             "SELECT toplam, turkce, matematik, fizik, kimya, biyoloji FROM student_exams "
             "WHERE soz_no=$1 AND status='valid' ORDER BY exam_date DESC LIMIT 5", soz_no
         )
-        # Zayıf/güçlü konular
+        # Zayıf/güçlü konular — sinav_hata_yuzdesi = HATA % (yuksek=zayif, dusuk=guclu)
         weak = await db_fetch(
             "SELECT ders FROM student_topic_tracker WHERE soz_no=$1 "
-            "AND COALESCE(status,'') != 'metadata' AND sinav_hata_yuzdesi < 50 "
+            "AND COALESCE(status,'') != 'metadata' AND sinav_hata_yuzdesi >= 50 "
             "GROUP BY ders ORDER BY COUNT(*) DESC LIMIT 3", soz_no
         )
         strong = await db_fetch(
             "SELECT ders FROM student_topic_tracker WHERE soz_no=$1 "
-            "AND COALESCE(status,'') != 'metadata' AND sinav_hata_yuzdesi >= 70 "
+            "AND COALESCE(status,'') != 'metadata' AND sinav_hata_yuzdesi <= 25 "
             "GROUP BY ders ORDER BY COUNT(*) DESC LIMIT 3", soz_no
         )
         # Konuşma sıklığı (conversation_memory)

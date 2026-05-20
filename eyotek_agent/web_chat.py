@@ -930,17 +930,20 @@ async def _dashboard_ogrenci_lgs(soz_no, student, sinif: str, phone: str) -> dic
             }
 
         # LGS zayıf konular (sinav_turu='LGS' seed edilmiş)
+        # NOT: sinav_hata_yuzdesi = HATA % (yuksek=zayif). basari = 100 - hata.
+        # NULL (henuz veri yok) satirlari gosterme — yaniltici %0/%100 onlenir.
         weak = await db_fetch(
             """SELECT ders, konu, sinav_hata_yuzdesi
                FROM student_topic_tracker
                WHERE soz_no = $1 AND sinav_turu='LGS'
+                 AND sinav_hata_yuzdesi IS NOT NULL
                  AND (tamamlandi IS NULL OR tamamlandi = FALSE)
-               ORDER BY sinav_hata_yuzdesi ASC NULLS LAST LIMIT 5""",
+               ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 5""",
             int(soz_no)
         )
         oncelik = []
         for w in weak:
-            basari = float(w["sinav_hata_yuzdesi"] or 0)
+            basari = max(0.0, 100.0 - float(w["sinav_hata_yuzdesi"] or 0))
             neden = ""
             if basari < 20:
                 neden = f"Başarın %{int(basari)} — buradan başla, kolay kazanç"
@@ -1685,17 +1688,19 @@ async def student_dashboard(
             radar["Fen"] = round(sum(float((t["fizik"] or 0) + (t["kimya"] or 0) + (t["biyoloji"] or 0)) for t in trend[:n]) / n, 1)
             radar["Sosyal"] = round(sum(float((t["tarih"] or 0) + (t["cografya"] or 0) + (t["felsefe"] or 0) + (t["din_kulturu"] or 0)) for t in trend[:n]) / n, 1)
 
-        # Öncelik 3 konu — sinav_basari_yuzdesi düşük + NEDEN
+        # Öncelik 3 konu — EN ZAYIF (en yuksek hata%) + NEDEN
+        # sinav_hata_yuzdesi = HATA % (yuksek=zayif). basari = 100 - hata.
         weak = await db_fetch(
             """SELECT ders, konu, sinav_hata_yuzdesi, sinav_hata_sayisi, tamamlandi
                FROM student_topic_tracker
                WHERE soz_no::text = $1 AND (tamamlandi IS NULL OR tamamlandi = FALSE)
-               ORDER BY sinav_hata_yuzdesi ASC NULLS LAST LIMIT 3""",
+                 AND sinav_hata_yuzdesi IS NOT NULL AND COALESCE(status,'') != 'metadata'
+               ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 3""",
             str(soz_no)
         )
         oncelik = []
         for w in weak:
-            basari = float(w["sinav_hata_yuzdesi"] or 0)
+            basari = max(0.0, 100.0 - float(w["sinav_hata_yuzdesi"] or 0))
             neden = ""
             if basari < 20:
                 neden = f"Başarın %{int(basari)} — kazanım potansiyeli en yüksek"

@@ -84,17 +84,18 @@ async def hazirla_etut_onerisi(soz_no: int, ders: str) -> dict:
         int(soz_no)
     )
 
-    # Zayıf konular — ders filtreli
+    # Zayıf konular — ders filtreli (sinav_hata_yuzdesi=HATA%, yuksek=zayif; basari=100-hata)
     weak = await db_fetch(
         """SELECT ders, konu, sinav_hata_yuzdesi
            FROM student_topic_tracker
            WHERE soz_no = $1 AND ders ILIKE $2
+             AND sinav_hata_yuzdesi IS NOT NULL AND COALESCE(status,'') != 'metadata'
              AND (tamamlandi IS NULL OR tamamlandi = FALSE)
-           ORDER BY sinav_hata_yuzdesi ASC NULLS LAST LIMIT 5""",
+           ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 5""",
         int(soz_no), f"%{ders}%"
     )
     zayif_list = [
-        {"konu": w["konu"], "basari": round(float(w["sinav_hata_yuzdesi"] or 0), 1)}
+        {"konu": w["konu"], "basari": round(max(0.0, 100.0 - float(w["sinav_hata_yuzdesi"] or 0)), 1)}
         for w in weak
     ]
 

@@ -68,22 +68,23 @@ async def build_brief(ogretmen: str) -> str:
             lines.append("")
 
         # Bu hafta zayıf konu trendleri (tüm öğrenciler)
+        # sinav_hata_yuzdesi = HATA % (yuksek=zayif). Kurumsal en zayif = en yuksek ort hata.
         zayif = await db_fetch(
             """
             SELECT ders, konu, AVG(sinav_hata_yuzdesi) AS ort, COUNT(DISTINCT soz_no) AS ogr
             FROM fermat.student_topic_tracker
             WHERE COALESCE(status,'') != 'metadata'
-              AND sinav_hata_yuzdesi < 50
+              AND sinav_hata_yuzdesi >= 50
             GROUP BY ders, konu
             HAVING COUNT(DISTINCT soz_no) >= 3
-            ORDER BY AVG(sinav_hata_yuzdesi) ASC
+            ORDER BY AVG(sinav_hata_yuzdesi) DESC
             LIMIT 3
             """
         )
         if zayif:
             lines.append("🎯 *Kurumsal zayıf konular (3+ öğrenci):*")
             for z in zayif:
-                lines.append(f"  🔴 {z['ders']} · {z['konu'][:40]} (ort %{float(z['ort']):.0f}, {z['ogr']} öğr)")
+                lines.append(f"  🔴 {z['ders']} · {z['konu'][:40]} (ort %{float(z['ort']):.0f} hata, {z['ogr']} öğr)")
             lines.append("")
             lines.append("_Etüt önerisi ister misin?_ 📅")
 

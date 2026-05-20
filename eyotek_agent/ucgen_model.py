@@ -48,13 +48,14 @@ async def build_ogretmen_brief(soz_no: int) -> dict:
         soz_no
     )
 
-    # Zayıf konular
+    # Zayıf konular — sinav_hata_yuzdesi = HATA % (yuksek=zayif)
     zayif = await db_fetch(
         """SELECT ders, konu FROM student_topic_tracker
            WHERE soz_no = $1
-             AND sinav_hata_yuzdesi < 40
+             AND sinav_hata_yuzdesi >= 50
+             AND COALESCE(status,'') != 'metadata'
              AND (tamamlandi IS NULL OR tamamlandi = FALSE)
-           ORDER BY sinav_hata_yuzdesi ASC LIMIT 5""",
+           ORDER BY sinav_hata_yuzdesi DESC LIMIT 5""",
         soz_no
     )
 

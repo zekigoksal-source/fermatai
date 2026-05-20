@@ -74,6 +74,8 @@ async def update_topic_tracker():
             avg_net = sum(nets) / len(nets)
             basari_pct = round(avg_net / max_net * 100) if max_net > 0 else 0
             basari_pct = min(100, max(0, basari_pct))
+            # sinav_hata_yuzdesi kolonu HATA % tutar (yuksek=zayif). basari -> hata cevir.
+            hata_pct = 100 - basari_pct
 
             # Trend: son - ilk
             trend = ""
@@ -94,7 +96,7 @@ async def update_topic_tracker():
                     ON CONFLICT (soz_no, ders, konu)
                     DO UPDATE SET sinav_hata_yuzdesi = $4, sinav_hata_sayisi = $5, status = $6
                 """, soz_no, f"TYT {ders_adi}", f"Ortalama {avg_net:.1f}/{max_net} net",
-                    basari_pct, len(nets), trend or "bekliyor")
+                    hata_pct, len(nets), trend or "bekliyor")
                 updated += 1
             except Exception:
                 # UNIQUE constraint olmayabilir — normal insert dene
@@ -105,12 +107,12 @@ async def update_topic_tracker():
                     if existing:
                         await conn.execute(
                             "UPDATE student_topic_tracker SET sinav_hata_yuzdesi = $1, sinav_hata_sayisi = $2, status = $3 WHERE id = $4",
-                            basari_pct, len(nets), trend or "bekliyor", existing)
+                            hata_pct, len(nets), trend or "bekliyor", existing)
                     else:
                         await conn.execute(
                             "INSERT INTO student_topic_tracker (soz_no, ders, konu, sinav_hata_yuzdesi, sinav_hata_sayisi, status, tamamlandi) VALUES ($1, $2, $3, $4, $5, $6, FALSE)",
                             soz_no, f"TYT {ders_adi}", f"Ortalama {avg_net:.1f}/{max_net} net",
-                            basari_pct, len(nets), trend or "bekliyor")
+                            hata_pct, len(nets), trend or "bekliyor")
                     updated += 1
                 except Exception as e:
                     logger.debug(f"Topic tracker güncelleme hatası: {e}")
@@ -128,6 +130,8 @@ async def update_topic_tracker():
                 avg_net = sum(nets) / len(nets)
                 basari_pct = round(avg_net / max_net * 100) if max_net > 0 else 0
                 basari_pct = min(100, max(0, basari_pct))
+                # sinav_hata_yuzdesi = HATA % (yuksek=zayif). basari -> hata cevir.
+                hata_pct = 100 - basari_pct
 
                 try:
                     existing = await conn.fetchval(
@@ -136,12 +140,12 @@ async def update_topic_tracker():
                     if existing:
                         await conn.execute(
                             "UPDATE student_topic_tracker SET sinav_hata_yuzdesi = $1, sinav_hata_sayisi = $2 WHERE id = $3",
-                            basari_pct, len(nets), existing)
+                            hata_pct, len(nets), existing)
                     else:
                         await conn.execute(
                             "INSERT INTO student_topic_tracker (soz_no, ders, konu, sinav_hata_yuzdesi, sinav_hata_sayisi, status, tamamlandi) VALUES ($1, $2, $3, $4, $5, $6, FALSE)",
                             soz_no, f"AYT {ders_adi}", f"AYT Ortalama {avg_net:.1f}/{max_net} net",
-                            basari_pct, len(nets), "bekliyor")
+                            hata_pct, len(nets), "bekliyor")
                     updated += 1
                 except Exception as e:
                     logger.debug(f"AYT topic hatası: {e}")
