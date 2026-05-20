@@ -2022,6 +2022,22 @@ html[data-theme="dark"] .msg.bot .action-archive-form select {
   border-color: rgba(255, 255, 255, 0.10);
   color: #e2e8f0;
 }
+/* 25.47 (Neo 21 May): Kategori dropdown POPUP okunabilirlik fix.
+   Native <select> açılır listesi OS/browser default ZEMİN (Windows Chrome'da
+   beyaz) kullanır; dark theme'in açık metni (#e2e8f0) beyaz üstünde okunmuyordu.
+   <option>'lara her temada SOLID zemin + kontrast metin ver → açılır liste net. */
+.msg.bot .action-archive-form select option,
+#archEditCategory option,
+#archRnCategory option {
+  background: #ffffff;
+  color: #1f2937;
+}
+html[data-theme="dark"] .msg.bot .action-archive-form select option,
+html[data-theme="dark"] #archEditCategory option,
+html[data-theme="dark"] #archRnCategory option {
+  background: #1e2430;
+  color: #e8e6e0;
+}
 html[data-theme="dark"] .msg.bot .action-archive-form {
   background: rgba(245, 158, 11, 0.10);
   border-color: rgba(245, 158, 11, 0.30);
