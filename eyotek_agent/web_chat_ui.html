@@ -121,7 +121,27 @@
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+  // 25.46+ (Neo 19 May gece — fizik dersi screenshot): node 2-3 satır metni
+  // kesiliyordu. htmlLabels:true → foreignObject (HTML div) ile text wrap,
+  // node yüksekliği içeriğe göre otomatik genişler. padding/spacing artırıldı.
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'neutral',
+    securityLevel: 'loose',
+    flowchart: {
+      htmlLabels: true,
+      wrap: true,
+      nodeSpacing: 55,
+      rankSpacing: 65,
+      padding: 16,
+      useMaxWidth: true,
+      diagramPadding: 12
+    },
+    themeVariables: {
+      fontSize: '15px',
+      lineHeight: '1.4'
+    }
+  });
   window.mermaid = mermaid;
 </script>
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -1054,6 +1074,24 @@ html[data-theme="dark"] .msg.bot .karne-zayif { color: #FCA5A5; }
 /* Mermaid — beyaz arkaplan kontrast */
 .msg.bot .mermaid-container svg {
   max-width: 100%; height: auto;
+}
+/* 25.46+ (Neo 19 May): Node metin kesilmesini engelle — htmlLabels foreignObject
+   div'lerinin taşmasına izin ver, satır yüksekliği düzgün hesaplansın. */
+.msg.bot .mermaid-container .nodeLabel,
+.msg.bot .mermaid-container foreignObject,
+.msg.bot .mermaid-container foreignObject div {
+  overflow: visible !important;
+  white-space: normal !important;
+  line-height: 1.4 !important;
+  word-break: break-word;
+}
+.msg.bot .mermaid-container foreignObject {
+  height: auto !important;
+}
+/* SVG <text> fallback (htmlLabels devre dışı kalırsa) — kesilmeyi azalt */
+.msg.bot .mermaid-container .node text,
+.msg.bot .mermaid-container text {
+  dominant-baseline: central;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -4734,12 +4772,33 @@ function rerenderFormulas(el) {
 
       const stepsContainer = document.createElement("div");
       stepsContainer.className = "formula-steps";
+      // 25.46+ (Neo 19 May gece — fizik dersi screenshot bug):
+      // Bot adımları $...$ delimiter'sız ham LaTeX gönderebiliyor
+      // (\alpha \approx ... , \text{...}, \frac{}{}). renderMathInElement
+      // SADECE $ ile sarılıyı işler → çıplak LaTeX ham kalıyor. Çözüm:
+      // step içinde $ YOK ama LaTeX komutu (\harf veya ^_{} ) VARSA otomatik
+      // $$...$$ ile sar (display mode — adım türetme zaten blok formül).
+      function _autoWrapLatex(txt) {
+        if (!txt) return txt;
+        // Zaten $ veya $$ içeriyorsa dokunma
+        if (txt.indexOf("$") !== -1) return txt;
+        // LaTeX sinyali: \komut VEYA ^{ _{ \frac \text \times \approx vs.
+        var hasLatex = /\\[a-zA-Z]+|[\^_]\{|\\\(|\\\[/.test(txt);
+        if (!hasLatex) return txt;  // düz metin — dokunma
+        // " — açıklama" / " - açıklama" kısmını ayır (LaTeX dışı kuyruğu koru)
+        var m = txt.match(/^(.*?)(\s+[—–-]\s+.+)$/);
+        if (m && /\\[a-zA-Z]+|[\^_]\{/.test(m[1])) {
+          // formül kısmını $$ ile sar, açıklama kuyruğunu düz bırak
+          return "$$" + m[1].trim() + "$$" + m[2];
+        }
+        // Tüm satır formül → $$ ile sar
+        return "$$" + txt.trim() + "$$";
+      }
       steps.forEach((s, i) => {
         const div = document.createElement("div");
         div.className = "formula-step";
         div.setAttribute("data-step", i);
-        // KaTeX render — $...$ varsa parse, yoksa düz metin
-        div.innerHTML = s;
+        div.innerHTML = _autoWrapLatex(s);
         stepsContainer.appendChild(div);
       });
       wrap.appendChild(stepsContainer);

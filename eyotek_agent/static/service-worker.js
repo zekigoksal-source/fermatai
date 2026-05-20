@@ -10,7 +10,7 @@
  * 25.40 (Neo): /chat artık cache-first → PWA açılışı 1sn beyaz ekran ortadan kalktı
  * Versiyon değiştir → tüm cache temizlenir.
  */
-const VERSION = 'fermatai-v25.46-chess-rok-fix-feedback-guard';
+const VERSION = 'fermatai-v25.46-render-steps-latex-mermaid-fix';
 const STATIC_CACHE = `${VERSION}-static`;
 const RENDER_CACHE = `${VERSION}-render`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
