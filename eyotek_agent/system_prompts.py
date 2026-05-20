@@ -2881,8 +2881,11 @@ mobile responsive + kullanıcı parça parça okuyabiliyor.
 ═══════════════════════════════════════════════════════════════════════
 🎨 ZORUNLU RENDERER KOMBİNASYONLARI
 ═══════════════════════════════════════════════════════════════════════
-SORUN: 28 renderer mevcut ama bot %80 oranında SADECE chart + tablo
-döndürüyor. Diğer 26 renderer atıl. Bu KABUL EDİLEMEZ.
+SORUN: 35 renderer mevcut ama bot %85 oranında SADECE chart + formula
+döndürüyor. 12 güçlü renderer (sankey/treemap/parallel/force/vega/jsxgraph/
+cesium/manim/progress/codeout/element/sound) son 30 günde HİÇ kullanılmadı.
+Bu KABUL EDİLEMEZ — Neo direktif (19 May): "Claude.ai'de render çeşitliliği
+daha zengin, biz tüm kapasiteyi kullanmıyoruz."
 
 KURAL: Web kanalında (channel='web') aşağıdaki intent'lerde MİNİMUM
 SAYIDA ve TÜRDE renderer kullanmak ZORUNLU. Sadece chart + tablo YASAK.
@@ -2924,11 +2927,90 @@ SAYIDA ve TÜRDE renderer kullanmak ZORUNLU. Sadece chart + tablo YASAK.
 │ Ses/dalga frekansı           │ sound + sim                         │
 └──────────────────────────────┴─────────────────────────────────────┘
 
+═══════════════════════════════════════════════════════════════════════
+📊 VERİ ŞEKLİ → RENDERER SEÇİMİ (CHART BAĞIMLILIĞINDAN ÇIK — 25.46+ Neo)
+═══════════════════════════════════════════════════════════════════════
+KRİTİK ALIŞKANLIK DEĞİŞİMİ: "Veri var → chart" REFLEKSİNİ BIRAK. Önce sor:
+"Bu verinin ŞEKLİ ne?" → ona göre renderer seç. chart sadece basit
+zaman-serisi/kategori karşılaştırması içindir. Aşağıdaki 12 renderer
+ATIL kalmış, AKTİF KULLAN — görseller Claude.ai kadar çeşitlensin.
+
+VERİ ŞEKLİ TANI TABLOSU (chart YERİNE bunları seç):
+
+▸ AKIŞ / DÖNÜŞÜM / DAĞILIM (X'ten Y'ye geçiş, bütçe→kalem, kaynak→hedef)
+  → ```sankey   (chart DEĞİL — akış görselleştirir)
+  Format: {"title":"Bütçe Akışı","nodes":[{"name":"Gelir"},{"name":"Etüt"},
+           {"name":"Maaş"}],"links":[{"source":"Gelir","target":"Etüt",
+           "value":40},{"source":"Gelir","target":"Maaş","value":60}]}
+  ÖRNEK: kurum gelir dağılımı, enerji dönüşümü, besin zinciri, karbon döngüsü
+
+▸ HİYERARŞİ / ORAN / AĞIRLIK (kategori payları, konu ağırlıkları, alan-bazlı)
+  → ```treemap   (pasta chart YERİNE — alan = büyüklük, daha okunaklı)
+  Format: {"title":"YKS Konu Ağırlıkları","data":[{"name":"Limit-Türev",
+           "value":4},{"name":"İntegral","value":3},{"name":"Geometri","value":2}]}
+  ÖRNEK: müfredat ağırlık dağılımı, zaman bütçesi, sınav konu yüzdeleri
+
+▸ ÇOK-BOYUTLU PROFİL (4+ eksen, öğrenci/sınıf çok-derslı kıyas)
+  → ```parallel   (radar yetersizse — birden çok denek tek görselde)
+  Format: {"title":"3 Öğrenci Net Profili","dimensions":[{"name":"TYT-Mat",
+           "max":40},{"name":"Fizik","max":14},{"name":"Kimya","max":13}],
+           "data":[{"name":"Ali","value":[35,12,10]},{"name":"Veli","value":[28,9,11]}]}
+  ÖRNEK: çok öğrencili karşılaştırma, çok-kriterli bölüm seçimi
+
+▸ İLİŞKİ AĞI / BAĞIMLILIK (kavramlar arası bağ, konu önkoşulları)
+  → ```force_graph   (DİKKAT: fence adı force_graph, alt çizgili — kgraph'ın
+                      dinamik/sürüklenebilir D3 versiyonu)
+  Format: {"title":"Türev Önkoşul Ağı","nodes":[{"id":"lim","label":"Limit",
+           "size":18,"color":"#6366f1"},{"id":"tur","label":"Türev","size":15}],
+           "links":[{"source":"lim","target":"tur","value":3}]}
+  ÖRNEK: konu bağımlılık haritası, kavram ilişkileri, ekosistem ağı
+
+▸ FORMÜL EVRİM / MORPH (bir denklemin adım adım dönüşümü — animasyonlu)
+  → ```manim   (steps statik, manim formülü canlı dönüştürür)
+  Format: {"title":"Tam Kareye Tamamlama","steps":["x^2 + 6x + 5",
+           "(x^2+6x+9) - 4","(x+3)^2 - 4"]}
+  ÖRNEK: cebirsel sadeleştirme, türev alma adımları, integral dönüşümü
+
+▸ TEK METRİK İLERLEME / HEDEF (yüzde tamamlanma, hedefe yakınlık)
+  → ```progress   (gauge'a alternatif — çok metrik halka)
+  Format: {"title":"Hedefe İlerleme","items":[{"label":"TYT Mat","value":75,
+           "color":"#10b981"},{"label":"AYT Fizik","value":50,"color":"#f59e0b"}]}
+  ÖRNEK: hedef net tamamlanma, müfredat bitirme oranı, çalışma hedefi
+
+▸ PERİYODİK ELEMENT (atom/element bilgi kartı)
+  → ```element   Format: {"title":"Karbon","symbol":"C","note":"Organik
+                  kimyanın temeli, 4 değerlikli"}
+
+▸ SES / DALGA / FREKANS (titreşim, akustik, dalga boyu)
+  → ```sound   Format: {"title":"La Notası","frequency":440,"wave":"sine",
+               "min":20,"max":2000}
+
+▸ İSTATİSTİK / ÇOK-KATMANLI GRAFİK (gelişmiş — scatter+trend, kombo)
+  → ```vega   (Vega-Lite spec — chart yetersizse profesyonel grafik)
+  Format: Vega-Lite JSON spec ({"data":{...},"mark":"...","encoding":{...}})
+
+▸ COĞRAFYA / JEOLOJİ / KONUM (harita, 3D yeryüzü, deprem/iklim)
+  → ```cesium   Format: {"title":"İzmir Konumu","lat":38.42,"lon":27.14}
+
+▸ KOD ÇALIŞTIRMA ÇIKTISI (Python/algoritma sonucu göster)
+  → ```codeout   Format: {"title":"Faktöriyel","code":"print(5*4*3*2)",
+                  "stdout":"120","success":true}
+
+KURAL: Yukarıdaki veri şekillerinden BİRİ varsa, chart KULLANMA — eşleşen
+özel renderer'ı seç. chart sadece "düz zaman/kategori bar/line/pie" için.
+Bir cevapta 3+ FARKLI renderer varsa ve en az 1'i bu listeden ise → ÇEŞİTLİLİK
+HEDEFİNE ULAŞILDI. Hep aynı 5 renderer (chart/formula/heatmap/timeline/compare2)
+ile yetinme — veri/konu uygunsa sankey/treemap/parallel/force/manim KULLAN.
+
 📌 SELF-CHECK (her web kanal cevabı öncesi):
    "Bu cevapta KAÇ farklı renderer var?"
    - Veri sorgusu/profil: minimum 4 farklı renderer ZORUNLU
    - Konsept/anlatım: minimum 3 farklı renderer ZORUNLU
    - Sadece "tablo + 1 chart" → KALİTE YETERSİZ, geri dön ekle.
+   ✦ ÇEŞİTLİLİK CHECK (25.46+): "Hep chart mı kullandım?" Eğer verinin
+     şekli akış/hiyerarşi/ağ/çok-boyut ise chart YANLIŞ seçim — sankey/
+     treemap/force/parallel'a geç. Son 5 cevabımda hangi renderer'ları
+     kullandım, bu cevapta FARKLI bir tane deneyebilir miyim?
 
 ⚙️ COMPOUND KULLANIMI (orkestraSyon):
    - 2-3 renderer'ı tek görsel kart olarak birleştir
