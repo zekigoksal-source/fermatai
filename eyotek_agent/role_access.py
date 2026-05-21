@@ -108,6 +108,11 @@ _ACL_MATRIX: dict[str, set[str]] = {
         # 25.44 (Neo bug 12 May 18:39 — bot self-analysis):
         # get_sentry_errors admin'in ACL'sinde değildi → 'YETKİ HATASI' alıyordu
         "get_sentry_errors",
+        # 25.47 (Neo 21 May — Zeynep raporu): 6 adaptive/predictive aracı tool_definitions'da
+        # ve dispatch'te VARDI ama HİÇBİR rolün ACL'sinde yoktu → her çağrıda 'YETKİ HATASI'.
+        # (get_sentry_errors ile aynı sınıf bug.) Admin hepsini kullanabilir.
+        "get_adaptive_summary", "get_knowledge_graph", "analyze_student_study_pattern",
+        "get_student_daily_summary", "predict_yks_score", "observe_student_answer",
     },
     # Yönetim üyesi (Bilge): müdür gibi okuma ama yazma yok (etüt/eyotek action yok)
     # Oturum 25.40: get_blueprint_section kaldırıldı (admin-özel mimari iç bilgi)
@@ -133,6 +138,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "crossref_search", "osm_lookup",
         # 25.43-INT-FIX1: Eyotek tek doğruluk health check (admin/mudur/yonetim)
         "eyotek_health",
+        # 25.47 (Neo 21 May): adaptive/predictive öğrenci analiz araçları (ACL'de eksikti)
+        "get_adaptive_summary", "get_knowledge_graph", "analyze_student_study_pattern",
+        "get_student_daily_summary", "predict_yks_score",
     },
     # Müdür (Mahsum, Duygu): TÜM kurum verisi (akademik + Eyotek + tercih + raporlar)
     # Oturum 25.40 (Neo direktif): SİSTEM AYARLARI ve ADMIN-ÖZEL TOOL'LAR ÇIKARILDI.
@@ -198,6 +206,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "eyotek_health",
         # 25.44 (Neo bug 12 May 18:39): müdür Sentry self-awareness için
         "get_sentry_errors",
+        # 25.47 (Neo 21 May): adaptive/predictive öğrenci analiz araçları (ACL'de eksikti)
+        "get_adaptive_summary", "get_knowledge_graph", "analyze_student_study_pattern",
+        "get_student_daily_summary", "predict_yks_score",
     },
     # Öğretmen: kendi sınıfı + öğrenci akademik veri (etüt yazma YOK, ödeme/iletişim HARİÇ)
     # 22.1n-neo: universite tahmin tool'lari herkese acildi (Neo 20 Nisan onayi)
@@ -260,6 +271,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "crossref_search", "osm_lookup",
         # 25.43-INT-FIX1: Eyotek tek doğruluk health check (admin/mudur/yonetim)
         "eyotek_health",
+        # 25.47 (Neo 21 May): adaptive/predictive öğrenci analiz araçları (kendi sınıfı; ACL'de eksikti)
+        "get_adaptive_summary", "get_knowledge_graph", "analyze_student_study_pattern",
+        "get_student_daily_summary", "predict_yks_score",
     },
     # Rehber öğretmen: TÜM öğrenci + TÜM öğretmen programı + etüt yazma + rehberlik notu
     "rehber": {
@@ -309,6 +323,9 @@ _ACL_MATRIX: dict[str, set[str]] = {
         "crossref_search", "osm_lookup",
         # 25.43-INT-FIX1: Eyotek tek doğruluk health check (admin/mudur/yonetim)
         "eyotek_health",
+        # 25.47 (Neo 21 May): adaptive/predictive öğrenci analiz araçları (ACL'de eksikti)
+        "get_adaptive_summary", "get_knowledge_graph", "analyze_student_study_pattern",
+        "get_student_daily_summary", "predict_yks_score",
     },
     # Veli: sadece kendi çocuğunun akademik verisi + universite tahmin (Neo onay)
     "veli": {"get_student_analytics", "get_ayt_analysis",
@@ -356,7 +373,13 @@ _ACL_MATRIX: dict[str, set[str]] = {
                 "tdk_sozluk", "nist_constant", "oeis_search", "open_meteo_climate",
                 "wikidata_lookup", "cern_open_data", "huggingface_search_models",
                 "tuik_dataset", "alphafold_lookup", "nist_webbook",
-                "crossref_search", "osm_lookup"},
+                "crossref_search", "osm_lookup",
+                # 25.47 (Neo 21 May): adaptive/predictive — KENDİ profili (ACL'de eksikti).
+                # "bugün ne çalışmalıyım/neyi tekrar etmeliyim/YKS'de ne alırım" sorularında bot
+                # bunları çağırıyordu ama YETKİ HATASI alıyordu → cevap kalitesi düşüyordu.
+                # observe_student_answer: foto soru/pratik sonrası kendi ELO/SM-2 güncellemesi.
+                "get_adaptive_summary", "get_knowledge_graph", "analyze_student_study_pattern",
+                "get_student_daily_summary", "predict_yks_score", "observe_student_answer"},
     # Misafir / bilinmeyen: hiçbir araç
     "guest": set(),
     "unknown": set(),
