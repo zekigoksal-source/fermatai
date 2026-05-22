@@ -523,16 +523,37 @@ async def serve_artifact(uuid: str, request: Request):
   .fermat-render-header .brand {{ font-weight: 700; letter-spacing: 0.3px; }}
   .fermat-render-header .pwd {{ opacity: 0.9; font-size: 12px; }}
   .fermat-render-content {{ padding: 0; min-height: calc(100vh - 50px); }}
+  /* 25.47 (Neo 22 May — Bug #140): render sayfasında geri dönüş yoktu, sekme kapatmak
+     gerekiyordu. Header'a 44px dokunmatik-dostu "Geri" butonu. */
+  .fermat-render-header .back-btn {{
+    background: rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.35);
+    border-radius:8px; padding:8px 14px; font-size:14px; font-weight:600; cursor:pointer;
+    min-height:40px; display:inline-flex; align-items:center; gap:4px;
+    -webkit-tap-highlight-color:transparent;
+  }}
+  .fermat-render-header .back-btn:active {{ background: rgba(255,255,255,0.32); }}
 </style>
 </head>
 <body>
 <div class="fermat-render-header">
+  <button class="back-btn" onclick="fermatGoBack()" title="Geri dön">← Geri</button>
   <span class="brand">⚡ FermatAI</span>
   <span class="pwd">İnteraktif Eğitim Görseli</span>
 </div>
 <div class="fermat-render-content">
 {html}
 </div>
+<script>
+function fermatGoBack() {{
+  try {{
+    var sameHost = document.referrer && document.referrer.indexOf(location.host) !== -1;
+    if (sameHost && window.history.length > 1) {{ window.history.back(); return; }}
+  }} catch (e) {{}}
+  // Yeni sekmede açıldıysa kapatmayı dene; olmazsa ana sohbete dön.
+  window.close();
+  setTimeout(function() {{ if (!window.closed) location.href = '/chat'; }}, 200);
+}}
+</script>
 </body>
 </html>"""
         return HTMLResponse(

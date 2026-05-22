@@ -317,10 +317,12 @@ async def _ask_groq_for_suggestion(
             _cl = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"),
                             max_retries=3, timeout=120.0)
             _t0 = time.time()
+            # 25.47 (Neo 22 May — Sentry #118934403): claude-opus-4-7 'temperature'
+            # parametresini DEPRECATE etti → BadRequestError 400 (her gece Atlas-2 cron'da).
+            # temperature KALDIRILDI (default kullanılır). Cerebras fallback'te (aşağıda) kalabilir.
             _resp = _cl.messages.create(
                 model=ATLAS_MODEL,
                 max_tokens=2500,
-                temperature=0.3,
                 system=sys_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
             )

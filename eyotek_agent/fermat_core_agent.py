@@ -4063,6 +4063,47 @@ class FermatCoreAgent:
             except Exception as _re:
                 logger.warning(f"[RECAP] Hata (akis bozulmasin): {_re}")
 
+        # ═══════════════════════════════════════════════════════════════════
+        # 25.47 (Neo 22 May — Sentry #1: context_length_exceeded HARD GUARD)
+        # ═══════════════════════════════════════════════════════════════════
+        # Web chat'te admin (MAX_TURNS=999, recap'tan muaf) uzun konusmalarda
+        # 133K token'a ulasip Cerebras/model 400 "context_length_exceeded" veriyordu.
+        # Recap sadece ogrenci icin → admin/mudur korumasiz. TUM roller icin sert
+        # token-butce siniri: en eski mesajlari (tool eslesmesini bozmadan) dusur.
+        # Model limiti ~131K; system(~27K)+tools+yanit icin bosluk birak → 100K butce.
+        try:
+            _HIST_TOK_BUDGET = 100_000
+
+            def _est_tok(_c):
+                if isinstance(_c, str):
+                    return len(_c) // 4
+                if isinstance(_c, list):
+                    return sum(len(str(_b)) for _b in _c) // 4
+                return len(str(_c)) // 4
+
+            _total_tok = sum(_est_tok(m.get("content", "")) for m in self.history)
+            if _total_tok > _HIST_TOK_BUDGET:
+                _before_n = len(self.history)
+                # En eski mesajlari bastan dusur (en yeni user_input sonda korunur)
+                while self.history and _total_tok > _HIST_TOK_BUDGET and len(self.history) > 4:
+                    _drop = self.history.pop(0)
+                    _total_tok -= _est_tok(_drop.get("content", ""))
+                # Bastaki dangling tool_result'lari ve assistant'lari temizle —
+                # ilk mesaj 'user' (ve tool_result olmayan) olmali (Anthropic sart).
+                while self.history and (
+                    self.history[0].get("role") != "user"
+                    or (isinstance(self.history[0].get("content"), list)
+                        and any(isinstance(_b, dict) and _b.get("type") == "tool_result"
+                                for _b in self.history[0]["content"]))
+                ):
+                    self.history.pop(0)
+                logger.warning(
+                    f"[HISTORY-TRIM] Token butce asildi ({_before_n}→{len(self.history)} msg, "
+                    f"~{_total_tok} tok kaldi) — context_length_exceeded onlendi (Sentry #1)"
+                )
+        except Exception as _trim_e:
+            logger.warning(f"[HISTORY-TRIM] hata (akis bozulmasin): {_trim_e}")
+
         # Kullanici mesajini DB'ye kaydet
         await _log_conversation(self.session_id, caller_phone, role, "user", user_input)
 

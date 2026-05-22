@@ -176,6 +176,14 @@ async def predict_student(soz_no: int) -> dict:
       "factors": {...},   // Acıklayıcı
     }
     """
+    # 25.47 (Neo 22 May — Sentry DataError #117082128, 228×): student_exams.soz_no INT'tir
+    # ama predict_all_students students.soz_no'yu (TEXT) string olarak geçiriyordu →
+    # asyncpg int4 bind hatası (_get_exam_history). Girişte int'e zorla — tüm iç sorgular korunur.
+    try:
+        soz_no = int(soz_no)
+    except (TypeError, ValueError):
+        return {"error": f"Geçersiz soz_no: {soz_no!r}", "confidence": 0.0}
+
     # 1. Veri topla — paralel
     # Oturum 25.14h: AYT icin PURE AYT (TG karistirilmadan) — _get_pure_ayt_stats
     tyt_history, pure_ayt, weak_count, devamsiz_saat = await asyncio.gather(

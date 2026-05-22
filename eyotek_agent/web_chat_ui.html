@@ -2423,6 +2423,26 @@ html[data-theme="dark"] .msg.bot.streaming::after {
     height: 38px; padding: 0 12px; font-size: 14px;
   }
 }
+/* 25.47 (Neo 22 May — Bug #139 iPad touch target):
+   Üst bar butonları görsel oturuyor ama parmakla dokunulan hit-area <44px
+   (Apple HIG min = 44×44). pointer:coarse = parmakla dokunan cihaz (iPad/telefon);
+   bunlarda 44px garanti et. Masaüstü (mouse = fine pointer) ETKİLENMEZ, kompakt kalır. */
+@media (pointer: coarse) {
+  .chat-header .header-left .history-btn,
+  .chat-header .user .new-chat-btn,
+  .chat-header .user .study-btn,
+  .chat-header .user .topluluk-btn,
+  .chat-header .user .admin-dash-btn,
+  .chat-header .user .admin-btn,
+  .chat-header .user .theme-toggle,
+  .chat-header .user .logout {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
 @media (max-width: 400px) {
   /* Cok kucuk ekran */
   .msg { max-width: 95%; font-size: 13px; padding: 10px 12px; }
