@@ -1,5 +1,55 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
+> **Son güncelleme:** 23 Mayıs 2026 → **OTURUM 25.47+ (TOPIC INVERSION + ACL ORPHAN + iPad UX + SENTRY 3 FİX + WIX PERF DENETİM) — NEO DEV ARASI**
+>
+> ## 🟢 PROJE DURUMU (Snapshot — 25.47+, 23 May)
+>
+> - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
+> - **HEAD:** `9995e16` fix(ui): iPad alt input safe-area
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅ (12ms), git senkron, PostgreSQL OK (167 öğrenci), **topic_tracker bozuk satır = 0**, disk %6, RAM 3.3/15.6GB, son 10dk hata yok
+>
+> ## 🎯 22-23 Mayıs Yapılanlar
+>
+> **A. Topic başarı↔hata INVERSION fix (`5ad05c0` + migration 017) — EN KRİTİK**
+> - Kök: `student_topic_tracker.sinav_hata_yuzdesi` aslında BAŞARI tutuyordu (oncelikli_konular.yuzde + post_sync_update.basari_pct), ~30 okuyucu HATA sanıyordu → Zeynep Türkçe 37/40 iken raporda "%80 hata, kör nokta" çıkıyordu.
+> - DB migration 017 (idempotent guard'lı): 2892 satır flip + `sinav_basari_yuzdesi` GENERATED 100-hata. post_sync_update importer fix. 7 success-convention okuyucu (web_chat/teacher_escalation/ucgen_model/topic_difficulty_map/teacher_copilot/student_profile_v2) convention-E'ye çevrildi. system_prompts çapraz-doğrulama guardrail.
+> - CANLI DOĞRULANDI: 22 May Zeynep raporu artık "Türkçe %64 doğru, olağanüstü güçlü" diyor; gerçek zayıf = Kimya Asit-Baz %1.5.
+>
+> **B. ACL orphan 6 araç (`0c1f379`)** — get_adaptive_summary/get_knowledge_graph/analyze_student_study_pattern/get_student_daily_summary/predict_yks_score/observe_student_answer hiçbir rolde yoktu → her çağrıda YETKİ HATASI (get_sentry_errors ile aynı sınıf). Doğru rollere eklendi (orphan 6→0).
+>
+> **C. predictive_model DataError (`cad1412`)** — Sentry 228× `str soz_no → int4`. predict_all_students students.soz_no'yu (TEXT) string geçiriyordu. predict_student girişinde `int()` zorlandı. Smoke test geçti ('285'→graceful, 246→tyt 92.6).
+>
+> **D. Sentry 3 fix (`cad1412`)** — (1) context_length_exceeded 133K>131K: TÜM roller için 100K token HARD GUARD (recap sadece öğrenciydi, admin korumasızdı). (2) temperature deprecated (opus-4-7 Atlas-2 gece cron): prompt_optimizer Anthropic çağrısından temperature kaldırıldı. (3) #4 fpdf zaten çözülmüş.
+>
+> **E. Render UX (`6246b6d`+`4206b0c`)** — pending skeleton shimmer + Claude.ai-tarzı kayarak açılma + kontrast; arşiv kategori dropdown dark-theme okunabilirlik.
+>
+> **F. iPad UX (`cad1412`+`9995e16`)** — üst bar 44px touch target (@media pointer:coarse), render sayfası "← Geri" butonu, alt input home-indicator safe-area (body→input bar). Neo "idare eder" onayı.
+>
+> **G. Render çeşitlilik rehberi (`17f2c38`)** — system_prompt veri-tipi→renderer matrisi (treemap/compare2/gauge/timeline AKTİF, Neo canlı onayladı) + "ham yanlış sayısı sunma" prompt guard (`4fa3a6c`).
+>
+> **H. Wix perf DENETİM (KOD DEĞİŞİKLİĞİ YOK)** — Neo "gerçekten hız problemi var mı". Salt-okunur ölçüm: TTFB 0.25s (mükemmel), hero 47KB (sorun değil), JS ~1.3MB Wix platform (dokunulamaz), Sentry browser SDK 132KB (Neo: işlevsel KALSIN). CrUX: "yeterli gerçek kullanıcı verisi yok" → **gerçek problem sinyali YOK**, lab skoru worst-case. VERDICT: panik yok, tasarıma dokunma. Tek iz: /fermatai TTFB 1.75s (diğerleri 0.25s).
+>
+> ## 📋 22-23 May Commit Zinciri
+> ```
+> 9995e16 iPad alt input safe-area
+> cad1412 iPad touch + render geri + 3 Sentry fix
+> 4fa3a6c prompt: ham yanlış sayısı sunma
+> 0c1f379 ACL 6 orphan araç
+> 5ad05c0 topic başarı↔hata inversion + migration 017
+> 4206b0c arşiv dropdown kontrast
+> 6246b6d render-ux skeleton+reveal+kontrast
+> ```
+> (öncesinde aynı oturumda: chess fix zinciri 191a33c→16c492e, render LaTeX/mermaid 8c0d523, finans/navigator 442e592)
+>
+> ## 🔜 Sonraki Oturum Açıldığında
+> - **predict_yks_score** artık 6 rolde açık + DataError fixli → öğrenci "YKS'de ne alırım" sorularını canlı test et.
+> - **Sentry denetimi:** context guard + temperature fix sonrası issue sayısı düşmeli; bir sonraki turda get_sentry_errors ile doğrula.
+> - **Wix perf:** Neo CrUX ekranını görürse yorumla; kırmızı değilse kapat. /fermatai TTFB 1.75s opsiyonel kurcalama (kritik değil).
+> - **topic_tracker:** sezon sonu yeni sync sonrası post_sync_update'in 100-basari yazdığını + bozuk satır=0 kaldığını doğrula.
+>
+> ---
+> ## 📜 ÖNCEKİ OTURUM (arşiv) — 18 Mayıs
+>
 > **Son güncelleme:** 18 Mayıs 2026 → **OTURUM 25.46+ DEVAM (HALÜSİNASYON GUARD + ATLAS-2 TRİYAJ + SELF-AWARENESS UPGRADE) — NEO DEV ARASI**
 >
 > ## 🟢 PROJE DURUMU (Snapshot — 25.46+ EXT, 18 May)
