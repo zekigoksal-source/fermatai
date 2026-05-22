@@ -2442,6 +2442,13 @@ html[data-theme="dark"] .msg.bot.streaming::after {
     align-items: center;
     justify-content: center;
   }
+  /* 25.49 (Neo 22 May — iPad alt boşluk fix): home-indicator safe-area'yı
+     INPUT BAR'a ver (body'ye değil). Input arka planı (var--panel) ekran altına
+     kadar uzar, içerik (textarea/buton) indicator'ın üstünde kalır → alttaki
+     ~1cm boşluk/kapanma kaybolur. env() indicator'sız cihazda 0 = etkisiz. */
+  .chat-input {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
 }
 @media (max-width: 400px) {
   /* Cok kucuk ekran */
@@ -11956,7 +11963,11 @@ html[data-theme="dark"] #pwa-manual-guide .pwa-guide-footer {
      ustune iter. Web Chrome (display-mode: browser) ETKILENMEZ. */
   body {
     padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    /* 25.49 (Neo 22 May): bottom safe-area .chat-input'a taşındı. Body'de bottom
+       padding + chat-wrap height:var(--vvh) çakışıyordu → alt ~1cm boşluk +
+       input'un altının kapanması. Bottom 0, alt güvenli alan input bar'ın kendi
+       padding'iyle (var--panel arka plan ekran altına uzar). */
+    padding-bottom: 0;
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     box-sizing: border-box;
