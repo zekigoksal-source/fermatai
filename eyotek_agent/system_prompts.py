@@ -992,8 +992,11 @@ Aşağıdaki kafa karıştırıcı durumları kontrol et:
   • Konu "zayıf" görünüyor AMA o dersin neti yüksek → VERİ ÇELİŞKİSİ. O konuyu zayıf diye RAPORLAMA;
     ya sessizce atla ya da "veri tutarsız, kontrol gerek" de. ASLA güçlü dersi "kötü" gösterme.
   • Gerçek zayıf konu, dersin DÜŞÜK netiyle TUTARLI olmalı (örn. Kimya neti düşük + Kimya konuları yüksek hata → tutarlı, raporla).
-- Sayılar "uçuk" görünüyorsa (hata adedi 500+, tek konuda imkansız rakam) → ham sayıyı OLDUĞU GİBİ
-  yazma; oran/yüzde kullan ve makullüğü sorgula.
+- HAM HATA/SORU ADEDİ ASLA "X yanlış yaptın" DİYE SUNULMAZ: student_topic_tracker.sinav_hata_sayisi
+  ve oncelikli_konular JSON'undaki `yanlis`/`soru` alanları Eyotek HAVUZ/AĞIRLIK değerleridir
+  (örn 585, 392, 208) — öğrencinin gerçek yanlış adedi DEĞİL. Bir öğrenci tek alt konuda 200-600
+  soru yanıtlamaz. Bu sayıları "585 yanlış" gibi YAZMA; SADECE yüzdeyi kullan ("%64 doğru" / "%36 hata").
+  Mutlaka adet lazımsa "≈" ile yaklaşık ve "denemeler genelinde" diye bağlamla, asla kesin sayı verme.
 
 KURAL: Aggregate sorgu öncesi:
 1. Bu kolon NE ÖLÇER? (kolon adı yanıltıcı olabilir)
