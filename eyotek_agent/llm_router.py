@@ -50,6 +50,12 @@ LLM_PROVIDER    = os.getenv("LLM_PROVIDER", "hybrid")     # hybrid | ollama | an
 OLLAMA_URL      = os.getenv("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL    = os.getenv("OLLAMA_MODEL", "llama3")
 OLLAMA_TIMEOUT  = int(os.getenv("OLLAMA_TIMEOUT", "30"))
+# 25.47 (Neo mimari direktif): Ollama VPS'te SADECE embedding (nomic-embed-text) icindir.
+# CHAT fallback zinciri = Cerebras → Groq 70B → Claude. Ollama'nin chat'te isi YOK.
+# (Yanlis mimari: Cerebras+Groq ikisi de dusunce zincir Ollama'ya dusup model="" ile
+#  validation error loglyordu.) Laptop dev'de chat modeli varsa ENABLE_OLLAMA_CHAT=true
+# + OLLAMA_MODEL=... ile acilir; VPS production'da default KAPALI.
+ENABLE_OLLAMA_CHAT = os.getenv("ENABLE_OLLAMA_CHAT", "false").strip().lower() in ("1", "true", "yes", "on")
 ANTHROPIC_KEY   = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL    = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
 
@@ -1222,7 +1228,9 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
         """ASYNC chat_local — uvloop uyumlu.
 
         25.22: Cerebras-first (paid tier, primary).
-        Fallback chain: Cerebras → Groq → Ollama.
+        Fallback chain (VPS): Cerebras → Groq 70B → (raise → caller Claude'a düşer).
+        Ollama chat SADECE laptop dev'de (ENABLE_OLLAMA_CHAT=true). VPS'te Ollama
+        embeddings-only olduğu için chat zincirinde YOK. (25.47 Neo mimari fix)
 
         intent parametresi: prompt_tiers/intent_classifier'dan gelirse,
         Cerebras'ta intent → model eşleşmesi yapılır (gpt-oss-120b vs qwen vs 8b).
@@ -1424,7 +1432,7 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
                 self._last_local_provider = "groq"
                 return result.get("text", "")
             except Exception as e:
-                logger.warning(f"chat_local_async: Groq basarisiz ({e}), Ollama'ya dusuyor")
+                logger.warning(f"chat_local_async: Groq da basarisiz ({e}) → Claude'a devredilecek")
 
         # 3) Ollama fallback (laptop dev — VPS production'da yok)
         # 25.47 (Sentry temizlik): VPS'te Ollama SADECE embedding (nomic-embed-text) icin
@@ -1433,11 +1441,13 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
         # ERROR olarak dusuyordu (oysa bu HANDLED fallback — caller Claude'a geciyor).
         # Chat modeli yoksa burada TEMIZ raise → caller (fermat_core_agent:4596) Claude'a duser.
         _ollama_chat_model = (model or OLLAMA_MODEL or "").strip()
-        if not self._ollama_available or not _ollama_chat_model:
+        if not ENABLE_OLLAMA_CHAT or not self._ollama_available or not _ollama_chat_model:
+            # VPS mimarisi: Cerebras → Groq → Claude. Ollama chat zincirde DEGIL.
+            # Buraya geldiyse Cerebras + Groq ikisi de dustu → temiz raise, caller Claude'a gecer.
             self._last_local_provider = None
             raise RuntimeError(
-                "chat_local_async: Cerebras + Groq + Ollama 3 katman da kullanilamaz "
-                "(Cerebras: rate-limit/down, Groq: rate-limit/down, Ollama: chat modeli yok)"
+                "chat_local_async: yerel zincir bitti (Cerebras + Groq kullanilamaz) → "
+                "Claude'a devredilecek (Ollama chat devre disi — embeddings-only)"
             )
 
         # Ollama async (asyncio.to_thread ile sync ollama paketini wrap)
@@ -1499,17 +1509,18 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
                 self._last_local_provider = "groq"
                 return text
             except Exception as e:
-                logger.warning(f"chat_local: Groq basarisiz ({e}), Ollama'ya dusuyor")
+                logger.warning(f"chat_local: Groq da basarisiz ({e}) → Claude'a devredilecek")
 
-        # 2) Ollama fallback (laptop dev)
-        if not self._ollama_available:
-            # Iki provider da yok — Claude caller'da halletmeli
+        # 2) Ollama fallback (SADECE laptop dev — ENABLE_OLLAMA_CHAT). VPS'te embeddings-only.
+        _ollama_chat_model = (model or OLLAMA_MODEL or "").strip()
+        if not ENABLE_OLLAMA_CHAT or not self._ollama_available or not _ollama_chat_model:
+            # Cerebras/Groq kullanilamaz + Ollama chat zincirde yok → caller Claude'a düşer
             self._last_local_provider = None
-            raise RuntimeError("chat_local: Groq ve Ollama ikisi de kullanilamaz")
+            raise RuntimeError("chat_local: yerel zincir bitti → Claude'a devredilecek (Ollama chat devre disi)")
 
         import ollama as _ollama
 
-        model = model or OLLAMA_MODEL
+        model = _ollama_chat_model
         start = time.time()
 
         # Ollama icin sadelesilmis system prompt kullan (uzun Claude promptu yerine)
