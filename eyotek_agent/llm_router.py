@@ -1427,11 +1427,17 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
                 logger.warning(f"chat_local_async: Groq basarisiz ({e}), Ollama'ya dusuyor")
 
         # 3) Ollama fallback (laptop dev — VPS production'da yok)
-        if not self._ollama_available:
+        # 25.47 (Sentry temizlik): VPS'te Ollama SADECE embedding (nomic-embed-text) icin
+        # kurulu, chat modeli YOK → _ollama_available True ama OLLAMA_MODEL bos. Asagidaki
+        # ollama.chat(model="") "1 validation error for ChatRequest" firlatip Sentry'ye
+        # ERROR olarak dusuyordu (oysa bu HANDLED fallback — caller Claude'a geciyor).
+        # Chat modeli yoksa burada TEMIZ raise → caller (fermat_core_agent:4596) Claude'a duser.
+        _ollama_chat_model = (model or OLLAMA_MODEL or "").strip()
+        if not self._ollama_available or not _ollama_chat_model:
             self._last_local_provider = None
             raise RuntimeError(
                 "chat_local_async: Cerebras + Groq + Ollama 3 katman da kullanilamaz "
-                "(Cerebras: paid tier check, Groq: rate-limit/down, Ollama: laptop only)"
+                "(Cerebras: rate-limit/down, Groq: rate-limit/down, Ollama: chat modeli yok)"
             )
 
         # Ollama async (asyncio.to_thread ile sync ollama paketini wrap)
@@ -1467,7 +1473,9 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
             return text
         except Exception as e:
             self._last_local_provider = None
-            logger.error(f"chat_local_async Ollama hata: {e}")
+            # 25.47: HANDLED fallback (caller Claude'a geciyor) → warning, ERROR DEGIL.
+            # logger.error Sentry'ye issue olarak dusuyordu; bu beklenen degradasyon.
+            logger.warning(f"chat_local_async Ollama fallback basarisiz (Claude'a geciliyor): {e}")
             raise
 
     def chat_local(
