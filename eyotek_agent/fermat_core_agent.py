@@ -4070,16 +4070,21 @@ class FermatCoreAgent:
         # 133K token'a ulasip Cerebras/model 400 "context_length_exceeded" veriyordu.
         # Recap sadece ogrenci icin → admin/mudur korumasiz. TUM roller icin sert
         # token-butce siniri: en eski mesajlari (tool eslesmesini bozmadan) dusur.
-        # Model limiti ~131K; system(~27K)+tools+yanit icin bosluk birak → 100K butce.
+        # Model limiti ~131K (Cerebras qwen). 25.47-rev2 (24 May): 100K butce HALA
+        # tasiyordu (context_length_exceeded 24 May 13:25 tekrar tetikledi). Iki sebep:
+        #   1) len/4 tahmini Turkce+JSON'da DUSUK sayiyor (gercek ~3 char/token).
+        #   2) 100K history + system + tools + yanit > 131K oluyordu.
+        # FIX: butce 70K + tahmin len/3 (KONSERVATIF, daha erken kirp). 70K est (~210K
+        # char) hala cok uzun bir konusma; sadece asiri uzun diyaloglar kirilir.
         try:
-            _HIST_TOK_BUDGET = 100_000
+            _HIST_TOK_BUDGET = 70_000
 
             def _est_tok(_c):
                 if isinstance(_c, str):
-                    return len(_c) // 4
+                    return len(_c) // 3
                 if isinstance(_c, list):
-                    return sum(len(str(_b)) for _b in _c) // 4
-                return len(str(_c)) // 4
+                    return sum(len(str(_b)) for _b in _c) // 3
+                return len(str(_c)) // 3
 
             _total_tok = sum(_est_tok(m.get("content", "")) for m in self.history)
             if _total_tok > _HIST_TOK_BUDGET:
