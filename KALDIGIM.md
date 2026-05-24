@@ -1,12 +1,13 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 23 Mayıs 2026 → **OTURUM 25.47+ (TOPIC INVERSION + ACL ORPHAN + iPad UX + SENTRY 3 FİX + WIX PERF DENETİM) — NEO DEV ARASI**
+> **Son güncelleme:** 24 Mayıs 2026 → **OTURUM 25.47+ (TOPIC INVERSION + ACL + iPad UX + SENTRY + LLM MİMARİ + WIX/REKLAM DENETİM) — NEO DEV ARASI**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.47+, 23 May)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.47+, 24 May)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `9995e16` fix(ui): iPad alt input safe-area
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅ (12ms), git senkron, PostgreSQL OK (167 öğrenci), **topic_tracker bozuk satır = 0**, disk %6, RAM 3.3/15.6GB, son 10dk hata yok
+> - **HEAD:** `f1f28c0` fix(context): history token bütçesi 70K + len/3
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron, PostgreSQL OK (167 öğrenci), **topic_tracker bozuk satır = 0**, disk %6, son 24h Sentry 3 issue (hepsi handled/fix'li)
+> - **LLM ZİNCİRİ (NET):** Cerebras → Groq 70B → Claude. **Ollama chat'te DEĞİL** (embeddings-only, ENABLE_OLLAMA_CHAT=false)
 >
 > ## 🎯 22-23 Mayıs Yapılanlar
 >
@@ -41,11 +42,21 @@
 > ```
 > (öncesinde aynı oturumda: chess fix zinciri 191a33c→16c492e, render LaTeX/mermaid 8c0d523, finans/navigator 442e592)
 >
+> **I. LLM MİMARİ + SENTRY temizliği (24 May, commit `8152bfa`+`b849703`+`f1f28c0`)** — Neo denetim:
+> - `8152bfa` Ollama fallback gürültüsü: `ollama.chat(model="")` validation error → Sentry. Handled fallback'ti, logger.error→warning + temiz raise.
+> - `b849703` **MİMARİ NETLEŞTİRME (Neo direktif):** Ollama chat zincirinden ÇIKARILDI. Yedek = Groq 70B (llama-3.3-70b-versatile, available). Zincir artık **Cerebras → Groq → Claude**. `ENABLE_OLLAMA_CHAT` flag (VPS=false). Ollama = embeddings-only.
+> - `f1f28c0` context_length 24 May 13:25 tekrarladı (öğrenci EZGİ uzun seans) → history bütçe 100K→70K + tahmin len/3 (Türkçe+JSON yoğun). Kullanıcı Claude fallback ile cevabını almıştı; fix Cerebras boşa-deneme + gürültüyü kaldırır.
+>
+> **J. ADVISORY (kod yok) — Wix perf + Meta/Google Ads:**
+> - Wix perf: canlı ölçüm → TTFB 0.25s, hero 47KB, JS ~1.3MB Wix platform. CrUX "yeterli veri yok" = gerçek problem sinyali YOK. Lab skoru worst-case. VERDICT: tasarıma dokunma, panik yok. Tek iz /fermatai TTFB 1.75s.
+> - Meta Ads (resmi MCP, Nisan 2026, 29 tool) + Google Ads (resmi MCP) MEVCUT. **Neo kararı: bota GÖMME** (para+paylaşımlı servis+blast-radius riski) → **Cowork'te ayrı** read-only başlat. Cowork prompt verildi, Neo bağlantıyı orada kurdu. FermatAI bağlamı temiz tutuldu.
+>
 > ## 🔜 Sonraki Oturum Açıldığında
-> - **predict_yks_score** artık 6 rolde açık + DataError fixli → öğrenci "YKS'de ne alırım" sorularını canlı test et.
-> - **Sentry denetimi:** context guard + temperature fix sonrası issue sayısı düşmeli; bir sonraki turda get_sentry_errors ile doğrula.
-> - **Wix perf:** Neo CrUX ekranını görürse yorumla; kırmızı değilse kapat. /fermatai TTFB 1.75s opsiyonel kurcalama (kritik değil).
-> - **topic_tracker:** sezon sonu yeni sync sonrası post_sync_update'in 100-basari yazdığını + bozuk satır=0 kaldığını doğrula.
+> - **Sentry:** 429 (Cerebras trafiği) handled ama izle; context_length 70K fix sonrası tekrarlamamalı, doğrula.
+> - **predict_yks_score** 6 rolde açık + DataError fixli → öğrenci "YKS'de ne alırım" canlı test.
+> - **topic_tracker:** sezon sonu yeni sync → post_sync_update 100-basari yazıyor mu + bozuk satır=0 doğrula.
+> - **Reklam:** Neo Cowork'te Meta/Google Ads read-only kurdu; istenirse oradan analiz (FermatAI'ye gömülmedi, gömülmeyecek).
+> - **temperature fix:** opus-4-7 Atlas-2 gece cron'u temperature'sız çalıştı mı (BadRequestError tekrarı yok mu) doğrula.
 >
 > ---
 > ## 📜 ÖNCEKİ OTURUM (arşiv) — 18 Mayıs

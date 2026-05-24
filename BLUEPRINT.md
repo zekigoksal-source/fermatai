@@ -1,5 +1,42 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
+> **Belge tarihi:** 24 Mayıs 2026 · **Oturum:** 25.47+ — Topic Inversion Fix + ACL Orphan + iPad UX + Sentry + LLM Mimari Netleştirme + Wix/Reklam Denetim
+>
+> ## 🟢 SON DURUM SNAPSHOT (25.47+, 24 May)
+>
+> | Metrik | Değer |
+> |--------|-------|
+> | **VPS HEAD** | `f1f28c0` fix(context): history token bütçesi 70K + len/3 |
+> | **LLM zinciri** | **Cerebras → Groq 70B → Claude** (Ollama chat'te DEĞİL — embeddings-only, `ENABLE_OLLAMA_CHAT=false`) |
+> | **Sentry 24h** | 3 issue — hepsi handled/fix'li (Ollama gürültü fix HOLDING · context_length 70K fix · 429 fallback'le handled) |
+> | **topic_tracker** | başarı↔hata inversion DÜZELTİLDİ (migration 017 · bozuk satır=0 · generated `sinav_basari_yuzdesi`=100−hata) |
+> | **ACL** | orphan 6 adaptive/predictive araç doğru rollere eklendi → orphan=0 |
+> | **UX** | render skeleton+reveal+kontrast · iPad 44px touch + safe-area · SW `v25.50` |
+> | **Reklam** | Meta/Google Ads MCP → Cowork'te ayrı (bota gömülMEDİ — para + blast-radius kararı) |
+>
+> ## 🆕 OTURUM 25.47+ — Veri Bütünlüğü + LLM Mimari + UX (22-24 May)
+>
+> **A. Topic başarı↔hata INVERSION (`5ad05c0` + migration 017)** — `sinav_hata_yuzdesi` aslında BAŞARI tutuyordu; ~30 okuyucu HATA sanıyordu → güçlü dersi "kör nokta" gösteriyordu. migration 017 (idempotent): 2892 satır flip + `sinav_basari_yuzdesi` GENERATED 100−hata + post_sync_update importer fix + 7 ters okuyucu convention-E + system_prompts çapraz-doğrulama guardrail. Canlı doğrulandı.
+>
+> **B. ACL orphan 6 araç (`0c1f379`)** — get_adaptive_summary/get_knowledge_graph/analyze_student_study_pattern/get_student_daily_summary/predict_yks_score/observe_student_answer hiçbir rolde yoktu → YETKİ HATASI. Doğru rollere eklendi.
+>
+> **C. predictive_model DataError (`cad1412`)** — 228× `str soz_no→int4`. predict_student girişinde `int()` coercion. Smoke test geçti.
+>
+> **D. LLM MİMARİ NETLEŞTİRME (`8152bfa`+`b849703`)** — Yedek zincir = **Cerebras → Groq 70B → Claude**. Ollama chat'ten ÇIKARILDI (embeddings-only, `ENABLE_OLLAMA_CHAT` flag). Sebep: Cerebras 429 + Groq anlık düşünce zincir Ollama'ya sarkıp `model=""` validation error üretiyordu (Sentry gürültü); sistem zaten Claude'a düşüyordu ama mimari yanlıştı.
+>
+> **E. context_length HARD GUARD (`cad1412`→`f1f28c0`)** — uzun web sohbetlerinde 133K>131K. TÜM roller için history token bütçesi (recap sadece öğrenciydi). 100K→70K + len/3 tahmin (Türkçe+JSON yoğun).
+>
+> **F. temperature deprecated (`cad1412`)** — opus-4-7 Atlas-2 gece cron BadRequestError → prompt_optimizer Anthropic çağrısından temperature kaldırıldı.
+>
+> **G. UX — render + iPad** (`6246b6d`/`4206b0c`/`cad1412`/`9995e16`) — render skeleton+kayarak açılma+kontrast · arşiv dropdown dark-theme · iPad 44px touch + render "← Geri" + alt safe-area · SW v25.50.
+>
+> **H. Render çeşitlilik (`17f2c38`)** — veri-tipi→renderer matrisi (treemap/compare2/gauge/timeline aktif) + "ham yanlış sayısı sunma" guard (`4fa3a6c`).
+>
+> **I. ADVISORY (kod yok):** Wix perf canlı ölçüm → TTFB 0.25s, hero 47KB, JS ~1.3MB Wix platform tavanı, CrUX "yeterli veri yok" = gerçek problem sinyali YOK → tasarıma dokunma. · Meta/Google Ads resmi MCP'leri → Cowork'te ayrı read-only (bota gömülmedi).
+>
+> ---
+> ## 📜 ÖNCEKİ BELGE — 18 Mayıs
+>
 > **Belge tarihi:** 18 Mayıs 2026 · **Oturum:** 25.46+ EXT — Halüsinasyon Guard + Atlas-2 Self-Awareness + Kategori Rotasyonu
 >
 > ## 🟢 SON DURUM SNAPSHOT (25.46+ EXT, 18 May)
