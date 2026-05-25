@@ -1,13 +1,21 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 24 Mayıs 2026 → **OTURUM 25.47+ (TOPIC INVERSION + ACL + iPad UX + SENTRY + LLM MİMARİ + WIX/REKLAM DENETİM) — NEO DEV ARASI**
+> **Son güncelleme:** 26 Mayıs 2026 → **OTURUM 25.48 (SSS/SEO+GEO — bot-yüzlü tam FAQ sayfası, Wix) + 25.47 (TOPIC INVERSION + ACL + iPad + SENTRY + LLM MİMARİ) — NEO DEV ARASI**
 >
 > ## 🟢 PROJE DURUMU (Snapshot — 25.47+, 24 May)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `f1f28c0` fix(context): history token bütçesi 70K + len/3
+> - **HEAD:** `03dd9dd` fix(sentry): Cerebras-tools context_length pre-flight guard (SSS işi commit'siz — Wix-side)
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron, PostgreSQL OK (167 öğrenci), **topic_tracker bozuk satır = 0**, disk %6, son 24h Sentry 3 issue (hepsi handled/fix'li)
 > - **LLM ZİNCİRİ (NET):** Cerebras → Groq 70B → Claude. **Ollama chat'te DEĞİL** (embeddings-only, ENABLE_OLLAMA_CHAT=false)
+>
+> ## 🆕 26 May (gece) — SSS / SEO+GEO TAM (Wix + Google Console; bot koduna DOKUNULMADI)
+> - **Sorun:** Anasayfa FAQ widget'ı (Wix faq-ooi app) **client-side/lazy-load** → ham HTML'de sadece 1 segment; 69 sorunun ~65'i Google'a yalnızca JS-render ile, **JS'siz AI crawler'lara (GPTBot/ClaudeBot/Perplexity) HİÇ** görünmüyordu. `/sss` = 404. Wix REST API **sayfa OLUŞTURAMAZ** (yalnız site/folder/blog).
+> - **Çözüm = blog post** (server-render → ham HTML'de crawlable): Wix **FAQ API** (`/faq/v2/question-entries`+`/categories`) ile 69 soru / 13 segment temiz çekildi → Blog Draft API ile yayınlandı. Akış: create(intro)→PATCH richContent (152 Ricos node, **draft-first + Get-diff doğrulama** 141/141 eşleşme)→seoSlug→publish.
+> - **CANLI:** `/post/sikca-sorulan-sorular-sss` (postId `b695dd3c-068d-410a-bbfa-06a38c303cd2`) — **69 `<h3>`+cevap ham HTML'de**, BlogPosting schema, **noindex YOK**, canonical OK. `/sss` → **301 redirect** (Wix URL Redirect Manager / dashboard, gerçek sayfaya bağlı). robots.txt: `Allow: /` + AI crawler'lar serbest (yalnız PetalBot kapalı). `blog-posts-sitemap.xml`'de mevcut. Google Rich Results "**başarıyla tarandı, 4 geçerli öğe**" + Search Console **dizine ekleme talebi yapıldı** (öncelikli sıra).
+> - **Envanter:** 69 soru = 57 görünür + 12 gizli (anasayfa widget'ında gizli ama hepsi blog post'ta). 13 segment.
+> - **NOT:** FAQ rich-results 7 May 2026 deprecated → asıl değer **GEO** (ham HTML taranabilir içerik). Anasayfa tekil FAQPage durumu önceki adımda zaten temizlenmişti, dokunulmadı.
+> - **Sonraki:** 2-3 gün sonra Search Console'da `/post/sikca-sorulan-sorular-sss` "URL Google'da" yeşil mi doğrula.
 >
 > ## 🎯 22-23 Mayıs Yapılanlar
 >
