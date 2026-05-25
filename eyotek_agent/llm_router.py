@@ -1839,6 +1839,17 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
 
         try:
             for round_idx in range(max_rounds):
+                # 25.47-rev3 (Sentry context_length: chat_cerebras_with_tools 133-135K vakası):
+                # Cerebras 131K limiti. system prompt (~27K) + uzun history + tool şeması +
+                # her round biriken tool sonuçları toplamı bunu aşınca complete_with_tools
+                # 400 context_length veriyordu (handled — caller Claude'a düşer — ama boşa
+                # round + Sentry gürültü). Pre-flight: her round başında toplam çok büyükse
+                # Cerebras-tools'u ATLA → caller Claude (200K window, tool-calling için zaten
+                # birincil). Türkçe yoğun tokenize olduğu için len/3 ile konservatif sayıyoruz.
+                _cb_est_tok = sum(len(str(m.get("content", ""))) for m in cb_msgs) // 3
+                if _cb_est_tok > 95_000:
+                    logger.info(f"[CEREBRAS-TOOLS] mesaj çok büyük (~{_cb_est_tok} tok est, round {round_idx}) → Claude'a bırak")
+                    return None
                 result = await self._cerebras_client.complete_with_tools_async(
                     messages=cb_msgs,
                     tools=cerebras_tools,
