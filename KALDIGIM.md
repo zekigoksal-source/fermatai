@@ -60,6 +60,9 @@
 > - Meta Ads (resmi MCP, Nisan 2026, 29 tool) + Google Ads (resmi MCP) MEVCUT. **Neo kararı: bota GÖMME** (para+paylaşımlı servis+blast-radius riski) → **Cowork'te ayrı** read-only başlat. Cowork prompt verildi, Neo bağlantıyı orada kurdu. FermatAI bağlamı temiz tutuldu.
 >
 > ## 🔜 Sonraki Oturum Açıldığında
+> - **🏖️ 26 May TATİL ÖNCESİ SAĞLIK (Neo 5+ gün uzakta, bilgisayar KAPALI olacak):** VPS tamamen bağımsız ✅ — bridge+session-keeper active, /health+/chat 200, disk %6, uptime 32g, 8 systemd timer otonom, Eyotek headless cookie-keeper canlı (8 cookie). Sentry: **0 aktif** + 1 zombie (Cerebras context, deploy öncesi son görülme, kendiliğinden düşer). Wix `/sss`→301→post (69 h3) ✅.
+> - **DÖNÜŞTE 3 küçük iş (BLOKE DEĞİL, tatil öncesi bilerek deploy ETMEDİM):** (1) Groq free-tier TPD 100K/gün → uzun-context tool isteği Groq'u atlayıp Claude'a düşüyor; Cerebras gibi Groq'a da `>~90K skip` pre-flight guard ekle (boşuna 413 denemesin, Claude maliyetini kıs). (2) SQL hata 1×: "SELECT DISTINCT + ORDER BY column not in select list" (bir analytics tool, graceful döndü). (3) Bazı uzun öğrenci seanslarında context 130K+'a çıkıyor → history trim'i gözden geçir.
+> - **Eyotek tek gerçek RİSK (1 hafta):** captcha'lı zorunlu re-login gelirse headless keeper çözemez → Eyotek YAZMA durur, OKUMA/Q&A cache'ten devam eder (öğrenci sohbeti etkilenmez, graceful).
 > - **Sentry:** 429 (Cerebras trafiği) handled ama izle; context_length 70K fix sonrası tekrarlamamalı, doğrula.
 > - **predict_yks_score** 6 rolde açık + DataError fixli → öğrenci "YKS'de ne alırım" canlı test.
 > - **topic_tracker:** sezon sonu yeni sync → post_sync_update 100-basari yazıyor mu + bozuk satır=0 doğrula.
