@@ -168,8 +168,68 @@ async def _get_ayt_avg_netler(soz_no: str) -> dict:
     }
 
 
+async def _get_extra_signals(soz_no: str) -> dict:
+    """ÖSYM bandı + zayıf konu potansiyeli + öncelikli konular.
+    (Oturum 25.48 — puan_tahmin_motoru.py BUG3 birleştirme: bu sinyaller eskiden
+    ayrı motorda hesaplanıyordu, artık tek kaynak tahmin_et içinde.)"""
+    import json as _json
+    out = {'osym': None, 'zayif_konu': None, 'oncelikli_konular': []}
+    r = await db_fetchrow("""
+        SELECT osym_2025_yer, osym_2024_yer, osym_2023_yer, oncelikli_konular
+        FROM student_exam_analysis WHERE soz_no::text = $1 LIMIT 1
+    """, str(soz_no))
+    if r:
+        yer25 = _parse_num(r['osym_2025_yer'])
+        yer24 = _parse_num(r['osym_2024_yer'])
+        yer23 = _parse_num(r['osym_2023_yer'])
+        band = [v for v in (yer25, yer24, yer23) if v]
+        if band:
+            out['osym'] = {'son_2025': yer25 or None, 'ort_3y': round(sum(band) / len(band), 1)}
+        ok = r['oncelikli_konular']
+        if ok:
+            if isinstance(ok, str):
+                try:
+                    ok = _json.loads(ok)
+                except Exception:
+                    ok = []
+            flat = []
+            if isinstance(ok, list):
+                for g in ok:
+                    if isinstance(g, dict) and 'konular' in g:
+                        for k in g['konular']:
+                            if isinstance(k, dict) and k.get('konu'):
+                                flat.append({'konu': k['konu'], 'yuzde': k.get('yuzde')})
+                    elif isinstance(g, dict) and g.get('konu'):
+                        flat.append({'konu': g['konu'], 'yuzde': g.get('yuzde')})
+            out['oncelikli_konular'] = flat[:3]
+    # Zayıf konu (convention-E: sinav_hata_yuzdesi yüksek = zayıf, migration 017 sonrası)
+    try:
+        zayif = await db_fetchval("""
+            SELECT COUNT(*) FROM student_topic_tracker
+            WHERE soz_no::text = $1 AND tamamlandi = FALSE
+              AND COALESCE(status,'') != 'metadata'
+              AND sinav_hata_yuzdesi >= 50 AND LENGTH(konu) > 5
+              AND konu NOT LIKE 'Ortalama %'
+        """, str(soz_no)) or 0
+        if zayif:
+            out['zayif_konu'] = {'count': zayif, 'potansiyel_net': round(zayif * 0.5, 1)}
+        if not out['oncelikli_konular']:
+            top = await db_fetch("""
+                SELECT konu, ders FROM student_topic_tracker
+                WHERE soz_no::text = $1 AND tamamlandi = FALSE
+                  AND COALESCE(status,'') != 'metadata'
+                  AND sinav_hata_yuzdesi >= 50 AND LENGTH(konu) > 5
+                  AND konu NOT LIKE 'Ortalama %'
+                ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 3
+            """, str(soz_no))
+            out['oncelikli_konular'] = [{'konu': t['konu'], 'ders': t['ders']} for t in top]
+    except Exception:
+        pass
+    return out
+
+
 async def tahmin_et(soz_no: str) -> dict:
-    """Öğrenci için puan tahmin paketi."""
+    """Öğrenci için puan tahmin paketi (tek kaynak — fast-path + Claude + PDF hepsi bunu kullanır)."""
     student = await db_fetchrow(
         "SELECT full_name, class_name FROM students WHERE soz_no::text=$1",
         str(soz_no)
@@ -270,6 +330,15 @@ async def tahmin_et(soz_no: str) -> dict:
     else:
         en_iyi = en_kotu = 0
 
+    # 25.48 birleştirme: ÖSYM bandı + zayıf konu + öncelikli (eski motoru'nun sinyalleri)
+    extra = await _get_extra_signals(soz_no)
+    # Tarihli TYT trend serisi (line chart — kronolojik sıra)
+    tyt_trend_series = [
+        {'label': (r['exam_date'].strftime('%d.%m') if r.get('exam_date') else (r['exam_name'] or '')[:8]),
+         'net': round(_safe(r['toplam']), 1)}
+        for r in reversed(tyt)
+    ]
+
     return {
         'name': name, 'sinif': sinif,
         'sinav_sayisi': len(tyt),
@@ -293,6 +362,11 @@ async def tahmin_et(soz_no: str) -> dict:
             'fen': trend_fen, 'sosyal': trend_sos, 'toplam': trend_toplam,
         },
         'en_iyi_net': en_iyi, 'en_kotu_net': en_kotu,
+        # 25.48 birleştirme — eski puan_tahmin_motoru.py sinyalleri:
+        'tyt_trend_series': tyt_trend_series,   # [{label, net}] line chart için
+        'osym': extra['osym'],                  # {son_2025, ort_3y} ÖSYM gerçek puan bandı
+        'zayif_konu': extra['zayif_konu'],      # {count, potansiyel_net}
+        'oncelikli_konular': extra['oncelikli_konular'],  # [{konu, yuzde|ders}] top 3
     }
 
 
@@ -321,7 +395,11 @@ def hedef_analiz(tahmin: dict, hedef_puan: float, alan: str = 'SAY') -> dict:
 def format_rapor(tahmin: dict, hedef: dict = None) -> str:
     """WhatsApp formatlı puan tahmin raporu."""
     if 'error' in tahmin:
-        return f"⚠️ {tahmin.get('name', '')}: {tahmin['error']}"
+        first = (tahmin.get('name') or '').split()[0] if tahmin.get('name') else 'arkadaşım'
+        return (f"📊 *Puan Tahmini — {first}*\n\n"
+                f"{tahmin['error']}\n\n"
+                f"_Birkaç deneme katılımından sonra gerçek, matematiksel bir tahmin verebilirim — "
+                f"dürüst olmak gerek, veri olmadan tahmin yapmam._ 💪")
 
     t = tahmin
     lines = [
@@ -391,6 +469,42 @@ def format_rapor(tahmin: dict, hedef: dict = None) -> str:
 
     lines.append("")
 
+    # ── ÖSYM gerçek puan bandı (25.48 birleştirme) ──
+    if t.get('osym'):
+        o = t['osym']
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━")
+        lines.append("🏆 *ÖSYM GERÇEK PUAN BANDI*")
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━\n")
+        if o.get('ort_3y'):
+            lines.append(f"  📊 2023-2025 ortalama: *{o['ort_3y']:.0f}*")
+        if o.get('son_2025'):
+            lines.append(f"  🎯 Son ÖSYM (2025): {o['son_2025']:.0f}")
+        lines.append("")
+
+    # ── Net kazanım potansiyeli ──
+    zk = t.get('zayif_konu')
+    if zk and zk.get('count'):
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━")
+        lines.append("💪 *NET KAZANIM POTANSİYELİ*")
+        lines.append("━━━━━━━━━━━━━━━━━━━━━━━\n")
+        lines.append(f"  🔴 Zayıf konu sayısı: *{zk['count']}*")
+        lines.append(f"  🚀 Tamamen netleştirirsen: *+{zk['potansiyel_net']:.0f} net* potansiyel")
+        lines.append("")
+
+    # ── Öncelikli konular ──
+    onc = t.get('oncelikli_konular')
+    if onc:
+        lines.append("📚 *Öncelikli konular:*")
+        for k in onc[:3]:
+            if k.get('yuzde'):
+                suffix = f" — başarı {k['yuzde']}"
+            elif k.get('ders'):
+                suffix = f" ({k['ders']})"
+            else:
+                suffix = ""
+            lines.append(f"  • {str(k['konu'])[:55]}{suffix}")
+        lines.append("")
+
     if hedef:
         lines.append("━━━━━━━━━━━━━━━━━━━━━━━")
         lines.append("🎯 *HEDEF ANALİZİ*")
@@ -429,6 +543,24 @@ def format_rapor(tahmin: dict, hedef: dict = None) -> str:
             en_iyi_delta = delta
     if en_iyi_trend:
         lines.append(f"🚀 *{en_iyi_trend.title()}* derste artış var ({en_iyi_delta:+.1f}) — devam et.")
+
+    # ── Render blokları (25.48): web → Chart.js, WhatsApp → QuickChart image ──
+    import json as _j
+    ts = t.get('tyt_trend_series') or []
+    if len(ts) >= 2:
+        chart = {"type": "line",
+                 "data": {"labels": [x['label'] for x in ts],
+                          "datasets": [{"label": "TYT Net", "data": [x['net'] for x in ts],
+                                        "borderColor": "#C76F3E"}]}}
+        lines += ["```chart", _j.dumps(chart, ensure_ascii=False), "```"]
+    a = t.get('tyt_son3_avg') or {}
+    if a and (a.get('turkce') or a.get('matematik')):
+        radar = {"title": "TYT Ders Profili (son 3 ort.)",
+                 "labels": ["Türkçe", "Matematik", "Fen", "Sosyal"],
+                 "datasets": [{"label": t.get('name', 'Sen'),
+                               "data": [round(a.get('turkce', 0), 1), round(a.get('matematik', 0), 1),
+                                        round(a.get('fen', 0), 1), round(a.get('sosyal', 0), 1)]}]}
+        lines += ["```radar", _j.dumps(radar, ensure_ascii=False), "```"]
 
     lines.append("")
     lines.append("_'puan tahmin [isim] hedef [bolum]' diyerek bolum bazli analiz al._")
