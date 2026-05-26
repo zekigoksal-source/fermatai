@@ -5,7 +5,7 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.47+, 24 May)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `03dd9dd` fix(sentry): Cerebras-tools context_length pre-flight guard (SSS işi commit'siz — Wix-side)
+> - **HEAD:** `1c7ee15` (26 May: SSS/SEO + admin dashboard veri tutarlılığı + 19 duplike temizliği + Sistem Health auth fix)
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron, PostgreSQL OK (167 öğrenci), **topic_tracker bozuk satır = 0**, disk %6, son 24h Sentry 3 issue (hepsi handled/fix'li)
 > - **LLM ZİNCİRİ (NET):** Cerebras → Groq 70B → Claude. **Ollama chat'te DEĞİL** (embeddings-only, ENABLE_OLLAMA_CHAT=false)
 >
@@ -61,7 +61,7 @@
 >
 > ## 🔜 Sonraki Oturum Açıldığında
 > - **🆕 26 May ADMIN DASHBOARD veri tutarlılığı (Neo ekran denetimi, hepsi CANLI):**
->   - dashboard_ui.html: Maliyet tablosu **Cerebras+Vision+Diğer** sütunları (TOPLAM artık reconcile; eskiden Cerebras %61 sütunsuzdu → toplam tutmuyordu) · Routing donut kaynak-başı **ayrı renk** (cerebras_235b≠cerebras) · Öğrenci YKS **float yuvarlama** (29.8999→29.9) · **Mesaj-Trend** boş paneldi → `/api/message-trend` endpoint + line chart · avg_ms okunabilir (34113→"34,1 sn"). web_chat_ui.html: /chat Sistem Health donut bayat fast/ollama/claude → **gerçek routing-stats**. Commit'ler `0cf6447`+`5506ea8`, VPS deploy+restart OK.
+>   - dashboard_ui.html: Maliyet tablosu **Cerebras+Vision+Diğer** sütunları (TOPLAM artık reconcile; eskiden Cerebras %61 sütunsuzdu → toplam tutmuyordu) · Routing donut kaynak-başı **ayrı renk** (cerebras_235b≠cerebras) · Öğrenci YKS **float yuvarlama** (29.8999→29.9) · **Mesaj-Trend** boş paneldi → `/api/message-trend` endpoint + line chart · avg_ms okunabilir (34113→"34,1 sn"). web_chat_ui.html: /chat Sistem Health donut bayat fast/ollama/claude → **gerçek routing-stats** (önce auth header eksikti → boş panel, `1c7ee15` ile `authHeaders()` eklendi, canlı sayfada 200 doğrulandı + boş-veri mesajı). Commit'ler `0cf6447`+`5506ea8`+`1516de0`+`1c7ee15`, VPS deploy+restart OK. NOT: /chat PWA cache — değişiklik görmek için Ctrl+Shift+R.
 >   - **DB DUPLİKE TEMİZLİĞİ (geri alınabilir):** students 165 active ama 146 benzersiz → **19 boş duplike kabuk** (12 May re-import: yüksek soz_no, sezon/class/phone=None, 0 sınav; orijinaller dolu). 19'u `status='inactive'` (SİLME değil). active **165→146**, sınıfsız **50→31**, duplike **0**. Geri-alma: `/opt/fermatai/.dup_cleanup_26may.json`.
 >   - **DÖNÜŞTE:** (1) **23 ikizsiz sezon=None active** — yeni öğrenci mi phantom mu (telefon/sınav var mı bak). (2) **İMPORT ROOT-CAUSE:** 12 May scrape var olan öğrencilere YENİ soz_no verdi → importer'ı eyotek_id/tc_no UPSERT'e çevir yoksa dup tekrar gelir. (3) 8 "Kurs" öğrencisi 2025.26 ama class boş (devre/kur boş).
 > - **🏖️ 26 May TATİL ÖNCESİ SAĞLIK (Neo 5+ gün uzakta, bilgisayar KAPALI olacak):** VPS tamamen bağımsız ✅ — bridge+session-keeper active, /health+/chat 200, disk %6, uptime 32g, 8 systemd timer otonom, Eyotek headless cookie-keeper canlı (8 cookie). Sentry: **0 aktif** + 1 zombie (Cerebras context, deploy öncesi son görülme, kendiliğinden düşer). Wix `/sss`→301→post (69 h3) ✅.
