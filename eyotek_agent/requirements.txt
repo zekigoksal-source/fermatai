@@ -30,5 +30,6 @@ sentry-sdk[fastapi]>=2.0.0  # Production error tracking (DSN env varsa aktif)
 # ── Oturum 25.40l — PWA Web Push Notification (Neo: app'e cekme stratejisi) ─
 pywebpush>=2.0.0          # W3C Web Push Protocol — VAPID + payload encryption
 cryptography>=41.0.0      # pywebpush dependency (VAPID JWT signing)
-</content>
-</invoke>
+
+# ── Oturum 25.48 — PDF rapor ─────────────────────────────────────────────────
+fpdf2>=2.8.0              # Öğrenci PDF raporu — Türkçe Unicode (LiberationSans/DejaVu)

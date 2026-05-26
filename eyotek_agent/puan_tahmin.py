@@ -273,7 +273,7 @@ async def tahmin_et(soz_no: str) -> dict:
     return {
         'name': name, 'sinif': sinif,
         'sinav_sayisi': len(tyt),
-        'son_tarih': tyt[0]['exam_date'].strftime('%d.%m.%Y') if tyt else None,
+        'son_tarih': tyt[0]['exam_date'].strftime('%d.%m.%Y') if (tyt and tyt[0].get('exam_date')) else None,
         'tyt_son3_avg': {
             'turkce': avg_turkce, 'matematik': avg_mat,
             'fen': avg_fen, 'sosyal': avg_sos,

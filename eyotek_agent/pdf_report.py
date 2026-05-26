@@ -21,15 +21,51 @@ from db_pool import get_pool as _get_pool
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "reports")
 
 
+def _resolve_unicode_fonts():
+    """Regular/Bold/Italic için MEVCUT Unicode TTF yollarını döner (platform-bağımsız).
+    BUG1 fix (26 May): eskiden C:/Windows/Fonts hardcode'luydu → Linux VPS'te crash.
+    Linux'ta LiberationSans (Arial-uyumlu) / DejaVu, Windows'ta Arial denenir."""
+    candidates = {
+        "regular": [
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "C:/Windows/Fonts/arial.ttf",
+        ],
+        "bold": [
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "C:/Windows/Fonts/arialbd.ttf",
+        ],
+        "italic": [
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf",
+            "C:/Windows/Fonts/ariali.ttf",
+        ],
+    }
+    def pick(style):
+        for p in candidates[style]:
+            if os.path.exists(p):
+                return p
+        return None
+    reg = pick("regular")
+    if not reg:
+        raise RuntimeError(
+            "PDF raporu için Unicode TTF font bulunamadı (LiberationSans/DejaVu/Arial). "
+            "Linux'ta çözüm: apt install fonts-liberation")
+    return reg, (pick("bold") or reg), (pick("italic") or reg)
+
+
 class FermatReport(FPDF):
     """Fermat kurumsal PDF şablonu."""
 
     def __init__(self):
         super().__init__()
-        # Türkçe karakter desteği için Arial TTF
-        self.add_font("Arial", "", "C:/Windows/Fonts/arial.ttf", uni=True)
-        self.add_font("Arial", "B", "C:/Windows/Fonts/arialbd.ttf", uni=True)
-        self.add_font("Arial", "I", "C:/Windows/Fonts/ariali.ttf", uni=True)
+        # Türkçe karakter desteği — platform-bağımsız Unicode font (BUG1 fix)
+        _reg, _bold, _ital = _resolve_unicode_fonts()
+        # fpdf2'de uni param deprecated — TTF'ler zaten Unicode (uni=True KALDIRILDI)
+        self.add_font("Arial", "", _reg)
+        self.add_font("Arial", "B", _bold)
+        self.add_font("Arial", "I", _ital)
 
     def header(self):
         self.set_font("Arial", "B", 14)
