@@ -10,30 +10,12 @@ User=neo
 Group=neo
 Environment="HOME=/home/neo"
 Environment="DISPLAY="
-# Playwright bundled Chromium (varsayilan path)
+# Chrome CDP — port 9333, headless new, persistent profile.
+# ExecStart bir wrapper script'e delege edildi (26 May 2026): Playwright guncellemesi
+# chromium binary klasorunu degistiriyor (chromium-NNNN), eskiden hardcode oldugu icin
+# 203/EXEC flapping yapiyordu. Wrapper en guncel chromium-* build'i otomatik bulur.
 ExecStartPre=/bin/mkdir -p /home/neo/.fermat-chrome /home/neo/.fermat-chrome-logs
-# Chrome CDP — port 9222, headless new, persistent profile
-ExecStart=/home/neo/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome \
-    --headless=new \
-    --remote-debugging-port=9333 \
-    --remote-debugging-address=127.0.0.1 \
-    --user-data-dir=/home/neo/.fermat-chrome \
-    --disable-gpu \
-    --no-sandbox \
-    --no-first-run \
-    --no-default-browser-check \
-    --disable-dev-shm-usage \
-    --disable-extensions \
-    --disable-background-networking \
-    --disable-default-apps \
-    --disable-sync \
-    --disable-translate \
-    --metrics-recording-only \
-    --safebrowsing-disable-auto-update \
-    --disable-component-update \
-    --window-size=1366,768 \
-    --user-agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36" \
-    about:blank
+ExecStart=/opt/fermatai/eyotek_agent/chrome_cdp_start.sh
 
 # Restart on failure (network glitch, OOM, etc)
 Restart=always
