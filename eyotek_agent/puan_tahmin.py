@@ -555,12 +555,16 @@ def format_rapor(tahmin: dict, hedef: dict = None) -> str:
         lines += ["```chart", _j.dumps(chart, ensure_ascii=False), "```"]
     a = t.get('tyt_son3_avg') or {}
     if a and (a.get('turkce') or a.get('matematik')):
-        radar = {"title": "TYT Ders Profili (son 3 ort.)",
-                 "labels": ["Türkçe", "Matematik", "Fen", "Sosyal"],
-                 "datasets": [{"label": t.get('name', 'Sen'),
-                               "data": [round(a.get('turkce', 0), 1), round(a.get('matematik', 0), 1),
-                                        round(a.get('fen', 0), 1), round(a.get('sosyal', 0), 1)]}]}
-        lines += ["```radar", _j.dumps(radar, ensure_ascii=False), "```"]
+        # ```chart + type:radar → hem web (Chart.js) hem WhatsApp (QuickChart image).
+        # Ayrı ```radar fence'i chart_url_helper işlemiyor → WA'da raw JSON kalırdı.
+        radar = {"type": "radar",
+                 "data": {"labels": ["Türkçe", "Matematik", "Fen", "Sosyal"],
+                          "datasets": [{"label": t.get('name', 'Sen'),
+                                        "data": [round(a.get('turkce', 0), 1), round(a.get('matematik', 0), 1),
+                                                 round(a.get('fen', 0), 1), round(a.get('sosyal', 0), 1)],
+                                        "borderColor": "#58a6ff",
+                                        "backgroundColor": "rgba(88,166,255,0.2)"}]}}
+        lines += ["```chart", _j.dumps(radar, ensure_ascii=False), "```"]
 
     lines.append("")
     lines.append("_'puan tahmin [isim] hedef [bolum]' diyerek bolum bazli analiz al._")
