@@ -246,10 +246,10 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
   <div class="card">
     <h2>💰 Token Bütçe (7g)</h2>
     <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px;">Toplam: <span id="total-cost">--</span> USD</p>
-    <p style="color:var(--muted);font-size:0.75rem;margin:-6px 0 12px;">Kaynak sütunları (Cerebras·Claude·Groq·Fast·Vision) toplamı = Toplam. Cerebras ana motor olduğundan en yüksek paya sahiptir.</p>
+    <p style="color:var(--muted);font-size:0.75rem;margin:-6px 0 12px;">Kaynak sütunları (Cerebras·Claude·Groq·Fast·Vision·Diğer) toplamı = Toplam. Cerebras ana motor olduğundan en yüksek paya sahiptir. <em>Diğer</em> = cache / burst / yedek-eskalasyon (ücretsiz).</p>
     <table id="budget-table">
-      <thead><tr><th>Telefon</th><th>İsim</th><th>Rol</th><th>Cerebras</th><th>Claude</th><th>Groq</th><th>Fast</th><th>Vision</th><th>Toplam</th><th>Maliyet (USD)</th></tr></thead>
-      <tbody><tr><td colspan="10" class="empty">Yükleniyor...</td></tr></tbody>
+      <thead><tr><th>Telefon</th><th>İsim</th><th>Rol</th><th>Cerebras</th><th>Claude</th><th>Groq</th><th>Fast</th><th>Vision</th><th title="query_cache / burst_limit / escalated / ollama">Diğer</th><th>Toplam</th><th>Maliyet (USD)</th></tr></thead>
+      <tbody><tr><td colspan="11" class="empty">Yükleniyor...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -529,14 +529,15 @@ async function loadBudget() {
     const r = await api('/admin/api/token-budget?days=7');
     document.getElementById('total-cost').textContent = (r.total_cost_usd||0).toFixed(2);
     const tbody = document.querySelector('#budget-table tbody');
-    if (!r.users?.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty">Veri yok</td></tr>'; return; }
+    if (!r.users?.length) { tbody.innerHTML = '<tr><td colspan="11" class="empty">Veri yok</td></tr>'; return; }
     const cell = v => v ? `<strong>${v}</strong>` : '<span style="opacity:.35">0</span>';
-    tbody.innerHTML = r.users.map(u =>
-      `<tr><td>${u.phone}</td><td>${escapeHTML(u.full_name||'')}</td><td>${u.role}</td>
-       <td>${cell(u.cerebras||0)}</td><td>${cell(u.claude||0)}</td><td>${cell(u.groq||0)}</td><td>${cell(u.fast||0)}</td><td>${cell(u.vision||0)}</td>
+    tbody.innerHTML = r.users.map(u => {
+      const diger = Math.max(0, (u.total||0) - (u.cerebras||0) - (u.claude||0) - (u.groq||0) - (u.fast||0) - (u.vision||0) - (u.ollama||0));
+      return `<tr><td>${u.phone}</td><td>${escapeHTML(u.full_name||'')}</td><td>${u.role}</td>
+       <td>${cell(u.cerebras||0)}</td><td>${cell(u.claude||0)}</td><td>${cell(u.groq||0)}</td><td>${cell(u.fast||0)}</td><td>${cell(u.vision||0)}</td><td>${cell(diger)}</td>
        <td><strong style="color:var(--accent)">${u.total}</strong></td>
-       <td>$${(u.cost_usd||0).toFixed(4)}</td></tr>`
-    ).join('');
+       <td>$${(u.cost_usd||0).toFixed(4)}</td></tr>`;
+    }).join('');
   } catch(e) { console.error(e); }
 }
 
