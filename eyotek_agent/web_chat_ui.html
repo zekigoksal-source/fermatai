@@ -10004,11 +10004,13 @@ function renderAdminDashboard(d) {
       // Routing dağılımı (24h) — GERÇEK kaynak (cerebras/claude/fast), routing-stats endpoint.
       // Eski fast/ollama/claude modeli bayattı: Ollama zincirde yok, Cerebras (ana motor) eksikti.
       const SRC_COL = {fast_response:"#4ade80",cerebras_235b:"#60a5fa",cerebras_120b:"#7ee787",cerebras_8b:"#a5d6ff",cerebras:"#3b82f6",claude:"#f59e0b",claude_vision:"#e3a008",groq:"#c084fc",groq_escalated_to_claude:"#d8b4fe",query_cache:"#22d3ee",ollama:"#6b7280",burst_limit:"#f87171"};
-      fetch("/admin/api/routing-stats?hours=24", {credentials:"include", cache:"no-store"})
+      fetch(API_BASE + "/admin/api/routing-stats?hours=24", {credentials:"include", cache:"no-store", headers: authHeaders()})
         .then(r => r.ok ? r.json() : null).then(rs => {
           const dist = ((rs && rs.distribution) || []).filter(d => d.count > 0);
           const el = document.getElementById("dashRoutingChart");
-          if (!dist.length || !el) return;
+          if (!el) return;
+          if (!dist.length) { el.parentElement.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:40px;font-size:0.85rem;">Son 24 saatte routing verisi yok</div>'; return; }
+          if (_dashboardCharts.routing) { try { _dashboardCharts.routing.destroy(); } catch(e){} }
           _dashboardCharts.routing = new Chart(el, {
             type: "doughnut",
             data: { labels: dist.map(d => d.source),
