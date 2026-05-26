@@ -9992,7 +9992,7 @@ function renderAdminDashboard(d) {
     <div class="oncelik-item" style="border-left-color:#f87171;">
       <div class="onc-head">
         <span class="onc-ders">${escapeHtml(r.name)}</span>
-        <span class="onc-basari" style="color:#f87171;">${r.saat}s</span>
+        <span class="onc-basari" style="color:#f87171;" title="devamsızlık (saat)">${r.saat} sa</span>
       </div>
       <div class="onc-neden">${escapeHtml(r.sinif)}</div>
     </div>`).join("") : '<div class="dashboard-empty">Riskli yok</div>';
@@ -10001,20 +10001,23 @@ function renderAdminDashboard(d) {
   if (isAdmin) {
     // Routing dagilimi
     if (typeof Chart !== "undefined") {
-      const fast = sistem.fast_24h || 0, ollama = sistem.ollama_24h || 0, claude = sistem.claude_24h || 0;
-      if (fast + ollama + claude > 0) {
-        _dashboardCharts.routing = new Chart(document.getElementById("dashRoutingChart"), {
-          type: "doughnut",
-          data: {
-            labels:["Fast Response","Ollama","Claude API"],
-            datasets:[{data:[fast, ollama, claude], backgroundColor:["#4ade80","#60a5fa","#f59e0b"], borderWidth:0}]
-          },
-          options: {
-            responsive:true, maintainAspectRatio:false,
-            plugins:{legend:{position:"bottom", labels:{color:"#e5e7eb", padding:10, font:{size:11}}}}
-          }
-        });
-      }
+      // Routing dağılımı (24h) — GERÇEK kaynak (cerebras/claude/fast), routing-stats endpoint.
+      // Eski fast/ollama/claude modeli bayattı: Ollama zincirde yok, Cerebras (ana motor) eksikti.
+      const SRC_COL = {fast_response:"#4ade80",cerebras_235b:"#60a5fa",cerebras_120b:"#7ee787",cerebras_8b:"#a5d6ff",cerebras:"#3b82f6",claude:"#f59e0b",claude_vision:"#e3a008",groq:"#c084fc",groq_escalated_to_claude:"#d8b4fe",query_cache:"#22d3ee",ollama:"#6b7280",burst_limit:"#f87171"};
+      fetch("/admin/api/routing-stats?hours=24", {credentials:"include", cache:"no-store"})
+        .then(r => r.ok ? r.json() : null).then(rs => {
+          const dist = ((rs && rs.distribution) || []).filter(d => d.count > 0);
+          const el = document.getElementById("dashRoutingChart");
+          if (!dist.length || !el) return;
+          _dashboardCharts.routing = new Chart(el, {
+            type: "doughnut",
+            data: { labels: dist.map(d => d.source),
+              datasets: [{data: dist.map(d => d.count),
+                backgroundColor: dist.map(d => SRC_COL[d.source] || "#6b7280"), borderWidth:0}] },
+            options: { responsive:true, maintainAspectRatio:false,
+              plugins:{legend:{position:"bottom", labels:{color:"#e5e7eb", padding:10, font:{size:11}}}} }
+          });
+        }).catch(() => {});
       // Grade
       const gr = sistem.quality_grade || {};
       if (Object.keys(gr).length) {

@@ -180,6 +180,34 @@ async def usage_summary(
     return out
 
 
+# ── MESSAGE TREND (günlük seri) ────────────────────────────────────────────
+
+@router.get("/api/message-trend")
+async def message_trend(
+    request: Request,
+    fermat_session: Optional[str] = Cookie(default=None, alias=COOKIE_NAME),
+    days: int = 14,
+):
+    """Son N günün günlük mesaj sayısı (Genel sekmesindeki trend grafiği)."""
+    await _require_admin_session(request, fermat_session)
+    days = max(1, min(int(days), 90))
+    rows = await db_fetch(
+        f"""SELECT DATE(created_at) AS gun, COUNT(*) AS cnt
+            FROM usage_log
+            WHERE created_at >= CURRENT_DATE - INTERVAL '{days} days'
+            GROUP BY gun ORDER BY gun""",
+    )
+    # Boş günleri 0 ile doldur (kesintisiz çizgi için)
+    from datetime import date, timedelta as _td
+    by_day = {str(r['gun']): r['cnt'] for r in (rows or [])}
+    series = []
+    today = date.today()
+    for i in range(days, -1, -1):
+        d = today - _td(days=i)
+        series.append({"label": d.strftime("%d.%m"), "count": by_day.get(str(d), 0)})
+    return {"days": days, "series": series, "total": sum(s["count"] for s in series)}
+
+
 # ── COHORT / CLASS ANALYSIS ────────────────────────────────────────────────
 
 @router.get("/api/cohort-analysis")

@@ -246,9 +246,10 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
   <div class="card">
     <h2>💰 Token Bütçe (7g)</h2>
     <p style="color:var(--muted);font-size:0.85rem;margin-bottom:12px;">Toplam: <span id="total-cost">--</span> USD</p>
+    <p style="color:var(--muted);font-size:0.75rem;margin:-6px 0 12px;">Kaynak sütunları (Cerebras·Claude·Groq·Fast·Vision) toplamı = Toplam. Cerebras ana motor olduğundan en yüksek paya sahiptir.</p>
     <table id="budget-table">
-      <thead><tr><th>Telefon</th><th>İsim</th><th>Rol</th><th>Claude</th><th>Groq</th><th>Fast</th><th>Toplam</th><th>Maliyet (USD)</th></tr></thead>
-      <tbody><tr><td colspan="8" class="empty">Yükleniyor...</td></tr></tbody>
+      <thead><tr><th>Telefon</th><th>İsim</th><th>Rol</th><th>Cerebras</th><th>Claude</th><th>Groq</th><th>Fast</th><th>Vision</th><th>Toplam</th><th>Maliyet (USD)</th></tr></thead>
+      <tbody><tr><td colspan="10" class="empty">Yükleniyor...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -286,6 +287,20 @@ const URL_TOKEN = new URLSearchParams(location.search).get('token') || '';
 
 let routingChart = null, trendChart = null, routingChart2 = null;
 
+// Kaynak → renk (donut + tablo tutarlı). cerebras_235b ≠ cerebras (eskiden ikisi gri).
+const SOURCE_COLORS = {
+  fast_response:'#3fb950', cerebras_235b:'#58a6ff', cerebras_120b:'#7ee787',
+  cerebras_8b:'#a5d6ff', cerebras:'#1f6feb', claude:'#C76F3E', claude_vision:'#e3a008',
+  groq:'#bc8cff', groq_escalated_to_claude:'#d2a8ff', query_cache:'#39c5cf',
+  ollama:'#6e7681', burst_limit:'#f85149', unknown:'#484f58',
+};
+function srcColor(s){ return SOURCE_COLORS[s] || '#484f58'; }
+function fmtMs(ms){
+  if (ms===null || ms===undefined) return '-';
+  if (ms >= 10000) return (ms/1000).toFixed(1).replace('.', ',') + ' sn';
+  return Number(ms).toLocaleString('tr-TR') + ' ms';
+}
+
 // Tab switching
 document.querySelectorAll('.tab').forEach(t => {
   t.addEventListener('click', () => {
@@ -317,7 +332,7 @@ async function loadOverview() {
     const u = await api('/admin/api/usage-summary');
     document.getElementById('m-users-24h').textContent = u['24h']?.users || 0;
     document.getElementById('m-msgs-24h').textContent = (u['24h']?.msgs || 0) + ' mesaj';
-    document.getElementById('m-avg-ms').textContent = u['24h']?.avg_ms || 0;
+    document.getElementById('m-avg-ms').textContent = (u['24h']?.avg_ms || 0).toLocaleString('tr-TR');
   } catch(e) { console.error(e); }
 
   try {
@@ -340,17 +355,51 @@ async function loadOverview() {
     const r = await api('/admin/api/routing-stats?hours=24');
     drawRouting('chart-routing', r.distribution || []);
   } catch(e) { console.error(e); }
+
+  try {
+    const t = await api('/admin/api/message-trend?days=14');
+    drawTrend(t.series || []);
+  } catch(e) { console.error(e); }
+}
+
+function drawTrend(series) {
+  const ctx = document.getElementById('chart-trend');
+  if (!ctx) return;
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: series.map(s => s.label),
+      datasets: [{
+        label: 'Günlük mesaj',
+        data: series.map(s => s.count),
+        borderColor: '#C76F3E',
+        backgroundColor: 'rgba(199,111,62,0.15)',
+        fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: '#C76F3E',
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: c => c.parsed.y + ' mesaj' } } },
+      scales: {
+        x: { ticks: { color: '#7d8590', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, grid: { color: '#21262d' } },
+        y: { beginAtZero: true, ticks: { color: '#7d8590', precision: 0 }, grid: { color: '#21262d' } },
+      },
+    },
+  });
 }
 
 function drawRouting(canvasId, data) {
   const ctx = document.getElementById(canvasId);
   if (!ctx) return;
-  const colors = {fast_response:'#3fb950', groq:'#58a6ff', claude:'#C76F3E', ollama:'#7d8590'};
   const chartData = {
     labels: data.map(d => d.source || 'unknown'),
     datasets: [{
       data: data.map(d => d.count),
-      backgroundColor: data.map(d => colors[d.source] || '#7d8590'),
+      backgroundColor: data.map(d => srcColor(d.source)),
+      borderColor: '#161b22', borderWidth: 2,
     }],
   };
   const config = {
@@ -410,7 +459,7 @@ async function loadRouting() {
     drawRouting('chart-routing-2', r.distribution || []);
     const tbody = document.querySelector('#routing-table tbody');
     tbody.innerHTML = (r.distribution || []).map(d =>
-      `<tr><td>${d.source}</td><td>${d.count}</td><td>%${d.pct}</td><td>${d.avg_ms || '-'}</td></tr>`
+      `<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${srcColor(d.source)};margin-right:7px;vertical-align:middle;"></span>${d.source}</td><td><strong>${d.count}</strong></td><td>%${d.pct}</td><td>${fmtMs(d.avg_ms)}</td></tr>`
     ).join('');
   } catch(e) { console.error(e); }
 }
@@ -480,10 +529,12 @@ async function loadBudget() {
     const r = await api('/admin/api/token-budget?days=7');
     document.getElementById('total-cost').textContent = (r.total_cost_usd||0).toFixed(2);
     const tbody = document.querySelector('#budget-table tbody');
-    if (!r.users?.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty">Veri yok</td></tr>'; return; }
+    if (!r.users?.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty">Veri yok</td></tr>'; return; }
+    const cell = v => v ? `<strong>${v}</strong>` : '<span style="opacity:.35">0</span>';
     tbody.innerHTML = r.users.map(u =>
       `<tr><td>${u.phone}</td><td>${escapeHTML(u.full_name||'')}</td><td>${u.role}</td>
-       <td>${u.claude}</td><td>${u.groq}</td><td>${u.fast}</td><td>${u.total}</td>
+       <td>${cell(u.cerebras||0)}</td><td>${cell(u.claude||0)}</td><td>${cell(u.groq||0)}</td><td>${cell(u.fast||0)}</td><td>${cell(u.vision||0)}</td>
+       <td><strong style="color:var(--accent)">${u.total}</strong></td>
        <td>$${(u.cost_usd||0).toFixed(4)}</td></tr>`
     ).join('');
   } catch(e) { console.error(e); }
@@ -552,12 +603,13 @@ async function loadStudent() {
     if (p.error) {
       html += `<div class="card"><h2>📈 Tahmin</h2><div class="empty">${escapeHTML(p.message||p.error)}</div></div>`;
     } else {
+      const f1 = v => (v===null||v===undefined||v==='') ? '—' : Number(v).toFixed(1);
       html += `<div class="card">
         <h2>📈 YKS Puan Tahmini</h2>
         <div class="grid">
-          <div><div class="metric green">${p.predicted_tyt}</div><div class="metric-label">TYT Net</div></div>
-          <div><div class="metric accent">${p.predicted_ayt}</div><div class="metric-label">AYT Net</div></div>
-          <div><div class="metric yellow">${p.predicted_yerlesme_puani}</div><div class="metric-label">Yerleşme Puanı</div></div>
+          <div><div class="metric green">${f1(p.predicted_tyt)}</div><div class="metric-label">TYT Net</div></div>
+          <div><div class="metric accent">${f1(p.predicted_ayt)}</div><div class="metric-label">AYT Net</div></div>
+          <div><div class="metric yellow">${f1(p.predicted_yerlesme_puani)}</div><div class="metric-label">Yerleşme Puanı</div></div>
           <div><div class="metric ${p.confidence>0.7?'green':p.confidence>0.4?'yellow':'red'}">${(p.confidence*100).toFixed(0)}%</div><div class="metric-label">Güven</div></div>
         </div>
         <p style="margin-top:12px;color:var(--muted);font-size:0.85rem;">💡 ${escapeHTML(p.suggested_focus||'')}</p>
