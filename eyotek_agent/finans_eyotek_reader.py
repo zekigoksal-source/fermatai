@@ -657,6 +657,19 @@ async def sync_all_seasons(
                     sz_report["metrik"]["geciken_ogrenci"] = len(geciken_rows)
                     sz_report["metrik"]["geciken_tutar"] = round(toplam_geciken, 2)
                     if not dry_run:
+                        # 25.49 Neo bug (28 May): aynı öğrenci 10-13× repeat (Gökhan
+                        # Aygün/Mahmut Taha) — eskiden sadece INSERT yapılıyordu, sync
+                        # her çalışmada yeniden ekliyordu (no PK, no ON CONFLICT). Fix:
+                        # sezon snapshot'ı önce TEMIZLE, sonra taze yaz. Snapshot
+                        # semantiği zaten "şu anki durum", eski satır anlamsız.
+                        try:
+                            _deleted = await db_execute(
+                                "DELETE FROM geciken_snapshot WHERE sezon = $1",
+                                sezon_label,
+                            )
+                            logger.info(f"[GECIKEN] sezon={sezon_label} eski snapshot silindi ({_deleted})")
+                        except Exception as _de:
+                            logger.warning(f"[GECIKEN] pre-delete fail (devam): {_de}")
                         cnt = 0
                         for r in geciken_rows:
                             try:

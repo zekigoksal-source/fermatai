@@ -173,8 +173,27 @@ async def run_attendance_sync(days: int = 1) -> dict:
             await update_freshness('attendance', 0, False, 'no session after auto_login')
             return {'success': False, 'count': 0, 'reason': 'no session'}
 
-        async with EyotekWrapper(cookies) as ew:
-            records = await ew.scrape_attendance_control(days_back=days)
+        # 25.49 Sentry fix (Neo 31 May): Playwright launch transient EAGAIN race
+        # (BlockingIOError / "Target page closed" / "Connection closed" 24 events
+        # in 5 days). Retry-with-backoff: 3 attempts, 3s/6s/12s. OSError catches
+        # BlockingIOError (parent class) — covers errno 11 + connection errors.
+        records = None
+        _last_exc: Exception | None = None
+        for _attempt in range(3):
+            try:
+                async with EyotekWrapper(cookies) as ew:
+                    records = await ew.scrape_attendance_control(days_back=days)
+                break
+            except (OSError, ConnectionError) as _exc:
+                _last_exc = _exc
+                if _attempt < 2:
+                    _bf = 3 * (2 ** _attempt)
+                    logger.warning(f"[ATTENDANCE] Playwright retry {_attempt+1}/3 in {_bf}s: {type(_exc).__name__}: {_exc}")
+                    await asyncio.sleep(_bf)
+                else:
+                    raise
+        if records is None:
+            raise _last_exc or RuntimeError("scrape_attendance_control yielded no result")
 
         count = await upsert_attendance(records)
         await update_freshness('attendance', count, True, f'{days} gun')
