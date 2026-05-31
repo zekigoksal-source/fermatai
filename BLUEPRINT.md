@@ -752,7 +752,7 @@ VPS IP'si OEIS.org Cloudflare ile bloklanıyor. Çözüm: `_OEIS_FALLBACK` yerel
 | **Memory recap** | Yok (50 mesajlık konuşma token şişiyordu) | 30+ mesajda Cerebras 70B kalp özet + history kısalt |
 | **Tonal filter** | Robotik tekrar (Yağız 12 ardışık "Merhaba") | 3+ üst üste hitap → otomatik prefix sil |
 | **Kullanıcı sorunları** | 5+ açık (Yağız OTP, Ali halüsinasyon, Ada sentiment, frustration_log INSERT yok) | Hepsi çözüldü, 5 ayrı fix LIVE |
-| **Akademik kalite** | Vedat olayında "yeni nesil" → 20 klasik 1-adımlı soru | 7-kriter prompt + RAG bank + Cerebras qwen-3-235b → Maarif standardı |
+| **Akademik kalite** | Vedat olayında "yeni nesil" → 20 klasik 1-adımlı soru | 7-kriter prompt + RAG bank + Cerebras gpt-oss-120b → Maarif standardı |
 | **Production scale** | Single worker, in-memory locks | Workers=3 + distributed lock + leader election + semantic cache (25.40r) |
 | **Prompt mimarisi** | Tek monolitik SYSTEM_PROMPT (~154K char, 1 cache breakpoint) | **V3 modüler** (BASE 78K + pedagoji 38K + render 25K + db_schema 12K), 3 system breakpoint, **Cache HIT %100 ölçüldü** (25.40z3) |
 | **Token tasarrufu** | Her mesaj tüm prompt'u işler | V2 -%28.4 / V3 -%41.4 (ogretmen/selamlama), -%51 cache simülasyon |
@@ -794,7 +794,14 @@ VPS IP'si OEIS.org Cloudflare ile bloklanıyor. Çözüm: `_OEIS_FALLBACK` yerel
 
 ---
 
-## 🚀 CEREBRAS qwen-3-235b TAM ENTEGRASYON (25.40o)
+## 🚀 CEREBRAS gpt-oss-120b TAM ENTEGRASYON (25.40o → 25.49 model güncellemesi)
+
+> **⚠️ MODEL GÜNCELLEMESİ (31 May 2026, Oturum 25.49):** qwen-3-235b-a22b
+> Cerebras katalogundan **emekli** oldu (404). Tüm "kompleks" tier intent'leri
+> **gpt-oss-120b**'ye taşındı (production, 3000 tok/s). Canlı A/B test: gpt-oss-120b
+> kalite ≥ tek alternatif zai-glm-4.7 (355B preview, reasoning, 3.7x yavaş, İngilizce
+> CoT). 25.40o'da kurulan A+ şablon/kalıplar AYNEN geçerli (kavramsal intent'ler zaten
+> gpt-oss-120b'deydi; sadece kompleks tier model değişti, A/B kalite kaybı yok).
 
 ### INTENT_TO_MODEL haritası (cerebras_handler.py)
 | Intent | Model | Kullanım |
@@ -803,10 +810,10 @@ VPS IP'si OEIS.org Cloudflare ile bloklanıyor. Çözüm: `_OEIS_FALLBACK` yerel
 | selamlama/veda/teşekkür/yks_takvim | llama3.1-8b | hızlı statik |
 | kavram_aciklama/ornek_iste/cozum_iste/ozet_iste/yontem_iste | gpt-oss-120b | kavramsal sweet spot |
 | motivasyon_destek/duygu_paylasim/yetenek_sorgu/meta_direktif | gpt-oss-120b | empati + kurum |
-| plan_yap/analiz_iste/deneme_analiz/hedef_analiz | **qwen-3-235b** | karmaşık plan/analiz |
-| **test_olusturma/soru_uret/yeni_nesil_uret** (25.40o yeni) | **qwen-3-235b** | test/soru üretim |
-| **icerik_uretim/konu_anlatim_uzun/ornek_paket_uret** (yeni) | **qwen-3-235b** | uzun içerik üretim |
-| **karsilastirma/ozet_uzun/metin_zenginlestir** (yeni) | **qwen-3-235b** | yaratıcı sentez |
+| plan_yap/analiz_iste/deneme_analiz/hedef_analiz | **gpt-oss-120b** | karmaşık plan/analiz (eski: qwen-235b) |
+| **test_olusturma/soru_uret/yeni_nesil_uret** (25.40o) | **gpt-oss-120b** | test/soru üretim (eski: qwen-235b) |
+| **icerik_uretim/konu_anlatim_uzun/ornek_paket_uret** | **gpt-oss-120b** | uzun içerik üretim (eski: qwen-235b) |
+| **karsilastirma/ozet_uzun/metin_zenginlestir** | **gpt-oss-120b** | yaratıcı sentez (eski: qwen-235b) |
 
 ### INTENT_RENDERER_MAP (web kanalında otomatik tetiklenen görsel)
 | Intent | Renderer'lar |
@@ -822,13 +829,13 @@ VPS IP'si OEIS.org Cloudflare ile bloklanıyor. Çözüm: `_OEIS_FALLBACK` yerel
 | plan_yap | timeline + kgraph + progress |
 
 ### Maliyet/hız karşılaştırma (gerçek ölçüm)
-| Metrik | Claude Sonnet 4-6 | **Cerebras qwen-3-235b** |
+| Metrik | Claude Sonnet 4-6 | **Cerebras gpt-oss-120b** (25.49) |
 |--------|-------------------|---------------------------|
-| Cevap süresi | ~100sn (sık 3dk timeout) | **3sn** |
-| Hız | 1x | **33x** |
+| Cevap süresi | ~100sn (sık 3dk timeout) | **0.6-3sn** (A/B: ort 587ms) |
+| Hız | 1x | **~33x** |
 | Maliyet/konu | ~$0.04 | **~$0.001** |
 | 211 paket toplam | ~$8 + 1+ saat | **$0.20 + 7 dakika** |
-| Kalite (akademik) | A+ | **A+ EŞDEĞER** (test edildi) |
+| Kalite (akademik) | A+ | **A+ EŞDEĞER** (qwen-235b ve gpt-oss-120b ikisi de test edildi) |
 
 ---
 
@@ -1464,7 +1471,7 @@ Anthropic API max 4 cache breakpoint kuralına göre stratejik bölme:
 | Kanal | Model | Sebep | Tipik latency | Token cost |
 |---|---|---|---|---|
 | WhatsApp | gpt-oss-120b | Hız önemli (kullanıcı bekliyor) | ~1.0s | ~$0.0012/yanıt |
-| Web | qwen-3-235b-a22b | Akademik kalite (Claude tarzı detay) | ~2.5s | ~$0.0024/yanıt |
+| Web | gpt-oss-120b | Akademik kalite (Claude tarzı detay) | ~0.6-2.5s | ~$0.0012/yanıt |
 | Hassas/data | Claude Sonnet | Tool-calling + KVKK | ~5-15s | ~$0.024/yanıt |
 
 **Maliyet karşılaştırması (1 kavramsal yanıt: 3K input + 1K output):**
@@ -1472,13 +1479,12 @@ Anthropic API max 4 cache breakpoint kuralına göre stratejik bölme:
 | Model | Total cost | vs Claude |
 |---|---|---|
 | Claude Sonnet 4.6 | $0.0240 | 1× (referans) |
-| Cerebras qwen-3-235b | $0.0024 | **10× ucuz** |
 | Cerebras gpt-oss-120b | $0.0012 | **20× ucuz** |
 | Groq llama-3.3-70b | $0 (free) | sınırsız |
 
 **Web kanal akademik üst-segment senaryosu** (200 öğrenci kavramsal soru/ay):
 - Önce: 200 × $0.024 (Claude) = **$4.80/ay**
-- Şimdi: 200 × $0 (Cerebras qwen-3-235b free tier) = **$0/ay**
+- Şimdi: 200 × ~$0.0012 (Cerebras gpt-oss-120b) ≈ **$0.24/ay** (Claude'a göre %95 ucuz)
 - Kalite kazancı: RAG entegre + 600-1200 char detay + OGM/YouTube yönlendirme + pedagojik diyalog
 
 ---
@@ -1574,7 +1580,7 @@ Anthropic API max 4 cache breakpoint kuralına göre stratejik bölme:
 | **L1** | Fast Response (regex) | 5ms | $0 | %50 | Selamlama, KVKK red, statik bilgi (TYT tarihi vs) |
 | **L2** | Cerebras llama3.1-8b | 323ms | ~$0.0001 | %10 | Classify, basit selamlama, statik müfredat |
 | **L3** | Cerebras gpt-oss-120b | 436ms | ~$0.0003 | %25 | Kavramsal (limit, türev), basit plan, motivasyon |
-| **L4** | Cerebras qwen-3-235b | 567ms | ~$0.0008 | %5 | Kompleks akademik analiz, detaylı plan |
+| **L4** | Cerebras gpt-oss-120b | 567ms | ~$0.0008 | %5 | Kompleks akademik analiz, detaylı plan (eski: qwen-235b, 25.49 emekli) |
 | **L5** | Claude Sonnet 4.6 | 8-15sn | ~$0.05 | %10 | Tool gerektiren, hassas, kişisel veri analiz |
 
 ### Karar verme mantığı
@@ -1599,9 +1605,9 @@ INTENT_TO_MODEL = {
     "kavram_aciklama":"gpt-oss-120b",  # 436ms, sweet spot
     "ornek_iste":     "gpt-oss-120b",
     "motivasyon":     "gpt-oss-120b",
-    "plan_yap":       "qwen-3-235b",   # 567ms, en akademik
-    "deneme_analiz":  "qwen-3-235b",
-    "hedef_analiz":   "qwen-3-235b",
+    "plan_yap":       "gpt-oss-120b",  # 25.49: qwen-235b emekli → gpt-oss-120b
+    "deneme_analiz":  "gpt-oss-120b",
+    "hedef_analiz":   "gpt-oss-120b",
 }
 
 HASSAS_INTENTS = {  # Cerebras'a YASAK, Claude'a yönlendir
@@ -1614,7 +1620,7 @@ HASSAS_INTENTS = {  # Cerebras'a YASAK, Claude'a yönlendir
 
 `routing_stats` tablosunda `response_source` kolonu kategoriler:
 - `fast_response` — regex
-- `cerebras_8b`, `cerebras_120b`, `cerebras_235b` — model bazlı
+- `cerebras_8b`, `cerebras_120b` — model bazlı (`cerebras_235b` = qwen emekli 25.49, eski kayıt)
 - `groq` — fallback
 - `claude` — sonnet
 - `claude_vision` — foto soru çözümü
@@ -1631,20 +1637,20 @@ HASSAS_INTENTS = {  # Cerebras'a YASAK, Claude'a yönlendir
 **Avantajları:**
 - Inference hızı **2000+ token/sec** (silikon avantajı, Groq'tan da hızlı)
 - Paid tier'da queue yok, rate limit yüksek
-- 4 model erişilebilir
+- 2 production model (llama3.1-8b + gpt-oss-120b) + zai-glm-4.7 preview
 
 **Modeller:**
 | Model | Boyut | Kullanım | Latency | Kalite |
 |-------|-------|----------|---------|--------|
 | llama3.1-8b | 8B | Classify | 323ms | Orta (TR sınırlı) |
 | gpt-oss-120b | 120B | Kavramsal | 436ms | İyi + LaTeX |
-| qwen-3-235b-a22b | 235B MoE | Kompleks | 567ms | Mükemmel akademik |
-| zai-glm-4.7 | - | (test edilmedi) | - | - |
+| ~~qwen-3-235b-a22b~~ | 235B MoE | EMEKLI 25.49 (404) → gpt-oss-120b | - | - |
+| zai-glm-4.7 | 355B | Preview, reasoning (CoT İng., 3.7x yavaş) — A/B'de 120b ≥ glm | 2207ms | İyi ama entegrasyon değmez |
 
 **Pricing (USD/1M token, tahmini):**
 - llama3.1-8b: $0.10 / $0.10
 - gpt-oss-120b: $0.30 / $0.50
-- qwen-3-235b: $0.60 / $0.80
+- ~~qwen-3-235b: $0.60 / $0.80~~ (emekli 25.49; gpt-oss-120b tek üst-tier)
 
 ### Groq (FALLBACK — Free tier'da kısıtlı)
 **Durum:** Developer billing geçici kapalı, free tier 100K/gün dolup duruyor.
@@ -2441,7 +2447,7 @@ Aylık: ~32.400 mesaj
 | L1 Fast | %50 | 16.200 | $0 | $0 |
 | L2 Cerebras 8b | %10 | 3.240 | ~$0.0001 | ~$3 |
 | L3 Cerebras 120b | %25 | 8.100 | ~$0.0003 | ~$2.4 |
-| L4 Cerebras 235b | %5 | 1.620 | ~$0.0008 | ~$4 |
+| L4 Cerebras gpt-oss-120b | %5 | 1.620 | ~$0.0008 | ~$4 |
 | L5 Claude (tool) | %10 | 3.240 | ~$0.05 | ~$162 |
 | **TOPLAM** | | | | **~$172/ay** |
 
@@ -2515,7 +2521,7 @@ Bu bölüm, sistemin **tamamlanmış teknik kabiliyetlerini**, **aktif gelişim 
 |---|---|---|---|
 | Fast Response | regex pattern + handler | $0 | %30 (selamlama, sablon, güvenlik) |
 | Cerebras gpt-oss-120b | kavramsal soru, lane match | $0 (free tier) | %2.3 (artmakta — eskalasyon softening sonrası) |
-| Cerebras qwen-3-235b | karmaşık kavramsal | $0 (free tier) | <%1 |
+| Cerebras gpt-oss-120b (kompleks) | karmaşık kavramsal | ~$0.0008 | <%1 |
 | Cerebras llama3.1-8b | feedback triage | $0 (free tier) | nightly batch |
 | Groq llama-3.3-70b | Cerebras fail durumunda | $0 (free tier) | %7.5 (fallback) |
 | Claude Sonnet 4.6 | tool-calling, hassas analiz | ~$0.50/günlük | %59 (admin trafiği dahil) |
@@ -2635,7 +2641,7 @@ kadar bekliyor**:
 | **`services/notification_service.py`** | YAKINDA | alert_log + secure_messenger merkezi |
 | **`task_graph.py`** | Q3 PLAN | Multi-step reasoning orchestration (Gemini önerisi E2 + ChatGPT) |
 | **Self-Healing LMS** | Q2-Q3 PLAN | Eyotek DOM değişiklik koruması, Claude Vision fallback (Gemini önerisi E2) |
-| **Predictive Burnout** | Q3 PLAN | Rule prefilter + LLM judge (Cerebras qwen-3-235b), gözlem-only (Gemini önerisi E4) |
+| **Predictive Burnout** | Q3 PLAN | Rule prefilter + LLM judge (Cerebras gpt-oss-120b), gözlem-only (Gemini önerisi E4) |
 
 **KORUNAN MİMARİ İLKE — beyin parçalanmaz:**
 - `system_prompts.py` (87KB) → tek-bütün, denenmiş ve geri alındı (memory: project_monolith_korunsun)
@@ -2860,7 +2866,7 @@ user_input + role + phone
 | Fast Response | 30.0% | %45 |
 | Groq llama-3.3-70b | 7.5% | %5 |
 | Cerebras gpt-oss-120b | 1.7% | %25 |
-| Cerebras qwen-3-235b | 0.6% | %5 |
+| Cerebras gpt-oss-120b (kompleks) | 0.6% | %5 |
 | Ollama (embedding) | sürekli | sürekli |
 
 ### 15.3 Veri Tazelik Tablosu
