@@ -7,12 +7,12 @@ Cerebras Pay-as-You-Go entegrasyonu — Groq'un yerine geçer.
 Modeller:
 - llama3.1-8b           — classify (323ms, basit)
 - gpt-oss-120b          — kavramsal + plan (436ms, sweet spot, KVKK 3/3 reddetti)
-- qwen-3-235b...2507    — kompleks plan + analiz (567ms, en kaliteli)
+- gpt-oss-120b...2507    — kompleks plan + analiz (567ms, en kaliteli)
 
 Maliyet (estimate, gerçek pricing kullanım sonrası belli olur):
 - llama3.1-8b: ~$0.10/1M token
 - gpt-oss-120b: ~$0.30-0.50/1M
-- qwen-3-235b: ~$0.60-1/1M
+- gpt-oss-120b: ~$0.60-1/1M
 
 Karşılaştırma:
 - Claude Sonnet: $3 in / $15 out (5-30x daha pahalı)
@@ -23,7 +23,7 @@ API: OpenAI-compatible (https://api.cerebras.ai/v1)
 KVKK GÜVENLİK:
 - llama3.1-8b → injection saldırısında SIZINTI yapabildi (1/3)
 - gpt-oss-120b → 3/3 saldırı reddetti
-- qwen-3-235b → 3/3 saldırı reddetti
+- gpt-oss-120b → 3/3 saldırı reddetti
 => classify dışında llama3.1-8b kullanma. Üst tier gerekirse gpt-oss veya qwen.
 """
 from __future__ import annotations
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 CEREBRAS_MODELS = {
     "classify": "llama3.1-8b",
     "kavramsal": "gpt-oss-120b",
-    "kompleks": "qwen-3-235b-a22b-instruct-2507",
+    "kompleks": "gpt-oss-120b",
 }
 
 # Tier (intent → model) eşleştirme
@@ -64,22 +64,22 @@ INTENT_TO_MODEL = {
     "meta_direktif":     "gpt-oss-120b",
     # Karmaşık plan/analiz/kavramsal — qwen daha akademik
     # NOT: Bunlar Claude tool gerektirebilir, classifier üst kontrolü ile
-    "plan_yap":          "qwen-3-235b-a22b-instruct-2507",
-    "analiz_iste":       "qwen-3-235b-a22b-instruct-2507",
-    "deneme_analiz":     "qwen-3-235b-a22b-instruct-2507",
-    "hedef_analiz":      "qwen-3-235b-a22b-instruct-2507",
-    # 25.40o (Neo direktif): qwen-3-235b içerik üretim BÜYÜK potansiyel
+    "plan_yap":          "gpt-oss-120b",
+    "analiz_iste":       "gpt-oss-120b",
+    "deneme_analiz":     "gpt-oss-120b",
+    "hedef_analiz":      "gpt-oss-120b",
+    # 25.40o (Neo direktif): gpt-oss-120b içerik üretim BÜYÜK potansiyel
     # 95 konu Claude $4/100sn → 211 konu qwen $0.20/3sn (33x hız, %95 ucuz, EŞDEĞER kalite)
     # Bu intent'ler Claude yerine qwen'e gitmeli — proaktif yetkinlik kullanımı
-    "test_olusturma":    "qwen-3-235b-a22b-instruct-2507",  # "test hazırla", "konu tarama"
-    "soru_uret":         "qwen-3-235b-a22b-instruct-2507",  # "soru üret/yaz", "X soru hazırla"
-    "yeni_nesil_uret":   "qwen-3-235b-a22b-instruct-2507",  # "yeni nesil/maarif sorusu"
-    "icerik_uretim":     "qwen-3-235b-a22b-instruct-2507",  # "metni hazırla", "döküman", "etkinlik"
-    "konu_anlatim_uzun": "qwen-3-235b-a22b-instruct-2507",  # "X konusunu detaylı anlat"
-    "ornek_paket_uret":  "qwen-3-235b-a22b-instruct-2507",  # "5 örnek üret", "alıştırma"
-    "karsilastirma":     "qwen-3-235b-a22b-instruct-2507",  # "X vs Y" iki kavram/konu kıyas
-    "ozet_uzun":         "qwen-3-235b-a22b-instruct-2507",  # detaylı özet (kısa özet → ozet_iste/120b)
-    "metin_zenginlestir":"qwen-3-235b-a22b-instruct-2507",  # RAG'den gelen ham içeriği güzel sun
+    "test_olusturma":    "gpt-oss-120b",  # "test hazırla", "konu tarama"
+    "soru_uret":         "gpt-oss-120b",  # "soru üret/yaz", "X soru hazırla"
+    "yeni_nesil_uret":   "gpt-oss-120b",  # "yeni nesil/maarif sorusu"
+    "icerik_uretim":     "gpt-oss-120b",  # "metni hazırla", "döküman", "etkinlik"
+    "konu_anlatim_uzun": "gpt-oss-120b",  # "X konusunu detaylı anlat"
+    "ornek_paket_uret":  "gpt-oss-120b",  # "5 örnek üret", "alıştırma"
+    "karsilastirma":     "gpt-oss-120b",  # "X vs Y" iki kavram/konu kıyas
+    "ozet_uzun":         "gpt-oss-120b",  # detaylı özet (kısa özet → ozet_iste/120b)
+    "metin_zenginlestir":"gpt-oss-120b",  # RAG'den gelen ham içeriği güzel sun
     # Hassas — buralara HİÇ gelmemeli (Claude'a giderler)
     # injection_suspect, hassas_veri, finans, role_change, baska_ogrenci
 }
@@ -277,7 +277,7 @@ class CerebrasClient:
         self,
         messages: list,
         tools: list,
-        model: str = "qwen-3-235b-a22b-instruct-2507",
+        model: str = "gpt-oss-120b",
         max_tokens: int = 1500,
         temperature: float = 0.3,
     ) -> dict:
@@ -334,7 +334,7 @@ class CerebrasClient:
         self,
         messages: list,
         tools: list,
-        model: str = "qwen-3-235b-a22b-instruct-2507",
+        model: str = "gpt-oss-120b",
         max_tokens: int = 1500,
         temperature: float = 0.3,
     ) -> dict:
@@ -373,13 +373,13 @@ def select_cerebras_model(intent: Optional[str], channel: str = "whatsapp") -> s
     """Intent + kanal'a göre uygun Cerebras modelini dön.
 
     Oturum 25.29 (Neo karari): WEB kanalinda kavramsal+ornek+aciklama tipi
-    sorularda qwen-3-235b kullan — ogrenci'nin Claude tarzi detayli + akademik
+    sorularda gpt-oss-120b kullan — ogrenci'nin Claude tarzi detayli + akademik
     cevap aldigi hisseti vermek icin. WP'de hizli olsun diye gpt-oss-120b kalsin.
     """
     if not intent:
         # Kanal bazli default
         if channel == "web":
-            return CEREBRAS_MODELS["kompleks"]  # qwen-3-235b
+            return CEREBRAS_MODELS["kompleks"]  # gpt-oss-120b
         return CEREBRAS_MODELS["kavramsal"]  # gpt-oss-120b
 
     # Web kanalinda kavramsal/ornek/aciklama → qwen 235b (akademik kalite)
@@ -390,7 +390,7 @@ def select_cerebras_model(intent: Optional[str], channel: str = "whatsapp") -> s
             "motivasyon_destek", "uretim_paylas",
         }
         if intent in WEB_UPGRADE_INTENTS:
-            return CEREBRAS_MODELS["kompleks"]  # qwen-3-235b
+            return CEREBRAS_MODELS["kompleks"]  # gpt-oss-120b
 
     return INTENT_TO_MODEL.get(intent, CEREBRAS_MODELS["kavramsal"])
 

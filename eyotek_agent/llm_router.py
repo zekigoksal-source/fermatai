@@ -29,7 +29,7 @@ Hibrit Strateji (28 Nisan 2026 — 5 katman güncel hedef):
   - fast_responses (%45): Selamlama, şablon, KVKK red
   - Cerebras llama3.1-8b (%10): Classify, basit selamlama
   - Cerebras gpt-oss-120b (%25): Kavramsal, motivasyon, Eyotek planner
-  - Cerebras qwen-3-235b (%5): Kompleks akademik, plan_yap, deneme_analiz
+  - Cerebras gpt-oss-120b (%5): Kompleks akademik, plan_yap, deneme_analiz
   - Claude Sonnet 4.6 (%15): Tool-calling, finans, hassas, Vision
   FALLBACK: Groq (Cerebras down) → Ollama (laptop dev fallback)
 """
@@ -1237,7 +1237,7 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
 
         channel parametresi (Oturum 25.29 — Neo karari):
         - "web" → web addon enjekte (uzun akademik cevap), kavramsal intent'lerde
-                 qwen-3-235b model (en akademik kalite)
+                 gpt-oss-120b model (en akademik kalite)
         - "whatsapp" → mevcut kisa+net davranis (gpt-oss-120b varsayilan)
         """
         # ─── 25.22 Cerebras öncelik (paid tier, queue yok, 3 model) ────────
@@ -1793,9 +1793,9 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
         tools: list,
         tool_executor,
         max_rounds: int = 2,
-        model: str = "qwen-3-235b-a22b-instruct-2507",
+        model: str = "gpt-oss-120b",
     ):
-        """Cerebras (qwen-3-235b veya gpt-oss-120b) ile tool-calling.
+        """Cerebras (gpt-oss-120b veya gpt-oss-120b) ile tool-calling.
 
         Hata durumunda None döner → Claude'a sessizce fallback.
 

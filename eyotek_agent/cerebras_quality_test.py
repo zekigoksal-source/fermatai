@@ -6,7 +6,7 @@ Pay-as-You-Go aktive sonrası 4 model × 11 sorgu × kalite skoru.
 
 Test edilecek modeller:
 - llama3.1-8b (Free'de zayıf çıktı, paid'de farklı mı?)
-- qwen-3-235b-a22b-instruct-2507 (Free'de queue, paid'de erişilebilir)
+- gpt-oss-120b (Free'de queue, paid'de erişilebilir)
 
 Karşılaştırma: Mevcut Claude Sonnet (FULL prompt) yanıtları ile.
 
@@ -84,7 +84,7 @@ async def main():
         print("❌ CEREBRAS_API_KEY env'de yok!")
         return
 
-    models = ["llama3.1-8b", "qwen-3-235b-a22b-instruct-2507"]
+    models = ["llama3.1-8b", "gpt-oss-120b"]
     results = {m: [] for m in models}
     print("=" * 80)
     print(f"CEREBRAS KALİTE TEST — {datetime.now().strftime('%H:%M:%S')}")

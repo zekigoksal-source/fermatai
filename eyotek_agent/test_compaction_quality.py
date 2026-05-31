@@ -162,7 +162,7 @@ YANIT FORMATI (sadece JSON, başka açıklama yok):
     result = await client.complete_async(
         messages=[{"role": "user", "content": judge_prompt}],
         system="Sen tarafsız bir kalite hakemisin. JSON döndür.",
-        model="qwen-3-235b-a22b-instruct-2507",
+        model="gpt-oss-120b",
         max_tokens=400, temperature=0.2,
     )
     text = (result.get("text") or result.get("content") or "").strip()

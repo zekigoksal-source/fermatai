@@ -11,7 +11,7 @@ Her seed:
   - ders: opsiyonel ders bağı
   - etiketler: arama etiketleri
 
-Bu seed Cerebras qwen-3-235b'ye verilir → metin (200-300 char Türkçe) üretir.
+Bu seed Cerebras gpt-oss-120b'ye verilir → metin (200-300 char Türkçe) üretir.
 Validation: çıktıda core_facts ile çelişki YASAK (regex check).
 """
 

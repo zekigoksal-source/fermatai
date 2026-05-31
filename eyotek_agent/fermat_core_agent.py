@@ -4205,7 +4205,7 @@ class FermatCoreAgent:
                 # uvloop'una "Can't patch loop" hatasi veriyordu → Groq tum cagrilar fail.
                 if hasattr(self.router, "chat_local_async"):
                     # 25.22: intent geç (Cerebras model seçimi için)
-                    # 25.29: channel geç (web → uzun akademik + RAG + qwen-3-235b)
+                    # 25.29: channel geç (web → uzun akademik + RAG + gpt-oss-120b)
                     answer = await self.router.chat_local_async(
                         messages=self.history,
                         system=_lane_system,
@@ -4681,7 +4681,7 @@ class FermatCoreAgent:
                     _cb_ms = int((time.time() - _cb_t0) * 1000)
                     if _cb_r and _cb_r.get("text") and len(_cb_r["text"].strip()) >= 20:
                         answer = _cb_r["text"].strip()
-                        _cb_model = _cb_r.get("model", "qwen-3-235b")
+                        _cb_model = _cb_r.get("model", "gpt-oss-120b")
                         # 25.46+ BUG FIX (Neo 17 May — kirik promise tespiti):
                         # Eger Cerebras hicbir tool calistirmadan "cekiyorum / kontrol
                         # ediyorum / topluyorum / hazirliyorum / bakiyorum" diyorsa

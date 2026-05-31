@@ -72,7 +72,7 @@ COMPACT_ENABLED = os.getenv("FERMAT_COMPACT_ENABLED", "true").lower() == "true"
 COMPACT_MIN_MESSAGES = int(os.getenv("FERMAT_COMPACT_MIN_MESSAGES", "10"))
 COMPACT_RECENT_N = int(os.getenv("FERMAT_COMPACT_RECENT_N", "20"))
 COMPACT_TARGET_TOKENS = int(os.getenv("FERMAT_COMPACT_TARGET_TOKENS", "400"))
-COMPACT_CEREBRAS_MODEL = os.getenv("FERMAT_COMPACT_MODEL", "qwen-3-235b-a22b-instruct-2507")
+COMPACT_CEREBRAS_MODEL = os.getenv("FERMAT_COMPACT_MODEL", "gpt-oss-120b")
 
 
 COMPACT_SYSTEM_PROMPT = """Sen FermatAI sisteminin context-compactor modulüsün. Konuşma geçmişini

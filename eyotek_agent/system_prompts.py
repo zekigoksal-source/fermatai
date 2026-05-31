@@ -1409,7 +1409,7 @@ ROUTING 5 KATMAN:
   · L2 Cerebras llama3.1-8b → classify, basit selamlama (323ms, ~$0.0001) — HEDEF %10
   · L3 Cerebras gpt-oss-120b → kavramsal ("nedir/anlat/formul"), motivasyon,
     Eyotek planner (eyotek_planner.py JSON plan üretici) (436ms, ~$0.0003) — HEDEF %25
-  · L4 Cerebras qwen-3-235b → kompleks akademik analiz, plan_yap, deneme_analiz (567ms, ~$0.0008) — HEDEF %5
+  · L4 Cerebras gpt-oss-120b → kompleks akademik analiz, plan_yap, deneme_analiz (567ms, ~$0.0008) — HEDEF %5
   · L5 Claude Sonnet 4.6 → tool-calling (build_study_plan_context, query_analytics,
     write_etut, vs.), finans/muhasebe, hassas analiz, foto Vision, kisisel veri
     (~15-22sn, $0.003/msg cached) — HEDEF %15
@@ -1706,13 +1706,13 @@ Eger bot stale veri ile cevap verir + sonradan kullanici "yanlis" derse → frus
 📌 KRİTİK ROUTING (25.40o GÜNCELLENDİ — Neo direktif):
 Önceki yönerge YANLIŞTI. Doğru bilgi:
 
-🚀 CEREBRAS qwen-3-235b YETKİNLİĞİ (PROAKTIF KULLAN):
+🚀 CEREBRAS gpt-oss-120b YETKİNLİĞİ (PROAKTIF KULLAN):
 Bu model akademik içerik üretiminde MÜTHIS güçlü:
   • Hız: 3 saniye (Claude 100sn, 33x hızlı)
   • Maliyet: ~$0.001/konu (Claude $0.04, %95 ucuz)
   • Kalite: Claude Sonnet'a EŞDEĞER (test edildi 211 paket üretildi)
 
-ŞU GÖREVLER CEREBRAS qwen-3-235b'ye GIDER (NOT Claude):
+ŞU GÖREVLER CEREBRAS gpt-oss-120b'ye GIDER (NOT Claude):
   ✓ Test üretme / Soru hazırlama / Konu tarama testi
   ✓ Yeni nesil soru / Maarif uyumlu / LGS-YKS örnek
   ✓ Konu anlatımı (uzun, detaylı)
@@ -1731,7 +1731,7 @@ CLAUDE'A ANCAK ŞUNLAR GIDER (gerçekten gerekli):
 Vedat hoca vakası (2 May 18:24): Cerebras "yeni nesil 6.sınıf matematik"
 istendiğinde 20 klasik formül sorusu üretti. SEBEP: muhtemelen gpt-oss-120b
 (küçük model) tetiklendi VE/VEYA prompt'ta yeni nesil checklist yoktu.
-Şimdi: qwen-3-235b + 7-kriter prompt → 211 paket Maarif standardı çıktı.
+Şimdi: gpt-oss-120b + 7-kriter prompt → 211 paket Maarif standardı çıktı.
 
 🎨 İÇERİK SUNUMU — RENDERER ZORUNLU (Neo direktif 8 May, BRIEF #19 sonrası):
 WEB KANALINDA (channel='web') düz tablo/markdown YETERSİZ — ```chart``` zorunlu.

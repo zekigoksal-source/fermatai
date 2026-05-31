@@ -1,10 +1,10 @@
 """
-Pedagoji V2 — Cerebras qwen-3-235b İçerik Üretici (25.41 Neo)
+Pedagoji V2 — Cerebras gpt-oss-120b İçerik Üretici (25.41 Neo)
 ==============================================================
 
 Görevi:
   SEED listelerinden (anekdot + kavram) DB'ye hazır JSON üretir.
-  Cerebras qwen-3-235b: hızlı + kaliteli + ucuz (~$0.001/içerik).
+  Cerebras gpt-oss-120b: hızlı + kaliteli + ucuz (~$0.001/içerik).
 
 Halusilasyon koruma:
   - Çekirdek gerçekler (core_facts) prompt'a verilir → değiştirilemez
@@ -46,14 +46,14 @@ async def cerebras_generate(
     max_tokens: int = 800,
     temperature: float = 0.4,
 ) -> Optional[str]:
-    """qwen-3-235b ile içerik üretimi. None dönerse hata."""
+    """gpt-oss-120b ile içerik üretimi. None dönerse hata."""
     try:
         from cerebras_handler import CerebrasClient
         client = CerebrasClient()
         result = await client.complete_async(
             messages=[{"role": "user", "content": user_prompt}],
             system=system_prompt,
-            model="qwen-3-235b-a22b-instruct-2507",
+            model="gpt-oss-120b",
             max_tokens=max_tokens,
             temperature=temperature,
         )

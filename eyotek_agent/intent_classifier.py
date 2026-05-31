@@ -118,7 +118,7 @@ _INTENT_PATTERNS = [
     )),
 
     # ── C) SORU/KAYNAK/PROGRAMA EKLE (NORMAL tier) ──
-    # 25.40o (Neo direktif): yeni içerik üretim intent'leri qwen-3-235b'ye gider
+    # 25.40o (Neo direktif): yeni içerik üretim intent'leri gpt-oss-120b'ye gider
     # Order matters — bunlar soru_iste'den ÖNCE (üretim ≠ getir/göster)
     ("yeni_nesil_uret", re.compile(
         r'(yeni\s+nesil|maarif\s+(uyumlu|stil|m[uü]fredat)|lgs\s+tipi|yks\s+tipi|'
@@ -351,7 +351,7 @@ INTENT_TIER_HINT = {
     "foto_soru": "normal",
     # 25.40o (Neo direktif): Yeni içerik üretim intent'leri NORMAL tier
     # search_curriculum tool gerekir (RAG'dan yeni nesil paket çek + adapte)
-    # qwen-3-235b modeline cerebras_handler INTENT_TO_MODEL üzerinden yönlendirilir
+    # gpt-oss-120b modeline cerebras_handler INTENT_TO_MODEL üzerinden yönlendirilir
     "test_olusturma": "normal",
     "soru_uret": "normal",
     "yeni_nesil_uret": "normal",
@@ -431,7 +431,7 @@ INTENT_TOOL_SUBSET = {
         "search_curriculum",  # destek
     },
     # 25.40o (Neo direktif): Yeni icerik uretim → search_curriculum (RAG yeni nesil paket)
-    # Bot RAG'dan ornek paket ceker, qwen-3-235b ile zenginlestirir/adapte eder
+    # Bot RAG'dan ornek paket ceker, gpt-oss-120b ile zenginlestirir/adapte eder
     "test_olusturma": {
         "search_curriculum", "list_exam_questions", "send_exam_image",
     },

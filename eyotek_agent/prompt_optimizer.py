@@ -339,20 +339,20 @@ async def _ask_groq_for_suggestion(
         except Exception as _cae:
             logger.warning(f"[ATLAS-2] Claude exception ({_cae}), Cerebras'a duşuyor")
 
-    # ── 2) FALLBACK: Cerebras qwen-3-235b (paid tier, sınırsız) ─────────────
+    # ── 2) FALLBACK: Cerebras gpt-oss-120b (paid tier, sınırsız) ─────────────
     if not text and use_cerebras:
         try:
             r = cerebras.complete(
                 messages=[{"role": "user", "content": user_prompt}],
                 system=sys_prompt,
-                model="qwen-3-235b-a22b-instruct-2507",
+                model="gpt-oss-120b",
                 max_tokens=2000,
                 temperature=0.3,
             )
             if r.get("ok"):
                 text = r["text"]
-                used_model = "cerebras_qwen-3-235b"
-                logger.info(f"[ATLAS-2] Cerebras qwen-3-235b yaniti: {r['ms']}ms, in={r['tokens_in']} out={r['tokens_out']}")
+                used_model = "cerebras_gpt-oss-120b"
+                logger.info(f"[ATLAS-2] Cerebras gpt-oss-120b yaniti: {r['ms']}ms, in={r['tokens_in']} out={r['tokens_out']}")
             else:
                 logger.warning(f"[ATLAS-2] Cerebras fail ({r.get('error', 'unknown')}), Groq'a duşuyor")
         except Exception as _ce:

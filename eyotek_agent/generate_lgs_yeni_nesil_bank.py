@@ -422,7 +422,7 @@ async def generate_one_topic(client, sinif: str, ders: str, konu: str) -> Option
     )
 
     try:
-        # 25.40n (Neo direktif): Cerebras qwen-3-235b benchmark — 3sn vs Claude 100sn
+        # 25.40n (Neo direktif): Cerebras gpt-oss-120b benchmark — 3sn vs Claude 100sn
         # Kalite EŞDEĞER (park/mimarlık/biyoloji disiplinler arası, açık uçlu sentez).
         # Maliyet: ~%2.5 Claude'un. Tercih: Cerebras (env: GENERATOR_PROVIDER=cerebras|claude)
         provider = os.getenv("GENERATOR_PROVIDER", "cerebras").lower()
@@ -433,7 +433,7 @@ async def generate_one_topic(client, sinif: str, ders: str, konu: str) -> Option
             r = await cclient.complete_async(
                 messages=[{"role": "user", "content": prompt}],
                 system="Sen MEB Maarif uzmanı bir akademik içerik üreticisisin. Sadece geçerli JSON döndür.",
-                model="qwen-3-235b-a22b-instruct-2507",
+                model="gpt-oss-120b",
                 max_tokens=6000,
                 temperature=0.5,
             )
