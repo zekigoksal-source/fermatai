@@ -30,6 +30,38 @@
 > 58712e0 fix(cerebras+cdp): qwen-3-235b→gpt-oss-120b 13 files + chrome-cdp +x git mode
 > ```
 >
+> ## 🧠 31 May (Oturum 25.49-B) — CEREBRAS MODEL ANALİZİ + STALE REFERANS TEMİZLİĞİ (`73043f7`)
+>
+> **Neo sorusu:** "qwen-235b emekli olunca 120b'den başka alternatif var mı? Ana motor kalitesi/şablonlar etkilenir mi? Teknik borç bırakma."
+>
+> **Cerebras güncel katalog (web doğrulama, 31 May):**
+> - `gpt-oss-120b` — **PRODUCTION**, 120B, ~3000 tok/s ← bizim ana motor
+> - `zai-glm-4.7` — **PREVIEW**, 355B, ~1000 tok/s (reasoning model)
+> - qwen-3-235b-a22b — **KATALOGDAN KALKTI** (emekli, 404)
+> - Diğer (Llama/Kimi K2.6/Qwen) → sadece Dedicated Endpoints (ayrı ödemeli)
+>
+> **Canlı A/B test (VPS, gerçek sorularımız — kavramsal/plan/analiz/içerik/KVKK):**
+> - **gpt-oss-120b: 587ms ort, 1200-1600 char dolu Türkçe yanıt, KVKK-safe, production tier** ✅
+> - zai-glm-4.7: 2207ms (3.7x yavaş), **reasoning modeli** → CoT İngilizce + max_tok yetmezse `content` BOŞ gelir (ayrı `reasoning` alanı 2161c yer; content sadece 155c). 600 tok bütçede content hiç çıkmadı.
+> - gpt-oss-120b judge: A(120b)=2 kazandı, ESIT=6, B(glm)=0 → **120b kalite ≥ glm**.
+>
+> **KARAR:** gpt-oss-120b ANA MOTOR kalır. GLM-4.7 entegrasyonu **DEĞMEZ** — preview riski (= qwen tekrarı, her an kalkabilir) + 4x yavaş + İngilizce reasoning token yakar + response-parsing değişikliği gerek. **Kurduğumuz A+ şablon/kalıplar AYNEN geçerli** (gpt-oss-120b zaten 25.40o'dan beri "kavramsal/içerik üretim" sweet-spot'umuzdu; qwen sadece "kompleks" tier'daydı, o da artık 120b'de — A/B kalite kaybı yok).
+>
+> **Teknik borç temizliği (`73043f7`, 13 dosya, 38 referans):**
+> - Fonksiyonel: dead "235b" source-label branch'leri kaldırıldı (fermat_core 2 site); cost tabloları (dashboard+bridge) 235b satırı GEÇMİŞ-lookup için korundu + "LEGACY" notu; boot log "3 model"→"2 model".
+> - Öz-farkındalık: system_prompts + pedagoji_extended response_source listesi + supervisor handoff "Sen (Cerebras 235b)"→"gpt-oss-120b" + context header. Bot artık "ne kullanıyorsun" derse doğru söyler.
+> - Yorum/docstring: cerebras_handler/context_compactor/routing_engine/prompt_optimizer/cerebras_prefetch/test'ler. **Ollama qwen2.5:7b + Groq qwen-2.5-32b'ye DOKUNULMADI** (farklı modeller).
+> - 16 dosya py_compile OK, VPS 8 modül import OK, bridge NRestarts=0 health 200.
+>
+> ## 📋 31 May Tam Commit Zinciri (güncel)
+> ```
+> 73043f7 chore(cerebras): qwen-235b emekli — 13 dosya stale referans temizliği
+> 632dd7e docs(KALDIGIM): Oturum 25.49 Sentry temizlik
+> b7f5f38 fix(sentry): sync_etut_kontrol noise + _normalize_names
+> bc54d7e fix(sync): Playwright retry-backoff + geciken_snapshot dedup
+> 58712e0 fix(cerebras+cdp): qwen→gpt-oss-120b 13 files + chrome-cdp +x
+> ```
+>
 > ## ⏭️ Bir Sonraki Oturum (25.50 — Aktif Sıra)
 > - 🟡 **GRUP 4 Eyotek `test-transferred` timeout** (2 event) — `sinav_drilldown` 20s timeout, intermittent. Fix: 20s → 30s + retry.
 > - 🟡 **sync_etut_kontrol içine `try_auto_login()` tetikle** — şu an sessizce return [] yapıyor, CapSolver chain'i inline çağrılmalı (sync_attendance pattern).
