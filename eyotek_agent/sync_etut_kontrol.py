@@ -54,7 +54,11 @@ async def fetch_etut_student_control() -> list[dict]:
         await page.wait_for_timeout(3000)
 
         if await _is_login(page):
-            logger.error("[ETUT_KONTROL] Eyotek session expired")
+            # 25.49 Sentry noise fix (Neo 31 May): bu transient durum — CapSolver
+            # auto-login chain sonraki tetiklemede session'ı yeniler, geçici hata.
+            # logger.error Sentry'ye 4 event yolladı (5 gün). warning'e düşür.
+            # TODO 25.50: burada da try_auto_login() tetikle (sync_attendance gibi).
+            logger.warning("[ETUT_KONTROL] Eyotek session expired — sonraki çevrim CapSolver ile yenileyecek")
             return []
 
         # ARA link tikla (sayfa hazir hale gelmesi icin)
