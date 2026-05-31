@@ -1,13 +1,39 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 26 Mayıs 2026 → **OTURUM 25.48 (SSS/SEO+GEO — bot-yüzlü tam FAQ sayfası, Wix) + 25.47 (TOPIC INVERSION + ACL + iPad + SENTRY + LLM MİMARİ) — NEO DEV ARASI**
+> **Son güncelleme:** 31 Mayıs 2026 → **OTURUM 25.49 (SENTRY 5-GÜN TEMIZLIK — Cerebras model + chrome-cdp +x + Playwright retry + geciken_snapshot dedup) — NEO 5-6 GÜN DEV ARASI SONRASI**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.47+, 24 May)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.49, 31 May)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `ff47dc2` (26 May: SSS/SEO + dashboard tutarlılık + 19 duplike temizliği + bot self-review fix'leri + BUG3 puan tahmin motoru BİRLEŞTİRME)
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron, PostgreSQL OK (167 öğrenci), **topic_tracker bozuk satır = 0**, disk %6, son 24h Sentry 3 issue (hepsi handled/fix'li)
-> - **LLM ZİNCİRİ (NET):** Cerebras → Groq 70B → Claude. **Ollama chat'te DEĞİL** (embeddings-only, ENABLE_OLLAMA_CHAT=false)
+> - **HEAD:** `b7f5f38` (31 May: sync_etut_kontrol noise + name normalize tool) ← `bc54d7e` (Playwright retry + geciken_snapshot dedup) ← `58712e0` (Cerebras qwen→gpt-oss-120b 13 dosya + chrome-cdp git mode +x) ← `ff47dc2` (26 May SSS/SEO + BUG3 puan tahmin merge)
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `b7f5f38`, PostgreSQL OK, geciken_snapshot **551→40 (511 duplikasyon temizlendi + UNIQUE constraint)**, son 24h Sentry temiz (retry deploy edildi)
+> - **LLM ZİNCİRİ (NET):** Cerebras (gpt-oss-120b) → Groq 70B → Claude. **Ollama chat'te DEĞİL** (embeddings-only, ENABLE_OLLAMA_CHAT=false)
+>
+> ## 🔥 31 May (Oturum 25.49) — SENTRY 5-GÜN TEMIZLIK + NEO BUG'LAR
+>
+> **A. Cerebras qwen-3-235b RETIRED → gpt-oss-120b (`58712e0`)** — Cerebras kataloğu qwen-3-235b-a22b-instruct-2507'yi emekli etti, 404 dönüyordu (22 event/24h). 13 dosyada bulk replace (intent_classifier INTENT_TO_MODEL 13 intent + CEREBRAS_MODELS["kompleks"] + cerebras_handler + context_compactor + llm_router + fermat_core_agent + pedagoji/cerebras_generator + prompt_optimizer + system_prompts + pedagoji_extended + generate_lgs_yeni_nesil_bank + anekdotlar_seed + cerebras_quality_test + test_compaction_quality). Restart sonrası 404 = 0.
+>
+> **B. chrome-cdp 203/EXEC fix (`58712e0`)** — chrome_cdp_start.sh wrapper +x bit yokmuş (Windows commit korumamış, `-rw-rw-r--`). `git update-index --chmod=+x` ile git index'te mode 100755 + VPS chmod +x. Service NRestarts stabil (no flapping).
+>
+> **C. sync_attendance Playwright retry-with-backoff (`bc54d7e`)** — Sentry GRUP 1+2 (24 event, 5 gün): BlockingIOError [Errno 11] + "Target page closed" + "Connection closed" — uvloop subprocess pipe non-blocking EAGAIN race (chromium fork transient). Fix: `async with EyotekWrapper(cookies)` etrafına 3-deneme retry (3s/6s/12s exponential backoff), `OSError + ConnectionError` yakalar (BlockingIOError parent class OSError). Sessiz çevrime düşmez, retry başarısızsa raise.
+>
+> **D. geciken_snapshot dedup + UNIQUE constraint (`bc54d7e` + manuel DB)** — Neo 28 May gözlemi: Gökhan Aygün/Mahmut Taha 10-13× repeat. Kök neden: `finans_eyotek_reader.py:663` raw INSERT, ne PK ne ON CONFLICT ne DELETE → her sync aynı öğrenciyi yeniden insert. Fix: sezon snapshot'ı INSERT loop ÖNCESİ `DELETE WHERE sezon=$1` (snapshot semantiği = "şu anki durum"). VPS manuel temizlik: 551 → 40 satır (511 silindi, top duplicate **27 kopya**), `CREATE UNIQUE INDEX geciken_snapshot_uniq(soz_no, sezon)` re-insertion'ı sonsuza kalıcı engelliyor. Bot tool `geciken_odemeler` verify: 40 unique, 0 duplicate ✅.
+>
+> **E. sync_etut_kontrol session expire noise (`b7f5f38`)** — Sentry GRUP 3 (4 event): `logger.error("session expired")` → Sentry capture. Bu transient durum (CapSolver auto-relogin chain sonraki çevrimde yeniler). `logger.error → logger.warning` (behavior aynı, sadece Sentry spam'i durur). TODO 25.50: burada da `try_auto_login()` tetikle (sync_attendance gibi).
+>
+> **F. Name normalize defensive tool (`b7f5f38`)** — Neo 28 May "ORHAN  DEMİRBULAT" çift boşluk gözlemi. `_normalize_names.py` (teacher_timetable + staff + students) — VPS'te 0 anomali (zaten temiz, geçmişte düzeltilmiş). Script defensive kalıyor, ileride sync sonrası tekrar çalıştırılabilir.
+>
+> ## 📋 31 May Commit Zinciri
+> ```
+> b7f5f38 fix(sentry): sync_etut_kontrol noise + _normalize_names defensive tool
+> bc54d7e fix(sync): Playwright retry-with-backoff + geciken_snapshot dedup
+> 58712e0 fix(cerebras+cdp): qwen-3-235b→gpt-oss-120b 13 files + chrome-cdp +x git mode
+> ```
+>
+> ## ⏭️ Bir Sonraki Oturum (25.50 — Aktif Sıra)
+> - 🟡 **GRUP 4 Eyotek `test-transferred` timeout** (2 event) — `sinav_drilldown` 20s timeout, intermittent. Fix: 20s → 30s + retry.
+> - 🟡 **sync_etut_kontrol içine `try_auto_login()` tetikle** — şu an sessizce return [] yapıyor, CapSolver chain'i inline çağrılmalı (sync_attendance pattern).
+> - 🟢 **Geciken duplicate'ın user-facing etkisi izle** — bot 40 satır görüyor, ama eski konuşmalarda "şişirilmiş kurum geneli rakam" verdi mi (DB fix öncesi cache'lerde) check.
 >
 > ## 🆕 26 May (gece) — SSS / SEO+GEO TAM (Wix + Google Console; bot koduna DOKUNULMADI)
 > - **Sorun:** Anasayfa FAQ widget'ı (Wix faq-ooi app) **client-side/lazy-load** → ham HTML'de sadece 1 segment; 69 sorunun ~65'i Google'a yalnızca JS-render ile, **JS'siz AI crawler'lara (GPTBot/ClaudeBot/Perplexity) HİÇ** görünmüyordu. `/sss` = 404. Wix REST API **sayfa OLUŞTURAMAZ** (yalnız site/folder/blog).
