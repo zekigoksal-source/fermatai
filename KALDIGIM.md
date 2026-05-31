@@ -53,6 +53,28 @@
 > - Yorum/docstring: cerebras_handler/context_compactor/routing_engine/prompt_optimizer/cerebras_prefetch/test'ler. **Ollama qwen2.5:7b + Groq qwen-2.5-32b'ye DOKUNULMADI** (farklı modeller).
 > - 16 dosya py_compile OK, VPS 8 modül import OK, bridge NRestarts=0 health 200.
 >
+> ## 🔍 31 May (Oturum 25.49-C) — SİSTEM GENELİ qwen-235b DENETİMİ (`b2a68dd`)
+>
+> Neo: "model migration sistem geneli, her yüzeyde kalıntı temizle — VPS/GitHub/BLUEPRINT/render/API, bug yaşamayalım."
+>
+> **Denetlenen 8 yüzey + sonuç:**
+> | Yüzey | Bulgu | Aksiyon |
+> |-------|-------|---------|
+> | Python kod (.py) | Routing kalbi temiz | INTENT_TO_MODEL 29 intent **0 qwen**, tüm modeller {gpt-oss-120b, llama3.1-8b} ✅ |
+> | BLUEPRINT.md | 14 mevcut-durum tablosu stale | gpt-oss-120b'ye güncellendi; tarihsel log'lar korundu |
+> | Frontend HTML (dashboard+web_chat) | renk-map'te cerebras_235b | KORUNDU (geçmiş veri lookup, meşru — cost-tablo gibi) |
+> | VPS .env | FERMAT_COMPACT_MODEL **YOK** | kod default gpt-oss-120b geçerli, stale override yok ✅ |
+> | systemd/cron/timer | model ref yok | temiz ✅ |
+> | JSON/YAML/SQL config | yok | temiz ✅ |
+> | DB (sistem_ayar + routing_stats) | model config yok; son 235b kaydı **26 May** | yeni çağrı YOK ✅ |
+> | GitHub CI | .github yok | yok ✅ |
+>
+> **Canlı fonksiyonel teyit (VPS):** 8 eski-qwen intent (plan_yap/deneme_analiz/hedef_analiz/test_olusturma/soru_uret/icerik_uretim/karsilastirma/metin_zenginlestir) × 2 kanal (whatsapp+web) = **16/16 → gpt-oss-120b** ✅
+>
+> **🔑 BONUS KEŞIF (önemli):** routing_stats analizi — 26-31 May arası "kompleks" intent'ler qwen-235b'de 404 alıp **Claude'a fallback** ediyordu (claude trafiği şişti: 47 kayıt). Bugünkü fix (58712e0+73043f7) bunları gpt-oss-120b'ye geri aldı → 5 gündür sessizce pahalı Claude'a düşen yük artık ucuz Cerebras'ta. **Maliyet + hız iyileşmesi.**
+>
+> **Kalan referanslar (hepsi meşru):** tarihsel session-log/changelog (BLUEPRINT 110/225/776/922 + KALDIGIM geçmiş oturumlar), legacy-lookup (cost-tablo + renk-map, geçmiş veri için), benim "emekli" notlarım, Neo'nun tarihsel alıntısı, ilgisiz Ollama qwen2.5:7b + Groq qwen-2.5-32b. **Canlı model-çağrısı referansı: 0.**
+>
 > ## 📋 31 May Tam Commit Zinciri (güncel)
 > ```
 > 73043f7 chore(cerebras): qwen-235b emekli — 13 dosya stale referans temizliği
