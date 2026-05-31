@@ -132,7 +132,7 @@ def decide_route(
 
     NAMING NOTU (Oturum 25.22+ guncel): "local" döndüğünde gerçekte
     chat_local_async() çağrılır. Bu fonksiyon Cerebras-first calisir:
-      Cerebras (3 model: 8b/120b/235b) → Groq (fallback) → Ollama (laptop)
+      Cerebras (2 model: 8b/120b) → Groq (fallback) → Ollama (laptop)
     "ollama" eski isim, backwards compat icin kabul edilir; yeni kod "local".
 
     Öncelik sırası:
@@ -264,11 +264,11 @@ def decide_route(
         from llm_router import classify_complexity
         complexity = classify_complexity(message)
 
-        # 25.40z3-ROUTING-FIX1: claude_text_only → Cerebras 235b yönlendirme
+        # 25.40z3-ROUTING-FIX1: claude_text_only → Cerebras gpt-oss-120b yönlendirme
         # Bot analizi (5 May): Claude trafiğinin %39'u tool kullanmadan direkt cevap
         # (claude_text_only: 173/(270+173) son 7 gün). Bu mesajların büyük kısmı
         # öğrenci kavramsal soruları ("Tyt fizik anlat", "Cati eki", "AA yayı uzunluğu")
-        # → Cerebras 235b'ye taşınır. Admin text_only DEV TARTIŞMASI olduğu için
+        # → Cerebras gpt-oss-120b'ye taşınır. Admin text_only DEV TARTIŞMASI olduğu için
         # Claude'da kalır (mimari nüans + kalite zorunlu).
         # NOT: security guard yukarıda zaten yakaladı, burada güvenli intent'ler kalır.
         if complexity == "cloud":
@@ -289,7 +289,7 @@ def decide_route(
                 except Exception:
                     pass
 
-                # Tool gerektirmeyen kavramsal/yardımcı intent'ler → local (Cerebras 235b)
+                # Tool gerektirmeyen kavramsal/yardımcı intent'ler → local (Cerebras gpt-oss-120b)
                 text_only_safe_intents = {
                     "kavram_aciklama", "ornek_iste", "cozum_iste",
                     "ozet_iste", "yontem_iste", "konu_anlatim_uzun",

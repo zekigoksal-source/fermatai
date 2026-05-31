@@ -9,7 +9,7 @@ Akış:
   2. Son 24h konusmalarda problem tespit (frustration, baglam_kaybi,
      yanlis_data, halusinasyon, eksik_pattern)
   3. Claude Opus 4.7'ye sorulur — somut prompt degisikligi onerisi
-     (Cerebras qwen-235b + Groq 70B fallback)
+     (Cerebras gpt-oss-120b + Groq 70B fallback)
   4. prompt_suggestions tablosuna kaydedilir (status='pending')
   5. Sabah Neo dashboard'da gorur, "approve" tikalar
   6. Approved oldugunda → otomatik git patch + commit + VPS sync + restart
@@ -124,7 +124,7 @@ async def _ask_groq_for_suggestion(
 
     25.44-dm11 (Neo direktifi): Atlas önerileri KRİTİK — yanlış öneri sistemi
     bozar. Birincil model **Claude Opus 4.7** (en üst kalite öz-farkındalık +
-    hata tespiti + çözüm önerisi). Cerebras qwen-235b + Groq 70B fallback olarak
+    hata tespiti + çözüm önerisi). Cerebras gpt-oss-120b + Groq 70B fallback olarak
     korunur (Anthropic API down ise gece üretimi tamamen durmasın).
     Model env ile değiştirilebilir: ATLAS_LLM_MODEL (default: claude-opus-4-7).
 

@@ -1400,7 +1400,7 @@ def _build_claude_request_params(
             {
                 "type": "text",
                 "text": (
-                    f"\n\n═══════ KONUŞMA BAĞLAM ÖZETI (Cerebras 235B pre-compile) ═══════\n"
+                    f"\n\n═══════ KONUŞMA BAĞLAM ÖZETI (Cerebras gpt-oss-120b pre-compile) ═══════\n"
                     f"{compact_summary}\n"
                     f"═══════════════════════════════════════════════════════════"
                 ),
@@ -4070,7 +4070,7 @@ class FermatCoreAgent:
         # 133K token'a ulasip Cerebras/model 400 "context_length_exceeded" veriyordu.
         # Recap sadece ogrenci icin → admin/mudur korumasiz. TUM roller icin sert
         # token-butce siniri: en eski mesajlari (tool eslesmesini bozmadan) dusur.
-        # Model limiti ~131K (Cerebras qwen). 25.47-rev2 (24 May): 100K butce HALA
+        # Model limiti ~131K (Cerebras gpt-oss-120b). 25.47-rev2 (24 May): 100K butce HALA
         # tasiyordu (context_length_exceeded 24 May 13:25 tekrar tetikledi). Iki sebep:
         #   1) len/4 tahmini Turkce+JSON'da DUSUK sayiyor (gercek ~3 char/token).
         #   2) 100K history + system + tools + yanit > 131K oluyordu.
@@ -4525,8 +4525,9 @@ class FermatCoreAgent:
                                 _local_provider = "cerebras_8b"
                             elif "120b" in _cb_model or "gpt-oss" in _cb_model:
                                 _local_provider = "cerebras_120b"
-                            elif "235b" in _cb_model or "qwen" in _cb_model:
-                                _local_provider = "cerebras_235b"
+                            # 25.49: qwen-3-235b Cerebras katalogundan emekli (404).
+                            # Tek üst-tier artık gpt-oss-120b → 235b branch kaldırıldı.
+                            # Tanınmayan model "cerebras" generic etiketinde kalır.
                     elif getattr(self.router, "_cerebras_available", False):
                         _local_provider = "cerebras"
                     elif getattr(self.router, "_groq_available", False):
@@ -4603,7 +4604,7 @@ class FermatCoreAgent:
                 # Fallback — asagidaki Claude akisina devam et
 
         # ── 25.41 (Neo 7 May): Cerebras tool-calling pre-check (opt-in) ───────
-        # Cerebras 235b/120b daha hızlı (1.5-2.5sn) → Groq'tan ÖNCE denenir.
+        # Cerebras gpt-oss-120b daha hızlı (1.5-2.5sn) → Groq'tan ÖNCE denenir.
         # Hata olursa sessizce Groq pre-check'e düşer (alt blok).
         # 25.43-INT-FIX (10 May): Roller genisletildi — ogrenci + ogretmen + rehber + mudur
         # admin haric (selfdev tool kullaniyor, Cerebras yetersiz)
@@ -4613,7 +4614,7 @@ class FermatCoreAgent:
             # 25.44-dev-meeting-3 GUARD (Ada A3 vakasi):
             # Personal keyword (akademik kayit, hidisat, isim, finans vs) varsa
             # Cerebras-tools pre-check'i SKIP et — sistem prompt'taki durustluk
-            # kalibi Claude'da daha iyi uygulanir (Cerebras 235B 'kaydet' gorunce
+            # kalibi Claude'da daha iyi uygulanir (Cerebras gpt-oss-120b 'kaydet' gorunce
             # uydurma 'kaydedildi' yaniti veriyordu, halusinasyon).
             _last_user_msg = ""
             for _h in reversed(self.history):
@@ -4644,7 +4645,7 @@ class FermatCoreAgent:
                 logger.info("  [CEREBRAS-TOOLS] hack pattern → SKIP, fast_response/Claude")
                 raise RuntimeError("hack_pattern_skip")
             # 25.46+ BUG FIX (Neo 17 May — Duygu mudur vakasi 20:07-20:11):
-            # "Önümüzdeki hafta hangi etütler var eyotekten bak" → Cerebras qwen3
+            # "Önümüzdeki hafta hangi etütler var eyotekten bak" → Cerebras gpt-oss-120b
             # "Eyotek'e baglanip cekiyorum (~20sn)..." YAZIYORDU ama tool_use
             # EMITTEMIYORDU → kullanici beklemede kaldi, veri gelmedi.
             # Eyotek/etut/yoklama/sinav gibi VERI CEKEN sorgular Claude'a gitsin —
@@ -4718,10 +4719,8 @@ class FermatCoreAgent:
                         except Exception: pass
                         try:
                             from usage_tracker import log_event
-                            # Routing source: cerebras_235b veya cerebras_120b
-                            _src = "cerebras_235b" if "235b" in str(_cb_model) else (
-                                "cerebras_120b" if "120b" in str(_cb_model) else "cerebras_tools"
-                            )
+                            # Routing source: 25.49 qwen-235b emekli → gpt-oss-120b tek tier
+                            _src = "cerebras_120b" if "120b" in str(_cb_model) or "gpt-oss" in str(_cb_model) else "cerebras_tools"
                             await log_event(
                                 phone=caller_phone, role=role, full_name=caller_name,
                                 event_type="message", response_source=_src, response_ms=_cb_ms,
@@ -4847,7 +4846,7 @@ class FermatCoreAgent:
             #
             # STREAMING YOLU — eğer _stream_queue varsa AsyncAnthropic ile
             # 25.43-FAZ-2 (Neo direktif): Selective Cerebras pre-compile.
-            # Uzun konuşmalarda (10+ msg, 3K+ token) Cerebras 235B son 20 mesajı
+            # Uzun konuşmalarda (10+ msg, 3K+ token) Cerebras gpt-oss-120b son 20 mesajı
             # action-aware özetler, Claude bağlam zenginliği kazanır.
             # Sadece TURN 0'da (ilk Claude çağrısı) tetiklenir — tool loop'unda her
             # turda yeniden compact yapmak gereksiz (history zaten genişledi).

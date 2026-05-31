@@ -1438,7 +1438,8 @@ Aktif veri katmanlari:
   · student_topic_tracker (2573 konu, 107 ogrenci)
   · rag_content (5562 kayit: OGM Vision + PDF chunks + Claude-uretimi + Groq-uretimi)
   · usage_log + routing_stats (response_source: fast_response | cerebras_8b |
-    cerebras_120b | cerebras_235b | groq | claude | claude_vision | query_cache)
+    cerebras_120b | groq | claude | claude_vision | query_cache)
+    NOT: cerebras_235b (qwen) 31 May 25.49 emekli → gpt-oss-120b. Eski logda görülebilir.
 
 GROQ TOOL-CALLING DURUM (Oturum 25 PROJ-C):
   · llm_router.chat_groq_with_tools() helper + SAFE_GROQ_TOOLS allowlist
@@ -3812,7 +3813,7 @@ EK TABLOLAR (tool taniminda OLMAYAN — sadece burada):
 ADMIN-ONLY TABLOLAR (Neo haricindeki roller ERISEMEZ):
 - agent_conversations: id, session_id, phone TEXT, role, message_role ('user'/'assistant'), content TEXT, tools_used TEXT[], created_at
 - usage_log: phone, role, full_name, response_source, response_ms, created_at
-- routing_stats: phone, role, message TEXT, response_source ('fast_response'/'groq'/'cerebras'/'cerebras_120b'/'cerebras_235b'/'claude'/'ollama' legacy), response_ms INT, is_test_user BOOL (25.42 — test/gercek ayrimi, default false), created_at
+- routing_stats: phone, role, message TEXT, response_source ('fast_response'/'groq'/'cerebras'/'cerebras_120b'/'claude'/'ollama' legacy; 'cerebras_235b' = qwen emekli 25.49, eski kayıt), response_ms INT, is_test_user BOOL (25.42 — test/gercek ayrimi, default false), created_at
 - user_feedback: id, phone, role, full_name, feedback TEXT, category, status ('yeni'/'islendi'), created_at
 
 🔴 PERSONEL→PHONE SORGUSU:

@@ -6,7 +6,7 @@ Neo direktif (11 May 19:30):
 token kullanımını optimize ederiz."
 
 Mimari:
-  History (20-50 mesaj) → Cerebras 235B (1-2sn, $0.005/çağrı)
+  History (20-50 mesaj) → Cerebras gpt-oss-120b (1-2sn, $0.005/çağrı)
                        ↓
                     Compacted Summary (300-500 token)
                        ↓
@@ -22,7 +22,7 @@ CACHE-AWARE STRATEGY:
     - Conversation_memory recent_user_questions > 5 farklı konu → ENABLE
 
 Maliyet & Kalite:
-  - Cerebras 235B: $0.85/Mtok input, ~$1.20/Mtok output (yaklaşık)
+  - Cerebras gpt-oss-120b: $0.30/Mtok input, ~$0.50/Mtok output (qwen-235b emekli 25.49)
   - Compaction çağrı: 5K input + 0.5K output = $0.005
   - Karşılığında: Claude'a giden context %30-50 daha zengin (50 mesaj özeti)
                 + cache write azalır (kısa context = az cache yazımı)
@@ -190,7 +190,7 @@ async def compact_history_for_claude(
     min_messages: int = None,
     min_tokens: int = None,
 ) -> Optional[str]:
-    """Cerebras 235B ile history → compact summary."""
+    """Cerebras gpt-oss-120b ile history → compact summary."""
     decision = should_compact(history, user_msg,
                                 min_messages=min_messages,
                                 min_tokens=min_tokens)
@@ -210,7 +210,7 @@ async def compact_history_for_claude(
         client = CerebrasClient()
 
         start = time.time()
-        # Cerebras 235B en güçlü context anlama — uzun history için tercih
+        # Cerebras gpt-oss-120b güçlü context anlama — uzun history için tercih
         result = await client.complete_async(
             messages=[{"role": "user", "content": compact_input}],
             system=COMPACT_SYSTEM_PROMPT,

@@ -334,7 +334,7 @@ async def _run_scheduled_tasks():
                         "claude":         {"in": 3.0,  "out": 15.0},
                         "cerebras_8b":    {"in": 0.10, "out": 0.10},
                         "cerebras_120b":  {"in": 0.30, "out": 0.50},
-                        "cerebras_235b":  {"in": 0.60, "out": 0.80},
+                        "cerebras_235b":  {"in": 0.60, "out": 0.80},  # LEGACY 25.49 emekli — geçmiş kayıt
                         "cerebras":       {"in": 0.30, "out": 0.50},
                         "groq":           {"in": 0.59, "out": 0.79},
                     }
@@ -4511,7 +4511,7 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                     "SELECT tools_used::text FROM agent_conversations WHERE phone=$1 AND message_role='assistant' ORDER BY created_at DESC LIMIT 1",
                     phone)
                 # 25.22 Cerebras destekli source detection
-                # Granüler: cerebras_8b / cerebras_120b / cerebras_235b
+                # Granüler: cerebras_8b / cerebras_120b (235b qwen 25.49 emekli, branch geçmiş veri için)
                 _last_str = str(_last or "")
                 _ll = _last_str.lower()
                 if "cerebras_235b" in _ll:

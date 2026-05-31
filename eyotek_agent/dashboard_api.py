@@ -315,8 +315,9 @@ async def token_budget(
     # Fiyat tablosu (USD per 1M token):
     #   Claude Sonnet 4.6: input $3, output $15 (cached: $0.30 in)
     #   Cerebras Llama 3.1 8B:  input $0.10, output $0.10 (tahmin, classify icin)
-    #   Cerebras GPT-OSS 120B:  input $0.30, output $0.50 (tahmin, kavramsal)
-    #   Cerebras Qwen 3 235B:   input $0.60, output $0.80 (tahmin, kompleks)
+    #   Cerebras GPT-OSS 120B:  input $0.30, output $0.50 (ANA üst-tier — kavramsal+kompleks)
+    #   Cerebras Qwen 3 235B:   EMEKLI (31 May 25.49, Cerebras katalogundan kalktı).
+    #     Cost satiri GECMIS usage_log kayitlari icin korunuyor (silme → KeyError).
     #   Groq Llama 3.3 70B: input $0.59, output $0.79
     #   fast_response, query_cache, ollama: $0
     PRICES = {
@@ -325,7 +326,7 @@ async def token_budget(
         "cerebras":         {"in": 0.30, "out": 0.50},  # default kategori (gpt-oss-120b)
         "cerebras_8b":      {"in": 0.10, "out": 0.10},
         "cerebras_120b":    {"in": 0.30, "out": 0.50},
-        "cerebras_235b":    {"in": 0.60, "out": 0.80},
+        "cerebras_235b":    {"in": 0.60, "out": 0.80},  # LEGACY 31 May emekli — geçmiş kayıt lookup
         "groq":             {"in": 0.59, "out": 0.79},
         "groq_escalated_to_claude": {"in": 0,    "out": 0},  # observability only
         "ollama":           {"in": 0,    "out": 0},

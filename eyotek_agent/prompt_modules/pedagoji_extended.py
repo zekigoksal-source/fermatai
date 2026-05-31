@@ -36,7 +36,9 @@ ROUTING 5 KATMAN:
     get_daily_etut). Production trafigi normalde Cerebras'ta, Groq yedek.
 
 🔥 KRİTİK NETLIK (28 Nisan Neo bulgu — bot self-correct etti):
-  · Cerebras = BIRINCIL hizli motor (3 model, 24 Nisan paid tier, $15 prepay)
+  · Cerebras = BIRINCIL hizli motor (2 model: llama3.1-8b + gpt-oss-120b; paid tier).
+    NOT: qwen-3-235b 31 May emekli oldu → gpt-oss-120b tek üst-tier (3000 tok/s,
+    production; canlı A/B testte 120b kalite ≥ glm-4.7-preview, 3x daha hızlı).
   · Groq = FALLBACK/yedek oyuncu (Cerebras down olursa)
   · Ollama (VPS) = SADECE RAG embedding (nomic-embed-text), inference YOK
   · Eyotek planner = Cerebras gpt-oss-120b (eyotek_planner.py)
@@ -55,7 +57,9 @@ Aktif veri katmanlari:
   · student_topic_tracker (2573 konu, 107 ogrenci)
   · rag_content (5562 kayit: OGM Vision + PDF chunks + Claude-uretimi + Groq-uretimi)
   · usage_log + routing_stats (response_source: fast_response | cerebras_8b |
-    cerebras_120b | cerebras_235b | groq | claude | claude_vision | query_cache)
+    cerebras_120b | groq | claude | claude_vision | query_cache)
+    NOT: cerebras_235b (qwen) 31 May 25.49'da Cerebras katalogundan emekli oldu →
+    yerine gpt-oss-120b geçti. Eski log kayıtlarında 235b etiketi görülebilir.
 
 GROQ TOOL-CALLING DURUM (Oturum 25 PROJ-C):
   · llm_router.chat_groq_with_tools() helper + SAFE_GROQ_TOOLS allowlist

@@ -65,15 +65,15 @@ def test_handoff_response_source_format():
     print("\n[2] HANDOFF response_source format kontrolu")
 
     # Simulasyon: _handoff varsa source guncellenir
-    _local_provider = "cerebras_235b"
+    _local_provider = "cerebras_120b"
     _handoff = {"tool": "search_curriculum", "reason": "RAG'da daha detayli"}
 
     _resp_src = _local_provider
     if _handoff and _handoff.get("tool"):
         _resp_src = f"{_local_provider}+claude_handoff"
 
-    check("Handoff varsa source = 'cerebras_235b+claude_handoff'",
-          _resp_src == "cerebras_235b+claude_handoff",
+    check("Handoff varsa source = 'cerebras_120b+claude_handoff'",
+          _resp_src == "cerebras_120b+claude_handoff",
           f"got {_resp_src}")
 
     # Handoff yoksa orijinal kalir
@@ -81,8 +81,8 @@ def test_handoff_response_source_format():
     _resp_src = _local_provider
     if _handoff and _handoff.get("tool"):
         _resp_src = f"{_local_provider}+claude_handoff"
-    check("Handoff yoksa source = 'cerebras_235b'",
-          _resp_src == "cerebras_235b",
+    check("Handoff yoksa source = 'cerebras_120b'",
+          _resp_src == "cerebras_120b",
           f"got {_resp_src}")
 
 

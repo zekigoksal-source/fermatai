@@ -3,7 +3,7 @@
 Cerebras Pre-Fetch Context Engine (25.40z3-CEREBRAS-PREFETCH)
 ==============================================================
 
-Cerebras 235b TOOL CALLING yetenegine sahip degil — ama akilli pre-fetch ile
+Cerebras gpt-oss-120b standart chat path'inde TOOL CALLING yapmaz — ama akilli pre-fetch ile
 mevcut tool ekosisteminden DESTEK alabilir. Bot mesaji analiz edilir, intent ve
 konu tespit edilir, ARKA PLANDA paralel API'ler cagrilir, Cerebras prompt'una
 INJECT edilir. Cerebras zenginlestirilmis cevap verir — Claude'a HANDOFF gerek

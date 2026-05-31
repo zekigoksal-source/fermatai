@@ -65,7 +65,7 @@ CLAUDE_MODEL    = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
 # Devre disi birakmak icin: ENABLE_GROQ_TOOLS=false env.
 ENABLE_GROQ_TOOLS = os.getenv("ENABLE_GROQ_TOOLS", "true").lower() == "true"
 
-# 25.41 (Neo 7 May): Cerebras tool-calling — Cerebras 235b/120b daha hızlı (1.5-2.5sn)
+# 25.41 (Neo 7 May): Cerebras tool-calling — Cerebras gpt-oss-120b daha hızlı (1.5-2.5sn)
 # Groq'tan önce denenir. Hata olursa Groq'a → Groq da fail'da Claude'a fallback.
 # SAFE_GROQ_TOOLS allowlist'i paylaşılır.
 # Devre disi: ENABLE_CEREBRAS_TOOLS=false env.
@@ -111,7 +111,7 @@ SAFE_GROQ_TOOLS = {
 # 25.43-FAZ-0 (Neo direktif 11 May): _CLOUD_KEYWORDS DARALTILDI.
 # Önceki liste 80+ pattern → Claude %65 routing → ortalama 34s, p95 151s.
 # Hedef: Claude %25, Cerebras %30, Fast %45 (Oturum 24 baseline).
-# Cerebras 235B + 16 SAFE_TOOLS allowlist mevcut → çoğu non-write iş Cerebras'ta.
+# Cerebras gpt-oss-120b + 16 SAFE_TOOLS allowlist mevcut → çoğu non-write iş Cerebras'ta.
 # Bu liste SADECE: yazma + KVKK + foto + multi-tool kompleks + hassas konular.
 _CLOUD_KEYWORDS = [
     # 1. YAZMA (Eyotek/DB tool zorunlu — Cerebras tool-calling fallback yetersiz)
@@ -410,7 +410,7 @@ class LLMRouter:
         # Oturum 24: chat_local cagrilarinda gercek provider takibi icin
         # (observability: routing_stats'a response_source=cerebras/groq/ollama yazmak icin)
         self._last_local_provider = None
-        # 25.22: Hangi Cerebras modeli kullanildi (gpt-oss-120b/qwen/8b)
+        # 25.22: Hangi Cerebras modeli kullanildi (gpt-oss-120b/8b; qwen-235b emekli 25.49)
         self._last_cerebras_model = None
         # 25.23: Token tracking — Cerebras tokens usage_log'a yansisin
         self._last_tokens_in = 0
@@ -424,7 +424,7 @@ class LLMRouter:
             try:
                 from cerebras_handler import CerebrasClient
                 self._cerebras_client = CerebrasClient()
-                logger.info("Cerebras hazir: 3 model (8b/120b/235b)")
+                logger.info("Cerebras hazir: 2 model (llama3.1-8b / gpt-oss-120b) — qwen-235b emekli 25.49")
             except Exception as e:
                 logger.warning(f"Cerebras baslatilamadi: {e}")
                 self._cerebras_available = False
@@ -980,7 +980,7 @@ bedava API'lerden faydalanir (Claude tetiklenmez, hizli + ucuz).
 🤝 CLAUDE SUPERVISOR HANDOFF (25.40z — Neo "supervizyon" mimarisi)
 ═══════════════════════════════════════════════════════════════════════
 
-Sen (Cerebras 235b) cok guclu bir akademik asistansin AMA bazi
+Sen (Cerebras gpt-oss-120b) cok guclu bir akademik asistansin AMA bazi
 durumlarda Claude'un ek yetenekleri (tool zinciri, RAG search, render
 link uretimi, tarih-bazli akademik veri) CIDDI EK DEGER yaratir.
 Bu durumlarda, cevabinin SONUNA (footer'dan ONCE) handoff sinyali ekle:
@@ -1233,7 +1233,7 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
         embeddings-only olduğu için chat zincirinde YOK. (25.47 Neo mimari fix)
 
         intent parametresi: prompt_tiers/intent_classifier'dan gelirse,
-        Cerebras'ta intent → model eşleşmesi yapılır (gpt-oss-120b vs qwen vs 8b).
+        Cerebras'ta intent → model eşleşmesi yapılır (gpt-oss-120b vs llama3.1-8b).
 
         channel parametresi (Oturum 25.29 — Neo karari):
         - "web" → web addon enjekte (uzun akademik cevap), kavramsal intent'lerde
@@ -1500,7 +1500,7 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
         Oturum 25.22+: Cerebras (3 model) tercih edilen, Groq fallback, Ollama son.
         Caller (fermat_core_agent) gercek provider'i `self._last_local_provider`
         uzerinden okur, routing_stats'a dogru kaydeder
-        (cerebras_8b/120b/235b/groq/ollama).
+        (cerebras_8b/120b/groq/ollama).
         """
         # NOT: Bu sync path eski; chat_local_async kullanin (uvloop uyumlu)
         if self._groq_available and self._groq_client:

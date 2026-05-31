@@ -24,7 +24,7 @@ KVKK GÜVENLİK:
 - llama3.1-8b → injection saldırısında SIZINTI yapabildi (1/3)
 - gpt-oss-120b → 3/3 saldırı reddetti
 - gpt-oss-120b → 3/3 saldırı reddetti
-=> classify dışında llama3.1-8b kullanma. Üst tier gerekirse gpt-oss veya qwen.
+=> classify dışında llama3.1-8b kullanma. Üst tier gerekirse gpt-oss-120b.
 """
 from __future__ import annotations
 import os
@@ -62,15 +62,15 @@ INTENT_TO_MODEL = {
     "uretim_paylas":     "gpt-oss-120b",
     "yetenek_sorgu":     "gpt-oss-120b",
     "meta_direktif":     "gpt-oss-120b",
-    # Karmaşık plan/analiz/kavramsal — qwen daha akademik
+    # Karmaşık plan/analiz/kavramsal — gpt-oss-120b güçlü (qwen-235b emekli 25.49)
     # NOT: Bunlar Claude tool gerektirebilir, classifier üst kontrolü ile
     "plan_yap":          "gpt-oss-120b",
     "analiz_iste":       "gpt-oss-120b",
     "deneme_analiz":     "gpt-oss-120b",
     "hedef_analiz":      "gpt-oss-120b",
     # 25.40o (Neo direktif): gpt-oss-120b içerik üretim BÜYÜK potansiyel
-    # 95 konu Claude $4/100sn → 211 konu qwen $0.20/3sn (33x hız, %95 ucuz, EŞDEĞER kalite)
-    # Bu intent'ler Claude yerine qwen'e gitmeli — proaktif yetkinlik kullanımı
+    # 95 konu Claude $4/100sn → 211 konu gpt-oss-120b $0.20/3sn (33x hız, %95 ucuz, EŞDEĞER kalite)
+    # Bu intent'ler Claude yerine gpt-oss-120b'ye gitmeli — proaktif yetkinlik kullanımı
     "test_olusturma":    "gpt-oss-120b",  # "test hazırla", "konu tarama"
     "soru_uret":         "gpt-oss-120b",  # "soru üret/yaz", "X soru hazırla"
     "yeni_nesil_uret":   "gpt-oss-120b",  # "yeni nesil/maarif sorusu"
@@ -87,7 +87,7 @@ INTENT_TO_MODEL = {
 
 # ═══════════════════════════════════════════════════════════════════
 # Brief #11 (Neo 1 May 25.37) — INTENT → RENDERER MAP
-# Cerebras 120b/235b modelleri channel='web' geldiğinde hangi
+# Cerebras gpt-oss-120b modeli channel='web' geldiğinde hangi
 # renderer'ı kullanacağını net bilsin diye system_prompt'a inject edilir.
 # ═══════════════════════════════════════════════════════════════════
 INTENT_RENDERER_MAP: dict[str, list[str]] = {
@@ -382,7 +382,7 @@ def select_cerebras_model(intent: Optional[str], channel: str = "whatsapp") -> s
             return CEREBRAS_MODELS["kompleks"]  # gpt-oss-120b
         return CEREBRAS_MODELS["kavramsal"]  # gpt-oss-120b
 
-    # Web kanalinda kavramsal/ornek/aciklama → qwen 235b (akademik kalite)
+    # Web kanalinda kavramsal/ornek/aciklama → gpt-oss-120b (akademik kalite)
     if channel == "web":
         WEB_UPGRADE_INTENTS = {
             "kavram_aciklama", "ornek_iste", "cozum_iste",

@@ -11,7 +11,7 @@ B. Kısa konuşma (3 mesaj) → compact SKIP olmalı (heuristic check)
 C. Cache miss simulation → compact büyük değer üretmeli
 
 PASS criteria:
-- Cevap benzerliği ≥%85 (Cerebras 235B judge ile)
+- Cevap benzerliği ≥%85 (Cerebras gpt-oss-120b judge ile)
 - Latency Cerebras+Claude ≤ Claude full*1.2
 - Cost equivalent veya daha düşük
 
@@ -126,7 +126,7 @@ async def test_compact_long_conversation():
 
 
 async def test_quality_judge():
-    """Cerebras 235B judge: compact summary ile Claude tutarlı cevap verebilir mi?"""
+    """Cerebras gpt-oss-120b judge: compact summary ile Claude tutarlı cevap verebilir mi?"""
     from cerebras_handler import CerebrasClient
     from context_compactor import compact_history_for_claude
 
@@ -198,7 +198,7 @@ async def main():
         print(f"  ✗ FAIL: {e}")
         results.append(("heuristic", False, str(e)))
 
-    print("\n[2] Compact long conversation (Cerebras 235B)")
+    print("\n[2] Compact long conversation (Cerebras gpt-oss-120b)")
     try:
         r = await test_compact_long_conversation()
         results.append(("compact_long", True, r))
@@ -207,7 +207,7 @@ async def main():
         print(f"  ✗ FAIL: {e}")
         results.append(("compact_long", False, str(e)))
 
-    print("\n[3] Quality judge (Cerebras 235B as judge)")
+    print("\n[3] Quality judge (Cerebras gpt-oss-120b as judge)")
     try:
         r = await test_quality_judge()
         results.append(("quality_judge", True, r))
