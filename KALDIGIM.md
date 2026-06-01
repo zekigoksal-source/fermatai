@@ -101,8 +101,26 @@
 >
 > **NOT — multi-worker session:** Aynı kullanıcı ardışık mesajları farklı session_id alıyor (3 worker, in-process _AGENT_SESSIONS). conversation_memory PHONE-keyed olduğu için hafıza bozulmuyor (mitigated). Tam çözüm = sticky routing / Redis shared session → "yeni sezon" listesinde, şimdi hack YOK.
 >
+> ## 🛡️ 1 Haziran (Oturum 25.50) — OPUS 4.8 FRESH REVIEW: MODEL HEALTH MONITOR + KRİTİK FIX (`d54c4ea`)
+>
+> Neo (yeni model gözüyle): "Cerebras 5 günde model emekli edip hazırlıksız yakalayabiliyor — taze gözle incele, açık/eksik/kalite dokunuşu bul."
+>
+> **YENİ SİSTEM — `model_health.py` (vendor dayanıklılığı):** Yapılandırılmış HER LLM modelini (Cerebras+Groq+Claude) 1-token ping ile proaktif kontrol. Modeller sabit değil, gerçek config'ten okunur (otomatik uyum). model_not_found/auth → Neo'ya KRİTİK WP alarmı (notify_admin reuse) + `model_health` tablosu. rate_limit/timeout kritik değil (Groq TPD spam önle). Günlük systemd timer (06:00 UTC, `fermatai-model-health.timer`) + admin WP komutu "model durum".
+>
+> **🔴 MONİTÖR İLK ÇALIŞMADA İKİNCİ EMEKLİ MODELİ BULDU (kimse bilmiyordu):** Cerebras `llama3.1-8b` da `model_not_found` (404) — qwen-235b ile aynı kader. classify tier + selamlama/veda/teşekkür/yks_takvim/müfredat/kurum_bilgi intent'leri + feedback_triage gece batch'i SESSİZCE 404 alıyordu. Cerebras `/v1/models` artık SADECE `gpt-oss-120b` (prod) + `zai-glm-4.7` (preview).
+>
+> **FIX:** tüm llama3.1-8b → gpt-oss-120b (cerebras_handler + feedback_triage). Cerebras tek modele indi. Self-awareness docs (system_prompts + pedagoji_extended + llm_router) güncellendi. **FIX-LOOP DOĞRULAMA: monitör tekrar → 4/4 sağlıklı ✅.** Admin "model durum" canlı test OK.
+>
+> **Fresh-review diğer bulgular (Neo'ya sunuldu, kararına bırakıldı — UYGULANMADI):**
+> - 🟡 Foto kota `except: pass` (fast_responses) — DB hatası limit'i bypass edebilir mi? Enforcement path doğrulanmalı (maliyet riski).
+> - 🟡 API version pinning (Meta Graph v25.0 hardcoded) — vendor deprecation tracker.
+> - 🟡 Cerebras tek-model konsantrasyonu — gpt-oss-120b emekli olursa tüm Cerebras düşer (Groq/Claude fallback var); ucuz fast-tier için Groq llama-3.1-8b-instant (89ms, canlı) opsiyon.
+> - 🟢 Silent `except: pass` kümeleri (session_store/sinav_resync/plan_state) — observability borcu.
+>
 > ## 📋 31 May-1 Haz Tam Commit Zinciri (güncel)
 > ```
+> d54c4ea feat(resilience): Model Health Monitor + KRİTİK llama3.1-8b emekli fix
+> 275470b docs(KALDIGIM): 25.49-D konuşma analizi + puanlama
 > a5e877b fix(quality): YKS puan tutarlılığı + refinement bağlam kaybı (konuşma analizi)
 > fdc82a4 docs(KALDIGIM): 25.49-C sistem geneli qwen denetimi
 > b2a68dd docs(BLUEPRINT): qwen emekli — mevcut-durum tabloları
