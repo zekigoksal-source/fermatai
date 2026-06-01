@@ -4072,23 +4072,15 @@ async def try_fast_response(
         # Burada inline çağrı yapalım — hızlı ve güvenli
         from fast_response_visuals import sep, header, gauge as _gauge_fn
         try:
-            from whatsapp_bridge import _PHOTO_DAILY_LIMIT as _PL
-        except Exception:
-            _PL = 5
+            # 25.50 (Opus 4.8 review): enforcement ile AYNI kaynak (get_photo_usage)
+            # — eski ayrı DB COUNT + except:pass divergence'ı kaldırıldı.
+            from whatsapp_bridge import get_photo_usage as _gpu, _PHOTO_DAILY_LIMIT as _PL
+            kullanilan, _PL, kalan = await _gpu(caller_phone)
+        except Exception as _e:
+            import logging as _lg
+            _lg.getLogger(__name__).debug(f"[foto_hakki] usage alınamadı: {_e}")
+            _PL, kullanilan, kalan = 5, 0, 5
         first = name.split()[0] if name else ""
-        kullanilan = 0
-        try:
-            from db_pool import db_fetchval as _dfv_g
-            kullanilan = await _dfv_g(
-                "SELECT COUNT(*) FROM agent_conversations "
-                "WHERE phone=$1 AND DATE(created_at)=CURRENT_DATE "
-                "AND content LIKE '[FOTO%' AND message_role='user'",
-                caller_phone
-            ) or 0
-            kullanilan = int(kullanilan)
-        except Exception:
-            pass
-        kalan = max(0, _PL - kullanilan)
         gv = _gauge_fn(kullanilan, _PL)
         if kalan == 0:
             durum = ("🔴", "Bugünkü hakkın doldu! Yarın 00:00'da sıfırlanır.")

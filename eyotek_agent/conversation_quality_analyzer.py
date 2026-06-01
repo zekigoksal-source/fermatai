@@ -23,6 +23,7 @@ import argparse
 import asyncio
 import json
 import os
+from wa_config import GRAPH_BASE  # 25.50 Graph API tek-kaynak (wa_config.py)
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -385,7 +386,7 @@ async def check_alarm_and_notify(report: dict, run_id: int | None) -> bool:
         if not token or not phone_id:
             logger.warning("[QUALITY ALARM] WA token/phone_id yok, mesaj atilamadi")
             return True
-        url = f"https://graph.facebook.com/v18.0/{phone_id}/messages"
+        url = f"{GRAPH_BASE}/{phone_id}/messages"
         async with httpx.AsyncClient(timeout=15.0) as client:
             await client.post(
                 url,

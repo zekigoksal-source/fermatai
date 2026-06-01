@@ -228,7 +228,8 @@ class RedisStore:
     async def delete(self, key: str) -> None:
         try:
             await (await self._get_client()).delete(self._k(key))
-        except Exception: pass
+        except Exception as e:
+            logger.debug(f"redis delete err ({key}): {e}")  # 25.50: sessizdi
 
     async def exists(self, key: str) -> bool:
         try:
@@ -292,7 +293,8 @@ class RedisStore:
         try:
             raw = json.dumps(value, ensure_ascii=False, default=str)
             await (await self._get_client()).hset(self._k(key), field, raw)
-        except Exception: pass
+        except Exception as e:
+            logger.debug(f"redis hset err ({key}.{field}): {e}")  # 25.50: sessizdi
 
     async def hash_get(self, key: str, field: str) -> Optional[Any]:
         try:
@@ -305,7 +307,8 @@ class RedisStore:
     async def hash_del_field(self, key: str, field: str) -> None:
         try:
             await (await self._get_client()).hdel(self._k(key), field)
-        except Exception: pass
+        except Exception as e:
+            logger.debug(f"redis hdel err ({key}.{field}): {e}")  # 25.50: sessizdi
 
     async def hash_all(self, key: str) -> dict:
         try:

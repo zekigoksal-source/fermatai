@@ -163,8 +163,11 @@ async def get_active_plan(soz_no: int) -> Optional[dict]:
             return None
         plan = row["plan_json"]
         if isinstance(plan, str):
-            try: plan = json.loads(plan)
-            except: pass
+            try:
+                plan = json.loads(plan)
+            except Exception as _e:
+                # 25.50: eskiden sessizdi — bozuk plan_json string olarak dönüyordu
+                logger.warning(f"[plan_state] plan_json parse hatasi (soz_no={soz_no}): {_e}")
         return {
             "plan": plan,
             "plan_text": row["plan_text"],

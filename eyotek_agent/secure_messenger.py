@@ -13,6 +13,7 @@ GÜVENLİK PROTOKOLLERI:
 
 import asyncio
 import os
+from wa_config import GRAPH_BASE  # 25.50 Graph API tek-kaynak (wa_config.py)
 from datetime import datetime
 from typing import Optional
 
@@ -105,7 +106,7 @@ async def send_wp_message(to_phone: str, message: str) -> bool:
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             r = await client.post(
-                f"https://graph.facebook.com/v21.0/{WA_PHONE_ID}/messages",
+                f"{GRAPH_BASE}/{WA_PHONE_ID}/messages",
                 headers={
                     "Authorization": f"Bearer {WA_TOKEN}",
                     "Content-Type": "application/json",

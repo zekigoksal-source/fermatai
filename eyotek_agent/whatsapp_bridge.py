@@ -31,6 +31,7 @@ import hashlib
 import hmac
 import json
 import os
+from wa_config import GRAPH_BASE  # 25.50 Graph API tek-kaynak (wa_config.py)
 import re
 import sys
 import tempfile
@@ -69,7 +70,7 @@ WA_VERIFY_TOKEN    = os.getenv("WA_VERIFY_TOKEN", "fermatai_verify_2026")
 WA_ACCESS_TOKEN    = os.getenv("WA_ACCESS_TOKEN", "")
 WA_PHONE_NUMBER_ID = os.getenv("WA_PHONE_NUMBER_ID", "")
 WA_APP_SECRET      = os.getenv("WA_APP_SECRET", "")   # webhook imza doğrulama
-WA_API_URL         = f"https://graph.facebook.com/v25.0/{WA_PHONE_NUMBER_ID}/messages"
+WA_API_URL         = f"{GRAPH_BASE}/{WA_PHONE_NUMBER_ID}/messages"
 
 # ── 22.1n-kural1: OUTREACH GUARD (Neo KRITIK, 20 Nisan) ─────────────────────
 # Proaktif mesaj (kullanicidan gelen cevap DEGIL) Neo onayi olmadan GITMEZ.
@@ -1687,6 +1688,29 @@ _PHOTO_DAILY_LIMIT = 5   # ogrenci basina gunluk foto limiti (Neo direktif 9 May
 _PHOTO_COUNTS = HybridDict("photo:", ttl_default=86400)  # {phone: {"date": "2026-04-08", "count": 5}}
 VIDEO_ENABLED = False  # Video KAPALI — gereksiz islem gucu
 
+
+async def get_photo_usage(phone: str, soz_no=None) -> tuple[int, int, int]:
+    """25.50 (Opus 4.8 review): foto kullanım TEK KAYNAK — (kullanilan, limit, kalan).
+
+    ÖNCEDEN: enforcement _PHOTO_COUNTS (HybridDict, in-memory) kullanıyordu ama
+    fast_responses'taki bilgi gösterimi AYRI bir DB COUNT sorgusu yapıyordu +
+    except:pass. İki kaynak diverge ediyordu: DB hatası → 'kalan 5' gösterir ama
+    enforcement 0 der → öğrenci foto atar, bloklanır (yanıltıcı UX). Bu helper
+    enforcement ile AYNI kaynaktan okur → tutarlılık + fail-safe garanti.
+    """
+    from datetime import date as _date
+    today = _date.today().isoformat()
+    pc = _PHOTO_COUNTS.get(phone, {"date": "", "count": 0})
+    kullanilan = pc.get("count", 0) if pc.get("date") == today else 0
+    limit = _PHOTO_DAILY_LIMIT
+    if soz_no:
+        try:
+            from foto_solver_v2 import get_dynamic_photo_limit
+            limit = await get_dynamic_photo_limit(soz_no, _PHOTO_DAILY_LIMIT)
+        except Exception as _e:
+            logger.debug(f"[FOTO_USAGE] dinamik limit alınamadı, base={_PHOTO_DAILY_LIMIT}: {_e}")
+    return kullanilan, limit, max(0, limit - kullanilan)
+
 # Neo admin numarasi (Mimar)
 # NEO — Sistem Efendisi. Bu numara ASLA değiştirilemez, paylaşılamaz, devre dışı bırakılamaz.
 # Tüm admin komutları, onaylar ve sistem kontrolü sadece bu numaradan çalışır.
@@ -1882,7 +1906,7 @@ async def _refresh_wa_token() -> str | None:
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             r = await client.get(
-                f"https://graph.facebook.com/v25.0/oauth/access_token",
+                f"{GRAPH_BASE}/oauth/access_token",
                 params={
                     "grant_type": "fb_exchange_token",
                     "client_id": app_id,
@@ -2102,7 +2126,7 @@ async def send_wa_document(to: str, file_path: str, caption: str = "", filename:
     if not filename:
         filename = os.path.basename(file_path)
 
-    media_url = f"https://graph.facebook.com/v23.0/{WA_PHONE_NUMBER_ID}/media"
+    media_url = f"{GRAPH_BASE}/{WA_PHONE_NUMBER_ID}/media"
 
     async def _upload(token: str) -> str | None:
         async with httpx.AsyncClient(timeout=60) as client:
@@ -2464,7 +2488,7 @@ async def download_wa_media(media_id: str) -> bytes | None:
     async with httpx.AsyncClient(timeout=30) as client:
         # Önce media URL'ini al
         r = await client.get(
-            f"https://graph.facebook.com/v25.0/{media_id}",
+            f"{GRAPH_BASE}/{media_id}",
             headers={"Authorization": f"Bearer {WA_ACCESS_TOKEN}"},
         )
         if r.status_code != 200:

@@ -8,6 +8,7 @@ import asyncio
 import subprocess
 import sys
 import os
+from wa_config import GRAPH_BASE  # 25.50 Graph API tek-kaynak (wa_config.py)
 import json
 import time
 import signal
@@ -544,7 +545,7 @@ async def check_and_refresh_token():
 
     try:
         async with httpx.AsyncClient(timeout=5) as c:
-            r = await c.get(f"https://graph.facebook.com/v25.0/me?access_token={token}")
+            r = await c.get(f"{GRAPH_BASE}/me?access_token={token}")
             if r.status_code == 200:
                 data = r.json()
                 print(f"  {G}Token GECERLI{X} — Hesap: {data.get('name','?')}")
@@ -555,7 +556,7 @@ async def check_and_refresh_token():
                 app_secret = os.getenv("FB_APP_SECRET", "")
                 if app_id and app_secret:
                     r2 = await c.get(
-                        f"https://graph.facebook.com/v25.0/oauth/access_token",
+                        f"{GRAPH_BASE}/oauth/access_token",
                         params={
                             "grant_type": "fb_exchange_token",
                             "client_id": app_id,

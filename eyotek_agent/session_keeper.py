@@ -10,6 +10,7 @@ Admin WP'den "eyotek onayla" yazdiginda, sistem Chrome'dan taze cookie alir.
 import asyncio
 import json
 import os
+from wa_config import GRAPH_BASE  # 25.50 Graph API tek-kaynak (wa_config.py)
 import time
 import httpx
 from pathlib import Path
@@ -393,7 +394,7 @@ async def notify_admin(message: str, category: str = "eyotek_session",
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             r = await client.post(
-                f"https://graph.facebook.com/v25.0/{wa_phone_id}/messages",
+                f"{GRAPH_BASE}/{wa_phone_id}/messages",
                 headers={
                     "Authorization": f"Bearer {wa_token}",
                     "Content-Type": "application/json",
