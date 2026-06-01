@@ -135,6 +135,28 @@
 > - Dürüstlük: "2 sigma" değil, gerçekçi d=0.4-0.6 (yüksek mastery eşiği + proprietary data).
 > - DURUM: research_log/decisions kuralı — Neo "şunu uygula" diyene kadar FİKİR aşaması. Neo'ya öneri sunuldu, build kararı bekliyor.
 >
+> ## 🧠 1 Haziran (Oturum 25.52) — DİKEY-AI #1: BKT USTALIK + FSRS TEKRAR (CANLI) (`6fd79d4`)
+>
+> Neo roadmap'ten **BKT+FSRS temelini** seçti → inşa edildi + uçtan uca doğrulandı.
+>
+> **`knowledge_state.py` (YENİ) — bilimsel öğrenci modeli, 3 katman:**
+> - KONU USTALIĞI: `student_topic_tracker.basari%` → BKT-kalibre (slip=0.10/guess=0.20) + bant (Bloom mastery eşiği %85)
+> - DERS TRENDİ: `student_exams` ders netleri zaman serisi → yön (📈/📉/➡️) + slope (aynı-tarih dedup)
+> - FSRS TEKRAR: py-fsrs v6, desired_retention=0.90, learning_steps=() → "tam unutmadan tekrar et" tarihi
+>
+> **ENTEGRASYON (hepsi wire + canlı):**
+> - Claude tool `get_knowledge_state` (dispatch + tool_definitions schema + _tool fn)
+> - ACL 6 rol (ogrenci/rehber/ogretmen/mudur/yonetim/admin — öğrenci kendi haritası, KVKK) ✓ test edildi
+> - `study_plan_builder` → `result["bilgi_durumu"]` (FSRS due + ders ustalık) → plan artık bilimsel sinyalle
+> - LLM router cloud keyword + system_prompt protokolü (BİLİMSEL BİLGİ HARİTASI)
+> - requirements.txt fsrs>=6.3.0 (VPS kurulu)
+>
+> **UÇTAN UCA DOĞRULAMA (soz_no 167 Ali, gerçek telefon):** "neyi tekrar etmeliyim" → routing → Claude → tool → BKT/FSRS → kişiselleştirilmiş koçluk ("en acil Türkçe paragraf, 81 net yakaladın ama bu açık kapansa daha yükseğe", sağlam konular "dokunma", hafıza referansı). **Genel chatbot'ların yapamadığı = moat.** Kanıt: Ghana Rori RCT d=0.36.
+>
+> Bridge restart, health 200, NRestarts=0.
+>
+> **Roadmap kalan (Neo seçince):** 🟡 prediktif erken uyarı (XGBoost) + deneme röntgeni · 🟢 dijital ikiz + YKS puan motoru. Yeni motor: DeepSeek V4 (matematik, KVKK-dikkat) + Claude Memory Tool.
+>
 > ## 📋 31 May-1 Haz Tam Commit Zinciri (güncel)
 > ```
 > d54c4ea feat(resilience): Model Health Monitor + KRİTİK llama3.1-8b emekli fix
