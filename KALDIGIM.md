@@ -177,6 +177,34 @@
 >
 > **Dikey-AI roadmap durumu:** ✅ BKT+FSRS (25.52) · ✅ Exam X-ray · ✅ Dijital İkiz · ✅ Risk (read-only) · ✅ YKS skor (predict_student mevcut). TÜMÜ on-demand, outreach OFF. **Yeni sezon (1 Eylül): proaktif katman + DeepSeek V4 + Claude Memory Tool aktive edilebilir.**
 >
+> ## 🚀 1 Haziran (Oturum 25.54) — 4 YENİ KABİLİYET (öğrenme döngüsü TAM kapandı, OUTREACH OFF) (`1c4c62b`)
+>
+> Neo: "kazanabileceğimiz başka kabiliyet" → 4'ünü de eksiksiz + fix-loop + test + sıfır borç.
+>
+> **1. HATA TEŞHİSİ** (`foto_solver_v2` + `whatsapp_bridge._solve_photo_question` mode='diagnose'):
+> Öğrenci "nerede hata yaptım/çözümümü kontrol et" + kendi çözüm fotosu → Vision soruyu ÇÖZMEZ,
+> öğrencinin çözümünü teşhis eder (nerede+neden+doğru yaklaşım+konu). Hata türü→student_insights
+> (longitudinal patern). Tespit 4/4+4/4, e2e diagnose modu doğrulandı. **Khanmigo yapamaz.**
+>
+> **2. ADAPTİF PRATİK** (`practice_engine.py`): zayıf konudan (knowledge_state) özgün TYT/AYT
+> soru+5şık+çözüm (Cerebras→Claude fallback, RAG few-shot). generate→cevapla→check→mastery.
+> Canlı test (167): "Paragrafta Yardımcı Düşünce" özgün soru üretildi + A/B değerlendirme + çözüm.
+>
+> **3. DEEPSEEK V4** (`deepseek_handler.py`): OpenAI-compat, DEEPSEEK_API_KEY-gated. Foto-çözümde
+> MathPix matematik metni→kanonik çözüm→Claude'a context. KVKK: anonim soru metni. Key YOKSA
+> is_available()=False→atlanır (fallback doğrulandı, mevcut akış korunur). Neo .env'e key ekleyince aktif.
+>
+> **4. MODEL HAFIZASI** (`remember_student_insight` tool → `insight_extractor.log_insight` reuse):
+> Claude öğrenci hakkında kalıcı gözlem yazar→get_active_insights ile context'e geri gelir.
+> Yaz+oku doğrulandı (#253 guven 1.0 top insight). Beta Memory Tool yerine caching-safe + mevcut altyapı.
+>
+> **GÜVENLİK (Neo direktif — sıfır otomatik öğrenci mesajı):** 5 yeni modülde ZERO send_wa/notify
+> (grep ✅). 6 yeni tool ogrenci kendi soz_no zorlanır. OUTREACH_ENABLED=false. Yeni öğrenci-cron YOK.
+> Auto-push iskeletleri flag-OFF (EXAM_XRAY_PUSH_ACTIVE). YKS'ye 20 gün — hiçbir öğrenciye dokunulmaz.
+>
+> **ÖĞRENME DÖNGÜSÜ TAM:** Teşhis (knowledge_state/twin/risk) → Plan (FSRS) → Anlat (RAG/foto) →
+> **Pratik (yeni)** → **Hata-teşhisi (yeni)** → Ustalık. Hafıza her turda derinleşir. 9 dosya py_compile OK.
+>
 > ## 📋 31 May-1 Haz Tam Commit Zinciri (güncel)
 > ```
 > d54c4ea feat(resilience): Model Health Monitor + KRİTİK llama3.1-8b emekli fix
