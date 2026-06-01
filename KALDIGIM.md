@@ -75,8 +75,37 @@
 >
 > **Kalan referanslar (hepsi meşru):** tarihsel session-log/changelog (BLUEPRINT 110/225/776/922 + KALDIGIM geçmiş oturumlar), legacy-lookup (cost-tablo + renk-map, geçmiş veri için), benim "emekli" notlarım, Neo'nun tarihsel alıntısı, ilgisiz Ollama qwen2.5:7b + Groq qwen-2.5-32b. **Canlı model-çağrısı referansı: 0.**
 >
-> ## 📋 31 May Tam Commit Zinciri (güncel)
+> ## 💬 1 Haziran (Oturum 25.49-D) — KONUŞMA ANALİZİ + PUANLAMA + 2 KALİTE FIX (`a5e877b`)
+>
+> Neo: "kullanıcı konuşmalarını incele puanlandır, daha iyi olabilmesi için yapılacak varsa yap fix-loop, Sentry kontrol, sistem check."
+>
+> **Konuşma puanlaması (son 3 gün, 6 öğrenci, 139 mesaj):**
+> | Öğrenci | Konu | Puan | Sorun |
+> |---------|------|------|-------|
+> | Ali (4419) | YKS puan | **2/10** 🔴 | ham_puan 144→337→299→339 tutarsız, "kendini düzelt" |
+> | Yağız (8826) | Biyoloji | 5/10 🟡 | "teker teker" → cache generic tekrar (5 tur) |
+> | Deniz (2445) | LGS foto | 5/10 🟡 | foto sınıflandırma karmaşası |
+> | Mehmet (2398) | Fizik | 7/10 🟢 | iyi içerik + çıkmış soru |
+> | Ezgi (4232) | Biyoloji | 8/10 🟢 | temiz Q&A |
+> | (7439) | web+foto | 7/10 🟢 | çalışıyor |
+>
+> **Otomatik analyzer (quality_analyzer, 31 May 02:00, id=7) BAĞIMSIZ aynı bulgu:** `baglam_kaybi=1`, en düşük burst "aynı yanıtı verirken bağlamı koruyamıyor" → benim Yağız bulgumu doğruladı.
+>
+> **FIX 1 — YKS puan tutarlılığı (system_prompt YKS PUAN protokolü):** get_student_analytics ile ÖNCE gerçek net çek → calculate_yks_score VERBATIM → diploma_notu(0-100) vs OBP netliği → çelişkili sayıda TEK SEFER netleştir (sürekli yeniden hesaplama yok) → metin içinde elle puan/sıralama matematiği YASAK.
+>
+> **FIX 2 — refinement bağlam kaybı:** `conversation_memory.is_refinement_request()` (teker teker/madde madde/daha detaylı/şema olarak/sadece X/tekrar) → query_cache ATLA (history'li LLM refine etsin) + fast_response recent bot cevabı varsa Claude'a. Birim test 8/8 poz, 8/8 neg.
+>
+> **Sentry:** unhandled error YOK. Tek tekrar eden: Groq 413 TPD limiti (free tier 100K tok/gün, 106K istek) → handled, Claude'a fallback. ⚠️ Neo kararı gerekebilir: Groq Dev Tier upgrade VEYA Groq fallback path context trim (106K istek şişkin). Acil değil (Cerebras primary, Groq sadece yedek).
+>
+> **Sistem check:** fermat-chrome-cdp + fermat-session-keeper **active/running** (önce yanlış unit adı sorgulamıştım), bridge NRestarts=0, disk %6, mem 11Gi free. quality_analyzer haftalık çalışıyor (conversation_quality_score/_burst persist OK). **Sistem sağlam.**
+>
+> **NOT — multi-worker session:** Aynı kullanıcı ardışık mesajları farklı session_id alıyor (3 worker, in-process _AGENT_SESSIONS). conversation_memory PHONE-keyed olduğu için hafıza bozulmuyor (mitigated). Tam çözüm = sticky routing / Redis shared session → "yeni sezon" listesinde, şimdi hack YOK.
+>
+> ## 📋 31 May-1 Haz Tam Commit Zinciri (güncel)
 > ```
+> a5e877b fix(quality): YKS puan tutarlılığı + refinement bağlam kaybı (konuşma analizi)
+> fdc82a4 docs(KALDIGIM): 25.49-C sistem geneli qwen denetimi
+> b2a68dd docs(BLUEPRINT): qwen emekli — mevcut-durum tabloları
 > 73043f7 chore(cerebras): qwen-235b emekli — 13 dosya stale referans temizliği
 > 632dd7e docs(KALDIGIM): Oturum 25.49 Sentry temizlik
 > b7f5f38 fix(sentry): sync_etut_kontrol noise + _normalize_names
