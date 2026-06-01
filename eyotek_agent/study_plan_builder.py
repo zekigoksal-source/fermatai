@@ -334,6 +334,20 @@ async def build_study_plan_context(soz_no, force_refresh: bool = False) -> dict:
             potansiyel.sort(key=lambda x: x['kazanilabilir'], reverse=True)
             result["net_potansiyeli"] = potansiyel[:5]
 
+        # 25.51 (Neo dikey-AI): Bilimsel öğrenci modeli — FSRS tekrar takvimi +
+        # BKT-kalibre ustalık. Plan artık spekülatif değil, kanıtlanmış algoritmaya
+        # dayanır (hangi konu BUGÜN tekrar edilmeli + ders bazlı ustalık/trend).
+        try:
+            from knowledge_state import get_knowledge_state
+            ks = await get_knowledge_state(soz_no)
+            result["bilgi_durumu"] = {
+                "ders_ustalik": ks.get("ders_ozet", {}),
+                "tekrar_zamani_gelenler": ks.get("review_due", [])[:8],
+                "fsrs_aktif": ks.get("fsrs_active", False),
+            }
+        except Exception as _kse:
+            logger.debug(f"[study_plan] knowledge_state eklenemedi: {_kse}")
+
     except Exception as e:
         logger.error(f"Study plan context hatası: {e}")
         result["error"] = str(e)

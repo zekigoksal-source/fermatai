@@ -33,3 +33,6 @@ cryptography>=41.0.0      # pywebpush dependency (VAPID JWT signing)
 
 # ── Oturum 25.48 — PDF rapor ─────────────────────────────────────────────────
 fpdf2>=2.8.0              # Öğrenci PDF raporu — Türkçe Unicode (LiberationSans/DejaVu)
+
+# ── Oturum 25.51 — Bilimsel öğrenci modeli (Neo dikey-AI vizyonu) ─────────────
+fsrs>=6.3.0              # Free Spaced Repetition Scheduler — konu tekrar zamanlama ($0 yerel, pure-python)

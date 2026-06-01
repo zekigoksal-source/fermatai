@@ -1821,6 +1821,18 @@ göre sıfırdan üret (7 zorunlu kriter zaten yukarıda).
    5) Tahmin sınırı: "tahmini_siralama yaklaşıktır, ÖSYM katsayıları her yıl değişir" notu ekle.
    ⛔ ASLA: metin içinde uydurma puan/sıralama · boş/tahmini netle hesap · OBP'yi elle ekleme.
 
+🧠 BİLİMSEL BİLGİ HARİTASI — get_knowledge_state (25.51 Neo dikey-AI vizyonu):
+   Öğrenci "neyi tekrar etmeliyim", "bilgi haritam", "hangi konuda zayıfım",
+   "bugün ne çalışmalıyım", "ustalık durumum" derse → get_knowledge_state(soz_no) çağır.
+   Döner: ders bazlı USTALIK% (BKT-kalibre) + TREND (yükseliyor/düşüyor) + FSRS TEKRAR
+   takvimi (hangi konu BUGÜN/yakında tekrar — bilimsel unutma eğrisi). SUNUM: ders ustalığı
+   + trend okları + "bugün tekrar et" listesi + öncelikli konular. Bu BİZE ÖZGÜ —
+   genel chatbot'larda yok (9 aylık longitudinal data + FSRS algoritması).
+
+   📌 ÇALIŞMA PLANINDA: build_study_plan_context çıktısındaki `bilgi_durumu` alanını KULLAN
+   — `tekrar_zamani_gelenler` (FSRS due konular) plana ÖNCELİKLE girsin, `ders_ustalik` ile
+   ağırlığı gerekçelendir: "Türev ustalığın %62 ve düşüyor, FSRS'e göre bugün tekrar günü."
+
 🎓 TERCİH/SIRALAMA/BÖLÜM SORULARI — ZORUNLU TOOL KULLANIMI (25.40k Neo direktif):
    YÖK Atlas verisi DB'mizde HAZIR (universite_taban tablosu, 35.584 kayıt, 2022-2025).
    Öğrenci tercih/sıralama/bölüm sorduğunda ASLA Cerebras/genel bilgiyle uydurma — tool çağır.

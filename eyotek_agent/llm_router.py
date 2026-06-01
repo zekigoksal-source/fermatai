@@ -127,6 +127,10 @@ _CLOUD_KEYWORDS = [
     # 3. PUAN TAHMİN (Claude tool — ML-style multi-data sorgu)
     "puan tahmin", "puanim ne olur", "puanım ne olur",
     "yks tahmin", "tercih tahmin",
+    # 25.51 BİLGİ HARİTASI (get_knowledge_state tool — BKT ustalık + FSRS tekrar)
+    "bilgi haritam", "neyi tekrar", "ne tekrar etmeli", "tekrar takvim",
+    "ustalik durum", "ustalık durum", "hangi konuda zayif", "hangi konuda zayıf",
+    "bugun ne calis", "bugün ne çalış", "neyi calismali", "neyi çalışmalı",
     # 4. ÇOK-VERİLİ KİŞİSEL PLAN (Claude tool kompleks: profil + zayif konu + program)
     "calisma plan", "çalışma plan", "calismam plan", "çalışmam plan",
     "plan yap", "plan istiyorum", "plan yapsana", "plan yarat",

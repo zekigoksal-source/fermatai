@@ -1652,6 +1652,28 @@ TOOLS: list[dict] = [
             "required": ["soz_no"],
         },
     },
+    # ── OTURUM 25.51 — BİLİMSEL ÖĞRENCİ MODELİ (BKT ustalık + FSRS tekrar) ──
+    {
+        "name": "get_knowledge_state",
+        "description": (
+            "Öğrencinin BİLİMSEL bilgi haritası — knowledge_state.get_knowledge_state. "
+            "Üç katman: (1) ders bazlı USTALIK% (BKT-kalibre, slip/guess düzeltmeli) + bant, "
+            "(2) ders TRENDİ (gerçek deneme zaman serisinden yükseliyor/düşüyor), "
+            "(3) FSRS tekrar takvimi — hangi konu BUGÜN/yakında tekrar edilmeli "
+            "(bilimsel unutma eğrisi, py-fsrs). Returns: ders_ozet, review_due (tekrar zamanı "
+            "gelenler), weak_topics, all_topics. "
+            "Öğrenci 'neyi tekrar etmeliyim', 'bilgi haritam', 'hangi konuda zayıfım', "
+            "'bugün ne çalışmalıyım', 'ustalık durumum' derse KULLAN. "
+            "KVKK: öğrenci sadece kendi haritasını görür (soz_no caller'dan)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Öğrenci soz_no — INTEGER"},
+            },
+            "required": ["soz_no"],
+        },
+    },
     # ── OTURUM 25.9 — ADAPTIVE INTELLIGENCE / PREDICTIVE / KG ──
     {
         "name": "predict_yks_score",

@@ -900,6 +900,16 @@ async def _tool_puan_tahmin(**kwargs):
     return await tahmin_et(str(soz_no))
 
 
+async def _tool_get_knowledge_state(**kwargs):
+    """25.51 — Bilimsel ogrenci modeli: konu ustalik (BKT-kalibre) + ders trendi +
+    FSRS tekrar takvimi. 'neyi tekrar etmeliyim', 'bilgi haritam', 'hangi konu zayif'."""
+    from knowledge_state import get_knowledge_state
+    soz_no = kwargs.get("soz_no")
+    if not soz_no:
+        return {"error": "soz_no gerekli"}
+    return await get_knowledge_state(int(soz_no))
+
+
 async def _tool_counsellor_brief(**kwargs):
     """Rehber brief — services/admin_service.py'e taşındı (25.41-REFACTOR)."""
     from services.admin_service import counsellor_brief
@@ -1508,6 +1518,8 @@ TOOL_DISPATCH = {
     "siralama_ile_bolumler":      lambda p: _tool_siralama_ile_bolumler(**p),
     # 25.46+ (Neo 17 May, Duygu mudur vakasi): tek programin 4 yil trendi
     "universite_taban_trend":     lambda p: _tool_universite_taban_trend(**p),
+    # ── Oturum 25.51 — BİLİMSEL ÖĞRENCİ MODELİ (BKT ustalık + FSRS tekrar) ──
+    "get_knowledge_state":        lambda p: _tool_get_knowledge_state(**p),
     # ── Oturum 25.9 — ADAPTIVE INTELLIGENCE / PREDICTIVE / KG ──
     "predict_yks_score":          lambda p: _tool_predict_yks_score(**p),
     "get_adaptive_summary":       lambda p: _tool_get_adaptive_summary(**p),
