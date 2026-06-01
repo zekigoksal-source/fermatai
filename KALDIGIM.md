@@ -117,6 +117,24 @@
 > - 🟡 Cerebras tek-model konsantrasyonu — gpt-oss-120b emekli olursa tüm Cerebras düşer (Groq/Claude fallback var); ucuz fast-tier için Groq llama-3.1-8b-instant (89ms, canlı) opsiyon.
 > - 🟢 Silent `except: pass` kümeleri (session_store/sinav_resync/plan_state) — observability borcu.
 >
+> ## 🔧 1 Haziran (Oturum 25.51) — FRESH-REVIEW TAKİP FIX'LERİ + VİZYON ARAŞTIRMASI (`3c63a51`)
+>
+> Neo: "hepsini ele al fix-loop teknik borç bırakma + yeni API öner + dikey-AI vizyonu düşün."
+>
+> **4 FIX (hepsi deploy+verify):**
+> - **#20 Foto tek-kaynak:** enforcement (`_PHOTO_COUNTS` HybridDict) ↔ display (ayrı DB COUNT + except:pass) diverge ediyordu → DB hatası "5 hakkın var" gösterip enforcement 0 diyordu. `get_photo_usage()` tek-kaynak helper, display onu kullanıyor.
+> - **#21 Meta Graph API version:** v18/v21/v23/v25 — 6 dosyada 4 farklı hardcoded (v18 çok eski). `wa_config.py` `GRAPH_BASE` tek sabit (env `GRAPH_API_VERSION`). 9 occurrence merkezi, 0 hardcoded kaldı.
+> - **#22 Cerebras dayanıklılık:** VERIFIED — hata yakalanıp Groq→Claude'a düşüyor (llm_router 1382-1389). Zincir sağlam, model_health monitör tespiti ekledi. Kod değişikliği gereksiz.
+> - **#23 Silent except:** plan_state plan_json parse + session_store Redis delete/hset/hdel → logger.debug/warning (sessiz veri kaybı görünür).
+>
+> **VİZYON ARAŞTIRMASI (2 paralel agent, ~175K token, kaynaklı):** dikey-AI moat tezi + güncel AI fırsatları. ÖZET:
+> - Moat = model değil, **9 aylık longitudinal proprietary öğrenci datası + günlük WhatsApp döngüsü** (kopyalanamaz, her gün derinleşir). Speak/Harvey/Abridge örnekleri. 125 öğrenci = zayıflık değil, derinlik avantajı.
+> - **Kanıt:** Ghana Rori RCT — WhatsApp matematik tutor, d=0.36 (p<0.001), ~$5/öğrenci. Bizim formülün hakemli doğrulaması (biz çok-ders + duygu/rehber döngüsü ile bir adım önde).
+> - **Önerilen sıra:** 🔴 BKT knowledge tracing (pyBKT, mevcut data, $0) + FSRS spaced repetition (py-fsrs, $0) → 🟡 prediktif erken uyarı (XGBoost, AUC~0.69) + deneme röntgeni → 🟢 dijital ikiz + YKS puan motoru (tercih_robotu hazır).
+> - **Yeni model:** DeepSeek V4 (matematik akıl yürütme, ucuz, KVKK-dikkat) + Claude Memory Tool. **Düzeltme:** WhatsApp realtime-voice Türkiye'de UYGULANAMAZ (giden arama kısıtı) — TTS zaten iptal.
+> - Dürüstlük: "2 sigma" değil, gerçekçi d=0.4-0.6 (yüksek mastery eşiği + proprietary data).
+> - DURUM: research_log/decisions kuralı — Neo "şunu uygula" diyene kadar FİKİR aşaması. Neo'ya öneri sunuldu, build kararı bekliyor.
+>
 > ## 📋 31 May-1 Haz Tam Commit Zinciri (güncel)
 > ```
 > d54c4ea feat(resilience): Model Health Monitor + KRİTİK llama3.1-8b emekli fix
