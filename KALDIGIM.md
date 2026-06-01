@@ -157,6 +157,26 @@
 >
 > **Roadmap kalan (Neo seçince):** 🟡 prediktif erken uyarı (XGBoost) + deneme röntgeni · 🟢 dijital ikiz + YKS puan motoru. Yeni motor: DeepSeek V4 (matematik, KVKK-dikkat) + Claude Memory Tool.
 >
+> ## 🧬 1 Haziran (Oturum 25.53) — DİKEY-AI ROADMAP TAMAMLANDI (OUTREACH OFF) (`392712f`)
+>
+> Neo: "roadmap'in kalanını eksiksiz tamamla AMA YKS'ye 20 gün kala hiçbir öğrenciye otomatik ulaşım YOK — flag-OFF altyapı kur, teknik borç bırakma."
+>
+> **2 YENİ MODÜL (ikisi de SALT-OKUNUR, sıfır mesaj gönderimi):**
+> - **`exam_xray.py`** — Deneme Röntgeni: son deneme vs önceki ders-bazlı net delta + en iyi/kötü değişim + düşen derslerde zayıf konu çapraz ref. Canlı (167): 81.25 net +14, Mat +7 sıçrama, Bio -3.75 düşüş.
+> - **`digital_twin.py`** — 360° birleşik model: predict_student(skor) + knowledge_state(BKT/FSRS) + exam_xray + sentiment + devamsızlık + **kompozit risk** (decline+devamsızlık+duygu). Pure read.
+>
+> **GÜVENLİK (Neo direktif — sıfır otomatik öğrenci mesajı, çok katmanlı):**
+> 1. 3 yeni modülde ZERO send_wa/notify/httpx.post (grep doğrulandı) — sadece DB okur.
+> 2. Tool-seviyesi defense-in-depth: ogrenci → kendi soz_no ZORLANIR (soz_no=200 istedi→167 döndü ✅); digital_twin'de ogrenci için risk/devamsızlık/duygu dict'ten SİLİNİR (Claude görmez bile — test: öğrenci keys'inde risk YOK ✅, rehber'de VAR ✅).
+> 3. `OUTREACH_ENABLED=false` master guard değişmedi (öğrenciye outreach send-katmanında bloklanır).
+> 4. Öğrenciye gönderen YENİ cron/timer YOK (audit ✅).
+> 5. system_prompt: "OTOMATİK ULAŞIM YASAK, proaktif özellikler yeni sezonda (1 Eylül)".
+> - Auto-push iskeletleri flag-OFF (EXAM_XRAY_PUSH_ACTIVE default OFF, alert_system ALERTS_ACTIVE=False).
+>
+> **ENTEGRASYON:** 3 Claude tool (get_exam_xray/get_digital_twin + get_knowledge_state own-enforce) + dispatch _caller_role/_soz_no inject + ACL 6 rol + 2 schema + routing keyword + system_prompt protokol. E2E: öğrenci "son denememi analiz et" → çalıştı.
+>
+> **Dikey-AI roadmap durumu:** ✅ BKT+FSRS (25.52) · ✅ Exam X-ray · ✅ Dijital İkiz · ✅ Risk (read-only) · ✅ YKS skor (predict_student mevcut). TÜMÜ on-demand, outreach OFF. **Yeni sezon (1 Eylül): proaktif katman + DeepSeek V4 + Claude Memory Tool aktive edilebilir.**
+>
 > ## 📋 31 May-1 Haz Tam Commit Zinciri (güncel)
 > ```
 > d54c4ea feat(resilience): Model Health Monitor + KRİTİK llama3.1-8b emekli fix
