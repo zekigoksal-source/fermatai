@@ -930,6 +930,39 @@ def is_short_ambiguous(message: str) -> bool:
     return False
 
 
+# 25.49 (konuşma analizi — Yağız "teker teker özetler misin" vakası +
+# quality_analyzer baglam_kaybi=1): önceki cevabı YENİDEN BİÇİMLENDİR/DETAYLANDIR
+# isteyen takip soruları query_cache'te semantik eşleşip GENERIC TEKRAR üretiyordu
+# (Yağız 5 turda neredeyse aynı sindirim özetini aldı). Bunlar önceki cevap bağlamı
+# OLMADAN doğru cevaplanamaz → cache ATLA + Claude bağlamla cevaplasın.
+_REFINEMENT_PATTERNS = [
+    r"\b(teker teker|tek tek|madde madde|ayrı ayrı|ayri ayri|birer birer|tek tek tek)\b",
+    r"\b(daha detaylı|daha detayli|detaylandır|detaylandir|biraz daha (aç|ac|uzat)|daha uzun)\b",
+    r"\b(daha kısa|daha kisa|kısalt|kisalt|daha öz|daha sade)\b",
+    r"\b(tekrar (anlat|yaz|söyle|soyle|göster|goster|et)|bir daha (anlat|yaz|göster|goster))\b",
+    r"^(sadece|yalnızca|yalnizca)\s+\w+.{0,40}(anlat|özet|ozet|yaz|göster|goster|ver)",
+    r"\b(şema|sema|tablo|grafik|görsel|gorsel)\s*(olarak|halinde|şeklinde|seklinde|(ile )?(göster|goster)|çiz|ciz)",
+]
+
+
+def is_refinement_request(message: str) -> bool:
+    """Mesaj, önceki bot cevabını yeniden biçimlendir/detaylandır isteyen takip mı?
+
+    Örnek: "teker teker özetler misin", "daha detaylı anlat", "şema olarak göster",
+    "sadece sindirim sistemini özetle", "tekrar anlat".
+
+    Bu ifadeler tek başına anlamsız — önceki cevaba refer ederler. Caller, recent
+    bot cevabı (son ~15dk) varsa cache'i atlayıp Claude'a yönlendirmeli.
+    """
+    if not message:
+        return False
+    import re
+    msg = message.strip().lower()
+    if len(msg) > 70:
+        return False
+    return any(re.search(p, msg) for p in _REFINEMENT_PATTERNS)
+
+
 # ════════════════════════════════════════════════════════════════════════
 # 25.40j (Neo direktif) — UZUN KONUŞMA RECAP
 #

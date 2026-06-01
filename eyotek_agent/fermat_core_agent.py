@@ -2813,7 +2813,16 @@ class FermatCoreAgent:
         # ── QUERY CACHE (Oturum 22.1) — Ollama'ya anlamli is, Claude API tasarrufu ──
         # Cache iceriği SADECE no-tool Claude/Ollama yanitlari — guvenli
         # Per-phone isolation — cross-user sizinti yok
-        if caller_phone and len(user_input.strip()) >= 4:
+        # 25.49 (Yağız "teker teker" vakası): refinement takip sorusu (önceki cevabı
+        # yeniden biçimlendir/detaylandır) query_cache'te semantik eşleşip GENERIC
+        # TEKRAR üretiyordu. Refinement ise cache ATLA → history'li LLM doğru refine etsin.
+        _skip_cache_refine = False
+        try:
+            from conversation_memory import is_refinement_request as _is_ref
+            _skip_cache_refine = _is_ref(user_input)
+        except Exception:
+            pass
+        if caller_phone and len(user_input.strip()) >= 4 and not _skip_cache_refine:
             try:
                 from query_cache import find_cached
                 _cache_hit = await find_cached(caller_phone, user_input)

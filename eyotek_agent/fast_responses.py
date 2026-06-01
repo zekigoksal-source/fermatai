@@ -4419,6 +4419,18 @@ async def try_fast_response(
                         f"short+follow-up{'(REF)' if _has_ref else ''} — Claude'a"
                     )
                     return None
+            # 25.49 (Yağız "teker teker" vakası): refinement takip sorusu — önceki
+            # cevabı yeniden biçimlendir/detaylandır. Recent bot cevabı varsa Claude
+            # bağlamla refine etsin (cache/Cerebras generic tekrarı önle).
+            from conversation_memory import is_refinement_request
+            if is_refinement_request(message):
+                last_bot = await get_last_bot_response(caller_phone, max_age_minutes=15)
+                if last_bot:
+                    import logging
+                    logging.getLogger(__name__).info(
+                        f"[CONTEXT_BRIDGE] phone={caller_phone[-4:]} role={role} refinement — Claude'a"
+                    )
+                    return None
         except Exception:
             pass  # context bridge hatasi akisi bozmasin
 
