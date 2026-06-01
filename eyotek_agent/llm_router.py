@@ -135,6 +135,10 @@ _CLOUD_KEYWORDS = [
     "denememi analiz", "denememi incele", "ne kaybettim", "hangi derste dustum",
     "hangi derste düştüm", "son sinavim nasil", "son sınavım nasıl", "deneme rontgen",
     "360 profil", "tam durum", "dijital ikiz", "ogrenci profili", "risk durumu",
+    # 25.54 ADAPTİF PRATİK + HATA TEŞHİSİ
+    "soru ver", "soru coz", "soru çöz", "pratik yap", "test yap", "alistirma",
+    "alıştırma", "soru sor bana", "bana soru", "cozumumu kontrol", "çözümümü kontrol",
+    "nerede hata yaptim", "nerede hata yaptım", "hatami bul", "hatamı bul",
     # 4. ÇOK-VERİLİ KİŞİSEL PLAN (Claude tool kompleks: profil + zayif konu + program)
     "calisma plan", "çalışma plan", "calismam plan", "çalışmam plan",
     "plan yap", "plan istiyorum", "plan yapsana", "plan yarat",

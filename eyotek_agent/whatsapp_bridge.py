@@ -2272,10 +2272,14 @@ async def _transcribe_audio(audio_bytes: bytes) -> str:
         return ""
 
 
-async def _solve_photo_question(image_bytes: bytes, user_prompt: str = "") -> str:
+async def _solve_photo_question(image_bytes: bytes, user_prompt: str = "", mode: str = "solve") -> str:
     """
     Fotograf uzerindeki soruyu Claude Vision ile coz.
     Kunduz benzeri: sorunun fotografini at, cozumunu al.
+
+    mode="solve" (varsayilan): soruyu coz.
+    mode="diagnose" (25.54 Hata Teshisi): fotograf OGRENCININ KENDI cozumudur —
+      soruyu sifirdan cozme, NEREDE+NEDEN hata yaptigini bul + dogru yaklasim.
 
     22.1k guvenlik + robustluk:
     - MIME validation (magic bytes ile JPEG/PNG/WebP/GIF)
@@ -2428,6 +2432,26 @@ async def _solve_photo_question(image_bytes: bytes, user_prompt: str = "") -> st
     )
     if user_prompt:
         vision_prompt += f"\nOgrenci notu: {user_prompt}"
+
+    # 25.54 HATA TEŞHİSİ MODU — fotograf ogrencinin KENDI cozumudur (soru degil).
+    # Mevcut solve prompt'unu OVERRIDE et (dokunmadan): cozme, hatayi teshis et.
+    if mode == "diagnose":
+        vision_prompt = (
+            "Sen Fermat Egitim Kurumlari'nin uzman akademik kocusun. Bu fotograf bir "
+            "OGRENCININ KENDI COZUM DENEMESIDIR (el yazisi/cozum — sifirdan cozulecek soru DEGIL).\n\n"
+            "GOREV — soruyu sifirdan cozme, OGRENCININ cozumunu TEŞHİS et:\n"
+            "1. Ogrencinin cozumunu adim adim takip et\n"
+            "2. NEREDE hata yapti? (hangi adim/satir — spesifik)\n"
+            "3. NEDEN hata? (kavram / islem / isaret / dikkat hatasi — turunu belirt)\n"
+            "4. DOGRU yaklasimi o adimdan itibaren goster\n"
+            "5. Cozum DOGRUYSA: tebrik et + neyi iyi yaptigini soyle\n\n"
+            "ZORUNLU: cevabin icinde 'Ders: <ders>' ve 'Konu: <konu>' satiri OLMALI "
+            "(sistem konu takibi icin). 'Hata turu: <isaret/islem/kavram/dikkat/yok>' satiri ekle.\n"
+            "TON: motive edici, suclamadan — 'birlikte duzeltelim'. ASLA Ingilizce. "
+            "WhatsApp formati: kisa, net, *bold* vurgu, numarali adim.\n"
+        )
+        if user_prompt:
+            vision_prompt += f"\nOgrenci notu: {user_prompt}"
 
     # Sync SDK — to_thread ile event loop'u bloke etmemek icin + graceful error
     try:

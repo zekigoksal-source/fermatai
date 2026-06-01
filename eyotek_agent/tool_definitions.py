@@ -1706,6 +1706,60 @@ TOOLS: list[dict] = [
             "required": ["soz_no"],
         },
     },
+    {
+        "name": "generate_practice_question",
+        "description": (
+            "Adaptif PRATİK SORU — practice_engine. Öğrencinin zayıf konusundan (verilmezse "
+            "knowledge_state'ten seçilir) özgün TYT/AYT-format soru + 5 şık üretir (çözüm gizli). "
+            "Öğrenci 'soru ver', 'pratik yapalım', 'X konusundan soru çöz', 'test yap' derse KULLAN. "
+            "Üretilen soruyu şıklarıyla sun, öğrenci cevaplayınca check_practice_answer çağır. "
+            "KVKK: öğrenci kendi soz_no (zorlanır)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Öğrenci soz_no"},
+                "ders": {"type": "string", "description": "Opsiyonel ders filtresi"},
+                "konu": {"type": "string", "description": "Opsiyonel konu (yoksa en zayıf seçilir)"},
+            },
+            "required": ["soz_no"],
+        },
+    },
+    {
+        "name": "check_practice_answer",
+        "description": (
+            "Pratik soru cevabını değerlendir — practice_engine. generate_practice_question "
+            "ile üretilen aktif soruya öğrencinin verdiği cevabı (A-E) kontrol eder, doğru/yanlış "
+            "+ çözüm döner, mastery günceller. Öğrenci pratik soruya cevap verince KULLAN."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Öğrenci soz_no"},
+                "cevap": {"type": "string", "description": "Öğrencinin cevabı (A/B/C/D/E)"},
+            },
+            "required": ["soz_no", "cevap"],
+        },
+    },
+    {
+        "name": "remember_student_insight",
+        "description": (
+            "MODEL HAFIZASI — öğrenci hakkında KALICI gözlem kaydet (insight_extractor.log_insight). "
+            "Öğrenme stili, sınav kaygısı, ilgi alanı, hedef, güçlü/zayıf eğilim gibi DURABLE "
+            "çıkarımları kaydet → sonraki konuşmalarda otomatik context'e gelir (longitudinal hafıza). "
+            "Sohbette önemli kalıcı bir şey öğrenince KULLAN (ör. 'görsel öğreniyor', 'matematik kaygısı var'). "
+            "Geçici/günlük şeyleri kaydetme. SADECE HAFIZA — hiçbir mesaj göndermez. KVKK: öğrenci kendi soz_no."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "soz_no": {"type": "integer", "description": "Öğrenci soz_no"},
+                "insight_type": {"type": "string", "description": "Tip: ogrenme_stili/kaygi/ilgi/hedef/egilim/gozlem"},
+                "content": {"type": "string", "description": "Kısa kalıcı gözlem (1-2 cümle)"},
+            },
+            "required": ["soz_no", "insight_type", "content"],
+        },
+    },
     # ── OTURUM 25.9 — ADAPTIVE INTELLIGENCE / PREDICTIVE / KG ──
     {
         "name": "predict_yks_score",

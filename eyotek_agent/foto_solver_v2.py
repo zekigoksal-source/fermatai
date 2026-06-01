@@ -199,6 +199,38 @@ def _build_v2_extras(ders: str, konu: str, weak: bool, similar: dict | None,
     return ""
 
 
+_DIAGNOSE_RE = re.compile(
+    r"(nerede.*(hata|yanl[ıi]ş)|hata(m[ıi]?|m\b).*(bul|nerede|var\s*m)|"
+    r"yanl[ıi]ş[ıi]?m|çöz[üu]m[üu]m[üu]?|cozumum[uu]?|"
+    r"doğru\s*mu|dogru\s*mu|yanl[ıi]ş\s*m[ıi]|kontrol\s*et|"
+    r"yapt[ıi]ğ[ıi]m.*(doğru|yanl[ıi]ş|hata)|nerede\s*yanl[ıi]ş)",
+    re.IGNORECASE)
+
+
+def _is_diagnosis_request(user_prompt: str) -> bool:
+    """25.54: caption öğrencinin KENDİ çözümünü teşhis isteği mi? ('nerede hata yaptım',
+    'çözümümü kontrol et', 'doğru mu')."""
+    if not user_prompt:
+        return False
+    return bool(_DIAGNOSE_RE.search(user_prompt))
+
+
+async def _log_error_diagnosis(soz_no: str, ders: str, konu: str, hata_turu: str):
+    """25.54: hata teşhisini student_insights'a yaz — longitudinal hata paterni.
+    SALT KAYIT (outreach yok). rehber/öğretmen ileride paterni görebilir."""
+    if not soz_no:
+        return
+    try:
+        await db_execute(
+            """INSERT INTO student_insights
+               (soz_no, insight_type, content, source, confidence, created_at)
+               VALUES ($1, 'hata_teshisi', $2, 'foto_diagnosis', 0.8, NOW())""",
+            int(soz_no),
+            f"{ders or '?'} / {konu or '?'} — hata türü: {hata_turu or 'belirtilmedi'}")
+    except Exception as e:
+        logger.debug(f"[foto_diagnosis] insight log hatası: {e}")
+
+
 async def solve_photo_v2(image_bytes: bytes, user_prompt: str = "",
                          soz_no: str = None, phone: str = None,
                          role: str = "ogrenci") -> str:
@@ -233,19 +265,43 @@ async def solve_photo_v2(image_bytes: bytes, user_prompt: str = "",
                     enhanced_prompt = (mp_context + "\n\n" + (user_prompt or "")).strip()
                     logger.info(f"📐 MathPix OCR ekendi: confidence={mp_result.get('confidence'):.0%}, "
                                 f"is_math={mp_result.get('is_math')}, len={len(mp_result.get('text',''))}")
+                    # 25.54 DeepSeek: matematik metni temizse kanonik çözümü üret →
+                    # Claude'a CONTEXT olarak ver (KVKK: sadece anonim soru metni).
+                    # Key yoksa is_available()=False → atlanır, mevcut akış korunur.
+                    try:
+                        from deepseek_handler import is_available as _ds_ok, solve_math as _ds_solve
+                        if _ds_ok() and mp_result.get("is_math"):
+                            _ds_sol = await _ds_solve(mp_result.get("text", ""))
+                            if _ds_sol:
+                                enhanced_prompt += (
+                                    "\n\n[REFERANS ÇÖZÜM — DeepSeek matematik motoru, "
+                                    "doğrula ve pedagojik sun]:\n" + _ds_sol[:2000])
+                    except Exception as _dse:
+                        logger.debug(f"DeepSeek foto entegrasyon atlandı: {_dse}")
         except asyncio.TimeoutError:
             logger.debug("MathPix timeout (>8sn), Vision tek başına devam ediyor")
         except Exception as e:
             logger.debug(f"MathPix preflight hata: {e}")
 
-    answer = await _solve_photo_question(image_bytes, enhanced_prompt)
+    # 25.54 HATA TEŞHİSİ: caption "nerede hata yaptım / çözümümü kontrol et" ise
+    # öğrencinin KENDİ çözümünü teşhis et (soruyu çözme).
+    _mode = "diagnose" if _is_diagnosis_request(user_prompt) else "solve"
+    answer = await _solve_photo_question(image_bytes, enhanced_prompt, mode=_mode)
 
     if not answer or "Foto analizi icin" in answer:
         return answer
 
     # 2. Ders/konu/zorluk/sik cikar
     ders, konu, zorluk, sik = _extract_ders_konu(answer)
-    logger.info(f"📷 Foto v2: ders={ders}, konu={konu}, zorluk={zorluk}, sik={sik}")
+    logger.info(f"📷 Foto v2 [{_mode}]: ders={ders}, konu={konu}, zorluk={zorluk}, sik={sik}")
+
+    # 25.54: diagnosis ise hata türünü çıkar + longitudinal patern'e yaz (salt kayıt)
+    if _mode == "diagnose":
+        _ht = None
+        _m = re.search(r"Hata\s*t[üu]r[üu][:\s]+([^\n]{2,30})", answer, re.IGNORECASE)
+        if _m:
+            _ht = _m.group(1).strip()
+        asyncio.create_task(_log_error_diagnosis(soz_no, ders, konu, _ht))
 
     # 3. Paralel post-processing
     weak = False

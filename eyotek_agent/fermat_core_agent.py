@@ -949,6 +949,40 @@ async def _tool_get_digital_twin(**kwargs):
     return twin
 
 
+async def _tool_generate_practice_question(**kwargs):
+    """25.54 — Adaptif pratik soru: zayif konudan ozgun TYT/AYT soru uret.
+    'soru ver', 'pratik yap', 'X konusundan soru'. Ogrenci kendi soz_no."""
+    from practice_engine import generate_practice_question
+    soz_no = _enforce_own_soz_no(kwargs)
+    if not soz_no:
+        return {"error": "soz_no gerekli"}
+    return await generate_practice_question(int(soz_no), kwargs.get("ders", ""), kwargs.get("konu", ""))
+
+
+async def _tool_check_practice_answer(**kwargs):
+    """25.54 — Pratik cevap degerlendir: aktif soruyla kiyasla + cozum + mastery."""
+    from practice_engine import evaluate_practice_answer
+    soz_no = _enforce_own_soz_no(kwargs)
+    cevap = kwargs.get("cevap") or kwargs.get("answer") or ""
+    if not soz_no:
+        return {"error": "soz_no gerekli"}
+    return await evaluate_practice_answer(int(soz_no), str(cevap))
+
+
+async def _tool_remember_student_insight(**kwargs):
+    """25.54 — Model-managed memory: Claude ogrenci hakkinda KALICI gozlem kaydeder
+    (ogrenme stili, kaygi, ilgi alani, hedef). student_insights'a yazilir → sonraki
+    konusmalarda context'e geri gelir. SADECE HAFIZA — outreach/mesaj YOK."""
+    from insight_extractor import log_insight
+    soz_no = _enforce_own_soz_no(kwargs)
+    itype = (kwargs.get("insight_type") or "gozlem").strip()[:40]
+    content = (kwargs.get("content") or "").strip()
+    if not soz_no or not content:
+        return {"error": "soz_no ve content gerekli"}
+    rid = await log_insight(int(soz_no), itype, content[:500], confidence=0.85, source="claude_memory")
+    return {"basarili": bool(rid), "kaydedildi": content[:120], "tip": itype}
+
+
 async def _tool_counsellor_brief(**kwargs):
     """Rehber brief — services/admin_service.py'e taşındı (25.41-REFACTOR)."""
     from services.admin_service import counsellor_brief
@@ -1557,10 +1591,13 @@ TOOL_DISPATCH = {
     "siralama_ile_bolumler":      lambda p: _tool_siralama_ile_bolumler(**p),
     # 25.46+ (Neo 17 May, Duygu mudur vakasi): tek programin 4 yil trendi
     "universite_taban_trend":     lambda p: _tool_universite_taban_trend(**p),
-    # ── Oturum 25.51-52 — BİLİMSEL ÖĞRENCİ MODELİ + DİKEY-AI sentez ──
+    # ── Oturum 25.51-54 — BİLİMSEL ÖĞRENCİ MODELİ + DİKEY-AI sentez + pratik + hafıza ──
     "get_knowledge_state":        lambda p: _tool_get_knowledge_state(**p),
     "get_exam_xray":              lambda p: _tool_get_exam_xray(**p),
     "get_digital_twin":           lambda p: _tool_get_digital_twin(**p),
+    "generate_practice_question": lambda p: _tool_generate_practice_question(**p),
+    "check_practice_answer":      lambda p: _tool_check_practice_answer(**p),
+    "remember_student_insight":   lambda p: _tool_remember_student_insight(**p),
     # ── Oturum 25.9 — ADAPTIVE INTELLIGENCE / PREDICTIVE / KG ──
     "predict_yks_score":          lambda p: _tool_predict_yks_score(**p),
     "get_adaptive_summary":       lambda p: _tool_get_adaptive_summary(**p),
@@ -2636,8 +2673,10 @@ async def run_tool(name: str, input_data: dict,
             enriched["_caller_role"] = caller_role
             enriched["_caller_soz_no"] = getattr(run_tool, '_current_soz_no', None)
             result = await fn(enriched)
-        elif name in ("get_knowledge_state", "get_exam_xray", "get_digital_twin"):
-            # 25.51-52: ogrenci SADECE kendi soz_no (KVKK), digital_twin'de risk/devamsizlik
+        elif name in ("get_knowledge_state", "get_exam_xray", "get_digital_twin",
+                       "generate_practice_question", "check_practice_answer",
+                       "remember_student_insight"):
+            # 25.51-54: ogrenci SADECE kendi soz_no (KVKK), digital_twin'de risk/devamsizlik
             # ogrenciye tool seviyesinde silinir (defense-in-depth). Outreach YOK.
             enriched = dict(input_data)
             enriched["_caller_role"] = caller_role
