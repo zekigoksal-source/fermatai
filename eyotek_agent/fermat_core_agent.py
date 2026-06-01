@@ -900,14 +900,53 @@ async def _tool_puan_tahmin(**kwargs):
     return await tahmin_et(str(soz_no))
 
 
+def _enforce_own_soz_no(kwargs: dict):
+    """KVKK: ogrenci SADECE kendi soz_no'sunu sorgular (Claude baska soz_no gecse bile).
+    Diger roller (admin/mudur/rehber/ogretmen) verdikleri soz_no'yu kullanir."""
+    role = kwargs.get("_caller_role", "")
+    caller_soz = kwargs.get("_caller_soz_no")
+    if role == "ogrenci" and caller_soz:
+        return caller_soz
+    return kwargs.get("soz_no") or caller_soz
+
+
 async def _tool_get_knowledge_state(**kwargs):
     """25.51 — Bilimsel ogrenci modeli: konu ustalik (BKT-kalibre) + ders trendi +
     FSRS tekrar takvimi. 'neyi tekrar etmeliyim', 'bilgi haritam', 'hangi konu zayif'."""
     from knowledge_state import get_knowledge_state
-    soz_no = kwargs.get("soz_no")
+    soz_no = _enforce_own_soz_no(kwargs)
     if not soz_no:
         return {"error": "soz_no gerekli"}
     return await get_knowledge_state(int(soz_no))
+
+
+async def _tool_get_exam_xray(**kwargs):
+    """25.52 — Deneme rontgeni: son deneme delta analizi (ders+konu bazli).
+    'son denememi analiz et', 'ne kaybettim', 'hangi derste dustum'. Read-only."""
+    from exam_xray import analyze_latest_exam
+    soz_no = _enforce_own_soz_no(kwargs)
+    if not soz_no:
+        return {"error": "soz_no gerekli"}
+    return await analyze_latest_exam(int(soz_no))
+
+
+async def _tool_get_digital_twin(**kwargs):
+    """25.52 — Dijital ikiz: akademik+ustalik+rontgen+duygu+risk birlesik model.
+    'ogrenci 360 profili', 'tam durumu', 'risk'. KVKK+Dashboard Vizyonu: ogrenciye
+    risk/devamsizlik/duygu GOSTERILMEZ (tool seviyesinde silinir — defense-in-depth)."""
+    from digital_twin import get_digital_twin
+    role = kwargs.get("_caller_role", "")
+    soz_no = _enforce_own_soz_no(kwargs)
+    if not soz_no:
+        return {"error": "soz_no gerekli"}
+    twin = await get_digital_twin(int(soz_no))
+    if role == "ogrenci":
+        # Ogrenci kendi ikizini gorur AMA risk/devamsizlik/duygu KVKK geregi gizli
+        twin.pop("risk", None)
+        twin.pop("devamsizlik_saat", None)
+        twin.pop("duygu", None)
+        twin["_ogrenci_gorunumu"] = True
+    return twin
 
 
 async def _tool_counsellor_brief(**kwargs):
@@ -1518,8 +1557,10 @@ TOOL_DISPATCH = {
     "siralama_ile_bolumler":      lambda p: _tool_siralama_ile_bolumler(**p),
     # 25.46+ (Neo 17 May, Duygu mudur vakasi): tek programin 4 yil trendi
     "universite_taban_trend":     lambda p: _tool_universite_taban_trend(**p),
-    # ── Oturum 25.51 — BİLİMSEL ÖĞRENCİ MODELİ (BKT ustalık + FSRS tekrar) ──
+    # ── Oturum 25.51-52 — BİLİMSEL ÖĞRENCİ MODELİ + DİKEY-AI sentez ──
     "get_knowledge_state":        lambda p: _tool_get_knowledge_state(**p),
+    "get_exam_xray":              lambda p: _tool_get_exam_xray(**p),
+    "get_digital_twin":           lambda p: _tool_get_digital_twin(**p),
     # ── Oturum 25.9 — ADAPTIVE INTELLIGENCE / PREDICTIVE / KG ──
     "predict_yks_score":          lambda p: _tool_predict_yks_score(**p),
     "get_adaptive_summary":       lambda p: _tool_get_adaptive_summary(**p),
@@ -2591,6 +2632,13 @@ async def run_tool(name: str, input_data: dict,
             result = await fn(enriched)
         elif name == "add_to_student_program":
             # 25.14h: ACL — ogrenci sadece kendi soz_no, admin/mudur/rehber override
+            enriched = dict(input_data)
+            enriched["_caller_role"] = caller_role
+            enriched["_caller_soz_no"] = getattr(run_tool, '_current_soz_no', None)
+            result = await fn(enriched)
+        elif name in ("get_knowledge_state", "get_exam_xray", "get_digital_twin"):
+            # 25.51-52: ogrenci SADECE kendi soz_no (KVKK), digital_twin'de risk/devamsizlik
+            # ogrenciye tool seviyesinde silinir (defense-in-depth). Outreach YOK.
             enriched = dict(input_data)
             enriched["_caller_role"] = caller_role
             enriched["_caller_soz_no"] = getattr(run_tool, '_current_soz_no', None)

@@ -131,6 +131,10 @@ _CLOUD_KEYWORDS = [
     "bilgi haritam", "neyi tekrar", "ne tekrar etmeli", "tekrar takvim",
     "ustalik durum", "ustalık durum", "hangi konuda zayif", "hangi konuda zayıf",
     "bugun ne calis", "bugün ne çalış", "neyi calismali", "neyi çalışmalı",
+    # 25.52 DENEME RÖNTGENİ + DİJİTAL İKİZ
+    "denememi analiz", "denememi incele", "ne kaybettim", "hangi derste dustum",
+    "hangi derste düştüm", "son sinavim nasil", "son sınavım nasıl", "deneme rontgen",
+    "360 profil", "tam durum", "dijital ikiz", "ogrenci profili", "risk durumu",
     # 4. ÇOK-VERİLİ KİŞİSEL PLAN (Claude tool kompleks: profil + zayif konu + program)
     "calisma plan", "çalışma plan", "calismam plan", "çalışmam plan",
     "plan yap", "plan istiyorum", "plan yapsana", "plan yarat",

@@ -1674,6 +1674,38 @@ TOOLS: list[dict] = [
             "required": ["soz_no"],
         },
     },
+    {
+        "name": "get_exam_xray",
+        "description": (
+            "Deneme RÖNTGENİ — exam_xray.analyze_latest_exam. Son denemeyi öncekiyle "
+            "kıyaslar: ders bazlı net delta, en büyük sıçrama/düşüş, düşen derslerde "
+            "zayıf konu çapraz referansı. Öğrenci 'son denememi analiz et', 'ne kaybettim', "
+            "'hangi derste düştüm', 'son sınavım nasıl' derse KULLAN. Read-only. "
+            "KVKK: öğrenci sadece kendi denemesini görür (soz_no caller'dan zorlanır)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"soz_no": {"type": "integer", "description": "Öğrenci soz_no"}},
+            "required": ["soz_no"],
+        },
+    },
+    {
+        "name": "get_digital_twin",
+        "description": (
+            "Öğrenci DİJİTAL İKİZİ — digital_twin.get_digital_twin. 360° birleşik model: "
+            "akademik (YKS tahmin+trend), ustalık (BKT/FSRS), son deneme röntgeni, duygu, "
+            "devamsızlık, KOMPOZIT RİSK (decline+devamsızlık+duygu). "
+            "admin/müdür/rehber 'X öğrencinin tam durumu', 'risk', '360 profil' derse KULLAN. "
+            "⚠️ KVKK + Dashboard Vizyonu: ÖĞRENCİ rolünde risk/devamsızlık/duygu OTOMATİK "
+            "GİZLENİR (tool seviyesinde). Öğrenci kendi ikizini görür ama bu hassas alanları DEĞİL. "
+            "BU TOOL HİÇBİR MESAJ GÖNDERMEZ — sadece veri döner (outreach=false)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"soz_no": {"type": "integer", "description": "Öğrenci soz_no"}},
+            "required": ["soz_no"],
+        },
+    },
     # ── OTURUM 25.9 — ADAPTIVE INTELLIGENCE / PREDICTIVE / KG ──
     {
         "name": "predict_yks_score",

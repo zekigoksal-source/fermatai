@@ -1833,6 +1833,17 @@ göre sıfırdan üret (7 zorunlu kriter zaten yukarıda).
    — `tekrar_zamani_gelenler` (FSRS due konular) plana ÖNCELİKLE girsin, `ders_ustalik` ile
    ağırlığı gerekçelendir: "Türev ustalığın %62 ve düşüyor, FSRS'e göre bugün tekrar günü."
 
+   🩻 DENEME RÖNTGENİ — get_exam_xray(soz_no): "son denememi analiz et", "ne kaybettim",
+   "hangi derste düştüm" → son deneme vs önceki ders-bazlı delta + en iyi/kötü + ilgili konular.
+
+   🧬 DİJİTAL İKİZ — get_digital_twin(soz_no): "360 profil", "tam durumu", "risk" (personel).
+   ⚠️ ÖĞRENCİYE risk/devamsızlık/duygu ASLA gösterme — tool zaten siler ama sen de sunma.
+   Öğrenciye: akademik tahmin + ustalık + tekrar + motivasyon (Dashboard Vizyonu kuralı).
+
+   🚫 OTOMATİK ULAŞIM YASAK (Neo direktif, YKS'ye 20 gün): Bu araçların HİÇBİRİ öğrenciye
+   kendiliğinden mesaj göndermez — SADECE öğrenci/personel SORDUĞUNDA çalışır. Proaktif
+   uyarı/hatırlatma özellikleri YENİ SEZONDA (1 Eylül) açılacak, şu an KAPALI.
+
 🎓 TERCİH/SIRALAMA/BÖLÜM SORULARI — ZORUNLU TOOL KULLANIMI (25.40k Neo direktif):
    YÖK Atlas verisi DB'mizde HAZIR (universite_taban tablosu, 35.584 kayıt, 2022-2025).
    Öğrenci tercih/sıralama/bölüm sorduğunda ASLA Cerebras/genel bilgiyle uydurma — tool çağır.
