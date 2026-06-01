@@ -3516,6 +3516,15 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
                 lines.append(f"  {r['role']}: {r['c']}")
             return "\n".join(lines)
 
+        # 25.50 — Model sağlık komutu (vendor emekli erken tespit, qwen+llama8b vakası)
+        if neo_lower in ("model durum", "model health", "model saglik", "model sağlık", "modeller"):
+            try:
+                from model_health import run_health_check, format_report
+                summary = await run_health_check(alert=False)  # manuel — sessiz alarm (rapor zaten dönüyor)
+                return format_report(summary)
+            except Exception as _mh_e:
+                return f"Model sağlık kontrolü hatası: {str(_mh_e)[:160]}"
+
     # 22.1m — Whisper ENTEGRE: text artik transcribe'dan geliyor, normal flow devam
     # Eski ses-bloklama kaldirildi. Sadece transcribe BAŞARISIZ ise (text "[SES MESAJI — anlasilamadi]"
     # gibi marker ise) yazili yonlendirmeye dus.

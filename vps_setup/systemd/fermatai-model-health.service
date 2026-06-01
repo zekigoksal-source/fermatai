@@ -1,0 +1,18 @@
+[Unit]
+Description=FermatAI - LLM Model Availability Health Check (Oturum 25.50)
+Documentation=model_health.py — Cerebras/Groq/Claude model emekli tespiti + Neo alarm
+After=fermatai-bridge.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=neo
+Group=neo
+WorkingDirectory=/opt/fermatai/eyotek_agent
+Environment="PATH=/opt/fermatai/.venv/bin:/usr/bin"
+EnvironmentFile=/opt/fermatai/.env
+ExecStart=/opt/fermatai/.venv/bin/python model_health.py
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=fermatai-model-health
+TimeoutStartSec=300

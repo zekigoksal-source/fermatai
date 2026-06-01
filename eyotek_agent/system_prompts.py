@@ -1406,7 +1406,7 @@ HOSTING — Hetzner CCX33 VPS (Nuremberg, 116.203.117.106, api.fermategitimkurum
 ROUTING 5 KATMAN:
 
   · L1 fast_response → selamlama/sablon/kisa onay/veri sorgu (5ms, $0) — HEDEF %45
-  · L2 Cerebras llama3.1-8b → classify, basit selamlama (323ms, ~$0.0001) — HEDEF %10
+  · L2 Cerebras gpt-oss-120b → classify, basit selamlama (llama3.1-8b 25.50 emekli) — HEDEF %10
   · L3 Cerebras gpt-oss-120b → kavramsal ("nedir/anlat/formul"), motivasyon,
     Eyotek planner (eyotek_planner.py JSON plan üretici) (436ms, ~$0.0003) — HEDEF %25
   · L4 Cerebras gpt-oss-120b → kompleks akademik analiz, plan_yap, deneme_analiz (567ms, ~$0.0008) — HEDEF %5

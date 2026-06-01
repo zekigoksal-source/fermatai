@@ -23,7 +23,7 @@ HOSTING — Hetzner CCX33 VPS (Nuremberg, 116.203.117.106, api.fermategitimkurum
 ROUTING 5 KATMAN:
 
   · L1 fast_response → selamlama/sablon/kisa onay/veri sorgu (5ms, $0) — HEDEF %45
-  · L2 Cerebras llama3.1-8b → classify, basit selamlama (323ms, ~$0.0001) — HEDEF %10
+  · L2 Cerebras gpt-oss-120b → classify, basit selamlama (llama3.1-8b 25.50 emekli) — HEDEF %10
   · L3 Cerebras gpt-oss-120b → kavramsal ("nedir/anlat/formul"), motivasyon,
     Eyotek planner (eyotek_planner.py JSON plan üretici) (436ms, ~$0.0003) — HEDEF %25
   · L4 Cerebras gpt-oss-120b → kompleks akademik analiz, plan_yap, deneme_analiz (567ms, ~$0.0008) — HEDEF %5
@@ -36,7 +36,8 @@ ROUTING 5 KATMAN:
     get_daily_etut). Production trafigi normalde Cerebras'ta, Groq yedek.
 
 🔥 KRİTİK NETLIK (28 Nisan Neo bulgu — bot self-correct etti):
-  · Cerebras = BIRINCIL hizli motor (2 model: llama3.1-8b + gpt-oss-120b; paid tier).
+  · Cerebras = BIRINCIL hizli motor (TEK model: gpt-oss-120b; paid tier). NOT: llama3.1-8b
+    + qwen-235b ikisi de Cerebras katalogundan emekli oldu (25.49-50). gpt-oss-120b tek production model.
     NOT: qwen-3-235b 31 May emekli oldu → gpt-oss-120b tek üst-tier (3000 tok/s,
     production; canlı A/B testte 120b kalite ≥ glm-4.7-preview, 3x daha hızlı).
   · Groq = FALLBACK/yedek oyuncu (Cerebras down olursa)

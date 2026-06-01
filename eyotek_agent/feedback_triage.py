@@ -152,7 +152,7 @@ Kategori:"""
         result = await client.complete_async(
             messages=[{"role": "user", "content": prompt}],
             system="Sen kategorize uzmanisin. Sadece tek kelime cevap ver.",
-            model="llama3.1-8b",
+            model="gpt-oss-120b",  # 25.50: llama3.1-8b Cerebras'ta emekli → gpt-oss-120b
             max_tokens=10,
             temperature=0.1,
         )

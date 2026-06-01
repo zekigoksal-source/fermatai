@@ -27,7 +27,7 @@ Bu modülde İKİ ayrı sorumluluk bir arada:
 
 Hibrit Strateji (28 Nisan 2026 — 5 katman güncel hedef):
   - fast_responses (%45): Selamlama, şablon, KVKK red
-  - Cerebras llama3.1-8b (%10): Classify, basit selamlama
+  - Cerebras gpt-oss-120b (classify dahil — llama3.1-8b 25.50 emekli)
   - Cerebras gpt-oss-120b (%25): Kavramsal, motivasyon, Eyotek planner
   - Cerebras gpt-oss-120b (%5): Kompleks akademik, plan_yap, deneme_analiz
   - Claude Sonnet 4.6 (%15): Tool-calling, finans, hassas, Vision

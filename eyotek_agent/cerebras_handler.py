@@ -36,21 +36,27 @@ logger = logging.getLogger(__name__)
 
 
 # Model katalog
+# 25.50 (model_health.py bulgu, 1 Haz): llama3.1-8b Cerebras katalogundan EMEKLI
+# (model_not_found 404 — qwen-235b ile aynı kader). Cerebras /v1/models artık SADECE
+# gpt-oss-120b (prod) + zai-glm-4.7 (preview) döndürüyor. classify/fast tier 404 alıp
+# bozuluyordu → gpt-oss-120b'ye repoint. Cerebras tek modele indi (gpt-oss-120b).
 CEREBRAS_MODELS = {
-    "classify": "llama3.1-8b",
+    "classify": "gpt-oss-120b",   # eski: llama3.1-8b (emekli 25.50)
     "kavramsal": "gpt-oss-120b",
     "kompleks": "gpt-oss-120b",
 }
 
-# Tier (intent → model) eşleştirme
+# Tier (intent → model) eşleştirme — 25.50: llama3.1-8b emekli, hepsi gpt-oss-120b.
+# NOT: selamlama/veda/teşekkür zaten fast_responses (regex,$0) ile yakalanıyor;
+# Cerebras tier bunlar için backstop. gpt-oss-120b ~600ms, bu düşük hacimde uygun.
 INTENT_TO_MODEL = {
-    # Hızlı + basit
-    "selamlama":         "llama3.1-8b",
-    "veda":              "llama3.1-8b",
-    "tesekkur":          "llama3.1-8b",
-    "yks_takvim":        "llama3.1-8b",  # statik bilgi (fast'tan kaçanlar)
-    "mufredat_bilgi":    "llama3.1-8b",
-    "kurum_bilgi":       "llama3.1-8b",
+    # Hızlı + basit (eski llama3.1-8b → gpt-oss-120b, 25.50 emekli fix)
+    "selamlama":         "gpt-oss-120b",
+    "veda":              "gpt-oss-120b",
+    "tesekkur":          "gpt-oss-120b",
+    "yks_takvim":        "gpt-oss-120b",  # statik bilgi (fast'tan kaçanlar)
+    "mufredat_bilgi":    "gpt-oss-120b",
+    "kurum_bilgi":       "gpt-oss-120b",
     # Kavramsal + plan (gpt-oss-120b sweet spot)
     "kavram_aciklama":   "gpt-oss-120b",
     "ornek_iste":        "gpt-oss-120b",

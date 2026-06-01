@@ -1,0 +1,11 @@
+[Unit]
+Description=FermatAI - Gunluk model saglik kontrolu timer (06:00 UTC = 09:00 Istanbul)
+Documentation=Oturum 25.50 Neo direktif — vendor model emekli erken uyari (qwen+llama8b vakasi)
+
+[Timer]
+OnCalendar=*-*-* 06:00:00 UTC
+Persistent=true
+Unit=fermatai-model-health.service
+
+[Install]
+WantedBy=timers.target
