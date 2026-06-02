@@ -75,6 +75,10 @@ def get_configured_models() -> list[dict]:
     # Claude — env
     _add("claude", os.getenv("FERMAT_MODEL", "claude-sonnet-4-6"), "claude_main")
 
+    # DeepSeek — SADECE key set ise (opsiyonel matematik motoru, 25.54)
+    if os.getenv("DEEPSEEK_API_KEY"):
+        _add("deepseek", os.getenv("DEEPSEEK_MODEL", "deepseek-reasoner"), "foto_math")
+
     return [
         {"provider": p, "model": m, "used_by": sorted(used)}
         for (p, m), used in sorted(models.items())
@@ -103,6 +107,11 @@ def _classify_error(exc: Exception) -> tuple[str, str]:
             in s or "invalid_api_key" in s or "permission" in s
             or "unauthorized" in s):
         return "auth_error", str(exc)[:160]
+    # Bakiye bitti (DeepSeek 402 vb.) — model çalışır ama kredi yok → fallback'e düşer.
+    # Kritik DEĞİL (sistem Claude'a düşer) ama Neo görmeli (maliyet/aktivasyon sinyali).
+    if (status == 402 or "insufficient balance" in s or "insufficient_balance" in s
+            or "insufficient funds" in s):
+        return "no_balance", str(exc)[:160]
     # Rate limit / TPD — beklenen (Groq free tier), kritik DEĞİL
     if (status in (429, 413) or "rate_limit" in s or "rate limit" in s
             or "tokens per day" in s or "too large" in s or "quota" in s):
@@ -122,11 +131,16 @@ async def check_one(provider: str, model_id: str) -> dict:
     t0 = time.time()
     result = {"provider": provider, "model": model_id, "status": "ok", "detail": "", "ms": 0}
     try:
-        if provider in ("cerebras", "groq"):
+        if provider in ("cerebras", "groq", "deepseek"):
             from openai import OpenAI
-            base = ("https://api.cerebras.ai/v1" if provider == "cerebras"
-                    else "https://api.groq.com/openai/v1")
-            key = os.getenv("CEREBRAS_API_KEY" if provider == "cerebras" else "GROQ_API_KEY", "")
+            base = {
+                "cerebras": "https://api.cerebras.ai/v1",
+                "groq": "https://api.groq.com/openai/v1",
+                "deepseek": os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+            }[provider]
+            keyenv = {"cerebras": "CEREBRAS_API_KEY", "groq": "GROQ_API_KEY",
+                      "deepseek": "DEEPSEEK_API_KEY"}[provider]
+            key = os.getenv(keyenv, "")
             if not key:
                 result.update(status="no_key", detail=f"{provider} API key env'de yok")
                 return result
