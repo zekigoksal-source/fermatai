@@ -117,8 +117,27 @@ async def list_recent_exams(days: int = 30) -> list[dict]:
         await page.wait_for_timeout(3000)
 
         if await _is_login(page):
-            logger.error("[SYNC] Eyotek session expired")
-            return []
+            # 25.54 KÖK NEDEN FIX (Neo bulgu): gece session expire olunca sync auto-login
+            # DENEMEDEN boş dönüyordu → "0 yeni deneme" raporluyordu (sessiz veri bayatlaması).
+            # YKS'ye 11 gün kala öğrencilere 18 günlük eski veri sundu. CapSolver auto-relogin
+            # tetikle + taze cookie enjekte + retry. (sync_attendance ile aynı pattern.)
+            logger.warning("[SYNC] Eyotek session expired — CapSolver auto-login deneniyor")
+            try:
+                from eyotek_auto_login import try_auto_login
+                res = await try_auto_login(trigger_source="sync_recent_exams")
+                if res.get("success"):
+                    await _inject_cookies(ctx)  # taze cookie'ler mevcut context'e
+                    await page.goto("https://fermat.eyotek.com/v1/Pages/Student/test-transferred",
+                                    timeout=20000, wait_until="domcontentloaded")
+                    await page.wait_for_timeout(3000)
+                    logger.info("[SYNC] auto-login OK — sync devam ediyor")
+                else:
+                    logger.error(f"[SYNC] auto-login başarısız: {res.get('message', '?')}")
+            except Exception as _ale:
+                logger.error(f"[SYNC] auto-login hata: {_ale}")
+            if await _is_login(page):
+                logger.error("[SYNC] session expired (auto-login sonrası da) — bu çevrim atlandı")
+                return []
 
         await _open_search_modal(page)
         await page.wait_for_timeout(1000)
