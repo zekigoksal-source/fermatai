@@ -4850,6 +4850,9 @@ async def try_fast_response(
                             pass
                         return await sinav_bilgi(name, message, caller_class=_cls)
                     elif handler == "son_deneme":
+                        # 25.54: "analiz et/incele/röntgen" → exam_xray (Claude), düz tablo DEĞİL
+                        if re.search(r"analiz|incele|röntgen|rontgen|ne kaybett", msg_lower):
+                            return None  # Claude → get_exam_xray
                         # 25.40s — Ali vakasi: TYT/11.SINIF filtresi
                         # "TYT denemelerimi" → exam_filter="tyt"; "11. sınıf" → "sinif"
                         _exam_filter = ""
@@ -5881,6 +5884,9 @@ async def try_fast_response(
 
                 # Yuksek guvenle niyet belirlendi — dogru handler'a yonlendir
                 if intent == "son_deneme":
+                    # 25.54: "analiz et/incele/röntgen" → exam_xray (Claude), düz tablo DEĞİL
+                    if re.search(r"analiz|incele|röntgen|rontgen|ne kaybett", message.lower()):
+                        return None  # Claude → get_exam_xray (zengin delta röntgeni)
                     return await ogrenci_son_deneme(soz_no, name)
                 elif intent == "ayt_deneme":
                     return await ogrenci_ayt_deneme(soz_no, name)
