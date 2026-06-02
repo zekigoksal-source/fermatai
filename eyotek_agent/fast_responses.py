@@ -1290,13 +1290,11 @@ async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", s
                     )
             except Exception:
                 pass
-        # Genel fallback — veri yok
-        return (
-            f"🎯 *{name} — Konu Analizi*\n\n"
-            f"Henuz yeterli deneme verisi olmadigi icin konu analizi olusturulamadi.\n"
-            f"Deneme sinavlarina katildikca zayif ve guclu konularin otomatik belirlenecek.\n\n"
-            f"_Simdilik hangi derste zorlandigini soyle, birlikte calisalim!_ 📚"
-        )
+        # 25.54 (konuşma analizi — Ali çelişkisi): bu fast handler "veri yok" derken
+        # get_knowledge_state 8 zayıf konu buluyordu (query divergence) → ÇELİŞKİ.
+        # Fast handler veri bulamazsa DEAD-END mesaj DÖNME → None ile Claude'a devret;
+        # Claude get_knowledge_state ile gerçek veriyi (BKT/FSRS) sunar. Tutarlılık.
+        return None
 
     first = name.split()[0] if name else ""
     ders_filtre_text = f" — {ders_filtre.title()}" if ders_filtre else ""
@@ -3920,6 +3918,10 @@ async def _dispatch_registry_handler(
                 return _handler_kurum_reddet(name)
 
             if handler == "ogrenci_son_deneme":
+                # 25.54 (konuşma analizi — Ali vakası): "analiz et/incele/röntgen/
+                # ne kaybettim" → exam_xray (Claude, deneme röntgeni) — düz tablo DEĞİL.
+                if re.search(r"analiz|incele|röntgen|rontgen|ne kaybett|hangi derste\s*(düş|dus)", msg_lower):
+                    return None  # Claude → get_exam_xray (zengin delta analizi)
                 return await ogrenci_son_deneme(soz_no, name)
 
             if handler == "ogrenci_ayt_deneme":
@@ -4421,6 +4423,18 @@ async def try_fast_response(
                     import logging
                     logging.getLogger(__name__).info(
                         f"[CONTEXT_BRIDGE] phone={caller_phone[-4:]} role={role} refinement — Claude'a"
+                    )
+                    return None
+            # 25.54 (Berat "Yaklaştığında" vakası): bot SORU sorduysa + öğrenci KISA
+            # serbest cevap verdiyse (≤28 char, sayı değil), soruyu yanıtlıyor demektir →
+            # Claude bağlamla devam etsin (stale fizik/handler'a DÜŞMESİN, bağlam kaybı önle).
+            _msg_s = message.strip()
+            if 2 < len(_msg_s) <= 28 and not re.search(r"\d", _msg_s):
+                last_bot = await get_last_bot_response(caller_phone, max_age_minutes=10)
+                if last_bot and last_bot.get("is_question"):
+                    import logging
+                    logging.getLogger(__name__).info(
+                        f"[CONTEXT_BRIDGE] phone={caller_phone[-4:]} role={role} short-answer→question — Claude'a"
                     )
                     return None
         except Exception:
