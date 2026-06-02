@@ -5,7 +5,7 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.54, 2 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `20cc8b9` (DeepSeek model_health izleme) ← 25.54 (4 kabiliyet + DeepSeek aktif) ← 25.53 (exam_xray+digital_twin) ← 25.52 (BKT+FSRS) ← 25.51 (hardening) ← 25.50 (model_health) ← 25.49 (Sentry temizlik)
+> - **HEAD:** `b08936e` (konuşma analizi fix) ← `20cc8b9` (DeepSeek model_health izleme) ← 25.54 (4 kabiliyet + DeepSeek aktif) ← 25.53 (exam_xray+digital_twin) ← 25.52 (BKT+FSRS) ← 25.51 (hardening) ← 25.50 (model_health) ← 25.49 (Sentry temizlik)
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `20cc8b9`, NRestarts=0, PostgreSQL OK
 > - **LLM ZİNCİRİ (GÜNCEL):** Fast Response → **Cerebras gpt-oss-120b** (tek Cerebras modeli; qwen-235b+llama3.1-8b emekli 25.49-50) → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool-calling/hassas). **+ DeepSeek-reasoner** (foto matematik referans çözüm, key-gated, 25.54 aktif). Ollama = embeddings-only (chat'te DEĞİL).
 > - **MODEL SAĞLIK MONİTÖRÜ (25.50):** `model_health.py` günlük 06:00 — Cerebras/Groq/Claude/DeepSeek ping, emekli/bakiye-bitti tespiti → Neo'ya kritik alarm. Şu an **5/5 sağlıklı**. WP: "model durum".
@@ -178,6 +178,13 @@
 > **ENTEGRASYON:** 3 Claude tool (get_exam_xray/get_digital_twin + get_knowledge_state own-enforce) + dispatch _caller_role/_soz_no inject + ACL 6 rol + 2 schema + routing keyword + system_prompt protokol. E2E: öğrenci "son denememi analiz et" → çalıştı.
 >
 > **Dikey-AI roadmap durumu:** ✅ BKT+FSRS (25.52) · ✅ Exam X-ray · ✅ Dijital İkiz · ✅ Risk (read-only) · ✅ YKS skor (predict_student mevcut). TÜMÜ on-demand, outreach OFF. **Yeni sezon (1 Eylül): proaktif katman + DeepSeek V4 + Claude Memory Tool aktive edilebilir.**
+>
+> ## 🔍 2 Haziran (Oturum 25.54-C) — KONUŞMA ANALİZİ FIX'LERİ (`b08936e`)
+>
+> Son 2 gün öğrenci konuşmaları (Ali 4419, Berat 6219) → 4 bağlam/cevap-tarzı bug + fix:
+> - **exam_xray tetiklenmiyordu:** "son denememi analiz et" düz tablo veriyordu → 3 dispatch noktası (5883/4852/3920) "analiz/incele/röntgen" → Claude get_exam_xray defer. Doğrulandı: Mat +7 sıçrama, Bio -3.75 düşüş zengin röntgen.
+> - **Çelişki:** "neyi tekrar etmeliyim"→8 konu ama "ne çalışmalıyım"→"veri yok". ogrenci_zayif_konular no-data dead-end → None (Claude+knowledge_state). Doğrulandı: gerçek konular geliyor.
+> - **Bağlam kaybı (Berat):** "stresim var"→"Yaklaştığında"→bot FİZİK anlattı. context_bridge: bot soru sorduysa+kısa serbest cevap → Claude. + system_prompt DUYGU MODU kuralı (stres'te akademik pivot yok, "emoji kullanma" honor, öfkeli kapanışta resmi veda yok, hitap tekrarı yok).
 >
 > ## 🚀 1 Haziran (Oturum 25.54) — 4 YENİ KABİLİYET (öğrenme döngüsü TAM kapandı, OUTREACH OFF) (`1c4c62b`)
 >
