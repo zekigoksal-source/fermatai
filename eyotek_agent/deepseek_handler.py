@@ -63,10 +63,19 @@ async def solve_math(problem_text: str, system: str = "", max_tokens: int = 1500
             ],
         )
         msg = resp.choices[0].message
-        # deepseek-reasoner reasoning'i ayrı alanda tutabilir — content yeterli
-        text = (getattr(msg, "content", "") or "").strip()
+        # deepseek-reasoner: ADIMLAR reasoning_content'te, SONUÇ content'te.
+        # Referans çözüm zengin olsun diye ikisini birleştir (reasoning cap'li —
+        # maliyet/uzunluk kontrolü). deepseek-chat'te reasoning_content boş → content.
+        content = (getattr(msg, "content", "") or "").strip()
+        reasoning = (getattr(msg, "reasoning_content", "") or "").strip()
+        if reasoning and content:
+            text = f"{reasoning[:1800]}\n\n**Sonuç:** {content}"
+        else:
+            text = content or reasoning
+        text = (text or "").strip()
         if text:
-            logger.info(f"🧮 DeepSeek çözüm: {DEEPSEEK_MODEL} | {len(text)} char")
+            logger.info(f"🧮 DeepSeek çözüm: {DEEPSEEK_MODEL} | {len(text)} char "
+                        f"(reasoning={len(reasoning)}, content={len(content)})")
             return text
     except Exception as e:
         logger.warning(f"[deepseek] solve_math hatası ({type(e).__name__}): {str(e)[:120]}")
