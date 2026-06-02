@@ -5,7 +5,7 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.54, 2 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `b08936e` (konuşma analizi fix) ← `20cc8b9` (DeepSeek model_health izleme) ← 25.54 (4 kabiliyet + DeepSeek aktif) ← 25.53 (exam_xray+digital_twin) ← 25.52 (BKT+FSRS) ← 25.51 (hardening) ← 25.50 (model_health) ← 25.49 (Sentry temizlik)
+> - **HEAD:** `e5b0033` (exam sync auto-login fix) ← `b08936e` (konuşma analizi fix) ← `20cc8b9` (DeepSeek model_health izleme) ← 25.54 (4 kabiliyet + DeepSeek aktif) ← 25.53 (exam_xray+digital_twin) ← 25.52 (BKT+FSRS) ← 25.51 (hardening) ← 25.50 (model_health) ← 25.49 (Sentry temizlik)
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `20cc8b9`, NRestarts=0, PostgreSQL OK
 > - **LLM ZİNCİRİ (GÜNCEL):** Fast Response → **Cerebras gpt-oss-120b** (tek Cerebras modeli; qwen-235b+llama3.1-8b emekli 25.49-50) → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool-calling/hassas). **+ DeepSeek-reasoner** (foto matematik referans çözüm, key-gated, 25.54 aktif). Ollama = embeddings-only (chat'te DEĞİL).
 > - **MODEL SAĞLIK MONİTÖRÜ (25.50):** `model_health.py` günlük 06:00 — Cerebras/Groq/Claude/DeepSeek ping, emekli/bakiye-bitti tespiti → Neo'ya kritik alarm. Şu an **5/5 sağlıklı**. WP: "model durum".
@@ -178,6 +178,16 @@
 > **ENTEGRASYON:** 3 Claude tool (get_exam_xray/get_digital_twin + get_knowledge_state own-enforce) + dispatch _caller_role/_soz_no inject + ACL 6 rol + 2 schema + routing keyword + system_prompt protokol. E2E: öğrenci "son denememi analiz et" → çalıştı.
 >
 > **Dikey-AI roadmap durumu:** ✅ BKT+FSRS (25.52) · ✅ Exam X-ray · ✅ Dijital İkiz · ✅ Risk (read-only) · ✅ YKS skor (predict_student mevcut). TÜMÜ on-demand, outreach OFF. **Yeni sezon (1 Eylül): proaktif katman + DeepSeek V4 + Claude Memory Tool aktive edilebilir.**
+>
+> ## 🩺 2 Haziran (Oturum 25.54-D) — VERİ TAZELİĞİ KÖK NEDEN (`e5b0033`)
+>
+> Neo gözlem: "öğrenci 'son 5 deneme' deyince gerçekten Eyotek'e mi bakıyor yoksa eski DB mi?"
+> - **Cevap: ESKİ DB.** ogrenci_son_deneme `student_exams`'tan okuyor (canlı Eyotek değil). DB **18 GÜN bayat** (en son 15 May), YKS'ye 11 gün kala.
+> - **KÖK NEDEN:** sync_recent_exams gece 03:00'te session expire olunca `if _is_login: return []` → "0 yeni deneme" SESSİZCE raporluyordu (auto-login denemeden). Aynı bug sync_attendance'da fix'liydi, burada değildi.
+> - **CANLI İSPAT (dry-run):** Eyotek'te 20 sınav, **6 YENİ** (biri bugün 2 Haz) DB'de yoktu.
+> - **FIX:** session expired → try_auto_login (CapSolver) + _inject_cookies + re-goto + retry. Nightly artık kendini iyileştirir.
+> - **ANINDA:** manuel sync → 31 yeni kayıt (2 Haz'a kadar). Veri TAZE: BİLGİ SARMAL TG 4 TYT/AYT, İşler Son Viraj Geri Sayım 6 vb.
+> - **AÇIK NOKTA (Neo'ya):** süreklilik/bağlam zayıflığı = fast-response interception pattern (context-dependent sorgular Claude yerine regex handler'a düşüyor). Hedefli fix'ler yapıldı (refinement/short-answer/analiz-defer), geniş pass opsiyon.
 >
 > ## 🔍 2 Haziran (Oturum 25.54-C) — KONUŞMA ANALİZİ FIX'LERİ (`b08936e`)
 >
