@@ -1,13 +1,15 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 31 Mayıs 2026 → **OTURUM 25.49 (SENTRY 5-GÜN TEMIZLIK — Cerebras model + chrome-cdp +x + Playwright retry + geciken_snapshot dedup) — NEO 5-6 GÜN DEV ARASI SONRASI**
+> **Son güncelleme:** 2 Haziran 2026 → **OTURUM 25.49→25.54 MEGA ARK (Opus 4.8): Sentry temizlik → model dayanıklılık → konuşma kalite → DİKEY-AI TAM YIĞIN (BKT/FSRS + röntgen + ikiz + risk + pratik + hata teşhisi + DeepSeek + model hafıza)**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.49, 31 May)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.54, 2 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `b7f5f38` (31 May: sync_etut_kontrol noise + name normalize tool) ← `bc54d7e` (Playwright retry + geciken_snapshot dedup) ← `58712e0` (Cerebras qwen→gpt-oss-120b 13 dosya + chrome-cdp git mode +x) ← `ff47dc2` (26 May SSS/SEO + BUG3 puan tahmin merge)
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `b7f5f38`, PostgreSQL OK, geciken_snapshot **551→40 (511 duplikasyon temizlendi + UNIQUE constraint)**, son 24h Sentry temiz (retry deploy edildi)
-> - **LLM ZİNCİRİ (NET):** Cerebras (gpt-oss-120b) → Groq 70B → Claude. **Ollama chat'te DEĞİL** (embeddings-only, ENABLE_OLLAMA_CHAT=false)
+> - **HEAD:** `20cc8b9` (DeepSeek model_health izleme) ← 25.54 (4 kabiliyet + DeepSeek aktif) ← 25.53 (exam_xray+digital_twin) ← 25.52 (BKT+FSRS) ← 25.51 (hardening) ← 25.50 (model_health) ← 25.49 (Sentry temizlik)
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `20cc8b9`, NRestarts=0, PostgreSQL OK
+> - **LLM ZİNCİRİ (GÜNCEL):** Fast Response → **Cerebras gpt-oss-120b** (tek Cerebras modeli; qwen-235b+llama3.1-8b emekli 25.49-50) → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool-calling/hassas). **+ DeepSeek-reasoner** (foto matematik referans çözüm, key-gated, 25.54 aktif). Ollama = embeddings-only (chat'te DEĞİL).
+> - **MODEL SAĞLIK MONİTÖRÜ (25.50):** `model_health.py` günlük 06:00 — Cerebras/Groq/Claude/DeepSeek ping, emekli/bakiye-bitti tespiti → Neo'ya kritik alarm. Şu an **5/5 sağlıklı**. WP: "model durum".
+> - **DİKEY-AI MOTORU (25.52-54, hepsi on-demand, SIFIR otomatik öğrenci mesajı):** knowledge_state (BKT ustalık+FSRS tekrar), exam_xray (deneme röntgeni), digital_twin (360° + risk), practice_engine (adaptif soru), foto hata-teşhisi, remember_student_insight (model hafıza). OUTREACH_ENABLED=false (proaktif özellikler yeni sezonda).
 >
 > ## 🔥 31 May (Oturum 25.49) — SENTRY 5-GÜN TEMIZLIK + NEO BUG'LAR
 >
@@ -205,18 +207,27 @@
 > **ÖĞRENME DÖNGÜSÜ TAM:** Teşhis (knowledge_state/twin/risk) → Plan (FSRS) → Anlat (RAG/foto) →
 > **Pratik (yeni)** → **Hata-teşhisi (yeni)** → Ustalık. Hafıza her turda derinleşir. 9 dosya py_compile OK.
 >
-> ## 📋 31 May-1 Haz Tam Commit Zinciri (güncel)
+> ## ⚡ 2 Haziran (Oturum 25.54-B) — DEEPSEEK AKTİVASYON (`20cc8b9`)
+> - Neo `.env`'e `DEEPSEEK_API_KEY` + $5 bakiye ekledi → DeepSeek-reasoner **CANLI**.
+> - **reasoning_content fix:** deepseek-reasoner adımları ayrı alanda tutuyordu (handler sadece kısa `content` okuyordu, "f'(2)=4" 9 char). Fix: reasoning+content birleştir (1800 cap). Canlı: 3-4-5 üçgen tam adım-adım (1082 char).
+> - **model_health'e DeepSeek eklendi** (key set ise kontrol) + 402 `no_balance` tespiti. Canlı: **5/5 sağlıklı** (cerebras+claude+deepseek+2 groq).
+> - Akış: öğrenci foto matematik → MathPix OCR → DeepSeek kanonik çözüm (anonim, ~$0.0002) → Claude pedagojik sunum. Key yoksa Claude fallback (sıfır kırılma).
+> - GÜVENLİK: API key chat'te göründü → Neo'ya rotasyon önerildi (kendi kararı). Ben config'e key yazmadım (kural), Neo ekledi.
+>
+> ## 📋 Oturum 25.49→25.54 Tam Commit Zinciri (güncel)
 > ```
-> d54c4ea feat(resilience): Model Health Monitor + KRİTİK llama3.1-8b emekli fix
-> 275470b docs(KALDIGIM): 25.49-D konuşma analizi + puanlama
-> a5e877b fix(quality): YKS puan tutarlılığı + refinement bağlam kaybı (konuşma analizi)
-> fdc82a4 docs(KALDIGIM): 25.49-C sistem geneli qwen denetimi
-> b2a68dd docs(BLUEPRINT): qwen emekli — mevcut-durum tabloları
-> 73043f7 chore(cerebras): qwen-235b emekli — 13 dosya stale referans temizliği
-> 632dd7e docs(KALDIGIM): Oturum 25.49 Sentry temizlik
-> b7f5f38 fix(sentry): sync_etut_kontrol noise + _normalize_names
-> bc54d7e fix(sync): Playwright retry-backoff + geciken_snapshot dedup
+> 20cc8b9 feat(model_health): DeepSeek izleme + 402 bakiye tespiti
+> 6f6f7bf feat(deepseek): reasoning_content yakalama — tam adım-adım çözüm
+> ddea632 docs(KALDIGIM): 25.54 4 yeni kabiliyet
+> 1c4c62b feat(vertical-ai): Hata Teşhisi + Adaptif Pratik + DeepSeek + Model Hafıza
+> 392712f feat(vertical-ai): Deneme Röntgeni + Dijital İkiz (outreach OFF)
+> 6fd79d4 feat(vertical-ai): BKT ustalık + FSRS tekrar zamanlama
+> a5e877b fix(quality): YKS puan tutarlılığı + refinement bağlam kaybı
+> 3c63a51 fix(hardening): foto tek-kaynak + Graph API version + silent except
+> d54c4ea feat(resilience): Model Health Monitor + llama3.1-8b emekli fix
+> 73043f7 chore(cerebras): qwen-235b emekli — 13 dosya temizlik
 > 58712e0 fix(cerebras+cdp): qwen→gpt-oss-120b 13 files + chrome-cdp +x
+> bc54d7e fix(sync): Playwright retry-backoff + geciken_snapshot dedup
 > ```
 >
 > ## ⏭️ Bir Sonraki Oturum (25.50 — Aktif Sıra)

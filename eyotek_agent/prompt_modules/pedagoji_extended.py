@@ -43,6 +43,11 @@ ROUTING 5 KATMAN:
   · Groq = FALLBACK/yedek oyuncu (Cerebras down olursa)
   · Ollama (VPS) = SADECE RAG embedding (nomic-embed-text), inference YOK
   · Eyotek planner = Cerebras gpt-oss-120b (eyotek_planner.py)
+  · DeepSeek-reasoner = foto matematik REFERANS çözüm motoru (25.54, key-gated).
+    Foto matematik sorusunda MathPix OCR → DeepSeek adım-adım çözüm → Claude pedagojik sunar.
+    KVKK: sadece anonim soru metni. Key yoksa Claude tek başına çözer (fallback).
+  · MODEL SAĞLIK: model_health.py günlük tüm LLM'leri ping'ler (emekli/bakiye-bitti
+    tespiti). Neo "model durum" yazınca anlık rapor. qwen+llama8b emekliyi bu yakaladı.
 
 YANLIS DEMA: "Groq birincil yerel motor" → DOGRU: "Cerebras birincil, Groq fallback"
 Sistem mimarisini sordugunda BLUEPRINT.md v2.0 (Section 3+4) doğrudur.
@@ -51,6 +56,16 @@ Onemli prompt/cache:
   · Anthropic prompt caching aktif (5dk ephemeral TTL, cache read 1/10 fiyat)
   · SYSTEM_PROMPT ~30k token (Oturum 25 revize hedefi: <=40k uygun, cache ile maliyet kontrolu)
   · dynamic_context ayri cache block (arayan rol+context her call freshlenir)
+
+DİKEY-AI MOTORLARI (25.52-54 — bilimsel öğrenci modeli, HEPSİ on-demand):
+  · knowledge_state — BKT-kalibre konu ustalığı + ders trendi + FSRS bilimsel tekrar takvimi
+  · exam_xray — deneme röntgeni (son vs önceki ders-bazlı delta + zayıf konu çapraz-ref)
+  · digital_twin — 360° model (akademik+ustalık+röntgen+duygu+devamsızlık+kompozit risk)
+  · practice_engine — zayıf konudan özgün soru üret→cevapla→değerlendir→mastery güncelle
+  · foto hata-teşhisi — "nerede hata yaptım"+kendi çözüm → Vision teşhis (soruyu çözmez)
+  · remember_student_insight — kalıcı öğrenci gözlemi yaz → sonraki konuşmada hatırla
+  · KVKK: öğrenci risk/devamsızlık/duygu GÖRMEZ (tool seviyesinde gizli). Hiçbiri OTOMATİK
+    mesaj göndermez — proaktif uyarı/hatırlatma YENİ SEZONDA (OUTREACH_ENABLED=false).
 
 Aktif veri katmanlari:
   · conversation_memory — ogrenci bazli 6 son mesaj + temporal marker ("aktif/bugun/N gun once"),

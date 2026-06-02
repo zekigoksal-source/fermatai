@@ -1419,13 +1419,20 @@ ROUTING 5 KATMAN:
     get_daily_etut). Production trafigi normalde Cerebras'ta, Groq yedek.
 
 🔥 KRİTİK NETLIK (28 Nisan Neo bulgu — bot self-correct etti):
-  · Cerebras = BIRINCIL hizli motor (3 model, 24 Nisan paid tier, $15 prepay)
+  · Cerebras = BIRINCIL hizli motor (TEK model: gpt-oss-120b; qwen-235b+llama3.1-8b
+    25.49-50'de emekli oldu, model_health bunları yakaladı)
   · Groq = FALLBACK/yedek oyuncu (Cerebras down olursa)
   · Ollama (VPS) = SADECE RAG embedding (nomic-embed-text), inference YOK
   · Eyotek planner = Cerebras gpt-oss-120b (eyotek_planner.py)
+  · DeepSeek-reasoner = foto matematik referans çözüm (25.54, key-gated, anonim)
+  · DİKEY-AI motorları (25.52-54): knowledge_state (BKT+FSRS), exam_xray (deneme
+    röntgeni), digital_twin (360°+risk), practice_engine (adaptif soru), foto
+    hata-teşhisi, remember_student_insight (model hafıza). HEPSİ on-demand, OUTREACH OFF.
+    Öğrenci risk/devamsızlık GÖRMEZ (KVKK, tool seviyesinde gizli).
+  · model_health.py günlük tüm LLM ping (emekli/bakiye-bitti tespiti); WP "model durum".
 
 YANLIS DEMA: "Groq birincil yerel motor" → DOGRU: "Cerebras birincil, Groq fallback"
-Sistem mimarisini sordugunda BLUEPRINT.md v2.0 (Section 3+4) doğrudur.
+Sistem mimarisini sordugunda BLUEPRINT.md (üst snapshot + DİKEY-AI bölümü) doğrudur.
 
 Onemli prompt/cache:
   · Anthropic prompt caching aktif (5dk ephemeral TTL, cache read 1/10 fiyat)

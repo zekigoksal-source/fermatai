@@ -1,18 +1,48 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 24 Mayıs 2026 · **Oturum:** 25.47+ — Topic Inversion Fix + ACL Orphan + iPad UX + Sentry + LLM Mimari Netleştirme + Wix/Reklam Denetim
+> **Belge tarihi:** 2 Haziran 2026 · **Oturum:** 25.49→25.54 MEGA ARK (Opus 4.8) — Sentry temizlik + Model Dayanıklılık + Konuşma Kalite + **DİKEY-AI TAM YIĞIN**
 >
-> ## 🟢 SON DURUM SNAPSHOT (25.47+, 24 May)
+> ## 🟢 SON DURUM SNAPSHOT (25.54, 2 Haz)
 >
 > | Metrik | Değer |
 > |--------|-------|
-> | **VPS HEAD** | `f1f28c0` fix(context): history token bütçesi 70K + len/3 |
-> | **LLM zinciri** | **Cerebras → Groq 70B → Claude** (Ollama chat'te DEĞİL — embeddings-only, `ENABLE_OLLAMA_CHAT=false`) |
-> | **Sentry 24h** | 3 issue — hepsi handled/fix'li (Ollama gürültü fix HOLDING · context_length 70K fix · 429 fallback'le handled) |
-> | **topic_tracker** | başarı↔hata inversion DÜZELTİLDİ (migration 017 · bozuk satır=0 · generated `sinav_basari_yuzdesi`=100−hata) |
-> | **ACL** | orphan 6 adaptive/predictive araç doğru rollere eklendi → orphan=0 |
-> | **UX** | render skeleton+reveal+kontrast · iPad 44px touch + safe-area · SW `v25.50` |
+> | **VPS HEAD** | `20cc8b9` — Bridge HTTP 200 ✅, NRestarts=0, git senkron |
+> | **LLM zinciri** | Fast Response → **Cerebras gpt-oss-120b** → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool/hassas) · **+ DeepSeek-reasoner** (foto matematik, key-gated) · Ollama = embeddings-only |
+> | **Model sağlık** | `model_health.py` günlük 06:00 ping — **5/5 sağlıklı** (cerebras+claude+deepseek+2 groq). Emekli/bakiye-bitti → Neo alarm. WP: "model durum" |
+> | **DİKEY-AI motoru** | BKT ustalık + FSRS tekrar (knowledge_state) · deneme röntgeni (exam_xray) · 360° dijital ikiz + risk (digital_twin) · adaptif soru (practice_engine) · foto hata-teşhisi · model hafıza (remember_student_insight) — **HEPSİ on-demand, OUTREACH OFF** |
+> | **Güvenlik** | `OUTREACH_ENABLED=false` → öğrenciye otomatik mesaj send-katmanında bloklanır. Yeni 6 tool ogrenci kendi soz_no zorlanır. Risk/devamsızlık öğrenciye gizli (Dashboard Vizyonu). |
+> | **Emekli modeller** | qwen-3-235b + llama3.1-8b Cerebras'tan emekli (25.49-50) → gpt-oss-120b tek Cerebras modeli. model_health bunları yakaladı. |
 > | **Reklam** | Meta/Google Ads MCP → Cowork'te ayrı (bota gömülMEDİ — para + blast-radius kararı) |
+>
+> ## 🧬 DİKEY-AI ÖĞRENME DÖNGÜSÜ (25.52-54, Opus 4.8) — EN DEĞERLİ KATMAN
+>
+> > **Tez:** Moat model değil, **9 aylık longitudinal proprietary öğrenci datası**. Genel chatbot'un yapamadığı (geçmişi yok). Kanıt: Ghana Rori RCT (WhatsApp tutoring d=0.36). Döngü baştan sona kapalı:
+>
+> **TEŞHİS → PLAN → ANLAT → PRATİK → HATA-TEŞHİSİ → USTALIK** (her tur hafıza derinleşir)
+>
+> | Modül | Ne yapar | Kaynak veri | Tool |
+> |-------|----------|-------------|------|
+> | `knowledge_state.py` | BKT-kalibre konu ustalığı (slip=.10/guess=.20, Bloom %85 eşik) + ders trendi + **FSRS** tekrar takvimi (py-fsrs v6, retention=0.90) | student_topic_tracker + student_exams | `get_knowledge_state` |
+> | `exam_xray.py` | Son deneme vs önceki ders-bazlı delta + en iyi/kötü + zayıf konu çapraz-ref | student_exams + topic_tracker | `get_exam_xray` |
+> | `digital_twin.py` | 360° sentez: akademik(predict)+ustalık(BKT/FSRS)+röntgen+duygu+devamsızlık+**kompozit risk** | tüm katmanlar | `get_digital_twin` |
+> | `practice_engine.py` | Zayıf konudan özgün TYT/AYT soru+5şık+çözüm (Cerebras→Claude, RAG few-shot) → cevapla → mastery güncelle | knowledge_state + RAG | `generate_practice_question`, `check_practice_answer` |
+> | foto **hata-teşhisi** | "nerede hata yaptım"+kendi çözüm fotosu → Vision teşhis (çözmez) → hata türü→insights | Claude Vision + topic | `_solve_photo_question(mode='diagnose')` |
+> | **model hafıza** | Claude kalıcı öğrenci gözlemi yazar → sonraki konuşmada context'e gelir | student_insights (decay) | `remember_student_insight` |
+> | `model_health.py` | Yapılandırılmış HER LLM'i günlük ping → emekli/bakiye-bitti tespiti → Neo alarm | env+kod model config | `model durum` (admin WP) |
+> | `deepseek_handler.py` | Foto matematik referans çözüm (reasoning+content, anonim, key-gated) | DeepSeek-reasoner | foto path entegre |
+>
+> **KVKK katmanları (defense-in-depth):** (1) ogrenci tool'da kendi soz_no'ya zorlanır, (2) digital_twin'de risk/devamsızlık/duygu ogrenci için dict'ten SİLİNİR (Claude görmez), (3) system_prompt kuralı, (4) `OUTREACH_ENABLED=false` send-katmanı bloğu. **YKS'ye 20 gün — sıfır otomatik öğrenci mesajı doğrulandı (5 modül grep + audit).**
+>
+> ## 🛡️ 25.49-51 — DAYANIKLILIK + KALİTE (Opus 4.8, 31 May-1 Haz)
+>
+> | Konu | Sorun → Çözüm |
+> |------|---------------|
+> | **Cerebras qwen emekli** | qwen-3-235b 5 günde sessizce emekli oldu (404, 5 gün pahalı Claude fallback). 13 dosya gpt-oss-120b'ye + BLUEPRINT/system_prompt güncel. |
+> | **Model Health Monitor** | Reaktif yakalanmamak için `model_health.py` (günlük ping). İLK çalışmada **2. emekli modeli buldu**: llama3.1-8b da 404 → gpt-oss-120b'ye. |
+> | **geciken_snapshot dedup** | Aynı öğrenci 27× tekrar (no PK). DELETE-before-insert + UNIQUE(soz_no,sezon). 551→40 satır. |
+> | **Playwright retry** | sync_attendance BlockingIOError (24 event) → 3-deneme backoff (OSError+ConnError). |
+> | **Konuşma kalite** | YKS puan tutarsızlığı (ham_puan 144→339) → system_prompt protokol (gerçek net çek + tool verbatim). Refinement bağlam kaybı ("teker teker"→cache generic) → `is_refinement_request` cache-skip. |
+> | **Hardening** | Foto kota tek-kaynak (`get_photo_usage`) · Graph API version `wa_config.GRAPH_BASE` (4 hardcoded→1) · silent except logging. |
 >
 > ## 🆕 OTURUM 25.47+ — Veri Bütünlüğü + LLM Mimari + UX (22-24 May)
 >
