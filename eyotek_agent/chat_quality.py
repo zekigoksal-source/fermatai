@@ -87,30 +87,32 @@ def is_crisis_message(message: str) -> bool:
     return bool(message and _CRISIS_RE.search(message))
 
 
-# Yanlış/halüsinasyon kriz hattı satırları: 182 (=MHRS hastane randevu, ruh sağlığı DEĞİL),
-# 154, 188 vb. Canlı test: model "182 (Alo 182) ruh sağlığı hattı ve 154 (Alo 154)" uydurdu.
-# Aynı satırda hat/destek bağlamıyla geçen yanlış numaralı satırı temizle (183 + 112 doğru, kalır).
-_WRONG_HOTLINE_RE = _re.compile(
-    r"(?:alo\s*0?(?:182|154|188)\b|\b0?(?:182|154|188)\b)"
-    r".{0,40}?(?:hat|destek|ruh|psikol|ara|servis|yardım|yardim|imdat)"
-    r"|(?:hat|destek|ruh|psikol|servis)"
-    r".{0,40}?(?:alo\s*0?(?:182|154|188)\b|\b0?(?:182|154|188)\b)",
+# Model kriz hattı olarak HER SEFER FARKLI yanlış numara uyduruyor (canlı test: 182, 154,
+# 1822, "Alo 182 ruh sağlığı hattı"...). Numara-numara kovalamak ölçeklenmez → KATEGORİK:
+# hat/destek/kriz/acil bağlamı OLAN + içinde telefon-benzeri numara GEÇEN satırı temizle.
+# İstisna: doğru hat 183 geçen satıra dokunma. 112 silinen satırda olsa footer geri ekler.
+_HOTLINE_CTX_RE = _re.compile(
+    r"hat\b|hatt|destek hat|kriz|acil|imdat|yardım hatt|yardim hatt|"
+    r"ruh sağlığı hat|ruh sagligi hat|psikolojik destek|alo\s*\d|7/?24|7 ?gün ?24",
     _re.IGNORECASE,
 )
+_PHONE_NUM_RE = _re.compile(r"\b\d{3,4}\b")  # 112, 182, 183, 1822 gibi hat numaraları
 
 
 def _scrub_wrong_hotlines(answer: str) -> str:
-    """Kriz cevabından yanlış hat satırlarını çıkar (182/154/188 destek hattı iddiaları).
-    183 içeren satırlara dokunma."""
+    """Kriz cevabından hat-bağlamlı + numaralı satırları çıkar (model uydurmasına karşı).
+    183 içeren satırlara dokunma — doğru hat zaten verilmiş olabilir."""
     out = []
     for line in (answer or "").split("\n"):
         low = line.lower()
-        if "183" not in low and _WRONG_HOTLINE_RE.search(low):
-            continue  # yanlış hat satırı — at
+        if "183" in low:
+            out.append(line)  # doğru hat — koru
+            continue
+        if _HOTLINE_CTX_RE.search(low) and _PHONE_NUM_RE.search(low):
+            continue  # hat bağlamlı + numaralı (uydurma riski) — at, footer doğrusunu ekler
         out.append(line)
-    # Arka arkaya boş satırları sadeleştir
     txt = "\n".join(out)
-    txt = _re.sub(r"\n{3,}", "\n\n", txt)
+    txt = _re.sub(r"\n{3,}", "\n\n", txt)  # boş satır temizliği
     return txt.rstrip()
 
 
