@@ -128,6 +128,44 @@ def ensure_crisis_safety(message: str, answer: str) -> str:
     return ans.rstrip() + _CRISIS_FOOTER
 
 
+# Akademik/kavramsal sorularda WhatsApp'ta da DOYURUCU, uzun, görsel cevap (25.56 Neo).
+# Lane "max 150 kelime" + base "WP kısa" akademik derinliği kesiyordu — bu addon EN SONA
+# eklenir (recency), kısa talimatı bilinçli aşar. Cerebras dünyanın en hızlı motoru →
+# uzunluk maliyeti düşük, öğrenci uzman düzeyi akademik doyum hak ediyor.
+ACADEMIC_DEPTH_ADDON = """
+
+═══════════ AKADEMİK DERİNLİK — DOYURUCU CEVAP (kısa kesme) ═══════════
+Bu akademik/kavramsal bir soru. Öğrenci uzman düzeyinde, tatmin edici bir açıklama
+hak ediyor — yüzeysel "max 150 kelime" tarzı geçiştirme YAPMA. Hedef 250-450 kelime.
+YAPI (görsel + akademik):
+• *Konu Adı* — sorulan TAM konuyu başlığa yaz (emoji + bold)
+• Net tanım + SEZGİSEL açıklama (neden/nasıl, günlük analoji)
+• Varsa formül (LaTeX: \\( ... \\)) + adım adım mantığı
+• 1-2 GERÇEK HAYAT / YKS örneği
+• 💡 YKS ipucu: nerede çıkar, sık yapılan hata
+• Kısa kapanış + öğrenciye yönlendiren bir soru
+GÖRSEL DÜZEN: emoji başlıklar, *bold* anahtar terimler, listeler. Veri/karşılaştırma/trend
+uygunsa ```chart bloğu ekle (WhatsApp'ta otomatik grafik görseline dönüşür).
+RAG/pre-fetch içeriği geldiyse onu ÖZÜMSE + derinleştir (kopyalama, anlat).
+═══════════════════════════════════════════════════════════════════════
+"""
+
+# Bu addon'un uygulanacağı akademik/kavramsal intent'ler
+_ACADEMIC_INTENTS = frozenset({
+    "kavram_aciklama", "ders_anlatim", "formul_aciklama", "konu_anlatim_uzun",
+    "ozet_iste", "yontem_iste", "cozum_iste", "ornek_uretim", "karsilastirma",
+})
+
+
+def needs_academic_depth(intent: str = "", lane: str = "") -> bool:
+    """Akademik derinlik addon'u uygulanmalı mı?"""
+    if intent and intent in _ACADEMIC_INTENTS:
+        return True
+    if lane in ("kavramsal_kisa", "kavramsal", "aciklama", "ders_anlatim"):
+        return True
+    return False
+
+
 def needs_chat_quality(lane: str = "", sentiment: str = "", message: str = "") -> bool:
     """Cerebras cevabına sohbet/duygu kalite şablonu eklensin mi?"""
     if sentiment in ("stressed", "negative", "angry", "crisis"):

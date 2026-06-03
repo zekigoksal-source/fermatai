@@ -51,14 +51,21 @@ _PATTERNS = {
             r"istemiyorum|bosuna|anlamsi[zs]",
             r"neden calis|niye\s*u[gğ]ra[sş]",
             r"uskum|s[iı]k[iı]ld[iı]m.*ders|b[iı]ktim",
-            r"pes etmek|vazgec|b[iı]rakmak",
+            r"pes etmek|pes ettim|vazgec|b[iı]rakmak",
             r"moralim bozuk|mutsuzum|umutsuzum",
             # Oturum Mentenans (21 Nisan 14:28)
             r"motivasyon(um)?\s*d[uü]s[uü]k",
             r"caliamiyorum|[cç]al[iı][sş]amiyorum",
             r"hic?bir\s*seyi\s*(yap|ist|[cç]al)",
+            # 25.56 (Neo denetim — canlı test: "motivasyonum bitti" kaçıyordu):
+            r"motivasyon(um)?\s*(bitti|t[uü]kendi|kalmad[iı]|s[iı]f[iı]r)",
+            r"ba[sş]layam[iı]yorum|ba[sş]layabilmiyorum|ba[sş]layam[iı]yor",
+            r"yapamayaca[gğ][iı]m|yapamam\b|beceremiyorum",
+            r"hic?bir\s*[sş]ey(e|i)\s*(ba[sş]la|yapa|ist)",
+            r"enerjim\s*yok|yorgunum.*ders|tak[iı]ts[iı]z",
+            r"i[cç]im\s*ge[cç]miyor|gaz[iı]m\s*yok|hevesim\s*(yok|kalmad)",
         ],
-        "confidence_boost": r"ger[cç]ekten|artik|surekli|hic",
+        "confidence_boost": r"ger[cç]ekten|artik|surekli|hic|galiba",
     },
     "ogrenme_bloku": {
         "keywords": [

@@ -4344,6 +4344,14 @@ class FermatCoreAgent:
                     + _cerebras_enrich
                 )
                 logger.info(f"  [YEREL] Cerebras enrichment kuyruğa eklendi (+{len(_cerebras_enrich)} char)")
+            # (d) 25.56 — Akademik derinlik addon (EN SONA → recency; "kısa" lane'i bilinçli aşar)
+            try:
+                from chat_quality import ACADEMIC_DEPTH_ADDON, needs_academic_depth
+                if needs_academic_depth(_intent or "", _lane or ""):
+                    _lane_tail += ACADEMIC_DEPTH_ADDON
+                    logger.info("  [YEREL] Akademik derinlik addon eklendi (doyurucu uzun cevap)")
+            except Exception:
+                pass
             # TEK [LANE TALIMATI] marker — kuyruk varsa chat_local_async Cerebras'a taşır
             if _lane_tail:
                 _lane_system = _lane_system + "\n\n[LANE TALIMATI]\n" + _lane_tail
