@@ -87,16 +87,43 @@ def is_crisis_message(message: str) -> bool:
     return bool(message and _CRISIS_RE.search(message))
 
 
+# Yanlış/halüsinasyon kriz hattı satırları: 182 (=MHRS hastane randevu, ruh sağlığı DEĞİL),
+# 154, 188 vb. Canlı test: model "182 (Alo 182) ruh sağlığı hattı ve 154 (Alo 154)" uydurdu.
+# Aynı satırda hat/destek bağlamıyla geçen yanlış numaralı satırı temizle (183 + 112 doğru, kalır).
+_WRONG_HOTLINE_RE = _re.compile(
+    r"(?:alo\s*0?(?:182|154|188)\b|\b0?(?:182|154|188)\b)"
+    r".{0,40}?(?:hat|destek|ruh|psikol|ara|servis|yardım|yardim|imdat)"
+    r"|(?:hat|destek|ruh|psikol|servis)"
+    r".{0,40}?(?:alo\s*0?(?:182|154|188)\b|\b0?(?:182|154|188)\b)",
+    _re.IGNORECASE,
+)
+
+
+def _scrub_wrong_hotlines(answer: str) -> str:
+    """Kriz cevabından yanlış hat satırlarını çıkar (182/154/188 destek hattı iddiaları).
+    183 içeren satırlara dokunma."""
+    out = []
+    for line in (answer or "").split("\n"):
+        low = line.lower()
+        if "183" not in low and _WRONG_HOTLINE_RE.search(low):
+            continue  # yanlış hat satırı — at
+        out.append(line)
+    # Arka arkaya boş satırları sadeleştir
+    txt = "\n".join(out)
+    txt = _re.sub(r"\n{3,}", "\n\n", txt)
+    return txt.rstrip()
+
+
 def ensure_crisis_safety(message: str, answer: str) -> str:
     """Kriz mesajıysa cevapta DOĞRU güvenlik hattı (ALO 183) + rehber garanti et.
-    Model 112/182 gibi yanlış/eksik hat verebilir → deterministik footer ekle.
-    ALO 183 zaten doğru geçmişse dokunma (çift footer olmasın)."""
+    Model 112/182/154 gibi yanlış hat verebilir → yanlış satırları temizle + doğru footer ekle.
+    ALO 183 zaten doğru geçmişse footer'ı tekrarlamaz (çift footer olmasın)."""
     if not is_crisis_message(message):
         return answer
-    low = (answer or "").lower()
-    if "183" in low:  # model zaten doğru hattı vermiş
-        return answer
-    return (answer or "").rstrip() + _CRISIS_FOOTER
+    ans = _scrub_wrong_hotlines(answer)  # önce yanlış hatları temizle
+    if "183" in ans.lower():  # model zaten doğru hattı vermiş (ve scrub korudu)
+        return ans
+    return ans.rstrip() + _CRISIS_FOOTER
 
 
 def needs_chat_quality(lane: str = "", sentiment: str = "", message: str = "") -> bool:
