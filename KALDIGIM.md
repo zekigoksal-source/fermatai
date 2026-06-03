@@ -1,12 +1,28 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 3 Haziran 2026 → **OTURUM 25.55 (Opus 4.8): HİBRİT KALİTE — Cerebras non-tool chat A+ ana yüklenici + duygu/sohbet SICAKLIK şablonu + DETERMİNİSTİK KRİZ GÜVENLİK AĞI (ALO 183 garanti)**
+> **Son güncelleme:** 3 Haziran 2026 → **OTURUM 25.55→25.56 (Opus 4.8): HİBRİT KALİTE (Cerebras non-tool A+ + kriz ALO 183 ağı) → CEREBRAS KAZANIM ENTEGRASYONU (pedagoji/RAG/render/uzunluk öksüzlüğü çözüldü)**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.55, 3 Haz)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `dbc5eaf` (kriz scrub kategorik) ← `1f16d94` (kriz scrub) ← `3c8e063` (kriz güvenlik ağı ALO 183) ← `7e68876` (emo-keyword fallback) ← `45506b4` (kriz-split kaldır + chat_quality şablonu) ← `9bcf410` (hibrit routing duygu→Cerebras) ← 25.54 (dikey-AI tam yığın)
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `dbc5eaf`, restart sonrası canlı, PostgreSQL OK
+> - **HEAD:** `722ea9b` (egitim_psikoloji coverage + akademik derinlik) ← `26759ca` (Cerebras kazanım entegrasyonu FIX1-4) ← `e1d6a07` (25.55 dok) ← `dbc5eaf` (kriz scrub) ← `3c8e063` (kriz ALO 183 ağı) ← `45506b4` (kriz-split kaldır + chat_quality) ← 25.54 (dikey-AI)
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `722ea9b`, restart canlı, PostgreSQL OK
+>
+> ## 🔥 3 Haz (Oturum 25.56) — CEREBRAS KAZANIM ENTEGRASYONU (öksüzlük denetimi + fix)
+>
+> **Neo endişesi:** "Routing değiştikçe (Ollama→Groq→Cerebras) geçmişte literatür taramasıyla kurduğumuz pedagojik şablonlar, RAG akademik DB, render araçları, motivasyon yapıları boşta kalmış olabilir. Cerebras bu kazanımlardan faydalanıyor mu? Cevaplar uzun, akademik doyurucu, görsel A+, tüm ajantik araçları max kullanmış olmalı — Claude/ChatGPT'nin ötesine geç."
+>
+> **3 paralel denetim (Explore) → Neo %100 HAKLI. KÖK MEKANİZMA:** `chat_local_async` (llm_router:1264-1281) kendi kısa `_local_system_with_date()`'ini kurar; geçen `system`'den SADECE arayan adı + `[LANE TALIMATI]` işaretinden SONRAKİ kuyruğu korur. `_role_aware_prompt`'taki TÜM dinamik enrichment (egitim_psikoloji müdahale, pedagoji_block anekdot/kavram, renderer_hint, topic_hint) `[LANE TALIMATI]` ÖNCESİNDE → `parts[0]`'da **ÇÖPE gidiyordu**. (Bonus bug: lane=None ise marker yok → 25.55 CHAT_QUALITY_ADDON bile çöpe — kriz/duygu mesajlarında.)
+>
+> **6 FIX (hepsi canlı VPS test edildi):**
+> - **FIX1 (fermat_core):** `_cerebras_enrich` collector + local path TEK `[LANE TALIMATI]` kuyruk yeniden yapısı → egitim_psikoloji + pedagoji_block + renderer_hint + topic_hint + CHAT_QUALITY_ADDON her zaman Cerebras'a ulaşır (lane=None fix dahil). Smoke test: "enrichment kuyruğa eklendi +1902 char", Cerebras in=8495 tok (eski ~3000).
+> - **FIX2 (cerebras_prefetch):** RAG 2→4 hit, 350→650 char + akademik içerik fallback (intent kaçsa bile akademik soru RAG alır). Prefetch 700→2074-3354 char.
+> - **FIX3 (llm_router):** WP token cap akademik intent'lerde 1500→3000 (selamlama/sohbet 1500).
+> - **FIX4 (renderer_hint_inject):** WhatsApp chart-only hint (```chart QuickChart image'a dönüyor; 3d/sim WP'de ham kod, teşvik edilmez).
+> - **FIX5 (egitim_psikoloji):** motivasyon_dusuk keyword genişletildi ("motivasyonum bitti"/"başlayamıyorum"/"yapamayacağım"/"pes ettim"/"enerjim yok" → conf≥0.5; eski detector kaçırıyordu, müdahale tetiklenmiyordu).
+> - **FIX6 (chat_quality + fermat_core):** ACADEMIC_DEPTH_ADDON — akademik intent'te kuyruğun EN SONUNA (recency) doyurucu uzun cevap direktifi (250-450 kelime, görsel yapı, formül, örnek, YKS ipucu, chart). Lane "max 150 kelime" kısıtını bilinçli aşar.
+>
+> **A/B test sonuçları (VPS canlı):** Akademik (fotosentez) 1114→1456 char (RAG-temelli derinlik + LaTeX + Calvin döngüsü + ipucu). Duygusal (motivasyon bitti): müdahale YOK→self_determination+flow+values_clarification literatürü + sıcak ton. Smoke test full-agent HATA YOK.
 > - **LLM ZİNCİRİ (GÜNCEL):** Fast Response → **Cerebras gpt-oss-120b** (tek Cerebras modeli) → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool-calling/render-veri/kompleks). **+ DeepSeek-reasoner** (foto matematik, key-gated). Ollama = embeddings-only.
 > - **HİBRİT KALİTE BÖLÜMÜ (25.55):** Cerebras = TÜM non-tool chat (kavramsal+render, duygu, kriz, sohbet, motivasyon) ANA YÜKLENİCİ. Claude = SADECE tool-calling (DB/Eyotek veri, write, foto vision), render-with-veri, kompleks analiz. Ayırma çizgisi RENDER değil **VERİ KAYNAĞI** (kavramsal render→Cerebras, öğrenci-özel veri→Claude tool). Duygu AYRILMAZ (kriz dahil hepsi Cerebras + güvenlik ağı).
 > - **MODEL SAĞLIK MONİTÖRÜ (25.50):** `model_health.py` günlük 06:00 — 5/5 sağlıklı. WP: "model durum".
