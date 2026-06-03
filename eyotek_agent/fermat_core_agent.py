@@ -4449,7 +4449,16 @@ class FermatCoreAgent:
                 # Ollama'nın kişisel veri sorusuna uydurma sayı ile cevap verme riski
                 else:
                     import re as _re
-                    if _re.search(r"(devams[iı]zl[iı]|program|sinav|sınav|deneme|net\b|etut|etüt|sinif|sınıf|ogrenci|öğrenci)", user_input.lower()):
+                    # 25.55 (Neo hibrit review): EMOSYONEL mesajda Cerebras cevabındaki
+                    # sayılar (nefes "4-7-8", "3 adım") PEDAGOJİK — uydurma veri DEĞİL.
+                    # Emosyonel ise bu halüsinasyon-eskalasyonunu ATLA (Cerebras A+ cevabı kalsın).
+                    _emo_resp = False
+                    try:
+                        from sentiment_tracker import detect_sentiment as _ds_h
+                        _emo_resp = _ds_h(user_input) in ("stressed", "negative", "angry", "crisis")
+                    except Exception:
+                        pass
+                    if (not _emo_resp) and _re.search(r"(devams[iı]zl[iı]|program|sinav|sınav|deneme|net\b|etut|etüt|sinif|sınıf|ogrenci|öğrenci)", user_input.lower()):
                         # Mesaj veri soruyorsa ama fast_response yakalamamış — Claude daha güvenli
                         if _re.search(r'\b\d{1,3}[.,]\d\b', answer):
                             # Ollama net/puan gibi spesifik sayı uydurmuş olabilir
