@@ -4056,6 +4056,24 @@ async def try_fast_response(
         staff_name = _tr_title(staff_name)
 
     # ══════════════════════════════════════════════════════════════════════
+    # 25.55 (Neo hibrit review) — DUYGU DEFER (EN ÜST, tüm content-handler'lardan ÖNCE):
+    # Emosyonel mesaj fast-canned template'e takılmasın → Cerebras bağlamla A+ yönetsin.
+    # Test kanıtladı: Cerebras stres/kaygı/moral'i bağlamla A+ yönetiyor (konu kaymadan).
+    # Non-kriz → decide_route emotion→Cerebras. Kriz → decide_route Claude (güvenlik).
+    # ══════════════════════════════════════════════════════════════════════
+    if role == "ogrenci" and caller_phone:
+        try:
+            from sentiment_tracker import detect_sentiment as _ds_emo
+            _emo = _ds_emo(message)
+            if _emo in ("stressed", "negative", "angry", "crisis"):
+                import logging as _lg_emo
+                _lg_emo.getLogger(__name__).info(
+                    f"[EMO-DEFER] phone={caller_phone[-4:]} sentiment={_emo} → LLM (Cerebras/Claude bağlamla, fast-canned değil)")
+                return None
+        except Exception:
+            pass
+
+    # ══════════════════════════════════════════════════════════════════════
     # 📸 FOTO LIMIT GUARD (9 May, Neo direktif)
     # "foto" + "limit/hak/sınır" geçen herhangi bir mesaj direkt foto_hakki
     # handler'a gitsin. Cerebras/Claude "limit yok" diyerek kullanıcıyı
@@ -4439,25 +4457,6 @@ async def try_fast_response(
                     return None
         except Exception:
             pass  # context bridge hatasi akisi bozmasin
-
-    # ══════════════════════════════════════════════════════════════════════
-    # 25.55 (Neo hibrit review) — DUYGU DEFER: emosyonel mesaj fast-canned DEĞİL,
-    # Cerebras bağlamla A+ yönetsin (test kanıtladı: Berat stres → Cerebras stres
-    # temasında kaldı). Fast emotional/motivasyon template'leri "amatör" hissi
-    # veriyordu. Non-kriz duygu → None (decide_route emotion→Cerebras local).
-    # Kriz → None ama decide_route Claude'a yollar (güvenlik korunur).
-    # ══════════════════════════════════════════════════════════════════════
-    if role == "ogrenci" and caller_phone:
-        try:
-            from sentiment_tracker import detect_sentiment
-            _emo = detect_sentiment(message)
-            if _emo in ("stressed", "negative", "angry", "crisis"):
-                import logging
-                logging.getLogger(__name__).info(
-                    f"[EMO-DEFER] phone={caller_phone[-4:]} sentiment={_emo} → LLM (Cerebras/Claude bağlamla, fast-canned değil)")
-                return None
-        except Exception:
-            pass
 
     # ══════════════════════════════════════════════════════════════════════
     # ADMIN ERKEN BYPASS — Admin mesajları SADECE selamlama + "not et" fast'te kalır
