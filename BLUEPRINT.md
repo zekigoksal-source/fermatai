@@ -6,8 +6,9 @@
 >
 > | Metrik | Değer |
 > |--------|-------|
-> | **VPS HEAD** | `722ea9b` — Bridge HTTP 200 ✅, restart canlı, git senkron |
+> | **VPS HEAD** | `4b3263d` — Bridge HTTP 200 ✅, restart canlı, git senkron |
 > | **Cerebras kazanım entegrasyonu (25.56)** | KÖK: `chat_local_async` full `_role_aware_prompt`'u atıyordu (sadece `[LANE TALIMATI]` kuyruğu korunuyor) → pedagoji/psikoloji/render/topic enrichment ÇÖPE gidiyordu. FIX: `_cerebras_enrich` collector + TEK `[LANE TALIMATI]` kuyruk → egitim_psikoloji müdahale + anekdot/kavram + RAG(2→4 hit,650char) + renderer + akademik derinlik addon Cerebras'a ulaşır. Smoke: Cerebras in=8495 tok (eski ~3000), akademik cevap 1114→1456 char. |
+> | **Kanal önceliği + render rotası (25.56)** | ANA KANAL=web/app (olgun). WhatsApp=ikincil (render chart-only). Test: Cerebras render uyumu ~%25 vs Claude %100. NEO KARARI akıllı eşik (FIX7): web render-değerli akademik (formül/karşılaştırma/veri/adım — `detect_renderer_need`) → Claude; saf "nedir"+sohbet+duygusal → Cerebras. WhatsApp etkilenmez. |
 > | **LLM zinciri** | Fast Response → **Cerebras gpt-oss-120b** → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool/render-veri/kompleks) · **+ DeepSeek-reasoner** (foto matematik, key-gated) · Ollama = embeddings-only |
 > | **Hibrit kalite bölümü (25.55)** | Cerebras = TÜM non-tool chat ANA YÜKLENİCİ (kavramsal+render, duygu, **kriz**, sohbet, motivasyon). Claude = SADECE tool-calling (DB/Eyotek veri, write, foto vision) + render-with-veri + kompleks analiz. Ayırma çizgisi RENDER değil **VERİ KAYNAĞI**. Duygu AYRILMAZ (kriz dahil). |
 > | **Kriz güvenlik ağı (25.55)** | `chat_quality.ensure_crisis_safety` — kriz mesajında modelin uydurduğu yanlış hatları (182/154/1822) KATEGORİK temizler + tek yetkili footer (**ALO 183** Sosyal Destek + 112 + rehber) garanti. Local+cloud finalize defense-in-depth. SAFETY-CRITICAL, modele bırakılmaz. |

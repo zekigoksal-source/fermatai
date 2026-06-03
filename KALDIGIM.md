@@ -5,8 +5,15 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `722ea9b` (egitim_psikoloji coverage + akademik derinlik) ← `26759ca` (Cerebras kazanım entegrasyonu FIX1-4) ← `e1d6a07` (25.55 dok) ← `dbc5eaf` (kriz scrub) ← `3c8e063` (kriz ALO 183 ağı) ← `45506b4` (kriz-split kaldır + chat_quality) ← 25.54 (dikey-AI)
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `722ea9b`, restart canlı, PostgreSQL OK
+> - **HEAD:** `4b3263d` (web akıllı render eşiği FIX7) ← `722ea9b` (egitim_psikoloji + akademik derinlik FIX5-6) ← `26759ca` (Cerebras kazanım entegrasyonu FIX1-4) ← `dbc5eaf` (kriz scrub) ← `45506b4` (25.55 kriz-split + chat_quality) ← 25.54 (dikey-AI)
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `4b3263d`, restart canlı, PostgreSQL OK
+>
+> ## 🎯 KANAL ÖNCELİĞİ + RENDER ROTASI (25.56, Neo netleştirme + karar)
+>
+> - **ANA KANAL = web/app/mobil web** (olgun, oturmuş — öğrenciler buraya yönlendiriliyor). **WhatsApp = İKİNCİL** (render chart-only, kısıt var).
+> - **Ampirik render bulgusu (test):** Cerebras gpt-oss-120b kavramsal akademik soruda render bloğu uyumu **~%25** (güçlü+format direktifle bile 1/4); **Claude Sonnet %100** (3/3 + daha uzun 2335-3109 char). Cerebras düz-metin eğilimli, prompt'la zorlanamıyor.
+> - **NEO KARARI — Akıllı eşik (FIX7):** Web'de render-DEĞERLİ akademik (formül-ağır türev/integral/limit, karşılaştırma, veri/trend, adım adım — `detect_renderer_need` sinyali) → **Claude** (tutarlı render+derinlik). Saf "nedir" kavramsal (manyetik alan/hücre/fotosentez/osmanlı) + sohbet + duygusal → **Cerebras** (zengin metin, hızlı, ucuz). Tutucu eşik = maliyet kontrollü. WhatsApp ikincil ETKİLENMEZ.
+> - **Bilinen pre-existing (WhatsApp):** academic→Claude giderse ```steps/```formula ham kod görünür (sadece ```chart→QuickChart image dönüyor). İkincil kanal, düşük öncelik — ileride WhatsApp render-strip eklenebilir.
 >
 > ## 🔥 3 Haz (Oturum 25.56) — CEREBRAS KAZANIM ENTEGRASYONU (öksüzlük denetimi + fix)
 >
