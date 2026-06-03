@@ -4267,28 +4267,15 @@ class FermatCoreAgent:
             # yakaliyor, buraya geldiysek tool/analiz gerekiyor
             complexity = "cloud"
 
-        # 25.55 (Neo direktif + hibrit kalite testi): Psikoloji override RAFINE edildi.
-        # ESKİ: HER duygu → Claude (Ollama-bad-emotion korkusu, 21 Nis). YENİ: Cerebras
-        # gpt-oss-120b bağlamla duyguyu A+ yönetiyor (test kanıtladı). Sadece KRİZ
-        # (intihar/kendine zarar) → Claude ZORUNLU (güvenlik). Normal duygu (sınav
-        # kaygısı/stres/moral) → Cerebras'ta KAL (history + DUYGU MODU kuralı, çok ucuz).
+        # 25.55 (Neo direktif: "duyguları ayırmak verimsiz ve gereksiz — kriz diyalogunda
+        # da Cerebras gayet yeterli"): TÜM duygu (stres/kaygı/moral/KRİZ dahil) Cerebras'ta
+        # KALIR. Kriz güvenliği kriz-split ile değil, chat_quality.CHAT_QUALITY_ADDON ile
+        # sağlanır (Cerebras local path'inde ALO 183 + rehber + sıcaklık şablonu enjekte
+        # edilir; Claude gold cevaptan damıtıldı, test edildi). Eski crisis→cloud kaldırıldı.
         if complexity == "local":
-            try:
-                _ddurum = locals().get("_detected_durum")
-                _is_crisis = False
-                try:
-                    from sentiment_tracker import detect_sentiment
-                    if detect_sentiment(user_input) == "crisis":
-                        _is_crisis = True
-                except Exception:
-                    _is_crisis = bool(_ddurum)  # detektör fail → eski güvenli davranış
-                if _is_crisis:
-                    logger.info("  [ESKALASYON] KRİZ tespit — Claude'a zorunlu (güvenlik)")
-                    complexity = "cloud"
-                elif _ddurum:
-                    logger.info(f"  [DUYGU] {_ddurum} → Cerebras bağlamla (DUYGU MODU, A+ ucuz)")
-            except Exception:
-                pass
+            _ddurum = locals().get("_detected_durum")
+            if _ddurum:
+                logger.info(f"  [DUYGU] {_ddurum} → Cerebras bağlam + kalite şablonu (A+ ucuz, kriz güvenli)")
 
         if complexity == "local" and self.router.is_local_available:
             # Oturum 25.22+: Router Cerebras-first, Groq fallback, Ollama son fallback
@@ -4308,6 +4295,22 @@ class FermatCoreAgent:
                     if _addon:
                         _lane_system = _lane_system + "\n\n[LANE TALIMATI]\n" + _addon
                         logger.info(f"  [YEREL] Lane: {_lane} ({_hangi} aciliyor)")
+            except Exception:
+                pass
+            # 25.55 (Neo direktif): sohbet/duygu/kriz → Cerebras'a Claude-kalitesi şablonu
+            # (SICAKLIK + kriz güvenliği ALO 183/rehber + render). Test: Claude gold'dan damıtıldı.
+            # Duyguları AYIRMA — kriz dahil Cerebras yönetir, ama bu şablonla A+ + güvenli.
+            try:
+                from chat_quality import CHAT_QUALITY_ADDON, needs_chat_quality
+                _snt_cq = ""
+                try:
+                    from sentiment_tracker import detect_sentiment as _ds_cq
+                    _snt_cq = _ds_cq(user_input)
+                except Exception:
+                    pass
+                if needs_chat_quality(_lane or "", _snt_cq):
+                    _lane_system = _lane_system + CHAT_QUALITY_ADDON
+                    logger.info("  [YEREL] Sohbet/duygu A+ şablonu eklendi (Cerebras Claude-kalitesi + kriz güvenliği)")
             except Exception:
                 pass
 

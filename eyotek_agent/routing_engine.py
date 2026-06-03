@@ -183,17 +183,12 @@ def decide_route(
     # Duygu/psikolojik belirtisi varsa Ollama'ya GITMESIN, Claude'a zorunlu.
     # Fix 4 (egitim_psikoloji pattern'larıyla hizalı).
     if detect_duygu_psikoloji(message):
-        # 25.55 (Neo direktif + hibrit kalite testi): KRİZ (intihar/kendine zarar) →
-        # Claude ZORUNLU (güvenlik). Normal duygu (stres/kaygı/moral) → Cerebras
-        # bağlamla A+ (test: Berat stres vakası Cerebras'ta stres temasında kaldı,
-        # fizik'e geçmedi; çok daha ucuz). Cerebras self.history + DUYGU MODU kuralı alır.
-        # Duygu ASLA tool gerektirmez → Cerebras güvenli (tool eksikliği sorun değil).
-        try:
-            from sentiment_tracker import detect_sentiment
-            if detect_sentiment(message) == "crisis":
-                return "claude"
-        except Exception:
-            return "claude"  # detektör fail → güvenli taraf (Claude)
+        # 25.55 (Neo direktif: "duyguları ayırmak verimsiz ve gereksiz — kriz diyalogunda
+        # da Cerebras gayet yeterli"): TÜM duygu (stres/kaygı/moral/KRİZ dahil) → Cerebras.
+        # Kriz güvenliği kriz-split ile DEĞİL, chat_quality.CHAT_QUALITY_ADDON ile sağlanır
+        # (Cerebras local path'inde ALO 183 + rehber + sıcaklık şablonu enjekte edilir —
+        # Claude gold cevaptan damıtıldı, test edildi). Duygu ASLA tool gerektirmez →
+        # Cerebras self.history + DUYGU MODU + kalite şablonu ile A+ + çok daha ucuz.
         return "local"
 
     # ── 0c. SECURITY INTENT GUARD (25.40z3-ROUTING-FIX1, EN ÜST GÜVENLİK) ──
