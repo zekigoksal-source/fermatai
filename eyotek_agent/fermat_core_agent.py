@@ -4681,6 +4681,14 @@ class FermatCoreAgent:
                         from conversation_memory import strip_redundant_greeting
                         answer = strip_redundant_greeting(answer, self.history)
                     except Exception: pass
+                    # 25.55 KRİZ GÜVENLİK AĞI (deterministik): kriz mesajıysa cevapta DOĞRU
+                    # hat (ALO 183) garanti. Canlı test: Cerebras şablonla bile 112/182
+                    # (yanlış) verebiliyor → safety-critical, modele bırakılmaz.
+                    try:
+                        from chat_quality import ensure_crisis_safety
+                        answer = ensure_crisis_safety(user_input, answer)
+                    except Exception:
+                        pass
                     self.history.append({"role": "assistant", "content": answer})
                     await _log_conversation(
                         self.session_id, caller_phone, role,
@@ -5109,6 +5117,13 @@ class FermatCoreAgent:
                             answer = answer + footer
                             logger.info(f"  [ENRICH_FOOTER] Claude path +{len(footer)} char")
 
+                # 25.55 KRİZ GÜVENLİK AĞI (defense-in-depth): Claude güvenilir 183 verir
+                # ama safety-critical → cloud path'te de garanti et.
+                try:
+                    from chat_quality import ensure_crisis_safety
+                    answer = ensure_crisis_safety(user_input, answer)
+                except Exception:
+                    pass
                 # History'ye response.content (TextBlock list) yerine duz string ekle
                 # Boylece Ollama'ya geciste format sorunu olmaz
                 self.history.append({"role": "assistant", "content": answer})

@@ -60,6 +60,45 @@ _EMO_FALLBACK = _re.compile(
 )
 
 
+# ── KRİZ GÜVENLİK AĞI (deterministik — modele güvenme) ──────────────────────
+# Canlı test bulgusu: Cerebras kriz cevabında ŞABLONLA BİLE "112"/"182 (Alo 182)"
+# gibi YANLIŞ hat veriyordu (182 = MHRS hastane randevu; 183 = Sosyal Destek/psikolojik).
+# 27k system prompt sonuna eklenen şablon, modelin yanlış-numara eğilimini güvenilir
+# ezemiyor. Safety-critical → deterministik footer ile DOĞRU hat (ALO 183) garanti edilir.
+_CRISIS_RE = _re.compile(
+    r"yaşamak istemiyorum|yasamak istemiyorum|intihar|kendime zarar|kendime kıy|kendime kiy|"
+    r"canıma kıy|canima kiy|ölmek istiyorum|olmek istiyorum|hayata son|yok olmak istiyorum|"
+    r"bitsin artık|bitsin artik|değersiz hissed|degersiz hissed|değersizim|degersizim|"
+    r"yaşamın anlamı yok|yasamin anlami yok|kaybolmak istiyorum|dayanamıyorum artık|dayanamiyorum artik",
+    _re.IGNORECASE,
+)
+
+_CRISIS_FOOTER = (
+    "\n\n———\n"
+    "💛 *Yalnız değilsin, yanındayım.* Bunları konuşabileceğin profesyonel destek var:\n"
+    "📞 *ALO 183 — Sosyal Destek Hattı* (7/24, ücretsiz ve gizli)\n"
+    "🚨 Hayati bir tehlike varsa hemen *112*\n"
+    "İstersen kurumumuzun *rehber öğretmeniyle* bir görüşme de ayarlayabilirim — sadece söyle."
+)
+
+
+def is_crisis_message(message: str) -> bool:
+    """Mesaj net bir kriz/kendine zarar sinyali içeriyor mu? (tutucu — yalnız açık ifadeler)"""
+    return bool(message and _CRISIS_RE.search(message))
+
+
+def ensure_crisis_safety(message: str, answer: str) -> str:
+    """Kriz mesajıysa cevapta DOĞRU güvenlik hattı (ALO 183) + rehber garanti et.
+    Model 112/182 gibi yanlış/eksik hat verebilir → deterministik footer ekle.
+    ALO 183 zaten doğru geçmişse dokunma (çift footer olmasın)."""
+    if not is_crisis_message(message):
+        return answer
+    low = (answer or "").lower()
+    if "183" in low:  # model zaten doğru hattı vermiş
+        return answer
+    return (answer or "").rstrip() + _CRISIS_FOOTER
+
+
 def needs_chat_quality(lane: str = "", sentiment: str = "", message: str = "") -> bool:
     """Cerebras cevabına sohbet/duygu kalite şablonu eklensin mi?"""
     if sentiment in ("stressed", "negative", "angry", "crisis"):
