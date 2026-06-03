@@ -1,13 +1,15 @@
 # 🏛️ FermatAI — Sistem Mimarisi & Teknik Blueprint
 
-> **Belge tarihi:** 2 Haziran 2026 · **Oturum:** 25.49→25.54 MEGA ARK (Opus 4.8) — Sentry temizlik + Model Dayanıklılık + Konuşma Kalite + **DİKEY-AI TAM YIĞIN**
+> **Belge tarihi:** 3 Haziran 2026 · **Oturum:** 25.55 (Opus 4.8) — **HİBRİT KALİTE: Cerebras non-tool chat A+ ana yüklenici + duygu/sohbet sıcaklık şablonu + deterministik kriz güvenlik ağı (ALO 183)**
 >
-> ## 🟢 SON DURUM SNAPSHOT (25.54, 2 Haz)
+> ## 🟢 SON DURUM SNAPSHOT (25.55, 3 Haz)
 >
 > | Metrik | Değer |
 > |--------|-------|
-> | **VPS HEAD** | `20cc8b9` — Bridge HTTP 200 ✅, NRestarts=0, git senkron |
-> | **LLM zinciri** | Fast Response → **Cerebras gpt-oss-120b** → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool/hassas) · **+ DeepSeek-reasoner** (foto matematik, key-gated) · Ollama = embeddings-only |
+> | **VPS HEAD** | `dbc5eaf` — Bridge HTTP 200 ✅, restart canlı, git senkron |
+> | **LLM zinciri** | Fast Response → **Cerebras gpt-oss-120b** → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool/render-veri/kompleks) · **+ DeepSeek-reasoner** (foto matematik, key-gated) · Ollama = embeddings-only |
+> | **Hibrit kalite bölümü (25.55)** | Cerebras = TÜM non-tool chat ANA YÜKLENİCİ (kavramsal+render, duygu, **kriz**, sohbet, motivasyon). Claude = SADECE tool-calling (DB/Eyotek veri, write, foto vision) + render-with-veri + kompleks analiz. Ayırma çizgisi RENDER değil **VERİ KAYNAĞI**. Duygu AYRILMAZ (kriz dahil). |
+> | **Kriz güvenlik ağı (25.55)** | `chat_quality.ensure_crisis_safety` — kriz mesajında modelin uydurduğu yanlış hatları (182/154/1822) KATEGORİK temizler + tek yetkili footer (**ALO 183** Sosyal Destek + 112 + rehber) garanti. Local+cloud finalize defense-in-depth. SAFETY-CRITICAL, modele bırakılmaz. |
 > | **Model sağlık** | `model_health.py` günlük 06:00 ping — **5/5 sağlıklı** (cerebras+claude+deepseek+2 groq). Emekli/bakiye-bitti → Neo alarm. WP: "model durum" |
 > | **DİKEY-AI motoru** | BKT ustalık + FSRS tekrar (knowledge_state) · deneme röntgeni (exam_xray) · 360° dijital ikiz + risk (digital_twin) · adaptif soru (practice_engine) · foto hata-teşhisi · model hafıza (remember_student_insight) — **HEPSİ on-demand, OUTREACH OFF** |
 > | **Güvenlik** | `OUTREACH_ENABLED=false` → öğrenciye otomatik mesaj send-katmanında bloklanır. Yeni 6 tool ogrenci kendi soz_no zorlanır. Risk/devamsızlık öğrenciye gizli (Dashboard Vizyonu). |

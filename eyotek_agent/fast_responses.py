@@ -4059,7 +4059,8 @@ async def try_fast_response(
     # 25.55 (Neo hibrit review) — DUYGU DEFER (EN ÜST, tüm content-handler'lardan ÖNCE):
     # Emosyonel mesaj fast-canned template'e takılmasın → Cerebras bağlamla A+ yönetsin.
     # Test kanıtladı: Cerebras stres/kaygı/moral'i bağlamla A+ yönetiyor (konu kaymadan).
-    # Non-kriz → decide_route emotion→Cerebras. Kriz → decide_route Claude (güvenlik).
+    # 25.55-rev: Neo "duyguları ayırma" → KRİZ DAHİL hepsi Cerebras (decide_route emotion→local).
+    # Kriz güvenliği routing-split ile DEĞİL, chat_quality.ensure_crisis_safety (ALO 183 footer) ile.
     # ══════════════════════════════════════════════════════════════════════
     if role == "ogrenci" and caller_phone:
         try:
@@ -4068,7 +4069,7 @@ async def try_fast_response(
             if _emo in ("stressed", "negative", "angry", "crisis"):
                 import logging as _lg_emo
                 _lg_emo.getLogger(__name__).info(
-                    f"[EMO-DEFER] phone={caller_phone[-4:]} sentiment={_emo} → LLM (Cerebras/Claude bağlamla, fast-canned değil)")
+                    f"[EMO-DEFER] phone={caller_phone[-4:]} sentiment={_emo} → Cerebras bağlamla (fast-canned değil)")
                 return None
         except Exception:
             pass

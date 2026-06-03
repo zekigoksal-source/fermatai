@@ -55,7 +55,10 @@ _TOOL_REQUIRED = re.compile(
     re.IGNORECASE,
 )
 
-# Duygu/kriz keyword'leri (Claude zorunlu)
+# Duygu/kriz keyword'leri — Groq-safe-LANE dışı (lane=None döner).
+# 25.55: Bu Claude'a ZORLAMAZ; genel Cerebras path devralır + chat_quality şablonu
+# (sıcaklık) + ensure_crisis_safety (ALO 183 footer) uygulanır. Sadece dar Groq-tool
+# lane'inden hariç tutar (kriz tool gerektirmez, sıcak diyalog ister).
 _KRIZ_PATTERN = re.compile(
     r'\b(intihar|olmek\s+istiyorum|ölmek\s+istiyorum|hayata\s+küs|hayata\s+kus|bitkin|'
     r'depresyon|panik\s+atak|kendime\s+zarar|vazgect|vazgeçt|her\s+ş?ey\s+anlamsiz|anlamsız|'

@@ -1,15 +1,30 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 2 Haziran 2026 → **OTURUM 25.49→25.54 MEGA ARK (Opus 4.8): Sentry temizlik → model dayanıklılık → konuşma kalite → DİKEY-AI TAM YIĞIN (BKT/FSRS + röntgen + ikiz + risk + pratik + hata teşhisi + DeepSeek + model hafıza)**
+> **Son güncelleme:** 3 Haziran 2026 → **OTURUM 25.55 (Opus 4.8): HİBRİT KALİTE — Cerebras non-tool chat A+ ana yüklenici + duygu/sohbet SICAKLIK şablonu + DETERMİNİSTİK KRİZ GÜVENLİK AĞI (ALO 183 garanti)**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.54, 2 Haz)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.55, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `9bcf410` (hibrit routing: duygu→Cerebras) ← `e5b0033` (exam sync auto-login fix) ← `b08936e` (konuşma analizi fix) ← `20cc8b9` (DeepSeek model_health izleme) ← 25.54 (4 kabiliyet + DeepSeek aktif) ← 25.53 (exam_xray+digital_twin) ← 25.52 (BKT+FSRS) ← 25.51 (hardening) ← 25.50 (model_health) ← 25.49 (Sentry temizlik)
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `20cc8b9`, NRestarts=0, PostgreSQL OK
-> - **LLM ZİNCİRİ (GÜNCEL):** Fast Response → **Cerebras gpt-oss-120b** (tek Cerebras modeli; qwen-235b+llama3.1-8b emekli 25.49-50) → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool-calling/hassas). **+ DeepSeek-reasoner** (foto matematik referans çözüm, key-gated, 25.54 aktif). Ollama = embeddings-only (chat'te DEĞİL).
-> - **MODEL SAĞLIK MONİTÖRÜ (25.50):** `model_health.py` günlük 06:00 — Cerebras/Groq/Claude/DeepSeek ping, emekli/bakiye-bitti tespiti → Neo'ya kritik alarm. Şu an **5/5 sağlıklı**. WP: "model durum".
-> - **DİKEY-AI MOTORU (25.52-54, hepsi on-demand, SIFIR otomatik öğrenci mesajı):** knowledge_state (BKT ustalık+FSRS tekrar), exam_xray (deneme röntgeni), digital_twin (360° + risk), practice_engine (adaptif soru), foto hata-teşhisi, remember_student_insight (model hafıza). OUTREACH_ENABLED=false (proaktif özellikler yeni sezonda).
+> - **HEAD:** `dbc5eaf` (kriz scrub kategorik) ← `1f16d94` (kriz scrub) ← `3c8e063` (kriz güvenlik ağı ALO 183) ← `7e68876` (emo-keyword fallback) ← `45506b4` (kriz-split kaldır + chat_quality şablonu) ← `9bcf410` (hibrit routing duygu→Cerebras) ← 25.54 (dikey-AI tam yığın)
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `dbc5eaf`, restart sonrası canlı, PostgreSQL OK
+> - **LLM ZİNCİRİ (GÜNCEL):** Fast Response → **Cerebras gpt-oss-120b** (tek Cerebras modeli) → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool-calling/render-veri/kompleks). **+ DeepSeek-reasoner** (foto matematik, key-gated). Ollama = embeddings-only.
+> - **HİBRİT KALİTE BÖLÜMÜ (25.55):** Cerebras = TÜM non-tool chat (kavramsal+render, duygu, kriz, sohbet, motivasyon) ANA YÜKLENİCİ. Claude = SADECE tool-calling (DB/Eyotek veri, write, foto vision), render-with-veri, kompleks analiz. Ayırma çizgisi RENDER değil **VERİ KAYNAĞI** (kavramsal render→Cerebras, öğrenci-özel veri→Claude tool). Duygu AYRILMAZ (kriz dahil hepsi Cerebras + güvenlik ağı).
+> - **MODEL SAĞLIK MONİTÖRÜ (25.50):** `model_health.py` günlük 06:00 — 5/5 sağlıklı. WP: "model durum".
+> - **DİKEY-AI MOTORU (25.52-54, on-demand, SIFIR otomatik öğrenci mesajı):** knowledge_state (BKT+FSRS), exam_xray, digital_twin, practice_engine, foto hata-teşhisi, remember_student_insight. OUTREACH_ENABLED=false.
+>
+> ## 🔥 3 Haz (Oturum 25.55) — HİBRİT CEREBRAS CHAT A+ + KRİZ GÜVENLİK AĞI
+>
+> **Neo direktifi (3 mesaj):** "(1) normal chat → Cerebras Claude-kalitesinde A+ A+ olmalı bağlam kusursuz, fast response amatör his verebiliyor gözden geçir. (2) duyguları ayırmak verimsiz/gereksiz — kriz diyalogunda da Cerebras yeterli, Claude SADECE tool/render/üst-analiz. Claude'a örnek ürettirip şablon yap Cerebras o kaliteye çıksın. (3) render/external-api desteklerini koru — görsel kaliteyi kaybetme."
+>
+> **A. Kriz-split KALDIRILDI (`45506b4`):** routing_engine.decide_route + fermat_core_agent in-agent eskalasyonundaki `detect_sentiment=="crisis"→Claude` split'i kaldırıldı. TÜM duygu (stres/kaygı/moral/KRİZ) → `local` (Cerebras). Neo: "o kadar kolay ayrılabilecek kavramlar değil onlar."
+>
+> **B. chat_quality.py (YENİ) — CHAT_QUALITY_ADDON:** Cerebras sohbet/duygu lane'lerine enjekte edilen kalite şablonu. WARMTH (sıcak/konuşma tarzı, klinik liste DEĞİL) + kriz güvenliği yönergesi + render kullanım rehberi + 2 ideal diyalog örneği. Claude gold cevaptan damıtıldı. Wire: fermat_core local path `_lane_system + CHAT_QUALITY_ADDON` (sentiment/lane/psik/emo-keyword tetikli). Canlı A/B test: şablonlu Cerebras = Claude GOLD tonu (duygu "Anlıyorum"/"Seni dinliyorum" empati-önce; şablonsuz liste-cil "1️⃣ 4-7-8 nefes"). Render (```chart) kavramsalda korundu.
+>
+> **C. emo-keyword fallback (`7e68876`):** Canlı bulgu — "motivasyonum bitti yapamayacağım" sentiment=neutral + lane=None + psik=False (3 dedektör de kaçırdı). `needs_chat_quality`'ye tutucu duygusal-keyword regex eklendi (motivasyon/yapamayacağım/pes/yoruldum/umutsuz...). Trigger doğrulandı: kriz/stres/motivasyon→addon=True, kavramsal/veri→False.
+>
+> **D. DETERMİNİSTİK KRİZ GÜVENLİK AĞI (`3c8e063`+`1f16d94`+`dbc5eaf`) — EN KRİTİK:** Canlı production router testi: Cerebras kriz cevabında ŞABLONLA BİLE yanlış hat veriyordu (112, "182 Alo 182 ruh sağlığı hattı", "154", "1822" — HER SEFER FARKLI uyduruyor; 182=MHRS hastane randevu, 183=Sosyal Destek/psikolojik DOĞRU hat). 27k system prompt sonundaki şablon, modelin yanlış-numara halüsinasyonunu güvenilir ezemiyor → SAFETY-CRITICAL, modele bırakılmaz. **Çözüm (modele güvenme):** `chat_quality.ensure_crisis_safety(message, answer)` — kriz mesajıysa (tutucu regex) → `_scrub_wrong_hotlines` KATEGORİK temizler (hat/destek/kriz/acil bağlamı + telefon-benzeri 3-4 hane numara geçen satır → sil, 183 hariç) → tek yetkili footer ekler (ALO 183 Sosyal Destek + 112 acil + rehber randevu). Local + cloud finalize'da enforce (defense-in-depth). Uçtan uca VPS testi: sıcak gövde korundu, yanlış numaralar (182/154/1822) silindi, ALO 183+112+rehber garanti, çelişki yok.
+>
+> **Yeni dosya:** `chat_quality.py` (CHAT_QUALITY_ADDON + needs_chat_quality + is_crisis_message + ensure_crisis_safety + _scrub_wrong_hotlines).
 >
 > ## 🔥 31 May (Oturum 25.49) — SENTRY 5-GÜN TEMIZLIK + NEO BUG'LAR
 >
