@@ -4684,18 +4684,22 @@ async def try_fast_response(
             from student_scenarios import detect_scenario
             scenario = detect_scenario(message, role)
             if scenario:
-                if not scenario.get("needs_claude") and scenario.get("response"):
-                    # Motivasyon gibi direkt yanıt — yerel yeterli
+                # 25.55 (Neo hibrit review — AMATÖR DÖNÜŞ KÖKÜ): duygu/motivasyon
+                # senaryosu (needs_claude=True) eskiden CANNED 'questions' template'i
+                # döndürüyordu ("böyle hissetmen çok normal...") → scripted/amatör his.
+                # Artık → DEFER (None) → Cerebras bağlamla DOĞAL + kişiselleştirilmiş
+                # A+ cevap verir (test kanıtladı). Kriz ise decide_route Claude'a yollar.
+                if scenario.get("needs_claude"):
+                    import logging as _lg_sc
+                    _lg_sc.getLogger(__name__).info(
+                        f"[SCENARIO-DEFER] {scenario.get('scenario','?')} → LLM (Cerebras/Claude bağlamla, canned template değil)")
+                    return None
+                if scenario.get("response"):
+                    # needs_claude=False direkt yanıt (ör. statik bilgi) — yerel yeterli
                     resp = scenario["response"]
                     if "{name}" in resp:
                         resp = resp.replace("{name}", name or "")
                     return resp
-                elif scenario.get("questions"):
-                    # Bağlam toplama soruları — güzel şablonla sor, Claude sonra analiz eder
-                    q = scenario["questions"]
-                    if "{name}" in q:
-                        q = q.replace("{name}", name or "")
-                    return q
         except Exception:
             pass
 
