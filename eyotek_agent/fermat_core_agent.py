@@ -4308,7 +4308,17 @@ class FermatCoreAgent:
                     _snt_cq = _ds_cq(user_input)
                 except Exception:
                     pass
-                if needs_chat_quality(_lane or "", _snt_cq):
+                # Psikoloji sinyali: _detected_durum (egitim_psikoloji) VEYA detect_duygu_psikoloji.
+                # "motivasyonum bitti yapamayacagim" gibi sentiment=neutral ama duygusal mesajlar
+                # için kritik — sentiment tek başına yetmiyor (canlı test bulgusu).
+                _psik_cq = bool(locals().get("_detected_durum"))
+                if not _psik_cq:
+                    try:
+                        from routing_engine import detect_duygu_psikoloji as _ddp_cq
+                        _psik_cq = _ddp_cq(user_input)
+                    except Exception:
+                        pass
+                if _psik_cq or needs_chat_quality(_lane or "", _snt_cq, user_input):
                     _lane_system = _lane_system + CHAT_QUALITY_ADDON
                     logger.info("  [YEREL] Sohbet/duygu A+ şablonu eklendi (Cerebras Claude-kalitesi + kriz güvenliği)")
             except Exception:

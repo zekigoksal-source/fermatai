@@ -46,10 +46,26 @@ Numaralı klinik liste ("5 adım", "1️⃣2️⃣3️⃣") formatından KAÇIN.
 """
 
 
-def needs_chat_quality(lane: str = "", sentiment: str = "") -> bool:
+import re as _re
+
+# Sentiment/lane/psikoloji dedektörlerinin KAÇIRDIĞI duygusal mesajlar için son ağ.
+# Canlı test: "motivasyonum bitti yapamayacagim galiba" → sent=neutral, lane=None,
+# psik=False (üçü de kaçırdı) ama tam sıcaklık gereken motivasyon-çöküşü mesajı.
+_EMO_FALLBACK = _re.compile(
+    r"motivasyon|yapamayacağ|yapamayacag|pes et|vazgeç|vazgec|bıkt|bikt|yoruldum|"
+    r"yorgunum|isteksiz|moralim|umutsuz|çökt|cokt|tükendim|tukendim|bunaldım|bunaldim|"
+    r"ağlıyorum|agliyorum|kötü hissed|kotu hissed|mutsuz|kaygılı|kaygili|"
+    r"başaramayacağ|basaramayacag|nefret ediyorum|sıkıldım|sikildim",
+    _re.IGNORECASE,
+)
+
+
+def needs_chat_quality(lane: str = "", sentiment: str = "", message: str = "") -> bool:
     """Cerebras cevabına sohbet/duygu kalite şablonu eklensin mi?"""
     if sentiment in ("stressed", "negative", "angry", "crisis"):
         return True
     if lane in ("sohbet", "kisa_motivasyon", "motivasyon", "duygu_paylasim", "kibarlik"):
+        return True
+    if message and _EMO_FALLBACK.search(message):
         return True
     return False
