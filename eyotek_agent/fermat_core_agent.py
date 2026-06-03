@@ -4267,21 +4267,26 @@ class FermatCoreAgent:
             # yakaliyor, buraya geldiysek tool/analiz gerekiyor
             complexity = "cloud"
 
-        # Fix 21 Nisan 15:40 — Psikoloji override: duygu/kriz tespitinde Claude zorunlu
-        # _detected_durum enrichment bloğunda tespit edildiyse (confidence >= 0.5)
-        # Ollama'ya ASLA gitmesin. Bugün Zehra vakasında ters duygu yanıt oluşmuştu.
+        # 25.55 (Neo direktif + hibrit kalite testi): Psikoloji override RAFINE edildi.
+        # ESKİ: HER duygu → Claude (Ollama-bad-emotion korkusu, 21 Nis). YENİ: Cerebras
+        # gpt-oss-120b bağlamla duyguyu A+ yönetiyor (test kanıtladı). Sadece KRİZ
+        # (intihar/kendine zarar) → Claude ZORUNLU (güvenlik). Normal duygu (sınav
+        # kaygısı/stres/moral) → Cerebras'ta KAL (history + DUYGU MODU kuralı, çok ucuz).
         if complexity == "local":
             try:
                 _ddurum = locals().get("_detected_durum")
-                if _ddurum:
-                    logger.info(f"  [ESKALASYON] Psikolojik durum tespit edildi ({_ddurum}) — Claude'a zorunlu yonlendirme")
+                _is_crisis = False
+                try:
+                    from sentiment_tracker import detect_sentiment
+                    if detect_sentiment(user_input) == "crisis":
+                        _is_crisis = True
+                except Exception:
+                    _is_crisis = bool(_ddurum)  # detektör fail → eski güvenli davranış
+                if _is_crisis:
+                    logger.info("  [ESKALASYON] KRİZ tespit — Claude'a zorunlu (güvenlik)")
                     complexity = "cloud"
-                else:
-                    # Ek safety net: user_input'ta duygu keyword'u varsa
-                    from routing_engine import detect_duygu_psikoloji
-                    if detect_duygu_psikoloji(user_input):
-                        logger.info("  [ESKALASYON] Duygu keyword tespit edildi — Claude'a zorunlu")
-                        complexity = "cloud"
+                elif _ddurum:
+                    logger.info(f"  [DUYGU] {_ddurum} → Cerebras bağlamla (DUYGU MODU, A+ ucuz)")
             except Exception:
                 pass
 
