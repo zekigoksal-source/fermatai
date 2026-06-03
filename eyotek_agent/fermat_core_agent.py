@@ -4287,6 +4287,28 @@ class FermatCoreAgent:
             if _ddurum:
                 logger.info(f"  [DUYGU] {_ddurum} → Cerebras bağlam + kalite şablonu (A+ ucuz, kriz güvenli)")
 
+        # 25.56 (Neo "akıllı eşik" kararı): ASIL KANAL = web/app. Test kanıtladı: Cerebras
+        # render'ı güvenilir YAPAMIYOR (kavramsal ~%25, güçlü+format direktifle bile), Claude
+        # %100 üretiyor. Web'de render-DEĞERLİ akademik sorular (formül-ağır, karşılaştırma,
+        # veri/analiz, süreç → görsel blok gerçek değer) → Claude (tutarlı render + derinlik).
+        # Saf "nedir" kavramsal + sohbet + DUYGUSAL → Cerebras'ta kalır (zengin metin, hızlı,
+        # ucuz). WhatsApp ikincil → ETKİLENMEZ (orada render chart-only, Cerebras yeterli).
+        if complexity == "local" and getattr(self, "_channel", "whatsapp") == "web":
+            try:
+                _emo_web = bool(locals().get("_detected_durum"))  # duygusal → Cerebras'ta kal
+                if not _emo_web:
+                    from sentiment_tracker import detect_sentiment as _ds_web
+                    if _ds_web(user_input) in ("stressed", "negative", "angry", "crisis"):
+                        _emo_web = True
+                if not _emo_web:
+                    from renderer_hint_inject import detect_renderer_need
+                    _rv = detect_renderer_need(user_input)
+                    if _rv:
+                        complexity = "cloud"
+                        logger.info(f"  [WEB-RENDER] render-değerli akademik ({_rv}) → Claude (tutarlı görsel, asıl kanal)")
+            except Exception:
+                pass
+
         if complexity == "local" and self.router.is_local_available:
             # Oturum 25.22+: Router Cerebras-first, Groq fallback, Ollama son fallback
             _hangi = (
