@@ -183,7 +183,18 @@ def decide_route(
     # Duygu/psikolojik belirtisi varsa Ollama'ya GITMESIN, Claude'a zorunlu.
     # Fix 4 (egitim_psikoloji pattern'larıyla hizalı).
     if detect_duygu_psikoloji(message):
-        return "claude"
+        # 25.55 (Neo direktif + hibrit kalite testi): KRİZ (intihar/kendine zarar) →
+        # Claude ZORUNLU (güvenlik). Normal duygu (stres/kaygı/moral) → Cerebras
+        # bağlamla A+ (test: Berat stres vakası Cerebras'ta stres temasında kaldı,
+        # fizik'e geçmedi; çok daha ucuz). Cerebras self.history + DUYGU MODU kuralı alır.
+        # Duygu ASLA tool gerektirmez → Cerebras güvenli (tool eksikliği sorun değil).
+        try:
+            from sentiment_tracker import detect_sentiment
+            if detect_sentiment(message) == "crisis":
+                return "claude"
+        except Exception:
+            return "claude"  # detektör fail → güvenli taraf (Claude)
+        return "local"
 
     # ── 0c. SECURITY INTENT GUARD (25.40z3-ROUTING-FIX1, EN ÜST GÜVENLİK) ──
     # KRITIK: Bu kontrol HİÇBİR routing kararından SONRA gelmemeli — lane/fast
