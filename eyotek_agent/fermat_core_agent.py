@@ -4770,7 +4770,16 @@ class FermatCoreAgent:
                 "haftanin etut", "haftanın etüt", "hangi etut", "hangi etüt",
                 "etutler var", "etütler var", "etut listesi", "etüt listesi",
             )
-            if any(kw in _ml for kw in _data_fetch_keywords):
+            # 25.55 (Neo hibrit review): emosyonel mesaj "sınav/deneme" içerse bile
+            # VERİ-İSTEĞİ DEĞİL ("sınav korkusu var stresliyim") → data-fetch skip'i ATLA,
+            # Cerebras duyguyu A+ yönetsin. Sadece gerçek veri-istekleri Claude tool'a.
+            _emotional_msg = False
+            try:
+                from sentiment_tracker import detect_sentiment
+                _emotional_msg = detect_sentiment(user_input) in ("stressed", "negative", "angry", "crisis")
+            except Exception:
+                pass
+            if any(kw in _ml for kw in _data_fetch_keywords) and not _emotional_msg:
                 logger.info("  [CEREBRAS-TOOLS] data-fetch keyword (eyotek/etut/sinav) → SKIP, Claude tool-calling daha guvenilir")
                 raise RuntimeError("data_fetch_skip")
             if (ENABLE_CEREBRAS_TOOLS and role in _CB_ELIGIBLE_ROLES
