@@ -5,8 +5,17 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `4b3263d` (web akıllı render eşiği FIX7) ← `722ea9b` (egitim_psikoloji + akademik derinlik FIX5-6) ← `26759ca` (Cerebras kazanım entegrasyonu FIX1-4) ← `dbc5eaf` (kriz scrub) ← `45506b4` (25.55 kriz-split + chat_quality) ← 25.54 (dikey-AI)
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `4b3263d`, restart canlı, PostgreSQL OK
+> - **HEAD:** `cb186dd` (admin konuşma görüntüleyici geliştirme 25.57) ← `4b3263d` (web akıllı render eşiği FIX7) ← `722ea9b` (FIX5-6) ← `26759ca` (Cerebras kazanım FIX1-4) ← `45506b4` (25.55 kriz-split) ← 25.54 (dikey-AI)
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `cb186dd`, restart canlı, PostgreSQL OK
+>
+> ## 🖥️ 3 Haz (Oturum 25.57) — ADMIN KONUŞMA GÖRÜNTÜLEYİCİ (Neo bağlam takibi)
+>
+> Neo: "sohbet geçmişi ekranımda eksiklikler — sıralama, çabuk yok oluyor, 1 haftalık yenileme + öğrencileri bağlam içinde takip." Endpoint: `/chat/admin/conversations?token=...&days=N` (`web_chat.py` → `conversation_viewer.py`).
+> - **Teşhis:** Veri 90 gün saklanıyor (`db_retention.py`) — KAYIP YOK. Sorun: Neo bookmark `days=1` + UI'da pencere seçici yok + aynı-saniye sıralama belirsizliği.
+> - **Sıralama fix:** `ORDER BY created_at ASC, id ASC` — aynı saniyedeki user+bot mesajları non-deterministik sıralanıp ters/boşluk görünüyordu; id=insertion order ile düzeldi.
+> - **UI gün seçici:** Bugün/7g/30g/90g/Tümü butonları (token+param korunarak reload, aktif vurgulu). URL elle değiştirmeye son. Canlı: days=1→5 kişi, days=7→12, days=30→128 (pencere çalışıyor).
+> - **Mesaj İÇERİĞİ araması:** 3+ karakter → isim + mesaj metni ("kaygı" yaz → o konuyu konuşan öğrencileri bul). Bağlam takibi.
+> - **Kartlarda son kullanıcı mesajı önizleme + 'bugün aktif' nokta** (hızlı tarama). Cinema palette korundu.
 >
 > ## 🎯 KANAL ÖNCELİĞİ + RENDER ROTASI (25.56, Neo netleştirme + karar)
 >
