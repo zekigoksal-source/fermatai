@@ -35,12 +35,15 @@ async def get_conversations(days: int = 2):
     pool = await _get_pool()
     async with pool.acquire() as conn:
         # Tüm mesajları çek
+        # 25.57 (Neo): ikincil sıra id ASC — aynı saniyedeki user+bot mesajları
+        # eskiden non-deterministik sıralanıp "ters/boşluk" hissi yaratıyordu.
+        # id = insertion order → user mesajı her zaman bot cevabından önce gelir.
         rows = await conn.fetch(f"""
             SELECT c.phone, c.message_role, c.content, c.created_at, c.tools_used
             FROM agent_conversations c
             WHERE c.content IS NOT NULL AND c.content != ''
             {interval_clause}
-            ORDER BY c.created_at ASC
+            ORDER BY c.created_at ASC, c.id ASC
         """)
 
         # Kullanıcı bilgilerini çek
@@ -122,7 +125,7 @@ def _tr_title(name: str) -> str:
     return ' '.join(result)
 
 
-def generate_html(conversations: dict, users: dict, period_label: str) -> str:
+def generate_html(conversations: dict, users: dict, period_label: str, days: int = 7) -> str:
     # Kullanıcıları son mesaj zamanına göre sırala
     sorted_phones = sorted(
         conversations.keys(),
@@ -155,16 +158,26 @@ def generate_html(conversations: dict, users: dict, period_label: str) -> str:
 
         active_class = 'active' if idx == 0 else ''
 
+        # 25.57 (Neo): son KULLANICI mesajı önizleme + bugün-aktif göstergesi
+        # (bağlam taraması — kartlara bakınca kimin ne dediğini hızlı gör).
+        _last_user_msg = next(
+            (m['content'] for m in reversed(msgs) if m['role'] == 'user' and m['content']), ''
+        )
+        preview = ' '.join(_last_user_msg.split())[:70]
+        _is_today = bool(msgs) and msgs[-1]['time'].date() == datetime.now().date()
+        today_dot = '<span class="today-dot" title="Bugün aktif"></span>' if _is_today else ''
+
         # Kullanıcı kartı
         user_cards.append(f'''
         <div class="user-card {active_class}" onclick="showChat('{phone}', this)" data-phone="{phone}">
             <div class="user-avatar">{name[0] if name else '?'}</div>
             <div class="user-info">
-                <div class="user-name">{html.escape(name)}</div>
+                <div class="user-name">{today_dot}{html.escape(name)}</div>
                 <div class="user-meta">{_role_badge(role)} {html.escape(str(cls))} {f'• #{soz}' if soz else ''}</div>
                 <div class="user-stats">
                     {len(user_msgs)} mesaj • {first_time} — {last_time}
                 </div>
+                {f'<div class="user-preview">{html.escape(preview)}</div>' if preview else ''}
             </div>
         </div>
         ''')
@@ -254,6 +267,13 @@ def generate_html(conversations: dict, users: dict, period_label: str) -> str:
         ''')
 
     now = datetime.now().strftime('%d.%m.%Y %H:%M')
+
+    # 25.57 (Neo): UI gün seçici — URL elle değiştirmeden pencere değiştir, token korunur.
+    _ranges = [(1, "Bugün"), (7, "7 Gün"), (30, "30 Gün"), (90, "90 Gün"), (0, "Tümü")]
+    range_btns = ''.join(
+        f'<button class="range-btn{" active" if d == days else ""}" onclick="setRange({d})">{lbl}</button>'
+        for d, lbl in _ranges
+    )
 
     return f'''<!DOCTYPE html>
 <html lang="tr">
@@ -360,6 +380,37 @@ body::after {{
     box-shadow:0 0 0 3px var(--brand-glow);
 }}
 .search-box input::placeholder {{ color:var(--fg-tertiary); }}
+
+/* 25.57 — Zaman aralığı seçici (1g/7g/30g/90g/Tümü) */
+.range-selector {{
+    display:flex; gap:6px; padding:0 14px 12px; flex-wrap:wrap;
+}}
+.range-btn {{
+    flex:1; min-width:42px; padding:7px 6px;
+    background:var(--bg-base); border:1px solid var(--border);
+    border-radius:8px; color:var(--fg-muted);
+    font-size:12px; font-weight:600; font-family:'Fira Code',monospace;
+    cursor:pointer; transition:all 0.2s var(--easing);
+}}
+.range-btn:hover {{ border-color:var(--border-strong); color:var(--fg); }}
+.range-btn.active {{
+    background:var(--gradient-gold); color:#1a0d00; border-color:transparent;
+    box-shadow:0 2px 10px var(--brand-glow);
+}}
+
+/* 25.57 — Bugün aktif noktası + son mesaj önizleme */
+.today-dot {{
+    display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:var(--success); margin-right:6px; vertical-align:middle;
+    box-shadow:0 0 6px var(--success); animation:pulse 2s infinite;
+}}
+@keyframes pulse {{ 0%,100%{{opacity:1}} 50%{{opacity:0.4}} }}
+.user-preview {{
+    font-size:11.5px; color:var(--fg-tertiary); margin-top:4px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    font-style:italic; opacity:0.85;
+}}
+.user-card.active .user-preview {{ color:var(--fg-muted); }}
 
 /* User list */
 .user-list {{ flex:1; overflow-y:auto; padding:6px 8px; }}
@@ -583,8 +634,11 @@ body::after {{
             <h2>🤖 FermatAI Konuşmalar</h2>
             <div class="stats">{total_users} kişi • {total_msgs} mesaj • {period_label} • {now}</div>
         </div>
+        <div class="range-selector">
+            {range_btns}
+        </div>
         <div class="search-box">
-            <input type="text" placeholder="Kişi ara..." oninput="filterUsers(this.value)">
+            <input type="text" placeholder="Kişi veya mesaj içeriği ara..." oninput="filterUsers(this.value)">
         </div>
         <div class="user-list" id="userList">
             {''.join(user_cards)}
@@ -666,12 +720,25 @@ function changePage(phone, delta) {{
     }}
 }}
 
+// 25.57 — Zaman aralığı değiştir (token + diğer query paramları korunur)
+function setRange(days) {{
+    const u = new URL(window.location.href);
+    u.searchParams.set('days', days);
+    window.location.href = u.toString();
+}}
+
 function filterUsers(query) {{
-    const q = query.toLowerCase();
+    const q = query.toLowerCase().trim();
     document.querySelectorAll('.user-card').forEach(card => {{
         const name = card.querySelector('.user-name').textContent.toLowerCase();
         const meta = card.querySelector('.user-meta').textContent.toLowerCase();
-        card.style.display = (name.includes(q) || meta.includes(q)) ? 'flex' : 'none';
+        let match = !q || name.includes(q) || meta.includes(q);
+        // 25.57: mesaj İÇERİĞİ araması (3+ karakter) — "kaygı" yaz → o konuyu konuşanları bul
+        if (!match && q.length >= 3) {{
+            const panel = document.getElementById('chat_' + card.dataset.phone);
+            if (panel) match = panel.textContent.toLowerCase().includes(q);
+        }}
+        card.style.display = match ? 'flex' : 'none';
     }});
 }}
 

@@ -2018,7 +2018,7 @@ async def admin_conversations(
                 if p == phone_clean or p.endswith(phone_clean[-4:])
             }
             period_label += f" | Filtre: {phone[-4:]}"
-        html_out = generate_html(conversations, users, period_label)
+        html_out = generate_html(conversations, users, period_label, days=days)
         return HTMLResponse(content=html_out, status_code=200)
     except Exception as e:
         logger.error(f"admin_conversations hata: {e}")
