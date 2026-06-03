@@ -5,7 +5,7 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.54, 2 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `e5b0033` (exam sync auto-login fix) ← `b08936e` (konuşma analizi fix) ← `20cc8b9` (DeepSeek model_health izleme) ← 25.54 (4 kabiliyet + DeepSeek aktif) ← 25.53 (exam_xray+digital_twin) ← 25.52 (BKT+FSRS) ← 25.51 (hardening) ← 25.50 (model_health) ← 25.49 (Sentry temizlik)
+> - **HEAD:** `9bcf410` (hibrit routing: duygu→Cerebras) ← `e5b0033` (exam sync auto-login fix) ← `b08936e` (konuşma analizi fix) ← `20cc8b9` (DeepSeek model_health izleme) ← 25.54 (4 kabiliyet + DeepSeek aktif) ← 25.53 (exam_xray+digital_twin) ← 25.52 (BKT+FSRS) ← 25.51 (hardening) ← 25.50 (model_health) ← 25.49 (Sentry temizlik)
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `20cc8b9`, NRestarts=0, PostgreSQL OK
 > - **LLM ZİNCİRİ (GÜNCEL):** Fast Response → **Cerebras gpt-oss-120b** (tek Cerebras modeli; qwen-235b+llama3.1-8b emekli 25.49-50) → **Groq llama-3.3-70b** (fallback) → **Claude Sonnet** (tool-calling/hassas). **+ DeepSeek-reasoner** (foto matematik referans çözüm, key-gated, 25.54 aktif). Ollama = embeddings-only (chat'te DEĞİL).
 > - **MODEL SAĞLIK MONİTÖRÜ (25.50):** `model_health.py` günlük 06:00 — Cerebras/Groq/Claude/DeepSeek ping, emekli/bakiye-bitti tespiti → Neo'ya kritik alarm. Şu an **5/5 sağlıklı**. WP: "model durum".
@@ -178,6 +178,21 @@
 > **ENTEGRASYON:** 3 Claude tool (get_exam_xray/get_digital_twin + get_knowledge_state own-enforce) + dispatch _caller_role/_soz_no inject + ACL 6 rol + 2 schema + routing keyword + system_prompt protokol. E2E: öğrenci "son denememi analiz et" → çalıştı.
 >
 > **Dikey-AI roadmap durumu:** ✅ BKT+FSRS (25.52) · ✅ Exam X-ray · ✅ Dijital İkiz · ✅ Risk (read-only) · ✅ YKS skor (predict_student mevcut). TÜMÜ on-demand, outreach OFF. **Yeni sezon (1 Eylül): proaktif katman + DeepSeek V4 + Claude Memory Tool aktive edilebilir.**
+>
+> ## 🔀 3 Haziran (Oturum 25.55) — HİBRİT ROUTING REVİZYONU: duygu/sohbet → Cerebras A+ (`9bcf410`)
+>
+> Neo direktif: non-tool sohbet Cerebras A+ yapabilir (Claude bir üst seviye, pahalı). Fast-response amatör dönüşler yapıyor, gözden geçir. Kalite hep A+, bağlam kusursuz.
+> - **AMPİRİK TEST (kanıt):** Cerebras gpt-oss-120b + history → Berat stres "Yaklaştığında" stres temasında kaldı (fizik'e geçmedi), refinement/Newton-takip/kavramsal A/A+. Hatalar Cerebras yetersizliği DEĞİL, **7 katmanlı interception**'dı.
+> - **7 KATMAN DÜZELTİLDİ (hepsi duygu/sohbeti Claude'a veya canned'e yolluyordu):**
+>   1. decide_route emotion → kriz=Claude, normal=Cerebras (detect_sentiment split)
+>   2. in-agent psikoloji eskalasyonu (_detected_durum) → kriz-split
+>   3. data-fetch keyword guard → emosyonel mesaj "sınav" içerse muaf
+>   4. post-gen halüsinasyon eskalasyonu → emosyonel cevaptaki sayılar (nefes 4-7-8) muaf
+>   5. EMO-DEFER → emosyonel mesaj fast-canned değil, en üstte defer
+>   6. (detect_sentiment dar → scenario geniş yakalıyordu)
+>   7. **SCENARIO-DEFER (ASIL KÖK):** detect_scenario duygu/motivasyon → needs_claude=True olsa bile canned "böyle hissetmen çok normal..." template'i döndürüyordu → artık None (Cerebras bağlamla doğal A+)
+> - **DOĞRULAMA:** "motivasyonum düştü yetersiz hissediyorum" → KAYNAK=**cerebras_120b** (eskiden fast_response canned / claude). Kriz → Claude (güvenlik korundu). Maliyet↓ kalite A+ + bağlam korundu.
+> - **ÖĞRENİM:** routing pipeline çok katmanlı teknik borç (her oturum bir interception eklenmiş). Duygu/sohbet artık tutarlı Cerebras-with-context.
 >
 > ## 🩺 2 Haziran (Oturum 25.54-D) — VERİ TAZELİĞİ KÖK NEDEN (`e5b0033`)
 >
