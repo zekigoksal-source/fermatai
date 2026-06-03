@@ -3900,6 +3900,11 @@ class FermatCoreAgent:
         # Oturum 21 (21 Nisan): _detected_mood degiskeni anekdot zinciri icin kaydedilir
         _detected_mood = None
         _detected_durum = None
+        # 25.56 (Neo denetim): Cerebras enrichment collector. chat_local_async
+        # full _role_aware_prompt'u ATIYOR (sadece [LANE TALIMATI] kuyrugu + arayan
+        # adini koruyor). Pedagoji/psikoloji/render/topic enrichment'leri burada
+        # toplayip local path'te [LANE TALIMATI] kuyruguna ekleriz → Cerebras KAZANIMLARI ALIR.
+        _cerebras_enrich = ""
         try:
             from egitim_psikoloji import detect_state, get_intervention
             _state = detect_state(user_input)
@@ -3921,13 +3926,15 @@ class FermatCoreAgent:
                 _katman = "" if _conf >= 0.7 else "HEMEN"
                 interv = await get_intervention(_detected_durum, katman=_katman)
                 if interv:
-                    _role_aware_prompt += (
+                    _psik_block = (
                         f"\n\n🧠 PSIKOLOJIK DURUM TESPITI: {_detected_durum} (conf={_conf})\n"
                         f"📚 Literatür: {interv['pedagoji_kavram']}\n"
                         f"{interv['strateji_claude_icin'][:1500]}\n"
-                        f"\n_Claude: bu stratejileri doğal dille aktar — klinik terim "
+                        f"\n_Bu literatür-temelli stratejileri DOĞAL dille aktar — klinik terim "
                         f"kullanma, öğrenci hissetsin._"
                     )
+                    _role_aware_prompt += _psik_block
+                    _cerebras_enrich += _psik_block  # 25.56: Cerebras da bu müdahaleyi alsın
         except Exception as _ep_e:
             logger.debug(f"egitim_psikoloji hata: {_ep_e}")
 
@@ -4042,6 +4049,7 @@ class FermatCoreAgent:
             )
             if _pedagoji_block:
                 _role_aware_prompt += _pedagoji_block
+                _cerebras_enrich += _pedagoji_block  # 25.56: anekdot/kavram Cerebras'a da
         except Exception as _pdj_e:
             logger.debug(f"pedagoji_v2 hata: {_pdj_e}")
             # Fallback: eski sistem (V2 down ise — geriye uyum)
@@ -4079,6 +4087,7 @@ class FermatCoreAgent:
             _renderer_hint = build_hint(user_input, channel=_channel)
             if _renderer_hint:
                 _role_aware_prompt += _renderer_hint
+                _cerebras_enrich += _renderer_hint  # 25.56: render teşviki Cerebras'a da
                 logger.info(f"  [RENDERER-HINT] Inject: {_renderer_hint[:80]}...")
         except Exception as _rh_e:
             logger.debug(f"renderer_hint inject hata: {_rh_e}")
@@ -4092,6 +4101,7 @@ class FermatCoreAgent:
             _topic_hint = get_enrichment_hint(user_input)
             if _topic_hint:
                 _role_aware_prompt += _topic_hint
+                _cerebras_enrich += _topic_hint  # 25.56: konu-API hint Cerebras'a da
                 logger.info(f"  [TOPIC-ENRICH] Inject: {_topic_hint[:90].strip()}...")
         except Exception as _te_e:
             logger.debug(f"topic_tool_enricher inject hata: {_te_e}")
@@ -4285,21 +4295,26 @@ class FermatCoreAgent:
                 else "Ollama"
             )
 
-            # Oturum 25.10 — Lane-specific system addon (Groq tutarliligi icin)
-            # 25.17 Faz 3: _lane zaten yukarıda hesaplandı, tekrar etme
+            # ── 25.56 (Neo denetim) — CEREBRAS [LANE TALIMATI] KUYRUĞU ───────────
+            # KÖK SORUN: chat_local_async (llm_router) full _role_aware_prompt'u ATIYOR;
+            # sadece "[LANE TALIMATI]" işaretinden SONRAKİ kuyruğu + arayan adını koruyor.
+            # Bu yüzden Cerebras'a ulaşmasını istediğimiz HER ŞEY (lane addon + sohbet/duygu
+            # şablonu + pedagoji/psikoloji/render/topic enrichment) TEK kuyrukta toplanır ve
+            # TEK "[LANE TALIMATI]" marker ile eklenir. Eski bug: lane=None ise marker yoktu
+            # → CHAT_QUALITY_ADDON bile çöpe gidiyordu (kriz/duygu mesajlarında).
             _lane_system = system
+            _lane_tail = ""  # [LANE TALIMATI]'dan sonra → chat_local_async KORUR
+            # (a) Groq/Cerebras lane addon (kısa-net / render-zorunlu lane talimatı)
             try:
                 from groq_lanes import get_lane_system_addon
                 if _lane:
                     _addon = get_lane_system_addon(_lane)
                     if _addon:
-                        _lane_system = _lane_system + "\n\n[LANE TALIMATI]\n" + _addon
+                        _lane_tail += _addon
                         logger.info(f"  [YEREL] Lane: {_lane} ({_hangi} aciliyor)")
             except Exception:
                 pass
-            # 25.55 (Neo direktif): sohbet/duygu/kriz → Cerebras'a Claude-kalitesi şablonu
-            # (SICAKLIK + kriz güvenliği ALO 183/rehber + render). Test: Claude gold'dan damıtıldı.
-            # Duyguları AYIRMA — kriz dahil Cerebras yönetir, ama bu şablonla A+ + güvenli.
+            # (b) 25.55 — sohbet/duygu/kriz Claude-kalitesi şablonu (SICAKLIK + kriz ALO 183)
             try:
                 from chat_quality import CHAT_QUALITY_ADDON, needs_chat_quality
                 _snt_cq = ""
@@ -4308,9 +4323,6 @@ class FermatCoreAgent:
                     _snt_cq = _ds_cq(user_input)
                 except Exception:
                     pass
-                # Psikoloji sinyali: _detected_durum (egitim_psikoloji) VEYA detect_duygu_psikoloji.
-                # "motivasyonum bitti yapamayacagim" gibi sentiment=neutral ama duygusal mesajlar
-                # için kritik — sentiment tek başına yetmiyor (canlı test bulgusu).
                 _psik_cq = bool(locals().get("_detected_durum"))
                 if not _psik_cq:
                     try:
@@ -4319,10 +4331,22 @@ class FermatCoreAgent:
                     except Exception:
                         pass
                 if _psik_cq or needs_chat_quality(_lane or "", _snt_cq, user_input):
-                    _lane_system = _lane_system + CHAT_QUALITY_ADDON
+                    _lane_tail += CHAT_QUALITY_ADDON
                     logger.info("  [YEREL] Sohbet/duygu A+ şablonu eklendi (Cerebras Claude-kalitesi + kriz güvenliği)")
             except Exception:
                 pass
+            # (c) 25.56 — Pedagoji/psikoloji/render/topic enrichment (kazanımlar Cerebras'a)
+            if _cerebras_enrich:
+                _lane_tail += (
+                    "\n\n═══ PEDAGOJİK + GÖRSEL ZENGİNLEŞTİRME (AKTİF KULLAN) ═══\n"
+                    "Aşağıdaki literatür-temelli strateji, anekdot/kavram, RAG müfredat ve render\n"
+                    "yönergelerini cevabında DOĞAL biçimde kullan — öğrenci uzman desteği hissetsin.\n"
+                    + _cerebras_enrich
+                )
+                logger.info(f"  [YEREL] Cerebras enrichment kuyruğa eklendi (+{len(_cerebras_enrich)} char)")
+            # TEK [LANE TALIMATI] marker — kuyruk varsa chat_local_async Cerebras'a taşır
+            if _lane_tail:
+                _lane_system = _lane_system + "\n\n[LANE TALIMATI]\n" + _lane_tail
 
             logger.info(f"  [YEREL] {_hangi} ile yanitlaniyor (dusuk maliyet)")
             try:

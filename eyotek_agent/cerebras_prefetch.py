@@ -72,6 +72,17 @@ _RESEARCH_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Akademik soru tespiti — intent kaçsa bile RAG tetikleyen içerik sinyali (25.56)
+_ACADEMIC_QUERY_RE = re.compile(
+    r'\b(nedir|ne\s+demek|ne\s+demektir|açıkla|acikla|anlat|öğret|ogret|'
+    r'formül|formul|nasıl\s+çöz|nasil\s+coz|nasıl\s+yapıl|nasil\s+yapil|'
+    r'konu(su)?\s+anlat|özetle|ozetle|kavram|tanım|tanim|hangi\s+durumda|'
+    r'neden\s+olur|niçin|nicin|ispat|kanıtla|kanitla|örnek\s+ver|ornek\s+ver|'
+    r'farkı\s+ne|farki\s+ne|karşılaştır|karsilastir|türev|integral|limit|'
+    r'fonksiyon|fotosentez|hücre|hucre|mol|asit|baz|osmanlı|osmanli|paragraf)\b',
+    re.IGNORECASE,
+)
+
 # Konu çıkarma (RAG/Wiki için)
 _TOPIC_KEYWORDS = re.compile(
     r'\b(?:nedir|ne\s+demek|açıkla|aciklа|anlat|göster|örnek|örnek)\s+'
@@ -102,16 +113,22 @@ def extract_topic(message: str) -> str:
 # ─── Pre-Fetch Engine ─────────────────────────────────────────────────────
 
 async def _fetch_rag(query: str) -> Optional[str]:
-    """RAG semantik arama (pgvector) — Fermat 4500+ konu icerigi."""
+    """RAG semantik arama (pgvector) — Fermat 4500+ konu icerigi.
+
+    25.56 (Neo denetim): limit 2→4, icerik 350→650 char. Eski ayar akademik
+    derinligi %18-23'e dusuruyordu (Claude full alirken Cerebras sig kaliyordu).
+    Cerebras dunyanin en hizli motoru — daha fazla baglam isleyebilir, doyurucu
+    akademik cevap icin RAG'i ZENGIN ver.
+    """
     try:
         from rag_engine import search_curriculum
-        hits = await search_curriculum(query, limit=2)
+        hits = await search_curriculum(query, limit=4)
         if not hits:
             return None
-        out = "\n[📚 RAG (Fermat veritabanı)]\n"
-        for h in hits[:2]:
+        out = "\n[📚 RAG (Fermat müfredat veritabanı — bu içeriği AKTİF kullan, derinleştir)]\n"
+        for h in hits[:4]:
             out += f"• {h.get('ders', '?')} / {h.get('konu', '?')}:\n"
-            out += f"  {(h.get('icerik', '') or '')[:350]}\n"
+            out += f"  {(h.get('icerik', '') or '')[:650]}\n"
         return out
     except Exception as e:
         logger.debug(f"[PREFETCH] RAG fail: {e}")
@@ -264,6 +281,12 @@ async def prefetch_context(
         sources.append("usgs")
     if _RESEARCH_PATTERN.search(msg_lower) and "arxiv" not in sources:
         sources.append("arxiv")
+
+    # 25.56 (Neo denetim): AKADEMİK İÇERİK FALLBACK — intent kaçsa/boş olsa bile
+    # mesaj akademik bir soru gibi görünüyorsa RAG çek. Eskiden intent map'te
+    # olmayan akademik sorular RAG'siz kalıyordu (intent misclassify riski).
+    if "rag" not in sources and _ACADEMIC_QUERY_RE.search(msg_lower):
+        sources.append("rag")
 
     # Hiç kaynak yoksa boş dön (sohbet/selamlama vb.)
     if not sources:

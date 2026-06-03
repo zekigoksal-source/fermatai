@@ -1322,10 +1322,24 @@ golgedeki bitki ile arada hangi mekanizma farki vardir?_
                 cerebras_model = select_cerebras_model(intent, channel=channel)
                 self._last_cerebras_model = cerebras_model
 
-                # Web kanalinda uzun akademik cevap, WP'de kisa kal
-                # Oturum 25.29: Web 3500 → 6000 (Claude'a yakin, fizik/matematik
-                # uzun aciklamalar cesitlendirilmis gorsel + akademik derinlik icin)
-                _max_tok = 6000 if channel == "web" else 1500
+                # Web kanalinda uzun akademik cevap, WP'de intent-aware uzunluk.
+                # Oturum 25.29: Web 3500 → 6000 (Claude'a yakin akademik derinlik).
+                # 25.56 (Neo denetim): WP'de akademik/pedagojik intent'lerde 1500→3000
+                # (Cerebras dunyanin en hizli motoru — doyurucu uzun cevap verebilir;
+                # eski 1500 cap akademik derinligi+render blogunu kesip atiyordu).
+                # Selamlama/sohbet/kisa motivasyon 1500'de kalir (uzunluk gereksiz).
+                _RICH_WP_INTENTS = {
+                    "kavram_aciklama", "ders_anlatim", "formul_aciklama",
+                    "konu_anlatim_uzun", "ozet_iste", "yontem_iste", "cozum_iste",
+                    "ornek_uretim", "karsilastirma", "render_request", "quiz_request",
+                    "calisma_plani", "calisma_yontemi", "konu_haritasi",
+                }
+                if channel == "web":
+                    _max_tok = 6000
+                elif (intent or "") in _RICH_WP_INTENTS:
+                    _max_tok = 3000
+                else:
+                    _max_tok = 1500
 
                 result = await self._cerebras_client.complete_async(
                     messages=messages,

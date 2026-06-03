@@ -324,19 +324,32 @@ def build_hint(message: str, channel: str = "web") -> Optional[str]:
     Returns:
         Inject edilecek string ya da None (gerek yok)
     """
-    if channel != "web":
-        return None
     renderers = detect_renderer_need(message)
     if not renderers:
         return None
-    r_block = " + ".join(f"```{r}" for r in renderers)
-    return (
-        f"\n\n🎨 [RENDERER — ZORUNLU İNJECT]: {r_block}\n"
-        f"Kullanıcı mesajı bu blok(lar)ı tetikledi. Web kanalında düz markdown\n"
-        f"YETERSIZ — yanıtın i[çc]inde MUTLAKA yukarıdaki kod fence'lerini\n"
-        f"(ge[çc]erli JSON/string ile) ÜRET. Aksi halde cevap eksik kalır.\n"
-        f"Bot grafik/kar[şs]ıla[şs]tırma istenince tablo sunup chart üretmeme = bug."
-    )
+
+    # ── WEB: tüm render tipleri canlı (Chart.js/Three.js/p5.js/KaTeX) ──
+    if channel == "web":
+        r_block = " + ".join(f"```{r}" for r in renderers)
+        return (
+            f"\n\n🎨 [RENDERER — ZORUNLU İNJECT]: {r_block}\n"
+            f"Kullanıcı mesajı bu blok(lar)ı tetikledi. Web kanalında düz markdown\n"
+            f"YETERSIZ — yanıtın i[çc]inde MUTLAKA yukarıdaki kod fence'lerini\n"
+            f"(ge[çc]erli JSON/string ile) ÜRET. Aksi halde cevap eksik kalır.\n"
+            f"Bot grafik/kar[şs]ıla[şs]tırma istenince tablo sunup chart üretmeme = bug."
+        )
+
+    # ── WHATSAPP (25.56): SADECE ```chart QuickChart image'a dönüşüyor.
+    # Diğer render tipleri (3d/sim/steps/gauge...) WP'de ham kod görünür → TEŞVİK ETME.
+    # Veri/karşılaştırma/trend uygunsa ```chart öner → sistem otomatik GÖRSELE çevirir.
+    if "chart" in renderers:
+        return (
+            "\n\n🎨 [GÖRSEL — WhatsApp]: Bu mesaj veri/karşılaştırma/trend içeriyor.\n"
+            "Uygunsa cevabına BİR ```chart bloğu ekle (geçerli JSON: type + data{labels,datasets}).\n"
+            "Sistem onu otomatik GRAFİK GÖRSELİNE çevirip gönderir. SADECE ```chart kullan —\n"
+            "diğer render tipleri WhatsApp'ta görünmez. Kısa yorum + grafik birlikte güçlü olur."
+        )
+    return None
 
 
 # ─── TEST ─────────────────────────────────────────────────────────────
