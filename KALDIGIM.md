@@ -12,8 +12,9 @@
 >
 > - **Etkileşim (24h):** 78 mesaj (Claude 35 / Cerebras 33 / fast 7 / Groq 3). Frustration/hata sinyali YOK.
 > - **Sentry:** 23 açık issue, ama GERÇEKTEN aktif (last_seen<48h) sadece **1**: `#118125659 RateLimitError 429 'high traffic' @ web_chat.stream_message` (1.4h önce). Diğer 22 tarihsel/zombie — qwen-235b 404 **5.3g önce** (25.49 fix çalışmış), BlockingIOError/sync timeout 5.5-5.7g önce.
-> - **Fix (`6deb038`):** Claude clientları zaten max_retries=4; sürekli yoğunlukta tükenince 429 fırlayıp generic 'teknik aksama' + logger.error ile Sentry'e BUG gibi düşüyordu. Artık kapasite hatası (429/529/overload/rate_limit/high traffic) ayrılır → logger.warning (Sentry gürültü durur, gerçek bug error kalır) + öğrenciye dürüst nazik mesaj. Birim test 6/6.
-> - **Gözlem (bug değil):** Groq free-tier TPD 100K/gün dolunca 413 → Claude fallback artıyor; Claude %45'e çıkmış (FIX7 web-render→Claude da katkı). Operasyonel kapasite, kod sorunu değil. İzlenecek.
+> - **DOĞRU teşhis (`3723292`, Sentry event detayı):** 429 code=`queue_exceeded` param=`queue` — **CEREBRAS'ın KÜRESEL inference kuyruğu** anlık dolu (Cerebras infra, tüm müşterileri; bizim yük/Groq ile İLGİSİZ). openai SDK stack (Anthropic değil). Nadir: firstSeen 7 May, count 33 (~günde 1). **NOT: önceki 'Groq free-tier doldu' açıklaması YANLIŞTI** — o 413'ü benim test trafiğim (dev sırasında dev prompt'lar) üretmişti, gerçek kullanım değil.
+> - **Fix (`3723292`):** cerebras_handler.complete + complete_with_tools zaten 429'u yakalıyor (ok:False→Groq fallback) — normal yol sağlam. Nadir blip stream-timeout edge'inden user-facing çıkıyordu. Yanıltıcı 'sistem çok yoğun' mesajı (kurumu suçluyor) KALDIRILDI → kapasite blip'inde + chunk akmadıysa **1sn sonra SESSİZ retry** (process_message yeniden) → öğrenci hata GÖRMEZ, cevabını alır. Retry tutmazsa nötr 'bir saniye takıldım'. Sentry: warning (bug değil).
+> - **Claude %45 gözlemi:** FIX7 (web render→Claude, kasıtlı) + nadir local-fallback. Kapasitemiz bol; sorun değil.
 >
 > ## 🖥️ 3 Haz (Oturum 25.57) — ADMIN KONUŞMA GÖRÜNTÜLEYİCİ (Neo bağlam takibi)
 >
