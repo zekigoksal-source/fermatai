@@ -5,8 +5,16 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `8f17a6d` (topic başarı/hata INVERSION fix) ← `3723292` (web stream kapasite retry) ← `cb186dd` (admin konuşma görüntüleyici) ← `4b3263d` (web render eşiği) ← `26759ca` (Cerebras kazanım) ← 25.54
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `8f17a6d`, PostgreSQL OK
+> - **HEAD:** `6a8b9dd` (veri-bütünlüğü denetimi + boş/yanlış ayrım) ← `8f17a6d` (topic INVERSION fix) ← `3723292` (web kapasite retry) ← `cb186dd` (konuşma görüntüleyici) ← 25.54
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `6a8b9dd`, PostgreSQL OK
+>
+> ## 🔬 5 Haz (Oturum 25.57-E) — SİSTEM GENELİ VERİ DENETİMİ + BOŞ/YANLIŞ PEDAGOJİK AYRIM
+>
+> Neo (Ali bug sonrası): "tüm sistemi bu gözle denetle, benzer hataları avla, şüpheli cevapları test et, boş bırakılan soruları pedagojik doğru yorumla — bu tip hataları artık hiç yapma."
+> - **Denetim:** 3 paralel Explore ajanı + CANLI çapraz-doğrulama. Ajan iddialarının ÇOĞU FALSE POSITIVE (devamsızlık dup=0, finans dup=0, exam_xray kolonu var/doğru, puan_tahmin AYT keys eşleşiyor, net mantığı sağlam). **Ders:** ajan bulgularını körlemesine kabul ETME, canlı veriyle doğrula (önceki yanlış-Groq dersi).
+> - **1 GERÇEK bug:** `context_engine.py` — `hata_yuzdesi→sinav_hata_yuzdesi` + `son_calisma→calisti_tarih` (query crash → tekrar-hata tespiti sessizce çalışmıyordu). Düzeltildi + bare % etiketlendi.
+> - **BOŞ/YANLIŞ pedagojik ayrım (Neo):** `student_topic_tracker` + `sinav_yanlis_sayisi`/`sinav_bos_sayisi` (1700 satır oncelikli_konular'dan). Tip: bos baskın="boş bırakıyor" (DENEMİYOR, hata DEĞİL ama doğru da değil), yanlis baskın="hata yapıyor" (kavram eksiği), karma. conversation_memory + fast_responses + system_prompt pedagojik yorumluyor. Ali doğrulama: Oran-Orantı="boş bırakıyor", Sözcük Anlamı="hata yapıyor", Paragraf konuları zayıf listesinden çıktı (güçlü).
+> - **Araçlar:** `fix_topic_inversion.py` (inversion düzeltici, dry-run+apply), `populate_topic_breakdown.py` (yanlis/bos kolonu populate). Yedek: `student_topic_tracker_bak_0605`.
 >
 > ## 🐛 5 Haz (Oturum 25.57-D) — TOPIC_TRACKER BAŞARI/HATA INVERSION FIX (Neo: Ali Küçükuysal)
 >
