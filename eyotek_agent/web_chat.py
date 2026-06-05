@@ -2957,8 +2957,24 @@ async def stream_message(
                 raise
 
         except Exception as e:
-            logger.error(f"Web chat stream hatası: {e}")
-            err_chunk = "Teknik bir aksama var. Biraz sonra tekrar dene."
+            # 25.57 (Neo Sentry kontrolü): kapasite (429/overload/high traffic) hatasını
+            # KOD BUG'ından ayır. SDK zaten max_retries=4 deniyor; sürekli yoğunlukta yine
+            # tükenebilir — bu operasyonel, bug DEĞİL. logger.warning → Sentry'e BUG gibi
+            # düşmez (gürültü durur), gerçek hatalar logger.error ile yakalanmaya devam eder.
+            # Ayrıca öğrenciye dürüst + nazik mesaj (generic "teknik aksama" yerine).
+            _es = str(e).lower()
+            _is_capacity = (
+                "429" in _es or "529" in _es or "overload" in _es
+                or "high traffic" in _es or "rate_limit" in _es
+                or ("rate" in _es and "limit" in _es)
+            )
+            if _is_capacity:
+                logger.warning(f"Web chat stream KAPASİTE (429/overload, operasyonel): {str(e)[:140]}")
+                err_chunk = ("Şu an sistem çok yoğun 🙏 Birkaç saniye sonra tekrar yazarsan "
+                             "cevabını hemen veririm. (İstersen WhatsApp'tan da deneyebilirsin.)")
+            else:
+                logger.error(f"Web chat stream hatası: {e}")
+                err_chunk = "Teknik bir aksama var. Biraz sonra tekrar dene."
             yield f"data: {json.dumps({'chunk': err_chunk, 'error': True}, ensure_ascii=False)}\n\n"
             yield f"data: {json.dumps({'done': True})}\n\n"
 
