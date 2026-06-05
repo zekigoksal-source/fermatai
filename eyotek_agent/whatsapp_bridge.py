@@ -1228,6 +1228,26 @@ if _SENTRY_DSN:
         from sentry_sdk.integrations.fastapi import FastApiIntegration
         from sentry_sdk.integrations.starlette import StarletteIntegration
         from sentry_sdk.integrations.asyncio import AsyncioIntegration
+
+        def _sentry_before_send(event, hint):
+            # 1) Gürültü logger'ları
+            _lg = str(event.get("logger") or "")
+            if any(skip in _lg for skip in ["uvicorn.access", "httpx", "asyncpg.compat"]):
+                return None
+            # 2) 25.57-F: SAĞLAYICI kapasite blip'i (Cerebras 'queue_exceeded' 429 — Cerebras'ın
+            # küresel kuyruğu anlık dolu; bizim yük DEĞİL). Graceful handle ediliyor (web stream
+            # sessiz retry). Operasyonel, BUG değil → Sentry'i kirletmesin. Gerçek hatalar geçer.
+            try:
+                _exc = (hint or {}).get("exc_info")
+                _msg = str(_exc[1]) if _exc and len(_exc) >= 2 else ""
+                if not _msg:
+                    _msg = str(event.get("exception") or "")
+                if "queue_exceeded" in _msg or "experiencing high traffic" in _msg:
+                    return None
+            except Exception:
+                pass
+            return event
+
         sentry_sdk.init(
             dsn=_SENTRY_DSN,
             integrations=[
@@ -1240,13 +1260,7 @@ if _SENTRY_DSN:
             environment=os.getenv("SENTRY_ENV", "production"),
             release=os.getenv("SENTRY_RELEASE", "fermatai@25.38"),
             send_default_pii=False,  # KVKK — kullanıcı verisi gönderme
-            before_send=lambda event, hint: (
-                None if any(
-                    skip in str(event.get("logger") or "")
-                    for skip in ["uvicorn.access", "httpx", "asyncpg.compat"]
-                )
-                else event
-            ),
+            before_send=_sentry_before_send,
         )
         _SENTRY_ENABLED = True
         logger.info(f"✓ Sentry aktif (env={os.getenv('SENTRY_ENV', 'production')})")
