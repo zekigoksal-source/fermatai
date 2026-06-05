@@ -59,11 +59,16 @@ async def main():
                 hata = yanlis + bos
                 soru = int(k.get('soru', 0) or k.get('soru_sayisi', 0) or 0)
 
-                # Hata yuzdesi hesapla
+                # Hata yuzdesi hesapla.
+                # 25.57-D INVERSION FIX (Neo: Ali Küçükuysal bug): oncelikli_konular'daki
+                # 'yuzde' alanı = BAŞARI (doğru) oranı (system_prompts:977 = (soru-yanlis-bos)/soru),
+                # HATA DEĞİL. Eskiden direkt hata kolonuna yazılıyordu → başarı, hata sanılıyordu
+                # (güçlü konu zayıf görünüyordu). Doğrusu: hata = 100 - başarı.
                 yuzde_raw = k.get('yuzde', '')
                 if yuzde_raw:
                     try:
-                        yuzde = float(str(yuzde_raw).replace('%', '').replace(',', '.'))
+                        basari = float(str(yuzde_raw).replace('%', '').replace(',', '.'))
+                        yuzde = max(0.0, min(100.0, 100 - basari))   # hata% = 100 - başarı%
                     except (ValueError, TypeError):
                         yuzde = (hata / soru * 100) if soru > 0 else 0
                 else:
