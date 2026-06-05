@@ -2957,26 +2957,46 @@ async def stream_message(
                 raise
 
         except Exception as e:
-            # 25.57 (Neo Sentry kontrolü): kapasite (429/overload/high traffic) hatasını
-            # KOD BUG'ından ayır. SDK zaten max_retries=4 deniyor; sürekli yoğunlukta yine
-            # tükenebilir — bu operasyonel, bug DEĞİL. logger.warning → Sentry'e BUG gibi
-            # düşmez (gürültü durur), gerçek hatalar logger.error ile yakalanmaya devam eder.
-            # Ayrıca öğrenciye dürüst + nazik mesaj (generic "teknik aksama" yerine).
+            # 25.57 (Neo Sentry kontrolü): SAĞLAYICI geçici blip'i (Cerebras 'queue_exceeded'
+            # 429 — Cerebras'ın KÜRESEL inference kuyruğu anlık dolu; bizim yük/Groq ile İLGİSİZ,
+            # ayda ~33 = günde ~1 nadir). Bu öğrenciye GÖRÜNMEMELİ → sessizce 1 kez tekrar dene
+            # (yeni denemede Cerebras boşalır ya da Groq/Claude'a düşer). Henüz chunk akmadıysa
+            # güvenli (kapasite hatası içerik üretiminden ÖNCE olur → duplicate yok).
             _es = str(e).lower()
             _is_capacity = (
-                "429" in _es or "529" in _es or "overload" in _es
+                "queue_exceeded" in _es or "too_many_requests" in _es
+                or "429" in _es or "529" in _es or "overload" in _es
                 or "high traffic" in _es or "rate_limit" in _es
                 or ("rate" in _es and "limit" in _es)
             )
-            if _is_capacity:
-                logger.warning(f"Web chat stream KAPASİTE (429/overload, operasyonel): {str(e)[:140]}")
-                err_chunk = ("Şu an sistem çok yoğun 🙏 Birkaç saniye sonra tekrar yazarsan "
-                             "cevabını hemen veririm. (İstersen WhatsApp'tan da deneyebilirsin.)")
-            else:
-                logger.error(f"Web chat stream hatası: {e}")
-                err_chunk = "Teknik bir aksama var. Biraz sonra tekrar dene."
-            yield f"data: {json.dumps({'chunk': err_chunk, 'error': True}, ensure_ascii=False)}\n\n"
-            yield f"data: {json.dumps({'done': True})}\n\n"
+            _recovered = False
+            _tc = locals().get('thinking_cleared', True)   # akış başladıysa retry etme (duplicate riski)
+            _mwc = locals().get('_msg_with_ctx')
+            if _is_capacity and not _tc and _mwc:
+                logger.warning(f"Web stream sağlayıcı blip (429/queue) — sessiz retry: {str(e)[:120]}")
+                try:
+                    await _aio.sleep(1.0)
+                    from whatsapp_bridge import process_message as _pm_retry
+                    _retry_reply = await _pm_retry(sess["phone"], _mwc, channel="web")
+                    if _retry_reply and len(_retry_reply.strip()) > 10:
+                        yield f"data: {json.dumps({'thinking_clear': True})}\n\n"
+                        async for _rc in _stream_text(_retry_reply):
+                            yield _rc
+                        yield f"data: {json.dumps({'done': True})}\n\n"
+                        _recovered = True
+                        logger.info("  [WEB-RETRY] sağlayıcı blip sonrası retry başarılı")
+                except Exception as _re:
+                    logger.warning(f"  [WEB-RETRY] retry de başarısız: {str(_re)[:100]}")
+            if not _recovered:
+                if _is_capacity:
+                    # Retry de tutmadıysa: nötr, dürüst mesaj (kurum kapasitesini SUÇLAMA)
+                    logger.warning(f"Web stream kapasite — retry sonrası da tutmadı: {str(e)[:120]}")
+                    err_chunk = "Bir saniye takıldım 🙏 tekrar yazar mısın, hemen yanıtlayayım."
+                else:
+                    logger.error(f"Web chat stream hatası: {e}")
+                    err_chunk = "Teknik bir aksama var. Biraz sonra tekrar dene."
+                yield f"data: {json.dumps({'chunk': err_chunk, 'error': True}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'done': True})}\n\n"
 
     headers = {
         "Cache-Control": "no-cache, no-transform",
