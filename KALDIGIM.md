@@ -5,8 +5,15 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `6deb038` (web stream kapasite/Sentry gürültü fix) ← `cb186dd` (admin konuşma görüntüleyici 25.57) ← `4b3263d` (web akıllı render eşiği FIX7) ← `722ea9b` (FIX5-6) ← `26759ca` (Cerebras kazanım FIX1-4) ← 25.54 (dikey-AI)
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `6deb038`, restart canlı, PostgreSQL OK
+> - **HEAD:** `8f17a6d` (topic başarı/hata INVERSION fix) ← `3723292` (web stream kapasite retry) ← `cb186dd` (admin konuşma görüntüleyici) ← `4b3263d` (web render eşiği) ← `26759ca` (Cerebras kazanım) ← 25.54
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `8f17a6d`, PostgreSQL OK
+>
+> ## 🐛 5 Haz (Oturum 25.57-D) — TOPIC_TRACKER BAŞARI/HATA INVERSION FIX (Neo: Ali Küçükuysal)
+>
+> Neo: "zayıf konu verirken başarı/hata karışıyor — Ali (top öğrenci) Paragrafta Yardımcı Düşünce %86 zayıf çıkıyor, anlamsız. Daha önce düzeltmiştik yine çıkıyor."
+> - **KÖK (ham Eyotek ile kanıt):** `build_topic_tracker.py` oncelikli_konular'daki `yuzde`=BAŞARI oranını ((soru-yanlis-bos)/soru, system_prompts:977) DOĞRUDAN `sinav_hata_yuzdesi`'ne yazmış → başarı, hata kolonunda → bot GÜÇLÜ konuyu ZAYIF sanıyor. Ali Paragraf: stored hata=86 ama ham soru=1586/yanlis=198/bos=18 → gerçek hata=%13.6 → Ali %86 BAŞARILI. Önceki #12 fix sadece post_sync 'Ortalama' satırlarını düzeltmiş, subtopic'ler hiç düzelmemiş (= "yine çıkıyor").
+> - **FIX:** `fix_topic_inversion.py` (YENİ araç, oncelikli_konular'dan otoriter yeniden hesap, dry-run+--apply) → **248 satır/99 öğrenci** düzeltildi. `build_topic_tracker.py` kaynak fix (yuzde=başarı→hata=100-yuzde). `sinav_basari_yuzdesi` GENERATED kolon (oto 100-hata). Yedek: `student_topic_tracker_bak_0605` (3359 satır, rollback). Doğrulama: Ali Paragraf 86→13.6% hata (güçlü), zayıf context'ten çıktı.
+> - **⚠️ TAKİP NÜANSI (Neo kararı bekliyor):** Fix sonrası bos-ağır konular (Ali Oran-Orantı: yanlis=0/bos=576/soru=576 → %100 hata) zayıf görünüyor. Bunlar "HİÇ DENENMEMİŞ" (boş=havuz, system_prompts:996) ≠ gerçek zayıf. Konvansiyon boş'u hata sayıyor. Olası rafine: yanlis=0 & bos-dominant konuları "denenmedi" diye ayır/çıkar. Neo onayı sonrası yapılabilir.
 >
 > ## 🩺 3 Haz (Oturum 25.57-B) — SENTRY + ETKİLEŞİM SAĞLIK KONTROLÜ (Neo dev arası)
 >
