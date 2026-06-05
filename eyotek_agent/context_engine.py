@@ -305,10 +305,13 @@ async def _get_weekly_delta(soz_no: int) -> dict:
         # Sadece gecen hafta etut yapilan konularin listesi
         gh_konu_set = {(r["ders"], r["konu"]) for r in (gh_rows or [])}
         # Bu hafta zayif (hata > 50%) topic_tracker
+        # 25.57-E (veri-bütünlüğü denetimi): kolon adları YANLIŞTI → query crash ediyordu
+        # (hata_yuzdesi→sinav_hata_yuzdesi, son_calisma→calisti_tarih). Tekrar-hata tespiti
+        # sessizce çalışmıyordu.
         zayif_rows = await db_fetch(
             """SELECT ders, konu FROM student_topic_tracker
-               WHERE soz_no=$1 AND hata_yuzdesi > 50
-                 AND son_calisma > NOW() - INTERVAL '7 days'""",
+               WHERE soz_no=$1 AND sinav_hata_yuzdesi > 50
+                 AND calisti_tarih > NOW() - INTERVAL '7 days'""",
             soz_no,
         )
         tekrar_hata = []
@@ -493,11 +496,12 @@ def format_for_prompt(unified: dict, max_chars: int = 1500) -> str:
         )
 
     if weak:
+        # 25.57-E: bare % YASAK (Neo kafa karıştı) — "hata %X" diye etiketle.
         zayif_str = ", ".join(
-            f"{w['ders']}/{w['konu'][:25]} (%{int(w['sinav_hata_yuzdesi'])})"
+            f"{w['ders']}/{w['konu'][:25]} (hata %{int(w['sinav_hata_yuzdesi'])})"
             for w in weak[:3]
         )
-        lines.append(f"  • Zayıf konular: {zayif_str}")
+        lines.append(f"  • Geliştirilecek konular: {zayif_str}")
 
     if sentiment.get("durum") in ("alarm", "izle"):
         lines.append(

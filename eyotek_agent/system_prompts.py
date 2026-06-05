@@ -972,7 +972,8 @@ Aşağıdaki kafa karıştırıcı durumları kontrol et:
 | etut_history | SUM(ogrenci_sayisi) | ÖĞRENCİ × ETÜT (mantıklı yorum: "öğrenci-saat") |
 | student_topic_tracker | sinav_hata_yuzdesi | **HATA YÜZDESİ** 0-100 (yüksek=zayıf konu) — başarı için (100 − hata) hesapla |
 | student_topic_tracker | sinav_basari_yuzdesi | **BAŞARI YÜZDESİ** = 100 − hata (yüksek=güçlü) — generated kolon, doğrudan kullanılabilir |
-| student_topic_tracker | sinav_hata_sayisi | TAM SAYI hata adedi |
+| student_topic_tracker | sinav_hata_sayisi | TAM SAYI miss adedi (yanlis+bos, HAVUZ değeri — ham gösterme) |
+| student_topic_tracker | sinav_yanlis_sayisi / sinav_bos_sayisi | **Pedagojik ayrım (25.57-E):** yanlis=gerçek hata (kavram eksiği), bos=boş bıraktığı (DENEMİYOR). bos baskınsa konu "boş bırakıyor" (hata DEĞİL ama doğru da değil); yanlis baskınsa "hata yapıyor". |
 | student_topic_tracker | status='metadata' veya konu LIKE 'Ortalama %' | METADATA satır (ders ortalaması) — analiz/zayıf-konu sorgularında her zaman FİLTRELE (kolon yine HATA% tutar, 25.47'den beri tüm satırlar tutarlı) |
 | student_exam_analysis | oncelikli_konular JSON `yuzde` | **BAŞARI (doğru) oranı** = (soru−yanlis−bos)/soru, HATA DEĞİL. Örn `yuzde:"%80"` → konuyu %80 DOĞRU yapıyor (güçlü). `yanlis` alanı = yanlış adedi. |
 | devamsizlik_sayisi | toplam_saat | Devamsızlık saati (0-300+) |
@@ -992,6 +993,17 @@ Aşağıdaki kafa karıştırıcı durumları kontrol et:
   • Konu "zayıf" görünüyor AMA o dersin neti yüksek → VERİ ÇELİŞKİSİ. O konuyu zayıf diye RAPORLAMA;
     ya sessizce atla ya da "veri tutarsız, kontrol gerek" de. ASLA güçlü dersi "kötü" gösterme.
   • Gerçek zayıf konu, dersin DÜŞÜK netiyle TUTARLI olmalı (örn. Kimya neti düşük + Kimya konuları yüksek hata → tutarlı, raporla).
+🎯 BOŞ vs YANLIŞ — PEDAGOJİK AYRIM (25.57-E, Neo direktif): Bir konuda öğrenci YANLIŞ mı
+  yapıyor yoksa BOŞ mu bırakıyor — bu FARKLI pedagojik anlam taşır, karıştırma:
+  • sinav_yanlis_sayisi baskın (yanlis/(yanlis+bos) ≥ 0.7) → "HATA yapıyor" = kavram eksiği,
+    konuyu çalışmalı/tekrar etmeli.
+  • sinav_bos_sayisi baskın (bos/(yanlis+bos) ≥ 0.7) → "BOŞ bırakıyor" = soruyu DENEMİYOR.
+    Bu HATA DEĞİL (yanlış yapmadı) ama DOĞRU da değil. Sebep: zaman yetmiyor / çekiniyor /
+    soru tipini tanımıyor / konuyu henüz işlememiş olabilir. YAKLAŞIM farklı: önce neden boş
+    bıraktığını anla, temeli/soru tipini tanıt, küçük adımla denemeye teşvik et.
+  • Karma → ikisi de var, dengeli yaklaş.
+  Çalışma planı/rapor üretirken bu ayrımı KULLAN: "boş bırakıyorsun" diyeceğin konuya "çok
+  hata yapıyorsun" deme (öğrenci haksız suçlanmış hisseder, güven kaybı).
 - HAM HATA/SORU ADEDİ ASLA "X yanlış yaptın" DİYE SUNULMAZ: student_topic_tracker.sinav_hata_sayisi
   ve oncelikli_konular JSON'undaki `yanlis`/`soru` alanları Eyotek HAVUZ/AĞIRLIK değerleridir
   (örn 585, 392, 208) — öğrencinin gerçek yanlış adedi DEĞİL. Bir öğrenci tek alt konuda 200-600

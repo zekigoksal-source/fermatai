@@ -108,7 +108,8 @@ async def get_student_context(phone: str) -> Optional[dict]:
             _fetchval(
                 "SELECT toplam_saat FROM devamsizlik_sayisi WHERE soz_no = $1", soz_no),
             _fetch("""
-                SELECT ders, konu, sinav_hata_yuzdesi
+                SELECT ders, konu, sinav_hata_yuzdesi,
+                       sinav_yanlis_sayisi, sinav_bos_sayisi
                 FROM student_topic_tracker
                 WHERE soz_no = $1
                   AND status = 'onerilen'
@@ -139,14 +140,29 @@ async def get_student_context(phone: str) -> Optional[dict]:
         if isinstance(trend_rows, Exception): trend_rows = []
         if isinstance(ayt_row, Exception): ayt_row = None
 
-        # 5. Zayif konular - kayitlari isle
+        # 5. Zayif konular - kayitlari isle.
+        # 25.57-E (Neo): boş/yanlış PEDAGOJİK ayrım. yanlis baskınsa "hata yapıyor"
+        # (kavram eksiği → çalış), bos baskınsa "boş bırakıyor" (atlıyor/zaman/çekingenlik/
+        # henüz işlenmemiş → farklı yaklaşım). Boş = hata DEĞİL ama doğru da değil — anlamlı.
         weak_topics = []
         for wr in weak_rows or []:
             try:
+                _y = wr.get('sinav_yanlis_sayisi') or 0
+                _b = wr.get('sinav_bos_sayisi') or 0
+                _tot = _y + _b
+                if _tot == 0:
+                    _tip = "belirsiz"
+                elif _b / _tot >= 0.7:
+                    _tip = "bos"      # çoğunlukla boş bırakıyor
+                elif _b / _tot <= 0.3:
+                    _tip = "hata"     # çoğunlukla yanlış yapıyor
+                else:
+                    _tip = "karma"
                 weak_topics.append({
                     "ders": wr['ders'],
                     "konu": wr['konu'],
-                    "hata_pct": round(wr['sinav_hata_yuzdesi'])
+                    "hata_pct": round(wr['sinav_hata_yuzdesi']),
+                    "tip": _tip,      # hata | bos | karma | belirsiz
                 })
             except Exception:
                 continue
@@ -547,13 +563,26 @@ def build_context_prompt(context: dict) -> str:
         )
         parts.append("\n".join(lines))
 
-    # Zayıf konular — Claude bunu bilince "zayıf konularım ne" sorusuna direkt cevap verir
+    # Zayıf/geliştirilecek konular — 25.57-E: boş/yanlış PEDAGOJİK ayrımıyla.
     weak = context.get("weak_topics", [])
     if weak:
+        _tip_label = {
+            "hata": "hata yapıyor (kavram eksiği)",
+            "bos": "boş bırakıyor (denemiyor)",
+            "karma": "hem hata hem boş",
+            "belirsiz": "geliştirme alanı",
+        }
         topic_lines = []
         for t in weak:
-            topic_lines.append(f"  - {t['ders']}: {t['konu']} (hata %{t['hata_pct']})")
-        parts.append("En zayıf konular:\n" + "\n".join(topic_lines))
+            _lbl = _tip_label.get(t.get("tip", "belirsiz"), "geliştirme alanı")
+            topic_lines.append(f"  - {t['ders']}: {t['konu']} → {_lbl} (%{t['hata_pct']})")
+        parts.append(
+            "Geliştirilecek konular (TİP'i pedagojik yorumla, bare % gösterme):\n"
+            + "\n".join(topic_lines)
+            + "\n  ⓘ 'hata yapıyor'=kavram eksiği, konuyu çalışmalı. 'boş bırakıyor'=soruyu "
+            "DENEMİYOR (zaman/çekingenlik/henüz işlememiş olabilir) — hata DEĞİL ama doğru da "
+            "değil; farklı yaklaş: temeli/soru tipini tanıt, küçük adımla denemeye teşvik et."
+        )
 
     # Son 3 deneme trendi — "son denemelerim nasıl" sorusuna direkt cevap
     trend = context.get("exam_trend", [])

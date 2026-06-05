@@ -1234,7 +1234,8 @@ async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", s
     # ORDER BY DESC ile gerçek zayıf konular önce gelir; LIMIT 20 alıp Python tarafında
     # kur-track filtresi (SAY -> AYT Türkçe/Tarih hariç) uyguluyoruz.
     rows = await _q(
-        f"SELECT ders, konu, sinav_hata_sayisi, sinav_hata_yuzdesi, status, sinav_turu "
+        f"SELECT ders, konu, sinav_hata_sayisi, sinav_hata_yuzdesi, status, sinav_turu, "
+        f"sinav_yanlis_sayisi, sinav_bos_sayisi "
         f"FROM student_topic_tracker "
         f"WHERE {where} ORDER BY sinav_hata_yuzdesi DESC NULLS LAST LIMIT 20",
         *params)
@@ -1395,7 +1396,19 @@ async def ogrenci_zayif_konular(soz_no: int, name: str, ders_filtre: str = "", s
         lines.append(f"*{i}.* {emoji} *{r['ders']}* · {r['konu'][:35]}{status_icon}")
         # 25.43-TEST-FIX (Neo iter#2): parantezde hata gosterim cifte bilgi karistirici
         # idi. Sadece "Basarin: %X" goster, judge yorumu "kafa karistirici" demisti.
-        lines.append(f"    Başarın: *%{basari:.0f}* | {oncelik_txt} öncelik{cikmis_bilgi}")
+        # 25.57-E (Neo): boş/yanlış pedagojik ayrımı — "boş bırakıyor" hata DEĞİL.
+        _y = r.get('sinav_yanlis_sayisi') or 0
+        _b = r.get('sinav_bos_sayisi') or 0
+        _tot = _y + _b
+        _tip_txt = ""
+        if _tot > 0:
+            if _b / _tot >= 0.7:
+                _tip_txt = " · ⭕ _çoğunlukla boş bırakıyorsun (denemiyorsun)_"
+            elif _b / _tot <= 0.3:
+                _tip_txt = " · ❌ _hata yapıyorsun (kavram)_"
+            else:
+                _tip_txt = " · ⚠️ _hem hata hem boş_"
+        lines.append(f"    Başarın: *%{basari:.0f}* | {oncelik_txt} öncelik{cikmis_bilgi}{_tip_txt}")
         lines.append("")
 
     # Strateji onerisi + aksiyon
