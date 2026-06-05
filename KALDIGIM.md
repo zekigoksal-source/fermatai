@@ -5,8 +5,17 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `6a8b9dd` (veri-bütünlüğü denetimi + boş/yanlış ayrım) ← `8f17a6d` (topic INVERSION fix) ← `3723292` (web kapasite retry) ← `cb186dd` (konuşma görüntüleyici) ← 25.54
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `6a8b9dd`, PostgreSQL OK
+> - **HEAD:** `acb2254` (Sentry queue_exceeded filtre) ← `6a8b9dd` (veri-bütünlüğü denetimi + boş/yanlış) ← `8f17a6d` (topic INVERSION fix) ← `3723292` (web kapasite retry) ← 25.54
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `acb2254`, PostgreSQL OK
+>
+> ## ✅ 5 Haz — DEV-ARASI HAZIRLIK DENETİMİ (Neo "eksiksiz çalıştığına emin ol")
+> - **Git:** local+VPS+origin = `acb2254`, çalışan ağaç temiz, junk silindi (`=2.0.0`/`=41.0.0`/`_hybrid_quality_test.py`).
+> - **Bridge:** active, NRestarts=0, HTTP 200, restart sonrası log temiz. **16/16 kritik modül import OK.**
+> - **Modeller:** 5/5 sağlıklı (gpt-oss-120b, claude-sonnet-4-6, deepseek-reasoner, 2× Groq).
+> - **Timer/cron:** hepsi active + son çalışmaları başarılı (backup, eyotek-daily, model-health, smart-sync, slow-claude, atlas-nightly, quality-weekly, dr-drill).
+> - **DB:** students=175 (117 telefonlu), topic_tracker=3359, yedek `fermat.student_topic_tracker_bak_0605` (3359) sağlam.
+> - **Sentry:** tek aktif olay benign Cerebras queue blip'i → `before_send` ile filtrelendi (gerçek bug'lar geçer). Kalan 22 issue tarihsel/zombie.
+> - **Teknik borç:** Ali inversion (248 satır) + boş/yanlış pedagojik ayrım (1700 satır) + context_engine crash + web kapasite + kanal/render mimarisi — hepsi kapatıldı.
 >
 > ## 🔬 5 Haz (Oturum 25.57-E) — SİSTEM GENELİ VERİ DENETİMİ + BOŞ/YANLIŞ PEDAGOJİK AYRIM
 >
