@@ -5,8 +5,15 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `cb186dd` (admin konuşma görüntüleyici geliştirme 25.57) ← `4b3263d` (web akıllı render eşiği FIX7) ← `722ea9b` (FIX5-6) ← `26759ca` (Cerebras kazanım FIX1-4) ← `45506b4` (25.55 kriz-split) ← 25.54 (dikey-AI)
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `cb186dd`, restart canlı, PostgreSQL OK
+> - **HEAD:** `6deb038` (web stream kapasite/Sentry gürültü fix) ← `cb186dd` (admin konuşma görüntüleyici 25.57) ← `4b3263d` (web akıllı render eşiği FIX7) ← `722ea9b` (FIX5-6) ← `26759ca` (Cerebras kazanım FIX1-4) ← 25.54 (dikey-AI)
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `6deb038`, restart canlı, PostgreSQL OK
+>
+> ## 🩺 3 Haz (Oturum 25.57-B) — SENTRY + ETKİLEŞİM SAĞLIK KONTROLÜ (Neo dev arası)
+>
+> - **Etkileşim (24h):** 78 mesaj (Claude 35 / Cerebras 33 / fast 7 / Groq 3). Frustration/hata sinyali YOK.
+> - **Sentry:** 23 açık issue, ama GERÇEKTEN aktif (last_seen<48h) sadece **1**: `#118125659 RateLimitError 429 'high traffic' @ web_chat.stream_message` (1.4h önce). Diğer 22 tarihsel/zombie — qwen-235b 404 **5.3g önce** (25.49 fix çalışmış), BlockingIOError/sync timeout 5.5-5.7g önce.
+> - **Fix (`6deb038`):** Claude clientları zaten max_retries=4; sürekli yoğunlukta tükenince 429 fırlayıp generic 'teknik aksama' + logger.error ile Sentry'e BUG gibi düşüyordu. Artık kapasite hatası (429/529/overload/rate_limit/high traffic) ayrılır → logger.warning (Sentry gürültü durur, gerçek bug error kalır) + öğrenciye dürüst nazik mesaj. Birim test 6/6.
+> - **Gözlem (bug değil):** Groq free-tier TPD 100K/gün dolunca 413 → Claude fallback artıyor; Claude %45'e çıkmış (FIX7 web-render→Claude da katkı). Operasyonel kapasite, kod sorunu değil. İzlenecek.
 >
 > ## 🖥️ 3 Haz (Oturum 25.57) — ADMIN KONUŞMA GÖRÜNTÜLEYİCİ (Neo bağlam takibi)
 >
