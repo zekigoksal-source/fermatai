@@ -217,6 +217,59 @@ async def _persist(results: list[dict]):
 _CRITICAL = {"model_not_found", "auth_error", "no_key"}
 
 
+async def check_wa_token() -> dict:
+    """WhatsApp Graph API access token sağlık + erken-uyarı (25.57-G).
+
+    NEDEN: 8 Haz WA USER token'ı expire oldu, reaktif _refresh_wa_token ölü token'ı
+    kurtaramadı (fb_exchange yalnız GEÇERLİ token'ı uzatır) → ~22h WhatsApp gönderimi
+    SESSİZCE kırık kaldı (sadece Sentry'den fark ettik). Bu kontrol günlük çalışıp
+    token geçerliliğini + kalan gün sayısını izler → expire OLMADAN haber verir.
+    KALICI ÇÖZÜM: Meta'da System User PERMANENT token (expires_at=0) kullan → hiç bitmez.
+    """
+    import time as _t
+    t0 = _t.time()
+    res = {"provider": "whatsapp", "model": "access_token", "status": "error",
+           "detail": "", "ms": 0, "used_by": ["channel:whatsapp_send"]}
+    tok = os.getenv("WA_ACCESS_TOKEN", "").strip()
+    pnid = os.getenv("WA_PHONE_NUMBER_ID", "").strip()
+    ver = os.getenv("GRAPH_API_VERSION", "v25.0")
+    if not tok or not pnid:
+        res.update(status="no_key", detail="WA_ACCESS_TOKEN/PHONE_NUMBER_ID tanımsız")
+        return res
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=15) as c:
+            r = await c.get(f"https://graph.facebook.com/{ver}/{pnid}",
+                            params={"access_token": tok, "fields": "verified_name"})
+            if r.status_code != 200:
+                err = (r.json() or {}).get("error", {})
+                res.update(status="auth_error",
+                           detail=f"WA token GEÇERSİZ — code={err.get('code')} {str(err.get('message'))[:90]} "
+                                  f"→ Meta'dan YENİ token üret (System User permanent öner)")
+                res["ms"] = int((_t.time() - t0) * 1000)
+                return res
+            # Geçerli — kalan süre
+            appid = os.getenv("FB_APP_ID", ""); appsec = os.getenv("FB_APP_SECRET", "")
+            days_left = None
+            if appid and appsec:
+                rd = await c.get(f"https://graph.facebook.com/{ver}/debug_token",
+                                 params={"input_token": tok, "access_token": f"{appid}|{appsec}"})
+                dd = (rd.json() or {}).get("data", {})
+                exp = dd.get("expires_at")
+                if exp and exp > 0:
+                    days_left = round((exp - _t.time()) / 86400, 1)
+            if days_left is not None and days_left < 7:
+                res.update(status="rate_limit",  # degraded (kritik değil ama UYARI)
+                           detail=f"⚠️ WA token {days_left} GÜN sonra expire olacak — YENİLE (System User permanent öner)")
+            else:
+                res.update(status="ok",
+                           detail=f"geçerli{f', {days_left}g kaldı' if days_left is not None else ' (kalıcı?)'}")
+    except Exception as e:
+        res.update(status="error", detail=str(e)[:100])
+    res["ms"] = int((_t.time() - t0) * 1000)
+    return res
+
+
 async def run_health_check(alert: bool = True) -> dict:
     """Tüm yapılandırılmış modelleri kontrol et, persist et, kritikse Neo'ya alarm."""
     configured = get_configured_models()
@@ -224,6 +277,11 @@ async def run_health_check(alert: bool = True) -> dict:
 
     results = await asyncio.gather(*[
         check_one(m["provider"], m["model"]) for m in configured])
+    # 25.57-G: WhatsApp token sağlık kontrolü (sessiz expire'ı önle)
+    try:
+        results.append(await check_wa_token())
+    except Exception as _wae:
+        logger.warning(f"[MODEL_HEALTH] WA token check atlandı: {_wae}")
     # used_by bilgisini geri ekle
     by_key = {(m["provider"], m["model"]): m["used_by"] for m in configured}
     for r in results:
@@ -253,6 +311,26 @@ async def run_health_check(alert: bool = True) -> dict:
     # KRİTİK alarm — sadece model_not_found / auth (qwen senaryosu)
     if alert and critical:
         await _alert_neo(critical, results)
+
+    # 25.57-G: WA token erken-uyarı — < 7 gün kaldıysa WA HÂLÂ ÇALIŞIRKEN Neo'ya
+    # proaktif WA mesajı (asıl önleme: expire OLMADAN yenile). Token ÖLÜYSE WA-alarm
+    # gidemez (Sentry/log/DB yakalar) — ama bu uyarı tam o noktaya düşmeden tetiklenir.
+    if alert:
+        _wa = next((r for r in results if r["provider"] == "whatsapp"), None)
+        if _wa and _wa["status"] not in ("ok", "no_key"):
+            try:
+                from session_keeper import notify_admin
+                _crit = _wa["status"] == "auth_error"
+                _ic = "🔴" if _crit else "🟡"
+                await notify_admin(
+                    f"{_ic} *WhatsApp Token* — {_wa['detail']}\n\n"
+                    f"_Çözüm: Meta Business → WhatsApp → API Setup'tan token üret. "
+                    f"KALICI için System User permanent token (hiç bitmez). "
+                    f"Sonra VPS .env WA_ACCESS_TOKEN güncelle + bridge restart._",
+                    category="wa_token", severity="critical" if _crit else "warning")
+                logger.warning(f"[MODEL_HEALTH] WA token uyarı gönderildi: {_wa['status']}")
+            except Exception as _we:
+                logger.error(f"[MODEL_HEALTH] WA token uyarısı gönderilemedi (WA down?): {_we}")
 
     return summary
 
