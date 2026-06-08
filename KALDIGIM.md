@@ -5,8 +5,14 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `acb2254` (Sentry queue_exceeded filtre) ← `6a8b9dd` (veri-bütünlüğü denetimi + boş/yanlış) ← `8f17a6d` (topic INVERSION fix) ← `3723292` (web kapasite retry) ← 25.54
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `acb2254`, PostgreSQL OK
+> - **HEAD:** `238051b` (WA token sağlık izleme) ← `acb2254` (Sentry filtre) ← `6a8b9dd` (veri denetimi + boş/yanlış) ← `8f17a6d` (topic INVERSION) ← 25.54
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `238051b`, PostgreSQL OK
+>
+> ## 🔴 8 Haz — DEV-ARASI DENETİM: WHATSAPP TOKEN EXPIRE (Neo aksiyonu bekliyor)
+> - **KRİTİK:** WA USER access token **7 Haz 22:45 expire** oldu, reaktif `_refresh_wa_token` ölü token'ı kurtaramadı (fb_exchange yalnız GEÇERLİ token uzatır) → **~22h WhatsApp gönderimi SESSİZCE kırık** (Sentry `send_wa_message code=190` birikiminden bulundu). Proaktif yenileme/izleme YOKTU.
+> - **NEO YAPMALI (ben token üretemem/giremem — güvenlik):** Meta Business → WhatsApp → API Setup'tan YENİ token üret (KALICI için **System User permanent token**, expires_at=0, hiç bitmez) → VPS `.env` `WA_ACCESS_TOKEN` güncelle → bridge restart. (Web/app ana kanal çalışıyor; bu sadece ikincil WhatsApp gönderimi.)
+> - **KOD FIX (238051b):** `model_health.check_wa_token()` günlük 06:00 → token geçerlilik + kalan gün; <7 gün VEYA ölü → Neo'ya proaktif WA alarmı (token ölmeden). Persist + "model durum"da görünür. Bir daha sessiz 22h kesinti olmaz.
+> - **Diğer denetim:** Sentry'de başka aktif hata YOK (queue_exceeded filtreli, qwen-235b zombie). Routing Claude %50 ama 58 msg/3 kullanıcı + tool-yoğun analitik sorgular → hacim-kaynaklı, sorun değil. Ali "84→68 net" = gerçek net dalgalanması (83.25→67.25), veri DOĞRU. Ali sohbet: bot "deneme kitabı sırala" isteğini multi-turn'de karıştırdı (LLM anlama, crash değil).
 >
 > ## ✅ 5 Haz — DEV-ARASI HAZIRLIK DENETİMİ (Neo "eksiksiz çalıştığına emin ol")
 > - **Git:** local+VPS+origin = `acb2254`, çalışan ağaç temiz, junk silindi (`=2.0.0`/`=41.0.0`/`_hybrid_quality_test.py`).
