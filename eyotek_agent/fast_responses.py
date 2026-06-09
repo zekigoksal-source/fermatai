@@ -4726,8 +4726,25 @@ async def try_fast_response(
         msg_norm = msg_lower
 
     if role == "ogrenci" and soz_no:
+        # 25.57-H (Neo: "zart zurt çocuklara deneme sonucu dayıyor"): KİŞİSEL-SINAV
+        # handler'ları PİYASA/KİTAP/DIŞ-KAYNAK bağlamında ASLA tetiklenmesin. Ali
+        # "piyasadaki tyt denemelerini sırala" (= deneme KİTABI) deyince bot kendi
+        # deneme sonuçlarını ("sistemde 5 denemen var") dayıyordu. Mesajda piyasa/
+        # yayınevi/kitap/marka geçiyorsa bu KİŞİSEL VERİ DEĞİL → Claude düzgün cevaplasın.
+        _PERSONAL_EXAM_HANDLERS = {
+            "son_deneme", "ayt_deneme", "deneme_kiyasla", "son_deneme_trend",
+        }
+        _market_ctx = bool(re.search(
+            r"piyasa|yay[ıi]nev|yay[ıi]n\b|\bmarka\b|kitap|d[ıi][şs]ar[ıi]dan|"
+            r"hangi\s*(yay[ıi]n|seri)|[öo]ner\w*\s*mi", msg_lower))
         for pattern, handler, desc in OGRENCI_PATTERNS:
             if re.search(pattern, msg_lower) or (msg_norm != msg_lower and re.search(pattern, msg_norm)):
+                # 25.57-H: piyasa/kitap bağlamında kişisel-sınav handler'ı → Claude'a bırak
+                if handler in _PERSONAL_EXAM_HANDLERS and _market_ctx:
+                    import logging as _lg_mk
+                    _lg_mk.getLogger(__name__).info(
+                        f"[MARKET-GUARD] '{handler}' piyasa/kitap bağlamında atlandı → Claude")
+                    return None
                 # 25.41 (Neo) — ANTI-REPEAT: Aynı handler 90sn arda tetiklenirse SKIP → LLM
                 # Kullanıcı tekrar soruyorsa demek ki detay istiyor → Cerebras/Claude bağlamla anlasın
                 try:

@@ -1154,22 +1154,16 @@ def strip_redundant_greeting(response: str, history: list, max_lookback: int = 6
             if len(bot_msgs) >= 3:
                 break
 
-    if len(bot_msgs) < 2:
-        # Cok az gecmis var — bu ilk veya 2. cevap olabilir, hitap KORUNUR
+    # 25.57-H (Neo: "her cevapta Merhaba [isim] robotik/yapay hisseder"): Sohbet
+    # ortasında (recent history'de EN AZ 1 önceki bot cevabı varsa) selamlamayı SİL.
+    # ESKİ mantık "son 2 cevap DA selamladı" şartı çok hoşgörülüydü — araya selamsız
+    # bir cevap girince streak kırılıp her tur yeniden selamlıyordu. Artık ilk temas
+    # DIŞINDA tüm selamlama prefix'leri temizlenir (doğal sohbet akışı).
+    if len(bot_msgs) < 1:
+        # İlk cevap / yeni temas — hitap KORUNUR (selamlama doğal)
         return response
 
-    # Son 2 bot cevabi da hitap ile basliyor mu?
-    has_greeting_count = sum(
-        1 for c in bot_msgs[:2]
-        if _GREETING_PREFIX_RE.match(c)
-    )
-
-    if has_greeting_count < 2:
-        # En az son 2'si hitapla baslamadi — bu cevap da OK kalsin
-        return response
-
-    # 3 ust uste hitap → bu cevabin prefix'i silinecek
-    # Match end konum:
+    # Sohbet ortası → bu cevabın selamlama prefix'i silinecek. Match end konum:
     end = m.end()
     cleaned = response_strip[end:].lstrip()
     if not cleaned or len(cleaned) < 5:
