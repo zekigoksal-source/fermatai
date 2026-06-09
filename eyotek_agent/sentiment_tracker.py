@@ -26,6 +26,12 @@ SENTIMENT_PATTERNS = {
     "crisis": [
         r"intihar", r"kendimi\s*oldu", r"yasama\s*amac",
         r"olsem\s*daha", r"kendime\s*zarar",
+        # 25.58 (smoke bulgusu): açık kriz ifadeleri eksikti → "negative"e düşüyordu
+        # (kriz GÜVENLİĞİ chat_quality._CRISIS_RE ile zaten sağlanıyordu; bu fix
+        # sınıflandırma doğruluğu — rehber uyarı şiddeti + insights için).
+        r"ya[sş]amak\s*istemiyorum", r"[öo]lmek\s*istiyorum",
+        r"can[iı]ma\s*k[iı]y", r"kendime\s*k[iı]y", r"hayata\s*son",
+        r"de[gğ]ersiz\w*\s*hissed", r"yok\s*olmak\s*istiyorum",
     ],
     "stressed": [
         r"stres", r"kaygi", r"kaygı", r"baskı", r"bunalt", r"bunalım",
