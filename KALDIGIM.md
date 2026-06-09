@@ -5,8 +5,15 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `238051b` (WA token sağlık izleme) ← `acb2254` (Sentry filtre) ← `6a8b9dd` (veri denetimi + boş/yanlış) ← `8f17a6d` (topic INVERSION) ← 25.54
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `238051b`, PostgreSQL OK
+> - **HEAD:** `f4e8288` (konuşma kalite fix'leri 25.57-H) ← `3e2e4fa` (WA token aracı) ← `238051b` (WA token izleme) ← `acb2254` (Sentry filtre) ← `6a8b9dd` (veri denetimi) ← 25.54
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `f4e8288`, PostgreSQL OK
+>
+> ## 💬 9 Haz (25.57-H) — KONUŞMA KALİTE FIX (Neo: "deneme dayatması + bağlam kopuk + düz/sıradan")
+> Gerçek konuşma okuması (Ali/Oğulcan/Berf/Yağız) ile 3 kök bulundu+düzeltildi (hepsi canlı test):
+> - **1. DENEME DAYATMASI (ana şikayet):** Ali "piyasadaki tyt **denemelerini** sırala" (=KİTAP) deyince fast-response `tyt...denem` + `karşılaştır` pattern'ı kendi sınav sonuçlarını ("sistemde 5 denemen var", "Son 3 Deneme Trendi") DAYIYORDU. FIX (fast_responses): MARKET-GUARD — kişisel-sınav handler'ları (son_deneme/ayt_deneme/deneme_kiyasla) `piyasa|yayın|kitap|marka` bağlamında tetiklenmez → Claude. Test: piyasa→Claude, "son denemem"→fast (ikisi de doğru).
+> - **2. SELAMLAMA TEKRARI (düz/robotik):** `strip_redundant_greeting` "son 2 cevap DA selamladı" şartı çok hoşgörülüydü (araya selamsız cevap girince streak kırılıp her tur yeniden "Merhaba Ali" diyordu). Artık ilk temas DIŞINDA tüm selamlama prefix'leri silinir. Test: sohbet ortası siler, ilk mesaj korur.
+> - **3. ŞABLON + BAĞLAM:** system_prompt'a şablon-tuzağı kuralı ("Merhaba—---*Başlık*" iskeleti her cevapta YASAK, soruya göre yapı değişsin, takip sorusunda direkt cevap) + bağlam-uydurma yasağı ("az önce X konuşuyorduk" halüsinasyonu).
+> - **AÇIK GÖZLEM (sonraki):** Bazı cevaplar 2x duplicate gidiyor (Yağız asit-baz, Ali Bülbülü) — token-kesinti dönemi artığı olabilir; sürerse dedup/streaming incelenecek. Routing Claude %62 (4 aktif tool-yoğun kullanıcı, hacim kaynaklı).
 >
 > ## 🔴 8 Haz — DEV-ARASI DENETİM: WHATSAPP TOKEN EXPIRE (Neo aksiyonu bekliyor)
 > - **KRİTİK:** WA USER access token **7 Haz 22:45 expire** oldu, reaktif `_refresh_wa_token` ölü token'ı kurtaramadı (fb_exchange yalnız GEÇERLİ token uzatır) → **~22h WhatsApp gönderimi SESSİZCE kırık** (Sentry `send_wa_message code=190` birikiminden bulundu). Proaktif yenileme/izleme YOKTU.
