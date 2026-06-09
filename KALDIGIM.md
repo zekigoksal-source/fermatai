@@ -5,8 +5,15 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `f4e8288` (konuşma kalite fix'leri 25.57-H) ← `3e2e4fa` (WA token aracı) ← `238051b` (WA token izleme) ← `acb2254` (Sentry filtre) ← `6a8b9dd` (veri denetimi) ← 25.54
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `f4e8288`, PostgreSQL OK
+> - **HEAD:** `9e53e6e` (crisis pattern) ← `cbe6285` (25.58 duplicate kök fix + hot-path LRU) ← `76d7ded` (konuşma kalite 25.57-H) ← `3e2e4fa` (WA token aracı) ← 25.54
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `9e53e6e`, PostgreSQL OK
+>
+> ## 🔧 9 Haz (25.58) — TAM-SİSTEM MÜHENDİSLİK İNCELEMESİ (Neo: "yeni kapasiteyle baştan sona")
+> 3 paralel denetim ajanı (hot-path verim / duplicate-güvenilirlik / token-maliyet) + HER bulgu kod/canlı doğrulamadan geçirildi:
+> - **🔴 DUPLICATE-MESAJ KÖK FIX (kullanıcı-görünür, Yağız/Ali çift-cevap):** `whatsapp_bridge._handle_single_message` gelen-wamid dedup'u Redis YOKKEN (REDIS_URL boş → MemoryStore, `_get_client` yok) hasattr-gate yüzünden **tamamen devre dışıydı** (hasattr False → exception yok → in-memory kontrol hiç çalışmıyor) → Meta webhook retry aynı mesajı 2. kez işletip LLM'i 2 kez çağırıyordu. FIX: in-memory set HER ZAMAN önce; Redis varsa ek katman. Birim test: eski kaçırıyor / yeni yakalıyor / ilk mesajı bloklamıyor.
+> - **⚡ HOT-PATH LRU (20-30ms/mesaj):** `detect_sentiment` (4-5 katman aynı mesajda çağırıyordu), `classify_lane` (2x), `classify_intent` (2x, ~100 pattern) — üçü de SAF doğrulandı → lru_cache(512). VPS smoke: cache hits çalışıyor, değerler doğru.
+> - **🩹 25.58-B crisis pattern boşluğu (smoke yakaladı, pre-existing):** `detect_sentiment("yaşamak istemiyorum")`='negative' dönüyordu (crisis listesi 5 dar pattern). Güvenlik etkilenmiyordu (chat_quality `_CRISIS_RE`+ALO 183 bağımsız); sınıflandırma doğruluğu için 7 açık kriz ifadesi eklendi. VPS: 6/6 sınıflandırma doğru.
+> - **❌ REDDEDİLEN ajan önerileri (doğrulama sonrası):** dynamic_context cache_control kaldırma (tool-loop 2. turda cache-HIT veriyor — tool-ağır Claude yolumuzda NET POZİTİF, kaldırmak zarar) · history-trim "O(N) 1.5s" (pop(0) 30 elemanda µs — abartı) · prefetch-3x (test artefaktı) · addon-merge (Cerebras'a gidiyor, ucuz; kalite riski) · compact threshold düşürme (kalite riski, kazanç ~$2/ay).
 >
 > ## 💬 9 Haz (25.57-H) — KONUŞMA KALİTE FIX (Neo: "deneme dayatması + bağlam kopuk + düz/sıradan")
 > Gerçek konuşma okuması (Ali/Oğulcan/Berf/Yağız) ile 3 kök bulundu+düzeltildi (hepsi canlı test):
