@@ -65,8 +65,18 @@ SENTIMENT_PATTERNS = {
 }
 
 
+from functools import lru_cache
+
+
+@lru_cache(maxsize=512)
 def detect_sentiment(message: str) -> str:
-    """Mesajdan duygu tespit et."""
+    """Mesajdan duygu tespit et.
+
+    25.58 (hot-path verim): SAF fonksiyon (sadece regex, yan etki yok) → lru_cache.
+    Aynı mesaj tek istek içinde 4-5 katmandan çağrılıyordu (EMO-DEFER, chat_quality,
+    web-render eşiği, halüsinasyon guard, bridge sentiment log) — her biri ~65 regex
+    taraması. Cache ile ilk çağrı normal, sonrakiler ~0ms.
+    """
     msg_lower = message.lower()
 
     # Öncelik sırası: crisis > stressed > negative > angry > positive > neutral

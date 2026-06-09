@@ -293,8 +293,16 @@ _INTENT_PATTERNS = [
 ]
 
 
+from functools import lru_cache as _lru_cache
+
+
+@_lru_cache(maxsize=512)
 def classify_intent(message: str) -> Optional[str]:
     """Mesaj içeriğine göre intent etiketi dön (None → bilinmiyor).
+
+    25.58 (hot-path verim): SAF fonksiyon (regex + tr_normalize, yan etki yok) →
+    lru_cache. Aynı mesaj için routing_engine güvenlik-guard'ı + fermat_core_agent
+    iki kez çağırıyordu (~100 pattern taraması x2) — ikincisi artık ~0ms.
 
     Sıralı kontrol: önce güvenlik (injection/role/hassas/finans),
     sonra plan/analiz, sonra kavramsal/sohbet.

@@ -4957,28 +4957,33 @@ async def _handle_single_message(msg: dict, value: dict) -> None:
     # TTL=1 saat (Meta 24 saate kadar retry yapabilir ama 1 saat yeterli — yeni
     # mesaj ayni ID'yi kullanmaz).
     if msg_id:
-        _is_dup = False
-        try:
-            from session_store import get_store
-            _store = get_store()
-            # Redis set with NX (set if not exists) — atomik
-            if hasattr(_store, '_get_client'):
-                _rc = await _store._get_client()
-                # SET key value NX EX=3600 → 1 saat TTL
-                _redis_key = f"wa:msg:processed:{msg_id}"
-                _ok = await _rc.set(_redis_key, "1", ex=3600, nx=True)
-                _is_dup = not _ok  # NX başarısızsa zaten varmış
-        except Exception as _dup_e:
-            logger.debug(f"  Redis dup check fail (memory fallback): {_dup_e}")
-            # Fallback: in-memory set
-            _is_dup = msg_id in _PROCESSED_MSG_IDS
+        # 25.58 KRİTİK FIX (duplicate-mesaj kök sebebi, Yağız/Ali vakaları):
+        # ESKİ kod in-memory kontrolü SADECE Redis exception'ında yapıyordu. Ama Redis
+        # YAPILANDIRILMAMIŞKEN (REDIS_URL boş → MemoryStore, _get_client YOK) hasattr
+        # False döner, exception OLMAZ → in-memory kontrol HİÇ çalışmaz → _is_dup hep
+        # False → Meta webhook retry'ları aynı mesajı 2. kez işletip LLM'i 2 kez
+        # çağırıyordu (DB'de 1dk arayla çift bot cevabı). YENİ: in-memory HER ZAMAN
+        # önce kontrol edilir; Redis varsa cross-restart ek katman olarak da bakılır.
+        _is_dup = msg_id in _PROCESSED_MSG_IDS
+        if not _is_dup:
+            try:
+                from session_store import get_store
+                _store = get_store()
+                # Redis set with NX (set if not exists) — atomik, restart-persist
+                if hasattr(_store, '_get_client'):
+                    _rc = await _store._get_client()
+                    _redis_key = f"wa:msg:processed:{msg_id}"
+                    _ok = await _rc.set(_redis_key, "1", ex=3600, nx=True)
+                    _is_dup = not _ok  # NX başarısızsa zaten varmış
+            except Exception as _dup_e:
+                logger.debug(f"  Redis dup check fail (memory-only devam): {_dup_e}")
 
         if _is_dup:
             logger.info(f"  [DUP-SKIP] Tekrar gelen mesaj (msg_id={msg_id[-16:]})")
             return
 
-    # In-memory fallback — Redis down olursa da koruma olsun
-    _PROCESSED_MSG_IDS.add(msg_id)
+        # HEMEN işaretle (işlem bitmeden — uzun LLM sırasında gelen retry de yakalansın)
+        _PROCESSED_MSG_IDS.add(msg_id)
     if len(_PROCESSED_MSG_IDS) > 5000:  # Bellek yönetimi — eski ID'leri at, tamamen silme
         # En eski yarısını at (set sırasız ama yine de azalt)
         to_remove = list(_PROCESSED_MSG_IDS)[:2500]

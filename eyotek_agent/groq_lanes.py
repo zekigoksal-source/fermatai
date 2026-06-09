@@ -241,10 +241,18 @@ GroqSafeLane = Literal[
 ]
 
 
+from functools import lru_cache
+
+
+@lru_cache(maxsize=512)
 def classify_lane(message: str, role: str = "", phone: str = "") -> Optional[str]:
     """Mesaji Groq-safe lane'lerden birine yerlestir.
 
     Returns: lane name | None (None = Claude'a yolla)
+
+    25.58 (hot-path verim): SAF fonksiyon (sadece regex; phone gövdede kullanılmıyor,
+    IO/state yok) → lru_cache. Aynı mesaj için routing_engine.decide_route +
+    fermat_core_agent.run iki kez çağırıyordu — ikincisi artık ~0ms.
     """
     if not message or not message.strip():
         return None
