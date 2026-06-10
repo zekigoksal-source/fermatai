@@ -1,12 +1,31 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 10 Haziran 2026 → **OTURUM 25.58-H (Fable 5): FİZİK DÜNYASI v2 — Rapier WASM fizik motoru + 5 gerçek deney istasyonu + bloom/PBR görsel + tut-fırlat, 5 fazın hepsi preview'da doğrulanıp CANLI**
+> **Son güncelleme:** 10 Haziran 2026 → **OTURUM 25.58-I (Fable 5): BİLİM EVRENİ — oda-tabanlı 3D eğitimsel metaworld: TPS karakter (V=FPS), 4 ders odası + portallar, 10 slider-parametreli PhET-seviye simülasyon, web chat 🌌 Evren butonu — CANLI**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.58-H, 10 Haz)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.58-I, 10 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `37cd241` (25.58-H Faz 5) ← `557fd9f` (Faz 4) ← `0609d70` (Faz 3) ← `dcdf141` (Faz 1+2) ← `8764ac1` (25.58-G brief)
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `37cd241`, PostgreSQL OK
+> - **HEAD:** 25.58-I (bilim-evreni) ← `4ac740b` (25.58-H docs) ← `37cd241` (Faz 5) ← `0609d70` (Faz 3) ← `dcdf141` (Faz 1+2)
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, PostgreSQL OK
+>
+> ## 🌌 10 Haz (25.58-I) — BİLİM EVRENİ: ODA-TABANLI METAWORLD (Neo: "çocukça değil profesyonel; odalar olsun; third-person GTA gibi; PhET/oPhysics referans; FermatAI arayüzüne giriş tuşu")
+> `static/games/bilim-evreni.html` (tek dosya ~70KB, çekirdek agent'a dokunulmadı). **CANLI:** `api.fermategitimkurumlari.com/static/games/bilim-evreni.html`. fizik-dunyasi-v2 yerinde duruyor (ara evrim kaydı).
+> - **TPS karakter (GTA tarzı):** prosedürel stilize keşif robotu (marka turuncu vizör + mor kemer, yürüme animasyonu, harekete dönme). Kamera omuz-arkası 4.6m + **Rapier ışınıyla duvar kesişim kontrolü** (kamera duvara gömülmez). **V = FPS/TPS geçişi** (mobil 🎥 butonu). Karakter FPS'te gizlenir.
+> - **Bölge mimarisi:** Nexus hub (devre-desenli yansımalı zemin + dönen ikosahedron hologram) + 4 oda (Fizik/Mat/Kimya/Bio) ±400m uzak bölgeler. **Portal sistemi:** parlayan halka + fade geçişi + 2.5s cooldown; her odada Nexus dönüş portalı. Duvar trim emisyonları tema renkli.
+> - **Slider panel sistemi:** istasyon paneli artık `<input type=range>` parametreli (PhET tarzı) — canlı değer + anında simülasyon güncelleme. Masaüstü: Esc→panel; mobil: direkt dokunma.
+> - **FİZİK (6 istasyon, hepsi sayısal doğrulandı):**
+>   · 🎯 Eğik Atış: θ/v₀/m slider — **Galileo testi: 0.3kg ve 2.0kg aynı 22.4m'ye düştü** (kütle bağımsızlığı motor kanıtı)
+>   · ⏱️ Sarkaç: L₂ slider **joint'i canlı yeniden kurar** — L=4.0 → T=4.07 (teori 4.01)
+>   · 📐 Eğik Düzlem: θ + μ slider — **statik eşik keşfi: μ=0.6 ≥ tan25° → kutu kaymadı** (mesaj otomatik)
+>   · 💥 Çarpışma: m₁/m₂/e/v₀ slider + KE sayacı — **e=0 tamamen inelastik: yapışıp 3 m/s, Σp=6→6, KE=18→9 (teorik tam %50 kayıp)**
+>   · 〰️ Yay-Kütle SHM (YENİ): k/m slider, 1B kısıt + impuls yayı — T=1.98 (teori 1.99), denge uzaması mg/k gösterimi
+>   · 🧲 Manyetik: akım slider — parçacık hızı ∝ I/r (iç halka dıştan hızlı)
+> - **MATEMATİK:** 🌊 z=f(x,y) yüzey (4 preset: dalga/eyer/paraboloit; a-b slider, yükseklik-renk gradyanı, 64×64 canlı displacement) · 📈 Türev Kaşifi (x₀ slider → teğet döner; **x=0'da eğim tam 0 "ekstremumdasın!"**, 3 fonksiyon preset)
+> - **KİMYA:** 🫧 İdeal Gaz (T/V/N slider, 160 InstancedMesh tanecik, kendi entegratörü; **basınç duvar impulslarından ÖLÇÜLÜYOR** — T 2×→P 1.8×, V yarı→P 2.1× Boyle ✓, PV/NT sabiti ±%5 istatistiksel bant) · 🧬 Molekül Geometrisi (H₂O 104.5° / CO₂ 180° / CH₄ 109.5°, VSEPR + polarite notu)
+> - **BİYOLOJİ:** oda + "içerikler hazırlanıyor" hologramı (bu oturumda bilinçli içeriksiz — brief güvenlik notu).
+> - **Derin link:** `?oda=fizik|matematik|kimya|biyoloji` veya `?istasyon=sarkac|gaz|turev|...` → start'ta direkt ışınlama. **Bot artık sohbet cevabında zayıf konuya özel Evren linki üretebilir** (backend değişikliği gerekmez, sadece URL).
+> - **Web chat:** header'a 🌌 **Evren** butonu (Topluluk yanı, mobil ikon-only + 44px hit-area + <400px kompakt desenine eklendi). `web_chat_ui.html` tek dokunuş — çekirdek mantık değişmedi.
+> - **Sonraki adımlar (Neo kararı):** Bio odası içerikleri · istasyon↔topic_tracker eşlemesi (bot "Manyetizma zayıf → Evren'de dene: <link>") · oda başına içerik genişletme · screenshot pipeline notu: sürekli-animasyonlu WebGL'de preview screenshot takılırsa server restart çözüyor.
 >
 > ## 🌍 10 Haz (25.58-H) — FİZİK DÜNYASI v2: GERÇEK MOTOR (Neo: "görsel + fizik motoru + etkileşim çok daha gelişmiş olsun")
 > 25.58-G brief'i uygulandı — `static/games/fizik-dunyasi-v2.html` (tek dosya, çekirdek agent'a sıfır dokunuş). **CANLI:** `api.fermategitimkurumlari.com/static/games/fizik-dunyasi-v2.html` (HTTP 200, 55 KB).

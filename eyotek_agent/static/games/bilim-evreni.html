@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bilim Evreni · FermatAI</title>
+<style>
+  :root{--bg:#0F172A;--accent:#C76F3E;--accent2:#A78BFA;--ok:#34D399;--err:#F87171;--panel:rgba(13,19,38,.93)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);font-family:-apple-system,system-ui,sans-serif;color:#E2E8F0;overflow:hidden;touch-action:none}
+  canvas{display:block}
+
+  /* ── Giriş ── */
+  #intro{position:fixed;inset:0;background:radial-gradient(circle at 50% 35%,#1e293b,#0F172A);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:60;text-align:center;padding:24px}
+  #intro h1{font-size:34px;margin:0 0 4px;color:#fff;letter-spacing:1px}
+  #intro h1 b{color:var(--accent)}
+  #intro .tag{color:var(--accent2);font-size:13px;letter-spacing:3px;text-transform:uppercase;margin-bottom:20px}
+  #intro .keys{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:24px;max-width:640px}
+  #intro .kc{background:rgba(255,255,255,.05);border:1px solid rgba(199,111,62,.3);border-radius:12px;padding:12px 15px;min-width:112px}
+  #intro .kc .ico{font-size:22px}
+  #intro .kc .lbl{font-size:10.5px;color:#CBD5E1;margin-top:5px;line-height:1.45}
+  #loadMsg{color:var(--accent2);font-size:13px;margin-bottom:14px;min-height:18px}
+  #startBtn{background:#475569;color:#fff;border:none;padding:14px 40px;border-radius:14px;font-size:16px;font-weight:700;cursor:not-allowed;opacity:.6;transition:all .3s}
+  #startBtn.ready{background:var(--accent);cursor:pointer;opacity:1;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+
+  /* ── Geçiş karartması ── */
+  #fade{position:fixed;inset:0;background:#05081a;opacity:0;pointer-events:none;transition:opacity .28s;z-index:55}
+
+  /* ── HUD ── */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
+  #cross{position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:rgba(255,255,255,.55);box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+  #topbar{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid rgba(199,111,62,.25);
+    border-radius:30px;padding:7px 18px;font-size:12px;color:#CBD5E1;letter-spacing:.5px;white-space:nowrap}
+  #topbar b{color:var(--accent)}
+  #fpsBox{position:absolute;top:12px;right:12px;background:var(--panel);border:1px solid rgba(167,139,250,.25);border-radius:10px;
+    padding:7px 11px;font-size:11px;color:#94A3B8;font-variant-numeric:tabular-nums}
+  #exitBtn{position:absolute;top:10px;left:12px;pointer-events:auto;background:var(--panel);border:1px solid rgba(199,111,62,.25);
+    border-radius:10px;padding:8px 12px;font-size:12px;color:#CBD5E1;cursor:pointer}
+  #hintBar{position:absolute;bottom:10px;left:14px;font-size:10.5px;color:#64748B;letter-spacing:.4px}
+
+  /* ── İstasyon paneli ── */
+  #station{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:var(--panel);backdrop-filter:blur(10px);
+    border:1px solid rgba(199,111,62,.35);border-radius:16px;padding:15px 18px;width:min(480px,92vw);box-shadow:0 10px 40px rgba(0,0,0,.5);
+    pointer-events:auto;display:none}
+  #station h2{margin:0 0 6px;font-size:16px;color:var(--accent)}
+  #station .formula{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);border-radius:8px;padding:6px 10px;
+    text-align:center;font-size:13.5px;color:#fff;margin:8px 0}
+  #station p{margin:6px 0;font-size:12.5px;line-height:1.5;color:#CBD5E1}
+  #station .key{color:var(--accent2);font-weight:600}
+  #station .prm{margin:8px 0 2px}
+  #station .prm label{display:flex;justify-content:space-between;font-size:12px;color:#CBD5E1;margin-bottom:2px}
+  #station .prm label b{color:var(--ok);font-variant-numeric:tabular-nums}
+  #station .prm input[type=range]{width:100%;accent-color:var(--accent);height:22px;cursor:pointer}
+  #station .act{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  #station .act button{flex:1;min-width:108px;background:rgba(199,111,62,.15);border:1px solid rgba(199,111,62,.35);color:#fff;
+    padding:9px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer}
+  #station .act button:active{transform:scale(.97)}
+  #station .meter{font-size:12px;color:var(--ok);margin-top:8px;min-height:16px;font-variant-numeric:tabular-nums;line-height:1.55}
+
+  /* nişan ipucu */
+  #aimHint{position:absolute;top:50%;left:50%;transform:translate(-50%,26px);background:rgba(15,23,42,.85);
+    border:1px solid rgba(199,111,62,.4);color:#fff;padding:5px 13px;border-radius:16px;font-size:12px;
+    font-weight:600;display:none;white-space:nowrap}
+
+  /* ── Mobil kontroller ── */
+  .joy{position:absolute;bottom:30px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.06);
+    border:1.5px solid rgba(199,111,62,.3);pointer-events:auto;display:none;z-index:11}
+  #joyMove{left:24px}
+  #joyMove .stick{position:absolute;top:50%;left:50%;width:46px;height:46px;margin:-23px;border-radius:50%;
+    background:rgba(199,111,62,.5);border:1px solid rgba(255,255,255,.2)}
+  .mbtn{position:absolute;right:28px;width:62px;height:62px;border-radius:50%;color:#fff;font-size:21px;
+    pointer-events:auto;display:none;z-index:11}
+  #jumpBtn{bottom:42px;background:rgba(167,139,250,.25);border:1.5px solid rgba(167,139,250,.5)}
+  #grabBtn{bottom:118px;background:rgba(199,111,62,.25);border:1.5px solid rgba(199,111,62,.55)}
+  #camBtn{bottom:194px;background:rgba(52,211,153,.18);border:1.5px solid rgba(52,211,153,.45)}
+  .mobile .joy,.mobile .mbtn{display:block}
+
+  @media (max-width:480px){
+    #station{width:94vw;padding:11px 13px;max-height:46vh;overflow-y:auto}
+    #station h2{font-size:13.5px}
+    #station p{font-size:11.5px;line-height:1.45}
+    #station .formula{font-size:12px;padding:5px 8px}
+    #station .act button{min-width:42%;padding:8px;font-size:12px}
+    #station .meter{font-size:11px}
+    #hintBar{display:none}
+  }
+</style>
+</head>
+<body>
+<div id="intro">
+  <h1>BİLİM <b>EVRENİ</b></h1>
+  <div class="tag">FermatAI · Eğitimsel Metaworld</div>
+  <div class="keys">
+    <div class="kc"><div class="ico">🚶</div><div class="lbl"><b>WASD</b> yürü · <b>Shift</b> koş<br><b>Boşluk</b> zıpla</div></div>
+    <div class="kc"><div class="ico">🎥</div><div class="lbl"><b>V</b> kamera değiştir<br>(omuz ↔ birinci şahıs)</div></div>
+    <div class="kc"><div class="ico">🌀</div><div class="lbl">Portallardan geç —<br>ders odalarına ışınlan</div></div>
+    <div class="kc"><div class="ico">🎛️</div><div class="lbl"><b>Esc</b> → panel ayarları<br>kaydırıcılarla deney yap</div></div>
+    <div class="kc"><div class="ico">✊</div><div class="lbl">Tıkla → tut & fırlat<br>her şey gerçek fizik</div></div>
+  </div>
+  <div id="loadMsg">⚙️ Evren inşa ediliyor…</div>
+  <button id="startBtn" disabled>▶ Evrene Gir</button>
+</div>
+<div id="fade"></div>
+
+<div id="hud">
+  <div id="cross"></div>
+  <div id="aimHint"></div>
+  <div id="topbar">🌌 <b id="zoneName">Nexus</b> · portallara yürü</div>
+  <div id="fpsBox">— fps</div>
+  <div id="exitBtn">✕ Çık</div>
+  <div id="hintBar">V kamera · Esc panel · Shift koş · tıkla tut/fırlat</div>
+  <div id="station"></div>
+  <div id="joyMove" class="joy"><div class="stick"></div></div>
+  <button id="jumpBtn" class="mbtn">⤒</button>
+  <button id="grabBtn" class="mbtn">✊</button>
+  <button id="camBtn" class="mbtn">🎥</button>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/",
+    "rapier3d": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.12.0/+esm"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import RAPIER from 'rapier3d';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ════════════════ Kalite kademesi ════════════════
+const URLP = new URLSearchParams(location.search);
+const IS_MOBILE = URLP.get('mobile') === '1' || matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
+const LOW_Q = URLP.get('q') === 'low' || IS_MOBILE;
+const Q = LOW_Q
+  ? { shadow:false, bloom:false, px:1.5, shadowSize:1024 }
+  : { shadow:true,  bloom:true,  px:2,   shadowSize:2048 };
+
+// ════════════════ Sahne + renderer ════════════════
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b1026);
+scene.fog = new THREE.Fog(0x161c33, 30, 110);
+
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 260);
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, Q.px));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+renderer.shadowMap.enabled = Q.shadow;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+const canvas = renderer.domElement;
+
+{
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.5;
+}
+
+let composer = null;
+if (Q.bloom) {
+  const rt = new THREE.WebGLRenderTarget(innerWidth, innerHeight, { samples:4, type:THREE.HalfFloatType });
+  composer = new EffectComposer(renderer, rt);
+  composer.setPixelRatio(Math.min(devicePixelRatio, Q.px));
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.65, 0.82));
+  composer.addPass(new OutputPass());
+}
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  if (composer) composer.setSize(innerWidth, innerHeight);
+});
+
+// ── Işık ──
+scene.add(new THREE.HemisphereLight(0xbfd4ff, 0x1c2438, 0.65));
+const sun = new THREE.DirectionalLight(0xffe3bd, 1.5);
+sun.position.set(26, 38, 14);
+if (Q.shadow) {
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(Q.shadowSize, Q.shadowSize);
+  sun.shadow.camera.left = -42; sun.shadow.camera.right = 42;
+  sun.shadow.camera.top = 42;   sun.shadow.camera.bottom = -42;
+  sun.shadow.camera.far = 120;
+  sun.shadow.bias = -0.0004;
+}
+scene.add(sun);
+// güneş + gölge kamerası oyuncuyu takip eder (uzak odalarda da gölge)
+const sunOffset = new THREE.Vector3(26, 38, 14);
+
+// ── Gökyüzü kubbesi ──
+{
+  const skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: {
+      cTop: { value: new THREE.Color(0x05081a) },
+      cMid: { value: new THREE.Color(0x141f3a) },
+      cHor: { value: new THREE.Color(0x4a2e1e) },
+    },
+    vertexShader: 'varying vec3 vPos; void main(){ vPos = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader: `varying vec3 vPos; uniform vec3 cTop; uniform vec3 cMid; uniform vec3 cHor;
+      void main(){
+        float h = normalize(vPos).y;
+        vec3 col = h > 0.16 ? mix(cMid, cTop, smoothstep(0.16, 0.7, h))
+                            : mix(cHor, cMid, smoothstep(-0.04, 0.16, h));
+        gl_FragColor = vec4(col, 1.0);
+      }`
+  });
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(200, 28, 18), skyMat);
+  sky.frustumCulled = false;
+  scene.add(sky);
+  // gökyüzü oyuncuyu takip etsin (uzak odalarda da kubbe ortada)
+  window.__sky = sky;
+}
+
+// ── Yıldızlar ──
+const stars = (() => {
+  const pos = [];
+  for (let i=0; i<500; i++) pos.push((Math.random()-.5)*220, 24+Math.random()*70, (Math.random()-.5)*220);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const p = new THREE.Points(g, new THREE.PointsMaterial({ color:0xbfd0ee, size:0.35, fog:false }));
+  p.frustumCulled = false;
+  scene.add(p);
+  return p;
+})();
+
+// ── Toz zerreleri (oyuncuyu izler) ──
+const dust = (() => {
+  const pos = [];
+  for (let i=0; i<200; i++) pos.push((Math.random()-.5)*54, 0.3+Math.random()*5.5, (Math.random()-.5)*54);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const p = new THREE.Points(g, new THREE.PointsMaterial({
+    color:0x8a9cc8, size:0.055, transparent:true, opacity:0.5,
+    blending:THREE.AdditiveBlending, depthWrite:false }));
+  scene.add(p);
+  return p;
+})();
+
+// ════════════════ Fizik dünyası ════════════════
+await RAPIER.init();
+const world = new RAPIER.World({ x:0, y:-9.81, z:0 });
+const STEP = 1/60;
+
+const dynamics = [];
+function addDynamic(mesh, bodyDesc, colliderDesc, opts={}) {
+  scene.add(mesh);
+  const body = world.createRigidBody(bodyDesc);
+  const col = world.createCollider(colliderDesc, body);
+  if (Q.shadow) { mesh.castShadow = true; mesh.receiveShadow = true; }
+  const rec = { mesh, body, col, ...opts };
+  dynamics.push(rec);
+  return rec;
+}
+function syncDynamics() {
+  for (const d of dynamics) {
+    const t = d.body.translation(), r = d.body.rotation();
+    d.mesh.position.set(t.x, t.y, t.z);
+    d.mesh.quaternion.set(r.x, r.y, r.z, r.w);
+  }
+}
+function removeDynamic(rec) {
+  world.removeRigidBody(rec.body);
+  scene.remove(rec.mesh);
+  const i = dynamics.indexOf(rec); if (i >= 0) dynamics.splice(i, 1);
+}
+
+// tek büyük zemin collider (tüm bölgeleri kapsar)
+{
+  const gBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, -0.1, 0));
+  world.createCollider(RAPIER.ColliderDesc.cuboid(500, 0.1, 500).setFriction(1.0), gBody);
+}
+
+const tickers = [];
+let simTime = 0;
+
+const _rodUp = new THREE.Vector3(0,1,0), _rodA = new THREE.Vector3(), _rodB = new THREE.Vector3(), _rodD = new THREE.Vector3();
+function updateRod(mesh, a, b) {
+  _rodA.set(a.x,a.y,a.z); _rodB.set(b.x,b.y,b.z);
+  mesh.position.copy(_rodA).add(_rodB).multiplyScalar(0.5);
+  mesh.scale.set(1, _rodA.distanceTo(_rodB), 1);
+  mesh.quaternion.setFromUnitVectors(_rodUp, _rodD.copy(_rodB).sub(_rodA).normalize());
+}
+
+// ── Parçacık patlaması havuzu ──
+const BURST_N = 70;
+const burstPos = new Float32Array(BURST_N*3);
+const burstGeo = new THREE.BufferGeometry();
+burstGeo.setAttribute('position', new THREE.BufferAttribute(burstPos, 3));
+const burstMat = new THREE.PointsMaterial({ color:0xFFD27F, size:0.14, transparent:true, opacity:0,
+  blending:THREE.AdditiveBlending, depthWrite:false });
+const burstObj = new THREE.Points(burstGeo, burstMat);
+burstObj.frustumCulled = false; scene.add(burstObj);
+let burst = null;
+function spawnBurst(x, y, z, color=0xFFD27F) {
+  burstMat.color.setHex(color);
+  burst = { vel:[], life:0.9, t:0 };
+  for (let i=0; i<BURST_N; i++) {
+    burstPos[i*3] = x; burstPos[i*3+1] = y; burstPos[i*3+2] = z;
+    const a = Math.random()*Math.PI*2, sp = Math.random()*3 + 0.8;
+    burst.vel.push([Math.cos(a)*sp, Math.random()*4 + 1.5, Math.sin(a)*sp]);
+  }
+  burstGeo.attributes.position.needsUpdate = true;
+  burstMat.opacity = 1;
+}
+tickers.push(() => {
+  if (!burst) return;
+  burst.t += STEP;
+  const k = 1 - burst.t/burst.life;
+  if (k <= 0) { burst = null; burstMat.opacity = 0; return; }
+  for (let i=0; i<BURST_N; i++) {
+    const v = burst.vel[i];
+    v[1] -= 9.81*STEP*0.6;
+    burstPos[i*3] += v[0]*STEP; burstPos[i*3+1] += v[1]*STEP; burstPos[i*3+2] += v[2]*STEP;
+    if (burstPos[i*3+1] < 0.03) burstPos[i*3+1] = 0.03;
+  }
+  burstMat.opacity = k;
+  burstGeo.attributes.position.needsUpdate = true;
+});
+
+// ════════════════ Doku üreticileri ════════════════
+function makeGridTex(r, g, b, lineA=0.22) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+  const c = cv.getContext('2d');
+  const t = 64;
+  for (let y=0; y<8; y++) for (let x=0; x<8; x++) {
+    const v = ((x+y)%2)*5 + Math.random()*4;
+    c.fillStyle = `rgb(${r+v},${g+v},${b+v})`;
+    c.fillRect(x*t, y*t, t, t);
+  }
+  c.strokeStyle = `rgba(140,160,210,${lineA})`; c.lineWidth = 2;
+  for (let i=0; i<=8; i++) {
+    c.beginPath(); c.moveTo(i*t,0); c.lineTo(i*t,512); c.stroke();
+    c.beginPath(); c.moveTo(0,i*t); c.lineTo(512,i*t); c.stroke();
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+function makeCircuitTex(hex) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 1024;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#000'; c.fillRect(0,0,1024,1024);
+  c.strokeStyle = hex;
+  // eşmerkezli halkalar
+  for (const [r, w, a] of [[140,3,.9],[250,2,.55],[360,2.5,.75],[470,2,.45]]) {
+    c.globalAlpha = a; c.lineWidth = w;
+    c.beginPath(); c.arc(512,512,r,0,Math.PI*2); c.stroke();
+  }
+  // radyal hatlar
+  c.globalAlpha = .5; c.lineWidth = 2;
+  for (let i=0; i<16; i++) {
+    const a = i*Math.PI/8;
+    c.beginPath();
+    c.moveTo(512+Math.cos(a)*150, 512+Math.sin(a)*150);
+    c.lineTo(512+Math.cos(a)*460, 512+Math.sin(a)*460);
+    c.stroke();
+  }
+  c.globalAlpha = 1;
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+function makeLabel(text, color='#C76F3E', w=256, fs=26) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = 64;
+  const c = cv.getContext('2d');
+  c.fillStyle = 'rgba(13,19,38,0.88)'; c.fillRect(0,0,w,64);
+  c.strokeStyle = color; c.lineWidth = 3; c.strokeRect(2,2,w-4,60);
+  c.fillStyle = '#fff'; c.font = `bold ${fs}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(text, w/2, 34);
+  const tex = new THREE.CanvasTexture(cv);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true }));
+  spr.scale.set(w/64, 1, 1);
+  return spr;
+}
+
+// ════════════════ Bölge (oda) sistemi ════════════════
+const ZONES = {
+  hub:   { name:'Nexus',           color:0xC76F3E, cx:0,    cz:0,    half:26 },
+  fizik: { name:'Fizik Odası',     color:0xC76F3E, cx:400,  cz:0,    half:34 },
+  mat:   { name:'Matematik Odası', color:0xA78BFA, cx:-400, cz:0,    half:30 },
+  kimya: { name:'Kimya Odası',     color:0x34D399, cx:0,    cz:400,  half:30 },
+  bio:   { name:'Biyoloji Odası',  color:0xF87171, cx:0,    cz:-400, half:26 },
+};
+let currentZone = 'hub';
+const zoneNameEl = document.getElementById('zoneName');
+
+function buildZone(id) {
+  const z = ZONES[id];
+  const themed = new THREE.Color(z.color);
+  // zemin
+  const floorTex = makeGridTex(20, 26, 44);
+  floorTex.repeat.set(z.half/2, z.half/2);
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(z.half*2, z.half*2),
+    new THREE.MeshStandardMaterial({ map:floorTex, roughness:0.52, metalness:0.55 })
+  );
+  floor.rotation.x = -Math.PI/2;
+  floor.position.set(z.cx, 0.01, z.cz);
+  floor.receiveShadow = Q.shadow;
+  scene.add(floor);
+  // duvarlar + tepe trim
+  const wallMat = new THREE.MeshStandardMaterial({ color:0x141d33, transparent:true, opacity:0.5, side:THREE.DoubleSide, roughness:0.4, metalness:0.5 });
+  const trimMat = new THREE.MeshStandardMaterial({ color:0x000000, emissive:themed, emissiveIntensity:1.6, roughness:1 });
+  const H = 7;
+  for (const [dx, dz, ry] of [[0,-z.half,0],[0,z.half,0],[-z.half,0,Math.PI/2],[z.half,0,Math.PI/2]]) {
+    const b = world.createRigidBody(RAPIER.RigidBodyDesc.fixed()
+      .setTranslation(z.cx+dx, H/2, z.cz+dz)
+      .setRotation({ x:0, y:Math.sin(ry/2), z:0, w:Math.cos(ry/2) }));
+    world.createCollider(RAPIER.ColliderDesc.cuboid(z.half, H/2, 0.3), b);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(z.half*2, H), wallMat);
+    m.position.set(z.cx+dx, H/2, z.cz+dz); m.rotation.y = ry; scene.add(m);
+    const trim = new THREE.Mesh(new THREE.BoxGeometry(z.half*2, 0.12, 0.12), trimMat);
+    trim.position.set(z.cx+dx, H+0.06, z.cz+dz); trim.rotation.y = ry; scene.add(trim);
+    const trim2 = trim.clone(); trim2.position.y = 0.08; scene.add(trim2);
+  }
+  // bölge tabelası
+  const sign = makeLabel(z.name, '#'+themed.getHexString(), 384, 30);
+  sign.scale.set(9, 1.5, 1);
+  sign.position.set(z.cx, H+1.6, z.cz);
+  scene.add(sign);
+}
+for (const id of Object.keys(ZONES)) buildZone(id);
+
+// hub merkez devre deseni
+{
+  const tex = makeCircuitTex('#C76F3E');
+  const disc = new THREE.Mesh(
+    new THREE.CircleGeometry(15, 48),
+    new THREE.MeshStandardMaterial({ color:0x0a0f1f, emissive:0xC76F3E, emissiveIntensity:0.85, emissiveMap:tex, roughness:0.5, metalness:0.6, transparent:true, opacity:0.95 })
+  );
+  disc.rotation.x = -Math.PI/2; disc.position.y = 0.03;
+  scene.add(disc);
+}
+
+// ════════════════ Portal sistemi ════════════════
+const fadeEl = document.getElementById('fade');
+let portalLockUntil = 0;
+const portals = [];
+
+function addPortal({ x, z, ry, color, label, destZone, destSpawn }) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z); g.rotation.y = ry;
+  const c = new THREE.Color(color);
+  // halka
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.13, 12, 48),
+    new THREE.MeshStandardMaterial({ color:0x101827, emissive:c, emissiveIntensity:2.0, roughness:0.3, metalness:0.7 }));
+  ring.position.y = 2.1; g.add(ring);
+  // iç disk
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(1.55, 36),
+    new THREE.MeshBasicMaterial({ color:c.clone().multiplyScalar(1.4), transparent:true, opacity:0.22, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false }));
+  disc.position.y = 2.1; g.add(disc);
+  // taban kaide
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.3, 0.18, 24),
+    new THREE.MeshStandardMaterial({ color:0x1a2440, emissive:c, emissiveIntensity:0.35, roughness:0.4, metalness:0.7 }));
+  base.position.y = 0.09; g.add(base);
+  // yan sütunlar
+  const pilMat = new THREE.MeshStandardMaterial({ color:0x222e4e, roughness:0.35, metalness:0.8 });
+  for (const sx of [-2.0, 2.0]) {
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 4.4, 10), pilMat);
+    p.position.set(sx, 2.2, 0); g.add(p);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12),
+      new THREE.MeshStandardMaterial({ color:0x000000, emissive:c, emissiveIntensity:2.2 }));
+    tip.position.set(sx, 4.5, 0); g.add(tip);
+  }
+  const lbl = makeLabel(label, '#'+c.getHexString());
+  lbl.position.y = 5.2; g.add(lbl);
+  if (Q.shadow) ring.castShadow = true;
+  scene.add(g);
+  const portal = { x, z, disc, ring, destZone, destSpawn, phase: Math.random()*6 };
+  portals.push(portal);
+  return portal;
+}
+
+function gotoZone(zoneId, spawn, instant=false) {
+  const doTp = () => {
+    playerBody.setTranslation({ x:spawn.x, y:1.05, z:spawn.z }, true);
+    velY = 0; yaw = spawn.yaw; pitch = 0;
+    currentZone = zoneId;
+    zoneNameEl.textContent = ZONES[zoneId].name;
+    portalLockUntil = simTime + 2.5;
+    updateCamera(0);
+  };
+  if (instant) { doTp(); return; }
+  fadeEl.style.opacity = 1;
+  setTimeout(() => { doTp(); setTimeout(() => { fadeEl.style.opacity = 0; }, 120); }, 290);
+}
+
+// portal animasyon + tetikleme
+tickers.push(() => {
+  const p = playerBody.translation();
+  for (const po of portals) {
+    po.disc.material.opacity = 0.16 + 0.1*Math.sin(simTime*2.2 + po.phase);
+    po.ring.rotation.z = simTime*0.4 + po.phase;
+    if (simTime > portalLockUntil) {
+      const d = Math.hypot(p.x - po.x, p.z - po.z);
+      if (d < 1.7 && p.y < 4) gotoZone(po.destZone, po.destSpawn);
+    }
+  }
+});
+
+// portal çiftleri: hub ↔ odalar
+addPortal({ x:20,  z:0,   ry:-Math.PI/2, color:0xC76F3E, label:'⚛️ Fizik',     destZone:'fizik', destSpawn:{ x:376,  z:0,    yaw:-Math.PI/2 } });
+addPortal({ x:372, z:0,   ry: Math.PI/2, color:0xC76F3E, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:16,   z:0,    yaw: Math.PI/2 } });
+addPortal({ x:-20, z:0,   ry: Math.PI/2, color:0xA78BFA, label:'📐 Matematik', destZone:'mat',   destSpawn:{ x:-380, z:0,    yaw: Math.PI/2 } });
+addPortal({ x:-376,z:0,   ry:-Math.PI/2, color:0xA78BFA, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:-16,  z:0,    yaw:-Math.PI/2 } });
+addPortal({ x:0,   z:20,  ry: Math.PI,   color:0x34D399, label:'🧪 Kimya',     destZone:'kimya', destSpawn:{ x:0,    z:380,  yaw: Math.PI } });
+addPortal({ x:0,   z:376, ry: 0,         color:0x34D399, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:0,    z:16,   yaw: 0 } });
+addPortal({ x:0,   z:-20, ry: 0,         color:0xF87171, label:'🌱 Biyoloji',  destZone:'bio',   destSpawn:{ x:0,    z:-382, yaw: 0 } });
+addPortal({ x:0,   z:-378,ry: Math.PI,   color:0xF87171, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:0,    z:-16,  yaw: Math.PI } });
+
+// hub: portallara giden yol noktaları
+{
+  const dotGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.05, 10);
+  for (const [tx, tz, color] of [[20,0,0xC76F3E],[-20,0,0xA78BFA],[0,20,0x34D399],[0,-20,0xF87171]]) {
+    const dir = new THREE.Vector3(tx, 0, tz).normalize();
+    const mat = new THREE.MeshStandardMaterial({ color:0x000000, emissive:color, emissiveIntensity:1.8, roughness:1 });
+    for (let s = 5; s <= 16; s += 2.2) {
+      const dot = new THREE.Mesh(dotGeo, mat);
+      dot.position.copy(dir).multiplyScalar(s);
+      dot.position.y = 0.06;
+      scene.add(dot);
+    }
+  }
+}
+
+// hub merkez hologramı
+{
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 0),
+    new THREE.MeshStandardMaterial({ color:0x0c1428, emissive:0xFFD27F, emissiveIntensity:1.1, roughness:0.2, metalness:0.8, wireframe:true }));
+  core.position.set(0, 3.4, 0); scene.add(core);
+  const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1),
+    new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xC76F3E, emissiveIntensity:2.0, roughness:0.4 }));
+  inner.position.copy(core.position); scene.add(inner);
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.1, 1.2, 8),
+    new THREE.MeshStandardMaterial({ color:0x223052, roughness:0.3, metalness:0.85 }));
+  ped.position.set(0, 0.6, 0); if (Q.shadow) ped.castShadow = true; scene.add(ped);
+  const pb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, 0.6, 0));
+  world.createCollider(RAPIER.ColliderDesc.cylinder(0.6, 1.0), pb);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.05, 8, 48),
+    new THREE.MeshBasicMaterial({ color:new THREE.Color(0xA78BFA).multiplyScalar(1.5), transparent:true, opacity:0.7 }));
+  ring.position.copy(core.position); scene.add(ring);
+  const title = makeLabel('FERMAT EVREN', '#FFD27F', 320, 30);
+  title.scale.set(6.5, 1.3, 1); title.position.set(0, 6.6, 0); scene.add(title);
+  tickers.push(() => {
+    core.rotation.y = simTime*0.5; core.rotation.x = simTime*0.23;
+    inner.rotation.y = -simTime*0.8;
+    ring.rotation.x = Math.PI/2 + Math.sin(simTime*0.6)*0.35;
+    ring.rotation.y = simTime*0.5;
+    core.position.y = 3.4 + Math.sin(simTime*1.1)*0.15;
+    inner.position.y = core.position.y;
+    ring.position.y = core.position.y;
+  });
+}
+
+// hub oyun köşesi: kutu kulesi + top
+const crateMat = new THREE.MeshStandardMaterial({ color:0xC76F3E, roughness:0.55, metalness:0.25 });
+const crateMat2 = new THREE.MeshStandardMaterial({ color:0xA78BFA, roughness:0.5, metalness:0.3 });
+function addCrate(x, y, z, size=0.7, mat=crateMat) {
+  return addDynamic(
+    new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat),
+    RAPIER.RigidBodyDesc.dynamic().setTranslation(x, y, z),
+    RAPIER.ColliderDesc.cuboid(size/2, size/2, size/2).setDensity(0.8).setFriction(0.7).setRestitution(0.15),
+    { kind:'crate' });
+}
+{
+  const S = 0.72;
+  addCrate(8-S-0.04, S/2, -8); addCrate(8, S/2, -8); addCrate(8+S+0.04, S/2, -8);
+  addCrate(8-S/2-0.02, S*1.5+0.04, -8, S, crateMat2); addCrate(8+S/2+0.02, S*1.5+0.04, -8, S, crateMat2);
+  addCrate(8, S*2.5+0.1, -8);
+  addDynamic(
+    new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 24),
+      new THREE.MeshStandardMaterial({ color:0x34D399, roughness:0.3, metalness:0.4, emissive:0x0c5237, emissiveIntensity:0.3 })),
+    RAPIER.RigidBodyDesc.dynamic().setTranslation(-8, 6, -8),
+    RAPIER.ColliderDesc.ball(0.45).setDensity(1.2).setFriction(0.6).setRestitution(0.55),
+    { kind:'ball' });
+}
+
+// ════════════════ İstasyon sistemi (slider parametreli) ════════════════
+const stations = [];
+const stEl = document.getElementById('station');
+let nearStation = null, meterEl = null;
+function setMeter(txt) { if (meterEl) meterEl.innerHTML = txt; }
+
+function addStation(cfg) {
+  const g = new THREE.Group(); g.position.set(cfg.x, 0, cfg.z); scene.add(g);
+  const lbl = makeLabel(cfg.short, cfg.color); lbl.position.y = cfg.labelY || 5.5; g.add(lbl);
+  const st = { ...cfg, group:g };
+  if (cfg.build) cfg.build(g, st);
+  stations.push(st);
+  return st;
+}
+
+function showStation(s) {
+  let html = `<h2>${s.title}</h2>`;
+  if (s.formula) html += `<div class="formula">${s.formula}</div>`;
+  html += `<p>${s.desc}</p>`;
+  if (s.params) {
+    for (const p of s.params) {
+      html += `<div class="prm"><label>${p.label} <b data-pk="${p.key}">${p.fmt(p.get())}</b></label>
+        <input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.get()}" data-pk="${p.key}"></div>`;
+    }
+  }
+  if (s.actions && s.actions.length) {
+    html += '<div class="act">';
+    s.actions.forEach((a, i) => html += `<button data-i="${i}">${typeof a.label === 'function' ? a.label() : a.label}</button>`);
+    html += '</div>';
+  }
+  html += `<div class="meter" id="stMeter"></div>`;
+  stEl.innerHTML = html; stEl.style.display = 'block';
+  meterEl = document.getElementById('stMeter');
+  stEl.querySelectorAll('button').forEach(b => {
+    b.onclick = () => { s.actions[+b.dataset.i].fn(); showStation(s); };
+  });
+  stEl.querySelectorAll('input[type=range]').forEach(inp => {
+    const p = s.params.find(q => q.key === inp.dataset.pk);
+    inp.oninput = () => {
+      p.set(parseFloat(inp.value));
+      const b = stEl.querySelector(`b[data-pk="${p.key}"]`);
+      if (b) b.textContent = p.fmt(p.get());
+    };
+  });
+}
+function updateProximity() {
+  const p = playerBody.translation();
+  let best = null, bestD = 1e9;
+  for (const s of stations) {
+    const d = Math.hypot(p.x - s.group.position.x, p.z - s.group.position.z);
+    if (d < (s.radius || 5) && d < bestD) { best = s; bestD = d; }
+  }
+  if (best !== nearStation) {
+    nearStation = best;
+    if (best) showStation(best);
+    else { stEl.style.display = 'none'; meterEl = null; }
+  }
+}
+
+// ════════════════ FİZİK ODASI (merkez 400,0) ════════════════
+const FZ = ZONES.fizik;
+
+// — 1. Fırlatma Rampası —
+{
+  const LX = FZ.cx-16, LZ = 18, MUZZLE_H = 1.4, BARREL = 2.2;
+  let angle = 45, speed = 14, mass = 0.8, barrel = null, trailLine = null, lastResult = '';
+  const shots = [];
+  let shot = null;
+  const shotMat = new THREE.MeshStandardMaterial({ color:0xFFD27F, emissive:0xC76F3E, emissiveIntensity:1.2, roughness:0.4 });
+  function aimBarrel() {
+    const th = angle*Math.PI/180;
+    const d = new THREE.Vector3(0, Math.sin(th), -Math.cos(th));
+    barrel.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d);
+    barrel.position.set(0, MUZZLE_H, 0).addScaledVector(d, BARREL/2);
+  }
+  function fire() {
+    if (shots.length >= 3) removeDynamic(shots.shift());
+    const th = angle*Math.PI/180, v = speed;
+    const d = { x:0, y:Math.sin(th), z:-Math.cos(th) };
+    const sx = LX, sy = MUZZLE_H + d.y*BARREL, sz = LZ + d.z*BARREL;
+    const density = mass / (4/3*Math.PI*0.25**3);
+    const rec = addDynamic(
+      new THREE.Mesh(new THREE.SphereGeometry(0.25, 18, 18), shotMat),
+      RAPIER.RigidBodyDesc.dynamic().setTranslation(sx, sy, sz)
+        .setLinvel(d.x*v, d.y*v, d.z*v).setCcdEnabled(true),
+      RAPIER.ColliderDesc.ball(0.25).setDensity(density).setFriction(0.5).setRestitution(0.35),
+      { kind:'shot' });
+    shots.push(rec);
+    if (trailLine) { scene.remove(trailLine); trailLine.geometry.dispose(); trailLine = null; }
+    shot = { rec, sx, sy, sz, th, v, landed:false, pts:[new THREE.Vector3(sx,sy,sz)] };
+  }
+  tickers.push(() => {
+    if (!shot || shot.landed) return;
+    const t = shot.rec.body.translation();
+    shot.pts.push(new THREE.Vector3(t.x, t.y, t.z));
+    if (trailLine) { trailLine.geometry.dispose(); trailLine.geometry = new THREE.BufferGeometry().setFromPoints(shot.pts); }
+    else { trailLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(shot.pts),
+      new THREE.LineBasicMaterial({ color:new THREE.Color(0xFFD27F).multiplyScalar(1.7), transparent:true, opacity:0.85 })); scene.add(trailLine); }
+    if (t.y <= 0.27 && shot.pts.length > 6) {
+      shot.landed = true;
+      const measured = Math.hypot(t.x-shot.sx, t.z-shot.sz);
+      const { th, v } = shot, g = 9.81, h = shot.sy - 0.25;
+      const theory = v*Math.cos(th)/g * (v*Math.sin(th) + Math.sqrt((v*Math.sin(th))**2 + 2*g*h));
+      lastResult = `📏 Ölçülen: <b>${measured.toFixed(1)} m</b> · Teori: <b>${theory.toFixed(1)} m</b> · kütle ${mass.toFixed(1)} kg → menzile etkisi YOK`;
+      spawnBurst(t.x, 0.15, t.z);
+    }
+  });
+  const st = addStation({
+    id:'firlatici', zone:'fizik',
+    x:LX, z:LZ, short:'🎯 Eğik Atış', color:'#C76F3E', radius:6.5, labelY:5,
+    title:'🎯 Eğik Atış Laboratuvarı',
+    formula:'R = v²·sin(2θ)/g &nbsp;·&nbsp; hmax = v²·sin²θ/2g',
+    desc:'Üç parametreyi ayarla, fırlat. Motor parabolü <span class="key">gerçek yerçekimiyle</span> çizer, menzili ölçer. Kütleyi değiştir — <span class="key">menzil değişmez</span> (Galileo haklıydı). 45° neden optimum, kendin keşfet.',
+    params:[
+      { key:'a', label:'Atış açısı θ', min:10, max:80, step:1, get:()=>angle, set:v=>{ angle=v; aimBarrel(); }, fmt:v=>v.toFixed(0)+'°' },
+      { key:'v', label:'İlk hız v₀',   min:5,  max:20, step:0.5, get:()=>speed, set:v=>{ speed=v; }, fmt:v=>v.toFixed(1)+' m/s' },
+      { key:'m', label:'Kütle m',      min:0.2, max:2, step:0.1, get:()=>mass, set:v=>{ mass=v; }, fmt:v=>v.toFixed(1)+' kg' },
+    ],
+    actions:[ { label:'🚀 Fırlat', fn(){ fire(); } } ],
+    update(){ setMeter(lastResult || (shot && !shot.landed ? '🌠 Uçuşta…' : 'Parametreleri ayarla → 🚀 Fırlat')); },
+    build(g){
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.3, 0.8, 24),
+        new THREE.MeshStandardMaterial({ color:0x334155, roughness:0.4, metalness:0.7 }));
+      base.position.y = 0.4; g.add(base);
+      barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, BARREL, 16),
+        new THREE.MeshStandardMaterial({ color:0xC76F3E, roughness:0.3, metalness:0.75 }));
+      g.add(barrel);
+      if (Q.shadow) { base.castShadow = true; barrel.castShadow = true; }
+      aimBarrel();
+      // menzil cetveli: zemine işaretler (5m aralıkla)
+      for (let r = 5; r <= 40; r += 5) {
+        const mk = makeLabel(r+' m', '#64748B', 128, 30);
+        mk.scale.set(1.2, 0.6, 1);
+        mk.position.set(0.001 - LX + LX, 0.6, -r); // local
+        mk.position.set(2.2, 0.6, -r);
+        g.add(mk);
+      }
+    }
+  });
+  st._api = { fire, set:(a,v,m)=>{ if(a!=null){angle=a;aimBarrel();} if(v!=null)speed=v; if(m!=null)mass=m; }, last:()=>lastResult.replace(/<[^>]+>/g,'') };
+}
+
+// — 2. Sarkaç Laboratuvarı —
+{
+  const PX = FZ.cx+22, PZ = -6, TOP = 5.6;
+  let pullDeg = 32;
+  const arms = [
+    { L:2.0, ox:-1.7, oz:-0.5, color:0xA78BFA, fixed:true,  bob:null, rod:null, joint:null, anchorB:null, lastSign:0, lastCross:0, halves:[] },
+    { L:3.2, ox: 1.7, oz: 0.5, color:0x34D399, fixed:false, bob:null, rod:null, joint:null, anchorB:null, lastSign:0, lastCross:0, halves:[] },
+  ];
+  const rodMat = new THREE.MeshStandardMaterial({ color:0x94A3B8, roughness:0.35, metalness:0.75 });
+  function release() {
+    const a = pullDeg*Math.PI/180;
+    for (const arm of arms) {
+      const ax = PX + arm.ox, az = PZ + arm.oz;
+      arm.bob.body.setTranslation({ x: ax + Math.sin(a)*arm.L, y: TOP - Math.cos(a)*arm.L, z: az }, true);
+      arm.bob.body.setLinvel({ x:0, y:0, z:0 }, true);
+      arm.bob.body.setAngvel({ x:0, y:0, z:0 }, true);
+      arm.halves = []; arm.lastSign = 0; arm.lastCross = 0;
+    }
+  }
+  function setL2(L) {
+    const arm = arms[1];
+    arm.L = L;
+    world.removeImpulseJoint(arm.joint, true);
+    arm.joint = world.createImpulseJoint(
+      RAPIER.JointData.spherical({ x:0, y:0, z:0 }, { x:0, y:L, z:0 }), arm.anchorB, arm.bob.body, true);
+    arm.bob.body.setTranslation({ x:PX+arm.ox, y:TOP-L, z:PZ+arm.oz }, true);
+    arm.bob.body.setLinvel({ x:0, y:0, z:0 }, true);
+    arm.halves = []; arm.lastSign = 0; arm.lastCross = 0;
+  }
+  function measured(a) {
+    if (a.halves.length < 2) return null;
+    return 2 * a.halves.reduce((s,v) => s+v, 0) / a.halves.length;
+  }
+  tickers.push(() => {
+    for (const a of arms) {
+      if (!a.bob) continue;
+      const vx = a.bob.body.linvel().x;
+      const sign = vx > 0.04 ? 1 : vx < -0.04 ? -1 : 0;
+      if (sign !== 0 && a.lastSign !== 0 && sign !== a.lastSign) {
+        if (a.lastCross > 0) { a.halves.push(simTime - a.lastCross); if (a.halves.length > 6) a.halves.shift(); }
+        a.lastCross = simTime;
+      }
+      if (sign !== 0) a.lastSign = sign;
+    }
+  });
+  const st = addStation({
+    id:'sarkac', zone:'fizik',
+    x:PX, z:PZ, short:'⏱️ Sarkaç', color:'#A78BFA', radius:6.5, labelY:7.2,
+    title:'⏱️ Sarkaç Laboratuvarı',
+    formula:'T = 2π·√(L/g) — kütleden bağımsız',
+    desc:'<span class="key">Mor referans</span> L=2.0 m sabit. <span class="key">Yeşilin uzunluğunu</span> kaydırıcıyla değiştir, ikisini bırak, periyotları motor ölçsün. T yalnız <span class="key">L ve g</span>\'ye bağlı — genlik büyürse küçük-açı formülünden sapma başlar, onu da gör.',
+    params:[
+      { key:'L', label:'Yeşil sarkaç uzunluğu L₂', min:1, max:4.4, step:0.1, get:()=>arms[1].L, set:v=>setL2(v), fmt:v=>v.toFixed(1)+' m' },
+      { key:'p', label:'Bırakma açısı', min:10, max:60, step:1, get:()=>pullDeg, set:v=>{ pullDeg=v; }, fmt:v=>v.toFixed(0)+'°' },
+    ],
+    actions:[ { label:'🪀 Çek ve bırak', fn(){ release(); } } ],
+    update(){
+      const t1 = measured(arms[0]), t2 = measured(arms[1]);
+      const th1 = 2*Math.PI*Math.sqrt(arms[0].L/9.81), th2 = 2*Math.PI*Math.sqrt(arms[1].L/9.81);
+      setMeter(`🟣 L=2.0: T=${t1 ? '<b>'+t1.toFixed(2)+'s</b>' : '—'} (teori ${th1.toFixed(2)})<br>🟢 L=${arms[1].L.toFixed(1)}: T=${t2 ? '<b>'+t2.toFixed(2)+'s</b>' : '—'} (teori ${th2.toFixed(2)})`);
+    },
+    build(g){
+      const postMat = new THREE.MeshStandardMaterial({ color:0x475569, roughness:0.4, metalness:0.6 });
+      for (const sx of [-2.6, 2.6]) {
+        const p = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, TOP+0.3, 10), postMat);
+        p.position.set(sx, (TOP+0.3)/2, 0); if (Q.shadow) p.castShadow = true; g.add(p);
+      }
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 5.6, 10), postMat);
+      beam.rotation.z = Math.PI/2; beam.position.y = TOP + 0.1; g.add(beam);
+      for (const a of arms) {
+        const ax = PX + a.ox, az = PZ + a.oz;
+        a.anchorB = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(ax, TOP, az));
+        a.bob = addDynamic(
+          new THREE.Mesh(new THREE.SphereGeometry(0.3, 20, 20),
+            new THREE.MeshStandardMaterial({ color:a.color, roughness:0.25, metalness:0.5, emissive:a.color, emissiveIntensity:0.2 })),
+          RAPIER.RigidBodyDesc.dynamic().setTranslation(ax, TOP - a.L, az).setLinearDamping(0.02).setCcdEnabled(true),
+          RAPIER.ColliderDesc.ball(0.3).setDensity(3).setFriction(0.2).setRestitution(0.3),
+          { kind:'bob' });
+        a.joint = world.createImpulseJoint(
+          RAPIER.JointData.spherical({ x:0, y:0, z:0 }, { x:0, y:a.L, z:0 }), a.anchorB, a.bob.body, true);
+        a.rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1, 8), rodMat);
+        scene.add(a.rod);
+        const anchorPos = { x:ax, y:TOP, z:az };
+        tickers.push(() => updateRod(a.rod, anchorPos, a.bob.body.translation()));
+      }
+    }
+  });
+  st._api = { release, setL2, setPull:v=>{ pullDeg=v; }, periods:() => ({ T1: measured(arms[0]), T2: measured(arms[1]) }) };
+}
+
+// — 3. Eğik Düzlem —
+{
+  const IX = FZ.cx+14, IZ = -22;
+  const RAMP_HL = 3.5;
+  let thDeg = 25, mu = 0.02;
+  let rampBody = null, rampMesh = null, ballRec = null, boxRec = null, race = null, raceResult = '';
+  const zAxis = new THREE.Vector3(0,0,1);
+  let rampCY = 0, rampQuat = new THREE.Quaternion();
+  function rampPoint(sx, h, zlane) {
+    const v = new THREE.Vector3(sx, 0.15 + h, zlane).applyAxisAngle(zAxis, -thDeg*Math.PI/180);
+    return { x: IX + v.x, y: rampCY + v.y, z: IZ + v.z };
+  }
+  function rebuildRamp() {
+    const TH = thDeg*Math.PI/180;
+    rampCY = RAMP_HL*Math.sin(TH) + 0.15*Math.cos(TH);
+    rampQuat.setFromAxisAngle(zAxis, -TH);
+    rampBody.setTranslation({ x:IX, y:rampCY, z:IZ }, true);
+    rampBody.setRotation({ x:rampQuat.x, y:rampQuat.y, z:rampQuat.z, w:rampQuat.w }, true);
+    rampMesh.position.set(0, rampCY, 0);
+    rampMesh.quaternion.copy(rampQuat);
+  }
+  function setMu(v) {
+    mu = v;
+    world.removeCollider(boxRec.col, false);
+    boxRec.col = world.createCollider(
+      RAPIER.ColliderDesc.cuboid(0.31, 0.31, 0.31).setDensity(1).setFriction(mu).setRestitution(0.1)
+        .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min),
+      boxRec.body);
+  }
+  function startRace() {
+    const bp = rampPoint(-2.6, 0.4, -1.1), xp = rampPoint(-2.6, 0.31, 1.1);
+    ballRec.body.setTranslation(bp, true); ballRec.body.setLinvel({x:0,y:0,z:0}, true); ballRec.body.setAngvel({x:0,y:0,z:0}, true);
+    boxRec.body.setTranslation(xp, true);
+    boxRec.body.setRotation({ x:rampQuat.x, y:rampQuat.y, z:rampQuat.z, w:rampQuat.w }, true);
+    boxRec.body.setLinvel({x:0,y:0,z:0}, true); boxRec.body.setAngvel({x:0,y:0,z:0}, true);
+    race = { t0: simTime, ball:null, box:null };
+    raceResult = '';
+  }
+  tickers.push(() => {
+    if (!race) return;
+    if (race.ball === null && ballRec.body.translation().y < 0.45) race.ball = simTime - race.t0;
+    if (race.box === null && boxRec.body.translation().y < 0.36) race.box = simTime - race.t0;
+    if (simTime - race.t0 > 8 && race.box === null) {           // kutu kaymadı (μ ≥ tanθ)
+      raceResult = `🟠 Top ${race.ball ? race.ball.toFixed(2)+'s' : '—'} · 🧊 kutu KAYMADI → μ=${mu.toFixed(2)} ≥ tan${thDeg}°=${Math.tan(thDeg*Math.PI/180).toFixed(2)}`;
+      race = null; return;
+    }
+    if (race.ball !== null && race.box !== null) {
+      const w = race.box < race.ball ? '🧊 Kutu kazandı' : '🟠 Top kazandı';
+      raceResult = `${w} — 🧊 ${race.box.toFixed(2)} s · 🟠 ${race.ball.toFixed(2)} s`;
+      race = null;
+    }
+  });
+  const st = addStation({
+    id:'egik', zone:'fizik',
+    x:IX, z:IZ, short:'📐 Eğik Düzlem', color:'#34D399', radius:7, labelY:5.6,
+    title:'📐 Eğik Düzlem — Sürtünme & Yuvarlanma',
+    formula:'a(kayan) = g·(sinθ − μ·cosθ) · a(top) = (5/7)·g·sinθ',
+    desc:'Açıyı ve kutunun <span class="key">sürtünme katsayısını μ</span> ayarla, yarıştır. μ küçükken kutu kazanır (top enerjiyi dönmeye harcar). μ\'yü <span class="key">tanθ</span> üstüne çıkar — kutu hiç kaymaz. Statik denge eşiğini kendin bul.',
+    params:[
+      { key:'t', label:'Eğim açısı θ', min:10, max:40, step:1, get:()=>thDeg, set:v=>{ thDeg=v; rebuildRamp(); }, fmt:v=>v.toFixed(0)+'°' },
+      { key:'m', label:'Kutu sürtünmesi μ', min:0, max:0.9, step:0.01, get:()=>mu, set:v=>setMu(v), fmt:v=>v.toFixed(2) },
+    ],
+    actions:[ { label:'🏁 Yarışı başlat', fn(){ startRace(); } } ],
+    update(){
+      const tanth = Math.tan(thDeg*Math.PI/180);
+      setMeter(raceResult || (race ? '🏃 Yarış sürüyor…' : `Hazır · tan${thDeg}° = ${tanth.toFixed(2)} ${mu >= tanth ? '→ ⚠️ μ çok büyük, kutu kaymaz!' : ''}`));
+    },
+    build(g){
+      rampMesh = new THREE.Mesh(new THREE.BoxGeometry(RAMP_HL*2, 0.3, 4.6),
+        new THREE.MeshStandardMaterial({ color:0x2a3a5c, roughness:0.45, metalness:0.4 }));
+      rampMesh.receiveShadow = Q.shadow; if (Q.shadow) rampMesh.castShadow = true;
+      g.add(rampMesh);
+      rampBody = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(IX, 1, IZ));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(RAMP_HL, 0.15, 2.3).setFriction(0.9), rampBody);
+      ballRec = addDynamic(
+        new THREE.Mesh(new THREE.SphereGeometry(0.4, 22, 22),
+          new THREE.MeshStandardMaterial({ color:0xC76F3E, roughness:0.5, metalness:0.25 })),
+        RAPIER.RigidBodyDesc.dynamic().setTranslation(IX-2, 0.4, IZ-1.1),
+        RAPIER.ColliderDesc.ball(0.4).setDensity(1).setFriction(0.9).setRestitution(0.1),
+        { kind:'raceBall' });
+      boxRec = addDynamic(
+        new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.62, 0.62),
+          new THREE.MeshStandardMaterial({ color:0x7DD3FC, roughness:0.12, metalness:0.1, transparent:true, opacity:0.92 })),
+        RAPIER.RigidBodyDesc.dynamic().setTranslation(IX-2, 0.31, IZ+1.1),
+        RAPIER.ColliderDesc.cuboid(0.31, 0.31, 0.31).setDensity(1).setFriction(mu).setRestitution(0.1)
+          .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min),
+        { kind:'raceBox' });
+      rebuildRamp();
+    }
+  });
+  st._api = { startRace, setAngle:v=>{ thDeg=v; rebuildRamp(); }, setMu, result:() => raceResult, racing:() => !!race };
+}
+
+// — 4. Çarpışma Laboratuvarı —
+{
+  const CX = FZ.cx-2, CZ = -10, LANE = 6;
+  let recA = null, recB = null, m1 = 0.6, m2 = 0.6, rest = 0.92, v0 = 6;
+  const VOL = 4/3*Math.PI*0.4**3;
+  function remakeColliders() {
+    world.removeCollider(recA.col, false);
+    recA.col = world.createCollider(
+      RAPIER.ColliderDesc.ball(0.4).setDensity(m1/VOL).setFriction(0).setRestitution(rest)
+        .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min)
+        .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max), recA.body);
+    world.removeCollider(recB.col, false);
+    recB.col = world.createCollider(
+      RAPIER.ColliderDesc.ball(0.4).setDensity(m2/VOL).setFriction(0).setRestitution(rest)
+        .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min)
+        .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max), recB.body);
+    const s2 = 0.8 + 0.25*(m2-0.6)/2.4;
+    recB.mesh.scale.setScalar(Math.max(0.8, Math.min(1.25, s2+0.2)));
+  }
+  function reset() {
+    recA.body.setTranslation({ x:CX-4, y:0.4, z:CZ }, true); recA.body.setLinvel({x:0,y:0,z:0}, true); recA.body.setAngvel({x:0,y:0,z:0}, true);
+    recB.body.setTranslation({ x:CX+1, y:0.4, z:CZ }, true); recB.body.setLinvel({x:0,y:0,z:0}, true); recB.body.setAngvel({x:0,y:0,z:0}, true);
+  }
+  function launch() { recA.body.setLinvel({ x:v0, y:0, z:0 }, true); }
+  const st = addStation({
+    id:'carpisma', zone:'fizik',
+    x:CX, z:CZ, short:'💥 Çarpışma', color:'#F87171', radius:7, labelY:4.6,
+    title:'💥 Çarpışma Laboratuvarı — Momentum & Enerji',
+    formula:'Σp = m₁v₁+m₂v₂ sabit · KE = ½mv² (e<1 → kayıp)',
+    desc:'Kütleleri, ilk hızı ve <span class="key">esneklik katsayısını e</span> ayarla. e=1 → tam esnek (KE korunur), e=0 → toplar <span class="key">yapışır</span>, kinetik enerji ısıya gider ama <span class="key">momentum asla kaybolmaz</span>. Sayaç ikisini de canlı gösterir.',
+    params:[
+      { key:'m1', label:'Gelen top kütlesi m₁', min:0.2, max:3, step:0.1, get:()=>m1, set:v=>{ m1=v; remakeColliders(); }, fmt:v=>v.toFixed(1)+' kg' },
+      { key:'m2', label:'Hedef top kütlesi m₂', min:0.2, max:3, step:0.1, get:()=>m2, set:v=>{ m2=v; remakeColliders(); }, fmt:v=>v.toFixed(1)+' kg' },
+      { key:'e',  label:'Esneklik e',           min:0,   max:1, step:0.05, get:()=>rest, set:v=>{ rest=v; remakeColliders(); }, fmt:v=>v.toFixed(2) },
+      { key:'v',  label:'Fırlatma hızı v₁',     min:2,   max:8, step:0.5, get:()=>v0, set:v=>{ v0=v; }, fmt:v=>v.toFixed(1)+' m/s' },
+    ],
+    actions:[
+      { label:'🎯 Fırlat', fn(){ launch(); } },
+      { label:'↺ Sıfırla', fn(){ reset(); } },
+    ],
+    update(){
+      const vA = recA.body.linvel().x, vB = recB.body.linvel().x;
+      const mA = recA.body.mass(), mB = recB.body.mass();
+      const p = mA*vA + mB*vB;
+      const ke = 0.5*mA*vA*vA + 0.5*mB*vB*vB;
+      setMeter(`🟠 v₁=${vA.toFixed(2)} · 🟣 v₂=${vB.toFixed(2)} m/s<br>Σp=<b>${p.toFixed(2)} kg·m/s</b> · KE=<b>${ke.toFixed(2)} J</b>`);
+    },
+    build(g){
+      const railMat = new THREE.MeshStandardMaterial({ color:0x334155, roughness:0.4, metalness:0.6 });
+      const mkRail = (x, z, hx, hz) => {
+        const b = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(CX+x, 0.22, CZ+z));
+        world.createCollider(RAPIER.ColliderDesc.cuboid(hx, 0.22, hz).setRestitution(0.9), b);
+        const m = new THREE.Mesh(new THREE.BoxGeometry(hx*2, 0.44, hz*2), railMat);
+        m.position.set(x, 0.22, z); if (Q.shadow) m.castShadow = true; g.add(m);
+      };
+      mkRail(0, -1.0, LANE+0.3, 0.12);
+      mkRail(0,  1.0, LANE+0.3, 0.12);
+      mkRail(-LANE-0.2, 0, 0.12, 1.0);
+      mkRail( LANE+0.2, 0, 0.12, 1.0);
+      const ballGeo = new THREE.SphereGeometry(0.4, 22, 22);
+      recA = addDynamic(
+        new THREE.Mesh(ballGeo, new THREE.MeshStandardMaterial({ color:0xC76F3E, roughness:0.25, metalness:0.6 })),
+        RAPIER.RigidBodyDesc.dynamic().setTranslation(CX-4, 0.4, CZ).setCcdEnabled(true),
+        RAPIER.ColliderDesc.ball(0.4).setDensity(m1/VOL).setFriction(0).setRestitution(rest)
+          .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min)
+          .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max),
+        { kind:'colA' });
+      recB = addDynamic(
+        new THREE.Mesh(ballGeo.clone(), new THREE.MeshStandardMaterial({ color:0xA78BFA, roughness:0.25, metalness:0.6 })),
+        RAPIER.RigidBodyDesc.dynamic().setTranslation(CX+1, 0.4, CZ).setCcdEnabled(true),
+        RAPIER.ColliderDesc.ball(0.4).setDensity(m2/VOL).setFriction(0).setRestitution(rest)
+          .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min)
+          .setRestitutionCombineRule(RAPIER.CoefficientCombineRule.Max),
+        { kind:'colB' });
+    }
+  });
+  st._api = {
+    launch, reset,
+    set:(a,b,e,v)=>{ if(a!=null)m1=a; if(b!=null)m2=b; if(e!=null)rest=e; if(v!=null)v0=v; remakeColliders(); },
+    state:() => ({ vA:+recA.body.linvel().x.toFixed(2), vB:+recB.body.linvel().x.toFixed(2),
+                   p:+(recA.body.mass()*recA.body.linvel().x + recB.body.mass()*recB.body.linvel().x).toFixed(2),
+                   ke:+(0.5*recA.body.mass()*recA.body.linvel().x**2 + 0.5*recB.body.mass()*recB.body.linvel().x**2).toFixed(2) })
+  };
+}
+
+// — 5. Yay-Kütle (Basit Harmonik Hareket) —
+{
+  const SX = FZ.cx+4, SZ = 16, TOPY = 5.2, RESTLEN = 2.2;
+  let k = 15, sm = 1.2, massRec = null, springMesh = null;
+  let lastSign = 0, lastCross = 0, halves = [];
+  const BOXVOL = 0.5*0.5*0.5;
+  function remake() {
+    world.removeCollider(massRec.col, false);
+    massRec.col = world.createCollider(
+      RAPIER.ColliderDesc.cuboid(0.25, 0.25, 0.25).setDensity(sm/BOXVOL).setFriction(0.5), massRec.body);
+    halves = []; lastSign = 0; lastCross = 0;
+  }
+  function pull() {
+    const t = massRec.body.translation();
+    massRec.body.setTranslation({ x:SX, y:Math.max(0.6, t.y-1.0), z:SZ }, true);
+    massRec.body.setLinvel({ x:0, y:0, z:0 }, true);
+    halves = []; lastSign = 0; lastCross = 0;
+  }
+  function measuredT() {
+    if (halves.length < 2) return null;
+    return 2 * halves.reduce((s,v) => s+v, 0) / halves.length;
+  }
+  tickers.push(() => {
+    if (!massRec) return;
+    const b = massRec.body;
+    const t = b.translation();
+    // 1B kısıt: x/z sabitle
+    if (Math.abs(t.x-SX) > 1e-4 || Math.abs(t.z-SZ) > 1e-4) b.setTranslation({ x:SX, y:t.y, z:SZ }, true);
+    const v = b.linvel();
+    if (v.x !== 0 || v.z !== 0) b.setLinvel({ x:0, y:v.y, z:0 }, true);
+    // yay kuvveti: F = -k·(uzama) - c·v
+    const stretch = (TOPY - t.y) - RESTLEN;
+    const F = k*stretch - 0.08*v.y;
+    b.applyImpulse({ x:0, y:F*STEP, z:0 }, true);
+    // periyot ölçümü
+    const sign = v.y > 0.03 ? 1 : v.y < -0.03 ? -1 : 0;
+    if (sign !== 0 && lastSign !== 0 && sign !== lastSign) {
+      if (lastCross > 0) { halves.push(simTime - lastCross); if (halves.length > 6) halves.shift(); }
+      lastCross = simTime;
+    }
+    if (sign !== 0) lastSign = sign;
+    updateRod(springMesh, { x:SX, y:TOPY, z:SZ }, { x:SX, y:t.y+0.25, z:SZ });
+  });
+  const st = addStation({
+    id:'yay', zone:'fizik',
+    x:SX, z:SZ, short:'〰️ Yay-Kütle', color:'#FFD27F', radius:6, labelY:6.6,
+    title:'〰️ Yay-Kütle — Basit Harmonik Hareket',
+    formula:'T = 2π·√(m/k) · denge uzaması = m·g/k',
+    desc:'Yay sabitini <span class="key">k</span> ve kütleyi <span class="key">m</span> ayarla, kütleyi çek-bırak. Periyot yerçekiminden bağımsız, sadece <span class="key">m/k</span> oranına bağlı. Denge noktasının da m·g/k kadar aşağı kaydığına dikkat.',
+    params:[
+      { key:'k', label:'Yay sabiti k', min:5, max:40, step:1, get:()=>k, set:v=>{ k=v; halves=[]; }, fmt:v=>v.toFixed(0)+' N/m' },
+      { key:'m', label:'Kütle m', min:0.4, max:3, step:0.1, get:()=>sm, set:v=>{ sm=v; remake(); }, fmt:v=>v.toFixed(1)+' kg' },
+    ],
+    actions:[ { label:'⬇️ Çek ve bırak', fn(){ pull(); } } ],
+    update(){
+      const T = measuredT(), Tt = 2*Math.PI*Math.sqrt(sm/k);
+      const eq = (sm*9.81/k).toFixed(2);
+      setMeter(`T ölçülen: ${T ? '<b>'+T.toFixed(2)+' s</b>' : '—'} · teori ${Tt.toFixed(2)} s · denge uzaması ${eq} m`);
+    },
+    build(g){
+      const beamMat = new THREE.MeshStandardMaterial({ color:0x475569, roughness:0.4, metalness:0.6 });
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.18, 0.5), beamMat);
+      arm.position.y = TOPY + 0.1; g.add(arm);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, TOPY+0.2, 10), beamMat);
+      post.position.set(-1.1, (TOPY+0.2)/2, 0); if (Q.shadow) post.castShadow = true; g.add(post);
+      springMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 8),
+        new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xFFD27F, emissiveIntensity:1.0, roughness:0.6 }));
+      scene.add(springMesh);
+      massRec = addDynamic(
+        new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5),
+          new THREE.MeshStandardMaterial({ color:0xFFD27F, roughness:0.35, metalness:0.5 })),
+        RAPIER.RigidBodyDesc.dynamic().setTranslation(SX, TOPY-RESTLEN, SZ),
+        RAPIER.ColliderDesc.cuboid(0.25, 0.25, 0.25).setDensity(sm/BOXVOL).setFriction(0.5),
+        { kind:'springMass' });
+    }
+  });
+  st._api = { pull, set:(kk,mm)=>{ if(kk!=null)k=kk; if(mm!=null){sm=mm; remake();} }, T:() => measuredT() };
+}
+
+// — 6. Manyetik Alan Sütunu —
+{
+  const MX = FZ.cx-18, MZ = -18;
+  let dir = 1, current = 2, rings = null;
+  const st = addStation({
+    id:'manyetik', zone:'fizik',
+    x:MX, z:MZ, short:'🧲 Manyetik Alan', color:'#C76F3E', radius:6, labelY:6.2,
+    title:'🧲 Manyetik Alan Sütunu',
+    formula:'B = μ₀·I / (2π·r)',
+    desc:'Telden geçen <span class="key">akımı</span> ayarla — alan çizgileri (parçacıklar) telin çevresinde döner, hızları akımla orantılı, yarıçap büyüdükçe alan <span class="key">zayıflar</span>. Sağ-el kuralı: başparmak akım, parmaklar alan yönü.',
+    params:[
+      { key:'i', label:'Akım şiddeti I', min:0.5, max:5, step:0.1, get:()=>current, set:v=>{ current=v; }, fmt:v=>v.toFixed(1)+' A' },
+    ],
+    actions:[ { label:'🔄 Akım yönünü çevir', fn(){ dir *= -1; } } ],
+    update(){ setMeter(`Akım: ${(dir*current).toFixed(1)} A (${dir > 0 ? '⬆️ yukarı' : '⬇️ aşağı'}) · iç halka hızı dıştan ${(2.6/1.5).toFixed(1)}× yüksek`); },
+    build(g){
+      const tel = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 9, 20),
+        new THREE.MeshStandardMaterial({ color:0xCD7F32, emissive:0x6b3410, emissiveIntensity:0.5, metalness:0.8, roughness:0.25 }));
+      tel.position.y = 4.5; if (Q.shadow) tel.castShadow = true; g.add(tel);
+      rings = new THREE.Group(); g.add(rings);
+      for (const y of [-3, -1, 1, 3]) for (const r of [1.5, 2.6]) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.05, 8, 48),
+          new THREE.MeshBasicMaterial({ color:new THREE.Color(0xA78BFA).multiplyScalar(1.5), transparent:true, opacity:0.55 }));
+        ring.rotation.x = Math.PI/2; ring.position.y = y + 4.5; rings.add(ring);
+      }
+      const N = 110, ppos = new Float32Array(N*3), meta = [];
+      for (let i=0; i<N; i++) meta.push({ a:Math.random()*Math.PI*2, r:1.2+Math.random()*1.7, y:1.2+Math.random()*6.6 });
+      const pg = new THREE.BufferGeometry();
+      pg.setAttribute('position', new THREE.BufferAttribute(ppos, 3));
+      const pcloud = new THREE.Points(pg, new THREE.PointsMaterial({
+        color:new THREE.Color(0xC9A2FF).multiplyScalar(1.4), size:0.09, transparent:true, opacity:0.9,
+        blending:THREE.AdditiveBlending, depthWrite:false }));
+      g.add(pcloud);
+      tickers.push(() => {
+        rings.rotation.y += dir * current * 0.007;
+        for (let i=0; i<N; i++) {
+          const m = meta[i];
+          m.a += dir * current * (0.9/m.r) * STEP;   // B ∝ 1/r → iç parçacık hızlı
+          ppos[i*3] = Math.cos(m.a)*m.r; ppos[i*3+1] = m.y; ppos[i*3+2] = Math.sin(m.a)*m.r;
+        }
+        pg.attributes.position.needsUpdate = true;
+      });
+    }
+  });
+  st._api = { flip:() => { dir *= -1; }, setI:v=>{ current=v; }, dir:() => dir };
+}
+
+// ════════════════ MATEMATİK ODASI (merkez -400,0) ════════════════
+const MT = ZONES.mat;
+
+// — Fonksiyon Yüzeyi z = f(x,y) —
+{
+  const FX = MT.cx-2, FZp = -10, SEG = 64, SIZE = 14;
+  let amp = 1.4, freq = 0.6, preset = 0;
+  const PRESETS = [
+    { name:'Dalga',      f:(x,y,a,b) => a*Math.sin(b*Math.hypot(x,y)*2 - 0.6) },
+    { name:'Eyer',       f:(x,y,a,b) => a*b*(x*x - y*y)/14 },
+    { name:'Paraboloit', f:(x,y,a,b) => a*b*(x*x + y*y)/18 - a },
+    { name:'Dalgalanma', f:(x,y,a,b) => a*Math.sin(b*x*1.6)*Math.cos(b*y*1.6) },
+  ];
+  let surf = null, wire = null;
+  const cLow = new THREE.Color(0x1e3a8a), cMid = new THREE.Color(0x34D399), cHigh = new THREE.Color(0xFFD27F);
+  function rebuildSurface() {
+    const pos = surf.geometry.attributes.position;
+    const col = surf.geometry.attributes.color;
+    const f = PRESETS[preset].f;
+    let minZ = 1e9, maxZ = -1e9;
+    for (let i=0; i<pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i);
+      const z = f(x, y, amp, freq);
+      pos.setZ(i, z);
+      if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+    }
+    const range = Math.max(0.001, maxZ - minZ);
+    const tmp = new THREE.Color();
+    for (let i=0; i<pos.count; i++) {
+      const t = (pos.getZ(i) - minZ) / range;
+      if (t < 0.5) tmp.lerpColors(cLow, cMid, t*2);
+      else tmp.lerpColors(cMid, cHigh, (t-0.5)*2);
+      col.setXYZ(i, tmp.r, tmp.g, tmp.b);
+    }
+    pos.needsUpdate = true; col.needsUpdate = true;
+    surf.geometry.computeVertexNormals();
+  }
+  const st = addStation({
+    id:'yuzey', zone:'mat',
+    x:FX, z:FZp, short:'🌊 3B Fonksiyon', color:'#A78BFA', radius:9, labelY:6,
+    title:'🌊 3B Fonksiyon Yüzeyi — z = f(x, y)',
+    formula:'iki değişkenli fonksiyonun grafiği bir YÜZEYDİR',
+    desc:'Tek değişkenli fonksiyon çizgi çizer; <span class="key">iki değişkenli fonksiyon yüzey</span> oluşturur. Genlik ve frekansı kaydır, yüzeyin canlı şekillenişini izle. <span class="key">Eyer</span> noktası — bir yönde max, diğer yönde min — AYT türev sorularının 3B atası.',
+    params:[
+      { key:'a', label:'Genlik a', min:0.4, max:3, step:0.05, get:()=>amp, set:v=>{ amp=v; rebuildSurface(); }, fmt:v=>v.toFixed(2) },
+      { key:'b', label:'Frekans b', min:0.2, max:1.4, step:0.05, get:()=>freq, set:v=>{ freq=v; rebuildSurface(); }, fmt:v=>v.toFixed(2) },
+    ],
+    actions:[ { label:() => `🔁 Şekil: ${PRESETS[preset].name}`, fn(){ preset = (preset+1) % PRESETS.length; rebuildSurface(); } } ],
+    update(){ setMeter(`Şekil: <b>${PRESETS[preset].name}</b> · a=${amp.toFixed(2)} · b=${freq.toFixed(2)}`); },
+    build(g){
+      const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
+      geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array((SEG+1)*(SEG+1)*3), 3));
+      surf = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+        vertexColors:true, side:THREE.DoubleSide, roughness:0.45, metalness:0.3 }));
+      surf.rotation.x = -Math.PI/2;
+      surf.position.y = 2.6;
+      g.add(surf);
+      wire = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ wireframe:true, color:0xA78BFA, transparent:true, opacity:0.12 }));
+      wire.rotation.x = -Math.PI/2; wire.position.y = 2.605;
+      g.add(wire);
+      // kaide çerçevesi
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(SIZE+1, 0.15, SIZE+1),
+        new THREE.MeshStandardMaterial({ color:0x223052, roughness:0.4, metalness:0.7 }));
+      frame.position.y = 0.075; g.add(frame);
+      rebuildSurface();
+      tickers.push(() => { surf.rotation.z = simTime*0.05; wire.rotation.z = simTime*0.05; });
+    }
+  });
+  st._api = { set:(a,b)=>{ if(a!=null)amp=a; if(b!=null)freq=b; rebuildSurface(); }, cycle:()=>{ preset=(preset+1)%PRESETS.length; rebuildSurface(); }, preset:()=>PRESETS[preset].name };
+}
+
+// — Türev Kaşifi (teğet doğrusu) —
+{
+  const DX = MT.cx+12, DZ = 10;
+  let x0 = 1, preset = 0;
+  const PRESETS = [
+    { name:'x²/4',   f:x => x*x/4 },
+    { name:'sin(x)', f:x => Math.sin(x) },
+    { name:'x³/16',  f:x => x*x*x/16 },
+  ];
+  let curveLine = null, tangentLine = null, marker = null;
+  const SC = 1.1, BASE_Y = 2.8;                 // dünya ölçeği + taban yüksekliği
+  function fv(x) { return PRESETS[preset].f(x); }
+  function dfv(x) { const h = 1e-4; return (fv(x+h) - fv(x-h)) / (2*h); }
+  function rebuildCurve() {
+    const pts = [];
+    for (let x=-4; x<=4.001; x+=0.08) pts.push(new THREE.Vector3(x*SC, fv(x)*SC + BASE_Y, 0));
+    curveLine.geometry.dispose();
+    curveLine.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+    updateTangent();
+  }
+  function updateTangent() {
+    const y0 = fv(x0), m = dfv(x0);
+    const dxs = 1.5;
+    const p1 = new THREE.Vector3((x0-dxs)*SC, (y0-m*dxs)*SC + BASE_Y, 0.02);
+    const p2 = new THREE.Vector3((x0+dxs)*SC, (y0+m*dxs)*SC + BASE_Y, 0.02);
+    tangentLine.geometry.dispose();
+    tangentLine.geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+    marker.position.set(x0*SC, y0*SC + BASE_Y, 0.02);
+  }
+  const st = addStation({
+    id:'turev', zone:'mat',
+    x:DX, z:DZ, short:'📈 Türev Kaşifi', color:'#34D399', radius:7.5, labelY:7,
+    title:'📈 Türev Kaşifi — Teğetin Eğimi',
+    formula:"f'(x₀) = teğet doğrusunun eğimi",
+    desc:'Noktayı eğri üzerinde kaydır, <span class="key">teğet doğrusunun</span> dönüşünü izle. Eğim sıfırlandığı yerde <span class="key">ekstremum</span> var. AYT\'nin en sevdiği soru tipi — burada elinle hissediyorsun.',
+    params:[
+      { key:'x', label:'Nokta x₀', min:-4, max:4, step:0.05, get:()=>x0, set:v=>{ x0=v; updateTangent(); }, fmt:v=>v.toFixed(2) },
+    ],
+    actions:[ { label:() => `🔁 f(x) = ${PRESETS[preset].name}`, fn(){ preset = (preset+1) % PRESETS.length; rebuildCurve(); } } ],
+    update(){
+      const m = dfv(x0);
+      const yorum = Math.abs(m) < 0.08 ? '≈ 0 → <b>ekstremum noktasındasın!</b>' : (m > 0 ? '→ artan' : '→ azalan');
+      setMeter(`f(${x0.toFixed(2)}) = ${fv(x0).toFixed(2)} · f'(${x0.toFixed(2)}) = <b>${m.toFixed(2)}</b> ${yorum}`);
+    },
+    build(g){
+      // pano çerçevesi
+      const board = new THREE.Mesh(new THREE.BoxGeometry(10.4, 7.2, 0.18),
+        new THREE.MeshStandardMaterial({ color:0x101a30, roughness:0.5, metalness:0.5 }));
+      board.position.y = 4.1; board.position.z = -0.15; g.add(board);
+      const frameMat = new THREE.MeshStandardMaterial({ color:0x000000, emissive:0x34D399, emissiveIntensity:1.4, roughness:1 });
+      for (const [w, h, px, py] of [[10.6,0.12,0,7.66],[10.6,0.12,0,0.54],[0.12,7.2,-5.26,4.1],[0.12,7.2,5.26,4.1]]) {
+        const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.14), frameMat);
+        t.position.set(px, py, -0.15); g.add(t);
+      }
+      // eksenler
+      const axMat = new THREE.LineBasicMaterial({ color:0x64748B });
+      const ax1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        [new THREE.Vector3(-4.6*SC, BASE_Y, 0), new THREE.Vector3(4.6*SC, BASE_Y, 0)]), axMat);
+      const ax2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        [new THREE.Vector3(0, BASE_Y-2.4, 0), new THREE.Vector3(0, BASE_Y+3.4, 0)]), axMat);
+      g.add(ax1); g.add(ax2);
+      curveLine = new THREE.Line(new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial({ color:new THREE.Color(0xA78BFA).multiplyScalar(1.5) }));
+      g.add(curveLine);
+      tangentLine = new THREE.Line(new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial({ color:new THREE.Color(0xFFD27F).multiplyScalar(1.7) }));
+      g.add(tangentLine);
+      marker = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 14),
+        new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xFFD27F, emissiveIntensity:2.2 }));
+      g.add(marker);
+      rebuildCurve();
+    }
+  });
+  st._api = { setX:v=>{ x0=v; updateTangent(); }, slope:() => dfv(x0), cycle:()=>{ preset=(preset+1)%PRESETS.length; rebuildCurve(); } };
+}
+
+// ════════════════ KİMYA ODASI (merkez 0,400) ════════════════
+const KM = ZONES.kimya;
+
+// — İdeal Gaz Laboratuvarı —
+{
+  const GX = -8, GZ = KM.cz, BX = 3, BZ = 3;       // kutu yarı-genişlikleri
+  let T = 300, H = 4, N = 80;
+  const MAXN = 160, BASE_S = 3.2;                  // 300K'deki ortalama hız
+  const px = new Float32Array(MAXN), py = new Float32Array(MAXN), pz = new Float32Array(MAXN);
+  const vx = new Float32Array(MAXN), vy = new Float32Array(MAXN), vz = new Float32Array(MAXN);
+  let gasMesh = null, piston = null;
+  let wallJ = 0, winStart = 0, pMeas = 0;
+  const dummy = new THREE.Object3D();
+  function speedScale() { return BASE_S * Math.sqrt(T/300); }
+  function initParticles() {
+    for (let i=0; i<MAXN; i++) {
+      px[i] = (Math.random()*2-1)*BX*0.9; pz[i] = (Math.random()*2-1)*BZ*0.9;
+      py[i] = 0.3 + Math.random()*(H-0.6);
+      const th = Math.random()*Math.PI*2, ph = Math.acos(Math.random()*2-1), s = speedScale()*(0.7+Math.random()*0.6);
+      vx[i] = s*Math.sin(ph)*Math.cos(th); vy[i] = s*Math.cos(ph); vz[i] = s*Math.sin(ph)*Math.sin(th);
+    }
+  }
+  function setT(nt) {
+    const ratio = Math.sqrt(nt/T);
+    for (let i=0; i<MAXN; i++) { vx[i]*=ratio; vy[i]*=ratio; vz[i]*=ratio; }
+    T = nt; wallJ = 0; winStart = simTime;
+  }
+  function setH(nh) {
+    H = nh;
+    piston.position.y = H + 0.08;
+    for (let i=0; i<MAXN; i++) if (py[i] > H-0.1) py[i] = H-0.1;
+    wallJ = 0; winStart = simTime;
+  }
+  tickers.push(() => {
+    if (!gasMesh) return;
+    for (let i=0; i<N; i++) {
+      px[i] += vx[i]*STEP; py[i] += vy[i]*STEP; pz[i] += vz[i]*STEP;
+      if (px[i] > BX)  { px[i] = BX;  vx[i] = -vx[i]; wallJ += 2*Math.abs(vx[i]); }
+      if (px[i] < -BX) { px[i] = -BX; vx[i] = -vx[i]; wallJ += 2*Math.abs(vx[i]); }
+      if (pz[i] > BZ)  { pz[i] = BZ;  vz[i] = -vz[i]; wallJ += 2*Math.abs(vz[i]); }
+      if (pz[i] < -BZ) { pz[i] = -BZ; vz[i] = -vz[i]; wallJ += 2*Math.abs(vz[i]); }
+      if (py[i] > H-0.1) { py[i] = H-0.1; vy[i] = -vy[i]; wallJ += 2*Math.abs(vy[i]); }
+      if (py[i] < 0.15)  { py[i] = 0.15;  vy[i] = -vy[i]; wallJ += 2*Math.abs(vy[i]); }
+    }
+    if (simTime - winStart >= 1.0) {
+      const A = 2*(2*BX*H + 2*BZ*H) + 2*(2*BX*2*BZ);
+      pMeas = wallJ / (A * (simTime - winStart));
+      wallJ = 0; winStart = simTime;
+    }
+    for (let i=0; i<N; i++) {
+      dummy.position.set(GX + px[i], py[i], GZ + pz[i]);
+      dummy.updateMatrix();
+      gasMesh.setMatrixAt(i, dummy.matrix);
+    }
+    gasMesh.count = N;
+    gasMesh.instanceMatrix.needsUpdate = true;
+  });
+  const st = addStation({
+    id:'gaz', zone:'kimya',
+    x:GX, z:GZ, short:'🫧 İdeal Gaz', color:'#34D399', radius:8, labelY:7.2,
+    title:'🫧 İdeal Gaz Laboratuvarı — PV = nRT',
+    formula:'P·V = n·R·T → P·V / (N·T) = sabit',
+    desc:'<span class="key">Sıcaklık</span> tanecik hızını, <span class="key">piston</span> hacmi, <span class="key">N</span> tanecik sayısını değiştirir. Basıncı formülden değil — <span class="key">taneciklerin duvara çarpma impulslarından</span> ölçüyoruz. PV/(NT) oranı ne yaparsan yap sabit kalır: gaz yasası gözünün önünde.',
+    params:[
+      { key:'t', label:'Sıcaklık T', min:100, max:600, step:5, get:()=>T, set:v=>setT(v), fmt:v=>v.toFixed(0)+' K' },
+      { key:'h', label:'Piston yüksekliği (hacim)', min:1.5, max:6, step:0.1, get:()=>H, set:v=>setH(v), fmt:v=>'V≈'+(2*BX*2*BZ*v).toFixed(0)+' m³' },
+      { key:'n', label:'Tanecik sayısı N', min:20, max:160, step:5, get:()=>N, set:v=>{ N=Math.round(v); wallJ=0; winStart=simTime; }, fmt:v=>v.toFixed(0) },
+    ],
+    actions:[],
+    update(){
+      const V = 2*BX*2*BZ*H;
+      const sabit = pMeas > 0 ? (pMeas*V/(N*T)*1000).toFixed(2) : '—';
+      setMeter(`P(ölçülen) = <b>${pMeas.toFixed(2)}</b> birim · V = ${V.toFixed(0)} m³ · N = ${N} · T = ${T} K<br>P·V/(N·T) × 1000 = <b>${sabit}</b> ← sabit kalmalı ✓`);
+    },
+    build(g){
+      // cam kutu
+      const glass = new THREE.MeshStandardMaterial({ color:0x9fd8c8, transparent:true, opacity:0.1, roughness:0.1, metalness:0.1, side:THREE.DoubleSide });
+      for (const [w, h2, d, x, y, z] of [
+        [2*BX, 6.4, 0.06, 0, 3.2, -BZ], [2*BX, 6.4, 0.06, 0, 3.2, BZ],
+        [0.06, 6.4, 2*BZ, -BX, 3.2, 0], [0.06, 6.4, 2*BZ, BX, 3.2, 0]]) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h2, d), glass);
+        m.position.set(x, y, z); g.add(m);
+      }
+      // kenar çizgileri
+      const edgeMat = new THREE.MeshStandardMaterial({ color:0x000000, emissive:0x34D399, emissiveIntensity:1.3, roughness:1 });
+      for (const [sx, sz] of [[-BX,-BZ],[-BX,BZ],[BX,-BZ],[BX,BZ]]) {
+        const e = new THREE.Mesh(new THREE.BoxGeometry(0.07, 6.4, 0.07), edgeMat);
+        e.position.set(sx, 3.2, sz); g.add(e);
+      }
+      // piston (hacim göstergesi)
+      piston = new THREE.Mesh(new THREE.BoxGeometry(2*BX+0.2, 0.16, 2*BZ+0.2),
+        new THREE.MeshStandardMaterial({ color:0x223052, emissive:0x34D399, emissiveIntensity:0.5, roughness:0.3, metalness:0.8 }));
+      piston.position.set(0, H + 0.08, 0); g.add(piston);
+      // tanecikler
+      gasMesh = new THREE.InstancedMesh(
+        new THREE.SphereGeometry(0.07, 8, 8),
+        new THREE.MeshStandardMaterial({ color:0x6EE7B7, emissive:0x10B981, emissiveIntensity:0.7, roughness:0.4 }),
+        MAXN);
+      gasMesh.frustumCulled = false;
+      scene.add(gasMesh);
+      initParticles();
+    }
+  });
+  st._api = { setT, setH, setN:v=>{ N=v; }, P:() => +pMeas.toFixed(3), sabit:() => pMeas > 0 ? +(pMeas*(2*BX*2*BZ*H)/(N*T)*1000).toFixed(2) : null };
+}
+
+// — Molekül Geometrisi —
+{
+  const MX2 = 12, MZ2 = KM.cz + 4;
+  let mIdx = 0, molGroup = null;
+  const MOLS = [
+    { name:'H₂O — Su', angle:'104.5°', note:'kırık doğru · POLAR', build(){
+      const g = new THREE.Group();
+      g.add(atom(0, 0, 0, 0.5, 0xF87171));                    // O
+      const a = 104.5/2*Math.PI/180, L = 1.05;
+      g.add(atom(Math.sin(a)*L, -Math.cos(a)*L, 0, 0.3, 0xE2E8F0));
+      g.add(atom(-Math.sin(a)*L, -Math.cos(a)*L, 0, 0.3, 0xE2E8F0));
+      g.add(bond({x:0,y:0,z:0}, {x:Math.sin(a)*L, y:-Math.cos(a)*L, z:0}));
+      g.add(bond({x:0,y:0,z:0}, {x:-Math.sin(a)*L, y:-Math.cos(a)*L, z:0}));
+      return g;
+    }},
+    { name:'CO₂ — Karbondioksit', angle:'180°', note:'doğrusal · APOLAR', build(){
+      const g = new THREE.Group();
+      g.add(atom(0, 0, 0, 0.45, 0x334155));                   // C
+      g.add(atom(1.3, 0, 0, 0.5, 0xF87171));
+      g.add(atom(-1.3, 0, 0, 0.5, 0xF87171));
+      g.add(bond({x:0,y:0,z:0}, {x:1.3,y:0,z:0}));
+      g.add(bond({x:0,y:0,z:0}, {x:-1.3,y:0,z:0}));
+      return g;
+    }},
+    { name:'CH₄ — Metan', angle:'109.5°', note:'düzgün dörtyüzlü · APOLAR', build(){
+      const g = new THREE.Group();
+      g.add(atom(0, 0, 0, 0.45, 0x334155));
+      const dirs = [[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]];
+      for (const d of dirs) {
+        const L = 1.15/Math.sqrt(3);
+        g.add(atom(d[0]*L, d[1]*L, d[2]*L, 0.28, 0xE2E8F0));
+        g.add(bond({x:0,y:0,z:0}, {x:d[0]*L, y:d[1]*L, z:d[2]*L}));
+      }
+      return g;
+    }},
+  ];
+  function atom(x, y, z, r, color) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 20),
+      new THREE.MeshStandardMaterial({ color, roughness:0.25, metalness:0.35, emissive:color, emissiveIntensity:0.12 }));
+    m.position.set(x, y, z);
+    return m;
+  }
+  function bond(a, b) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1, 8),
+      new THREE.MeshStandardMaterial({ color:0x94A3B8, roughness:0.4, metalness:0.6 }));
+    updateRod(m, a, b);
+    return m;
+  }
+  function setMol(i) {
+    if (molGroup) { molGroup.parent.remove(molGroup); }
+    mIdx = i;
+    molGroup = MOLS[i].build();
+    molGroup.position.y = 3.2;
+    molGroup.scale.setScalar(1.4);
+    stRef.group.add(molGroup);
+  }
+  let stRef = null;
+  stRef = addStation({
+    id:'molekul', zone:'kimya',
+    x:MX2, z:MZ2, short:'🧬 Molekül Geometrisi', color:'#A78BFA', radius:7, labelY:6.4,
+    title:'🧬 Molekül Geometrisi — VSEPR',
+    formula:'bağ açısı → molekül şekli → polarite',
+    desc:'Molekülün etrafında <span class="key">yürüyerek</span> dolaş — kağıt üzerinde göremediğin 3B geometriyi gör. Bağ açısı molekülün <span class="key">polaritesini</span> belirler; polarite de çözünürlüğü, kaynama noktasını, her şeyi.',
+    params:[],
+    actions:[ { label:() => `🔁 ${MOLS[mIdx].name.split(' ')[0]}`, fn(){ setMol((mIdx+1) % MOLS.length); } } ],
+    update(){ const m = MOLS[mIdx]; setMeter(`<b>${m.name}</b> · bağ açısı <b>${m.angle}</b> · ${m.note}`); },
+    build(g){
+      const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.7, 0.5, 24),
+        new THREE.MeshStandardMaterial({ color:0x223052, roughness:0.3, metalness:0.8 }));
+      ped.position.y = 0.25; if (Q.shadow) ped.castShadow = true; g.add(ped);
+      const pb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(MX2, 0.25, MZ2));
+      world.createCollider(RAPIER.ColliderDesc.cylinder(0.25, 1.5), pb);
+      tickers.push(() => { if (molGroup) { molGroup.rotation.y = simTime*0.4; molGroup.rotation.x = Math.sin(simTime*0.3)*0.25; } });
+    }
+  });
+  setMol(0);
+  stRef._api = { cycle:() => setMol((mIdx+1) % MOLS.length), name:() => MOLS[mIdx].name };
+}
+
+// ════════════════ BİYOLOJİ ODASI (placeholder) ════════════════
+{
+  const B = ZONES.bio;
+  const holo = new THREE.Mesh(new THREE.OctahedronGeometry(1.3, 0),
+    new THREE.MeshStandardMaterial({ color:0x0c1428, emissive:0xF87171, emissiveIntensity:1.3, wireframe:true }));
+  holo.position.set(B.cx, 3.2, B.cz);
+  scene.add(holo);
+  const sign = makeLabel('🌱 İçerikler hazırlanıyor…', '#F87171', 384, 26);
+  sign.scale.set(8, 1.35, 1);
+  sign.position.set(B.cx, 5.4, B.cz);
+  scene.add(sign);
+  tickers.push(() => { holo.rotation.y = simTime*0.5; holo.position.y = 3.2 + Math.sin(simTime*0.9)*0.2; });
+}
+
+// ════════════════ Oyuncu + Karakter ════════════════
+const PLAYER = { speed:6.5, sprint:10, jump:5.2, eyeY:0.7, spawn:{ x:0, y:1.05, z:13 } };
+const playerBody = world.createRigidBody(
+  RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(PLAYER.spawn.x, PLAYER.spawn.y, PLAYER.spawn.z)
+);
+const playerCol = world.createCollider(RAPIER.ColliderDesc.capsule(0.55, 0.35), playerBody);
+const charCtrl = world.createCharacterController(0.06);
+charCtrl.enableAutostep(0.45, 0.25, true);
+charCtrl.enableSnapToGround(0.45);
+charCtrl.setApplyImpulsesToDynamicBodies(true);
+if (charCtrl.setCharacterMass) charCtrl.setCharacterMass(75);
+
+let velY = 0, grounded = false, wantJump = false;
+
+// — prosedürel karakter (stilize keşif robotu) —
+const charRoot = new THREE.Group();
+const charParts = {};
+{
+  const matBody = new THREE.MeshStandardMaterial({ color:0x2b3650, roughness:0.35, metalness:0.7 });
+  const matDark = new THREE.MeshStandardMaterial({ color:0x1a2238, roughness:0.5, metalness:0.6 });
+  const matGlow = new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xC76F3E, emissiveIntensity:1.8, roughness:1 });
+  const matGlow2 = new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xA78BFA, emissiveIntensity:1.4, roughness:1 });
+  // gövde
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.3, 0.62, 12), matBody);
+  torso.position.y = 1.05; charRoot.add(torso); charParts.torso = torso;
+  const chest = new THREE.Mesh(new THREE.SphereGeometry(0.085, 12, 12), matGlow);
+  chest.position.set(0, 1.18, 0.22); charRoot.add(chest);
+  const belt = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.035, 8, 20), matGlow2);
+  belt.rotation.x = Math.PI/2; belt.position.y = 0.82; charRoot.add(belt);
+  // kafa
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 16), matBody);
+  head.position.y = 1.62; charRoot.add(head); charParts.head = head;
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.085, 0.1), matGlow);
+  visor.position.set(0, 1.64, 0.15); charRoot.add(visor);
+  // omuzlar + kollar
+  for (const [side, sx] of [['L',-0.38],['R',0.38]]) {
+    const sh = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), matDark);
+    sh.position.set(sx, 1.3, 0); charRoot.add(sh);
+    const armG = new THREE.Group(); armG.position.set(sx, 1.3, 0); charRoot.add(armG);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.56, 8), matBody);
+    arm.position.y = -0.31; armG.add(arm);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), matDark);
+    hand.position.y = -0.6; armG.add(hand);
+    charParts['arm'+side] = armG;
+  }
+  // bacaklar
+  for (const [side, sx] of [['L',-0.14],['R',0.14]]) {
+    const legG = new THREE.Group(); legG.position.set(sx, 0.76, 0); charRoot.add(legG);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.66, 8), matBody);
+    leg.position.y = -0.33; legG.add(leg);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 0.24), matDark);
+    foot.position.set(0, -0.68, 0.05); legG.add(foot);
+    charParts['leg'+side] = legG;
+  }
+  charRoot.traverse(o => { if (o.isMesh && Q.shadow) o.castShadow = true; });
+  scene.add(charRoot);
+}
+let charYaw = 0, walkPhase = 0, walkAmp = 0;
+
+// ════════════════ Kontroller ════════════════
+let yaw = 0, pitch = 0;
+let fpsMode = false;                                  // varsayılan: third-person
+const TPS_DIST = 4.6;
+const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+const keys = {};
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Space') wantJump = true;
+  if (e.code === 'KeyV') { fpsMode = !fpsMode; }
+  if (e.code === 'KeyE' && document.pointerLockElement) document.exitPointerLock();
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+
+let dragLook = false, dragLast = { x:0, y:0 };
+canvas.addEventListener('click', () => { if (!IS_MOBILE && started && !document.pointerLockElement) canvas.requestPointerLock(); });
+document.addEventListener('mousemove', e => {
+  if (document.pointerLockElement === canvas) {
+    yaw -= e.movementX * 0.0022;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch - e.movementY * 0.0022));
+  } else if (dragLook) {
+    yaw -= (e.clientX - dragLast.x) * 0.004;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch - (e.clientY - dragLast.y) * 0.004));
+    dragLast.x = e.clientX; dragLast.y = e.clientY;
+  }
+});
+canvas.addEventListener('mousedown', e => { if (!document.pointerLockElement) { dragLook = true; dragLast.x = e.clientX; dragLast.y = e.clientY; } });
+addEventListener('mouseup', () => { dragLook = false; });
+
+const joy = { x:0, y:0 };
+let moveTouchId = null, lookTouchId = null, lookLast = { x:0, y:0 };
+const joyEl = document.getElementById('joyMove'), stickEl = joyEl.querySelector('.stick');
+const JOY_R = 55;
+function touchStart(e) {
+  for (const t of e.changedTouches) {
+    if (t.clientX < innerWidth*0.5 && moveTouchId === null) {
+      moveTouchId = t.identifier;
+      joyEl.style.left = (t.clientX-55)+'px'; joyEl.style.bottom = (innerHeight-t.clientY-55)+'px';
+      joy._ox = t.clientX; joy._oy = t.clientY;
+    } else if (t.clientX >= innerWidth*0.5 && lookTouchId === null) {
+      lookTouchId = t.identifier; lookLast.x = t.clientX; lookLast.y = t.clientY;
+    }
+  }
+}
+function touchMove(e) {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    if (t.identifier === moveTouchId) {
+      let dx = t.clientX-joy._ox, dy = t.clientY-joy._oy;
+      const d = Math.hypot(dx, dy); if (d > JOY_R) { dx = dx/d*JOY_R; dy = dy/d*JOY_R; }
+      stickEl.style.transform = `translate(${dx}px,${dy}px)`;
+      joy.x = dx/JOY_R; joy.y = dy/JOY_R;
+    } else if (t.identifier === lookTouchId) {
+      yaw -= (t.clientX-lookLast.x) * 0.005;
+      pitch = Math.max(-1.2, Math.min(1.2, pitch - (t.clientY-lookLast.y) * 0.005));
+      lookLast.x = t.clientX; lookLast.y = t.clientY;
+    }
+  }
+}
+function touchEnd(e) {
+  for (const t of e.changedTouches) {
+    if (t.identifier === moveTouchId) { moveTouchId = null; joy.x = 0; joy.y = 0; stickEl.style.transform = ''; }
+    if (t.identifier === lookTouchId) lookTouchId = null;
+  }
+}
+canvas.addEventListener('touchstart', touchStart, { passive:false });
+canvas.addEventListener('touchmove',  touchMove,  { passive:false });
+canvas.addEventListener('touchend', touchEnd);
+canvas.addEventListener('touchcancel', touchEnd);
+document.getElementById('jumpBtn').addEventListener('touchstart', e => { e.preventDefault(); wantJump = true; });
+document.getElementById('camBtn').addEventListener('touchstart', e => { e.preventDefault(); fpsMode = !fpsMode; });
+
+// ════════════════ Tut & Fırlat ════════════════
+const GRAB_RANGE = 4.6, HOLD_DIST = 2.4, THROW_V = 14;
+let held = null;
+const ray = new THREE.Raycaster();
+const aimHintEl = document.getElementById('aimHint');
+const grabBtn = document.getElementById('grabBtn');
+const _camDir = new THREE.Vector3(), _holdP = new THREE.Vector3();
+
+function aimedDynamic() {
+  ray.setFromCamera({ x:0, y:0 }, camera);
+  const meshes = [];
+  for (const d of dynamics) if (d.kind !== 'bob' && d.kind !== 'springMass' && d !== held) meshes.push(d.mesh);
+  const hits = ray.intersectObjects(meshes, false);
+  if (!hits.length) return null;
+  // TPS'te ışın kameradan çıkar — mesafeyi oyuncudan ölç
+  const pp = playerBody.translation();
+  const hp = hits[0].point;
+  if (Math.hypot(hp.x-pp.x, hp.y-(pp.y+0.7), hp.z-pp.z) > GRAB_RANGE) return null;
+  return dynamics.find(d => d.mesh === hits[0].object) || null;
+}
+function tryGrabOrThrow() {
+  if (held) {
+    camera.getWorldDirection(_camDir);
+    held.body.setLinvel({ x:_camDir.x*THROW_V, y:_camDir.y*THROW_V + 1.5, z:_camDir.z*THROW_V }, true);
+    held = null;
+    grabBtn.textContent = '✊';
+    return;
+  }
+  const g = aimedDynamic();
+  if (g) { held = g; g.body.wakeUp(); grabBtn.textContent = '🚀'; }
+}
+canvas.addEventListener('mousedown', e => {
+  if (started && document.pointerLockElement === canvas && e.button === 0) tryGrabOrThrow();
+});
+grabBtn.addEventListener('touchstart', e => { e.preventDefault(); tryGrabOrThrow(); });
+
+tickers.push(() => {
+  if (!held) return;
+  camera.getWorldDirection(_camDir);
+  const pp = playerBody.translation();
+  _holdP.set(pp.x, pp.y + 0.7, pp.z).addScaledVector(_camDir, HOLD_DIST);
+  const t = held.body.translation();
+  const dx = _holdP.x - t.x, dy = _holdP.y - t.y, dz = _holdP.z - t.z;
+  const dist = Math.hypot(dx, dy, dz);
+  if (dist > 5.5) { held = null; grabBtn.textContent = '✊'; return; }
+  const kk = Math.min(12, 20/Math.max(dist, 0.001));
+  held.body.setLinvel({ x:dx*kk, y:dy*kk, z:dz*kk }, true);
+  const av = held.body.angvel();
+  held.body.setAngvel({ x:av.x*0.85, y:av.y*0.85, z:av.z*0.85 }, true);
+});
+
+let aimHintT = 0;
+function updateAimHint(dt) {
+  aimHintT -= dt;
+  if (aimHintT > 0) return;
+  aimHintT = 0.25;
+  if (!started) { aimHintEl.style.display = 'none'; return; }
+  if (held) { aimHintEl.textContent = IS_MOBILE ? '🚀 fırlatmak için 🚀 bas' : '🚀 tıkla → fırlat'; aimHintEl.style.display = 'block'; return; }
+  const g = aimedDynamic();
+  if (g) {
+    const v = g.body.linvel();
+    const spd = Math.hypot(v.x, v.y, v.z);
+    aimHintEl.textContent = (IS_MOBILE ? '✊ tutmak için ✊ bas' : '✊ tıkla → tut') + (spd > 0.4 ? ` · ${spd.toFixed(1)} m/s` : '');
+    aimHintEl.style.display = 'block';
+  } else aimHintEl.style.display = 'none';
+}
+
+// ════════════════ Başlat / çık ════════════════
+let started = false;
+const intro = document.getElementById('intro'), hud = document.getElementById('hud');
+const startBtn = document.getElementById('startBtn'), loadMsg = document.getElementById('loadMsg');
+loadMsg.textContent = '✅ Evren hazır';
+startBtn.disabled = false; startBtn.classList.add('ready'); startBtn.textContent = '▶ Evrene Gir';
+
+function start() {
+  if (started) return;
+  started = true; intro.style.display = 'none'; hud.style.display = 'block';
+  if (IS_MOBILE) document.body.classList.add('mobile');
+  else canvas.requestPointerLock();
+  // derin link: ?oda=fizik veya ?istasyon=sarkac
+  const oda = URLP.get('oda'), ist = URLP.get('istasyon');
+  if (ist) {
+    const s = stations.find(s => s.id === ist);
+    if (s) {
+      const zid = s.zone || 'hub';
+      gotoZone(zid, { x: s.group.position.x, z: s.group.position.z + (s.radius||5) - 1.5, yaw: Math.PI }, true);
+      // istasyona bak
+      const dx = s.group.position.x - playerBody.translation().x;
+      const dz = s.group.position.z - playerBody.translation().z;
+      yaw = Math.atan2(-dx, -dz);
+    }
+  } else if (oda) {
+    const map = { fizik:'fizik', matematik:'mat', mat:'mat', kimya:'kimya', biyoloji:'bio', bio:'bio' };
+    const zid = map[oda.toLowerCase()];
+    if (zid) {
+      const sp = { fizik:{x:376,z:0,yaw:-Math.PI/2}, mat:{x:-380,z:0,yaw:Math.PI/2}, kimya:{x:0,z:380,yaw:Math.PI}, bio:{x:0,z:-382,yaw:0} }[zid];
+      gotoZone(zid, sp, true);
+    }
+  }
+}
+startBtn.addEventListener('click', start);
+document.getElementById('exitBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  if (document.pointerLockElement) document.exitPointerLock();
+  started = false; intro.style.display = 'flex'; hud.style.display = 'none';
+});
+
+// ════════════════ Kamera (TPS ↔ FPS) ════════════════
+const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3();
+const _rayObj = new RAPIER.Ray({ x:0, y:0, z:0 }, { x:0, y:0, z:1 });
+function updateCamera(dt) {
+  const pp = playerBody.translation();
+  const head = _v1.set(pp.x, pp.y + PLAYER.eyeY, pp.z);
+  if (fpsMode) {
+    charRoot.visible = false;
+    euler.set(pitch, yaw, 0);
+    camera.position.copy(head);
+    camera.quaternion.setFromEuler(euler);
+  } else {
+    charRoot.visible = true;
+    const lookDir = _v2.set(-Math.sin(yaw)*Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw)*Math.cos(pitch));
+    // kamera duvar kontrolü: kafadan geriye ışın
+    let dist = TPS_DIST;
+    _rayObj.origin.x = head.x; _rayObj.origin.y = head.y; _rayObj.origin.z = head.z;
+    _rayObj.dir.x = -lookDir.x; _rayObj.dir.y = -lookDir.y; _rayObj.dir.z = -lookDir.z;
+    const hit = world.castRay(_rayObj, TPS_DIST + 0.3, true, undefined, undefined, undefined, playerBody);
+    if (hit && hit.toi < dist) dist = Math.max(1.1, hit.toi - 0.25);
+    // hafif omuz ofseti
+    _v3.set(Math.cos(yaw), 0, -Math.sin(yaw)).multiplyScalar(0.38);
+    camera.position.copy(head).addScaledVector(lookDir, -dist).add(_v3);
+    camera.position.y += 0.22;
+    camera.lookAt(head.x + lookDir.x*3, head.y + lookDir.y*3, head.z + lookDir.z*3);
+  }
+  // gökyüzü + güneş + toz oyuncuyu izler
+  if (window.__sky) window.__sky.position.set(pp.x, 0, pp.z);
+  stars.position.set(Math.round(pp.x/100)*100, 0, Math.round(pp.z/100)*100);
+  sun.position.set(pp.x + sunOffset.x, sunOffset.y, pp.z + sunOffset.z);
+  sun.target.position.set(pp.x, 0, pp.z);
+  sun.target.updateMatrixWorld();
+  dust.position.set(pp.x, 0, pp.z);
+}
+
+// ════════════════ Ana döngü ════════════════
+const clock = new THREE.Clock();
+let acc = 0, fpsCount = 0, fpsTime = 0, lastFps = 0, lowFpsStreak = 0;
+const fpsBox = document.getElementById('fpsBox');
+const moveDir = new THREE.Vector3();
+let lastPX = 0, lastPZ = 0, playerSpd = 0;
+
+function physicsStep() {
+  // hareket tabanı: yaw'dan (kameradan bağımsız — deterministik)
+  const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  const rx = Math.cos(yaw),  rz = -Math.sin(yaw);
+  moveDir.set(0, 0, 0);
+  if (started) {
+    if (keys['KeyW'] || keys['ArrowUp'])    { moveDir.x += fx; moveDir.z += fz; }
+    if (keys['KeyS'] || keys['ArrowDown'])  { moveDir.x -= fx; moveDir.z -= fz; }
+    if (keys['KeyD'] || keys['ArrowRight']) { moveDir.x += rx; moveDir.z += rz; }
+    if (keys['KeyA'] || keys['ArrowLeft'])  { moveDir.x -= rx; moveDir.z -= rz; }
+    if (IS_MOBILE && (joy.x || joy.y)) {
+      moveDir.x += fx*(-joy.y) + rx*joy.x;
+      moveDir.z += fz*(-joy.y) + rz*joy.x;
+    }
+  }
+  const spd = (keys['ShiftLeft'] || keys['ShiftRight']) ? PLAYER.sprint : PLAYER.speed;
+  if (moveDir.lengthSq() > 0) moveDir.normalize().multiplyScalar(spd * STEP);
+
+  velY += -9.81 * STEP;
+  if (grounded && wantJump) velY = PLAYER.jump;
+  wantJump = false;
+  const desired = { x: moveDir.x, y: velY * STEP, z: moveDir.z };
+
+  charCtrl.computeColliderMovement(playerCol, desired);
+  grounded = charCtrl.computedGrounded();
+  if (grounded && velY < 0) velY = -0.5;
+  const m = charCtrl.computedMovement();
+  const p = playerBody.translation();
+  playerBody.setNextKinematicTranslation({ x: p.x + m.x, y: p.y + m.y, z: p.z + m.z });
+
+  world.step();
+  simTime += STEP;
+  for (const fn of tickers) fn();
+}
+
+function updateCharacter(dt) {
+  const pp = playerBody.translation();
+  charRoot.position.set(pp.x, pp.y - 0.95, pp.z);
+  // hız ölçümü
+  const dx = pp.x - lastPX, dz = pp.z - lastPZ;
+  playerSpd = dt > 0 ? Math.hypot(dx, dz)/dt : 0;
+  lastPX = pp.x; lastPZ = pp.z;
+  // yürüme yönüne dön
+  if (playerSpd > 0.5) {
+    const target = Math.atan2(dx, dz);
+    let d = target - charYaw;
+    while (d > Math.PI) d -= Math.PI*2;
+    while (d < -Math.PI) d += Math.PI*2;
+    charYaw += d * Math.min(1, dt*10);
+  }
+  charRoot.rotation.y = charYaw;
+  // yürüme animasyonu
+  const targetAmp = playerSpd > 0.5 ? Math.min(1, playerSpd/6) : 0;
+  walkAmp += (targetAmp - walkAmp) * Math.min(1, dt*8);
+  walkPhase += playerSpd * dt * 2.4;
+  const sw = Math.sin(walkPhase) * 0.65 * walkAmp;
+  charParts.armL.rotation.x = sw;
+  charParts.armR.rotation.x = -sw;
+  charParts.legL.rotation.x = -sw;
+  charParts.legR.rotation.x = sw;
+  charParts.torso.position.y = 1.05 + Math.abs(Math.sin(walkPhase)) * 0.045 * walkAmp;
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+  acc += dt;
+  let n = 0;
+  while (acc >= STEP && n < 5) { physicsStep(); acc -= STEP; n++; }
+  if (n === 5) acc = 0;
+
+  updateCamera(dt);
+  updateCharacter(dt);
+  syncDynamics();
+  updateProximity();
+  if (nearStation && nearStation.update) nearStation.update();
+  updateAimHint(dt);
+
+  fpsCount++; fpsTime += dt;
+  if (fpsTime >= 1) {
+    lastFps = Math.round(fpsCount / fpsTime); fpsBox.textContent = lastFps + ' fps';
+    fpsCount = 0; fpsTime = 0;
+    if (started && !document.hidden && lastFps < 28) lowFpsStreak++;
+    else lowFpsStreak = 0;
+    if (lowFpsStreak >= 4 && composer) {
+      composer = null;
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.25));
+      fpsBox.textContent += ' ·eco';
+    }
+  }
+
+  dust.rotation.y += dt * 0.006;
+
+  if (composer) composer.render();
+  else renderer.render(scene, camera);
+}
+animate();
+
+// ════════════════ Debug API ════════════════
+window.__fz = {
+  ready: true,
+  start,
+  playerPos: () => { const t = playerBody.translation(); return { x:+t.x.toFixed(2), y:+t.y.toFixed(2), z:+t.z.toFixed(2) }; },
+  key: (code, down) => { keys[code] = down; if (code === 'Space' && down) wantJump = true; },
+  look: (y, p) => { yaw = y; pitch = p; },
+  fps: () => lastFps,
+  grounded: () => grounded,
+  tp: (x, z) => { playerBody.setTranslation({ x, y:1.05, z }, true); velY = 0; },
+  goto: (zoneId) => {
+    const sp = { hub:{x:0,z:13,yaw:0}, fizik:{x:376,z:0,yaw:-Math.PI/2}, mat:{x:-380,z:0,yaw:Math.PI/2}, kimya:{x:0,z:380,yaw:Math.PI}, bio:{x:0,z:-382,yaw:0} }[zoneId];
+    if (sp) gotoZone(zoneId, sp, true);
+    return currentZone;
+  },
+  zone: () => currentZone,
+  near: () => nearStation ? nearStation.short : null,
+  meter: () => meterEl ? meterEl.textContent : null,
+  api: (idOrName) => { const s = stations.find(s => s.id === idOrName || s.short.includes(idOrName)); return s ? s._api : null; },
+  stations: () => stations.map(s => ({ id:s.id, zone:s.zone, short:s.short })),
+  dyn: (kind) => dynamics.filter(d => d.kind === kind).map(d => { const t = d.body.translation(), v = d.body.linvel(); return { p:[+t.x.toFixed(2), +t.y.toFixed(2), +t.z.toFixed(2)], v:[+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)] }; }),
+  grab: () => { tryGrabOrThrow(); return held ? held.kind : null; },
+  held: () => held ? held.kind : null,
+  aimed: () => { const g = aimedDynamic(); return g ? g.kind : null; },
+  cam: () => ({ mode: fpsMode ? 'fps' : 'tps', p: camera.position.toArray().map(v => +v.toFixed(2)) }),
+  setCam: (m) => { fpsMode = (m === 'fps'); },
+  simTime: () => +simTime.toFixed(2),
+  fastForward: (sec) => {
+    const n = Math.min(Math.round(sec*60), 3600);
+    for (let i=0; i<n; i++) physicsStep();
+    updateCamera(0);
+    syncDynamics();
+    updateProximity();
+    if (nearStation && nearStation.update) nearStation.update();
+    return +simTime.toFixed(2);
+  },
+};
+</script>
+</body>
+</html>

@@ -2383,6 +2383,15 @@ html[data-theme="dark"] .msg.bot.streaming::after {
   .chat-header .user .topluluk-btn::before {
     content: "💬"; font-size: 15px;
   }
+  /* 25.58-H: Evren butonu mobilde ikon-only */
+  .chat-header .user .evren-btn {
+    font-size: 0 !important;
+    padding: 6px 9px !important;
+    margin-right: 4px !important;
+  }
+  .chat-header .user .evren-btn::before {
+    content: "🌌"; font-size: 15px;
+  }
   /* Kullanıcı ismi mobilde gizli (Çıkış kalır, butona basınca çıkış) */
   .chat-header .user #userName { display: none; }
   /* Çıkış butonu kompakt */
@@ -2432,6 +2441,7 @@ html[data-theme="dark"] .msg.bot.streaming::after {
   .chat-header .user .new-chat-btn,
   .chat-header .user .study-btn,
   .chat-header .user .topluluk-btn,
+  .chat-header .user .evren-btn,
   .chat-header .user .admin-dash-btn,
   .chat-header .user .admin-btn,
   .chat-header .user .theme-toggle,
@@ -2466,6 +2476,7 @@ html[data-theme="dark"] .msg.bot.streaming::after {
   /* 25.14h: ikonlar daha sıkı, marginleri minimuma çek */
   .chat-header .user .new-chat-btn,
   .chat-header .user .study-btn,
+  .chat-header .user .evren-btn,
   .chat-header .user .admin-dash-btn {
     margin-right: 2px !important;
     padding: 5px 7px !important;
@@ -3263,6 +3274,8 @@ html[data-theme="dark"] .msg.bot.streaming::after {
       <button class="study-btn" id="studyBtn" onclick="openStudyDashboard()" title="Çalışmam — günlük program, soru, alışkanlık takibi" style="display:none;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;color:#1a0d00;cursor:pointer;font-size:13px;padding:6px 14px;margin-right:8px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(245,158,11,0.25);">📚 Çalışmam</button>
       <!-- 25.46+ (Neo 17 May): Topluluk sohbet (QuitNow tarzı, ortak alan) -->
       <button class="topluluk-btn" id="topluluBtn" onclick="openTopluluk()" title="Topluluk — öğrenci ortak sohbet alanı" style="background:linear-gradient(135deg,#10B981,#059669);border:none;color:#fff;cursor:pointer;font-size:13px;padding:6px 12px;margin-right:6px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(16,185,129,0.25);">💬 Topluluk</button>
+      <!-- 25.58-H (Neo): Bilim Evreni — 3D eğitimsel metaworld girişi. ?oda=fizik|matematik|kimya derin link destekler. -->
+      <button class="evren-btn" id="evrenBtn" onclick="window.open('/static/games/bilim-evreni.html','_blank')" title="Bilim Evreni — 3D interaktif deney dünyası: fizik, matematik, kimya odaları" style="background:linear-gradient(135deg,#C76F3E,#A78BFA);border:none;color:#fff;cursor:pointer;font-size:13px;padding:6px 12px;margin-right:6px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(167,139,250,0.3);">🌌 Evren</button>
       <!-- Oturum 25.14d: Admin/Mudur Dashboard (Cinema palette dashboard'a yönlendir) -->
       <button class="admin-dash-btn" id="adminDashBtn" onclick="openAdminDashboard()" title="Yönetim Paneli — bildirim, routing, sınıf/öğretmen analiz, Atlas-2" style="display:none;background:linear-gradient(135deg,#5E6AD2,#8B5CF6);border:none;color:#fff;cursor:pointer;font-size:13px;padding:6px 14px;margin-right:8px;border-radius:8px;font-weight:600;transition:all 0.15s;box-shadow:0 2px 10px rgba(94,106,210,0.3);">📊 Yönetim Paneli</button>
       <!-- 22.1n-vizyon3: Admin/Mudur eski Insight Panel (modal — geriye uyum) -->
