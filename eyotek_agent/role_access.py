@@ -582,19 +582,24 @@ def _check_sql_acl(role: str, sql: str, soz_no: int = None, phone: str = "") -> 
         if _re_acl.search(r'\b(OR\s+\d+\s*=\s*\d+|UNION\s+(?:ALL\s+)?SELECT|--|/\*)\b', sql_upper):
             return "Güvenlik: SQL injection pattern (OR/UNION/comment) tespit edildi — reddedildi."
         # 2) Hassas ogrenci tablolari — kendi soz_no kisitlamali
-        if soz_no:
-            sensitive_tables = ["STUDENT_EXAMS", "STUDENT_TOPIC_TRACKER", "DEVAMSIZLIK",
-                                "STUDENT_EXAM_ANALYSIS", "STUDENT_INSIGHTS",
-                                "COUNSELLOR_NOTES", "ETUT_HISTORY",
-                                "TERCIH_PROFIL", "TERCIH_LISTESI"]
-            if any(t in sql_upper for t in sensitive_tables):
-                if str(soz_no) not in sql:
-                    return f"Güvenlik: Sadece kendi verilerine erişebilirsin. Sorgu kendi soz_no'nu ({soz_no}) içermelidir."
-                # Bulunan tüm soz_no sayıları kendi soz_no'muza eşit olmalı
-                found_nums = _re_acl.findall(r'soz_no\s*[=<>]+\s*(\d+)', sql_upper, _re_acl.IGNORECASE)
-                for n in found_nums:
-                    if n != str(soz_no):
-                        return f"Güvenlik: Başka öğrencinin soz_no'su ({n}) sorgulanamaz. Sadece kendi ({soz_no})."
+        # 25.58-E GÜVENLİK FIX: önceki `if soz_no:` fail-OPEN'di — soz_no boşsa
+        # (kimliksiz/null soz_no öğrenci) hassas-tablo kontrolü TAMAMEN atlanıp
+        # filtresiz SELECT geçebiliyordu. Fail-CLOSED: hassas tabloya dokunan her
+        # öğrenci SQL'i geçerli soz_no ZORUNLU.
+        sensitive_tables = ["STUDENT_EXAMS", "STUDENT_TOPIC_TRACKER", "DEVAMSIZLIK",
+                            "STUDENT_EXAM_ANALYSIS", "STUDENT_INSIGHTS",
+                            "COUNSELLOR_NOTES", "ETUT_HISTORY",
+                            "TERCIH_PROFIL", "TERCIH_LISTESI"]
+        if any(t in sql_upper for t in sensitive_tables):
+            if not soz_no:
+                return "Güvenlik: Öğrenci kimliği (soz_no) belirlenemediği için hassas tabloya erişim reddedildi."
+            if str(soz_no) not in sql:
+                return f"Güvenlik: Sadece kendi verilerine erişebilirsin. Sorgu kendi soz_no'nu ({soz_no}) içermelidir."
+            # Bulunan tüm soz_no sayıları kendi soz_no'muza eşit olmalı
+            found_nums = _re_acl.findall(r'soz_no\s*[=<>]+\s*(\d+)', sql_upper, _re_acl.IGNORECASE)
+            for n in found_nums:
+                if n != str(soz_no):
+                    return f"Güvenlik: Başka öğrencinin soz_no'su ({n}) sorgulanamaz. Sadece kendi ({soz_no})."
 
     # Yasaklı tablo kontrolü
     forbidden_tables = _FORBIDDEN_TABLES.get(role, [])

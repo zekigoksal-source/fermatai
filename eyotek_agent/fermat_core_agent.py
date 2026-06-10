@@ -5576,7 +5576,12 @@ def _clean_response(text: str) -> str:
 async def _get_caller_profile(phone: str) -> dict:
     """Telefon numarasindan kullanici profilini al (acl + students)."""
     if not phone or not DATABASE_URL:
-        return {"role": "admin", "full_name": "Admin", "phone": phone}
+        # 25.58-E GÜVENLİK FIX: önceki 'admin' fallback fail-OPEN'di — 25.42'de
+        # exception-path 'unknown'a sertleştirilmişti ama bu erken-guard kaçmıştı.
+        # Boş "from"lu (spoof/malformed) webhook admin rolü alıyordu → privilege
+        # escalation. Fail-CLOSED: kayıtsız 'unknown', downstream erişimi reddeder.
+        return {"role": "unknown", "full_name": "", "phone": phone or "",
+                "source": "no_phone_or_db", "is_verified": False}
     # OTURUM 22.7 (21 Nisan) — phone_utils.normalize_phone delegasyonu
     from phone_utils import normalize_phone
     clean_phone = normalize_phone(phone) or phone

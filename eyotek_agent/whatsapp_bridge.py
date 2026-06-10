@@ -724,13 +724,21 @@ async def lifespan(app: FastAPI):
         (bool(WA_ACCESS_TOKEN),    _ok if WA_ACCESS_TOKEN else _warn, "WA_ACCESS_TOKEN"),
         (bool(WA_PHONE_NUMBER_ID), _ok if WA_PHONE_NUMBER_ID else _warn, "WA_PHONE_NUMBER_ID"),
         (bool(OPENAI_KEY),         _ok if OPENAI_KEY else "ℹ️ ", "OPENAI_API_KEY (opsiyonel — Whisper)"),
-        (bool(WA_APP_SECRET),      _ok if WA_APP_SECRET else "ℹ️ ", "WA_APP_SECRET (opsiyonel — imza doğrulama)"),
+        (bool(WA_APP_SECRET),      _ok if WA_APP_SECRET else _warn, "WA_APP_SECRET (webhook imza doğrulama)"),
     ]
     has_errors = False
     for ok, icon, name in checks:
         logger.info(f"  {icon}  {name}")
         if not ok and icon == _warn:
             has_errors = True
+
+    # 25.58-E GÜVENLİK: WA_APP_SECRET yoksa webhook imzası DOĞRULANMIYOR (verify_signature
+    # secret yokken True döner) → herhangi biri /webhook'a sahte mesaj POST edebilir,
+    # admin telefonunu taklit edip admin komutu (blokla/yetki/sync) tetikleyebilir.
+    # KAPATMAK İÇİN: Meta App Dashboard → Settings → Basic → App Secret → .env WA_APP_SECRET.
+    if not WA_APP_SECRET:
+        logger.warning("🔴 GÜVENLİK: WA_APP_SECRET TANIMSIZ — webhook imza doğrulaması KAPALI "
+                       "(spoofing riski). Meta App Secret'i .env'e ekleyin.")
 
     # Session dosyası var mı?
     session_file = Path(os.getenv("SESSION_FILE", ".eyotek_session.json"))
@@ -2554,7 +2562,11 @@ def verify_signature(payload: bytes, signature: str, client_ip: str = "") -> boo
     NOT (Oturum 18): Üretimde WA_APP_SECRET .env'de set edilmesi onerilir.
     """
     if not WA_APP_SECRET:
-        # Secret tanımsız — geriye uyumlu mod (Meta webhook'larini engellemez)
+        # 25.58-E: Secret tanımsızsa imza DOĞRULANAMAZ → fail-open (True).
+        # UYARI: bu modda /webhook spoofing'e açık (başlangıçta gür uyarı veriliyor).
+        # Üretimde WA_APP_SECRET .env'de set EDİLMELİ (Meta App Secret).
+        # NOT: localhost-only reddetmiyoruz çünkü Meta uzak IP'den çağırır; secret
+        # set edilince (aşağıda) HMAC zorunlu olur.
         return True
     expected = "sha256=" + hmac.new(
         WA_APP_SECRET.encode(), payload, hashlib.sha256
