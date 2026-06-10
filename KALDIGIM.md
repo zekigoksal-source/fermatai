@@ -1,12 +1,22 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 3 Haziran 2026 → **OTURUM 25.55→25.56 (Opus 4.8): HİBRİT KALİTE (Cerebras non-tool A+ + kriz ALO 183 ağı) → CEREBRAS KAZANIM ENTEGRASYONU (pedagoji/RAG/render/uzunluk öksüzlüğü çözüldü)**
+> **Son güncelleme:** 10 Haziran 2026 → **OTURUM 25.58-D (Fable 5): GOLD KALİTE KALİBRASYONU — fable-5'i yeni A++++ standart alıp Cerebras şablonları v2'ye yükseltildi + LaTeX→WhatsApp okunabilir + BLUEPRINT v2.2**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.58-D, 10 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `02eee6a` (25.58-C model stratejisi) ← `9e53e6e` (crisis pattern) ← `cbe6285` (duplicate kök + LRU) ← `76d7ded` (konuşma kalite) ← 25.54
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `02eee6a`, PostgreSQL OK
+> - **HEAD:** `74a5384` (25.58-D fable gold kalibrasyon) ← `a5fc833` (25.58-C model stratejisi docs) ← `22a7d03` (EOL+premium) ← `9e53e6e` (crisis pattern) ← 25.58
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `74a5384`, PostgreSQL OK
+>
+> ## ✨ 10 Haz (25.58-D) — FABLE-5 GOLD KALİTE KALİBRASYONU (Neo: "fable A++++ ile eski A+ şablonları daha da geliştir")
+> Eski standart: Sonnet=A+ gold → Cerebras şablonları ona kalibre (25.55). Yeni: fable-5 gold üret → Cerebras v1-şablonlu cevapla kıyasla → fable-judge'dan şablon-yükseltecek talimat çıkar → A/B doğrula → deploy.
+> - **Sağlık ÖN-KONTROL:** Sentry 24h temiz (1× tekil process_message logu, kalıcı değil), frustration YOK, **dedup fix tutuyor (çift bot cevabı YOK)**, premium 0 tetik (beklenen — düşük web-akademik trafik).
+> - **CHAT_QUALITY_ADDON v2 (gap-analizinden):** Cerebras duygu senaryosu **C** almıştı (kriz anında VIP/randevu PAZARLAMA + erken-teknik + generic teselli). Eklenen: ÖNCE-DUYGU-SONRA-TEKNİK sırası, **SATIŞ/PAZARLAMA KESİN YASAK** (duygu/krizde), taşınabilir metafor ("duygular hava durumu gibi"), kişiselleştiren tek-soru kapanış. Kriz: duyguyu-ayır + 112 risk-ilişki + isimli rehber. **Ölçüm: duygu C → A-.**
+> - **ACADEMIC_DEPTH_ADDON v2:** tek kavramsal çekirdek (formüle erken atlama yok) + YKS sıklık-yıldızı önceliği. **Sahte ASCII dayatması KALDIRILDI** — Cerebras ASCII diyagram beceremiyor (C aldı); zaten render-değerli web akademik `detect_renderer_need` ile PREMIUM fable-5'e gidiyor (7/7 görsel-istek doğrulandı). Cerebras'a yapamayacağını dayatmak yerine: chart + net sözel-uzaysal tarif.
+> - **LaTeX→WhatsApp (format_whatsapp._latex_to_readable):** fable-judge yakaladı — WhatsApp'ta ham `\( \frac \lim x^2 \theta` çıkıyordu (web KaTeX render eder, WP etmez). Dönüşüm: √ ² ≤ π lim(x→a) (x). SADECE WP path (web korunur). Tüm kaynakların (Cerebras/Groq/Claude) WP matematiğini düzeltir. 7/7 test temiz, normal metne dokunmuyor. + pre-existing `\s` SyntaxWarning temizlendi.
+> - **Routing kalibrasyon (batch üretim):** `rag_content_builder` `FERMAT_CONTENT_PREMIUM=1` → fable-5 (Neo "simulasyon/üretim fable üretsin sonet yerine" direktifi; offline + düşük hacim + kalite-kritik → canlı maliyet yok).
+> - **BLUEPRINT v2.2:** 25.55→25.58-D mimari changelog (9 satır delta tablosu). Yazar v2.2 = fable-5.
+> - **AÇIK (sonraki — Neo kararı):** premium kapsam genişletme mi? Şu an sadece web-render. Öneri: study-plan + exam-xray anlatımları gibi yüksek-değerli üretimler de fable'a alınabilir (maliyet/kalite dengesi Neo'nun). Detay aşağıda "PREMIUM kapsam önerisi".
 >
 > ## 🤖 10 Haz (25.58-C) — MODEL STRATEJİSİ: EOL FIX + PREMIUM KATMAN (fable-5) — Neo direktif
 > `/v1/models` ile KANITLANDI: hesap **claude-fable-5** + opus-4-8 + sonnet-4-6 + haiku-4-5 erişimine sahip.
