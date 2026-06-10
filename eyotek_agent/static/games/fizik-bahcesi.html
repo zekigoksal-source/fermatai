@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Fizik Bahçesi · FermatAI 3D Dünya</title>
+<style>
+  :root{--bg:#0F172A;--accent:#C76F3E;--accent2:#A78BFA;--ok:#34D399;--err:#F87171;--panel:rgba(15,23,42,.9)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);font-family:-apple-system,system-ui,sans-serif;color:#E2E8F0;overflow:hidden;touch-action:none}
+  canvas{display:block}
+
+  /* Başlangıç ekranı */
+  #intro{position:fixed;inset:0;background:radial-gradient(circle at 50% 40%,#1e293b,#0F172A);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;text-align:center;padding:24px;cursor:pointer}
+  #intro h1{font-size:30px;margin:0 0 6px;color:#fff;letter-spacing:.5px}
+  #intro h1 b{color:var(--accent)}
+  #intro .sub{color:#94A3B8;font-size:14px;margin-bottom:26px}
+  #intro .keys{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-bottom:28px}
+  #intro .kc{background:rgba(255,255,255,.05);border:1px solid rgba(199,111,62,.3);border-radius:12px;padding:14px 18px;min-width:120px}
+  #intro .kc .ico{font-size:24px}
+  #intro .kc .lbl{font-size:11px;color:#CBD5E1;margin-top:6px;line-height:1.4}
+  #intro .start{background:var(--accent);color:#fff;border:none;padding:14px 34px;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+
+  /* HUD */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
+  #cross{position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:rgba(255,255,255,.5);box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+  #topbar{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid rgba(199,111,62,.25);
+    border-radius:30px;padding:7px 18px;font-size:12px;color:#CBD5E1;letter-spacing:.5px}
+  #topbar b{color:var(--accent)}
+  #compass{position:absolute;top:12px;right:12px;background:var(--panel);border:1px solid rgba(167,139,250,.25);border-radius:10px;padding:8px 12px;font-size:11px;color:#94A3B8}
+  #exitBtn{position:absolute;top:10px;left:12px;pointer-events:auto;background:var(--panel);border:1px solid rgba(199,111,62,.25);
+    border-radius:10px;padding:8px 12px;font-size:12px;color:#CBD5E1;cursor:pointer}
+
+  /* İstasyon paneli */
+  #station{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:var(--panel);backdrop-filter:blur(10px);
+    border:1px solid rgba(199,111,62,.35);border-radius:16px;padding:15px 18px;max-width:min(460px,92vw);box-shadow:0 10px 40px rgba(0,0,0,.5);
+    pointer-events:auto;display:none}
+  #station h2{margin:0 0 6px;font-size:16px;color:var(--accent)}
+  #station .formula{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);border-radius:8px;padding:6px 10px;
+    text-align:center;font-size:14px;color:#fff;margin:8px 0}
+  #station p{margin:6px 0;font-size:12.5px;line-height:1.5;color:#CBD5E1}
+  #station .key{color:var(--accent2);font-weight:600}
+  #station .act{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  #station .act button{flex:1;min-width:120px;background:rgba(199,111,62,.15);border:1px solid rgba(199,111,62,.35);color:#fff;
+    padding:9px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer}
+  #station .act button:active{transform:scale(.97)}
+
+  /* Yaklaş ipucu */
+  #prompt{position:absolute;bottom:50%;left:50%;transform:translate(-50%,60px);background:rgba(199,111,62,.9);color:#fff;
+    padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;display:none;white-space:nowrap}
+
+  /* Mobil joystick */
+  .joy{position:absolute;bottom:30px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.06);
+    border:1.5px solid rgba(199,111,62,.3);pointer-events:auto;display:none;z-index:11}
+  #joyMove{left:24px}
+  #joyMove .stick{position:absolute;top:50%;left:50%;width:46px;height:46px;margin:-23px;border-radius:50%;
+    background:rgba(199,111,62,.5);border:1px solid rgba(255,255,255,.2)}
+  #joyHint{position:absolute;bottom:145px;left:24px;font-size:10px;color:#64748B;display:none}
+  #lookHint{position:absolute;bottom:30px;right:24px;font-size:10px;color:#64748B;display:none;text-align:right}
+  .mobile .joy{display:block}
+  .mobile #joyHint,.mobile #lookHint{display:block}
+</style>
+</head>
+<body>
+<div id="intro">
+  <h1>FERMAT<b>AI</b> · Fizik Bahçesi</h1>
+  <div class="sub">İçinde gezebileceğin 3D bir keşif dünyası — prototip</div>
+  <div class="keys">
+    <div class="kc"><div class="ico">🎮</div><div class="lbl"><b>WASD</b> ile yürü<br>(mobilde joystick)</div></div>
+    <div class="kc"><div class="ico">🖱️</div><div class="lbl">Fareyle bak<br>(mobilde sağı kaydır)</div></div>
+    <div class="kc"><div class="ico">📍</div><div class="lbl">İstasyonlara<br>yaklaş, keşfet</div></div>
+  </div>
+  <button class="start">▶ Keşfetmeye Başla</button>
+</div>
+
+<div id="hud">
+  <div id="cross"></div>
+  <div id="topbar">🌿 <b>Fizik Bahçesi</b> · istasyonlara yürü</div>
+  <div id="compass">📍 —</div>
+  <div id="exitBtn">✕ Çık</div>
+  <div id="prompt">📍 Yaklaştın — keşfet</div>
+  <div id="station"></div>
+  <div id="joyMove" class="joy"><div class="stick"></div></div>
+  <div id="joyHint">yürü</div>
+  <div id="lookHint">bakmak için<br>kaydır →</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147/build/three.min.js"></script>
+<script>
+// ════════════════ Sahne ════════════════
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0F172A);
+scene.fog = new THREE.Fog(0x0F172A, 22, 70);
+
+const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, 0.1, 200);
+camera.position.set(0, 1.7, 16);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+const canvas = renderer.domElement;
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// Işık
+scene.add(new THREE.HemisphereLight(0xbfd4ff, 0x202840, 0.7));
+const sun = new THREE.DirectionalLight(0xffe8c0, 0.9); sun.position.set(20, 30, 10); scene.add(sun);
+
+// ════════════════ Zemin (Minecraft-vari grid) ════════════════
+const WORLD = 28; // yarı-genişlik
+const groundMat = new THREE.MeshStandardMaterial({color:0x16203a, roughness:0.95});
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(WORLD*2, WORLD*2), groundMat);
+ground.rotation.x = -Math.PI/2; scene.add(ground);
+const grid = new THREE.GridHelper(WORLD*2, WORLD, 0x2a3a5c, 0x1e2a44);
+grid.position.y = 0.02; scene.add(grid);
+
+// Sınır duvarları (görünür çit)
+const wallMat = new THREE.MeshStandardMaterial({color:0x1e293b, transparent:true, opacity:0.4, side:THREE.DoubleSide});
+[[0,0,-WORLD,0],[0,0,WORLD,0],[-WORLD,0,0,Math.PI/2],[WORLD,0,0,Math.PI/2]].forEach(([x,_,z,ry])=>{
+  const w = new THREE.Mesh(new THREE.PlaneGeometry(WORLD*2, 4), wallMat);
+  w.position.set(x,2,z); w.rotation.y = ry; scene.add(w);
+});
+
+// Yıldız tavanı (atmosfer)
+const starGeo = new THREE.BufferGeometry();
+const starPos = [];
+for(let i=0;i<400;i++){ starPos.push((Math.random()-.5)*160, 20+Math.random()*40, (Math.random()-.5)*160); }
+starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos,3));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color:0x9db2d9, size:0.3})));
+
+// ════════════════ Etiket sprite üretici ════════════════
+function makeLabel(text, color='#C76F3E'){
+  const cv = document.createElement('canvas'); cv.width=256; cv.height=64;
+  const c = cv.getContext('2d');
+  c.fillStyle='rgba(15,23,42,0.85)'; c.fillRect(0,0,256,64);
+  c.strokeStyle=color; c.lineWidth=3; c.strokeRect(2,2,252,60);
+  c.fillStyle='#fff'; c.font='bold 26px sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+  c.fillText(text, 128, 34);
+  const tex = new THREE.CanvasTexture(cv);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true}));
+  spr.scale.set(4, 1, 1);
+  return spr;
+}
+
+// ════════════════ İstasyonlar ════════════════
+const stations = [];
+function addStation(cfg){
+  const g = new THREE.Group(); g.position.set(cfg.x, 0, cfg.z); scene.add(g);
+  const lbl = makeLabel(cfg.short, cfg.color); lbl.position.y = cfg.labelY||5.5; g.add(lbl);
+  cfg.build(g);
+  stations.push({...cfg, group:g, active:false});
+}
+
+// — İSTASYON 1: Manyetik Alan Sütunu (etrafında dönebilirsin) —
+let magCurrentDir = 1, magRings;
+addStation({
+  x:-12, z:-8, short:'🧲 Manyetik Alan', color:'#C76F3E', radius:5,
+  title:'🧲 Manyetik Alan Sütunu',
+  formula:'B = μ₀·I / (2π·r)',
+  desc:'Bu sütundan akım geçiyor. Etrafında dön — alan çizgileri telin çevresinde halkalar oluşturur. <span class="key">Sağ-el kuralı:</span> başparmak akım yönü, parmaklar alan yönü.',
+  actions:[{label:'🔄 Akım yönünü çevir', fn:()=>{ magCurrentDir*=-1; }}],
+  build(g){
+    const tel = new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.25,9,20),
+      new THREE.MeshStandardMaterial({color:0xCD7F32, emissive:0x6b3410, emissiveIntensity:0.5, metalness:0.7}));
+    tel.position.y=4.5; g.add(tel);
+    magRings = new THREE.Group(); g.add(magRings);
+    [-3,-1,1,3].forEach(y=>{ [1.5,2.6].forEach(r=>{
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(r,0.05,8,48),
+        new THREE.MeshBasicMaterial({color:0xA78BFA,transparent:true,opacity:0.6}));
+      ring.rotation.x=Math.PI/2; ring.position.y=y+4.5; magRings.add(ring);
+    });});
+  }
+});
+
+// — İSTASYON 2: Yerçekimi / Serbest Düşme —
+let gravBall, gravVel=0, gravActive=false;
+addStation({
+  x:12, z:-8, short:'🪐 Yerçekimi', color:'#A78BFA', radius:5,
+  title:'🪐 Serbest Düşme',
+  formula:'h = ½·g·t²   ·   g ≈ 9.8 m/s²',
+  desc:'Tüm cisimler kütlesinden bağımsız <span class="key">aynı ivmeyle</span> düşer. Topu bırak, hızlanışı izle — her saniye hız 9.8 m/s artar.',
+  actions:[{label:'⬇️ Topu bırak', fn:()=>{ gravBall.position.y=9; gravVel=0; gravActive=true; }}],
+  build(g){
+    const plat=new THREE.Mesh(new THREE.BoxGeometry(3,0.3,3),
+      new THREE.MeshStandardMaterial({color:0x2a3a5c})); plat.position.y=0.15; g.add(plat);
+    const post=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,9,8),
+      new THREE.MeshStandardMaterial({color:0x475569})); post.position.set(1.3,4.5,0); g.add(post);
+    gravBall=new THREE.Mesh(new THREE.SphereGeometry(0.5,20,20),
+      new THREE.MeshStandardMaterial({color:0xA78BFA,emissive:0x4c3a80,emissiveIntensity:0.5}));
+    gravBall.position.set(0,9,0); g.add(gravBall);
+  }
+});
+
+// — İSTASYON 3: Parabol / Fonksiyon —
+let parabA=1, parabCurve;
+addStation({
+  x:0, z:-18, short:'📈 Parabol', color:'#34D399', radius:5.5,
+  title:'📈 Parabol — y = a·x²',
+  formula:'y = a·x²',
+  desc:'<span class="key">a</span> katsayısı parabolün açıklığını belirler. Büyüt/küçült — eğrinin nasıl daraldığını/genişlediğini canlı gör. AYT\'de grafik yorumu sık çıkar.',
+  actions:[
+    {label:'➕ a büyüt', fn:()=>{ parabA=Math.min(3,parabA+0.5); rebuildParab(); }},
+    {label:'➖ a küçült', fn:()=>{ parabA=Math.max(0.5,parabA-0.5); rebuildParab(); }}
+  ],
+  build(g){ window._parabG=g; rebuildParab(); }
+});
+function rebuildParab(){
+  const g=window._parabG; if(!g) return;
+  if(parabCurve) g.remove(parabCurve);
+  const pts=[];
+  for(let x=-3;x<=3;x+=0.2){ pts.push(new THREE.Vector3(x*1.4, parabA*x*x*0.7+0.3, 0)); }
+  const geo=new THREE.BufferGeometry().setFromPoints(pts);
+  parabCurve=new THREE.Line(geo, new THREE.LineBasicMaterial({color:0x34D399, linewidth:3}));
+  g.add(parabCurve);
+}
+
+// — İSTASYON 4: Karşılama Obeliski (merkez) —
+addStation({
+  x:0, z:0, short:'🌟 Başlangıç', color:'#FFD27F', radius:4, labelY:6,
+  title:'🌟 Fizik Bahçesi\'ne Hoş Geldin',
+  formula:'Keşfet · Yaklaş · Öğren',
+  desc:'Etrafında 3 istasyon var: <span class="key">🧲 Manyetik Alan</span> (sol), <span class="key">🪐 Yerçekimi</span> (sağ), <span class="key">📈 Parabol</span> (ileri). Birine yürü, panelden etkileş. Bu bir <span class="key">prototip</span> — beğenirsen büyür.',
+  actions:[],
+  build(g){
+    const ob=new THREE.Mesh(new THREE.ConeGeometry(0.8,4,4),
+      new THREE.MeshStandardMaterial({color:0xFFD27F,emissive:0xC76F3E,emissiveIntensity:0.4}));
+    ob.position.y=2; ob.rotation.y=Math.PI/4; g.add(ob);
+  }
+});
+
+// ════════════════ First-Person Kontrol (hand-rolled, masaüstü+mobil) ════════════════
+let yaw=0, pitch=0;
+const euler=new THREE.Euler(0,0,0,'YXZ');
+const keys={};
+const isMobile = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
+
+addEventListener('keydown', e=>{ keys[e.code]=true; });
+addEventListener('keyup', e=>{ keys[e.code]=false; });
+
+// — Masaüstü: pointer lock + fare bak —
+canvas.addEventListener('click', ()=>{ if(!isMobile && started) canvas.requestPointerLock(); });
+document.addEventListener('mousemove', e=>{
+  if(document.pointerLockElement===canvas){
+    yaw -= e.movementX*0.0022;
+    pitch -= e.movementY*0.0022;
+    pitch = Math.max(-1.45, Math.min(1.45, pitch));
+  }
+});
+
+// — Mobil: sol joystick (yürü) + sağ kaydır (bak) —
+let joy={x:0,y:0}, moveTouchId=null, lookTouchId=null, lookLast={x:0,y:0};
+const joyEl=document.getElementById('joyMove'), stickEl=joyEl.querySelector('.stick');
+const JOY_R=55;
+function touchStart(e){
+  for(const t of e.changedTouches){
+    if(t.clientX < innerWidth*0.5 && moveTouchId===null){
+      moveTouchId=t.identifier;
+      joyEl.style.left=(t.clientX-55)+'px'; joyEl.style.bottom=(innerHeight-t.clientY-55)+'px';
+      joy._ox=t.clientX; joy._oy=t.clientY;
+    } else if(t.clientX >= innerWidth*0.5 && lookTouchId===null){
+      lookTouchId=t.identifier; lookLast.x=t.clientX; lookLast.y=t.clientY;
+    }
+  }
+}
+function touchMove(e){
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    if(t.identifier===moveTouchId){
+      let dx=t.clientX-joy._ox, dy=t.clientY-joy._oy;
+      const d=Math.hypot(dx,dy); if(d>JOY_R){ dx=dx/d*JOY_R; dy=dy/d*JOY_R; }
+      stickEl.style.transform=`translate(${dx}px,${dy}px)`;
+      joy.x=dx/JOY_R; joy.y=dy/JOY_R;
+    } else if(t.identifier===lookTouchId){
+      yaw -= (t.clientX-lookLast.x)*0.005;
+      pitch -= (t.clientY-lookLast.y)*0.005;
+      pitch=Math.max(-1.45,Math.min(1.45,pitch));
+      lookLast.x=t.clientX; lookLast.y=t.clientY;
+    }
+  }
+}
+function touchEnd(e){
+  for(const t of e.changedTouches){
+    if(t.identifier===moveTouchId){ moveTouchId=null; joy.x=0; joy.y=0; stickEl.style.transform=''; }
+    if(t.identifier===lookTouchId){ lookTouchId=null; }
+  }
+}
+canvas.addEventListener('touchstart', touchStart, {passive:false});
+canvas.addEventListener('touchmove', touchMove, {passive:false});
+canvas.addEventListener('touchend', touchEnd);
+canvas.addEventListener('touchcancel', touchEnd);
+
+// ════════════════ Başlangıç / çıkış ════════════════
+let started=false;
+const intro=document.getElementById('intro'), hud=document.getElementById('hud');
+function start(){
+  started=true; intro.style.display='none'; hud.style.display='block';
+  if(isMobile){ document.body.classList.add('mobile'); }
+  else { canvas.requestPointerLock(); }
+}
+intro.addEventListener('click', start);
+document.getElementById('exitBtn').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  if(document.pointerLockElement) document.exitPointerLock();
+  started=false; intro.style.display='flex'; hud.style.display='none';
+});
+
+// ════════════════ İstasyon yakınlık + panel ════════════════
+const stEl=document.getElementById('station'), promptEl=document.getElementById('prompt');
+let nearStation=null;
+function showStation(s){
+  let html=`<h2>${s.title}</h2>`;
+  if(s.formula) html+=`<div class="formula">${s.formula}</div>`;
+  html+=`<p>${s.desc}</p>`;
+  if(s.actions&&s.actions.length){
+    html+='<div class="act">';
+    s.actions.forEach((a,i)=> html+=`<button data-i="${i}">${a.label}</button>`);
+    html+='</div>';
+  }
+  stEl.innerHTML=html; stEl.style.display='block';
+  stEl.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=> s.actions[+b.dataset.i].fn();
+  });
+}
+function updateProximity(){
+  let best=null, bestD=999;
+  for(const s of stations){
+    const dx=camera.position.x-s.group.position.x, dz=camera.position.z-s.group.position.z;
+    const d=Math.hypot(dx,dz);
+    if(d < (s.radius||5) && d<bestD){ best=s; bestD=d; }
+  }
+  if(best!==nearStation){
+    nearStation=best;
+    if(best){ showStation(best); promptEl.style.display='none'; document.getElementById('compass').textContent='📍 '+best.short; }
+    else { stEl.style.display='none'; document.getElementById('compass').textContent='📍 keşfet'; }
+  }
+}
+
+// ════════════════ Animasyon ════════════════
+const clock=new THREE.Clock();
+const SPEED=7;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+
+  // bakış uygula
+  euler.set(pitch, yaw, 0); camera.quaternion.setFromEuler(euler);
+
+  // hareket vektörleri (yaw'a göre yatay)
+  const fwd=new THREE.Vector3(); camera.getWorldDirection(fwd); fwd.y=0; fwd.normalize();
+  const right=new THREE.Vector3().crossVectors(fwd, camera.up).normalize();
+  const move=new THREE.Vector3();
+  if(keys['KeyW']||keys['ArrowUp']) move.add(fwd);
+  if(keys['KeyS']||keys['ArrowDown']) move.sub(fwd);
+  if(keys['KeyD']||keys['ArrowRight']) move.add(right);
+  if(keys['KeyA']||keys['ArrowLeft']) move.sub(right);
+  if(isMobile && (joy.x||joy.y)){ move.addScaledVector(fwd, -joy.y); move.addScaledVector(right, joy.x); }
+  if(move.lengthSq()>0){
+    move.normalize().multiplyScalar(SPEED*dt);
+    camera.position.add(move);
+    // sınır + istasyon çarpışma (basit)
+    camera.position.x=Math.max(-WORLD+1,Math.min(WORLD-1,camera.position.x));
+    camera.position.z=Math.max(-WORLD+1,Math.min(WORLD-1,camera.position.z));
+    camera.position.y=1.7;
+  }
+
+  // animasyonlar
+  if(magRings) magRings.rotation.y += magCurrentDir*0.01;
+  if(gravActive){
+    gravVel += 9.8*dt*0.35;
+    gravBall.position.y -= gravVel*dt;
+    if(gravBall.position.y<=0.5){ gravBall.position.y=0.5; gravActive=false; }
+  }
+  stations.forEach(s=>{ if(s.group.children[0]) s.group.children[0].material.rotation+=0; }); // label sabit
+
+  updateProximity();
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>
