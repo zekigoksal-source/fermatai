@@ -160,7 +160,8 @@ def read_page_with_vision(image_data: bytes, prompt: str, max_retries: int = 3) 
     for attempt in range(1, max_retries + 1):
         try:
             response = client.messages.create(
-                model="claude-sonnet-4-20250514",
+                # 25.58-C: claude-sonnet-4-20250514 EOL 15 Haz 2026 — env-driven
+                model=os.getenv("FERMAT_MODEL", "claude-sonnet-4-6"),
                 max_tokens=3000,
                 messages=[{
                     "role": "user",

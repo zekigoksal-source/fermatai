@@ -2471,7 +2471,8 @@ async def _solve_photo_question(image_bytes: bytes, user_prompt: str = "", mode:
     try:
         response = await asyncio.to_thread(
             client.messages.create,
-            model="claude-sonnet-4-20250514",
+            # 25.58-C: claude-sonnet-4-20250514 EOL 15 Haz 2026 — env-driven güncel model
+            model=os.getenv("FERMAT_VISION_MODEL", os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")),
             max_tokens=3000,
             messages=[{
                 "role": "user",

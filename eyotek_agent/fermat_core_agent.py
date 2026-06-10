@@ -42,6 +42,12 @@ load_dotenv(override=True)
 from db_pool import DB_URL as DATABASE_URL, db_fetch as _db_fetch, db_fetchrow as _db_fetchrow, db_fetchval as _db_fetchval, db_execute as _db_execute, get_pool as _db_pool
 ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 MODEL         = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
+# 25.58-C (Neo: "simülasyonu fable üretsin"): PREMIUM model katmanı — SADECE
+# render-değerli WEB üretimlerinde (simülasyon/interaktif/grafik — make_render_link
+# çıktısını ana model yazar, kalite=model kalitesi). Hesapta erişim /v1/models ile
+# doğrulandı. Düşük hacim (web+render-değerli ~birkaç çağrı/gün) → maliyet sınırlı.
+# Kapatmak için: FERMAT_MODEL_PREMIUM="" (boş string → katman devre dışı).
+MODEL_PREMIUM = os.getenv("FERMAT_MODEL_PREMIUM", "claude-fable-5")
 
 
 # Arac Tanimlari (22.1n-split: tool_definitions.py modulune tasindi)
@@ -2842,6 +2848,7 @@ class FermatCoreAgent:
         self._caller_phone = caller_phone
         self._channel = channel
         self._stream_queue = _stream_queue
+        self._model_override = None  # 25.58-C: premium model katmanı (per-request reset)
         self._wa_progressive_send = _wa_progressive_send
         # ── Decision trace reset (Oturum 25.29) ───────────────────────
         # Her run() cagrisi temiz baslar. Bridge sonra okur, routing_stats'a yazar.
@@ -4309,6 +4316,21 @@ class FermatCoreAgent:
             except Exception:
                 pass
 
+        # 25.58-C PREMIUM TIER (Neo: "simülasyonu fable üretsin"): WEB kanalında
+        # render-değerli Claude üretimleri (simülasyon/interaktif/grafik — yukarıdaki
+        # eskalasyonla VEYA zaten cloud'a düşmüş veri-görselleştirme istekleri) en
+        # yeni modelle yapılır. make_render_link HTML'ini ana model yazdığı için
+        # kalite doğrudan model kalitesi. FERMAT_MODEL_PREMIUM="" ile kapatılır.
+        if (MODEL_PREMIUM and complexity == "cloud"
+                and getattr(self, "_channel", "whatsapp") == "web"):
+            try:
+                from renderer_hint_inject import detect_renderer_need as _drn_p
+                if _drn_p(user_input):
+                    self._model_override = MODEL_PREMIUM
+                    logger.info(f"  [PREMIUM] render-değerli web üretim → {MODEL_PREMIUM}")
+            except Exception:
+                pass
+
         if complexity == "local" and self.router.is_local_available:
             # Oturum 25.22+: Router Cerebras-first, Groq fallback, Ollama son fallback
             _hangi = (
@@ -5078,7 +5100,7 @@ class FermatCoreAgent:
                 claude_prompt=_claude_prompt,
                 dynamic_context=dynamic_context,
                 claude_tools=_claude_tools,
-                model=MODEL,
+                model=(getattr(self, "_model_override", None) or MODEL),  # 25.58-C premium tier
                 messages=self.history,
                 compact_summary=_compact_summary,  # 25.43-FAZ-2
             )

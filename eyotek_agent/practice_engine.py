@@ -125,8 +125,9 @@ async def _generate_via_llm(ders: str, konu: str, fewshot: str) -> dict | None:
         key = os.getenv("ANTHROPIC_API_KEY", "")
         if key:
             cl = Anthropic(api_key=key)
+            # 25.58-C: claude-sonnet-4-20250514 EOL 15 Haz 2026 — env-driven güncel model
             resp = await _aio.to_thread(
-                cl.messages.create, model="claude-sonnet-4-20250514", max_tokens=1200,
+                cl.messages.create, model=os.getenv("FERMAT_MODEL", "claude-sonnet-4-6"), max_tokens=1200,
                 system=_GEN_SYSTEM, messages=[{"role": "user", "content": user}])
             txt = "".join(b.text for b in resp.content if hasattr(b, "text"))
             q = _parse_question_json(txt)

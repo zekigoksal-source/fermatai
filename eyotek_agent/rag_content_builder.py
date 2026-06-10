@@ -117,7 +117,8 @@ def generate_content(ders: str, konu: str, sinav_turu: str,
     )
 
     response = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        # 25.58-C: claude-sonnet-4-20250514 EOL 15 Haz 2026 — env-driven güncel model
+        model=os.getenv("FERMAT_MODEL", "claude-sonnet-4-6"),
         max_tokens=1500,
         messages=[{"role": "user", "content": prompt}],
     )

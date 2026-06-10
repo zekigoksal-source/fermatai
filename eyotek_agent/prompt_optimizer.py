@@ -307,10 +307,12 @@ async def _ask_groq_for_suggestion(
     text = ""
     used_model = None
 
-    # ── 1) BİRİNCİL: Claude Opus 4.7 (25.44-dm11 Neo direktifi) ──────────────
+    # ── 1) BİRİNCİL: Claude Opus (25.44-dm11 Neo direktifi) ──────────────
     # Atlas önerileri sistem promptunu değiştirir → en üst kalite şart.
     # Hata olursa (key yok / API down / model id yanlış) sessizce Cerebras'a düşer.
-    ATLAS_MODEL = os.getenv("ATLAS_LLM_MODEL", "claude-opus-4-7")
+    # 25.58-C: opus-4-7 → opus-4-8 (hesapta erişilebilir doğrulandı; haftalık tek
+    # çağrı, maliyet etkisi ihmal edilebilir, kalite artışı net).
+    ATLAS_MODEL = os.getenv("ATLAS_LLM_MODEL", "claude-opus-4-8")
     if os.getenv("ANTHROPIC_API_KEY"):
         try:
             from anthropic import Anthropic
