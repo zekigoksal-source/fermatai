@@ -2,6 +2,12 @@
 
 > **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-L (Fable 5): FERMATRIX — rebrand (matrix yeşili + dijital yağmur), Minecraft piksel karakter, 3D DC Devre + Faraday Alternatörü, Atari +Doppler +Çift Kaynak Girişimi (27 istasyon + 6 atari sim) — CANLI**
 >
+> ## 🎲 11 Haz (25.58-M) — GALTON KESİN FİX (Neo: "toplar yukarıdan zıplayarak dağılıyor veya sıkışıyor")
+> Üç kök neden bulundu-kapatıldı, 2×100 top regresyon: **100/100 sayım, 0 sıkışma, 0 havada, merkez tepeli dağılım.**
+> - ① **Huni-çivi çakışması:** yapı yükseltilince (25.58-K) huni plakalarının dibi (y≈4.70) ilk çivi sırasıyla (y=4.9) kesişti → cep oluştu, toplar kamalanıp yukarı sekiyordu → huni collider'ı TAMAMEN kaldırıldı (merkez bırakma + görsel ağız halkası yeterli).
+> - ② **Sandviç duvar kaması:** iç yüz ±0.14, top r=0.12 → x-yönünde 0.02 boşluk, top kamalanıyordu → duvarlar ±0.21 (iç yüz ±0.17 = çivi ucuyla hizalı).
+> - ③ **Ara deneme dersi (kayıtlı):** sekmeyi düşürüp damping eklemek dağılımı U-şekline çevirdi (kademeli tek-yön kayma) — Galton'un çan eğrisi SEKME KAOSUNDAN doğar; restitution top 0.22 / çivi 0.4 geri alındı. Anti-stuck itki güçlendirildi (18 tick → z±0.012).
+>
 > ## 🟢 11 Haz (25.58-L) — FERMATRIX (Neo: "Evren→Fermatrix + matrix yeşili tema · Minecraft karakter · 3D'yi çeşitlendir EM/devre/Faraday · atari sim A++ kalite ophysics seviyesi")
 > - **Rebrand:** "Bilim Evreni" → **FERMATRIX**. Palet matrix yeşili (--accent #1ee06f), gökyüzü/sis/hub devre/yol/toz hepsi yeşil, intro monospace + glow. **Dijital yağmur** (340 parçacık, oyuncuyu izler). web_chat butonu 🟢 Fermatrix (yeşil gradyan).
 > - **Minecraft karakter (Neo: "lego/robot amatör, hazır şablon kullan"):** el yapımı insansı → **bilinçli Minecraft piksel kübü** (NearestFilter prosedürel doku: kapüşon+matrix gözlük bandı+göğüste yeşil λ, 8px yüz, klasik MC kol-bacak ters-faz salınımı). İkonik, öğrenci-dostu, "amatör" değil tanıdık. Kafa bakış takibi korundu.

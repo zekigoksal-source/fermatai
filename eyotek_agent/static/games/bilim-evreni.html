@@ -2006,11 +2006,12 @@ const MT = ZONES.mat;
   function dropBalls(n) { if (balls.length) resetGalton(); spawnQueue = n; }
   tickers.push(() => {
     // sıralı top bırakma
-    if (spawnQueue > 0 && ++spawnTick >= 7) {
+    if (spawnQueue > 0 && ++spawnTick >= 9) {
       spawnTick = 0; spawnQueue--;
       const rec = addDynamic(
         new THREE.Mesh(ballGeo, ballMat),
-        RAPIER.RigidBodyDesc.dynamic().setTranslation(GBX, 5.6, GBZ + (Math.random()-0.5)*0.12).setCcdEnabled(true),
+        RAPIER.RigidBodyDesc.dynamic().setTranslation(GBX, 5.4, GBZ + (Math.random()-0.5)*0.1)
+          .setCcdEnabled(true),
         RAPIER.ColliderDesc.ball(0.12).setDensity(1).setFriction(0.04).setRestitution(0.22),
         { kind:'galton', counted:false, still:0 });
       balls.push(rec);
@@ -2022,8 +2023,8 @@ const MT = ZONES.mat;
       if (t.y > 2.85) {                                 // hâlâ çivi bölgesinde
         const hiz = Math.hypot(v.y, v.z);
         b.still = hiz < 0.12 ? b.still + 1 : 0;
-        if (b.still > 25) {                             // çivi üstünde dengelendi → minik itki
-          b.body.applyImpulse({ x:0, y:0.001, z:(Math.random() < 0.5 ? -1 : 1)*0.004 }, true);
+        if (b.still > 18) {                             // çivi üstünde dengelendi → kararlı itki
+          b.body.applyImpulse({ x:0, y:0.002, z:(Math.random() < 0.5 ? -1 : 1)*0.012 }, true);
           b.still = 0;
         }
       }
@@ -2058,8 +2059,9 @@ const MT = ZONES.mat;
       const back = new THREE.Mesh(new THREE.BoxGeometry(0.12, 6.2, 4.6),
         new THREE.MeshStandardMaterial({ color:0x141d33, roughness:0.5, metalness:0.5 }));
       back.position.set(-0.3, 3.1, 0); g.add(back);
-      // top sandviç duvarları (görünmez collider) + yan duvarlar
-      for (const xx of [-0.18, 0.18]) {
+      // top sandviç duvarları (görünmez collider) — iç yüz ±0.17 (çivi ucuyla hizalı,
+      // top x-yönünde kamalanamaz; 25.58-M fix: eski ±0.14 iç yüz 3 topu sıkıştırıyordu)
+      for (const xx of [-0.21, 0.21]) {
         const wb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(GBX+xx, 3.2, GBZ));
         world.createCollider(RAPIER.ColliderDesc.cuboid(0.04, 3.0, 2.3), wb);
       }
@@ -2070,16 +2072,12 @@ const MT = ZONES.mat;
           new THREE.MeshStandardMaterial({ color:0x223052, roughness:0.4, metalness:0.6 }));
         m.position.set(0, 3.2, zz); g.add(m);
       }
-      // huni (üst yönlendirme)
-      for (const [zz, ry] of [[-0.68, -0.45], [0.68, 0.45]]) {
-        const fb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed()
-          .setTranslation(GBX, 5.15, GBZ+zz)
-          .setRotation({ x:Math.sin(ry/2), y:0, z:0, w:Math.cos(ry/2) }));
-        world.createCollider(RAPIER.ColliderDesc.cuboid(0.18, 0.5, 0.04), fb);
-        const m = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.07),
-          new THREE.MeshStandardMaterial({ color:0x334155, metalness:0.6, roughness:0.4 }));
-        m.position.set(0, 5.15, zz); m.rotation.x = ry; g.add(m);
-      }
+      // 25.58-M fix: huni KALDIRILDI — plaka dipleri ilk çivi sırasıyla çakışıp
+      // topları cebe sıkıştırıyor ve yukarı sektiriyordu. Merkez bırakma yeterli;
+      // sadece görsel bırakma ağzı kaldı (collider'sız).
+      const agiz = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.045, 8, 20),
+        new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xFFD27F, emissiveIntensity:1.2, roughness:1 }));
+      agiz.rotation.x = Math.PI/2; agiz.position.set(0, 5.5, 0); g.add(agiz);
       // çiviler (yatay silindirler)
       const pegMat = new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xA78BFA, emissiveIntensity:1.2, roughness:1 });
       const pegGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.34, 8);
