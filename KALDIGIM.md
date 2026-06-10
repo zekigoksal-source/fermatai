@@ -1,12 +1,28 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 10 Haziran 2026 → **OTURUM 25.58-D (Fable 5): GOLD KALİTE KALİBRASYONU — fable-5'i yeni A++++ standart alıp Cerebras şablonları v2'ye yükseltildi + LaTeX→WhatsApp okunabilir + BLUEPRINT v2.2**
+> **Son güncelleme:** 10 Haziran 2026 → **OTURUM 25.58-H (Fable 5): FİZİK DÜNYASI v2 — Rapier WASM fizik motoru + 5 gerçek deney istasyonu + bloom/PBR görsel + tut-fırlat, 5 fazın hepsi preview'da doğrulanıp CANLI**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.58-D, 10 Haz)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.58-H, 10 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `2bde6df` (25.58-E güvenlik fail-open fix) ← `56a8a2e` (25.58-D KALDIGIM) ← `74a5384` (fable gold kalibrasyon) ← `a5fc833` (model stratejisi docs) ← 25.58
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `2bde6df`, PostgreSQL OK
+> - **HEAD:** `37cd241` (25.58-H Faz 5) ← `557fd9f` (Faz 4) ← `0609d70` (Faz 3) ← `dcdf141` (Faz 1+2) ← `8764ac1` (25.58-G brief)
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `37cd241`, PostgreSQL OK
+>
+> ## 🌍 10 Haz (25.58-H) — FİZİK DÜNYASI v2: GERÇEK MOTOR (Neo: "görsel + fizik motoru + etkileşim çok daha gelişmiş olsun")
+> 25.58-G brief'i uygulandı — `static/games/fizik-dunyasi-v2.html` (tek dosya, çekirdek agent'a sıfır dokunuş). **CANLI:** `api.fermategitimkurumlari.com/static/games/fizik-dunyasi-v2.html` (HTTP 200, 55 KB).
+> - **Motor:** Three.js r165 importmap + **Rapier 0.12 WASM** (jsdelivr +esm, base64-gömülü — ek fetch yok). Sabit 1/60 adım + accumulator. Kinematik kapsül + CharacterController (autostep, snap-to-ground, zıplama, dinamik gövdeleri itme `applyImpulsesToDynamicBodies`).
+> - **5 istasyon, hepsi ÖLÇÜMLE doğrulandı (çizilmiş değil, motor hesaplıyor):**
+>   · 🎯 **Fırlatıcı** (eğik atış): açı/hız seç → HDR iz çizgisi + iniş parçacığı + menzil ölçümü. 45°/17→**32.1 ölçülen / 32.0 teori**; 30°→29.0/28.9; 60°→27.2/27.2. Hız tavanı 17 m/s (20'de top dünya duvarına çarpıyordu — yakalanıp düzeltildi).
+>   · ⏱️ **Çift sarkaç** (L=2.0/3.2, spherical joint): ölçülen T=2.89/3.64 — küçük-açı teorisi 2.84/3.59, 32° genlik büyük-açı düzeltmesiyle **tam 2.90** → motor ders kitabı hassasiyetinde.
+>   · 📐 **Eğik düzlem yarışı:** buz kutusu (μ=0.02, Min-rule) 1.87s vs yuvarlanan top 2.10s — 5/7·g·sinθ farkı canlı kanıt. (İlk denemede Average friction-combine kutuyu eşikte kilitledi — Min rule fix.)
+>   · 💥 **Çarpışma masası:** canlı v₁/v₂/Σp sayacı. Eşit kütle: 6→0.24/5.76, **Σp=2.41→2.41 birebir**. 2× hedef: top GERİ seker (-1.68), Σp yine sabit. Kütle 1×/2×/3× düğmesi.
+>   · 🧲 **Manyetik sütun:** 110 yörünge parçacığı + halkalar, akım yönü tersinir.
+> - **Görsel (Faz 3):** UnrealBloom (MSAA×4 HalfFloat) + RoomEnvironment PMREM (bakır namluda gerçek yansıma) + shader alacakaranlık gökyüzü (marka kor ufku) + plazadan istasyonlara parlayan renk-kodlu yol noktaları + toz zerreleri. 180 fps masaüstü.
+> - **Tut & Fırlat (Faz 4):** raycast nişan (✊ ipucu + canlı m/s hız ölçer) → fizik-yay taşıma (çarpışma aktif kalır) → bakış yönünde 14 m/s fırlatma. Sarkaç topları (eklemli) muaf. Mobil ✊/🚀 butonu.
+> - **Mobil + adaptif (Faz 5):** kalite kademesi (mobilde bloom/gölge kapalı, px 1.5) + `?mobile=1`/`?q=low` test paramı + **eco modu** (4sn <28fps → bloom kapat + px 1.25) + kompakt panel (44vh, %58→%41 ekran).
+> - **Test altyapısı:** `window.__fz` debug API — `fastForward(s)` senkron fizik ilerletme (rAF kısılmasından bağımsız deterministik doğrulama), tp/look/grab/dyn/api. Tüm fazlar preview_eval ile sayısal doğrulandı.
+> - **Mimari:** brief kurallarına uyuldu — saf statik HTML, CDN importmap, çekirdek dosyalara dokunulmadı. Önceki prototipler (manyetik-alan-lab, fizik-bahcesi) yerinde duruyor.
+> - **AÇIK (Neo kararı):** Neo dünyayı telefonda deneyip geri bildirim verecek. Olası sonraki adımlar: blok yerleştirme (sandbox), istasyon içeriklerini müfredat konularına bağlama (topic_tracker entegrasyonu), web_chat'ten "3D dünya" linki.
 >
 > ## 🔐 10 Haz (25.58-E) — GÜVENLİK + VERİMLİLİK DENETİMİ (Neo: "açık/verimsizlik/mimari hata var mı, fable-5 ile incele")
 > 4 paralel denetim ajanı (auth/SQLi-ACL/secret-injection/verimlilik) + HER bulgu canlı kod+env ile çapraz doğrulandı. **3 GERÇEK fail-open düzeltildi + deploy:**
