@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Manyetik Alan Laboratuvarı · FermatAI</title>
+<style>
+  :root{
+    --bg:#0F172A; --panel:rgba(15,23,42,0.86); --accent:#C76F3E; --accent2:#A78BFA;
+    --ok:#34D399; --err:#F87171; --line:rgba(199,111,62,0.28);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#E2E8F0;overflow:hidden;-webkit-tap-highlight-color:transparent}
+  canvas{display:block}
+
+  .panel{position:fixed;background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.4)}
+
+  /* Bilgi (sol üst) */
+  #info{top:12px;left:12px;padding:13px 15px;max-width:280px}
+  #info h1{margin:0 0 6px;font-size:15px;color:var(--accent);letter-spacing:.2px}
+  #info .formula{font-size:14px;color:#fff;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.25);
+    border-radius:8px;padding:6px 9px;margin:7px 0;text-align:center;font-variant-numeric:tabular-nums}
+  #info p{margin:5px 0;font-size:12px;line-height:1.45;color:#CBD5E1}
+  #info .key{color:var(--accent2);font-weight:600}
+  #bval{color:var(--accent);font-weight:700}
+
+  /* Kontroller (sağ üst) */
+  #ctrl{top:12px;right:12px;padding:13px 15px;width:210px}
+  #ctrl .row{margin:9px 0}
+  #ctrl label{font-size:11px;color:#94A3B8;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+  .btn{width:100%;border:1px solid var(--line);background:rgba(199,111,62,.12);color:#fff;
+    padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;display:flex;
+    align-items:center;justify-content:center;gap:7px}
+  .btn:hover{background:rgba(199,111,62,.24)}
+  .btn:active{transform:scale(.97)}
+  .btn.on{background:rgba(167,139,250,.22);border-color:rgba(167,139,250,.5)}
+  input[type=range]{width:100%;accent-color:var(--accent);height:4px}
+  #ival{color:var(--accent);font-weight:700}
+
+  /* Quiz (alt) */
+  #quiz{bottom:12px;left:50%;transform:translateX(-50%);padding:13px 16px;max-width:min(440px,92vw);text-align:center}
+  #qtext{font-size:13.5px;color:#fff;margin:0 0 9px;font-weight:600}
+  .qbtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .qbtn{border:1px solid var(--line);background:rgba(255,255,255,.04);color:#E2E8F0;padding:8px 14px;
+    border-radius:9px;font-size:13px;cursor:pointer;transition:.15s}
+  .qbtn:hover{background:rgba(255,255,255,.1)}
+  .qbtn.correct{background:rgba(52,211,153,.22);border-color:var(--ok);color:#D1FAE5}
+  .qbtn.wrong{background:rgba(248,113,113,.2);border-color:var(--err);color:#FEE2E2}
+  #qfeed{font-size:12px;margin-top:8px;min-height:16px;line-height:1.4}
+  #qprog{font-size:10.5px;color:#64748B;margin-top:6px;letter-spacing:.5px}
+
+  #hint{position:fixed;bottom:12px;left:12px;font-size:10.5px;color:#475569;background:var(--panel);
+    padding:6px 10px;border-radius:8px;border:1px solid rgba(199,111,62,.15)}
+  .brand{position:fixed;top:12px;left:50%;transform:translateX(-50%);font-size:11px;color:#64748B;
+    letter-spacing:1px;font-weight:600}
+  .brand b{color:var(--accent)}
+  @media(max-width:620px){
+    #info{max-width:46vw;padding:10px 11px}#info h1{font-size:13px}#info p{font-size:10.5px}
+    #ctrl{width:44vw;padding:10px 11px}.brand{display:none}
+    #quiz{bottom:8px}
+  }
+</style>
+</head>
+<body>
+<div class="brand">FERMAT<b>AI</b> · 3D LAB</div>
+
+<div id="info" class="panel">
+  <h1>🧲 Manyetik Alan</h1>
+  <div class="formula">B = μ₀·I / (2π·r)</div>
+  <p>Düz telden geçen <span class="key">akım (I)</span>, çevresinde dairesel bir <span class="key">manyetik alan (B)</span> oluşturur.</p>
+  <p><b>Sağ-el kuralı:</b> başparmağın <span class="key">akım yönünü</span> gösterirse, kıvrılan parmakların <span class="key">alanın yönünü</span> verir.</p>
+  <p>Test noktası (r=2): <span id="bval">B = …</span></p>
+</div>
+
+<div id="ctrl" class="panel">
+  <div class="row">
+    <label>Akım Yönü</label>
+    <button id="dirBtn" class="btn">⬆️ Yukarı (+I)</button>
+  </div>
+  <div class="row">
+    <label>Akım Şiddeti · <span id="ival">5</span> A</label>
+    <input id="curr" type="range" min="1" max="10" step="1" value="5">
+  </div>
+  <div class="row">
+    <button id="handBtn" class="btn">✋ Sağ-El Kuralı</button>
+  </div>
+</div>
+
+<div id="quiz" class="panel">
+  <p id="qtext">Yükleniyor…</p>
+  <div class="qbtns" id="qbtns"></div>
+  <div id="qfeed"></div>
+  <div id="qprog"></div>
+</div>
+
+<div id="hint">🖱️ sürükle = döndür · scroll = yakınlaştır · 📱 dokun = döndür</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ── Sahne ───────────────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0F172A);
+scene.fog = new THREE.Fog(0x0F172A, 18, 42);
+
+const camera = new THREE.PerspectiveCamera(58, innerWidth/innerHeight, 0.1, 1000);
+camera.position.set(7, 5, 11);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const ctrl = new THREE.OrbitControls(camera, renderer.domElement);
+ctrl.enableDamping = true; ctrl.dampingFactor = 0.08;
+ctrl.minDistance = 5; ctrl.maxDistance = 30;
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const key = new THREE.PointLight(0xC76F3E, 0.9, 60); key.position.set(6, 10, 8); scene.add(key);
+const fill = new THREE.PointLight(0xA78BFA, 0.5, 60); fill.position.set(-8, -4, -6); scene.add(fill);
+
+// ── Durum ───────────────────────────────────────────────────────────────────
+const MU0 = 4*Math.PI*1e-7;
+let current = 5;        // A
+let dir = 1;            // +1 yukarı, -1 aşağı
+let showHand = false;
+
+// ── Tel (dikey, y ekseni) ───────────────────────────────────────────────────
+const wire = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.16, 0.16, 14, 24),
+  new THREE.MeshStandardMaterial({color:0xCD7F32, emissive:0x6b3410, emissiveIntensity:0.5, metalness:0.7, roughness:0.35})
+);
+scene.add(wire);
+
+// Akım partikülleri (telde akan yük)
+const particles = [];
+const pGeo = new THREE.SphereGeometry(0.22, 12, 12);
+const pMat = new THREE.MeshStandardMaterial({color:0xFFD27F, emissive:0xC76F3E, emissiveIntensity:1.1});
+for(let i=0;i<7;i++){
+  const m = new THREE.Mesh(pGeo, pMat);
+  m.userData.t = i/7;
+  scene.add(m); particles.push(m);
+}
+
+// ── Alan halkaları (yatay xz düzlemlerinde) ─────────────────────────────────
+// Fizik: I = +ŷ için B yönü φ̂ = ŷ × r̂.  r̂=(cosθ,0,sinθ) → tanjant=(sinθ,0,-cosθ).
+const radii = [1.2, 2.2, 3.4];
+const heights = [-4.2, -2.1, 0, 2.1, 4.2];
+const ringGroup = new THREE.Group();
+scene.add(ringGroup);
+const arrowMeshes = [];
+
+function ringColor(r){
+  // yakın halka daha parlak (alan güçlü), uzak sönük
+  const t = 1 - (r-1.2)/(3.4-1.2);
+  return new THREE.Color().setHSL(0.72 - 0.12*t, 0.65, 0.45 + 0.18*t);
+}
+
+heights.forEach(y=>{
+  radii.forEach(r=>{
+    const col = ringColor(r);
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(r, 0.025, 8, 64),
+      new THREE.MeshBasicMaterial({color:col, transparent:true, opacity:0.5})
+    );
+    ring.rotation.x = Math.PI/2;           // xz düzlemine yatır
+    ring.position.y = y;
+    ringGroup.add(ring);
+
+    // yön okları (halka üzerinde 4 nokta)
+    for(let k=0;k<4;k++){
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.13, 0.34, 10),
+        new THREE.MeshStandardMaterial({color:col, emissive:col, emissiveIntensity:0.6})
+      );
+      cone.userData = {r, y, base:(k/4)*Math.PI*2};
+      ringGroup.add(cone);
+      arrowMeshes.push(cone);
+    }
+  });
+});
+
+function placeArrows(){
+  arrowMeshes.forEach(c=>{
+    const {r, y, base} = c.userData;
+    const th = base + spin;
+    const px = r*Math.cos(th), pz = r*Math.sin(th);
+    c.position.set(px, y, pz);
+    // tanjant (B yönü) — akım yönüne göre işaret
+    const tx = dir*Math.sin(th), tz = dir*(-Math.cos(th));
+    const tangent = new THREE.Vector3(tx, 0, tz).normalize();
+    c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), tangent);
+  });
+}
+
+// ── Akım yönü oku (telin üstünde büyük ok) ──────────────────────────────────
+let currentArrow = new THREE.ArrowHelper(
+  new THREE.Vector3(0,1,0), new THREE.Vector3(0,6.6,0), 1.8, 0xFFD27F, 0.7, 0.45
+);
+scene.add(currentArrow);
+
+// ── Sağ-el kuralı göstergesi (stilize: başparmak + kıvrık parmaklar) ────────
+const hand = new THREE.Group();
+hand.visible = false;
+// başparmak (akım yönünde)
+const thumb = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.14,0.14,2.4,12),
+  new THREE.MeshStandardMaterial({color:0xA78BFA, emissive:0x4c3a80, emissiveIntensity:0.5})
+);
+thumb.position.y = 1.2; hand.add(thumb);
+const thumbTip = new THREE.Mesh(new THREE.ConeGeometry(0.22,0.5,12),
+  new THREE.MeshStandardMaterial({color:0xA78BFA, emissive:0x4c3a80, emissiveIntensity:0.6}));
+thumbTip.position.y = 2.5; hand.add(thumbTip);
+// kıvrık parmaklar (alan yönünde yay)
+const fingerCurve = new THREE.Mesh(
+  new THREE.TorusGeometry(1.5, 0.13, 10, 40, Math.PI*1.4),
+  new THREE.MeshStandardMaterial({color:0xC76F3E, emissive:0x6b3410, emissiveIntensity:0.6})
+);
+fingerCurve.rotation.x = Math.PI/2;
+hand.add(fingerCurve);
+scene.add(hand);
+
+// ── Hesap / okuma ────────────────────────────────────────────────────────────
+function updateReadout(){
+  const r = 2.0;
+  const B = MU0*current/(2*Math.PI*r); // Tesla
+  const uT = (B*1e6).toFixed(2);       // mikroTesla
+  document.getElementById('bval').textContent = `B = ${uT} µT`;
+  document.getElementById('ival').textContent = current;
+}
+
+// ── UI olayları ───────────────────────────────────────────────────────────────
+const dirBtn = document.getElementById('dirBtn');
+dirBtn.onclick = ()=>{
+  dir *= -1;
+  dirBtn.textContent = dir>0 ? '⬆️ Yukarı (+I)' : '⬇️ Aşağı (−I)';
+  currentArrow.setDirection(new THREE.Vector3(0, dir, 0));
+  currentArrow.position.y = dir>0 ? 6.6 : 7.4;
+  thumb.scale.y = 1; hand.scale.y = dir; // başparmağı çevir
+};
+document.getElementById('curr').oninput = (e)=>{
+  current = +e.target.value; updateReadout();
+  // şiddet → halka parlaklığı + partikül hızı
+  ringGroup.children.forEach(o=>{ if(o.material && o.material.opacity!==undefined && o.geometry.type==='TorusGeometry') o.material.opacity = 0.28 + 0.05*current; });
+};
+const handBtn = document.getElementById('handBtn');
+handBtn.onclick = ()=>{
+  showHand = !showHand; hand.visible = showHand;
+  handBtn.classList.toggle('on', showHand);
+};
+
+// ── Mini-quiz (oyun döngüsü öğrenmeden geçsin) ──────────────────────────────
+const QUESTIONS = [
+  {q:'Akım YUKARI akarken, tele yukarıdan bakınca alan hangi yönde döner?',
+   a:['Saat yönünün TERSİ','Saat yönünde'], c:0,
+   ok:'Doğru! Sağ-el: başparmak yukarı → parmaklar üstten bakınca saat tersi kıvrılır.',
+   no:'Tekrar bak: başparmağını yukarı tut, parmakların üstten saat TERSİNE kıvrılır.'},
+  {q:'Telden uzaklaştıkça (r artınca) manyetik alan B nasıl değişir?',
+   a:['Azalır','Artar','Değişmez'], c:0,
+   ok:'Doğru! B = μ₀I/(2πr) — r paydada, uzaklaşınca B azalır.',
+   no:'Formüle bak: B = μ₀I/(2πr). r paydada olduğu için uzaklaşınca B AZALIR.'},
+  {q:'Akım şiddeti I iki katına çıkarsa, aynı noktada B ne olur?',
+   a:['İki katına çıkar','Yarıya iner','Değişmez'], c:0,
+   ok:'Doğru! B, I ile doğru orantılı — I×2 ise B×2.',
+   no:'B = μ₀I/(2πr): B, I ile doğru orantılı. I iki katına çıkınca B de iki katına çıkar.'}
+];
+let qi = 0, qScore = 0, qAnswered = false;
+function renderQuiz(){
+  qAnswered = false;
+  const item = QUESTIONS[qi];
+  document.getElementById('qtext').textContent = '❓ ' + item.q;
+  document.getElementById('qfeed').textContent = '';
+  document.getElementById('qprog').textContent = `Soru ${qi+1}/${QUESTIONS.length} · Doğru: ${qScore}`;
+  const box = document.getElementById('qbtns'); box.innerHTML='';
+  // şıkları KARIŞTIR — doğru cevap hep aynı konumda olmasın (gamable olmasın)
+  const order = item.a.map((txt,idx)=>({txt, correct: idx===item.c}));
+  for(let i=order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
+  order.forEach(opt=>{
+    const b=document.createElement('button'); b.className='qbtn'; b.textContent=opt.txt;
+    b.onclick=()=>answer(opt.correct, b); box.appendChild(b);
+  });
+}
+function answer(isCorrect, btn){
+  if(qAnswered) return; qAnswered = true;
+  const item = QUESTIONS[qi];
+  const feed = document.getElementById('qfeed');
+  if(isCorrect){
+    btn.classList.add('correct'); qScore++;
+    feed.style.color='var(--ok)'; feed.textContent='✅ '+item.ok;
+  }else{
+    btn.classList.add('wrong');
+    feed.style.color='var(--err)'; feed.textContent='💡 '+item.no;
+    [...document.getElementById('qbtns').children].forEach(b=>{ if(b.textContent===item.a[item.c]) b.classList.add('correct'); });
+  }
+  document.getElementById('qprog').textContent = `Soru ${qi+1}/${QUESTIONS.length} · Doğru: ${qScore}`;
+  setTimeout(()=>{
+    qi++;
+    if(qi<QUESTIONS.length){ renderQuiz(); }
+    else{
+      document.getElementById('qtext').textContent = `🎓 Bitti! ${qScore}/${QUESTIONS.length} doğru.`;
+      document.getElementById('qbtns').innerHTML='';
+      const r=document.createElement('button'); r.className='qbtn'; r.textContent='🔄 Tekrar dene';
+      r.onclick=()=>{qi=0;qScore=0;renderQuiz();}; document.getElementById('qbtns').appendChild(r);
+      document.getElementById('qfeed').textContent = qScore===QUESTIONS.length ? 'Manyetik alanı çözdün! 🧲' : 'Sahneyle oyna, sonra tekrar dene.';
+    }
+  }, isCorrect ? 1100 : 2400);
+}
+
+// ── Animasyon ────────────────────────────────────────────────────────────────
+let spin = 0;
+function animate(){
+  requestAnimationFrame(animate);
+  spin += 0.004 * dir * (0.5 + current/10);   // akış hissi, şiddetle hızlanır
+  placeArrows();
+
+  // akım partikülleri
+  const speed = 0.0016*(0.5+current/8);
+  particles.forEach(m=>{
+    m.userData.t = (m.userData.t + dir*speed + 1)%1;
+    m.position.set(0, -6.5 + m.userData.t*13, 0);
+  });
+
+  if(showHand){ hand.rotation.y += 0.005; }
+  ctrl.update();
+  renderer.render(scene, camera);
+}
+
+updateReadout();
+renderQuiz();
+animate();
+</script>
+</body>
+</html>
