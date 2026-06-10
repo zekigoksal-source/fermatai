@@ -1,12 +1,26 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 10 Haziran 2026 → **OTURUM 25.58-I (Fable 5): BİLİM EVRENİ — oda-tabanlı 3D eğitimsel metaworld: TPS karakter (V=FPS), 4 ders odası + portallar, 10 slider-parametreli PhET-seviye simülasyon, web chat 🌌 Evren butonu — CANLI**
+> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-J (Fable 5): BİLİM EVRENİ v2 — Neo geri bildirimi sonrası literatür-temelli büyük genişleme: 10→24 istasyon, PubChem canlı 3D, NASA verisi, karakter v2, 3 araştırma ajanı + fix-loop, EVREN_TASARIM.md — CANLI**
 >
-> ## 🟢 PROJE DURUMU (Snapshot — 25.58-I, 10 Haz)
+> ## 🟢 PROJE DURUMU (Snapshot — 25.58-J, 11 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** 25.58-I (bilim-evreni) ← `4ac740b` (25.58-H docs) ← `37cd241` (Faz 5) ← `0609d70` (Faz 3) ← `dcdf141` (Faz 1+2)
+> - **HEAD:** 25.58-J (evren v2) ← `ef5f091` (25.58-I evren v1) ← `4ac740b` ← `37cd241`
 > - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, PostgreSQL OK
+>
+> ## 🌌 11 Haz (25.58-J) — BİLİM EVRENİ v2 (Neo: "çeşitlilik az, içerik basit, literatür araştır, API kullan, product-ready fix-loop")
+> **Süreç:** 3 paralel araştırma ajanı → (1) YKS konu→sim haritası: PhET ~200 sim envanteri + ÖSYM 2018-25 soru dağılımı + İLK-12 öncelik; (2) PubChem PUG REST canlı doğrulama (CORS açık, CID'ler test edildi, parse şeması); (3) NASA NSSDC gezegen+Kepler (Mars 3.73 revizyonu yakalandı). Sonuçlar `static/games/EVREN_TASARIM.md`'de (konu haritası + yol haritası + kalite barı).
+> - **Hata düzeltmeleri (Neo raporu):** ① joystick "geç algılama" kökü = görsel daire `pointer-events:auto` dokunuşu yutuyordu → `none` (tüm dokunuş canvas'ta); ② Matematik "bozuk yer" = türev panosunda collider yoktu, oyuncu/kamera içine girip siyah ekran → pano+gaz kutusu+tüm sergilere collider; ③ mobilde panel butonların altında kalıyordu → `stOpen` sınıfı panelde butonları 46vh üstüne kaydırır.
+> - **Karakter v2:** iki-segment uzuvlar (diz/dirsek doğal büküm), göğüs plakası + sırt ünitesi + anten, kafa kamera bakışını takip eder (±0.65 rad), zıplama pozu (airBlend), idle nefes + çekirdek nabzı, harekete yönelme + öne eğilme.
+> - **İçerik 10→24 istasyon (hepsi fix-loop'tan sayısal doğrulamayla geçti):**
+>   · FİZİK 6→11: 🪐 Gezegen Modu (NASA g — TÜM oda taşınır, Ay'da sarkaç T=7.1s ölçüldü/6.98 teori, odadan çıkınca Dünya'ya döner) · 🔭 Kepler (5 gezegen gerçek a/T, T²/a³=0.999–1.0014) · 🌊 Arşimet (ρ=0.5→batık %49.1 ölçüldü/%50 teori; küp tutulabilir) · 〽️ Dalga tankı (v=λf, işaretli tanecik ilerlemez) · 🛹 Enerji Parkı (140-segment trimesh half-pipe, %98 korunum; E0 ölçüm bug'ı: collider değişimi sonrası mass() 1 adım gecikmeli → deferred E0 fix)
+>   · MAT 2→5: 🎲 Galton (gerçek fizik 60 top → çan eğrisi; yan duvar-bölme oluğu fix) · ∫ Riemann (sol toplam yakınsama, n=2..40) · 🌀 Birim çember (sin/cos/tan + bölge + döndür)
+>   · KİMYA 2→4: 🧬 Molekül Kütüphanesi **PubChem CANLI 3D** (12 molekül: su→kafein→DNA bazları; CID 2519 canlı fetch 24 atom ✓; CPK renk + kovalent yarıçap + önbellek + offline fallback) · 🌫️ Difüzyon (Graham v∝1/√M, bölme kaldır) · ⚗️ Tepkime Hızı & Denge (çarpışma teorisi A+B⇌C, T/Ea/k₋₁ slider, ileri=geri→DENGE rozeti; test: A=B=18,C=64 stokiyometri korundu)
+>   · BİO 0→4: 🧬 DNA sarmalı (bp slider, A-T/G-C 2/3 H-bağı, GC dayanıklılık) · 🐇🦊 Lotka-Volterra (faz portresi panoda kapalı eğri çizer!) · 🌿 Fotosentez (minimum yasası: sınırlayıcı faktör tespiti + 35°C üstü enzim çöküşü — 3/3 senaryo doğru) · 🫛 Mendel (Punnett + 100/1000 yavru, 3.50:1 gözlendi — büyük sayılar dersi)
+> - **Matrix tema:** oda-temalı süzülen formül glifleri (F=ma, ∫dx, PV=nRT, ATP…) + köşe ışık hüzmeleri + dinamik GRAV altyapısı (tüm teori formülleri GRAV okur).
+> - **Test:** 3 batch × preview_eval; 2 gerçek bug bulundu-düzeltildi (Galton oluk, E0 ölçüm). Riemann %3.7 "sapması" hata değil — sol toplamın dersi. Mendel 2σ sapma = olasılığın kendisi.
+> - **Bilinen:** preview screenshot 24-istasyonlu sahnede takılıyor (eval doğrulama tam; Neo telefonda canlı görecek). PubChem limit 5 istek/sn (önbellek var).
+> - **AÇIK (sonraki):** EVREN_TASARIM.md yol haritası — DC devre, Lorentz 3D, optik, pH, mitoz; topic_tracker→istasyon eşleme (bot otomatik link); NASA canlı API panosu.
 >
 > ## 🌌 10 Haz (25.58-I) — BİLİM EVRENİ: ODA-TABANLI METAWORLD (Neo: "çocukça değil profesyonel; odalar olsun; third-person GTA gibi; PhET/oPhysics referans; FermatAI arayüzüne giriş tuşu")
 > `static/games/bilim-evreni.html` (tek dosya ~70KB, çekirdek agent'a dokunulmadı). **CANLI:** `api.fermategitimkurumlari.com/static/games/bilim-evreni.html`. fizik-dunyasi-v2 yerinde duruyor (ara evrim kaydı).
