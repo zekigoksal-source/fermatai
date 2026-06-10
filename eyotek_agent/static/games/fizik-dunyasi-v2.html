@@ -59,7 +59,14 @@
     background:rgba(199,111,62,.5);border:1px solid rgba(255,255,255,.2)}
   #jumpBtn{position:absolute;bottom:46px;right:28px;width:64px;height:64px;border-radius:50%;background:rgba(167,139,250,.25);
     border:1.5px solid rgba(167,139,250,.5);color:#fff;font-size:22px;pointer-events:auto;display:none;z-index:11}
-  .mobile .joy,.mobile #jumpBtn{display:block}
+  #grabBtn{position:absolute;bottom:124px;right:28px;width:64px;height:64px;border-radius:50%;background:rgba(199,111,62,.25);
+    border:1.5px solid rgba(199,111,62,.55);color:#fff;font-size:22px;pointer-events:auto;display:none;z-index:11}
+  .mobile .joy,.mobile #jumpBtn,.mobile #grabBtn{display:block}
+
+  /* nişan ipucu */
+  #aimHint{position:absolute;top:50%;left:50%;transform:translate(-50%,26px);background:rgba(15,23,42,.85);
+    border:1px solid rgba(199,111,62,.4);color:#fff;padding:5px 13px;border-radius:16px;font-size:12px;
+    font-weight:600;display:none;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -77,12 +84,14 @@
 
 <div id="hud">
   <div id="cross"></div>
+  <div id="aimHint"></div>
   <div id="topbar">🌍 <b>Fizik Dünyası</b> · istasyonlara yürü</div>
   <div id="fpsBox">— fps</div>
   <div id="exitBtn">✕ Çık</div>
   <div id="station"></div>
   <div id="joyMove" class="joy"><div class="stick"></div></div>
   <button id="jumpBtn">⤒</button>
+  <button id="grabBtn">✊</button>
 </div>
 
 <script type="importmap">
@@ -827,6 +836,68 @@ canvas.addEventListener('touchend', touchEnd);
 canvas.addEventListener('touchcancel', touchEnd);
 document.getElementById('jumpBtn').addEventListener('touchstart', e => { e.preventDefault(); wantJump = true; });
 
+// ════════════════ Tut & Fırlat (fizik yaylı taşıma) ════════════════
+const GRAB_RANGE = 4.2, HOLD_DIST = 2.4, THROW_V = 14;
+let held = null;
+const ray = new THREE.Raycaster();
+const aimHintEl = document.getElementById('aimHint');
+const grabBtn = document.getElementById('grabBtn');
+const _camDir = new THREE.Vector3(), _holdP = new THREE.Vector3();
+
+function aimedDynamic() {                       // nişangahtaki tutulabilir gövde
+  ray.setFromCamera({ x:0, y:0 }, camera);
+  const meshes = [];
+  for (const d of dynamics) if (d.kind !== 'bob' && d !== held) meshes.push(d.mesh);
+  const hits = ray.intersectObjects(meshes, false);
+  if (!hits.length || hits[0].distance > GRAB_RANGE) return null;
+  return dynamics.find(d => d.mesh === hits[0].object) || null;
+}
+function tryGrabOrThrow() {
+  if (held) {                                   // fırlat
+    camera.getWorldDirection(_camDir);
+    held.body.setLinvel({ x:_camDir.x*THROW_V, y:_camDir.y*THROW_V + 1.5, z:_camDir.z*THROW_V }, true);
+    held = null;
+    grabBtn.textContent = '✊';
+    return;
+  }
+  const g = aimedDynamic();
+  if (g) { held = g; g.body.wakeUp(); grabBtn.textContent = '🚀'; }
+}
+canvas.addEventListener('mousedown', e => {
+  if (started && document.pointerLockElement === canvas && e.button === 0) tryGrabOrThrow();
+});
+grabBtn.addEventListener('touchstart', e => { e.preventDefault(); tryGrabOrThrow(); });
+
+tickers.push(() => {                            // tutulan gövdeyi yay ile taşı
+  if (!held) return;
+  camera.getWorldDirection(_camDir);
+  _holdP.copy(camera.position).addScaledVector(_camDir, HOLD_DIST);
+  const t = held.body.translation();
+  const dx = _holdP.x - t.x, dy = _holdP.y - t.y, dz = _holdP.z - t.z;
+  const dist = Math.hypot(dx, dy, dz);
+  if (dist > 5) { held = null; grabBtn.textContent = '✊'; return; }   // koptu
+  const k = Math.min(12, 20/Math.max(dist, 0.001));
+  held.body.setLinvel({ x:dx*k, y:dy*k, z:dz*k }, true);
+  const av = held.body.angvel();
+  held.body.setAngvel({ x:av.x*0.85, y:av.y*0.85, z:av.z*0.85 }, true);
+});
+
+let aimHintT = 0;
+function updateAimHint(dt) {                    // nişan ipucu + hız ölçer (4 Hz yeter)
+  aimHintT -= dt;
+  if (aimHintT > 0) return;
+  aimHintT = 0.25;
+  if (!started) { aimHintEl.style.display = 'none'; return; }
+  if (held) { aimHintEl.textContent = IS_MOBILE ? '🚀 fırlatmak için 🚀 bas' : '🚀 tıkla → fırlat'; aimHintEl.style.display = 'block'; return; }
+  const g = aimedDynamic();
+  if (g) {
+    const v = g.body.linvel();
+    const spd = Math.hypot(v.x, v.y, v.z);
+    aimHintEl.textContent = (IS_MOBILE ? '✊ tutmak için ✊ bas' : '✊ tıkla → tut') + (spd > 0.4 ? ` · ${spd.toFixed(1)} m/s` : '');
+    aimHintEl.style.display = 'block';
+  } else aimHintEl.style.display = 'none';
+}
+
 // ════════════════ Başlat / çık ════════════════
 let started = false;
 const intro = document.getElementById('intro'), hud = document.getElementById('hud');
@@ -936,6 +1007,7 @@ function animate() {
   syncDynamics();
   updateProximity();
   if (nearStation && nearStation.update) nearStation.update();
+  updateAimHint(dt);
 
   // fps sayacı
   fpsCount++; fpsTime += dt;
@@ -963,9 +1035,20 @@ window.__fz = {
   near: () => nearStation ? nearStation.short : null,
   meter: () => meterEl ? meterEl.textContent : null,
   api: (name) => { const s = stations.find(s => s.short.includes(name)); return s ? s._api : null; },
+  grab: () => { tryGrabOrThrow(); return held ? held.kind : null; },
+  cam: () => ({ p: camera.position.toArray().map(v => +v.toFixed(2)), d: camera.getWorldDirection(new THREE.Vector3()).toArray().map(v => +v.toFixed(2)) }),
+  held: () => held ? held.kind : null,
+  aimed: () => { const g = aimedDynamic(); return g ? g.kind : null; },
   dyn: (kind) => dynamics.filter(d => d.kind === kind).map(d => { const t = d.body.translation(), v = d.body.linvel(); return { p:[+t.x.toFixed(2), +t.y.toFixed(2), +t.z.toFixed(2)], v:[+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)] }; }),
   simTime: () => +simTime.toFixed(2),
-  fastForward: (sec) => { const n = Math.min(Math.round(sec*60), 3600); for (let i=0; i<n; i++) physicsStep(); syncDynamics(); return +simTime.toFixed(2); },
+  fastForward: (sec) => {
+    const n = Math.min(Math.round(sec*60), 3600);
+    for (let i=0; i<n; i++) physicsStep();
+    const pp = playerBody.translation();
+    camera.position.set(pp.x, pp.y + PLAYER.eyeY, pp.z);
+    syncDynamics();
+    return +simTime.toFixed(2);
+  },
 };
 </script>
 </body>
