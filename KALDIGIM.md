@@ -5,8 +5,16 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.56, 3 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `9e53e6e` (crisis pattern) ← `cbe6285` (25.58 duplicate kök fix + hot-path LRU) ← `76d7ded` (konuşma kalite 25.57-H) ← `3e2e4fa` (WA token aracı) ← 25.54
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `9e53e6e`, PostgreSQL OK
+> - **HEAD:** `02eee6a` (25.58-C model stratejisi) ← `9e53e6e` (crisis pattern) ← `cbe6285` (duplicate kök + LRU) ← `76d7ded` (konuşma kalite) ← 25.54
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `02eee6a`, PostgreSQL OK
+>
+> ## 🤖 10 Haz (25.58-C) — MODEL STRATEJİSİ: EOL FIX + PREMIUM KATMAN (fable-5) — Neo direktif
+> `/v1/models` ile KANITLANDI: hesap **claude-fable-5** + opus-4-8 + sonnet-4-6 + haiku-4-5 erişimine sahip.
+> - **🔴 ACİL EOL FIX:** 4 production dosyası `claude-sonnet-4-20250514` kullanıyordu — **15 Haz 2026 EOL (5 gün kala yakalandı!)**: whatsapp_bridge (FOTO VISION!), practice_engine (soru üretim fallback), rag_content_builder, ogm_vision_importer → env-driven `FERMAT_MODEL` (default sonnet-4-6). Düzeltilmeseydi foto çözüm 5 gün sonra KIRILACAKTI.
+> - **⭐ PREMIUM KATMAN:** `FERMAT_MODEL_PREMIUM=claude-fable-5` (env, ""=kapalı). WEB kanalında render-değerli Claude üretimleri (simülasyon/interaktif/grafik — make_render_link HTML'ini ana model yazar) en yeni modelle. Uçtan uca test: `[WEB-RENDER]→[PREMIUM] claude-fable-5→claude_tool_loop` ✓. fable-5 canlı ping + ```chart üretimi doğrulandı. Düşük hacim → maliyet sınırlı, `[PREMIUM]` log ile gözlemlenebilir.
+> - **ATLAS:** opus-4-7 → **opus-4-8** (haftalık tek çağrı).
+> - **Routing 7g analizi:** Claude ~$10/hafta (~$45/ay), **cache 18.5M token read — caching mimarisi çalışıyor** (dynamic_context cache_control tasarımı doğru, 25.58'deki RED kararı teyit). Cerebras 117 msg / fast 40 / query_cache 13 — dağılım sağlıklı.
+> - **Not (izlenecek):** ENABLE_GROQ_TOOLS yolu her Claude-bound mesajda ~116K token'lık Groq denemesi yapıp 413 yiyor (TPD 100K) → graceful fallback çalışıyor ama Groq kotası boşa gidiyor; ileride "tahmini token > limit ise Groq-tools atla" guard eklenebilir.
 >
 > ## 🔧 9 Haz (25.58) — TAM-SİSTEM MÜHENDİSLİK İNCELEMESİ (Neo: "yeni kapasiteyle baştan sona")
 > 3 paralel denetim ajanı (hot-path verim / duplicate-güvenilirlik / token-maliyet) + HER bulgu kod/canlı doğrulamadan geçirildi:
