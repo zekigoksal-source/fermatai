@@ -116,9 +116,13 @@ def generate_content(ders: str, konu: str, sinav_turu: str,
         hata_ort=hata_ort
     )
 
+    # 25.58-D: batch içerik üretimi için PREMIUM (fable-5) opsiyonu. Üretim offline +
+    # düşük hacim + kalite-kritik → fable'ın A++++ katmanı burada ideal, canlı maliyet yok.
+    # FERMAT_CONTENT_PREMIUM=1 ile aç (Neo "simulasyon/üretim fable üretsin" direktifi).
+    _premium = os.getenv("FERMAT_MODEL_PREMIUM", "claude-fable-5") if os.getenv("FERMAT_CONTENT_PREMIUM") == "1" else ""
+    _gen_model = _premium or os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
     response = client.messages.create(
-        # 25.58-C: claude-sonnet-4-20250514 EOL 15 Haz 2026 — env-driven güncel model
-        model=os.getenv("FERMAT_MODEL", "claude-sonnet-4-6"),
+        model=_gen_model,
         max_tokens=1500,
         messages=[{"role": "user", "content": prompt}],
     )

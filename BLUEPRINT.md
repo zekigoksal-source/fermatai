@@ -3151,9 +3151,24 @@ Ana başlıklar (KALDIGIM ayrıntısı için bakın):
 - **v1.0** — 28 Nisan 2026, Oturum 25.22 sonrası (Cerebras paid tier canlı)
 - **v2.0** — 28 Nisan 2026 gece, Oturum 25.27 sonrası (Agentic Eyotek + 9 borç + bug maratonu)
 - **v2.1** — 15 Mayıs 2026 gece, Oturum 25.46 sonrası (Foto stats + Topic enricher + Streaming UX + Web UI fix)
-- **Yazar:** Claude Sonnet 4.6 (Anthropic, Claude Code üzerinden)
+- **v2.2** — 10 Haziran 2026, Oturum 25.55→25.58-D (Cerebras ana yüklenici + kanal önceliği + fable-5 premium katman + kalite kalibrasyon)
+- **Yazar:** v1.0–v2.1 Claude Sonnet 4.6 · v2.2 Claude Fable 5 (Anthropic, Claude Code üzerinden)
 - **Doğrulama:** 138/138 test PASS + 33/33 agentic test PASS, 4/4 endpoint 200, 3 LLM provider hibrit aktif
 - **Güncelleme politikası:** Her büyük oturum sonrası bu belge KALDIGIM.md ile birlikte güncellenir. Belgenin canlı kalması, dış LLM/ortak referansı için kritik.
+
+### v2.2 değişiklik özeti (v2.1 → v2.2) — Oturum 25.55→25.58-D
+
+| Alan | Eklenen / Değişen |
+|---|---|
+| **Kanal önceliği** | web/app = ANA kanal (olgun render: chart/formül/steps/sim/3d). WhatsApp = ikincil (chart→QuickChart image). Akıllı eşik: render-değerli web akademik → Claude/premium; saf nedir+sohbet+duygu → Cerebras. |
+| **Cerebras ana yüklenici (25.55)** | TÜM non-tool chat (kavramsal+render, duygu, **kriz**, sohbet, motivasyon) Cerebras gpt-oss-120b. Claude = sadece tool/veri-kaynaklı/kompleks. Ayrım = VERİ KAYNAĞI, render değil. |
+| **chat_quality.py** | `CHAT_QUALITY_ADDON` (sıcaklık+kriz ALO 183+rehber) + `ACADEMIC_DEPTH_ADDON` (250-450 kelime doyurucu) + `ensure_crisis_safety` (kategorik yanlış-hat temizleme + deterministik footer). **25.58-D: fable-5 gold ile v2'ye kalibre** (önce-duygu, satış-yok, taşınabilir metafor, YKS sıklık yıldızı). |
+| **PREMIUM model katmanı (25.58-C/D)** | `MODEL_PREMIUM=claude-fable-5` — web kanalında render-değerli üretim (`detect_renderer_need`) → fable-5. `_model_override` ile Claude çağrı noktasında seçilir. Batch RAG içerik üretimi `FERMAT_CONTENT_PREMIUM=1` ile fable. |
+| **Topic inversion + boş/yanlış (25.57-D/E)** | `sinav_hata_yuzdesi`=HATA% (yüksek=zayıf), `sinav_basari_yuzdesi`=GENERATED. Pedagojik ayrım: `sinav_yanlis_sayisi`/`sinav_bos_sayisi` (boş≥0.7→"boş bırakıyor"≠hata). 248 satır düzeltildi. |
+| **WA token izleme (25.57-G)** | `model_health.check_wa_token()` (Graph API geçerlilik + <7gün uyarı) + `set_wa_token.py` (güvenli kurulum, token koda asla yazılmaz). System User KALICI token. |
+| **Dedup kök + LRU (25.58)** | `_handle_single_message` dedup: MemoryStore'da `hasattr` kapısı dedup'ı tamamen kapatıyordu → in-memory önce, Redis NX best-effort. `lru_cache` saf regex sınıflandırıcılarda (sentiment/lane/intent). |
+| **LaTeX→WhatsApp (25.58-D)** | `format_whatsapp._latex_to_readable` — ham `\( \frac \lim x^2` → Unicode okunabilir (√ ² ≤ π → lim). Sadece WP path (web KaTeX'i korunur). |
+| **Model EOL yönetimi (25.58-C)** | `claude-sonnet-4-20250514` (EOL 15 Haz) → tüm çağrılar `os.getenv("FERMAT_MODEL","claude-sonnet-4-6")`. ATLAS → `claude-opus-4-8`. |
 
 ### v2.0 değişiklik özeti (v1.0 → v2.0)
 

@@ -18,7 +18,7 @@ _BAD_EMOJIS = ('😈', '👻', '💀', '🖕', '🤬', '💩', '🤡', '🔥')
 # Kategori → başlangıç emoji mapping (ilk satıra eklenir)
 _CATEGORY_EMOJIS = {
     # Selamlama / sohbet
-    'selam|merhaba|iyi\s*g[uü]n|hey|hos\s*geld|hoş\s*geld': '🌟',
+    r'selam|merhaba|iyi\s*g[uü]n|hey|hos\s*geld|hoş\s*geld': '🌟',
     # Akademik
     'turev|türev|integral|limit|denklem|fonksiyon|matem': '🔢',
     'fizik|kuvvet|enerji|manyetik|elektrik': '⚡',
@@ -27,7 +27,7 @@ _CATEGORY_EMOJIS = {
     'tarih|osmanli|osmanlı|savas|savaş|cumhuriy': '🏛️',
     'cograf|coğraf|iklim|harita': '🌍',
     'edebiyat|siir|şiir|roman|paragr': '📖',
-    'turkce|türkçe|dil\s*bilg': '📝',
+    r'turkce|türkçe|dil\s*bilg': '📝',
     # Duygusal / pedagojik
     'stres|kayg|panik|mutsuz|sikkin|sıkkın|uzgun|üzgün': '💙',
     'motivasyon|vazgec|pes|bitkn|yorul': '🌱',
@@ -52,6 +52,56 @@ _CLOSING_VARIANTS = [
 ]
 
 
+# ── LaTeX → WhatsApp okunabilir matematik (25.58-D) ──────────────────────────
+# Web kanalı KaTeX render eder; WhatsApp ham "\( \lim_{x\to a} \)" gösteriyordu (fable
+# judge yakaladı). Bu dönüşüm SADECE WhatsApp path'inde çalışır (web _clean_response'u
+# atlar). Cerebras/Groq/Claude — her kaynağın WP matematiğini okunabilir yapar.
+_SUP = str.maketrans("0123456789n", "⁰¹²³⁴⁵⁶⁷⁸⁹ⁿ")
+_LATEX_SYM = {
+    r"\to": "→", r"\rightarrow": "→", r"\Rightarrow": "⇒", r"\cdot": "·",
+    r"\times": "×", r"\div": "÷", r"\pm": "±", r"\mp": "∓", r"\infty": "∞",
+    r"\leq": "≤", r"\geq": "≥", r"\neq": "≠", r"\approx": "≈", r"\equiv": "≡",
+    r"\sum": "Σ", r"\int": "∫", r"\partial": "∂", r"\nabla": "∇", r"\degree": "°",
+    r"\alpha": "α", r"\beta": "β", r"\gamma": "γ", r"\delta": "δ", r"\Delta": "Δ",
+    r"\theta": "θ", r"\lambda": "λ", r"\mu": "μ", r"\pi": "π", r"\sigma": "σ",
+    r"\omega": "ω", r"\Omega": "Ω", r"\phi": "φ", r"\rho": "ρ", r"\in": "∈",
+}
+
+
+def _latex_to_readable(text: str) -> str:
+    """Ham LaTeX'i WhatsApp'ta okunabilir Unicode matematiğe çevir (yalnızca sinyal varsa)."""
+    if not text or not re.search(r"\\[a-zA-Z]+|\\[\(\)\[\]]|\$", text):
+        return text
+    t = text
+    # 1) Matematik sınırlayıcıları kaldır (içeriği koru): \( \) \[ \] $$..$$ $..$
+    t = re.sub(r"\\[\(\)\[\]]", "", t)
+    t = re.sub(r"\$\$(.+?)\$\$", r"\1", t, flags=re.DOTALL)
+    t = re.sub(r"\$([^$\n]+?)\$", r"\1", t)
+    # 2) \frac{a}{b} → (a)/(b)  (tek seviye; iç içe nadir, dokunma)
+    for _ in range(3):
+        t = re.sub(r"\\(?:d|t)?frac\{([^{}]+)\}\{([^{}]+)\}", r"(\1)/(\2)", t)
+    # 3) \sqrt{x} → √(x),  \sqrt[n]{x} → ⁿ√(x)
+    t = re.sub(r"\\sqrt\[([^\]]+)\]\{([^{}]+)\}", r"\1√(\2)", t)
+    t = re.sub(r"\\sqrt\{([^{}]+)\}", r"√(\1)", t)
+    # 4) \lim_{x \to a} → lim(x→a)  (alt simge süslü)
+    t = re.sub(r"\\lim_\{([^{}]+)\}", lambda m: "lim(" + m.group(1).replace("\\to", "→").strip() + ")", t)
+    # 5) üst simge: x^{2}→x², x^2→x²  (tek karakter/sayı)
+    t = re.sub(r"\^\{([0-9n]+)\}", lambda m: m.group(1).translate(_SUP), t)
+    t = re.sub(r"\^([0-9n])", lambda m: m.group(1).translate(_SUP), t)
+    # 6) alt simge: x_{1}→x_1 (süslüyü aç, alt çizgi kalsın — okunur)
+    t = re.sub(r"_\{([^{}]+)\}", r"_\1", t)
+    # 7) sembol sözlüğü
+    for k, v in _LATEX_SYM.items():
+        t = t.replace(k, v)
+    # 8) fonksiyon adları: \sin \cos \tan \log \ln \cot vb. → ters taksim at
+    t = re.sub(r"\\(sin|cos|tan|cot|sec|csc|log|ln|exp|max|min|lim|deg)\b", r"\1", t)
+    # 9) \left \right \, \! \; düzenleyiciler → temizle
+    t = re.sub(r"\\left|\\right|\\,|\\!|\\;|\\:|\\quad|\\qquad", "", t)
+    # 10) kalan tekil süslü matematik gruplarını aç ({2} → 2), normal metne dokunma
+    t = re.sub(r"\{([^{}]{1,12})\}", r"\1", t)
+    return t
+
+
 def format_for_whatsapp(text: str, source: str = "claude") -> str:
     """
     Tüm cevapları WhatsApp formatına çevir.
@@ -62,6 +112,9 @@ def format_for_whatsapp(text: str, source: str = "claude") -> str:
     """
     if not text or len(text.strip()) < 5:
         return text
+
+    # ── 0. LaTeX → okunabilir (akademik cevaplarda ham \( \frac \lim WP'de çirkin) ──
+    text = _latex_to_readable(text)
 
     # ── 1. Markdown → WhatsApp ──
     text = re.sub(r'\*\*([^*]+)\*\*', r'*\1*', text)
