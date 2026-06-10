@@ -1,6 +1,10 @@
 # 🌌 Bilim Evreni — Tasarım Dokümanı ve Yol Haritası
 
-> **Sürüm:** 2.0 (25.58-J, 11 Haziran 2026) · **Dosya:** `bilim-evreni.html` (tek dosya, statik)
+> **Sürüm:** 3.0 (25.58-K, 11 Haziran 2026) · **Dosya:** `bilim-evreni.html` (tek dosya, statik)
+> **v3 eklentisi — Simülatör Terminali:** hub'daki retro kabinden tam-ekran 2D sim havuzu
+> (Optik Tezgah · Fotoelektrik · Bohr Atomu · Ölçek Yolculuğu 10⁰→10⁻³⁵ m). Havuz `SIMS[]`
+> dizisine yeni obje ekleyerek büyür: {id, ad, init, params, actions, meter, draw}. Matrix
+> insansı karakter + istasyon kaide/yol sistemi de v3'te.
 > **Temel:** 3 paralel araştırma ajanı — (1) YKS konu→simülasyon haritası (PhET ~200 sim envanteri
 > + ÖSYM 2018-2025 soru dağılımı), (2) PubChem PUG REST 3D şeması (canlı doğrulanmış),
 > (3) NASA NSSDC gezegen/Kepler verisi (fact sheet arşiv doğrulamalı).

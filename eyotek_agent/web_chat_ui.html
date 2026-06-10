@@ -2346,8 +2346,19 @@ html[data-theme="dark"] .msg.bot.streaming::after {
   .chat-header .user {
     font-size: 12px;
     display: flex; align-items: center; gap: 4px;
-    flex-shrink: 0;
+    /* 25.58-K (Neo mobil raporu): admin'de 8+ buton üst üste biniyordu →
+       şerit yatay kaydırılabilir, sarma YOK, scrollbar gizli. Tüm butonlar parmakla erişilir. */
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* flex-end + overflow eski tarayıcıda sol ucu kırpar → flex-start güvenli */
+    justify-content: flex-start;
   }
+  .chat-header .user::-webkit-scrollbar { display: none; }
+  .chat-header .user > * { flex: 0 0 auto; }
   /* Mobilde "Yeni Sohbet" butonu ikon-only, yazı gizli */
   .chat-header .user .new-chat-btn {
     font-size: 0 !important;

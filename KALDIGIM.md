@@ -1,6 +1,19 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-J (Fable 5): BİLİM EVRENİ v2 — Neo geri bildirimi sonrası literatür-temelli büyük genişleme: 10→24 istasyon, PubChem canlı 3D, NASA verisi, karakter v2, 3 araştırma ajanı + fix-loop, EVREN_TASARIM.md — CANLI**
+> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-K (Fable 5): BİLİM EVRENİ v3 — Simülatör Terminali (tam ekran 4 pro sim: Optik/Fotoelektrik/Bohr/Ölçek Yolculuğu), Matrix karakter, istasyon kaideleri + yollar, Galton fizik fix, mobil admin header fix — CANLI**
+>
+> ## 🕹️ 11 Haz (25.58-K) — BİLİM EVRENİ v3 (Neo: "dağınık + atari konsepti + Matrix karakter + Galton takılıyor + admin mobil header karışık")
+> - **SİMÜLATÖR TERMİNALİ (atari konsepti GERÇEKLEŞTİ):** Hub'da retro kabin (parlayan ekran, joystick, tepe tabela) → "Simülatöre Gir" → **tam ekran 2D simülasyon havuzu** (menü kartları → sim → havuza dön → evrene dön; Esc çıkar; sim açıkken dünya render durur, GPU sim'e). 4 profesyonel sim, hepsi `__fz.sim.test()` ile sayısal doğrulandı:
+>   · 🔍 **Optik Tezgah** — 4 eleman (ince/kalın mercek, çukur/tümsek ayna), f/d₀/h slider, ışın izleme + gerçek-sanal: d₀=8,f=3→dᵢ=4.80 m=-0.60 GERÇEK-ters ✓; d₀<f→SANAL-düz-büyük ✓
+>   · ⚡ **Fotoelektrik** — 4 metal (Cs/Na/Zn/Pt), λ/şiddet slider, foton-elektron animasyonu + KE-f grafiği: 400nm Cs→KE 1.15eV ✓; 600nm Zn→"SÖKÜLME YOK (şiddet kaç olursa olsun)" ✓ Einstein dersi
+>   · ⚛️ **Bohr Atomu** — n₁→n₂ geçiş animasyonu + yayılan foton + Balmer spektrum şeridi: 3→2=656nm Hα ✓, 2→1=122nm Lyman ✓
+>   · 🔬 **Ölçek Yolculuğu** (Neo'nun hayali) — 10⁰→10⁻³⁵ m sürekli zoom: insan→saç→hücre→virüs→DNA→atom→çekirdek→proton(3 kuark)→kuark→Planck köpüğü; otomatik dalış modu; evre metni nearest-match (fix-loop'ta seçim mantığı düzeltildi)
+> - **Matrix karakter (v3):** robot → insansı: uzun siyah palto (önü açık + yürürken savrulan etek), beyaz gömlek+kravat, güneş gözlüğü, ten/saç; iki-segment uzuvlar korundu, kafa bakış takibi korundu. Palto eteği walkAmp/airBlend ile salınır.
+> - **Düzen + ambiyans:** her istasyona otomatik **kaide platformu** (koyu disk + tema renkli çift ışık halkası, addStation içinde — 25 istasyon) + **oda içi yürüme yolları** (merkez→istasyon ışıklı noktalar) + oda merkez devre diski. "Dağınık" görünüm yapısal olarak çözüldü.
+> - **Galton fizik fix (Neo: toplar takılıyor, çan oluşmuyor):** ① takılma → anti-stuck dürtme (çivide 25 tick hareketsiz→minik z impulsu) ② yapı yeniden boyutlandı: 6 çivi sırası yukarı, bölmeler 1.5→2.6m (20 top/kutu), sayım eşiği yığılmayı kapsar ③ merkez giriş ±0.06 (geniş giriş dağılımı düzleştiriyordu). Sonuç: 100 topta net çan [5,6,12,17,15,8,17,7], kalıcı takılma yok, geç kalanlar canlı sayılır. + top sayısı slider 20–120.
+> - **Mobil admin header fix (web_chat_ui):** `.chat-header .user` mobilde yatay kaydırılabilir şerit (nowrap + overflow-x + gizli scrollbar + flex-start — flex-end eski tarayıcı kırpma tuzağından kaçınıldı). 8+ buton üst üste binmiyor; tüm roller aynı şeridi kullanır (admin en kalabalık → en çok kazanan).
+> - **Debug API:** `__fz.sim.{ac,kapat,acik,aktif,liste,test(id,mut)}` — sim metre matematiği rAF'sız test edilebilir.
+> - **AÇIK (sonraki):** sim havuzu genişletme (devre kurucu, Lorentz 3D, pH, mitoz — EVREN_TASARIM yol haritası) · atom→molekül kurucu (Lewis) · topic_tracker→istasyon/sim eşleme.
 >
 > ## 🟢 PROJE DURUMU (Snapshot — 25.58-J, 11 Haz)
 >
