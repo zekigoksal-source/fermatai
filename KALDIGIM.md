@@ -1,6 +1,20 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-K (Fable 5): BİLİM EVRENİ v3 — Simülatör Terminali (tam ekran 4 pro sim: Optik/Fotoelektrik/Bohr/Ölçek Yolculuğu), Matrix karakter, istasyon kaideleri + yollar, Galton fizik fix, mobil admin header fix — CANLI**
+> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-L (Fable 5): FERMATRIX — rebrand (matrix yeşili + dijital yağmur), Minecraft piksel karakter, 3D DC Devre + Faraday Alternatörü, Atari +Doppler +Çift Kaynak Girişimi (27 istasyon + 6 atari sim) — CANLI**
+>
+> ## 🟢 11 Haz (25.58-L) — FERMATRIX (Neo: "Evren→Fermatrix + matrix yeşili tema · Minecraft karakter · 3D'yi çeşitlendir EM/devre/Faraday · atari sim A++ kalite ophysics seviyesi")
+> - **Rebrand:** "Bilim Evreni" → **FERMATRIX**. Palet matrix yeşili (--accent #1ee06f), gökyüzü/sis/hub devre/yol/toz hepsi yeşil, intro monospace + glow. **Dijital yağmur** (340 parçacık, oyuncuyu izler). web_chat butonu 🟢 Fermatrix (yeşil gradyan).
+> - **Minecraft karakter (Neo: "lego/robot amatör, hazır şablon kullan"):** el yapımı insansı → **bilinçli Minecraft piksel kübü** (NearestFilter prosedürel doku: kapüşon+matrix gözlük bandı+göğüste yeşil λ, 8px yüz, klasik MC kol-bacak ters-faz salınımı). İkonik, öğrenci-dostu, "amatör" değil tanıdık. Kafa bakış takibi korundu.
+> - **3D Elektromanyetizma (Neo: "manyetizma sadece telden ibaret değil, devre/Faraday/AC"):**
+>   · 🔌 **DC Devre Masası** — V/R₁/R₂ slider + seri↔paralel toggle + **akan elektron filosu** (hız akımla orantılı, TubeGeometry teller) + ampul parlaklığı (P=I²R). Doğrulama: seri 12V/6/6→Req16,I0.75; paralel→Req7,I1.71,I₁=I₂0.857 ✓
+>   · ⚡ **Faraday Alternatörü** — N/S mıknatıs arası **dönen bobin** + ω/N/B slider + canlı sinüs EMF panosu + titreşen ampul. ε=NBAω·sin(ωt); εmax 12V→24V (2×ω) ✓ AYT indüksiyon+AC
+> - **Atari A++ (Neo: "ophysics seviyesi, çöp adam değil"):** 4→**6 sim**, ortak yeşil gradyan+ızgara arka plan (simBG) + glow:
+>   · 🚨 **Doppler** — kaynak hızı slider, genişleyen dalga cepheleri, **mach konisi** (v>340→sonik patlama); 30m/s→önde 483Hz arkada 404Hz ✓
+>   · 🌊 **Çift Kaynak Girişimi** — d/λ slider, **piksel alan render** (ImageData yapıcı/yıkıcı), ekran saçak yoğunluğu; d=3,λ=1.4→4 saçak ✓
+>   · 🔬 **Ölçek Yolculuğu görsel v2** — çöp adam → dolu kavisli silüet + tüm evrelere glow
+> - **simResize sağlamlaştırma:** preview sandbox innerWidth=1 raporluyordu (gerçek cihazda sorun yok); viewW/viewH load-time yakalama + 320px taban + 3D-resize senkron. Atari matematiği `__fz.sim.test(id,mut)` ile rAF'sız doğrulandı (6/6).
+> - **Bilinen (preview artefaktı, gerçek değil):** preview eval'de 2D overlay canvas getImageData/clientWidth çöküyor → atari pikselleri preview'da ölçülemiyor AMA ilk doppler render 1251px yeşil alan verdi + tüm sim matematiği test geçti + 3D screenshot DC Devre'yi doğru gösterdi. Neo telefonda canlı görecek.
+> - **AÇIK:** Neo "şu konuda sim üret" derse → beğenirse SIMS[]'e ekle (atari sürekli büyür). Sonraki: atom→molekül Lewis kurucu, optik 3D'ye taşıma, daha fazla devre elemanı (kapasitör/AC kaynak).
 >
 > ## 🕹️ 11 Haz (25.58-K) — BİLİM EVRENİ v3 (Neo: "dağınık + atari konsepti + Matrix karakter + Galton takılıyor + admin mobil header karışık")
 > - **SİMÜLATÖR TERMİNALİ (atari konsepti GERÇEKLEŞTİ):** Hub'da retro kabin (parlayan ekran, joystick, tepe tabela) → "Simülatöre Gir" → **tam ekran 2D simülasyon havuzu** (menü kartları → sim → havuza dön → evrene dön; Esc çıkar; sim açıkken dünya render durur, GPU sim'e). 4 profesyonel sim, hepsi `__fz.sim.test()` ile sayısal doğrulandı:

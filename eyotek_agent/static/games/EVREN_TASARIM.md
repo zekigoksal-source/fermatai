@@ -1,6 +1,11 @@
 # 🌌 Bilim Evreni — Tasarım Dokümanı ve Yol Haritası
 
-> **Sürüm:** 3.0 (25.58-K, 11 Haziran 2026) · **Dosya:** `bilim-evreni.html` (tek dosya, statik)
+> **Sürüm:** 4.0 / **Fermatrix** (25.58-L, 11 Haziran 2026) · **Dosya:** `bilim-evreni.html` (tek dosya, statik)
+> **v4 — Fermatrix rebrand:** matrix yeşili tema (#1ee06f) + dijital yağmur + Minecraft piksel
+> karakter. 3D'ye **DC Devre Masası** (seri/paralel, akan elektronlar) + **Faraday Alternatörü**
+> (dönen bobin, canlı EMF sinüsü). Atari'ye **Doppler** (mach konisi) + **Çift Kaynak Girişimi**
+> (piksel alan) + Ölçek Yolculuğu görsel v2. Yeni sim eklemek: `SIMS[]` dizisine obje + (3D için)
+> `addStation`. Karakteri değiştirmek: `charRoot` bloğu (şu an Minecraft piksel kübü).
 > **v3 eklentisi — Simülatör Terminali:** hub'daki retro kabinden tam-ekran 2D sim havuzu
 > (Optik Tezgah · Fotoelektrik · Bohr Atomu · Ölçek Yolculuğu 10⁰→10⁻³⁵ m). Havuz `SIMS[]`
 > dizisine yeni obje ekleyerek büyür: {id, ad, init, params, actions, meter, draw}. Matrix
