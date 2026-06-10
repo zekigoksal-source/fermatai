@@ -5,8 +5,16 @@
 > ## 🟢 PROJE DURUMU (Snapshot — 25.58-D, 10 Haz)
 >
 > - **Branch:** `claude/sweet-jemison-99ea7e` (main ile sync)
-> - **HEAD:** `74a5384` (25.58-D fable gold kalibrasyon) ← `a5fc833` (25.58-C model stratejisi docs) ← `22a7d03` (EOL+premium) ← `9e53e6e` (crisis pattern) ← 25.58
-> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `74a5384`, PostgreSQL OK
+> - **HEAD:** `2bde6df` (25.58-E güvenlik fail-open fix) ← `56a8a2e` (25.58-D KALDIGIM) ← `74a5384` (fable gold kalibrasyon) ← `a5fc833` (model stratejisi docs) ← 25.58
+> - **VPS:** `116.203.117.106` — Bridge HTTP 200 ✅, git senkron `2bde6df`, PostgreSQL OK
+>
+> ## 🔐 10 Haz (25.58-E) — GÜVENLİK + VERİMLİLİK DENETİMİ (Neo: "açık/verimsizlik/mimari hata var mı, fable-5 ile incele")
+> 4 paralel denetim ajanı (auth/SQLi-ACL/secret-injection/verimlilik) + HER bulgu canlı kod+env ile çapraz doğrulandı. **3 GERÇEK fail-open düzeltildi + deploy:**
+> - **🔴 #1 WEBHOOK SPOOFING (YÜKSEK, Neo aksiyonu bekliyor):** VPS'te `WA_APP_SECRET=YOK` → `verify_signature` secret yokken `return True` → webhook imzası KAPALI. Biri `/webhook`'a sahte Meta POST'u atıp **admin telefonunu (905051256802) taklit edip** admin komutu (blokla/yetki/sync) tetikleyebilir. Kod fail-open KALMALI (yoksa prod webhook 403 → WhatsApp kanalı kırılır) → başlangıçta GÜR 🔴 uyarı + yanıltıcı 'localhost-only' yorum düzeltildi. **ASIL KAPATMA = Neo: Meta App Dashboard → Settings → Basic → App Secret → VPS .env `WA_APP_SECRET=` + restart.** [[security_wa_app_secret_pending]]
+> - **🟠 #2 caller_profile fail-open (ORTA, FIX):** `_get_caller_profile` `not phone → {"role":"admin"}` dönüyordu (boş "from"lu webhook admin olur). 25.42'de exception-path 'unknown'a sertleşmişti ama bu erken-guard kaçmış. FIX: fail-CLOSED 'unknown'.
+> - **🟠 #3 SQL ACL soz_no fail-open (ORTA, FIX):** `_check_sql_acl` `if soz_no:` — öğrenci soz_no'su boşsa hassas-tablo (student_exams/topic/devamsizlik...) kontrolü TAMAMEN atlanıp filtresiz SELECT geçebiliyordu. FIX: hassas tabloya dokunan her öğrenci SQL'i geçerli soz_no ZORUNLU. Test 6/6 (soz_no yok→REDDET, kendi→GEÇ, başka→REDDET).
+> - **❌ REDDEDİLEN false-positive'ler (canlı doğrulama):** tercih_profil/listesi ACL'de "eksik" (aslında VAR — role_access:473+589) · finans_access string-interp "SQLi" (int() cast — geçmez) · llm_router regex "+2-5ms" (re._cache zaten cache'liyor, µs) · WA token .env yazma (tasarım, set_wa_token) · N+1 gece görevleri (off-peak, ms). **Ders tekrar teyit: ajan iddialarını körlemesine ALMA.**
+> - **İYİ KORUNAN (denetimde teyit):** CORS domain-listesi (wildcard yok) · cookie HttpOnly+SameSite+Secure · OTP 15dk+burst+daily limit+hack_tracker · db_pool tüm sorgular parametreli ($1/$2) · rol telefondan (mesajdan override edilemez) · subprocess/eval/exec/pickle YOK · OR/UNION/comment injection guard her öğrenci SQL'inde.
 >
 > ## ✨ 10 Haz (25.58-D) — FABLE-5 GOLD KALİTE KALİBRASYONU (Neo: "fable A++++ ile eski A+ şablonları daha da geliştir")
 > Eski standart: Sonnet=A+ gold → Cerebras şablonları ona kalibre (25.55). Yeni: fable-5 gold üret → Cerebras v1-şablonlu cevapla kıyasla → fable-judge'dan şablon-yükseltecek talimat çıkar → A/B doğrula → deploy.
