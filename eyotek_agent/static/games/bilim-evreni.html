@@ -72,6 +72,12 @@
   #simBar .sp{flex:1}
   #simBar button{background:rgba(199,111,62,.15);border:1px solid rgba(199,111,62,.4);color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer}
   #simMenu{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;padding:18px;align-content:start}
+  #simFiltreBar{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:2px}
+  .simChip{background:rgba(30,224,111,.06);border:1px solid rgba(30,224,111,.25);color:#CBD5E1;
+    padding:7px 13px;border-radius:20px;font-size:12.5px;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .simChip b{color:var(--accent);margin-left:3px}
+  .simChip.on{background:var(--accent);color:#04080a;border-color:var(--accent)}
+  .simChip.on b{color:#04080a}
   .simCard{background:rgba(20,29,51,.85);border:1px solid rgba(167,139,250,.25);border-radius:14px;padding:16px;cursor:pointer;transition:transform .15s,border-color .15s}
   .simCard:hover{border-color:var(--accent);transform:translateY(-2px)}
   .simCard .ico{font-size:30px}
@@ -4557,10 +4563,26 @@ function simBG(ctx, W2, H) {
   ctx.stroke();
 }
 
+function SIMS_phCalc(s) {
+  const Va = 25, Ca = 0.1, Cb = 0.1, Vb = s.eklenen;
+  const molA = Ca*Va/1000, molB = Cb*Vb/1000, Vt = (Va+Vb)/1000;
+  if (s.kuvvetli) {
+    if (molB < molA) return -Math.log10((molA-molB)/Vt);
+    if (Math.abs(molB-molA) < 1e-9) return 7;
+    return 14 + Math.log10((molB-molA)/Vt);
+  } else {
+    const Ka = 1.8e-5;
+    if (molB < molA*0.02) return -Math.log10(Math.sqrt(Ka*Ca));
+    if (molB < molA) { const r = molB/(molA-molB); return -Math.log10(Ka) + Math.log10(r); }
+    if (Math.abs(molB-molA) < molA*0.02) { const Cs = molA/Vt; return 7 + 0.5*(Math.log10(Ka)+14) + 0.5*Math.log10(Cs); }
+    return 14 + Math.log10((molB-molA)/Vt);
+  }
+}
+
 const SIMS = [
 // ── 1. OPTİK TEZGAH ──────────────────────────────────────────
 {
-  id:'optik', ico:'🔍', ad:'Optik Tezgah', kat:'Fizik · TYT+AYT Optik',
+  id:'optik', grup:'dalga', ico:'🔍', ad:'Optik Tezgah', kat:'Fizik · TYT+AYT Optik',
   desc:'Mercek ve aynalarda görüntü oluşumu: ışın izleme, gerçek/sanal, büyütme — hepsi canlı.',
   init(){ return { tip:0, f:3, d0:8, h:1.6 }; },
   params:[
@@ -4647,7 +4669,7 @@ const SIMS = [
 },
 // ── 2. FOTOELEKTRİK OLAY ─────────────────────────────────────
 {
-  id:'fotoelektrik', ico:'⚡', ad:'Fotoelektrik Olay', kat:'Fizik · AYT Modern Fizik',
+  id:'fotoelektrik', grup:'modern', ico:'⚡', ad:'Fotoelektrik Olay', kat:'Fizik · AYT Modern Fizik',
   desc:'Einstein\'a Nobel getiren deney: ışık şiddeti mi yoksa frekansı mı elektron söker?',
   init(){ return { metal:0, lambda:400, sid:55, fotonlar:[], elektronlar:[], acc:0, sayac:0, t:0 }; },
   METALS: [ { ad:'Sezyum (Cs)', W:1.95 }, { ad:'Sodyum (Na)', W:2.28 }, { ad:'Çinko (Zn)', W:4.31 }, { ad:'Platin (Pt)', W:5.65 } ],
@@ -4726,7 +4748,7 @@ const SIMS = [
 },
 // ── 3. BOHR ATOM MODELİ ─────────────────────────────────────
 {
-  id:'bohr', ico:'⚛️', ad:'Bohr Atomu — H Spektrumu', kat:'Fizik+Kimya · Modern Fizik',
+  id:'bohr', grup:'modern', ico:'⚛️', ad:'Bohr Atomu — H Spektrumu', kat:'Fizik+Kimya · Modern Fizik',
   desc:'Elektron yörünge atlar, atom foton yayar: hidrojen spektrumunun doğuşu. Lyman, Balmer, Paschen.',
   init(){ return { n1:3, n2:2, ang:0, anim:0, foton:null }; },
   params:[
@@ -4797,7 +4819,7 @@ const SIMS = [
 },
 // ── 4. ÖLÇEK YOLCULUĞU (Powers of Ten) ──────────────────────
 {
-  id:'olcek', ico:'🔬', ad:'Ölçek Yolculuğu', kat:'Fizik · İnsandan Planck\'a',
+  id:'olcek', grup:'modern', ico:'🔬', ad:'Ölçek Yolculuğu', kat:'Fizik · İnsandan Planck\'a',
   desc:'1 metreden 10⁻³⁵ metreye zoom: hücre, DNA, atom, çekirdek, kuark… evrenin merdiveni.',
   init(){ return { e:0.5, auto:false }; },
   params:[
@@ -4855,7 +4877,7 @@ const SIMS = [
 },
 // ── 5. DOPPLER OLAYI ─────────────────────────────────────────
 {
-  id:'doppler', ico:'🚨', ad:'Doppler Olayı', kat:'Fizik · TYT+AYT Dalgalar',
+  id:'doppler', grup:'dalga', ico:'🚨', ad:'Doppler Olayı', kat:'Fizik · TYT+AYT Dalgalar',
   desc:'Yaklaşan ambulans tizleşir, uzaklaşan kalınlaşır. Kaynak ses hızını aşınca mach konisi (sonik patlama).',
   init(){ return { vs:30, x:-9, dalgalar:[], acc:0, t:0 }; },
   C: 340,
@@ -4901,7 +4923,7 @@ const SIMS = [
 },
 // ── 6. ÇİFT KAYNAK GİRİŞİMİ ───────────────────────────────────
 {
-  id:'girisim', ico:'🌊', ad:'Çift Kaynak Girişimi', kat:'Fizik · AYT Dalga + Modern',
+  id:'girisim', grup:'dalga', ico:'🌊', ad:'Çift Kaynak Girişimi', kat:'Fizik · AYT Dalga + Modern',
   desc:'İki kaynaktan yayılan dalgalar üst üste biner: yapıcı→parlak, yıkıcı→karanlık. Young deneyinin özü.',
   init(){ return { d:3, lam:1.4, t:0, field:null, fw:0, fh:0 }; },
   params:[
@@ -4939,11 +4961,1477 @@ const SIMS = [
     ctx.fillText('parlak = yapıcı · karanlık = yıkıcı girişim · sağ kenar: ekran saçakları', 16, H-16);
   }
 },
+// ── MEKANİK PAKETİ ──────────────────────────────────────────
+{
+  id:'atisruzgar', grup:'mekanik', ico:'🌬️', ad:'Atış PRO — Hava + Rüzgâr', kat:'Fizik · Kuvvet-Hareket',
+  desc:'İkiz atış: biri vakumda (yeşil), biri hava direnci + rüzgârda (turuncu). Gerçek dünya parabolü neden bozar?',
+  init(){ return { v0:30, aci:45, k:0.02, ruzgar:0, izV:[], izH:[], calis:false, t:0 }; },
+  params:[
+    { key:'v', label:'İlk hız v₀', min:10, max:60, step:1, get:s=>s.v0, set:(s,v)=>{ s.v0=v; }, fmt:v=>v.toFixed(0)+' m/s' },
+    { key:'a', label:'Açı θ', min:15, max:80, step:1, get:s=>s.aci, set:(s,v)=>{ s.aci=v; }, fmt:v=>v.toFixed(0)+'°' },
+    { key:'k', label:'Hava direnci k', min:0, max:0.06, step:0.002, get:s=>s.k, set:(s,v)=>{ s.k=v; }, fmt:v=>v.toFixed(3) },
+    { key:'r', label:'Rüzgâr (+ileri)', min:-15, max:15, step:1, get:s=>s.ruzgar, set:(s,v)=>{ s.ruzgar=v; }, fmt:v=>v.toFixed(0)+' m/s' },
+  ],
+  actions:[ { label:'🚀 Fırlat', fn:s=>{
+    const r = s.aci*Math.PI/180;
+    s.izV = [{ x:0, y:0, vx:s.v0*Math.cos(r), vy:s.v0*Math.sin(r) }];
+    s.izH = [{ x:0, y:0, vx:s.v0*Math.cos(r), vy:s.v0*Math.sin(r) }];
+    s.calis = true; s.t = 0;
+  } } ],
+  meter(s){
+    const r = s.aci*Math.PI/180, Rv = s.v0*s.v0*Math.sin(2*r)/9.81;
+    const son = s.izH.length > 1 && !s.calis ? s.izH[s.izH.length-1].x : null;
+    return `Vakum menzili (teori): <b>${Rv.toFixed(1)} m</b>${son !== null ? ' · havalı ölçülen: <b>'+son.toFixed(1)+' m</b> (fark = sürükleme'+(s.ruzgar ? '+rüzgâr' : '')+')' : ''}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const r = s.aci*Math.PI/180, Rv = s.v0*s.v0*Math.sin(2*r)/9.81;
+    const sc = Math.min((W2-80)/Math.max(Rv*1.15, 30), (H-90)/(Rv*0.6+10));
+    const ox = 40, oy = H-50;
+    ctx.strokeStyle = '#33524a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, oy); ctx.lineTo(W2, oy); ctx.stroke();
+    if (s.calis) {
+      const dt = 1/180;
+      for (let i=0; i<3; i++) {
+        const v2 = s.izV[s.izV.length-1];
+        if (v2.y >= 0) s.izV.push({ x:v2.x+v2.vx*dt, y:v2.y+v2.vy*dt, vx:v2.vx, vy:v2.vy-9.81*dt });
+        const h = s.izH[s.izH.length-1];
+        if (h.y >= 0) {
+          const rvx = h.vx - s.ruzgar, sp = Math.hypot(rvx, h.vy);
+          s.izH.push({ x:h.x+h.vx*dt, y:h.y+h.vy*dt,
+            vx:h.vx - s.k*sp*rvx*dt, vy:h.vy - 9.81*dt - s.k*sp*h.vy*dt });
+        }
+        if (v2.y < 0 && h.y < 0) s.calis = false;
+      }
+    }
+    const ciz = (iz, col) => {
+      ctx.strokeStyle = col; ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      for (const p of iz) ctx.lineTo(ox + p.x*sc, oy - p.y*sc);
+      ctx.stroke();
+      if (iz.length) {
+        const u = iz[iz.length-1];
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(ox+u.x*sc, oy-Math.max(0,u.y)*sc, 6, 0, 7); ctx.fill();
+      }
+    };
+    ciz(s.izV, 'rgba(30,224,111,0.95)');
+    ciz(s.izH, 'rgba(245,163,92,0.95)');
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('🟢 vakum (ideal parabol) · 🟠 hava + rüzgâr (gerçek)', 16, 26);
+  }
+},
+{
+  id:'atwood', grup:'mekanik', ico:'⚖️', ad:'Atwood Makinesi', kat:'Fizik · Dinamik (AYT klasiği)',
+  desc:'Makara üzerinden bağlı iki kütle: fark büyüdükçe ivme artar. İp gerilmesi neden hep mg değil?',
+  init(){ return { m1:2, m2:3, y:0, v:0, calis:false }; },
+  params:[
+    { key:'a', label:'Kütle m₁ (sol)', min:0.5, max:8, step:0.1, get:s=>s.m1, set:(s,v)=>{ s.m1=v; s.calis=false; s.y=0; s.v=0; }, fmt:v=>v.toFixed(1)+' kg' },
+    { key:'b', label:'Kütle m₂ (sağ)', min:0.5, max:8, step:0.1, get:s=>s.m2, set:(s,v)=>{ s.m2=v; s.calis=false; s.y=0; s.v=0; }, fmt:v=>v.toFixed(1)+' kg' },
+  ],
+  actions:[ { label:'▶️ Bırak', fn:s=>{ s.calis=true; s.y=0; s.v=0; } }, { label:'↺', fn:s=>{ s.calis=false; s.y=0; s.v=0; } } ],
+  meter(s){
+    const a = (s.m2-s.m1)*9.81/(s.m1+s.m2);
+    const T = 2*s.m1*s.m2*9.81/(s.m1+s.m2);
+    return `a = (m₂−m₁)g/(m₁+m₂) = <b>${a.toFixed(2)} m/s²</b> · ip gerilmesi T = <b>${T.toFixed(1)} N</b><br>${Math.abs(a) < 0.01 ? 'denge — sistem durur' : (a > 0 ? 'sağ iner' : 'sol iner')}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const a = (s.m2-s.m1)*9.81/(s.m1+s.m2);
+    if (s.calis) { s.v += a/60; s.y += s.v/60; if (Math.abs(s.y) > 2.2) s.calis = false; }
+    const cx = W2/2, py = H*0.18, sc = H*0.09;
+    ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, py, 36, 0, 7); ctx.stroke();
+    ctx.fillStyle = '#46587f'; ctx.beginPath(); ctx.arc(cx, py, 8, 0, 7); ctx.fill();
+    const y1 = H*0.45 - s.y*sc, y2 = H*0.45 + s.y*sc;
+    ctx.strokeStyle = '#CBD5E1'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx-36, py); ctx.lineTo(cx-36, y1); ctx.moveTo(cx+36, py); ctx.lineTo(cx+36, y2); ctx.stroke();
+    const kutle = (x, y, m, col) => {
+      const b = 26 + m*4;
+      ctx.fillStyle = col; ctx.fillRect(x-b/2, y, b, b);
+      ctx.fillStyle = '#04080a'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(m.toFixed(1), x, y+b/2+5); ctx.textAlign = 'left';
+    };
+    kutle(cx-36, y1, s.m1, '#1ee06f');
+    kutle(cx+36, y2, s.m2, '#F5A35C');
+  }
+},
+{
+  id:'merkezcil', grup:'mekanik', ico:'🌀', ad:'Çembersel Hareket + BIRAK', kat:'Fizik · AYT (yanılgı kıran)',
+  desc:'Tahmin et: ipi bırakınca taş NEREYE gider? Çoğunluk "dışa fırlar" der — Newton başka söyler.',
+  init(){ return { om:2.2, r:2, ang:0, serbest:null, tahmin:null }; },
+  params:[
+    { key:'o', label:'Açısal hız ω', min:0.8, max:5, step:0.1, get:s=>s.om, set:(s,v)=>{ s.om=v; }, fmt:v=>v.toFixed(1)+' rad/s' },
+    { key:'r', label:'İp uzunluğu r', min:1, max:3.2, step:0.1, get:s=>s.r, set:(s,v)=>{ s.r=v; }, fmt:v=>v.toFixed(1)+' m' },
+  ],
+  actions:[
+    { label:'🔮 Tahmin: dışa fırlar', fn:s=>{ s.tahmin='radyal'; } },
+    { label:'🔮 Tahmin: teğet gider', fn:s=>{ s.tahmin='teget'; } },
+    { label:'✂️ İPİ KES', fn:s=>{
+      const sc = 70;
+      s.serbest = { x:Math.cos(s.ang)*s.r, y:Math.sin(s.ang)*s.r,
+        vx:-Math.sin(s.ang)*s.om*s.r, vy:Math.cos(s.ang)*s.om*s.r, t:0 };
+    } },
+  ],
+  meter(s){
+    const v = s.om*s.r, ac = s.om*s.om*s.r;
+    let sonuc = '';
+    if (s.serbest && s.tahmin) sonuc = s.tahmin === 'teget' ? ' · tahminin <b>DOĞRU</b> ✓' : ' · tahminin yanlıştı — eylemsizlik TEĞET götürür (Newton 1)';
+    return `v = ω·r = <b>${v.toFixed(2)} m/s</b> · merkezcil ivme = ω²r = <b>${ac.toFixed(2)} m/s²</b>${sonuc}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const cx = W2/2, cy = H/2, sc = Math.min(W2,H)*0.13;
+    ctx.strokeStyle = '#33524a'; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.arc(cx, cy, s.r*sc, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    if (!s.serbest) {
+      s.ang += s.om/60;
+      const px = cx + Math.cos(s.ang)*s.r*sc, py = cy + Math.sin(s.ang)*s.r*sc;
+      ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke();
+      // hız (teğet, yeşil) ve merkezcil ivme (içe, kırmızı) okları
+      const tv = { x:-Math.sin(s.ang), y:Math.cos(s.ang) };
+      ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px+tv.x*44, py+tv.y*44); ctx.stroke();
+      ctx.strokeStyle = '#F87171';
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px-(px-cx)*0.32, py-(py-cy)*0.32); ctx.stroke();
+      ctx.fillStyle = '#FFD27F';
+      ctx.beginPath(); ctx.arc(px, py, 9, 0, 7); ctx.fill();
+      ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+      ctx.fillText('🟢 hız (teğet) · 🔴 merkezcil ivme (içe)', 16, 26);
+    } else {
+      s.serbest.t += 1/60;
+      s.serbest.x += s.serbest.vx/60; s.serbest.y += s.serbest.vy/60;
+      const px = cx + s.serbest.x*sc, py = cy + s.serbest.y*sc;
+      // hayalet: radyal yanlış yol
+      const a0 = Math.atan2(s.serbest.y, s.serbest.x);
+      ctx.strokeStyle = 'rgba(248,113,113,0.4)'; ctx.setLineDash([6,6]);
+      ctx.beginPath(); ctx.moveTo(cx + Math.cos(a0)*s.r*sc, cy + Math.sin(a0)*s.r*sc);
+      ctx.lineTo(cx + Math.cos(a0)*s.r*sc*3, cy + Math.sin(a0)*s.r*sc*3); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#FFD27F';
+      ctx.beginPath(); ctx.arc(px, py, 9, 0, 7); ctx.fill();
+      ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+      ctx.fillText('kesik kırmızı = "dışa fırlar" yanılgısı · taş TEĞET gidiyor', 16, 26);
+      if (s.serbest.t > 2.4) s.serbest = null;
+    }
+  }
+},
+{
+  id:'carpisma1d', grup:'mekanik', ico:'🎱', ad:'1B Çarpışma Lab', kat:'Fizik · Momentum (AYT)',
+  desc:'İki cisim, dört parametre: çarpışma öncesi/sonrası momentum ve KE çubukları. e=1 esnek, e=0 yapışır.',
+  init(){ return { m1:2, m2:1, u1:4, u2:-2, e:1, x1:-6, x2:6, v1:4, v2:-2, carpti:false, calis:false }; },
+  params:[
+    { key:'a', label:'m₁', min:0.5, max:5, step:0.1, get:s=>s.m1, set:(s,v)=>{ s.m1=v; }, fmt:v=>v.toFixed(1)+' kg' },
+    { key:'b', label:'m₂', min:0.5, max:5, step:0.1, get:s=>s.m2, set:(s,v)=>{ s.m2=v; }, fmt:v=>v.toFixed(1)+' kg' },
+    { key:'u', label:'v₁ (başlangıç)', min:-6, max:6, step:0.5, get:s=>s.u1, set:(s,v)=>{ s.u1=v; }, fmt:v=>v.toFixed(1) },
+    { key:'w', label:'v₂ (başlangıç)', min:-6, max:6, step:0.5, get:s=>s.u2, set:(s,v)=>{ s.u2=v; }, fmt:v=>v.toFixed(1) },
+    { key:'e', label:'Esneklik e', min:0, max:1, step:0.05, get:s=>s.e, set:(s,v)=>{ s.e=v; }, fmt:v=>v.toFixed(2) },
+  ],
+  actions:[ { label:'▶️ Başlat', fn:s=>{ s.x1=-6; s.x2=6; s.v1=s.u1; s.v2=s.u2; s.carpti=false; s.calis=true; } } ],
+  meter(s){
+    const p0 = s.m1*s.u1 + s.m2*s.u2, k0 = 0.5*s.m1*s.u1*s.u1 + 0.5*s.m2*s.u2*s.u2;
+    const p1 = s.m1*s.v1 + s.m2*s.v2, k1 = 0.5*s.m1*s.v1*s.v1 + 0.5*s.m2*s.v2*s.v2;
+    return `Σp: ${p0.toFixed(1)} → <b>${p1.toFixed(1)} kg·m/s</b> (korunur) · KE: ${k0.toFixed(1)} → <b>${k1.toFixed(1)} J</b> ${s.carpti && k1 < k0-0.05 ? '(ısıya gitti)' : ''}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const cy = H*0.42, sc = W2/20;
+    if (s.calis) {
+      s.x1 += s.v1/60; s.x2 += s.v2/60;
+      const r1 = 0.4+s.m1*0.12, r2 = 0.4+s.m2*0.12;
+      if (!s.carpti && s.x2 - s.x1 <= r1 + r2) {
+        s.carpti = true;
+        const { m1, m2, e } = s, u1 = s.v1, u2 = s.v2;
+        s.v1 = (m1*u1 + m2*u2 + m2*e*(u2-u1))/(m1+m2);
+        s.v2 = (m1*u1 + m2*u2 + m1*e*(u1-u2))/(m1+m2);
+      }
+      if (Math.abs(s.x1) > 11 && Math.abs(s.x2) > 11) s.calis = false;
+    }
+    ctx.strokeStyle = '#33524a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, cy+34); ctx.lineTo(W2, cy+34); ctx.stroke();
+    const top = (x, m, col, v) => {
+      const r = (0.4+m*0.12)*sc*0.5;
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(W2/2 + x*sc*0.5, cy, r, 0, 7); ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(W2/2 + x*sc*0.5, cy); ctx.lineTo(W2/2 + x*sc*0.5 + v*9, cy); ctx.stroke();
+    };
+    top(s.x1, s.m1, '#1ee06f', s.v1);
+    top(s.x2, s.m2, '#F5A35C', s.v2);
+    // momentum / KE çubukları
+    const bar = (x, h, col, lbl) => {
+      ctx.fillStyle = col; ctx.fillRect(x, H-40-h, 34, h);
+      ctx.fillStyle = '#64748B'; ctx.font = '11px sans-serif'; ctx.fillText(lbl, x, H-22);
+    };
+    const p = Math.abs(s.m1*s.v1 + s.m2*s.v2), k = 0.5*s.m1*s.v1*s.v1 + 0.5*s.m2*s.v2*s.v2;
+    bar(W2-160, Math.min(100, p*6), '#7DD3FC', 'Σp');
+    bar(W2-100, Math.min(100, k*2.2), '#FFD27F', 'KE');
+  }
+},
+{
+  id:'kepler2', grup:'mekanik', ico:'🛰️', ad:'Yörünge Mimarı', kat:'Fizik · Kütle Çekim (üniv)',
+  desc:'Fırlatma hızını seç: çember mi, elips mi, kaçış mı? Kepler-2 eşit alanları canlı boyar.',
+  init(){ return { oran:1.0, x:5, y:0, vx:0, vy:0, iz:[], calis:false, alanT:0 }; },
+  params:[
+    { key:'o', label:'Hız / çembersel hız', min:0.4, max:1.6, step:0.02, get:s=>s.oran, set:(s,v)=>{ s.oran=v; }, fmt:v=>v.toFixed(2)+'×' },
+  ],
+  actions:[ { label:'🚀 Fırlat', fn:s=>{
+    s.x = 5; s.y = 0;
+    const vc = Math.sqrt(60/5);              // GM=60 birim
+    s.vx = 0; s.vy = vc*s.oran;
+    s.iz = []; s.calis = true;
+  } } ],
+  meter(s){
+    const kacis = Math.SQRT2;
+    return `çembersel: 1.00× · eliptik: <1.41× · <b>kaçış: ≥√2 = 1.41×</b> (şu an ${s.oran.toFixed(2)}×)<br>renkli üçgenler: eşit sürede süpürülen EŞİT alanlar (Kepler-2)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const cx = W2/2, cy = H/2, sc = Math.min(W2,H)/24;
+    ctx.fillStyle = '#FFD27F';
+    ctx.shadowColor = '#FFD27F'; ctx.shadowBlur = 22;
+    ctx.beginPath(); ctx.arc(cx, cy, 13, 0, 7); ctx.fill();
+    ctx.shadowBlur = 0;
+    if (s.calis) {
+      for (let i=0; i<4; i++) {
+        const r = Math.hypot(s.x, s.y);
+        if (r < 0.6 || r > 60) { s.calis = false; break; }
+        const a = -60/(r*r*r);
+        s.vx += a*s.x/60/4*4; s.vy += a*s.y/60;
+        s.x += s.vx/60; s.y += s.vy/60;
+      }
+      s.iz.push({ x:s.x, y:s.y, t:performance.now() });
+      if (s.iz.length > 700) s.iz.shift();
+    }
+    // eşit alan üçgenleri (her ~0.8s bir renk)
+    ctx.globalAlpha = 0.25;
+    for (let i=1; i<s.iz.length; i+=2) {
+      const renk = Math.floor(i/96) % 2 ? '#1ee06f' : '#A78BFA';
+      ctx.fillStyle = renk;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + s.iz[i-1].x*sc, cy + s.iz[i-1].y*sc);
+      ctx.lineTo(cx + s.iz[i].x*sc, cy + s.iz[i].y*sc);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(125,211,252,0.9)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (const p of s.iz) ctx.lineTo(cx + p.x*sc, cy + p.y*sc);
+    ctx.stroke();
+    if (s.calis || s.iz.length) {
+      ctx.fillStyle = '#7DD3FC';
+      ctx.beginPath(); ctx.arc(cx + s.x*sc, cy + s.y*sc, 6, 0, 7); ctx.fill();
+    }
+  }
+},
+{
+  id:'relativite', grup:'modern', ico:'⏱️', ad:'Işık Saati — Özel Görelilik', kat:'Fizik · Modern (üniv)',
+  desc:'Hareketli saatte ışık daha uzun yol gider → zaman YAVAŞLAR. γ faktörünü hızla hisset.',
+  init(){ return { beta:0.6, faz:0 }; },
+  params:[
+    { key:'b', label:'Hız v/c', min:0, max:0.99, step:0.01, get:s=>s.beta, set:(s,v)=>{ s.beta=v; }, fmt:v=>v.toFixed(2)+'c' },
+  ],
+  actions:[],
+  meter(s){
+    const g = 1/Math.sqrt(1-s.beta*s.beta);
+    return `γ = 1/√(1−β²) = <b>${g.toFixed(3)}</b> · gemide 1 saat = Dünya'da <b>${g.toFixed(2)} saat</b><br>1 m'lik cetvel ${(100/g).toFixed(1)} cm görünür · ${s.beta >= 0.95 ? 'GPS uyduları bunu her gün düzeltir!' : 'hızlan — etki büyüsün'}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.faz += 0.02;
+    const g = 1/Math.sqrt(1-s.beta*s.beta);
+    const yt = H*0.3, h2 = H*0.34;
+    // duran saat
+    const sx1 = W2*0.22;
+    ctx.strokeStyle = '#46587f'; ctx.lineWidth = 3;
+    ctx.strokeRect(sx1-34, yt, 68, h2);
+    const f1 = (Math.sin(s.faz*3)+1)/2;
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(sx1, yt+6); ctx.lineTo(sx1, yt + 6 + f1*(h2-12)); ctx.stroke();
+    ctx.fillStyle = '#1ee06f';
+    ctx.beginPath(); ctx.arc(sx1, yt + 6 + f1*(h2-12), 6, 0, 7); ctx.fill();
+    // hareketli saat: foton zigzag (yol/γ oranında yavaş tıklar)
+    const sx2 = W2*0.62, gen = 110*s.beta + 20;
+    ctx.strokeStyle = '#46587f'; ctx.lineWidth = 3;
+    ctx.strokeRect(sx2-34, yt, 68, h2);
+    const f2raw = (Math.sin(s.faz*3/g)+1)/2;
+    const zigX = Math.sin(s.faz*3/g)* gen*0.4;
+    ctx.strokeStyle = '#F5A35C'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(sx2 - gen*0.4, yt+6); ctx.lineTo(sx2 + zigX, yt + 6 + f2raw*(h2-12)); ctx.stroke();
+    ctx.fillStyle = '#F5A35C';
+    ctx.beginPath(); ctx.arc(sx2 + zigX, yt + 6 + f2raw*(h2-12), 6, 0, 7); ctx.fill();
+    // hız oku
+    ctx.strokeStyle = '#7DD3FC'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(sx2-30, yt+h2+26); ctx.lineTo(sx2-30 + s.beta*120, yt+h2+26); ctx.stroke();
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('duran saat', sx1-30, yt-10);
+    ctx.fillText(`hareketli (v=${s.beta.toFixed(2)}c) — tık sesi ${(1/g*100).toFixed(0)}% hızında`, sx2-34, yt-10);
+  }
+},
+// ── ELEKTRİK & MANYETİZMA + DALGA-OPTİK PAKETİ ──────────────
+{
+  id:'coulomb', grup:'em', ico:'⚡', ad:'Coulomb Alan Heykeli', kat:'Fizik · Elektrik (AYT)',
+  desc:'İki yükü konumlandır, işaret/büyüklük seç: alan çizgileri + test yüküne etkiyen kuvvet canlı.',
+  init(){ return { q1:3, q2:-3, sep:6, tx:0, ty:-3 }; },
+  params:[
+    { key:'a', label:'Yük q₁', min:-6, max:6, step:0.5, get:s=>s.q1, set:(s,v)=>{ s.q1=v; }, fmt:v=>v.toFixed(1)+' µC' },
+    { key:'b', label:'Yük q₂', min:-6, max:6, step:0.5, get:s=>s.q2, set:(s,v)=>{ s.q2=v; }, fmt:v=>v.toFixed(1)+' µC' },
+    { key:'s', label:'Yük arası mesafe', min:3, max:11, step:0.5, get:s=>s.sep, set:(s,v)=>{ s.sep=v; }, fmt:v=>v.toFixed(1) },
+  ],
+  actions:[],
+  meter(s){
+    return `<b>${s.q1*s.q2 < 0 ? 'ZIT yükler — çekim' : 'AYNI yükler — itme'}</b> · alan çizgileri +'tan çıkar, −'ye girer<br>F ∝ q₁q₂/r² (Coulomb) — çizgi sıklığı = alan şiddeti`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const cx = W2/2, cy = H/2, sc = Math.min(W2,H)/22;
+    const p1 = { x:cx - s.sep/2*sc, y:cy }, p2 = { x:cx + s.sep/2*sc, y:cy };
+    const Q = [{ p:p1, q:s.q1 }, { p:p2, q:s.q2 }];
+    const field = (x, y) => {
+      let ex = 0, ey = 0;
+      for (const c of Q) {
+        const dx = x-c.p.x, dy = y-c.p.y, r2 = dx*dx+dy*dy+30;
+        const k = c.q*900/(r2*Math.sqrt(r2));
+        ex += k*dx; ey += k*dy;
+      }
+      return [ex, ey];
+    };
+    // alan çizgileri: pozitiften başla
+    ctx.lineWidth = 1.3;
+    for (const c of Q) {
+      if (c.q <= 0) continue;
+      const n = Math.round(Math.abs(c.q)*3)+4;
+      for (let i=0; i<n; i++) {
+        const a0 = i/n*Math.PI*2;
+        let x = c.p.x + Math.cos(a0)*10, y = c.p.y + Math.sin(a0)*10;
+        ctx.strokeStyle = 'rgba(125,211,252,0.55)';
+        ctx.beginPath(); ctx.moveTo(x, y);
+        for (let step=0; step<160; step++) {
+          let [ex, ey] = field(x, y);
+          const m = Math.hypot(ex, ey) || 1;
+          x += ex/m*5; y += ey/m*5;
+          if (x<0||x>W2||y<0||y>H) break;
+          let near = false;
+          for (const c2 of Q) if (c2.q < 0 && Math.hypot(x-c2.p.x, y-c2.p.y) < 12) near = true;
+          ctx.lineTo(x, y);
+          if (near) break;
+        }
+        ctx.stroke();
+      }
+    }
+    // test yükü + kuvvet oku
+    const tpx = cx + s.tx*sc, tpy = cy - s.ty*sc;
+    const [fx, fy] = field(tpx, tpy);
+    const fm = Math.hypot(fx, fy) || 1;
+    ctx.strokeStyle = '#FFD27F'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(tpx, tpy); ctx.lineTo(tpx + fx/fm*40, tpy + fy/fm*40); ctx.stroke();
+    ctx.fillStyle = '#FFD27F'; ctx.beginPath(); ctx.arc(tpx, tpy, 5, 0, 7); ctx.fill();
+    // yükler
+    for (const c of Q) {
+      ctx.fillStyle = c.q >= 0 ? '#F87171' : '#4A90D9';
+      ctx.beginPath(); ctx.arc(c.p.x, c.p.y, 12+Math.abs(c.q), 0, 7); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(c.q >= 0 ? '+' : '−', c.p.x, c.p.y+6); ctx.textAlign = 'left';
+    }
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('🟡 test yükü + kuvvet oku', 16, H-16);
+  }
+},
+{
+  id:'lorentz3d', grup:'em', ico:'🧲', ad:'Manyetik Tuzak — Helis', kat:'Fizik · Manyetizma (AYT)',
+  desc:'B alanına açıyla giren yük helis çizer: r = mv/qB. Açıyı 90° yap → tam çember, 0° → düz çizgi.',
+  init(){ return { B:1, v:3, q:1, aci:60, trail:[], t:0 }; },
+  params:[
+    { key:'b', label:'Manyetik alan B', min:0.3, max:3, step:0.1, get:s=>s.B, set:(s,v)=>{ s.B=v; s.trail=[]; }, fmt:v=>v.toFixed(1)+' T' },
+    { key:'v', label:'Hız v', min:1, max:6, step:0.5, get:s=>s.v, set:(s,v)=>{ s.v=v; s.trail=[]; }, fmt:v=>v.toFixed(1) },
+    { key:'a', label:'Giriş açısı', min:0, max:90, step:5, get:s=>s.aci, set:(s,v)=>{ s.aci=v; s.trail=[]; }, fmt:v=>v.toFixed(0)+'°' },
+  ],
+  actions:[],
+  meter(s){
+    const r = s.v*Math.sin(s.aci*Math.PI/180)/(Math.abs(s.q)*s.B);
+    return `dönme yarıçapı r = mv⊥/qB = <b>${r.toFixed(2)} birim</b> · ${s.aci >= 88 ? 'tam ÇEMBER (v⊥B)' : s.aci <= 2 ? 'DÜZ çizgi (v∥B, kuvvet yok)' : 'HELİS (v hem paralel hem dik bileşenli)'}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const cx = W2/2, cy = H/2;
+    const ar = s.aci*Math.PI/180;
+    const vperp = s.v*Math.sin(ar), vpar = s.v*Math.cos(ar);
+    const r = vperp/(s.q*s.B)*40;
+    const om = s.q*s.B;
+    // izometrik helis: x ekseni boyunca ilerle + yz dairesi
+    const ph = s.t*om*1.5;
+    const px = (s.t*vpar*40) % (W2*0.7) - W2*0.32;
+    const yy = Math.cos(ph)*r, zz = Math.sin(ph)*r;
+    s.trail.push({ x:px, y:yy, z:zz });
+    if (s.trail.length > 180) s.trail.shift();
+    // B alanı çizgileri (yatay, sağ)
+    ctx.strokeStyle = 'rgba(167,139,250,0.3)'; ctx.lineWidth = 1.5;
+    for (let i=-3; i<=3; i++) {
+      const yb = cy + i*30;
+      ctx.beginPath(); ctx.moveTo(40, yb); ctx.lineTo(W2-40, yb); ctx.stroke();
+      ctx.fillStyle = 'rgba(167,139,250,0.5)';
+      ctx.beginPath(); ctx.moveTo(W2-40, yb); ctx.lineTo(W2-50, yb-4); ctx.lineTo(W2-50, yb+4); ctx.fill();
+    }
+    // helis izi (z → görsel y ofset + boyut)
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (const p of s.trail) {
+      const depth = 1 + p.z/120;
+      ctx.lineTo(cx + p.x, cy + p.y*depth);
+    }
+    ctx.stroke();
+    const last = s.trail[s.trail.length-1];
+    if (last) {
+      ctx.fillStyle = '#FFD27F';
+      ctx.beginPath(); ctx.arc(cx + last.x, cy + last.y*(1+last.z/120), 7, 0, 7); ctx.fill();
+    }
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('mor çizgiler = B alanı (→) · yeşil = yük yörüngesi', 16, 26);
+  }
+},
+{
+  id:'rlc', grup:'em', ico:'〽️', ad:'AC Devre — RLC Rezonans', kat:'Fizik · Alternatif Akım (üniv)',
+  desc:'Frekansı süpür: rezonansta (XL=XC) akım zirve yapar. Radyo istasyonu seçmenin fiziği bu.',
+  init(){ return { R:10, L:0.5, C:50, f:100, t:0 }; },
+  params:[
+    { key:'r', label:'Direnç R', min:2, max:50, step:1, get:s=>s.R, set:(s,v)=>{ s.R=v; }, fmt:v=>v.toFixed(0)+' Ω' },
+    { key:'l', label:'Bobin L', min:0.1, max:2, step:0.05, get:s=>s.L, set:(s,v)=>{ s.L=v; }, fmt:v=>v.toFixed(2)+' H' },
+    { key:'c', label:'Kondansatör C', min:10, max:200, step:5, get:s=>s.C, set:(s,v)=>{ s.C=v; }, fmt:v=>v.toFixed(0)+' µF' },
+    { key:'f', label:'Frekans f', min:10, max:400, step:2, get:s=>s.f, set:(s,v)=>{ s.f=v; }, fmt:v=>v.toFixed(0)+' Hz' },
+  ],
+  actions:[],
+  meter(s){
+    const f0 = 1/(2*Math.PI*Math.sqrt(s.L*s.C*1e-6));
+    const w = 2*Math.PI*s.f, XL = w*s.L, XC = 1/(w*s.C*1e-6);
+    const Z = Math.sqrt(s.R*s.R + (XL-XC)*(XL-XC));
+    return `rezonans f₀ = 1/(2π√LC) = <b>${f0.toFixed(0)} Hz</b> · empedans Z = <b>${Z.toFixed(1)} Ω</b><br>${Math.abs(s.f-f0) < 6 ? '🎯 REZONANS! akım maksimum (XL=XC)' : 'f₀\'a yaklaş → akım artar'}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const f0 = 1/(2*Math.PI*Math.sqrt(s.L*s.C*1e-6));
+    // rezonans eğrisi
+    const gx = 50, gy = H*0.6, gw = W2-100, gh = H*0.42;
+    ctx.strokeStyle = '#33524a'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx+gw, gy); ctx.moveTo(gx, gy); ctx.lineTo(gx, gy-gh); ctx.stroke();
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let i=0; i<=gw; i++) {
+      const fr = 10 + i/gw*390, w = 2*Math.PI*fr;
+      const XL = w*s.L, XC = 1/(w*s.C*1e-6);
+      const Z = Math.sqrt(s.R*s.R + (XL-XC)*(XL-XC));
+      const I = 10/Z;
+      ctx.lineTo(gx+i, gy - Math.min(gh, I*gh*s.R/2.2));
+    }
+    ctx.stroke();
+    // şu anki frekans işareti
+    const fx = gx + (s.f-10)/390*gw;
+    ctx.strokeStyle = '#FFD27F'; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(fx, gy); ctx.lineTo(fx, gy-gh); ctx.stroke(); ctx.setLineDash([]);
+    // f0 işareti
+    const f0x = gx + (f0-10)/390*gw;
+    ctx.fillStyle = '#F87171'; ctx.fillRect(f0x-1, gy-gh, 2, gh);
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('akım–frekans eğrisi · 🟡 seçilen f · 🔴 rezonans f₀', gx, gy-gh-8);
+    // sinüs akım göstergesi
+    const w = 2*Math.PI*s.f, XL = w*s.L, XC = 1/(w*s.C*1e-6), Z = Math.sqrt(s.R*s.R+(XL-XC)*(XL-XC));
+    ctx.strokeStyle = '#7DD3FC'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i=0; i<W2; i+=3) ctx.lineTo(i, H*0.18 + Math.sin(i*0.05 + s.t*8)*(10/Z)*20);
+    ctx.stroke();
+  }
+},
+{
+  id:'transformator', grup:'em', ico:'🔌', ad:'Transformatör', kat:'Fizik · İndüksiyon (AYT)',
+  desc:'Sarım oranı gerilimi belirler: yükselten mi alçaltan mı? Güç korunur → akım ters orantılı.',
+  init(){ return { Np:100, Ns:200, Vp:220, t:0 }; },
+  params:[
+    { key:'p', label:'Birincil sarım Nₚ', min:20, max:400, step:10, get:s=>s.Np, set:(s,v)=>{ s.Np=v; }, fmt:v=>v.toFixed(0) },
+    { key:'s', label:'İkincil sarım Nₛ', min:20, max:400, step:10, get:s=>s.Ns, set:(s,v)=>{ s.Ns=v; }, fmt:v=>v.toFixed(0) },
+    { key:'v', label:'Giriş gerilimi Vₚ', min:12, max:380, step:2, get:s=>s.Vp, set:(s,v)=>{ s.Vp=v; }, fmt:v=>v.toFixed(0)+' V' },
+  ],
+  actions:[],
+  meter(s){
+    const Vs = s.Vp*s.Ns/s.Np;
+    return `Vₛ/Vₚ = Nₛ/Nₚ → Vₛ = <b>${Vs.toFixed(0)} V</b> · <b>${s.Ns > s.Np ? 'YÜKSELTEN' : s.Ns < s.Np ? 'ALÇALTAN' : 'birebir'}</b> trafo<br>güç korunur: Iₛ = Iₚ·Nₚ/Nₛ (gerilim artarsa akım azalır)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const cx = W2/2, cy = H/2;
+    // çekirdek
+    ctx.strokeStyle = '#46587f'; ctx.lineWidth = 16;
+    ctx.strokeRect(cx-70, cy-90, 140, 180);
+    // sol bobin (Np) sağ bobin (Ns)
+    const coil = (x, n, col, faz) => {
+      ctx.strokeStyle = col; ctx.lineWidth = 3;
+      const turns = Math.min(14, Math.round(n/20));
+      for (let i=0; i<turns; i++) {
+        const yy = cy-80 + i/turns*160;
+        ctx.beginPath(); ctx.arc(x, yy+6, 14, -Math.PI/2, Math.PI/2, x < cx); ctx.stroke();
+      }
+      // akım parıltısı
+      const f = (Math.sin(s.t*5 + faz)+1)/2;
+      ctx.fillStyle = col; ctx.globalAlpha = f;
+      ctx.beginPath(); ctx.arc(x, cy-100, 6, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+    };
+    coil(cx-70, s.Np, '#1ee06f', 0);
+    coil(cx+70, s.Ns, '#F5A35C', s.Ns > s.Np ? 0 : Math.PI);
+    // değişen manyetik akı (çekirdekte akan ok)
+    const fl = (s.t*2) % 1;
+    ctx.fillStyle = 'rgba(167,139,250,0.7)';
+    ctx.beginPath(); ctx.arc(cx, cy-90 + fl*180, 5, 0, 7); ctx.fill();
+    const Vs = s.Vp*s.Ns/s.Np;
+    ctx.fillStyle = '#1ee06f'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(`${s.Vp}V · ${s.Np}t`, cx-90, cy+120);
+    ctx.fillStyle = '#F5A35C';
+    ctx.fillText(`${Vs.toFixed(0)}V · ${s.Ns}t`, cx+90, cy+120);
+    ctx.textAlign = 'left';
+  }
+},
+{
+  id:'durandalga', grup:'dalga', ico:'🎸', ad:'Telde Duran Dalga', kat:'Fizik · Dalgalar (TYT+AYT)',
+  desc:'Harmonik seç: 1., 2., 3. mod. Düğüm-karın deseni, gitar/keman tellerinin fiziği.',
+  init(){ return { n:1, gerginlik:1, t:0 }; },
+  params:[
+    { key:'n', label:'Harmonik (mod)', min:1, max:6, step:1, get:s=>s.n, set:(s,v)=>{ s.n=Math.round(v); }, fmt:v=>v.toFixed(0)+'. harmonik' },
+    { key:'t', label:'Gerginlik (hız)', min:0.5, max:2.5, step:0.1, get:s=>s.gerginlik, set:(s,v)=>{ s.gerginlik=v; }, fmt:v=>v.toFixed(1)+'×' },
+  ],
+  actions:[],
+  meter(s){
+    return `${s.n}. harmonik: <b>${s.n} karın, ${s.n+1} düğüm</b> · L = ${s.n}·(λ/2) → λ = 2L/${s.n}<br>frekans f = ${s.n}·f₁ · gerginlik ↑ → hız ↑ → tüm frekanslar ↑ (akort)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += s.gerginlik/60;
+    const mx = 50, mw = W2-100, cy = H/2, A = H*0.22;
+    const env = Math.cos(s.t*4);
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i=0; i<=mw; i++) {
+      const x = i/mw;
+      const y = A * Math.sin(s.n*Math.PI*x) * env;
+      ctx.lineTo(mx+i, cy - y);
+    }
+    ctx.stroke();
+    // zarf (hayalet)
+    ctx.strokeStyle = 'rgba(30,224,111,0.25)'; ctx.lineWidth = 1;
+    for (const sgn of [1,-1]) {
+      ctx.beginPath();
+      for (let i=0; i<=mw; i++) ctx.lineTo(mx+i, cy - sgn*A*Math.abs(Math.sin(s.n*Math.PI*i/mw)));
+      ctx.stroke();
+    }
+    // düğümler (kırmızı) ve uç sabitleri
+    ctx.fillStyle = '#F87171';
+    for (let k=0; k<=s.n; k++) {
+      const x = mx + k/s.n*mw;
+      ctx.beginPath(); ctx.arc(x, cy, 5, 0, 7); ctx.fill();
+    }
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('🔴 düğüm (sabit) · arada karın (max titreşim)', 16, 26);
+  }
+},
+{
+  id:'ses', grup:'dalga', ico:'🔊', ad:'Ses Dalgası — Vuru (Beat)', kat:'Fizik · Ses (AYT)',
+  desc:'İki yakın frekans üst üste binince "vuru" duyulur. Akortçuların sıfır-vuru tekniği.',
+  init(){ return { f1:440, f2:444, t:0 }; },
+  params:[
+    { key:'a', label:'Frekans 1', min:300, max:600, step:1, get:s=>s.f1, set:(s,v)=>{ s.f1=v; }, fmt:v=>v.toFixed(0)+' Hz' },
+    { key:'b', label:'Frekans 2', min:300, max:600, step:1, get:s=>s.f2, set:(s,v)=>{ s.f2=v; }, fmt:v=>v.toFixed(0)+' Hz' },
+  ],
+  actions:[],
+  meter(s){
+    const vuru = Math.abs(s.f1-s.f2);
+    return `vuru frekansı = |f₁−f₂| = <b>${vuru.toFixed(0)} Hz</b> (saniyede ${vuru.toFixed(0)} kez yükselip alçalır)<br>${vuru < 1 ? '🎯 SIFIR VURU — iki ses tam akortlu!' : 'frekansları eşitle → vuru kaybolur'}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const mx = 30, mw = W2-60;
+    const sc1 = 0.06, sc2 = 0.06 * s.f2/s.f1;
+    // iki dalga (üstte ayrı)
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(125,211,252,0.6)';
+    ctx.beginPath();
+    for (let i=0; i<=mw; i++) ctx.lineTo(mx+i, H*0.2 + Math.sin(i*sc1 + s.t*6)*22); ctx.stroke();
+    ctx.strokeStyle = 'rgba(245,163,92,0.6)';
+    ctx.beginPath();
+    for (let i=0; i<=mw; i++) ctx.lineTo(mx+i, H*0.38 + Math.sin(i*sc2 + s.t*6*s.f2/s.f1)*22); ctx.stroke();
+    // toplam (altta — vuru zarfı görünür)
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i=0; i<=mw; i++) {
+      const y = Math.sin(i*sc1+s.t*6) + Math.sin(i*sc2+s.t*6*s.f2/s.f1);
+      ctx.lineTo(mx+i, H*0.68 - y*30);
+    }
+    ctx.stroke();
+    // vuru zarfı
+    const fb = Math.abs(s.f1-s.f2);
+    ctx.strokeStyle = 'rgba(248,113,113,0.5)'; ctx.lineWidth = 1.5;
+    for (const sgn of [1,-1]) {
+      ctx.beginPath();
+      for (let i=0; i<=mw; i++) ctx.lineTo(mx+i, H*0.68 - sgn*60*Math.abs(Math.cos(i*(sc1-sc2)/2 + s.t*Math.PI*fb*0.02)));
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('🔵 f₁  🟠 f₂  🟢 toplam (kırmızı zarf = vuru)', 16, H-14);
+  }
+},
+{
+  id:'kirilma', grup:'dalga', ico:'💎', ad:'Snell Kırılması + Tam Yansıma', kat:'Fizik · Optik (AYT)',
+  desc:'Gelme açısını artır: ışık ortam değiştirince kırılır; kritik açıyı aşınca TAM yansır (fiber optik!).',
+  init(){ return { n1:1.0, n2:1.5, aci:30 }; },
+  params:[
+    { key:'a', label:'Gelme açısı', min:0, max:89, step:1, get:s=>s.aci, set:(s,v)=>{ s.aci=v; }, fmt:v=>v.toFixed(0)+'°' },
+    { key:'p', label:'Üst ortam n₁', min:1, max:2.4, step:0.05, get:s=>s.n1, set:(s,v)=>{ s.n1=v; }, fmt:v=>v.toFixed(2) },
+    { key:'q', label:'Alt ortam n₂', min:1, max:2.4, step:0.05, get:s=>s.n2, set:(s,v)=>{ s.n2=v; }, fmt:v=>v.toFixed(2) },
+  ],
+  actions:[],
+  meter(s){
+    const sinr = s.n1/s.n2*Math.sin(s.aci*Math.PI/180);
+    const kritik = s.n1 > s.n2 ? Math.asin(s.n2/s.n1)*180/Math.PI : null;
+    if (sinr > 1) return `sin(r) = ${sinr.toFixed(2)} > 1 → <b>TAM İÇ YANSIMA!</b> ışık hapsoldu (fiber optiğin sırrı)`;
+    const r = Math.asin(sinr)*180/Math.PI;
+    return `Snell: n₁sin θ₁ = n₂sin θ₂ → kırılma açısı = <b>${r.toFixed(1)}°</b>${kritik ? ' · kritik açı = '+kritik.toFixed(1)+'°' : ''}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const cx = W2/2, cy = H/2;
+    // ortamlar
+    ctx.fillStyle = 'rgba(74,144,217,0.08)'; ctx.fillRect(0, 0, W2, cy);
+    ctx.fillStyle = 'rgba(125,211,252,0.16)'; ctx.fillRect(0, cy, W2, H-cy);
+    ctx.strokeStyle = '#7DD3FC'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W2, cy); ctx.stroke();
+    // normal
+    ctx.strokeStyle = '#64748B'; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(cx, 30); ctx.lineTo(cx, H-30); ctx.stroke(); ctx.setLineDash([]);
+    const ar = s.aci*Math.PI/180;
+    // gelen ışın
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(cx - Math.sin(ar)*220, cy - Math.cos(ar)*220); ctx.lineTo(cx, cy); ctx.stroke();
+    const sinr = s.n1/s.n2*Math.sin(ar);
+    if (sinr > 1) {
+      // tam yansıma
+      ctx.strokeStyle = '#F87171'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(ar)*220, cy - Math.cos(ar)*220); ctx.stroke();
+      ctx.fillStyle = '#F87171'; ctx.font = 'bold 14px sans-serif';
+      ctx.fillText('TAM İÇ YANSIMA', cx+20, cy+40);
+    } else {
+      const rr = Math.asin(sinr);
+      ctx.strokeStyle = '#FFD27F'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(rr)*220, cy + Math.cos(rr)*220); ctx.stroke();
+      // zayıf yansıma
+      ctx.strokeStyle = 'rgba(248,113,113,0.4)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(ar)*120, cy - Math.cos(ar)*120); ctx.stroke();
+    }
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText(`n₁=${s.n1.toFixed(2)} (üst)`, 16, 24);
+    ctx.fillText(`n₂=${s.n2.toFixed(2)} (alt)`, 16, H-16);
+  }
+},
+// ── MODERN & KUANTUM PAKETİ (Neo arşiv esinli) ──────────────
+{
+  id:'tunelleme', grup:'modern', ico:'⚛️', ad:'Kuantum Tünelleme', kat:'Fizik · Modern (üniv)',
+  desc:'Klasik fizikte imkânsız: elektron, aşamayacağı enerji bariyerinin ÖTESİNE sızar. İncelt → olasılık fırlar.',
+  init(){ return { E:3, V:5, w:1.2, t:0 }; },
+  params:[
+    { key:'e', label:'Parçacık enerjisi E', min:0.5, max:6, step:0.1, get:s=>s.E, set:(s,v)=>{ s.E=v; }, fmt:v=>v.toFixed(1)+' eV' },
+    { key:'v', label:'Bariyer yüksekliği V₀', min:1, max:8, step:0.2, get:s=>s.V, set:(s,v)=>{ s.V=v; }, fmt:v=>v.toFixed(1)+' eV' },
+    { key:'w', label:'Bariyer kalınlığı', min:0.3, max:3, step:0.1, get:s=>s.w, set:(s,v)=>{ s.w=v; }, fmt:v=>v.toFixed(1)+' nm' },
+  ],
+  actions:[],
+  meter(s){
+    let T;
+    if (s.E >= s.V) T = 0.95;
+    else { const k = Math.sqrt(2*0.51*(s.V-s.E))*5.12*s.w; T = Math.exp(-2*k); }
+    return `geçiş olasılığı T ≈ <b>${(T*100).toExponential(1)}%</b> · ${s.E < s.V ? 'klasik: SIFIR — kuantum: SIZAR!' : 'enerji bariyeri aşıyor'}<br>bariyeri inceltince/E artınca T üstel fırlar — radyoaktivite + tünel diyot bu`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const cy = H*0.55, sc = H*0.06;
+    // bariyer
+    const bx = W2*0.42, bw = s.w*40;
+    ctx.fillStyle = 'rgba(248,113,113,0.18)';
+    ctx.fillRect(bx, cy - s.V*sc, bw, s.V*sc);
+    ctx.strokeStyle = '#F87171'; ctx.lineWidth = 2;
+    ctx.strokeRect(bx, cy - s.V*sc, bw, s.V*sc);
+    // enerji çizgisi
+    ctx.strokeStyle = '#FFD27F'; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(0, cy - s.E*sc); ctx.lineTo(W2, cy - s.E*sc); ctx.stroke(); ctx.setLineDash([]);
+    // dalga fonksiyonu: sol salınım, bariyer içi üstel sönüm, sağ küçük salınım
+    let T;
+    if (s.E >= s.V) T = 0.95;
+    else { const k = Math.sqrt(2*0.51*(s.V-s.E))*5.12*s.w; T = Math.exp(-2*k); }
+    const amp = 26;
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x=0; x<W2; x+=2) {
+      let y;
+      if (x < bx) y = amp*Math.sin(x*0.12 - s.t*5);
+      else if (x < bx+bw) {
+        const d = (x-bx)/bw;
+        y = amp*Math.exp(-d*Math.sqrt(Math.max(0,s.V-s.E))*1.6)*Math.sin(x*0.12 - s.t*5);
+      } else {
+        y = amp*Math.sqrt(T)*Math.sin(x*0.12 - s.t*5);
+      }
+      ctx.lineTo(x, cy - s.E*sc - y - 40);
+    }
+    ctx.stroke();
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('🟢 dalga fonksiyonu — bariyerde sönümlenir ama sağda CANLI kalır', 16, 26);
+  }
+},
+{
+  id:'debroglie', grup:'modern', ico:'🌊', ad:'De Broglie — Madde Dalgası', kat:'Fizik · Modern (üniv)',
+  desc:'Her parçacık aynı zamanda dalgadır: λ = h/(mv). Hızlandır → dalga boyu küçülür, parçacıklaşır.',
+  init(){ return { kutle:1, hiz:3, t:0 }; },
+  params:[
+    { key:'m', label:'Kütle (×elektron)', min:1, max:2000, step:1, get:s=>s.kutle, set:(s,v)=>{ s.kutle=v; }, fmt:v=>v < 1850 ? v.toFixed(0)+' mₑ' : 'proton (~1836)' },
+    { key:'v', label:'Hız', min:0.5, max:8, step:0.1, get:s=>s.hiz, set:(s,v)=>{ s.hiz=v; }, fmt:v=>v.toFixed(1)+'×10⁶ m/s' },
+  ],
+  actions:[],
+  meter(s){
+    const lam = 0.728 / (s.kutle * s.hiz);     // nm (ölçekli)
+    return `λ = h/(mv) = <b>${lam.toFixed(4)} nm</b> · ${lam > 0.2 ? 'dalga karakteri BASKIN (kırınım yapar)' : lam > 0.01 ? 'ara bölge' : 'neredeyse nokta-parçacık (makro cisim gibi)'}<br>kütle/hız ↑ → λ ↓ → klasik davranışa geçiş`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const lam = 0.728/(s.kutle*s.hiz);
+    const cy = H/2;
+    // dalga paketi: zarf içinde salınım, λ küçükse sık
+    const k = 0.6/Math.max(lam, 0.004);
+    const pkX = (s.t*s.hiz*30) % (W2+200) - 100;
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x=0; x<W2; x+=2) {
+      const env = Math.exp(-(((x-pkX)/90)**2));
+      ctx.lineTo(x, cy - env*Math.cos((x-pkX)*k*0.06)*60);
+    }
+    ctx.stroke();
+    // parçacık konumu
+    ctx.fillStyle = '#FFD27F';
+    ctx.beginPath(); ctx.arc(pkX, cy, 6 + Math.min(8, 1/lam*0.02), 0, 7); ctx.fill();
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText(lam > 0.1 ? 'dalga paketi geniş — dalgamsı' : 'dalga paketi dar — parçacığımsı', 16, 26);
+  }
+},
+{
+  id:'compton', grup:'modern', ico:'🎯', ad:'Compton Saçılması', kat:'Fizik · Modern (üniv)',
+  desc:'Foton elektronu biliardo gibi vurur: enerji aktarır, dalga boyu UZAR. Işığın parçacık kanıtı.',
+  init(){ return { aci:60, lam:0.05, anim:0, foton:null }; },
+  params:[
+    { key:'a', label:'Saçılma açısı θ', min:0, max:180, step:5, get:s=>s.aci, set:(s,v)=>{ s.aci=v; }, fmt:v=>v.toFixed(0)+'°' },
+    { key:'l', label:'Gelen λ', min:0.01, max:0.1, step:0.005, get:s=>s.lam, set:(s,v)=>{ s.lam=v; }, fmt:v=>v.toFixed(3)+' nm' },
+  ],
+  actions:[ { label:'💥 Çarpıştır', fn:s=>{ s.anim = 1; } } ],
+  meter(s){
+    const dlam = 0.00243 * (1 - Math.cos(s.aci*Math.PI/180));   // Compton nm
+    const lamP = s.lam + dlam;
+    return `Δλ = (h/mₑc)(1−cosθ) = <b>${dlam.toFixed(5)} nm</b> · saçılan λ′ = <b>${lamP.toFixed(4)} nm</b><br>θ=180° (geri saçılma) → max enerji kaybı · dalga boyu UZADI = foton enerji kaybetti`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const cx = W2*0.5, cy = H*0.5;
+    if (s.anim > 0) s.anim = Math.max(0, s.anim - 0.012);
+    const ar = s.aci*Math.PI/180;
+    // elektron (durağan, sonra teper)
+    const eVx = s.anim > 0 && s.anim < 1 ? (1-s.anim)*Math.cos(-ar*0.6)*80 : 0;
+    const eVy = s.anim > 0 && s.anim < 1 ? (1-s.anim)*Math.sin(ar*0.6)*80 : 0;
+    // gelen foton (sol→merkez)
+    const gp = s.anim > 0.5 ? (1-s.anim)*2 : 1;
+    ctx.strokeStyle = '#7DD3FC'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    const gx = cx - (1-Math.min(1,(1-s.anim)*2))*200 - 0;
+    for (let d=0; d<60; d++) ctx.lineTo(cx-200+d*3.3*(s.anim>0?Math.min(1,(1-s.anim)*3):1), cy + Math.sin(d*0.8)*5);
+    ctx.stroke();
+    // saçılan foton (uzun dalga = düşük frekans)
+    if (s.anim < 0.6) {
+      const sp = (0.6-s.anim)*3;
+      ctx.strokeStyle = '#F87171'; ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let d=0; d<50; d++) {
+        const dd = d*4*sp;
+        ctx.lineTo(cx + Math.cos(-ar)*dd, cy + Math.sin(-ar)*dd + Math.sin(d*0.5)*6);
+      }
+      ctx.stroke();
+    }
+    // elektron
+    ctx.fillStyle = '#1ee06f';
+    ctx.beginPath(); ctx.arc(cx + eVx, cy + eVy, 9, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('e⁻', cx+eVx, cy+eVy+4); ctx.textAlign = 'left';
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('🔵 gelen foton (kısa λ) → 🔴 saçılan (uzun λ) + 🟢 teperek kaçan elektron', 16, H-16);
+  }
+},
+{
+  id:'karacisim', grup:'modern', ico:'🔥', ad:'Kara Cisim Işıması', kat:'Fizik · Modern (üniv)',
+  desc:'Cismi ısıt: tayfı kayar (Wien), parlaklık fırlar (Stefan-Boltzmann). Yıldız renginin sıcaklık olduğunu gör.',
+  init(){ return { T:3500 }; },
+  params:[
+    { key:'t', label:'Sıcaklık T', min:1000, max:12000, step:100, get:s=>s.T, set:(s,v)=>{ s.T=v; }, fmt:v=>v.toFixed(0)+' K' },
+  ],
+  actions:[],
+  meter(s){
+    const lamMax = 2.898e6 / s.T;   // nm
+    const renk = s.T < 3500 ? 'kızıl (kor)' : s.T < 5000 ? 'turuncu-sarı' : s.T < 6500 ? 'beyaz (Güneş ~5778K)' : s.T < 10000 ? 'mavi-beyaz' : 'mavi (dev yıldız)';
+    const P = (s.T/5778)**4;
+    return `Wien: λ_max = <b>${lamMax.toFixed(0)} nm</b> (${renk}) · güç ∝ T⁴ → Güneş'in <b>${P.toFixed(1)}×</b>'i<br>sıcaklık 2× → parlaklık 16× (Stefan-Boltzmann)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const gx = 50, gy = H*0.82, gw = W2-100, gh = H*0.62;
+    // eksenler
+    ctx.strokeStyle = '#33524a'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx+gw, gy); ctx.moveTo(gx, gy); ctx.lineTo(gx, gy-gh); ctx.stroke();
+    // görünür spektrum şeridi (x ekseninde)
+    for (let i=0; i<gw; i++) {
+      const lam = 200 + i/gw*1800;
+      if (lam >= 380 && lam <= 750) {
+        const t = (lam-380)/370;
+        const col = `hsl(${280 - t*280}, 90%, 55%)`;
+        ctx.fillStyle = col; ctx.globalAlpha = 0.5; ctx.fillRect(gx+i, gy+2, 1, 8);
+      }
+    }
+    ctx.globalAlpha = 1;
+    // Planck eğrisi (birden çok sıcaklık soluk + seçili parlak)
+    const planck = (lam, T) => {
+      const x = 1.439e7/(lam*T);
+      return 1/(Math.pow(lam,5)*(Math.exp(Math.min(50,x))-1)) * 1e18;
+    };
+    const ciz = (T, col, lw) => {
+      let mx = 0;
+      for (let i=0; i<gw; i++) mx = Math.max(mx, planck(200+i/gw*1800, T));
+      ctx.strokeStyle = col; ctx.lineWidth = lw;
+      ctx.beginPath();
+      for (let i=0; i<gw; i++) {
+        const lam = 200 + i/gw*1800;
+        ctx.lineTo(gx+i, gy - Math.min(gh, planck(lam, T)/mx * gh * (T/12000)**0.5 * 3.4));
+      }
+      ctx.stroke();
+    };
+    for (const T of [3000, 4500, 6000, 8000]) ciz(T, 'rgba(100,116,139,0.4)', 1);
+    ciz(s.T, '#1ee06f', 2.5);
+    // seçili cisim küre (renk = sıcaklık)
+    const lamMax = 2.898e6/s.T;
+    const hue = lamMax < 450 ? 240 : lamMax < 600 ? 60 : lamMax < 700 ? 30 : 0;
+    ctx.fillStyle = `hsl(${hue},85%,${Math.min(70, 30+s.T/200)}%)`;
+    ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 30;
+    ctx.beginPath(); ctx.arc(W2-70, 60, 30, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('ışıma yoğunluğu — dalga boyu (mor→kırmızı→kızılötesi)', gx, gy-gh-8);
+  }
+},
+{
+  id:'led', grup:'modern', ico:'💡', ad:'LED Çalışma Prensibi', kat:'Fizik · Yarı İletken (üniv)',
+  desc:'Elektron-boşluk birleşince enerji FOTON olur. Bant aralığı rengi belirler: dar=kızıl, geniş=mavi.',
+  init(){ return { gap:2.0, akim:0.5, t:0, fotonlar:[] }; },
+  params:[
+    { key:'g', label:'Bant aralığı E_g', min:1.4, max:3.1, step:0.05, get:s=>s.gap, set:(s,v)=>{ s.gap=v; }, fmt:v=>v.toFixed(2)+' eV' },
+    { key:'i', label:'Akım', min:0.1, max:1, step:0.05, get:s=>s.akim, set:(s,v)=>{ s.akim=v; }, fmt:v=>'%'+(v*100).toFixed(0) },
+  ],
+  actions:[],
+  meter(s){
+    const lam = 1240/s.gap;
+    const renk = lam > 620 ? 'kırmızı' : lam > 590 ? 'turuncu' : lam > 560 ? 'sarı' : lam > 490 ? 'yeşil' : lam > 450 ? 'mavi' : 'mor';
+    return `foton enerjisi = E_g = ${s.gap.toFixed(2)} eV → λ = 1240/E_g = <b>${lam.toFixed(0)} nm (${renk})</b><br>geniş bant aralığı = yüksek enerji = mavi/mor · ışık şiddeti ∝ akım`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const cx = W2/2, cy = H/2;
+    const lam = 1240/s.gap;
+    const hue = lam > 620 ? 0 : lam > 560 ? 50 : lam > 490 ? 120 : lam > 450 ? 220 : 270;
+    const col = `hsl(${hue},90%,60%)`;
+    // p-n birleşim
+    ctx.fillStyle = 'rgba(245,163,92,0.15)'; ctx.fillRect(cx-160, cy-50, 160, 100);
+    ctx.fillStyle = 'rgba(125,211,252,0.15)'; ctx.fillRect(cx, cy-50, 160, 100);
+    ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 2; ctx.strokeRect(cx-160, cy-50, 320, 100);
+    ctx.fillStyle = '#F5A35C'; ctx.font = '13px sans-serif'; ctx.fillText('P (boşluk)', cx-150, cy-58);
+    ctx.fillStyle = '#7DD3FC'; ctx.fillText('N (elektron)', cx+60, cy-58);
+    // foton üret (birleşim bölgesinde)
+    if (Math.random() < s.akim*0.6) s.fotonlar.push({ x:cx, y:cy + (Math.random()*80-40), a:Math.random()*Math.PI*2, l:0 });
+    for (let i=s.fotonlar.length-1; i>=0; i--) {
+      const f = s.fotonlar[i]; f.l += 4;
+      const fx = f.x + Math.cos(f.a)*f.l, fy = f.y + Math.sin(f.a)*f.l;
+      if (f.l > 220) { s.fotonlar.splice(i,1); continue; }
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.globalAlpha = Math.max(0, 1-f.l/220);
+      ctx.beginPath();
+      for (let d=0; d<10; d++) ctx.lineTo(fx-Math.cos(f.a)*d*2, fy-Math.sin(f.a)*d*2 + Math.sin(d)*2);
+      ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    // birleşim parıltısı
+    ctx.fillStyle = col; ctx.globalAlpha = 0.3 + Math.sin(s.t*8)*0.1*s.akim;
+    ctx.beginPath(); ctx.ellipse(cx, cy, 10, 50, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('e⁻ + boşluk → foton · enerjisi = bant aralığı', 16, H-16);
+  }
+},
+{
+  id:'karadelik', grup:'modern', ico:'🕳️', ad:'Kara Delik — Işık Bükülmesi', kat:'Fizik · Görelilik (üniv)',
+  desc:'Kütle uzay-zamanı büker, ışık düz gidemez. Kütleyi artır: olay ufku büyür, ışık yutulur.',
+  init(){ return { M:1.5, t:0 }; },
+  params:[
+    { key:'m', label:'Kütle (güneş kütlesi)', min:0.3, max:6, step:0.1, get:s=>s.M, set:(s,v)=>{ s.M=v; }, fmt:v=>v.toFixed(1)+' M☉' },
+  ],
+  actions:[],
+  meter(s){
+    const rs = 2.95 * s.M;    // km/M☉ Schwarzschild
+    return `Schwarzschild yarıçapı = 2GM/c² = <b>${rs.toFixed(1)} km</b> (olay ufku)<br>ufka düşen ışık ASLA kaçamaz · kenarda ışık bükülür (kütleçekim merceği) — Einstein 1915`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const cx = W2/2, cy = H/2, rs = s.M*14;
+    // accretion disk parıltısı
+    for (let i=0; i<3; i++) {
+      ctx.strokeStyle = `rgba(245,163,92,${0.3-i*0.08})`; ctx.lineWidth = 6-i*2;
+      ctx.beginPath(); ctx.ellipse(cx, cy, rs*2.2+i*10, (rs*2.2+i*10)*0.35, 0, 0, 7); ctx.stroke();
+    }
+    // olay ufku
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(cx, cy, rs, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#A78BFA'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, rs, 0, 7); ctx.stroke();
+    // ışık ışınları: bazıları bükülür, içe yakın olanlar yutulur
+    for (let i=0; i<11; i++) {
+      const b = (i-5)*22;      // impact parameter
+      ctx.strokeStyle = Math.abs(b) < rs*1.5 ? 'rgba(248,113,113,0.7)' : 'rgba(30,224,111,0.7)';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      let x = -W2/2, y = b, vx = 4, vy = 0;
+      ctx.moveTo(cx+x, cy+y);
+      for (let step=0; step<200; step++) {
+        const dx = -x, dy = -y, r = Math.hypot(dx, dy) + 1;
+        if (r < rs) break;                       // yutuldu
+        const g = 240*s.M/(r*r);
+        vx += g*dx/r; vy += g*dy/r;
+        const m = Math.hypot(vx, vy); vx = vx/m*4; vy = vy/m*4;
+        x += vx; y += vy;
+        if (Math.abs(x) > W2/2 || Math.abs(y) > H/2) break;
+        ctx.lineTo(cx+x, cy+y);
+      }
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('🟢 bükülüp kaçan ışık · 🔴 olay ufkuna yutulan', 16, 26);
+  }
+},
+{
+  id:'hubble', grup:'modern', ico:'🌌', ad:'Evrenin Genişlemesi', kat:'Astrofizik · Big Bang (üniv)',
+  desc:'Uzak galaksiler daha hızlı uzaklaşır (Hubble). Zamanı geri sar → her şey tek noktaya: Big Bang.',
+  init(){ return { H:70, t:1, galak:[] }; },
+  params:[
+    { key:'h', label:'Hubble sabiti H₀', min:50, max:90, step:1, get:s=>s.H, set:(s,v)=>{ s.H=v; }, fmt:v=>v.toFixed(0)+' km/s/Mpc' },
+    { key:'t', label:'Ölçek faktörü a(t)', min:0.05, max:2, step:0.05, get:s=>s.t, set:(s,v)=>{ s.t=v; }, fmt:v=>v.toFixed(2) },
+  ],
+  actions:[],
+  meter(s){
+    const yas = 978 / s.H;   // Gyr yaklaşık 1/H0
+    return `Hubble yasası: v = H₀·d (uzak = hızlı) · evrenin yaşı ≈ 1/H₀ = <b>${yas.toFixed(1)} milyar yıl</b><br>${s.t < 0.15 ? '🔥 a→0: BIG BANG — tüm madde tek noktada!' : 'ölçek faktörünü küçült → geçmişe git'}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const cx = W2/2, cy = H/2;
+    if (!s.galak.length) for (let i=0; i<60; i++) {
+      const a = Math.random()*Math.PI*2, r = 30 + Math.random()*200;
+      s.galak.push({ x:Math.cos(a)*r, y:Math.sin(a)*r, r:r, h:140+Math.random()*120 });
+    }
+    // gözlemci (merkez)
+    ctx.fillStyle = '#FFD27F';
+    ctx.beginPath(); ctx.arc(cx, cy, 7, 0, 7); ctx.fill();
+    for (const g of s.galak) {
+      const px = cx + g.x*s.t, py = cy + g.y*s.t;
+      if (px < 0 || px > W2 || py < 0 || py > H) continue;
+      // kızıla kayma: uzak = kırmızı
+      const z = g.r*s.H/30000;
+      const hue = Math.max(0, g.h - z*200);
+      ctx.fillStyle = `hsl(${hue},70%,${60-s.t*5}%)`;
+      ctx.beginPath(); ctx.arc(px, py, 2.5+g.r/120, 0, 7); ctx.fill();
+      // uzaklaşma hızı oku (uzak galakside uzun)
+      if (g.r > 100) {
+        const v = g.r*s.H/8000;
+        ctx.strokeStyle = 'rgba(248,113,113,0.4)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + g.x/g.r*v, py + g.y/g.r*v); ctx.stroke();
+      }
+    }
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('🟡 biz · uzak galaksiler daha hızlı kaçar + daha kırmızı (redshift)', 16, H-16);
+  }
+},
+{
+  id:'fisyon', grup:'modern', ico:'☢️', ad:'Zincirleme Fisyon', kat:'Fizik · Nükleer (Maarif yeni)',
+  desc:'Bir nötron U-235\'i böler, 2-3 nötron çıkar, onlar başkalarını böler: zincir! Kritik kütle eşiği.',
+  init(){ return { yogunluk:0.5, cekirdek:[], notron:[], t:0, patlama:0 }; },
+  params:[
+    { key:'d', label:'Yakıt yoğunluğu', min:0.2, max:1, step:0.05, get:s=>s.yogunluk, set:(s,v)=>{ s.yogunluk=v; s.cekirdek=[]; }, fmt:v=>'%'+(v*100).toFixed(0) },
+  ],
+  actions:[ { label:'⚡ Nötron ateşle', fn:s=>{
+    s.notron.push({ x:40, y:s.cekirdek.length ? s.cekirdek[0].y : 200, vx:5, vy:0 });
+  } } ],
+  meter(s){
+    const kritik = s.yogunluk >= 0.55;
+    return `aktif zincir: <b>${s.notron.length} nötron</b> · bölünen çekirdek: ${s.patlama}<br>${kritik ? '🔴 KRİTİK ÜSTÜ — zincir katlanarak büyür (reaktör/bomba)' : '🟢 kritik altı — zincir söner (yoğunluğu artır)'}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    if (!s.cekirdek.length) {
+      const n = Math.round(s.yogunluk*70);
+      for (let i=0; i<n; i++) s.cekirdek.push({ x:80+Math.random()*(W2-120), y:50+Math.random()*(H-90), bol:false });
+    }
+    // nötronlar hareket + çarpışma
+    for (let i=s.notron.length-1; i>=0; i--) {
+      const n = s.notron[i];
+      n.x += n.vx; n.y += n.vy;
+      if (n.x<0||n.x>W2||n.y<0||n.y>H) { s.notron.splice(i,1); continue; }
+      for (const c of s.cekirdek) {
+        if (!c.bol && Math.hypot(n.x-c.x, n.y-c.y) < 12) {
+          c.bol = true; s.patlama++;
+          s.notron.splice(i,1);
+          // 2-3 yeni nötron
+          const cikan = 2 + (Math.random() < s.yogunluk ? 1 : 0);
+          for (let k=0; k<cikan; k++) {
+            const a = Math.random()*Math.PI*2;
+            s.notron.push({ x:c.x, y:c.y, vx:Math.cos(a)*5, vy:Math.sin(a)*5 });
+          }
+          break;
+        }
+      }
+    }
+    // çekirdekler
+    for (const c of s.cekirdek) {
+      ctx.fillStyle = c.bol ? 'rgba(248,113,113,0.25)' : '#7DD3FC';
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.bol ? 5 : 8, 0, 7); ctx.fill();
+    }
+    // nötronlar
+    ctx.fillStyle = '#FFD27F';
+    for (const n of s.notron) { ctx.beginPath(); ctx.arc(n.x, n.y, 3.5, 0, 7); ctx.fill(); }
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('🔵 U-235 çekirdek · 🟡 nötron — ateşle, zinciri başlat', 16, 26);
+  }
+},
+// ── KİMYA + BİYOLOJİ + MATEMATİK PAKETİ ─────────────────────
+{
+  id:'lechatelier', grup:'kimya', ico:'⚖️', ad:'Le Chatelier Dengesi', kat:'Kimya · Denge (AYT en çok)',
+  desc:'N₂+3H₂⇌2NH₃ (Haber). Basınç/sıcaklık/derişim değiştir: denge hangi yöne kayar? Sanayi amonyağının sırrı.',
+  init(){ return { P:1, T:400, n2:50, kayma:0, t:0 }; },
+  params:[
+    { key:'p', label:'Basınç', min:0.3, max:3, step:0.1, get:s=>s.P, set:(s,v)=>{ s.P=v; }, fmt:v=>v.toFixed(1)+' atm' },
+    { key:'t', label:'Sıcaklık', min:200, max:700, step:10, get:s=>s.T, set:(s,v)=>{ s.T=v; }, fmt:v=>v.toFixed(0)+'°C' },
+  ],
+  actions:[ { label:'➕ N₂ ekle (sola yük)', fn:s=>{ s.n2 = Math.min(90, s.n2+15); } } ],
+  meter(s){
+    // ileri (ürün NH3): yüksek P + düşük T lehine (ekzotermik + mol azalan)
+    const urun = Math.max(5, Math.min(95, 50 + (s.P-1)*25 - (s.T-400)*0.08 + (s.n2-50)*0.4));
+    let yon;
+    if (s.P > 1.2) yon = '→ basınç ↑: az mollü ürün NH₃ yönüne kayar';
+    else if (s.T > 450) yon = '← sıcaklık ↑: ısı alan (geri, ayrışma) yönüne';
+    else yon = 'denge dengede';
+    return `ürün NH₃ oranı ≈ <b>%${urun.toFixed(0)}</b> · ${yon}<br>Haber: yüksek basınç + düşük sıcaklık + katalizör → maksimum amonyak`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const urun = Math.max(5, Math.min(95, 50 + (s.P-1)*25 - (s.T-400)*0.08 + (s.n2-50)*0.4));
+    s.kayma += ((urun-50)/50 - s.kayma)*0.05;
+    // terazi
+    const cx = W2/2, cy = H*0.32;
+    const ang = -s.kayma*0.3;
+    ctx.strokeStyle = '#46587f'; ctx.lineWidth = 4;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(ang);
+    ctx.beginPath(); ctx.moveTo(-160, 0); ctx.lineTo(160, 0); ctx.stroke();
+    // sol kefe (reaktif N2+H2) sağ (ürün NH3)
+    const kefe = (x, lbl, col, oran) => {
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(x, 50, 30, 0, Math.PI); ctx.fill();
+      ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x-26, 50); ctx.moveTo(x, 0); ctx.lineTo(x+26, 50); ctx.stroke();
+    };
+    ctx.restore();
+    kefe(cx-160*Math.cos(ang), '', 'rgba(125,211,252,0.8)', 100-urun);
+    kefe(cx+160*Math.cos(ang)+0, '', 'rgba(30,224,111,0.8)', urun);
+    ctx.fillStyle = '#7DD3FC'; ctx.font = '13px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('N₂ + 3H₂ (reaktif)', cx-150, cy+110);
+    ctx.fillStyle = '#1ee06f';
+    ctx.fillText('2NH₃ (ürün)', cx+150, cy+110); ctx.textAlign='left';
+    // tanecik kutusu (denge görsel)
+    const bx = 60, by = H*0.62, bw = W2-120, bh = H*0.28;
+    ctx.strokeStyle = '#33524a'; ctx.strokeRect(bx, by, bw, bh);
+    for (let i=0; i<40; i++) {
+      const urunMu = i < urun*0.4;
+      ctx.fillStyle = urunMu ? '#1ee06f' : '#7DD3FC';
+      const px = bx + 20 + ((i*53 + s.t*30*(urunMu?1:-1)) % (bw-40)+bw-40)%(bw-40);
+      const py = by + 20 + (i*37 % (bh-30));
+      ctx.beginPath(); ctx.arc(px, py, urunMu?5:4, 0, 7); ctx.fill();
+    }
+  }
+},
+{
+  id:'phlab', grup:'kimya', ico:'🧪', ad:'pH & Titrasyon', kat:'Kimya · Asit-Baz (TYT+AYT)',
+  desc:'Baz ekle, pH eğrisini çiz: eşdeğerlik noktasında dik sıçrama. İndikatör rengi canlı değişir.',
+  init(){ return { asitMol:0.1, eklenen:0, kuvvetli:true }; },
+  params:[
+    { key:'e', label:'Eklenen baz hacmi', min:0, max:50, step:0.5, get:s=>s.eklenen, set:(s,v)=>{ s.eklenen=v; }, fmt:v=>v.toFixed(1)+' mL' },
+  ],
+  actions:[ { label:() => 'Asit: kuvvetli/zayıf', fn:s=>{ s.kuvvetli = !s.kuvvetli; } } ],
+  meter(s){
+    const ph = SIMS_phCalc(s);
+    const durum = ph < 6.5 ? 'asidik' : ph > 7.5 ? 'bazik' : 'nötr (eşdeğerlik!)';
+    return `eklenen ${s.eklenen.toFixed(1)} mL → pH = <b>${ph.toFixed(2)}</b> (${durum})<br>${s.kuvvetli ? 'kuvvetli asit: eşdeğerlik tam pH 7' : 'zayıf asit: eşdeğerlik pH > 7 (tuz bazik)'} · 25 mL\'de büyük sıçrama`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    // eğri
+    const gx = 50, gy = H*0.86, gw = W2*0.62, gh = H*0.7;
+    ctx.strokeStyle = '#33524a'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx+gw, gy); ctx.moveTo(gx, gy); ctx.lineTo(gx, gy-gh); ctx.stroke();
+    // pH 7 çizgisi
+    ctx.strokeStyle = 'rgba(125,211,252,0.3)'; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(gx, gy-7/14*gh); ctx.lineTo(gx+gw, gy-7/14*gh); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i=0; i<=gw; i++) {
+      const v = i/gw*50;
+      const ph = SIMS_phCalc({ eklenen:v, kuvvetli:s.kuvvetli });
+      ctx.lineTo(gx+i, gy - ph/14*gh);
+    }
+    ctx.stroke();
+    // şu anki nokta
+    const ph = SIMS_phCalc(s);
+    const px = gx + s.eklenen/50*gw, py = gy - ph/14*gh;
+    ctx.fillStyle = '#FFD27F'; ctx.beginPath(); ctx.arc(px, py, 6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('pH (0-14)', gx-10, gy-gh-6); ctx.fillText('baz hacmi (mL)', gx+gw-80, gy+16);
+    // beher: indikatör rengi
+    const bx = W2*0.78, by = H*0.3, bw = 90, bh = H*0.5;
+    const renk = ph < 4 ? '#F87171' : ph < 6 ? '#F5A35C' : ph < 8 ? '#FFD27F' : ph < 10 ? '#34D399' : '#A78BFA';
+    ctx.fillStyle = renk; ctx.globalAlpha = 0.55;
+    ctx.fillRect(bx, by+bh*0.3, bw, bh*0.7); ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#7DD3FC'; ctx.lineWidth = 2; ctx.strokeRect(bx, by, bw, bh);
+    ctx.fillStyle = '#CBD5E1'; ctx.font = '12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('pH '+ph.toFixed(1), bx+bw/2, by+bh+20); ctx.textAlign='left';
+  }
+},
+{
+  id:'cozunurluk', grup:'kimya', ico:'🧂', ad:'Çözünürlük & Doygunluk', kat:'Kimya · Karışımlar (TYT)',
+  desc:'Sıcaklığı artır, daha çok tuz çözünür. Soğut → kristaller çöker. Çözünürlük-sıcaklık eğrisi.',
+  init(){ return { T:40, tuz:30, t:0, kristal:[] }; },
+  params:[
+    { key:'t', label:'Sıcaklık', min:0, max:100, step:1, get:s=>s.T, set:(s,v)=>{ s.T=v; }, fmt:v=>v.toFixed(0)+'°C' },
+    { key:'s', label:'Eklenen tuz', min:0, max:100, step:1, get:s=>s.tuz, set:(s,v)=>{ s.tuz=v; }, fmt:v=>v.toFixed(0)+' g' },
+  ],
+  actions:[],
+  meter(s){
+    const cozunur = 20 + s.T*0.8;     // g/100mL (KNO3 benzeri)
+    const cokel = Math.max(0, s.tuz - cozunur);
+    return `${s.T}°C\'de çözünürlük: <b>${cozunur.toFixed(0)} g</b>/100mL · eklenen ${s.tuz} g<br>${cokel > 0 ? '⚠️ AŞIRI DOYMUŞ — '+cokel.toFixed(0)+' g kristalleşip çöker' : '✓ tamamı çözündü (doymamış)'}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const cozunur = 20 + s.T*0.8, cokel = Math.max(0, s.tuz - cozunur);
+    // eğri
+    const gx = 50, gy = H*0.86, gw = W2*0.55, gh = H*0.68;
+    ctx.strokeStyle = '#33524a'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx+gw, gy); ctx.moveTo(gx, gy); ctx.lineTo(gx, gy-gh); ctx.stroke();
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i=0; i<=gw; i++) { const T = i/gw*100; ctx.lineTo(gx+i, gy - (20+T*0.8)/100*gh); }
+    ctx.stroke();
+    const px = gx + s.T/100*gw, py = gy - cozunur/100*gh;
+    ctx.fillStyle = '#FFD27F'; ctx.beginPath(); ctx.arc(px, py, 6, 0, 7); ctx.fill();
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('çözünürlük (g/100mL)', gx, gy-gh-6); ctx.fillText('sıcaklık', gx+gw-50, gy+16);
+    // beher
+    const bx = W2*0.72, by = H*0.25, bw = 110, bh = H*0.55;
+    ctx.fillStyle = 'rgba(125,211,252,0.2)'; ctx.fillRect(bx, by+bh*0.2, bw, bh*0.8);
+    ctx.strokeStyle = '#7DD3FC'; ctx.lineWidth = 2; ctx.strokeRect(bx, by, bw, bh);
+    // çözünen tanecik (yüzen) + çöken kristal (dipte)
+    const nC = Math.min(40, Math.round(cozunur*0.35));
+    ctx.fillStyle = '#34D399';
+    for (let i=0; i<nC; i++) {
+      const px2 = bx+15 + (i*47 % (bw-30)), py2 = by+bh*0.3 + ((i*31 + s.t*15) % (bh*0.6));
+      ctx.beginPath(); ctx.arc(px2, py2, 3, 0, 7); ctx.fill();
+    }
+    ctx.fillStyle = '#FFD27F';
+    const nK = Math.min(30, Math.round(cokel*0.4));
+    for (let i=0; i<nK; i++) {
+      ctx.fillRect(bx+12 + (i*53 % (bw-24)), by+bh-12 - (i%3)*7, 5, 5);
+    }
+  }
+},
+{
+  id:'enzim', grup:'bio', ico:'🔑', ad:'Enzim Aktivitesi', kat:'Biyoloji · Enzimler (TYT+AYT)',
+  desc:'Sıcaklık/pH değiştir: enzim optimumda zirve yapar, aşırıda DENATÜRE olur (kilit bozulur).',
+  init(){ return { T:37, pH:7, subs:50, t:0, parts:[] }; },
+  params:[
+    { key:'t', label:'Sıcaklık', min:0, max:80, step:1, get:s=>s.T, set:(s,v)=>{ s.T=v; }, fmt:v=>v.toFixed(0)+'°C' },
+    { key:'p', label:'pH', min:1, max:13, step:0.5, get:s=>s.pH, set:(s,v)=>{ s.pH=v; }, fmt:v=>v.toFixed(1) },
+    { key:'s', label:'Substrat derişimi', min:5, max:100, step:5, get:s=>s.subs, set:(s,v)=>{ s.subs=v; }, fmt:v=>'%'+v.toFixed(0) },
+  ],
+  actions:[],
+  meter(s){
+    const fT = s.T <= 40 ? Math.exp(-(((s.T-37)/15)**2)) : Math.max(0, 1 - (s.T-40)/12);
+    const fP = Math.exp(-(((s.pH-7)/2.5)**2));
+    const fS = s.subs/(s.subs+30);
+    const hiz = fT*fP*fS;
+    const denat = s.T > 50 || s.pH < 3 || s.pH > 11;
+    return `aktivite hızı ≈ <b>%${(hiz*100).toFixed(0)}</b> · ${denat ? '🔴 DENATÜRASYON — enzim kalıcı bozuldu!' : 'optimum 37°C, pH 7 civarı'}<br>substrat ↑ → hız artar ama DOYGUNLUĞA ulaşır (tüm aktif bölgeler dolu)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const fT = s.T <= 40 ? Math.exp(-(((s.T-37)/15)**2)) : Math.max(0, 1 - (s.T-40)/12);
+    const fP = Math.exp(-(((s.pH-7)/2.5)**2));
+    const hiz = fT*fP*s.subs/(s.subs+30);
+    const denat = s.T > 50 || s.pH < 3 || s.pH > 11;
+    // sıcaklık eğrisi
+    const gx = 40, gy = H*0.84, gw = W2*0.5, gh = H*0.6;
+    ctx.strokeStyle = '#33524a'; ctx.beginPath(); ctx.moveTo(gx,gy); ctx.lineTo(gx+gw,gy); ctx.moveTo(gx,gy); ctx.lineTo(gx,gy-gh); ctx.stroke();
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i=0; i<=gw; i++) {
+      const T = i/gw*80;
+      const f = (T <= 40 ? Math.exp(-(((T-37)/15)**2)) : Math.max(0,1-(T-40)/12));
+      ctx.lineTo(gx+i, gy - f*gh*0.9);
+    }
+    ctx.stroke();
+    const px = gx + s.T/80*gw;
+    ctx.strokeStyle = '#FFD27F'; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(px,gy); ctx.lineTo(px,gy-gh); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('aktivite – sıcaklık (optimum 37°C)', gx, gy-gh-6);
+    // enzim-substrat kilidi
+    const ex = W2*0.78, ey = H*0.4;
+    ctx.fillStyle = denat ? '#F87171' : '#A78BFA';
+    if (denat) {
+      // bozulmuş şekil
+      ctx.beginPath();
+      for (let a=0; a<7; a+=0.5) ctx.lineTo(ex + Math.cos(a)*(30+Math.sin(a*3+s.t)*12), ey + Math.sin(a)*(30+Math.cos(a*2)*12));
+      ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.arc(ex, ey, 34, 0.6, Math.PI*2-0.6); ctx.lineTo(ex, ey); ctx.fill();
+      // substratlar yaklaşır
+      for (let i=0; i<5; i++) {
+        const a = i/5*Math.PI*2 + s.t*hiz;
+        ctx.fillStyle = '#34D399';
+        ctx.beginPath(); ctx.arc(ex + Math.cos(a)*60, ey + Math.sin(a)*60, 6, 0, 7); ctx.fill();
+        ctx.fillStyle = '#A78BFA';
+      }
+    }
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText(denat ? 'enzim DENATÜRE (kilit bozuk)' : 'enzim sağlam · 🟢 substrat', ex-60, ey+70);
+  }
+},
+{
+  id:'osmoz', grup:'bio', ico:'💧', ad:'Osmoz — Hücre Şişme/Büzülme', kat:'Biyoloji · Madde Geçişi (TYT)',
+  desc:'Dış ortam derişimini değiştir: su nereye akar? Hipotonik→şişer, hipertonik→büzülür (plazmoliz).',
+  init(){ return { dis:0.3, hucre:0.3, t:0 }; },
+  params:[
+    { key:'d', label:'Dış ortam derişimi', min:0, max:1, step:0.05, get:s=>s.dis, set:(s,v)=>{ s.dis=v; }, fmt:v=>'%'+(v*100).toFixed(0)+' tuz' },
+  ],
+  actions:[],
+  meter(s){
+    const tip = s.dis < s.hucre-0.03 ? 'HİPOTONİK (dış seyreltik)' : s.dis > s.hucre+0.03 ? 'HİPERTONİK (dış yoğun)' : 'İZOTONİK (denge)';
+    const yon = s.dis < s.hucre ? 'su HÜCREYE girer → şişer (patlayabilir!)' : s.dis > s.hucre ? 'su DIŞARI çıkar → büzülür (plazmoliz)' : 'net su akışı yok';
+    return `<b>${tip}</b> · ${yon}<br>su daima DÜŞÜK derişimden YÜKSEĞE akar (yarı geçirgen zardan)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    s.hucre += ((0.3) - s.hucre)*0;   // hücre derişimi sabit referans
+    const cx = W2/2, cy = H/2;
+    // dış ortam rengi (yoğunluk)
+    ctx.fillStyle = `rgba(125,211,252,${0.05+s.dis*0.18})`;
+    ctx.fillRect(0, 0, W2, H);
+    // hücre boyutu: hipotonik şişer
+    const fark = s.hucre - s.dis;       // + → şişer
+    const R = 70 * (1 + fark*0.9);
+    ctx.fillStyle = 'rgba(245,163,92,0.2)';
+    ctx.strokeStyle = '#F5A35C'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill(); ctx.stroke();
+    // çekirdek
+    ctx.fillStyle = 'rgba(167,139,250,0.5)';
+    ctx.beginPath(); ctx.arc(cx, cy, R*0.3, 0, 7); ctx.fill();
+    // su akış okları
+    const giris = fark > 0;
+    ctx.strokeStyle = giris ? '#1ee06f' : '#F87171'; ctx.lineWidth = 2;
+    for (let i=0; i<8; i++) {
+      const a = i/8*Math.PI*2 + s.t*0.5;
+      const r1 = giris ? R+40 : R-10, r2 = giris ? R+8 : R+42;
+      ctx.beginPath();
+      ctx.moveTo(cx+Math.cos(a)*r1, cy+Math.sin(a)*r1);
+      ctx.lineTo(cx+Math.cos(a)*r2, cy+Math.sin(a)*r2);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText(giris ? '🟢 su içeri akıyor (şişme)' : '🔴 su dışarı akıyor (büzülme)', 16, H-16);
+  }
+},
+{
+  id:'fourier', grup:'mat', ico:'📡', ad:'Fourier — Dalga Toplama', kat:'Matematik · Seriler (üniv)',
+  desc:'Sinüsleri topla, kare/testere dalga oluştur. Her karmaşık sinyal = basit dalgaların toplamı.',
+  init(){ return { n:1, tip:0, t:0 }; },
+  params:[
+    { key:'n', label:'Harmonik sayısı', min:1, max:20, step:1, get:s=>s.n, set:(s,v)=>{ s.n=Math.round(v); }, fmt:v=>v.toFixed(0)+' terim' },
+  ],
+  actions:[ { label:() => ['🔁 Kare dalga','🔁 Testere','🔁 Üçgen'][s.tip], fn:s=>{ s.tip=(s.tip+1)%3; } } ],
+  meter(s){
+    const ad = ['kare dalga: Σ sin((2k-1)x)/(2k-1)', 'testere: Σ sin(kx)/k', 'üçgen: Σ cos((2k-1)x)/(2k-1)²'][s.tip];
+    return `${s.n} sinüs toplandı → <b>${['kare','testere','üçgen'][s.tip]} dalga</b> oluşuyor<br>${ad} · terim ↑ → köşeler keskinleşir (sonsuzda tam)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/120;
+    const mx = 40, mw = W2-80, cy = H*0.42, A = H*0.25;
+    // bileşen sinüsler (soluk)
+    for (let k=1; k<=s.n; k++) {
+      let coef, freq;
+      if (s.tip === 0) { if (k%2===0) continue; coef = 1/k; freq = k; }
+      else if (s.tip === 1) { coef = 1/k * (k%2?1:-1); freq = k; }
+      else { if (k%2===0) continue; coef = 1/(k*k); freq = k; }
+      ctx.strokeStyle = `rgba(167,139,250,${0.15})`; ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let i=0; i<=mw; i++) ctx.lineTo(mx+i, cy - A*coef*Math.sin(freq*(i/mw*Math.PI*4) + s.t*3));
+      ctx.stroke();
+    }
+    // toplam (yeşil kalın)
+    ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i=0; i<=mw; i++) {
+      let y = 0;
+      for (let k=1; k<=s.n; k++) {
+        const x = i/mw*Math.PI*4 + s.t*3;
+        if (s.tip === 0) { if (k%2) y += Math.sin(k*x)/k; }
+        else if (s.tip === 1) { y += Math.sin(k*x)/k*(k%2?1:-1); }
+        else { if (k%2) y += Math.cos(k*x)/(k*k); }
+      }
+      const norm = s.tip===0 ? 4/Math.PI : s.tip===1 ? 2/Math.PI : 8/(Math.PI*Math.PI);
+      ctx.lineTo(mx+i, cy - A*y*norm);
+    }
+    ctx.stroke();
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('mor: bileşen sinüsler · yeşil: TOPLAMLARI', 16, 26);
+  }
+},
+{
+  id:'fraktal', grup:'mat', ico:'🌿', ad:'Fraktal — Sonsuz Detay', kat:'Matematik · Özyineleme',
+  desc:'Bir kural, sonsuz karmaşıklık: Koch kar tanesi her adımda 4/3 uzar. Doğanın geometrisi.',
+  init(){ return { derinlik:2, tip:0 }; },
+  params:[
+    { key:'d', label:'Özyineleme derinliği', min:0, max:6, step:1, get:s=>s.derinlik, set:(s,v)=>{ s.derinlik=Math.round(v); }, fmt:v=>v.toFixed(0)+'. seviye' },
+  ],
+  actions:[ { label:() => ['❄️ Koch','🌳 Ağaç'][s.tip], fn:s=>{ s.tip=(s.tip+1)%2; } } ],
+  meter(s){
+    if (s.tip === 0) {
+      const kenar = 3 * Math.pow(4, s.derinlik);
+      const uzunluk = Math.pow(4/3, s.derinlik);
+      return `Koch: <b>${kenar} kenar</b> · çevre Başlangıcın <b>${uzunluk.toFixed(2)}×</b>'i<br>sonsuz çevre, sonlu alan! · her adım ×4/3 — fraktal boyut 1.26`;
+    }
+    return `${s.derinlik} dallanma · 2^${s.derinlik} = <b>${Math.pow(2,s.derinlik)} dal ucu</b><br>tek kural (ikiye böl, döndür) → ağaç/akciğer/nehir deltası geometrisi`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    if (s.tip === 0) {
+      // Koch kar tanesi
+      const cx = W2/2, cy = H/2, R = Math.min(W2,H)*0.32;
+      let pts = [];
+      for (let i=0; i<3; i++) { const a = i/3*Math.PI*2 - Math.PI/2; pts.push({ x:cx+Math.cos(a)*R, y:cy+Math.sin(a)*R }); }
+      pts.push(pts[0]);
+      for (let d=0; d<s.derinlik; d++) {
+        const np = [];
+        for (let i=0; i<pts.length-1; i++) {
+          const a = pts[i], b = pts[i+1];
+          const dx = (b.x-a.x)/3, dy = (b.y-a.y)/3;
+          const p1 = { x:a.x+dx, y:a.y+dy }, p2 = { x:a.x+2*dx, y:a.y+2*dy };
+          const ang = Math.atan2(dy, dx) - Math.PI/3;
+          const len = Math.hypot(dx, dy);
+          const peak = { x:p1.x+Math.cos(ang)*len, y:p1.y+Math.sin(ang)*len };
+          np.push(a, p1, peak, p2);
+        }
+        np.push(pts[pts.length-1]);
+        pts = np;
+      }
+      ctx.strokeStyle = '#1ee06f'; ctx.lineWidth = 1.5;
+      ctx.fillStyle = 'rgba(30,224,111,0.08)';
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+      for (const p of pts) ctx.lineTo(p.x, p.y);
+      ctx.fill(); ctx.stroke();
+    } else {
+      // özyinelemeli ağaç
+      const dal = (x, y, ang, len, d) => {
+        if (d > s.derinlik) return;
+        const x2 = x + Math.cos(ang)*len, y2 = y + Math.sin(ang)*len;
+        ctx.strokeStyle = `hsl(${110 - d*12}, 60%, ${40+d*6}%)`;
+        ctx.lineWidth = Math.max(1, (s.derinlik-d+1)*1.4);
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x2, y2); ctx.stroke();
+        dal(x2, y2, ang-0.5, len*0.72, d+1);
+        dal(x2, y2, ang+0.5, len*0.72, d+1);
+      };
+      dal(W2/2, H-30, -Math.PI/2, H*0.22, 0);
+    }
+  }
+},
+{
+  id:'logistik', grup:'mat', ico:'🦋', ad:'Kaos — Lojistik Harita', kat:'Matematik · Dinamik Sistem (üniv)',
+  desc:'Basit denklem xₙ₊₁=rxₙ(1−xₙ): r artınca düzen → ikiye katlanma → KAOS. Kelebek etkisinin matematiği.',
+  init(){ return { r:2.8, x:[], t:0 }; },
+  params:[
+    { key:'r', label:'Büyüme parametresi r', min:1, max:4, step:0.005, get:s=>s.r, set:(s,v)=>{ s.r=v; }, fmt:v=>v.toFixed(3) },
+  ],
+  actions:[],
+  meter(s){
+    const d = s.r < 3 ? 'tek sabit nokta (düzen)' : s.r < 3.45 ? '2 değer arası salınım' : s.r < 3.57 ? '4-8-16 katlanma' : 'KAOS (öngörülemez)';
+    return `r = ${s.r.toFixed(3)} → <b>${d}</b><br>r=3.0 ilk çatallanma · r≈3.57 kaos eşiği · küçük r farkı → tamamen farklı kader (kelebek etkisi)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    // çatallanma diyagramı (bifurcation)
+    const mx = 40, my = H-40, mw = W2-80, mh = H-80;
+    ctx.fillStyle = 'rgba(30,224,111,0.7)';
+    for (let i=0; i<mw; i+=1) {
+      const r = 1 + i/mw*3;
+      let x = 0.5;
+      for (let k=0; k<60; k++) x = r*x*(1-x);          // geçici atla
+      for (let k=0; k<40; k++) { x = r*x*(1-x); ctx.fillRect(mx+i, my - x*mh, 1, 1); }
+    }
+    // seçili r çizgisi
+    const rx = mx + (s.r-1)/3*mw;
+    ctx.strokeStyle = '#FFD27F'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(rx, my); ctx.lineTo(rx, my-mh); ctx.stroke();
+    ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+    ctx.fillText('çatallanma diyagramı · x = popülasyon dengesi, r = büyüme', mx, 24);
+    ctx.fillText('r →', mx+mw-30, my+18);
+  }
+},
 ];
 
+const SIM_GRUPLAR = [
+  { id:'hepsi',   ad:'🌐 Tümü' },
+  { id:'mekanik', ad:'🎯 Mekanik' },
+  { id:'em',      ad:'⚡ Elektrik-Manyetizma' },
+  { id:'dalga',   ad:'🌊 Dalga-Optik' },
+  { id:'modern',  ad:'⚛️ Modern-Kuantum' },
+  { id:'kimya',   ad:'🧪 Kimya' },
+  { id:'bio',     ad:'🌱 Biyoloji' },
+  { id:'mat',     ad:'📐 Matematik' },
+];
+let simFiltre = 'hepsi';
 function buildSimMenu() {
-  simMenuEl.innerHTML = SIMS.map((s, i) =>
-    `<div class="simCard" data-i="${i}"><div class="ico">${s.ico}</div><div class="kat">${s.kat}</div><h3>${s.ad}</h3><p>${s.desc}</p></div>`).join('');
+  const filtreli = SIMS.map((s, i) => ({ s, i })).filter(o => simFiltre === 'hepsi' || o.s.grup === simFiltre);
+  const chips = SIM_GRUPLAR.map(g => {
+    const say = g.id === 'hepsi' ? SIMS.length : SIMS.filter(s => s.grup === g.id).length;
+    if (g.id !== 'hepsi' && say === 0) return '';
+    return `<button class="simChip${simFiltre === g.id ? ' on' : ''}" data-g="${g.id}">${g.ad} <b>${say}</b></button>`;
+  }).join('');
+  simMenuEl.innerHTML = `<div id="simFiltreBar">${chips}</div>` +
+    filtreli.map(o =>
+      `<div class="simCard" data-i="${o.i}"><div class="ico">${o.s.ico}</div><div class="kat">${o.s.kat}</div><h3>${o.s.ad}</h3><p>${o.s.desc}</p></div>`).join('');
+  simMenuEl.querySelectorAll('.simChip').forEach(c => { c.onclick = () => { simFiltre = c.dataset.g; buildSimMenu(); }; });
   simMenuEl.querySelectorAll('.simCard').forEach(c => { c.onclick = () => startSim(SIMS[+c.dataset.i]); });
 }
 function buildSimCtl(sim) {

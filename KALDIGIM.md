@@ -1,6 +1,21 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-O (Fable 5): FERMATRIX v5 — araştırma-güdümlü genişleme: 3 ajan (Maarif+yanılgılar+50 fikir), 39 istasyon, periyodik tablo 118 TAM, geometri/optik/mevsimler/kurucu/sinir — CANLI**
+> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-P (Fable 5): FERMATRIX SİMÜLATÖR HAVUZU 6→35 — atari terminaline 29 yeni tam ekran bilim sim (Neo arşiv esinli: tünelleme/Compton/karacisim/karadelik/LED/Hubble), 7 kategori filtreli menü — CANLI**
+>
+> ## 🕹️ 11 Haz (25.58-P) — SİMÜLATÖR HAVUZU PATLAMASI (Neo: "atari içine 30-40 ayrı çalışma, oPhysics/PhET seviyesi, arşivimden esinlen")
+> **Simülatör Terminali (atari) 6 → 35 tam ekran sim · 7 kategori filtreli menü (sayaçlı chip'ler) · Neo'nun render arşivi (user_archive, 53 kayıt) incelendi → kuantum/astro favorileri sim'e dönüştü.**
+> - **Mekanik (5):** Atış PRO (vakum vs hava+rüzgâr ikiz iz) · Atwood (a=1.96 ✓) · Çembersel+BIRAK (yanılgı kıran: teğet vs radyal tahmin) · 1B Çarpışma (Σp+KE çubuk) · Yörünge Mimarı (Kepler-2 eşit alan).
+> - **Elektrik-Manyetizma (4):** Coulomb alan heykeli (canlı alan çizgileri) · Lorentz helis · RLC rezonans (radyo seçme fiziği) · Transformatör (sarım oranı).
+> - **Dalga-Optik (6):** +Snell kırılma & tam yansıma (19.5° ✓, fiber optik) · Telde duran dalga · Ses vuru (beat) · (mevcut optik/doppler/girisim).
+> - **Modern-Kuantum (12) — Neo arşiv esinli:** Kuantum Tünelleme (üstel T ✓) · De Broglie · Compton saçılması · Kara Cisim Işıması (Güneş 502nm ✓ Wien) · LED (bant aralığı→renk, 2eV→620nm ✓) · Kara Delik ışık bükülmesi (Schwarzschild, accretion disk) · Hubble/Big Bang (redshift) · Zincirleme Fisyon (kritik kütle) · (mevcut fotoelektrik/bohr/olcek).
+> - **Kimya (3):** Le Chatelier (Haber prosesi terazi) · pH & Titrasyon (gerçek eğri matematiği, kuvvetli/zayıf) · Çözünürlük-doygunluk.
+> - **Biyoloji (2):** Enzim aktivitesi (denatürasyon) · Osmoz (hipo/hiper/izotonik).
+> - **Matematik (3):** Fourier dalga toplama · Fraktal (Koch+ağaç) · Kaos/Lojistik harita (çatallanma diyagramı).
+> - **Altyapı:** SIMS[] her sim'e `grup` etiketi · `SIM_GRUPLAR` + filtre chip'leri (buildSimMenu) · global `SIMS_phCalc` helper · `__fz.sim.test(id,mut)` ile rAF'sız matematik doğrulama.
+> - **Fix-loop:** `-X**2` JS sözdizimi hatası (unary minus + üs belirsizliği) 6 yerde yakalandı → `-(X**2)` (node --check ile doğrulandı, yoksa tüm modül yüklenmiyordu). Görsel: kara delik ışık bükülmesi + Le Chatelier terazi mobilde A++ doğrulandı.
+> - **AÇIK:** Neo bazen konu söyleyip sim ürettirecek → beğenirse SIMS[]'e eklenecek (kalıcı iş akışı, [[fermatrix-icerik-surucusu]]).
+>
+> ## 🧠 11 Haz (25.58-O) — FERMATRIX v5: ARAŞTIRMA-GÜDÜMLÜ GENİŞLEME (3 ajan, 39 istasyon, periyodik 118 TAM)
 >
 > ## 🧠 11 Haz (25.58-O) — ARAŞTIRMA-GÜDÜMLÜ GENİŞLEME (Neo: "benim hayal gücümle sınırlı kalma — müfredatı aç, literatür tara, 50 fikir üret, kendi sürücün ol")
 > **Süreç: 3 paralel araştırma ajanı → 33→39 istasyon + 118'lik periyodik tablo + EVREN_TASARIM v2 (fikir havuzu).**
