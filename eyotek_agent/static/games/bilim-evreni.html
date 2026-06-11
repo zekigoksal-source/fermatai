@@ -244,9 +244,9 @@ sun.position.set(26, 38, 14);
 if (Q.shadow) {
   sun.castShadow = true;
   sun.shadow.mapSize.set(Q.shadowSize, Q.shadowSize);
-  sun.shadow.camera.left = -42; sun.shadow.camera.right = 42;
-  sun.shadow.camera.top = 42;   sun.shadow.camera.bottom = -42;
-  sun.shadow.camera.far = 120;
+  sun.shadow.camera.left = -52; sun.shadow.camera.right = 52;
+  sun.shadow.camera.top = 52;   sun.shadow.camera.bottom = -52;
+  sun.shadow.camera.far = 140;
   sun.shadow.bias = -0.0004;
 }
 scene.add(sun);
@@ -450,10 +450,10 @@ function makeLabel(text, color='#C76F3E', w=256, fs=26) {
 // ════════════════ Bölge (oda) sistemi ════════════════
 const ZONES = {
   hub:   { name:'Nexus',           color:0x1ee06f, cx:0,    cz:0,    half:26 },
-  fizik: { name:'Fizik Odası',     color:0xC76F3E, cx:400,  cz:0,    half:34 },
-  mat:   { name:'Matematik Odası', color:0xA78BFA, cx:-400, cz:0,    half:30 },
-  kimya: { name:'Kimya Odası',     color:0x34D399, cx:0,    cz:400,  half:30 },
-  bio:   { name:'Biyoloji Odası',  color:0xF87171, cx:0,    cz:-400, half:26 },
+  fizik: { name:'Fizik Odası',     color:0xC76F3E, cx:400,  cz:0,    half:46 },
+  mat:   { name:'Matematik Odası', color:0xA78BFA, cx:-400, cz:0,    half:38 },
+  kimya: { name:'Kimya Odası',     color:0x34D399, cx:0,    cz:400,  half:38 },
+  bio:   { name:'Biyoloji Odası',  color:0xF87171, cx:0,    cz:-400, half:40 },
 };
 let currentZone = 'hub';
 const zoneNameEl = document.getElementById('zoneName');
@@ -624,14 +624,14 @@ tickers.push(() => {
 });
 
 // portal çiftleri: hub ↔ odalar
-addPortal({ x:20,  z:0,   ry:-Math.PI/2, color:0xC76F3E, label:'⚛️ Fizik',     destZone:'fizik', destSpawn:{ x:376,  z:0,    yaw:-Math.PI/2 } });
-addPortal({ x:372, z:0,   ry: Math.PI/2, color:0xC76F3E, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:16,   z:0,    yaw: Math.PI/2 } });
-addPortal({ x:-20, z:0,   ry: Math.PI/2, color:0xA78BFA, label:'📐 Matematik', destZone:'mat',   destSpawn:{ x:-380, z:0,    yaw: Math.PI/2 } });
-addPortal({ x:-376,z:0,   ry:-Math.PI/2, color:0xA78BFA, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:-16,  z:0,    yaw:-Math.PI/2 } });
-addPortal({ x:0,   z:20,  ry: Math.PI,   color:0x34D399, label:'🧪 Kimya',     destZone:'kimya', destSpawn:{ x:0,    z:380,  yaw: Math.PI } });
-addPortal({ x:0,   z:376, ry: 0,         color:0x34D399, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:0,    z:16,   yaw: 0 } });
-addPortal({ x:0,   z:-20, ry: 0,         color:0xF87171, label:'🌱 Biyoloji',  destZone:'bio',   destSpawn:{ x:0,    z:-382, yaw: 0 } });
-addPortal({ x:0,   z:-378,ry: Math.PI,   color:0xF87171, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:0,    z:-16,  yaw: Math.PI } });
+addPortal({ x:20,  z:0,   ry:-Math.PI/2, color:0xC76F3E, label:'⚛️ Fizik',     destZone:'fizik', destSpawn:{ x:364,  z:0,    yaw:-Math.PI/2 } });
+addPortal({ x:360, z:0,   ry: Math.PI/2, color:0xC76F3E, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:16,   z:0,    yaw: Math.PI/2 } });
+addPortal({ x:-20, z:0,   ry: Math.PI/2, color:0xA78BFA, label:'📐 Matematik', destZone:'mat',   destSpawn:{ x:-372, z:0,    yaw: Math.PI/2 } });
+addPortal({ x:-368,z:0,   ry:-Math.PI/2, color:0xA78BFA, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:-16,  z:0,    yaw:-Math.PI/2 } });
+addPortal({ x:0,   z:20,  ry: Math.PI,   color:0x34D399, label:'🧪 Kimya',     destZone:'kimya', destSpawn:{ x:0,    z:372,  yaw: Math.PI } });
+addPortal({ x:0,   z:368, ry: 0,         color:0x34D399, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:0,    z:16,   yaw: 0 } });
+addPortal({ x:0,   z:-20, ry: 0,         color:0xF87171, label:'🌱 Biyoloji',  destZone:'bio',   destSpawn:{ x:0,    z:-370, yaw: 0 } });
+addPortal({ x:0,   z:-366,ry: Math.PI,   color:0xF87171, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:0,    z:-16,  yaw: Math.PI } });
 
 // hub: portallara giden yol noktaları
 {
@@ -829,7 +829,7 @@ const FZ = ZONES.fizik;
 
 // — 1. Fırlatma Rampası —
 {
-  const LX = FZ.cx-16, LZ = 18, MUZZLE_H = 1.4, BARREL = 2.2;
+  const LX = FZ.cx-14, LZ = 30, MUZZLE_H = 1.4, BARREL = 2.2;
   let angle = 45, speed = 14, mass = 0.8, barrel = null, trailLine = null, lastResult = '';
   const shots = [];
   let shot = null;
@@ -909,7 +909,7 @@ const FZ = ZONES.fizik;
 
 // — 2. Sarkaç Laboratuvarı —
 {
-  const PX = FZ.cx+22, PZ = -6, TOP = 5.6;
+  const PX = FZ.cx+36, PZ = -6, TOP = 5.6;
   let pullDeg = 32;
   const arms = [
     { L:2.0, ox:-1.7, oz:-0.5, color:0xA78BFA, fixed:true,  bob:null, rod:null, joint:null, anchorB:null, lastSign:0, lastCross:0, halves:[] },
@@ -999,7 +999,7 @@ const FZ = ZONES.fizik;
 
 // — 3. Eğik Düzlem —
 {
-  const IX = FZ.cx+14, IZ = -22;
+  const IX = FZ.cx+10, IZ = -34;
   const RAMP_HL = 3.5;
   let thDeg = 25, mu = 0.02;
   let rampBody = null, rampMesh = null, ballRec = null, boxRec = null, race = null, raceResult = '';
@@ -1092,7 +1092,7 @@ const FZ = ZONES.fizik;
 
 // — 4. Çarpışma Laboratuvarı —
 {
-  const CX = FZ.cx-2, CZ = -10, LANE = 6;
+  const CX = FZ.cx-30, CZ = -30, LANE = 6;
   let recA = null, recB = null, m1 = 0.6, m2 = 0.6, rest = 0.92, v0 = 6;
   const VOL = 4/3*Math.PI*0.4**3;
   function remakeColliders() {
@@ -1177,7 +1177,7 @@ const FZ = ZONES.fizik;
 
 // — 5. Yay-Kütle (Basit Harmonik Hareket) —
 {
-  const SX = FZ.cx+4, SZ = 16, TOPY = 5.2, RESTLEN = 2.2;
+  const SX = FZ.cx+2, SZ = 32, TOPY = 5.2, RESTLEN = 2.2;
   let k = 15, sm = 1.2, massRec = null, springMesh = null;
   let lastSign = 0, lastCross = 0, halves = [];
   const BOXVOL = 0.5*0.5*0.5;
@@ -1256,7 +1256,7 @@ const FZ = ZONES.fizik;
 
 // — 6. Manyetik Alan Sütunu —
 {
-  const MX = FZ.cx-18, MZ = -18;
+  const MX = FZ.cx+18, MZ = 12;
   let dir = 1, current = 2, rings = null;
   const st = addStation({
     id:'manyetik', zone:'fizik',
@@ -1321,7 +1321,7 @@ const FZ = ZONES.fizik;
   }
   const st = addStation({
     id:'gezegen', zone:'fizik',
-    x:FZ.cx+12, z:26, short:'🪐 Gezegen Modu', color:'#FFD27F', radius:6, labelY:5.8,
+    x:FZ.cx+18, z:32, short:'🪐 Gezegen Modu', color:'#FFD27F', radius:6, labelY:5.8,
     title:'🪐 Gezegen Modu — Yerçekimi Laboratuvarı',
     formula:'W = m·g · h(zıplama) = v²/2g · T(sarkaç) ∝ 1/√g',
     desc:'NASA verisiyle gezegeni seç — <span class="key">tüm Fizik Odası o gezegene taşınır</span>: Ay\'da zıpla, Mars\'ta sarkacı bırak, Jüpiter\'de top fırlat. Kütle hep aynı; <span class="key">ağırlık</span> değişir. (Odadan çıkınca Dünya\'ya döner.)',
@@ -1337,7 +1337,7 @@ const FZ = ZONES.fizik;
       const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.1, 1.0, 16),
         new THREE.MeshStandardMaterial({ color:0x223052, roughness:0.3, metalness:0.85 }));
       ped.position.y = 0.5; if (Q.shadow) ped.castShadow = true; g.add(ped);
-      const pb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(FZ.cx+12, 0.5, 26));
+      const pb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(FZ.cx+18, 0.5, 32));
       world.createCollider(RAPIER.ColliderDesc.cylinder(0.5, 1.0), pb);
       planetMesh = new THREE.Mesh(new THREE.SphereGeometry(0.85, 24, 24),
         new THREE.MeshStandardMaterial({ color:0x4A90D9, emissive:0x4A90D9, emissiveIntensity:0.35, roughness:0.55, metalness:0.2 }));
@@ -1353,7 +1353,7 @@ const FZ = ZONES.fizik;
 
 // — 8. Kepler Gezegen Sistemi (gerçek yörünge verisi) —
 {
-  const KX = FZ.cx+24, KZ = 8;
+  const KX = FZ.cx+36, KZ = 14;
   const KP = [
     { ad:'Merkür',  a:0.387, T:0.2408, renk:0x9C9C9C, r:0.08 },
     { ad:'Venüs',   a:0.723, T:0.6152, renk:0xE8C26F, r:0.13 },
@@ -1409,7 +1409,7 @@ const FZ = ZONES.fizik;
 
 // — 9. Arşimet Havuzu (kaldırma kuvveti) —
 {
-  const AX = FZ.cx-6, AZ = 28, WL = 1.7, TH2 = 1.5;   // su seviyesi + tank yarı-genişliği
+  const AX = FZ.cx+32, AZ = 30, WL = 1.7, TH2 = 1.5;   // su seviyesi + tank yarı-genişliği
   let rho = 0.6, cubeRec = null, subAvg = 0;
   const CV = 0.5*0.5*0.5;
   function remakeCube() {
@@ -1483,7 +1483,7 @@ const FZ = ZONES.fizik;
 
 // — 10. Dalga Tankı (enine dalga) —
 {
-  const WX = FZ.cx-26, WZ = -2, NB = 44, SPAN = 8, BASE = 2.2;
+  const WX = FZ.cx-28, WZ = -12, NB = 44, SPAN = 8, BASE = 2.2;
   let amp = 0.45, freq = 0.8, lam = 3;
   let beads = null, marker = null;
   const dummyW = new THREE.Object3D();
@@ -1534,7 +1534,7 @@ const FZ = ZONES.fizik;
 
 // — 11. Enerji Parkı (yarım boru — enerji korunumu) —
 {
-  const EX = FZ.cx-2, EZ = -30, HW = 6, H = 3.8, RB = 0.35;
+  const EX = FZ.cx-12, EZ = -38, HW = 6, H = 3.8, RB = 0.35;
   let fr = 0.05, ballE = null, E0 = 0;
   const fy = u => H*(u/HW)*(u/HW);                       // parabolik pist profili
   function remakeBall() {
@@ -1622,7 +1622,7 @@ const FZ = ZONES.fizik;
 
 // — 12. DC Devre Masası (seri/paralel, akan elektronlar) —
 {
-  const VX = FZ.cx-26, VZ = 12, TY = 1.04;     // masa üstü yüksekliği
+  const VX = FZ.cx-28, VZ = 18, TY = 1.04;     // masa üstü yüksekliği
   let V = 9, R1 = 6, R2 = 6, seri = true;
   const RB = 4;                                 // ampul direnci
   let bulbMat = null, seriGrp = null, parGrp = null;
@@ -1754,7 +1754,7 @@ const FZ = ZONES.fizik;
 
 // — 13. Faraday Alternatörü (indüksiyon, AC üretimi) —
 {
-  const FAX = FZ.cx+26, FAZ2 = -18;
+  const FAX = FZ.cx+32, FAZ2 = -26;
   let omega = 6, sarim = 80, Bf = 0.5, theta = 0;
   const AREA = 0.05;
   let coil = null, bulbM = null, traceLine = null;
@@ -1762,7 +1762,7 @@ const FZ = ZONES.fizik;
   function emfAnlik() { return sarim * Bf * AREA * omega * Math.sin(theta); }
   tickers.push(() => {
     theta += omega * STEP;
-    if (coil) coil.rotation.z = theta;
+    if (coil) coil.rotation.x = theta;
     const e = emfAnlik();
     if (bulbM) bulbM.emissiveIntensity = Math.min(2.6, Math.abs(e)*0.06);
     trace.push(e);
@@ -1839,12 +1839,226 @@ const FZ = ZONES.fizik;
   st._api = { set:(w,n,b)=>{ if(w!=null)omega=w; if(n!=null)sarim=n; if(b!=null)Bf=b; }, emf:() => +emfAnlik().toFixed(2), emax:() => +(sarim*Bf*AREA*omega).toFixed(2) };
 }
 
+// — 14. Parçacık Hızlandırıcı (üniversite düzeyi — çarpışma olayları) —
+{
+  const HX = FZ.cx+2, HZ = 2, RING = 8, RY = 1.7;
+  let enerjiTeV = 7, kol = false, a1 = 0.3, sonN = 0;
+  let beam1 = null, beam2 = null, fragMesh = null;
+  const frags = [];
+  const dummyH = new THREE.Object3D();
+  const detP = { x:HX+RING, y:RY, z:HZ };           // dedektör/çarpışma noktası
+  function carpistir() { kol = true; }
+  function olayUret() {
+    frags.length = 0;
+    sonN = Math.round(26 + enerjiTeV*7 + Math.random()*8);
+    for (let i=0; i<sonN; i++) {
+      // izotropik + iki zıt jet (gerçek olaylardaki gibi demet ekseni boyunca boost)
+      let dx = (Math.random()*2-1), dy = (Math.random()*2-1), dz = (Math.random()*2-1);
+      const L = Math.hypot(dx,dy,dz) || 1; dx/=L; dy/=L; dz/=L;
+      if (Math.random() < 0.45) { dz += (Math.random() < 0.5 ? 2.2 : -2.2); const L2 = Math.hypot(dx,dy,dz); dx/=L2; dy/=L2; dz/=L2; }
+      frags.push({ x:detP.x, y:detP.y, z:detP.z,
+        vx:dx*(2+Math.random()*3), vy:dy*(2+Math.random()*3), vz:dz*(2+Math.random()*3),
+        q:(Math.random()<0.5?1:-1)*(0.6+Math.random()*1.4), life:1.4+Math.random()*1.6 });
+    }
+    spawnBurst(detP.x, detP.y, detP.z, 0x7DD3FC);
+  }
+  tickers.push(() => {
+    // demetler: zıt yönlü dolaşır
+    a1 += (0.8 + enerjiTeV*0.06) * STEP;
+    if (beam1) {
+      beam1.position.set(HX + Math.cos(a1)*RING, RY, HZ + Math.sin(a1)*RING);
+      beam2.position.set(HX + Math.cos(-a1)*RING, RY, HZ + Math.sin(-a1)*RING);
+      // iki demet dedektör noktasında (açı 0) buluşunca olay
+      const w1 = ((a1 % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+      if (kol && (w1 < 0.05 || w1 > Math.PI*2 - 0.05)) { kol = false; olayUret(); }
+    }
+    // parçacık izleri: manyetik alanda kıvrılır (q'ya göre zıt)
+    for (let i=frags.length-1; i>=0; i--) {
+      const f = frags[i];
+      f.life -= STEP;
+      if (f.life <= 0) { frags.splice(i,1); continue; }
+      const wq = f.q * 0.9 * STEP;                   // y ekseni etrafında döndür
+      const nvx = f.vx*Math.cos(wq) - f.vz*Math.sin(wq);
+      f.vz = f.vx*Math.sin(wq) + f.vz*Math.cos(wq); f.vx = nvx;
+      f.x += f.vx*STEP; f.y += f.vy*STEP; f.z += f.vz*STEP;
+    }
+    if (fragMesh) {
+      for (let i=0; i<160; i++) {
+        if (i < frags.length) { dummyH.position.set(frags[i].x, frags[i].y, frags[i].z); dummyH.scale.setScalar(Math.max(0.3, frags[i].life)); }
+        else dummyH.position.set(0, -40, 0);
+        dummyH.updateMatrix();
+        fragMesh.setMatrixAt(i, dummyH.matrix);
+      }
+      fragMesh.instanceMatrix.needsUpdate = true;
+    }
+  });
+  const st = addStation({
+    id:'hizlandirici', zone:'fizik',
+    x:HX, z:HZ, short:'⚛️ Hızlandırıcı', color:'#7DD3FC', radius:11.5, labelY:6.5,
+    title:'⚛️ Parçacık Hızlandırıcı — Çarpışma Olayları',
+    formula:'E = γmc² · izlerin kıvrımı: r = p/(qB)',
+    desc:'CERN\'in masaüstü modeli: iki proton demeti zıt yönde döner, dedektörde <span class="key">çarpışır</span> — yeni parçacıklar fışkırır. İzler manyetik alanda <span class="key">yüke göre zıt kıvrılır</span> (pozitif/negatif ayrımı böyle yapılır). Olayın İÇİNE yürü, etrafında dolaş. Üniversite düzeyi — ama merak yaşı yok.',
+    params:[
+      { key:'e', label:'Demet enerjisi', min:1, max:13, step:0.5, get:()=>enerjiTeV, set:v=>{ enerjiTeV=v; }, fmt:v=>v.toFixed(1)+' TeV' },
+    ],
+    actions:[ { label:'💥 ÇARPIŞTIR', fn(){ carpistir(); } } ],
+    update(){
+      const gamma = (enerjiTeV*1000/0.938).toFixed(0);
+      setMeter(`v ≈ %99.9999 c · γ = <b>${gamma}</b> (kütle ${gamma}× "ağırlaşmış")<br>${sonN ? 'son olay: <b>'+sonN+' parçacık izi</b> — jetlere dikkat' : 'demetler dönüyor — 💥 bas, kesişimde olay'}`);
+    },
+    build(g){
+      // ana halka
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(RING, 0.32, 12, 64),
+        new THREE.MeshStandardMaterial({ color:0x223052, roughness:0.3, metalness:0.85 }));
+      ring.rotation.x = Math.PI/2; ring.position.y = RY; g.add(ring);
+      // odaklayıcı mıknatıs blokları
+      for (let i=0; i<8; i++) {
+        const a = i/8*Math.PI*2 + 0.4;
+        const mb = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.9),
+          new THREE.MeshStandardMaterial({ color: i%2 ? 0x8a3b3b : 0x2E5FB3, roughness:0.4, metalness:0.6 }));
+        mb.position.set(Math.cos(a)*RING, RY, Math.sin(a)*RING);
+        mb.lookAt(g.position.x, RY, g.position.z);
+        if (Q.shadow) mb.castShadow = true;
+        g.add(mb);
+      }
+      // dedektör: 3 eşmerkezli dik halka (çarpışma noktasında)
+      for (const [r2, c2] of [[1.0, 0x7DD3FC], [1.5, 0xA78BFA], [2.0, 0x1ee06f]]) {
+        const d = new THREE.Mesh(new THREE.TorusGeometry(r2, 0.05, 8, 36),
+          new THREE.MeshStandardMaterial({ color:0x000000, emissive:c2, emissiveIntensity:1.3, roughness:1 }));
+        d.position.set(RING, RY, 0); d.rotation.y = Math.PI/2;
+        g.add(d);
+      }
+      // demet küreleri
+      const bGeo = new THREE.SphereGeometry(0.16, 12, 12);
+      beam1 = new THREE.Mesh(bGeo, new THREE.MeshStandardMaterial({ color:0x000000, emissive:0x7DD3FC, emissiveIntensity:2.6, roughness:1 }));
+      beam2 = new THREE.Mesh(bGeo.clone(), new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xF87171, emissiveIntensity:2.6, roughness:1 }));
+      scene.add(beam1); scene.add(beam2);
+      // parçacık izleri
+      fragMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 6, 6),
+        new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xFFD27F, emissiveIntensity:2.2, roughness:1 }), 160);
+      fragMesh.frustumCulled = false;
+      scene.add(fragMesh);
+      // halka kaide collider'ı (oyuncu üstünden atlayabilir ama içinden geçemez)
+      for (let i=0; i<12; i++) {
+        const a = i/12*Math.PI*2;
+        const cb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed()
+          .setTranslation(HX + Math.cos(a)*RING, RY, HZ + Math.sin(a)*RING));
+        world.createCollider(RAPIER.ColliderDesc.ball(0.45), cb);
+      }
+    }
+  });
+  st._api = { carpistir, setE:v=>{ enerjiTeV=v; }, sonOlay:() => sonN, izSayisi:() => frags.length };
+}
+
+// — 15. Manyetosfer (Dünya'nın kalkanı — güneş rüzgarı) —
+{
+  const MSX = FZ.cx, MSZ = -20, EY = 3.0;
+  let Bs = 1.2, ruzgar = 3, sapan = 0, vuran = 0, auroraHit = 0, auroraGlow = 0;
+  const NP2 = 80;
+  const pp2 = new Float32Array(NP2*3), pv2 = new Float32Array(NP2*3);
+  let windMesh = null, aurN = null, aurS = null;
+  const dummyM = new THREE.Object3D();
+  function respawn(i) {
+    pp2[i*3] = -9; pp2[i*3+1] = EY + (Math.random()*2-1)*2.8; pp2[i*3+2] = (Math.random()*2-1)*2.8;
+    pv2[i*3] = ruzgar*(0.8+Math.random()*0.4); pv2[i*3+1] = 0; pv2[i*3+2] = 0;
+  }
+  tickers.push(() => {
+    if (!windMesh) return;
+    for (let i=0; i<NP2; i++) {
+      let x = pp2[i*3], y = pp2[i*3+1] - EY, z = pp2[i*3+2];
+      const r = Math.hypot(x, y, z);
+      if (r < 1.2) { vuran++; respawn(i); continue; }
+      if (x > 9 || r > 13) { sapan++; respawn(i); continue; }
+      if (r < 2.3 && Math.abs(y) > 1.1) { auroraHit++; auroraGlow = Math.min(1.6, auroraGlow + 0.25); respawn(i); continue; }
+      // dipol alan: m = (0, Bs, 0) → B = (3(m·r̂)r̂ − m)/r³
+      const inv = 1/r, rx = x*inv, ry = y*inv, rz = z*inv;
+      const mdotr = Bs*ry, ir3 = 1/(r*r*r);
+      const Bx = (3*mdotr*rx) * ir3, By = (3*mdotr*ry - Bs) * ir3, Bz = (3*mdotr*rz) * ir3;
+      // Lorentz: v += k (v × B) dt
+      const vx = pv2[i*3], vy = pv2[i*3+1], vz = pv2[i*3+2], k = 2.4*STEP;
+      pv2[i*3]   += (vy*Bz - vz*By) * k;
+      pv2[i*3+1] += (vz*Bx - vx*Bz) * k;
+      pv2[i*3+2] += (vx*By - vy*Bx) * k;
+      pp2[i*3] += pv2[i*3]*STEP; pp2[i*3+1] += pv2[i*3+1]*STEP; pp2[i*3+2] += pv2[i*3+2]*STEP;
+    }
+    auroraGlow = Math.max(0.1, auroraGlow - 0.6*STEP);
+    if (aurN) { aurN.material.opacity = 0.15 + auroraGlow*0.45; aurS.material.opacity = 0.15 + auroraGlow*0.45; }
+    for (let i=0; i<NP2; i++) {
+      dummyM.position.set(MSX + pp2[i*3], pp2[i*3+1], MSZ + pp2[i*3+2]);
+      dummyM.updateMatrix();
+      windMesh.setMatrixAt(i, dummyM.matrix);
+    }
+    windMesh.instanceMatrix.needsUpdate = true;
+  });
+  const st = addStation({
+    id:'manyetosfer', zone:'fizik',
+    x:MSX, z:MSZ, short:'🌍 Manyetosfer', color:'#1ee06f', radius:9, labelY:7,
+    title:'🌍 Manyetosfer — Dünya\'nın Görünmez Kalkanı',
+    formula:'F = q·v×B · dipol: B ∝ 1/r³',
+    desc:'Güneş rüzgarı (sarı parçacıklar) Dünya\'ya akıyor; <span class="key">dipol manyetik alan</span> onları kıvırıp sapıtıyor. Kutuplara spiral inenler <span class="key">auroraları</span> yakar. B\'yi sıfıra yaklaştır — kalkanın çöküşünü izle (Mars\'ın başına gelen bu). Üniversite plazma fiziğinin kapısı.',
+    params:[
+      { key:'b', label:'Manyetik alan B', min:0.1, max:3, step:0.05, get:()=>Bs, set:v=>{ Bs=v; }, fmt:v=>v.toFixed(2)+'× Dünya' },
+      { key:'r', label:'Güneş rüzgarı hızı', min:1, max:6, step:0.25, get:()=>ruzgar, set:v=>{ ruzgar=v; }, fmt:v=>(v*150).toFixed(0)+' km/s' },
+    ],
+    actions:[ { label:'↺ Sayaçları sıfırla', fn(){ sapan = 0; vuran = 0; auroraHit = 0; } } ],
+    update(){
+      const top = sapan + vuran + auroraHit;
+      const oran = top ? Math.round(sapan/top*100) : 0;
+      setMeter(`Saptırılan: <b>%${oran}</b> · yüzeye vuran: ${vuran} · 🌌 aurora: ${auroraHit}<br>${Bs < 0.4 ? '⚠️ kalkan zayıf — atmosfer kaçışı riski (Mars senaryosu)' : 'kalkan görev başında'}`);
+    },
+    build(g){
+      // Dünya
+      const earth = new THREE.Mesh(new THREE.SphereGeometry(1.1, 24, 24),
+        new THREE.MeshStandardMaterial({ color:0x2E5FB3, emissive:0x16345e, emissiveIntensity:0.5, roughness:0.6 }));
+      earth.position.y = EY; g.add(earth);
+      const land = new THREE.Mesh(new THREE.SphereGeometry(1.11, 24, 24),
+        new THREE.MeshStandardMaterial({ color:0x2d6a3f, roughness:0.7, transparent:true, opacity:0.5,
+          alphaMap: (() => { const cv = document.createElement('canvas'); cv.width = 64; cv.height = 32;
+            const c = cv.getContext('2d'); c.fillStyle = '#000'; c.fillRect(0,0,64,32);
+            c.fillStyle = '#fff'; for (let i=0; i<10; i++) c.fillRect(Math.random()*56, Math.random()*24, 6+Math.random()*9, 4+Math.random()*6);
+            return new THREE.CanvasTexture(cv); })() }));
+      land.position.y = EY; g.add(land);
+      const eb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(MSX, EY, MSZ));
+      world.createCollider(RAPIER.ColliderDesc.ball(1.2), eb);
+      // dipol alan çizgileri (L-kabukları)
+      const lineMat = new THREE.LineBasicMaterial({ color:new THREE.Color(0x1ee06f).multiplyScalar(1.2), transparent:true, opacity:0.4 });
+      for (const L of [2.2, 3.2, 4.4]) for (const sgn of [1, -1]) {
+        const pts = [];
+        for (let lam=-1.25; lam<=1.25; lam+=0.07) {
+          const rr = L*Math.cos(lam)*Math.cos(lam);
+          if (rr < 1.15) continue;
+          pts.push(new THREE.Vector3(sgn*rr*Math.cos(lam), EY + rr*Math.sin(lam), 0));
+        }
+        g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
+      }
+      // aurora halkaları
+      const aurMat = () => new THREE.MeshBasicMaterial({ color:new THREE.Color(0x1ee06f).multiplyScalar(1.6),
+        transparent:true, opacity:0.15, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false });
+      aurN = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.12, 8, 26), aurMat());
+      aurN.position.set(0, EY+1.0, 0); aurN.rotation.x = Math.PI/2 - 0.3; g.add(aurN);
+      aurS = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.12, 8, 26), aurMat());
+      aurS.position.set(0, EY-1.0, 0); aurS.rotation.x = Math.PI/2 + 0.3; g.add(aurS);
+      // güneş yönü işareti
+      const sunM = new THREE.Mesh(new THREE.SphereGeometry(0.45, 14, 14),
+        new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xFFD27F, emissiveIntensity:2.4, roughness:1 }));
+      sunM.position.set(-8.6, EY, 0); g.add(sunM);
+      // rüzgar parçacıkları
+      windMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.055, 6, 6),
+        new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xFFD27F, emissiveIntensity:1.8, roughness:1 }), NP2);
+      windMesh.frustumCulled = false;
+      scene.add(windMesh);
+      for (let i=0; i<NP2; i++) respawn(i);
+    }
+  });
+  st._api = { set:(b,r)=>{ if(b!=null)Bs=b; if(r!=null)ruzgar=r; }, sayilar:() => ({ sapan, vuran, aurora:auroraHit }) };
+}
+
 // ════════════════ MATEMATİK ODASI (merkez -400,0) ════════════════
 const MT = ZONES.mat;
 
 // — Fonksiyon Yüzeyi z = f(x,y) —
 {
-  const FX = MT.cx-2, FZp = -10, SEG = 64, SIZE = 14;
+  const FX = MT.cx, FZp = -20, SEG = 64, SIZE = 14;
   let amp = 1.4, freq = 0.6, preset = 0;
   const PRESETS = [
     { name:'Dalga',      f:(x,y,a,b) => a*Math.sin(b*Math.hypot(x,y)*2 - 0.6) },
@@ -1912,7 +2126,7 @@ const MT = ZONES.mat;
 
 // — Türev Kaşifi (teğet doğrusu) —
 {
-  const DX = MT.cx+12, DZ = 10;
+  const DX = MT.cx-24, DZ = 0;
   let x0 = 1, preset = 0;
   const PRESETS = [
     { name:'x²/4',   f:x => x*x/4 },
@@ -1955,13 +2169,13 @@ const MT = ZONES.mat;
       setMeter(`f(${x0.toFixed(2)}) = ${fv(x0).toFixed(2)} · f'(${x0.toFixed(2)}) = <b>${m.toFixed(2)}</b> ${yorum}`);
     },
     build(g){
-      // pano çerçevesi
+      // 25.58-N: pano oda merkezine (+x) bakar — grup 90° dönük, collider buna göre
+      g.rotation.y = Math.PI/2;
       const board = new THREE.Mesh(new THREE.BoxGeometry(10.4, 7.2, 0.18),
         new THREE.MeshStandardMaterial({ color:0x101a30, roughness:0.5, metalness:0.5 }));
       board.position.y = 4.1; board.position.z = -0.15; g.add(board);
-      // collider: oyuncu/kamera panonun içine giremesin (25.58-J fix — siyah ekran)
-      const bb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(DX, 4.1, DZ - 0.15));
-      world.createCollider(RAPIER.ColliderDesc.cuboid(5.2, 3.6, 0.25), bb);
+      const bb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(DX - 0.15, 4.1, DZ));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(0.25, 3.6, 5.2), bb);
       const frameMat = new THREE.MeshStandardMaterial({ color:0x000000, emissive:0x34D399, emissiveIntensity:1.4, roughness:1 });
       for (const [w, h, px, py] of [[10.6,0.12,0,7.66],[10.6,0.12,0,0.54],[0.12,7.2,-5.26,4.1],[0.12,7.2,5.26,4.1]]) {
         const t = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.14), frameMat);
@@ -1991,7 +2205,7 @@ const MT = ZONES.mat;
 
 // — Galton Tahtası (binom → normal dağılım, gerçek fizik) —
 {
-  const GBX = MT.cx-14, GBZ = 10, ROWS = 6, BINS = 8, BINW = 0.5;
+  const GBX = MT.cx+22, GBZ = 16, ROWS = 6, BINS = 8, BINW = 0.5;
   let counts = new Array(BINS).fill(0), spawnQueue = 0, spawnTick = 0, topN = 60;
   const balls = [];
   const binBars = [];
@@ -2119,7 +2333,7 @@ const MT = ZONES.mat;
 
 // — Riemann Toplamı (integral = alan) —
 {
-  const RX = MT.cx-14, RZ = -12;
+  const RX = MT.cx+24, RZ = -12;
   let n = 6, preset = 0;
   const PRESETS = [
     { name:'x²/4',        f:x => x*x/4,              gercek: 16/3 },
@@ -2191,7 +2405,7 @@ const MT = ZONES.mat;
 
 // — Trigonometri Çemberi (birim çember) —
 {
-  const TX = MT.cx+14, TZ = -16, R = 2.2, CY = 3.1;
+  const TX = MT.cx-20, TZ = -22, R = 2.2, CY = 3.1;
   let theta = 35*Math.PI/180, spin = false;
   let pMark = null, sinLine = null, cosLine = null, arcLine = null;
   function updateTrig() {
@@ -2259,7 +2473,7 @@ const KM = ZONES.kimya;
 
 // — İdeal Gaz Laboratuvarı —
 {
-  const GX = -8, GZ = KM.cz, BX = 3, BZ = 3;       // kutu yarı-genişlikleri
+  const GX = -18, GZ = KM.cz - 12, BX = 3, BZ = 3;       // kutu yarı-genişlikleri
   let T = 300, H = 4, N = 80;
   const MAXN = 160, BASE_S = 3.2;                  // 300K'deki ortalama hız
   const px = new Float32Array(MAXN), py = new Float32Array(MAXN), pz = new Float32Array(MAXN);
@@ -2367,7 +2581,7 @@ const KM = ZONES.kimya;
 
 // — Molekül Kütüphanesi (PubChem 3D canlı + yerleşik fallback) —
 {
-  const MX2 = 12, MZ2 = KM.cz + 4;
+  const MX2 = 18, MZ2 = KM.cz - 12;
   // CPK renkleri + kovalent yarıçaplar (atom numarası → özellik)
   const ELEMENTS = {
     1:{ sym:'H', color:0xFFFFFF, r:0.31 },  6:{ sym:'C', color:0x909090, r:0.76 },
@@ -2483,7 +2697,7 @@ const KM = ZONES.kimya;
 
 // — Difüzyon Odacığı (Graham yasası) —
 {
-  const DFX = -12, DFZ = KM.cz - 12, BX2 = 2.6, BH = 2.6, NP = 55;
+  const DFX = -18, DFZ = KM.cz + 14, BX2 = 2.6, BH = 2.6, NP = 55;
   let mB = 4, duvar = true, t0 = 0;
   const pa = { x:new Float32Array(NP), y:new Float32Array(NP), z:new Float32Array(NP), vx:new Float32Array(NP), vy:new Float32Array(NP), vz:new Float32Array(NP) };
   const pb2 = { x:new Float32Array(NP), y:new Float32Array(NP), z:new Float32Array(NP), vx:new Float32Array(NP), vy:new Float32Array(NP), vz:new Float32Array(NP) };
@@ -2579,7 +2793,7 @@ const KM = ZONES.kimya;
 
 // — Tepkime Hızı & Denge (çarpışma teorisi) —
 {
-  const RVX = 12, RVZ = KM.cz - 10, BX3 = 2.4, BH3 = 2.6, NT = 100;
+  const RVX = 18, RVZ = KM.cz + 14, BX3 = 2.4, BH3 = 2.6, NT = 100;
   let T2 = 300, Ea = 3.5, kr = 0.12;
   // tip: 0=A (turuncu) 1=B (mor) 2=C (yeşil, birleşik)
   const tip = new Uint8Array(NT);
@@ -2700,12 +2914,228 @@ const KM = ZONES.kimya;
     sayilar:() => { let a=0,b=0,c=0; for (let i=0;i<NT;i++){ if(tip[i]===0)a++; else if(tip[i]===1)b++; else c++; } return { A:a, B:b, C:c }; } };
 }
 
+// — Radyoaktivite Masası (yarı ömür — istatistiksel bozunum) —
+{
+  const RAX = 0, RAZ = KM.cz - 2, GRID = 15, NN = GRID*GRID;
+  let lam2 = 0.25, izotop = 0, basladi = false, t0 = 0, olcT = 0, geiger = 0, geigerWin = 0;
+  const IZOTOPLAR = [
+    { ad:'C-14',   T:'5.730 yıl',  not:'arkeolojik tarihleme' },
+    { ad:'I-131',  T:'8 gün',      not:'tiroit tedavisi' },
+    { ad:'Rn-222', T:'3.8 gün',    not:'ev içi radyasyonun başlıcası' },
+    { ad:'U-238',  T:'4.5 milyar yıl', not:'Dünya\'nın yaşı buradan' },
+  ];
+  const alive = new Uint8Array(NN);
+  let nukMesh = null, curveLine = null;
+  const dummyN = new THREE.Object3D();
+  const C_ALIVE = new THREE.Color(0x1ee06f), C_DEAD = new THREE.Color(0x3a4252);
+  const olcPts = [];
+  function resetRad() {
+    alive.fill(1); basladi = false; olcT = 0; geiger = 0; geigerWin = 0; olcPts.length = 0;
+    for (let i=0; i<NN; i++) nukMesh.setColorAt(i, C_ALIVE);
+    if (nukMesh.instanceColor) nukMesh.instanceColor.needsUpdate = true;
+  }
+  function basla() { resetRad(); basladi = true; t0 = simTime; }
+  function kalan() { let n = 0; for (let i=0; i<NN; i++) n += alive[i]; return n; }
+  tickers.push(() => {
+    if (!nukMesh || !basladi) return;
+    let decayed = 0;
+    for (let i=0; i<NN; i++) {
+      if (alive[i] && Math.random() < lam2*STEP) {
+        alive[i] = 0; decayed++;
+        nukMesh.setColorAt(i, C_DEAD);
+      }
+    }
+    if (decayed) {
+      if (nukMesh.instanceColor) nukMesh.instanceColor.needsUpdate = true;
+      geiger += decayed;
+    }
+    geigerWin += STEP;
+    const n = kalan();
+    if (!olcT && n <= NN/2) olcT = simTime - t0;        // ölçülen yarı ömür
+    // eğri izi (her 0.4 sn bir nokta)
+    if (olcPts.length < 70 && (simTime - t0) >= olcPts.length*0.4) {
+      olcPts.push(new THREE.Vector3(-2 + Math.min(1, (simTime-t0)/24)*4, 2.6 + n/NN*2.4, 0.03));
+      curveLine.geometry.dispose();
+      curveLine.geometry = new THREE.BufferGeometry().setFromPoints(olcPts.length > 1 ? olcPts : [new THREE.Vector3(), new THREE.Vector3()]);
+    }
+  });
+  const st = addStation({
+    id:'radyoaktivite', zone:'kimya',
+    x:RAX, z:RAZ, short:'☢️ Radyoaktivite', color:'#FFD27F', radius:7.5, labelY:6,
+    title:'☢️ Radyoaktivite — Yarı Ömür',
+    formula:'N(t) = N₀·e^(−λt) · T½ = ln2/λ',
+    desc:'225 kararsız çekirdek. Hangisinin ne zaman bozunacağı <span class="key">bilinemez</span> — ama yarısının ne zaman gideceği kesindir: T½. λ\'yı kaydır, paneldeki üstel düşüşü ve ölçülen yarı ömrü izle. Kuantum dünyasının "kesin belirsizliği".',
+    params:[
+      { key:'l', label:'Bozunma sabiti λ', min:0.05, max:1, step:0.01, get:()=>lam2, set:v=>{ lam2=v; }, fmt:v=>v.toFixed(2)+' /sn' },
+    ],
+    actions:[
+      { label:'▶ Bozunumu başlat', fn(){ basla(); } },
+      { label:() => `🧪 ${IZOTOPLAR[izotop].ad}`, fn(){ izotop = (izotop+1) % IZOTOPLAR.length; } },
+    ],
+    update(){
+      const n = kalan(), teoT = Math.LN2/lam2;
+      const cps = geigerWin > 0.5 ? (geiger/geigerWin).toFixed(0) : '—';
+      if (geigerWin > 2) { geiger = 0; geigerWin = 0; }
+      const iz = IZOTOPLAR[izotop];
+      setMeter(`Kalan: <b>${n}/${NN}</b> · T½ teorik <b>${teoT.toFixed(1)} sn</b> · ölçülen ${olcT ? '<b>'+olcT.toFixed(1)+' sn</b>' : '—'} · Geiger ~${cps}/sn<br>${iz.ad}: gerçek T½ = ${iz.T} (${iz.not})`);
+    },
+    build(g){
+      const masa = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.12, 4.4),
+        new THREE.MeshStandardMaterial({ color:0x16241c, roughness:0.35, metalness:0.55 }));
+      masa.position.y = 1.0; g.add(masa);
+      const mb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(RAX, 0.5, RAZ));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(2.2, 0.55, 2.2), mb);
+      nukMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.16, 0.16, 0.16),
+        new THREE.MeshStandardMaterial({ roughness:0.4, metalness:0.3, emissive:0xffffff, emissiveIntensity:0.25 }), NN);
+      for (let i=0; i<NN; i++) {
+        const gx = (i % GRID - (GRID-1)/2) * 0.26, gz = (Math.floor(i/GRID) - (GRID-1)/2) * 0.26;
+        dummyN.position.set(gx, 1.16, gz);
+        dummyN.updateMatrix();
+        nukMesh.setMatrixAt(i, dummyN.matrix);
+        nukMesh.setColorAt(i, C_ALIVE);
+      }
+      nukMesh.position.copy(g.position); nukMesh.frustumCulled = false;
+      scene.add(nukMesh);
+      // üstel eğri panosu
+      const board = new THREE.Mesh(new THREE.BoxGeometry(4.8, 3.4, 0.14),
+        new THREE.MeshStandardMaterial({ color:0x0a140d, roughness:0.5, metalness:0.5 }));
+      board.position.set(0, 3.6, -2.6); g.add(board);
+      const bb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(RAX, 3.6, RAZ-2.6));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(2.4, 1.7, 0.2), bb);
+      curveLine = new THREE.Line(new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial({ color:new THREE.Color(0xFFD27F).multiplyScalar(1.5) }));
+      curveLine.position.z = -2.5; g.add(curveLine);
+      resetRad();
+    }
+  });
+  st._api = { basla, reset:resetRad, setLam:v=>{ lam2=v; }, kalan, olculenT:() => olcT ? +olcT.toFixed(2) : null };
+}
+
+// — Periyodik Tablo Duvarı (etkileşimli + 3D Bohr modeli) —
+{
+  const PTX = 0, PTZ = KM.cz + 30;     // kuzey duvarına yakın, merkeze bakar
+  // [Z, sembol, ad, kütle, grup, periyot, kategori, dizilim, not]
+  const ELEMS = [
+    [1,'H','Hidrojen',1.008,1,1,'ametal',[1],'evrenin %75\'i'],
+    [2,'He','Helyum',4.003,18,1,'soygaz',[2],'güneş enerjisinin külü'],
+    [3,'Li','Lityum',6.94,1,2,'alkali',[2,1],'telefonunun pili'],
+    [4,'Be','Berilyum',9.012,2,2,'toprak alkali',[2,2],'uzay aynalarında'],
+    [5,'B','Bor',10.81,13,2,'yarımetal',[2,3],'Türkiye dünya lideri'],
+    [6,'C','Karbon',12.011,14,2,'ametal',[2,4],'yaşamın iskeleti'],
+    [7,'N','Azot',14.007,15,2,'ametal',[2,5],'havanın %78\'i'],
+    [8,'O','Oksijen',15.999,16,2,'ametal',[2,6],'her nefeste'],
+    [9,'F','Flor',18.998,17,2,'halojen',[2,7],'en elektronegatif'],
+    [10,'Ne','Neon',20.18,18,2,'soygaz',[2,8],'kırmızı tabela ışığı'],
+    [11,'Na','Sodyum',22.99,1,3,'alkali',[2,8,1],'suya atma — patlar'],
+    [12,'Mg','Magnezyum',24.305,2,3,'toprak alkali',[2,8,2],'klorofilin kalbi'],
+    [13,'Al','Alüminyum',26.982,13,3,'metal',[2,8,3],'folyo + uçak gövdesi'],
+    [14,'Si','Silisyum',28.085,14,3,'yarımetal',[2,8,4],'her çipin içinde'],
+    [15,'P','Fosfor',30.974,15,3,'ametal',[2,8,5],'DNA omurgası + ATP'],
+    [16,'S','Kükürt',32.06,16,3,'ametal',[2,8,6],'volkan kokusu'],
+    [17,'Cl','Klor',35.45,17,3,'halojen',[2,8,7],'havuz dezenfektanı'],
+    [18,'Ar','Argon',39.948,18,3,'soygaz',[2,8,8],'ampul dolgu gazı'],
+    [19,'K','Potasyum',39.098,1,4,'alkali',[2,8,8,1],'sinir iletimi + muz'],
+    [20,'Ca','Kalsiyum',40.078,2,4,'toprak alkali',[2,8,8,2],'kemik + diş'],
+    [26,'Fe','Demir',55.845,8,4,'geçiş metali',[2,8,14,2],'kanında + yıldız küllerinde'],
+    [29,'Cu','Bakır',63.546,11,4,'geçiş metali',[2,8,18,1],'her kabloda'],
+    [30,'Zn','Çinko',65.38,12,4,'geçiş metali',[2,8,18,2],'bağışıklık + pil'],
+    [47,'Ag','Gümüş',107.87,11,5,'geçiş metali',[2,8,18,18,1],'en iyi iletken'],
+    [79,'Au','Altın',196.97,11,6,'geçiş metali',[2,8,18,32,18,1],'yıldız çarpışmasında doğdu'],
+    [82,'Pb','Kurşun',207.2,14,6,'metal',[2,8,18,32,18,4],'radyasyon zırhı'],
+    [92,'U','Uranyum',238.03,3,7,'aktinit',[2,8,18,32,21,9,2],'nükleer yakıt'],
+  ];
+  const KAT_RENK = { 'alkali':0xF87171, 'toprak alkali':0xF5A35C, 'geçiş metali':0xFFD27F, 'metal':0x9aa7c4,
+    'yarımetal':0x7DD3FC, 'ametal':0x1ee06f, 'halojen':0xA78BFA, 'soygaz':0xCE93D8, 'aktinit':0xE57373 };
+  let sec = 5, tiles = null, hi = null, bohrG = null;
+  const dummyP = new THREE.Object3D();
+  const TS = 0.92;                       // karo adımı
+  function tilePos(e) { return { x:(e[4] - 9.5) * TS, y: 6.4 - e[5] * TS }; }
+  function rebuildBohr(stG) {
+    if (bohrG) stG.remove(bohrG);
+    bohrG = new THREE.Group();
+    const e = ELEMS[sec];
+    const nuc = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 14),
+      new THREE.MeshStandardMaterial({ color:0x000000, emissive:KAT_RENK[e[6]], emissiveIntensity:1.6, roughness:1 }));
+    bohrG.add(nuc);
+    e[7].forEach((cnt, si) => {
+      const r = 0.55 + si*0.42;
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.018, 6, 40),
+        new THREE.MeshBasicMaterial({ color:0x64748B, transparent:true, opacity:0.6 }));
+      bohrG.add(ring);
+      for (let k=0; k<Math.min(cnt, 18); k++) {
+        const a = k/Math.min(cnt, 18)*Math.PI*2;
+        const el = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8),
+          new THREE.MeshStandardMaterial({ color:0x000000, emissive:0x1ee06f, emissiveIntensity:2, roughness:1 }));
+        el.position.set(Math.cos(a)*r, Math.sin(a)*r, 0);
+        bohrG.add(el);
+      }
+    });
+    bohrG.position.set(10.6, 3.6, 0.6);
+    stG.add(bohrG);
+    const tp = tilePos(e);
+    hi.position.set(tp.x, tp.y, 0.42);
+  }
+  const st = addStation({
+    id:'periyodik', zone:'kimya',
+    x:PTX, z:PTZ, short:'🧪 Periyodik Tablo', color:'#34D399', radius:10, labelY:8.2,
+    title:'🧪 Periyodik Tablo — Elementlerin Haritası',
+    formula:'periyot = katman sayısı · grup = değerlik deseni',
+    desc:'27 işaretli element: kaydır, seç — yanda <span class="key">3D Bohr modeli</span> katman katman kurulur, kartta kimlik bilgisi. Renkler kategori: kırmızı alkali, mor halojen, yeşil ametal… Aynı GRUPTAKİLERİN son katmanı hep aynı — kimyanın bütün sırrı bu desende.',
+    params:[
+      { key:'s', label:'Element seç', min:0, max:ELEMS.length-1, step:1, get:()=>sec, set:v=>{ sec=Math.round(v); rebuildBohr(st.group); }, fmt:v=>ELEMS[Math.round(v)][1]+' ('+ELEMS[Math.round(v)][0]+')' },
+    ],
+    actions:[
+      { label:'⬅️', fn(){ sec = (sec-1+ELEMS.length) % ELEMS.length; rebuildBohr(st.group); } },
+      { label:'➡️', fn(){ sec = (sec+1) % ELEMS.length; rebuildBohr(st.group); } },
+    ],
+    update(){
+      const e = ELEMS[sec];
+      setMeter(`<b>${e[2]} (${e[1]})</b> · Z=${e[0]} · A≈${e[3]}<br>${e[5]}. periyot · ${e[4]}. grup · <b>${e[6]}</b> · dizilim ${e[7].join('-')}<br>💡 ${e[8]}`);
+    },
+    build(g){
+      g.rotation.y = Math.PI;              // merkeze bak (güneye)
+      // duvar panosu
+      const board = new THREE.Mesh(new THREE.BoxGeometry(19, 7.6, 0.2),
+        new THREE.MeshStandardMaterial({ color:0x0a140d, roughness:0.5, metalness:0.5 }));
+      board.position.set(0, 3.9, 0); g.add(board);
+      const bb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(PTX, 3.9, PTZ));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(9.6, 3.8, 0.3), bb);
+      // karolar
+      tiles = new THREE.InstancedMesh(new THREE.BoxGeometry(TS-0.1, TS-0.1, 0.1),
+        new THREE.MeshStandardMaterial({ roughness:0.45, metalness:0.3, emissive:0xffffff, emissiveIntensity:0.35 }), ELEMS.length);
+      for (let i=0; i<ELEMS.length; i++) {
+        const tp = tilePos(ELEMS[i]);
+        dummyP.position.set(tp.x, tp.y, 0.18);
+        dummyP.updateMatrix();
+        tiles.setMatrixAt(i, dummyP.matrix);
+        tiles.setColorAt(i, new THREE.Color(KAT_RENK[ELEMS[i][6]]).multiplyScalar(0.55));
+      }
+      g.add(tiles);
+      // sembol etiketleri
+      for (const e of ELEMS) {
+        const tp = tilePos(e);
+        const lbl = makeLabel(e[1], '#FFFFFF', 96, 40);
+        lbl.scale.set(0.72, 0.36, 1);
+        lbl.position.set(tp.x, tp.y, 0.34);
+        g.add(lbl);
+      }
+      // seçim çerçevesi
+      hi = new THREE.Mesh(new THREE.BoxGeometry(TS+0.06, TS+0.06, 0.06),
+        new THREE.MeshStandardMaterial({ color:0x000000, emissive:0x1ee06f, emissiveIntensity:2.2, roughness:1, transparent:true, opacity:0.85 }));
+      g.add(hi);
+      tickers.push(() => { if (bohrG) bohrG.rotation.z = simTime*0.5; if (hi) hi.material.emissiveIntensity = 1.8 + Math.sin(simTime*4)*0.6; });
+      rebuildBohr(g);
+    }
+  });
+  st._api = { sec:i=>{ sec = i % ELEMS.length; rebuildBohr(st.group); }, secili:() => ({ sym:ELEMS[sec][1], Z:ELEMS[sec][0] }) };
+}
+
 // ════════════════ BİYOLOJİ ODASI (merkez 0,-400) ════════════════
 const BIO = ZONES.bio;
 
 // — DNA Çift Sarmalı —
 {
-  const DNX = BIO.cx-12, DNZ = BIO.cz+6;
+  const DNX = BIO.cx-22, DNZ = BIO.cz+18;
   let bp = 18, helixG = null, seq = [];
   const BASE_COL = { A:0xF5A35C, T:0xFFD27F, G:0x34D399, C:0x7DD3FC };
   const PAIR = { A:'T', T:'A', G:'C', C:'G' };
@@ -2766,7 +3196,7 @@ const BIO = ZONES.bio;
 
 // — Popülasyon Dinamiği (Lotka-Volterra av-avcı) —
 {
-  const PVX = BIO.cx+12, PVZ = BIO.cz+6;
+  const PVX = BIO.cx+22, PVZ = BIO.cz+18;
   let alfa = 1.0, beta = 0.04, gama = 0.9, delta = 0.015;
   let R = 40, F = 9;
   let barR = null, barF = null, faz = null;
@@ -2835,7 +3265,7 @@ const BIO = ZONES.bio;
 
 // — Fotosentez Hız Laboratuvarı (sınırlayıcı faktör) —
 {
-  const FSX = BIO.cx-12, FSZ = BIO.cz-14;
+  const FSX = BIO.cx-24, FSZ = BIO.cz-16;
   let isik = 60, co2 = 400, sicaklik = 25;
   const NBUB = 26;
   const bubbles = [];
@@ -2926,7 +3356,7 @@ const BIO = ZONES.bio;
 
 // — Mendel Genetiği (Punnett karesi + olasılık deneyi) —
 {
-  const MGX = BIO.cx+12, MGZ = BIO.cz-14;
+  const MGX = BIO.cx+24, MGZ = BIO.cz-16;
   const CROSSES = [
     { ad:'Aa × Aa', p1:['A','a'], p2:['A','a'], teorik:'3 : 1', not:'monohibrit klasiği' },
     { ad:'Aa × aa', p1:['A','a'], p2:['a','a'], teorik:'1 : 1', not:'kontrol çaprazlaması' },
@@ -2995,6 +3425,219 @@ const BIO = ZONES.bio;
     }
   });
   st._api = { cycle:() => { ci = (ci+1) % CROSSES.length; rebuildPunnett(st.group); }, uret:yavruUret, sonuc:() => ({ dom, rec:rec2 }) };
+}
+
+// — Dev Hücre Kompleksi (içine girilebilen ökaryot hücre) —
+{
+  const HCX = 0, HCZ = BIO.cz - 2, MEMR = 7;
+  let tur = -1;
+  const ORG = [];   // {ad, gorev, meshler:[]}
+  function kaydet(ad, gorev, ...meshler) { ORG.push({ ad, gorev, meshler }); }
+  tickers.push(() => {
+    for (let oi=0; oi<ORG.length; oi++) {
+      for (const m of ORG[oi].meshler) {
+        if (!m.material.emissive) continue;
+        const secili = oi === tur;
+        m.material.emissiveIntensity = secili ? 0.9 + Math.sin(simTime*5)*0.45 : (m.userData.baseEm ?? 0.25);
+      }
+    }
+  });
+  const st = addStation({
+    id:'hucre', zone:'bio',
+    x:HCX, z:HCZ, short:'🧫 Dev Hücre', color:'#34D399', radius:13, labelY:9.6,
+    title:'🧫 Dev Hücre Kompleksi — İçine Gir',
+    formula:'ökaryot hücre · yapı → işlev',
+    desc:'Zarın içinden yürü: çekirdek, mitokondri, ER, golgi, lizozom, sentriol — hepsi yerli yerinde, <span class="key">100.000× büyütülmüş</span>. "Organel turu"na bas: sırayla parlasın, görevini panodan oku. Kitapta şema, burada MEKÂN.',
+    params:[],
+    actions:[ { label:() => tur < 0 ? '🔦 Organel turu başlat' : `➡️ ${ORG[(tur+1) % ORG.length].ad}`, fn(){ tur = (tur+1) % ORG.length; } } ],
+    update(){
+      setMeter(tur < 0 ? `${ORG.length} organel keşfe hazır — tura başla`
+        : `<b>${ORG[tur].ad}</b><br>${ORG[tur].gorev}`);
+    },
+    build(g){
+      // hücre zarı (çift katman görünümü — içine girilebilir, collider yok)
+      const mem1 = new THREE.Mesh(new THREE.SphereGeometry(MEMR, 36, 24),
+        new THREE.MeshStandardMaterial({ color:0x34D399, transparent:true, opacity:0.1, roughness:0.3, side:THREE.DoubleSide }));
+      mem1.position.y = MEMR*0.72; mem1.scale.y = 0.72; g.add(mem1);
+      const mem2 = new THREE.Mesh(new THREE.SphereGeometry(MEMR-0.18, 36, 24),
+        new THREE.MeshStandardMaterial({ color:0x6EE7B7, transparent:true, opacity:0.06, roughness:0.3, side:THREE.DoubleSide }));
+      mem2.position.y = MEMR*0.72; mem2.scale.y = 0.72; g.add(mem2);
+      kaydet('Hücre zarı', 'Seçici geçirgen sınır: neyin girip çıkacağına karar verir (fosfolipid çift katman).', mem1);
+      // çekirdek
+      const nuc = new THREE.Mesh(new THREE.SphereGeometry(2.1, 24, 24),
+        new THREE.MeshStandardMaterial({ color:0xA78BFA, transparent:true, opacity:0.4, roughness:0.4, emissive:0xA78BFA, emissiveIntensity:0.25 }));
+      nuc.position.set(0, 4.2, 0); g.add(nuc);
+      const kromatin = new THREE.Mesh(new THREE.TorusKnotGeometry(0.9, 0.16, 64, 8, 2, 3),
+        new THREE.MeshStandardMaterial({ color:0x7C5CE0, roughness:0.5, emissive:0x7C5CE0, emissiveIntensity:0.3 }));
+      kromatin.position.set(0, 4.2, 0); g.add(kromatin);
+      const nb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(HCX, 4.2, HCZ));
+      world.createCollider(RAPIER.ColliderDesc.ball(2.15), nb);
+      kaydet('Çekirdek', 'Hücrenin komuta merkezi: DNA burada — kromatin yumağına dikkat. Çift zarlıdır, porlardan mRNA çıkar.', nuc, kromatin);
+      // mitokondriler
+      const mitoMeshes = [];
+      for (const [mx, my, mz, ry] of [[-3.6, 2.2, 1.8, 0.5], [3.4, 2.4, -2.0, -0.8], [2.6, 5.6, 2.6, 1.2], [-2.8, 5.2, -2.8, 0.2]]) {
+        const mito = new THREE.Mesh(new THREE.SphereGeometry(0.85, 18, 14),
+          new THREE.MeshStandardMaterial({ color:0xF5A35C, roughness:0.5, emissive:0xC76F3E, emissiveIntensity:0.3 }));
+        mito.scale.set(1.5, 0.8, 0.8); mito.position.set(mx, my, mz); mito.rotation.y = ry; g.add(mito);
+        for (let k=-1; k<=1; k++) {
+          const krista = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.0, 0.9),
+            new THREE.MeshStandardMaterial({ color:0xFFD27F, transparent:true, opacity:0.7 }));
+          krista.position.set(mx + Math.cos(ry)*k*0.5, my, mz - Math.sin(ry)*k*0.5);
+          krista.rotation.y = ry; g.add(krista);
+        }
+        mitoMeshes.push(mito);
+      }
+      kaydet('Mitokondri', 'Enerji santrali: O₂ ile glikozu yakar → ATP. İç zar kıvrımları (krista) yüzeyi artırır. Kendi DNA\'sı vardır!', ...mitoMeshes);
+      // endoplazmik retikulum (çekirdek çevresi kavisli yapraklar)
+      const erMeshes = [];
+      for (let i=0; i<3; i++) {
+        const er = new THREE.Mesh(new THREE.TorusGeometry(2.7 + i*0.5, 0.12, 8, 40, Math.PI*1.2),
+          new THREE.MeshStandardMaterial({ color:0x7DD3FC, roughness:0.5, emissive:0x2E86C1, emissiveIntensity:0.25 }));
+        er.position.set(0, 3.6 + i*0.6, 0); er.rotation.x = Math.PI/2; er.rotation.z = i*0.5; g.add(er);
+        erMeshes.push(er);
+      }
+      // ribozomlar (granüllü ER noktaları)
+      const ribPos = [];
+      for (let i=0; i<90; i++) {
+        const a = Math.random()*Math.PI*1.2, rr = 2.7 + Math.floor(Math.random()*3)*0.5;
+        ribPos.push(Math.cos(a)*rr, 3.6 + Math.floor(Math.random()*3)*0.6 + (Math.random()-0.5)*0.15, Math.sin(a)*rr);
+      }
+      const ribGeo = new THREE.BufferGeometry();
+      ribGeo.setAttribute('position', new THREE.Float32BufferAttribute(ribPos, 3));
+      const ribs = new THREE.Points(ribGeo, new THREE.PointsMaterial({ color:0xE57373, size:0.12 }));
+      g.add(ribs);
+      kaydet('Endoplazmik Retikulum', 'Hücre içi otoyol + üretim bandı. Üzerindeki kırmızı noktalar ribozom: protein sentezinin yapıldığı yer.', ...erMeshes);
+      // golgi (yassı kese yığını)
+      const golgiM = [];
+      for (let i=0; i<5; i++) {
+        const gk = new THREE.Mesh(new THREE.SphereGeometry(0.9 - i*0.08, 16, 8),
+          new THREE.MeshStandardMaterial({ color:0xFFD27F, roughness:0.5, emissive:0xC9A06B, emissiveIntensity:0.25 }));
+        gk.scale.set(1.4, 0.16, 1); gk.position.set(-3.4, 4.6 + i*0.3, 2.6); g.add(gk);
+        golgiM.push(gk);
+      }
+      kaydet('Golgi Aygıtı', 'Paketleme-kargo merkezi: ER\'den gelen proteinleri işler, etiketler, kesecikle adresine yollar.', ...golgiM);
+      // lizozomlar
+      const lizM = [];
+      for (const [lx, ly, lz] of [[1.8, 2.0, 3.2], [-1.6, 6.4, 1.4], [3.8, 4.0, 1.0]]) {
+        const liz = new THREE.Mesh(new THREE.SphereGeometry(0.4, 14, 14),
+          new THREE.MeshStandardMaterial({ color:0xF87171, roughness:0.45, emissive:0xF87171, emissiveIntensity:0.3 }));
+        liz.position.set(lx, ly, lz); g.add(liz);
+        lizM.push(liz);
+      }
+      kaydet('Lizozom', 'Sindirim torbası: enzim dolu. Yıpranmış organelleri ve yabancı maddeleri parçalar — hücrenin geri dönüşümü.', ...lizM);
+      // sentrioller
+      const senM = [];
+      for (const rot of [0, Math.PI/2]) {
+        const sen = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.7, 9),
+          new THREE.MeshStandardMaterial({ color:0x1ee06f, roughness:0.4, emissive:0x1ee06f, emissiveIntensity:0.35 }));
+        sen.position.set(2.4, 6.2, -2.2); sen.rotation.z = rot; g.add(sen);
+        senM.push(sen);
+      }
+      kaydet('Sentriol', 'Bölünme organizatörü: mitozda iğ ipliklerini kurar. Çift ve birbirine dik durur. Bitki hücresinde YOKTUR.', ...senM);
+      for (const o of ORG) for (const m of o.meshler) m.userData.baseEm = m.material.emissiveIntensity ?? 0.25;
+    }
+  });
+  st._api = { tur:() => { tur = (tur+1) % ORG.length; return ORG[tur].ad; }, organeller:() => ORG.map(o => o.ad) };
+}
+
+// — Mitoz Sahnesi (evre evre hücre bölünmesi) —
+{
+  const MZX = 0, MZZ = BIO.cz - 30, CY2 = 3.4;
+  let evre = 0, oynat = false;
+  const KROM = [];
+  let cell1 = null, cell2 = null, nuk1 = null, nuk2 = null, spindle = null;
+  const EVRELER = [
+    { s:0,    ad:'İnterfaz',  not:'DNA eşlenir (2n→2n×2 kromatid). Hücre büyür — bölünmenin %90\'ı burada geçer.' },
+    { s:0.18, ad:'Profaz',    not:'Kromatin yoğunlaşıp X şekilli kromozomlara dönüşür; çekirdek zarı erir, iğ iplikleri kurulur.' },
+    { s:0.40, ad:'Metafaz',   not:'Kromozomlar ekvator düzleminde tek sıra dizilir — mitozun en kolay tanınan karesi.' },
+    { s:0.58, ad:'Anafaz',    not:'Kardeş kromatidler ayrılıp zıt kutuplara çekilir. Artık her kutupta eşit DNA var.' },
+    { s:0.78, ad:'Telofaz + Sitokinez', not:'İki çekirdek zarı yeniden kurulur, sitoplazma boğumlanır → iki ÖZDEŞ hücre.' },
+  ];
+  function evreAdi(p) { let cur = EVRELER[0]; for (const e of EVRELER) if (p >= e.s) cur = e; return cur; }
+  const lerp = (a, b, t) => a + (b-a)*Math.max(0, Math.min(1, t));
+  function uygula(p) {
+    for (const k of KROM) {
+      const yogun = lerp(0.25, 1, (p-0.10)/0.10);                       // profazda yoğunlaş
+      const hedefX = lerp(k.sx, k.mx, (p-0.22)/0.16);                    // metafaza dizil
+      const kutup = (p-0.58)/0.16;                                       // anafazda ayrıl
+      const aX = lerp(hedefX, k.mx, 1);                                  // x sabit kalır
+      const aZa = lerp(0, -2.3, kutup), aZb = lerp(0, 2.3, kutup);
+      const telo = (p-0.78)/0.2;
+      k.a.position.set(aX, CY2 + k.sy*(1-Math.min(1,(p-0.22)/0.16)), lerp(k.sz, 0, (p-0.22)/0.16) + aZa);
+      k.b.position.set(aX, CY2 + k.sy*(1-Math.min(1,(p-0.22)/0.16)), lerp(k.sz, 0, (p-0.22)/0.16) + aZb + (p < 0.58 ? 0.16 : 0));
+      k.a.scale.setScalar(lerp(0.45, 1, yogun)); k.b.scale.setScalar(lerp(0.45, 1, yogun));
+      k.a.material.opacity = k.b.material.opacity = lerp(0.35, 1, yogun);
+    }
+    // iğ iplikleri sadece metafaz-anafazda
+    spindle.visible = p > 0.3 && p < 0.8;
+    // sitokinez: membran boğumlanması
+    const t2 = Math.max(0, (p-0.78)/0.22);
+    cell1.position.z = -t2*2.1; cell2.position.z = t2*2.1;
+    cell1.scale.setScalar(lerp(1, 0.74, t2)); cell2.scale.setScalar(lerp(1, 0.74, t2));
+    cell2.visible = t2 > 0.01;
+    nuk1.visible = nuk2.visible = t2 > 0.25;
+    nuk1.position.z = -t2*2.1; nuk2.position.z = t2*2.1;
+  }
+  tickers.push(() => {
+    if (oynat) { evre += 7*STEP; if (evre > 100) evre = 0; uygula(evre/100); }
+  });
+  const st = addStation({
+    id:'mitoz', zone:'bio',
+    x:MZX, z:MZZ, short:'🧬 Mitoz Sahnesi', color:'#F87171', radius:8.5, labelY:7,
+    title:'🧬 Mitoz — Bir Hücre Nasıl İkiye Bölünür',
+    formula:'2n → 2n + 2n (özdeş) · İPMAT',
+    desc:'Kaydırıcıyı sürükle ya da ▶ oynat: kromatin yoğunlaşır, kromozomlar <span class="key">ekvatora dizilir</span>, kardeş kromatidler kutuplara çekilir, hücre boğumlanır. TYT-AYT\'nin vazgeçilmez sorusu — evre evre, elinle.',
+    params:[
+      { key:'e', label:'Evre ilerleyişi', min:0, max:100, step:0.5, get:()=>evre, set:v=>{ evre=v; oynat=false; uygula(v/100); }, fmt:v=>evreAdi(v/100).ad },
+    ],
+    actions:[ { label:() => oynat ? '⏸ Durdur' : '▶️ Oynat', fn(){ oynat = !oynat; } } ],
+    update(){ const e = evreAdi(evre/100); setMeter(`<b>${e.ad}</b><br>${e.not}`); },
+    build(g){
+      // cam kubbe sahne
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(4.6, 28, 18),
+        new THREE.MeshStandardMaterial({ color:0xF87171, transparent:true, opacity:0.05, roughness:0.2, side:THREE.DoubleSide }));
+      dome.position.y = CY2; g.add(dome);
+      // ana hücre + yavru hücre zarları
+      const cellMat = () => new THREE.MeshStandardMaterial({ color:0xF5A35C, transparent:true, opacity:0.16, roughness:0.4, side:THREE.DoubleSide });
+      cell1 = new THREE.Mesh(new THREE.SphereGeometry(2.5, 24, 18), cellMat());
+      cell1.position.y = CY2; g.add(cell1);
+      cell2 = new THREE.Mesh(new THREE.SphereGeometry(2.5, 24, 18), cellMat());
+      cell2.position.y = CY2; cell2.visible = false; g.add(cell2);
+      const nMat = () => new THREE.MeshStandardMaterial({ color:0xA78BFA, transparent:true, opacity:0.3, roughness:0.4 });
+      nuk1 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), nMat());
+      nuk1.position.y = CY2; nuk1.visible = false; g.add(nuk1);
+      nuk2 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), nMat());
+      nuk2.position.y = CY2; nuk2.visible = false; g.add(nuk2);
+      // kromozomlar: 4 çift kromatid (mavi + turuncu — anne/baba kökeni)
+      const kGeo = new THREE.CapsuleGeometry(0.13, 0.6, 4, 10);
+      for (let i=0; i<4; i++) {
+        const col = i % 2 ? 0x7DD3FC : 0xF5A35C;
+        const mkK = () => new THREE.Mesh(kGeo, new THREE.MeshStandardMaterial({
+          color:col, roughness:0.45, emissive:col, emissiveIntensity:0.35, transparent:true }));
+        const a = mkK(), b = mkK();
+        g.add(a); g.add(b);
+        KROM.push({ a, b, sx:(Math.random()*2-1)*1.4, sy:(Math.random()*2-1)*1.2, sz:(Math.random()*2-1)*1.4, mx:(i-1.5)*0.75 });
+      }
+      // iğ iplikleri: kutuplardan ekvatora
+      const spts = [];
+      for (let i=0; i<4; i++) {
+        const mx = (i-1.5)*0.75;
+        spts.push(new THREE.Vector3(0, CY2, -2.3), new THREE.Vector3(mx, CY2, 0));
+        spts.push(new THREE.Vector3(0, CY2, 2.3), new THREE.Vector3(mx, CY2, 0));
+      }
+      spindle = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(spts),
+        new THREE.LineBasicMaterial({ color:0x94A3B8, transparent:true, opacity:0.5 }));
+      g.add(spindle);
+      // sahne kaidesi
+      const ped = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 5.2, 0.4, 32),
+        new THREE.MeshStandardMaterial({ color:0x223052, roughness:0.35, metalness:0.7 }));
+      ped.position.y = 0.2; g.add(ped);
+      const pb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(MZX, 0.25, MZZ));
+      world.createCollider(RAPIER.ColliderDesc.cylinder(0.25, 5.0), pb);
+      uygula(0);
+    }
+  });
+  st._api = { setEvre:v=>{ evre=v; uygula(v/100); }, evre:() => evreAdi(evre/100).ad, oynat:v=>{ oynat=v; } };
 }
 
 // ── Oda içi yürüme yolları: oda merkezinden her istasyon kaidesine ──
@@ -3784,7 +4427,7 @@ function start() {
     const map = { fizik:'fizik', matematik:'mat', mat:'mat', kimya:'kimya', biyoloji:'bio', bio:'bio' };
     const zid = map[oda.toLowerCase()];
     if (zid) {
-      const sp = { fizik:{x:376,z:0,yaw:-Math.PI/2}, mat:{x:-380,z:0,yaw:Math.PI/2}, kimya:{x:0,z:380,yaw:Math.PI}, bio:{x:0,z:-382,yaw:0} }[zid];
+      const sp = { fizik:{x:364,z:0,yaw:-Math.PI/2}, mat:{x:-372,z:0,yaw:Math.PI/2}, kimya:{x:0,z:372,yaw:Math.PI}, bio:{x:0,z:-370,yaw:0} }[zid];
       gotoZone(zid, sp, true);
     }
   }
@@ -3961,7 +4604,7 @@ window.__fz = {
   grounded: () => grounded,
   tp: (x, z) => { playerBody.setTranslation({ x, y:1.05, z }, true); velY = 0; },
   goto: (zoneId) => {
-    const sp = { hub:{x:0,z:13,yaw:0}, fizik:{x:376,z:0,yaw:-Math.PI/2}, mat:{x:-380,z:0,yaw:Math.PI/2}, kimya:{x:0,z:380,yaw:Math.PI}, bio:{x:0,z:-382,yaw:0} }[zoneId];
+    const sp = { hub:{x:0,z:13,yaw:0}, fizik:{x:364,z:0,yaw:-Math.PI/2}, mat:{x:-372,z:0,yaw:Math.PI/2}, kimya:{x:0,z:372,yaw:Math.PI}, bio:{x:0,z:-370,yaw:0} }[zoneId];
     if (sp) gotoZone(zoneId, sp, true);
     return currentZone;
   },

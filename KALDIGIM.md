@@ -2,6 +2,17 @@
 
 > **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-L (Fable 5): FERMATRIX — rebrand (matrix yeşili + dijital yağmur), Minecraft piksel karakter, 3D DC Devre + Faraday Alternatörü, Atari +Doppler +Çift Kaynak Girişimi (27 istasyon + 6 atari sim) — CANLI**
 >
+> ## 🌌 11 Haz (25.58-N) — FERMATRIX v4: DEV GENİŞLEME (Neo: "alan genişlet, üniversite düzeyi ekle — hızlandırıcı/manyetosfer/radyoaktivite; bio çok zayıf; periyodik tablo; yerleşim/yön hataları")
+> **27 → 33 istasyon · odalar büyüdü (fizik 34→46, mat/kimya 30→38, bio 26→40) · tüm istasyonlar bantlara yeniden dağıtıldı (45 koordinat değişimi, doğrulamalı betik).**
+> - **Hata düzeltmeleri:** ① Faraday bobini dönmüyordu — torus kendi simetri ekseni (z) etrafında döndürülüyordu, görünmez! → rotation.x (görünür takla) ② türev panosu sırtı dönüktü → 90° döndü + collider uyarlandı ③ dalga↔portal ve riemann↔yüzey iç içe geçmeleri → yeni yerleşimle çözüldü.
+> - **⚛️ Parçacık Hızlandırıcı (üniv.):** 8m halka, zıt dönen iki demet, 💥 ÇARPIŞTIR → dedektörde 97 parçacıklı olay; izler manyetik alanda yüke göre zıt kıvrılır, jet yapısı var; olayın İÇİNE yürünebilir. E slider 1–13 TeV, γ gösterimi.
+> - **🌍 Manyetosfer (üniv. plazma):** Dünya dipolü + L-kabuğu alan çizgileri; 80 güneş rüzgarı parçacığı gerçek v×B entegrasyonuyla sapıyor; kutuplara inenler aurora halkalarını yakıyor; B→0.1 = "Mars senaryosu" uyarısı. B + rüzgar hızı slider.
+> - **☢️ Radyoaktivite:** 225 çekirdek, olasılıksal bozunum, canlı üstel eğri panosu + Geiger; **ölçülen T½ = 2.02s vs teorik 1.98s** ✓; 4 izotop kartı (C-14→U-238).
+> - **🧪 Periyodik Tablo Duvarı:** 27 element karo (kategori renkli), slider/ok seçim → yanda **3D Bohr modeli katman katman** + kimlik kartı (dizilim, grup-periyot, günlük hayat notu).
+> - **🧫 Dev Hücre Kompleksi (bio artık zayıf değil):** 7m zar — İÇİNE GİRİLİYOR; çekirdek+kromatin, 4 mitokondri (kristalı), granüllü ER (90 ribozom), golgi, 3 lizozom, sentriol; "organel turu" sırayla parlatıp görev anlatıyor.
+> - **🧬 Mitoz Sahnesi:** evre slider'ı 0–100 → interfaz→profaz→metafaz→anafaz→telofaz+sitokinez; kromatid ayrılması, iğ iplikleri, membran boğumlanması canlı; ▶ otomatik oynatma. Test: 45→Metafaz, 65→Anafaz, 90→Telofaz ✓.
+> - 33 istasyonda 180 fps korunuyor; tüm oda spawn/portal/deep-link haritaları yeni boyutlara taşındı.
+>
 > ## 🎲 11 Haz (25.58-M) — GALTON KESİN FİX (Neo: "toplar yukarıdan zıplayarak dağılıyor veya sıkışıyor")
 > Üç kök neden bulundu-kapatıldı, 2×100 top regresyon: **100/100 sayım, 0 sıkışma, 0 havada, merkez tepeli dağılım.**
 > - ① **Huni-çivi çakışması:** yapı yükseltilince (25.58-K) huni plakalarının dibi (y≈4.70) ilk çivi sırasıyla (y=4.9) kesişti → cep oluştu, toplar kamalanıp yukarı sekiyordu → huni collider'ı TAMAMEN kaldırıldı (merkez bırakma + görsel ağız halkası yeterli).
