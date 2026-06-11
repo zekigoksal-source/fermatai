@@ -57,6 +57,32 @@
 | Bio | fotosentez | Fotosentez (AYT ~1-2) | ışık, CO₂, T | minimum yasası + enzim denatürasyonu |
 | Bio | mendel | Kalıtım (AYT ~3-4, en yüksek) | 3 çapraz | Punnett + n=100 büyük sayılar |
 
+## Araştırma Temeli v2 (25.58-O — 3 paralel ajan, 11 Haz 2026)
+
+**1) Maarif Modeli + yeni nesil sorular (MEB resmi kaynak doğrulamalı):**
+- %35 içerik seyreltme + beceri temelli yapı (MAB 5 matematik / FBAB 13 fen becerisi); "deney yapma,
+  bilimsel model oluşturma, kanıt kullanma" artık resmi beceri → simülasyon TAM isabet.
+- Fiziğe YENİ giren: **Akışkanlar/Bernoulli (9. sınıf)**, CERN/parçacık fiziği, nükleer enerji,
+  savunma sanayi bağlamı. Kimyaya: yeşil hidrojen, nanoteknoloji. → hızlandırıcı/manyetosfer
+  istasyonlarımız müfredatın yeni yönüyle örtüşüyor; **Bernoulli kanat istasyonu** sıradaki güçlü aday.
+- Yeni nesil imza: grafik dönüştürme (x-t↔v-t↔a-t), deney düzeneği yorumu, günlük bağlam.
+  → her istasyonun "canlı grafik panosu" deseni (faraday/radyoaktivite/sinir) bu imzaya hizmet ediyor.
+
+**2) Kavram yanılgıları (FCI + RSC + AAAS + Berkeley + TR literatür — 30 yanılgı):**
+- Tasarım çerçevesi: **Tahmin → Gözle → Açıkla** + bilişsel çelişki (Posner 1982, Hake 1998).
+  Her yanılgı-kıran istasyonda öğrenciden ÖNCE tahmin alınmalı (gelecek: panel "tahmin et" butonu).
+- Uygulananlar: P7 mevsimler ✓ (25.58-O) · P1 kütle-düşme ✓ (gezegen+fırlatıcı) · B4 karışım kalıtımı ✓
+  (mendel) · C7 kaynama platosu → gaz istasyonuna eklenebilir · P6 "akım tükenir" → devre masasına
+  ampermetre çifti eklenebilir (güçlü aday) · P3 Newton-3 çarpışma okları → çarpışma istasyonuna ok overlay.
+- Kalan 25 yanılgı dosyası: ajan çıktısı KALDIGIM 25.58-O bloğunda özet; tam liste oturum transkriptinde.
+
+**3) 50 fikir havuzu (PhET/oPhysics/Falstad/JavaLab taraması + MEB kazanım kodları):**
+İlk-10 önceliği: Top Atış Poligonu(rüzgârlı) · Teğet Avcısı✓ · Le Chatelier✓ · Punnett✓ · Optik Bench✓ ·
+**Katı Cisim Kesiti** (kesit düzlemi! mevcut katı istasyonuna eklenecek) · Mevsim✓ · **Galvanik Pil** ·
+Yay Sarkacı✓ · Av-Avcı✓. Havuzdan bir sonraki dalga adayları: 🌑 Ay Evreleri Tiyatrosu · ⭐ Yıldız Kaderi
+(HR diyagramı) · 🌡️ Sera Dengesi · 🧲 Manyetik Tuzak (helis) · 🗺️ Levha Mozaiği · ⚗️ Titrasyon Masası ·
+💧 Damıtma Kulesi · 🫀 Kalp Pompası · 🧬 DNA Kopyalama Hattı · 📐 Dönüşüm Düzlemi · 🎲 Seri Yakınsama.
+
 ## Yol Haritası (öncelik = pedagojik değer × soru sıklığı × yapılabilirlik)
 
 **Sonraki dalga (araştırma ajanının İLK 12'sinden kalanlar):**

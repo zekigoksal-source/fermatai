@@ -1,8 +1,19 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-L (Fable 5): FERMATRIX — rebrand (matrix yeşili + dijital yağmur), Minecraft piksel karakter, 3D DC Devre + Faraday Alternatörü, Atari +Doppler +Çift Kaynak Girişimi (27 istasyon + 6 atari sim) — CANLI**
+> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-O (Fable 5): FERMATRIX v5 — araştırma-güdümlü genişleme: 3 ajan (Maarif+yanılgılar+50 fikir), 39 istasyon, periyodik tablo 118 TAM, geometri/optik/mevsimler/kurucu/sinir — CANLI**
 >
-> ## 🌌 11 Haz (25.58-N) — FERMATRIX v4: DEV GENİŞLEME (Neo: "alan genişlet, üniversite düzeyi ekle — hızlandırıcı/manyetosfer/radyoaktivite; bio çok zayıf; periyodik tablo; yerleşim/yön hataları")
+> ## 🧠 11 Haz (25.58-O) — ARAŞTIRMA-GÜDÜMLÜ GENİŞLEME (Neo: "benim hayal gücümle sınırlı kalma — müfredatı aç, literatür tara, 50 fikir üret, kendi sürücün ol")
+> **Süreç: 3 paralel araştırma ajanı → 33→39 istasyon + 118'lik periyodik tablo + EVREN_TASARIM v2 (fikir havuzu).**
+> - **Araştırma:** ① Maarif Modeli (MEB doğrulamalı): %35 seyreltme, FBAB-13 beceri, fiziğe YENİ Akışkanlar/Bernoulli + CERN + nükleer (→hızlandırıcımız müfredatla örtüştü); ② 30 kavram yanılgısı (FCI/RSC/AAAS/Berkeley): Tahmin→Gözle→Açıkla çerçevesi; ③ 50 fikir havuzu (PhET/oPhysics/Falstad/JavaLab + MEB kazanım kodlarıyla) + ilk-10 öncelik. Hepsi EVREN_TASARIM.md'ye işlendi.
+> - **🧪 Periyodik Tablo v2: 27 → 118 ELEMENTİN TAMAMI** — lantanit/aktinit blokları, kategori kuralları, tüm Bohr kabuk dizilimleri gömülü (test: H/Fe/Au/U/Og 5/5 doğru), 37 landmark notu + kategori bazlı genel notlar.
+> - **6 yeni istasyon (hepsi sayısal doğrulandı):**
+>   · 🔍 **Optik Masa 3D** (fizik): ince/kalın mercek ışın izleme + odaklar, **prizma tayf ayrışması** (mor en çok kırılır), düz ayna gelme=yansıma; f ve açı sliderları
+>   · 🌞 **Mevsimler** (fizik, yanılgı-kıran P7): eğik eksen + eliptik yörünge (OCAK'ta günberi vurgusu!); deklinasyon ±23.44°, 40° enlem gündüz süresi 21 Haz 14.84h / 21 Ara 9.16h — astronomik formülle birebir; KYK/GYK ışınım barları; yıl oynatma
+>   · 🧊 **Katı Cisimler** (mat/geometri): koni↔silindir su deneyi animasyonu — 3 koni = 1 silindir KANIT; r,h sliderları (oran hep 3.00)
+>   · 📐 **Pisagor Panosu** (mat): kenar kareleri alanlarıyla görsel ispat, a²+b²=c² canlı (3-4-5 butonu)
+>   · 🔨 **Molekül Kurucu** (kimya): 7 hedef molekül, atom-atom kurma, tekli/İKİLİ/ÜÇLÜ bağ + ortaklanmamış çift noktaları (Lewis), oktet rozeti
+>   · ⚡ **Aksiyon Potansiyeli** (bio): eşik-altı=HİÇ / eşik-üstü=HEP tam boy impuls (akson+miyelin+Ranvier), canlı -70→+30 mV spike panosu, "beyin frekansla kodlar" dersi
+> - **Sonraki dalga (EVREN_TASARIM v2'den):** Bernoulli kanat · Galvanik pil · Ay evreleri · Yıldız Kaderi (HR) · Sera dengesi · katı cisim KESİT dü (Neo: "alan genişlet, üniversite düzeyi ekle — hızlandırıcı/manyetosfer/radyoaktivite; bio çok zayıf; periyodik tablo; yerleşim/yön hataları")
 > **27 → 33 istasyon · odalar büyüdü (fizik 34→46, mat/kimya 30→38, bio 26→40) · tüm istasyonlar bantlara yeniden dağıtıldı (45 koordinat değişimi, doğrulamalı betik).**
 > - **Hata düzeltmeleri:** ① Faraday bobini dönmüyordu — torus kendi simetri ekseni (z) etrafında döndürülüyordu, görünmez! → rotation.x (görünür takla) ② türev panosu sırtı dönüktü → 90° döndü + collider uyarlandı ③ dalga↔portal ve riemann↔yüzey iç içe geçmeleri → yeni yerleşimle çözüldü.
 > - **⚛️ Parçacık Hızlandırıcı (üniv.):** 8m halka, zıt dönen iki demet, 💥 ÇARPIŞTIR → dedektörde 97 parçacıklı olay; izler manyetik alanda yüke göre zıt kıvrılır, jet yapısı var; olayın İÇİNE yürünebilir. E slider 1–13 TeV, γ gösterimi.
@@ -12,6 +23,9 @@
 > - **🧫 Dev Hücre Kompleksi (bio artık zayıf değil):** 7m zar — İÇİNE GİRİLİYOR; çekirdek+kromatin, 4 mitokondri (kristalı), granüllü ER (90 ribozom), golgi, 3 lizozom, sentriol; "organel turu" sırayla parlatıp görev anlatıyor.
 > - **🧬 Mitoz Sahnesi:** evre slider'ı 0–100 → interfaz→profaz→metafaz→anafaz→telofaz+sitokinez; kromatid ayrılması, iğ iplikleri, membran boğumlanması canlı; ▶ otomatik oynatma. Test: 45→Metafaz, 65→Anafaz, 90→Telofaz ✓.
 > - 33 istasyonda 180 fps korunuyor; tüm oda spawn/portal/deep-link haritaları yeni boyutlara taşındı.
+>
+> ## 🌌 11 Haz (25.58-N) — FERMATRIX v4: ODA BÜYÜTME + 6 MEGA İSTASYON (Neo: "alan genişlet, üniversite düzeyi, bio zayıf")
+> 27→33 istasyon. Odalar büyüdü (fizik 46, mat/kimya 38, bio 40 yarı-genişlik; 45 koordinat taşıma doğrulamalı betikle, portal/spawn/deep-link haritaları güncellendi). Hatalar: Faraday bobini torusun simetri ekseninde döndürülüyordu (görünmezdi)→rotation.x; türev panosu ters→90°+collider; dalga/riemann iç içe→yeni bantlar. Yeni: ⚛️ Parçacık Hızlandırıcı (zıt demetler, ÇARPIŞTIR→97 izli olay, yüke göre kıvrılan izler, içine girilebilir) · 🌍 Manyetosfer (dipol v×B entegrasyonu, aurora, Mars senaryosu) · ☢️ Radyoaktivite (225 çekirdek, T½ ölçülen 2.02/teorik 1.98 ✓) · 🧫 Dev Hücre (içine girilen, 7 organel turu) · 🧬 Mitoz Sahnesi (evre slider, doğrulandı) · (🧪 periyodik ilk hali bu blokta 27 elementti → 25.58-O'da 118'e tamamlandı).
 >
 > ## 🎲 11 Haz (25.58-M) — GALTON KESİN FİX (Neo: "toplar yukarıdan zıplayarak dağılıyor veya sıkışıyor")
 > Üç kök neden bulundu-kapatıldı, 2×100 top regresyon: **100/100 sayım, 0 sıkışma, 0 havada, merkez tepeli dağılım.**

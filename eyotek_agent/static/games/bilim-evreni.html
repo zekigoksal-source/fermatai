@@ -2053,6 +2053,226 @@ const FZ = ZONES.fizik;
   st._api = { set:(b,r)=>{ if(b!=null)Bs=b; if(r!=null)ruzgar=r; }, sayilar:() => ({ sapan, vuran, aurora:auroraHit }) };
 }
 
+// — 16. Optik Masa 3D (mercek · prizma · ayna — ışın izleme) —
+{
+  const OX = FZ.cx+30, OZ = 4, TY2 = 1.04, AXY = 1.7;   // optik eksen yüksekliği
+  let mod = 0, f2 = 1.6, aci = 35, optikG = null;
+  const MODLAR = ['İnce kenarlı mercek', 'Kalın kenarlı mercek', 'Prizma (tayf!)', 'Düz ayna'];
+  const TAYF = [0xF87171, 0xF5A35C, 0xFFD27F, 0x34D399, 0x4A90D9, 0x9D5CFF];
+  function ln(g, pts, color, dashed=false) {
+    const m = dashed
+      ? new THREE.LineDashedMaterial({ color, dashSize:0.12, gapSize:0.08, transparent:true, opacity:0.85 })
+      : new THREE.LineBasicMaterial({ color, transparent:true, opacity:0.95 });
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), m);
+    if (dashed) l.computeLineDistances();
+    g.add(l);
+  }
+  function rebuildOptik(stG) {
+    if (optikG) stG.remove(optikG);
+    optikG = new THREE.Group();
+    const lazer = new THREE.Color(0x1ee06f).multiplyScalar(1.7);
+    if (mod <= 1) {
+      // mercek gövdesi
+      const mr = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.1, 24),
+        new THREE.MeshStandardMaterial({ color:0x7DD3FC, transparent:true, opacity:0.3, roughness:0.1 }));
+      mr.rotation.z = Math.PI/2; mr.rotation.y = Math.PI/2;
+      mr.position.set(0, AXY, 0); mr.scale.z = mod === 0 ? 1 : 0.55;
+      optikG.add(mr);
+      // odak işaretleri
+      for (const sgn of [-1, 1]) {
+        const fm = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8),
+          new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xFFD27F, emissiveIntensity:2, roughness:1 }));
+        fm.position.set(sgn*f2, AXY, 0);
+        optikG.add(fm);
+      }
+      // 5 paralel ışın
+      for (let i=-2; i<=2; i++) {
+        const h = i*0.3;
+        if (mod === 0) {       // yakınsak: odakta kesişir
+          ln(optikG, [new THREE.Vector3(-2.6, AXY+h, 0), new THREE.Vector3(0, AXY+h, 0), new THREE.Vector3(f2, AXY, 0),
+            new THREE.Vector3(2.8, AXY - h*(2.8-f2)/f2, 0)], lazer);
+        } else {               // ıraksak: sanal odaktan açılır
+          const dirY = h/f2;
+          ln(optikG, [new THREE.Vector3(-2.6, AXY+h, 0), new THREE.Vector3(0, AXY+h, 0),
+            new THREE.Vector3(2.8, AXY + h + dirY*2.8, 0)], lazer);
+          ln(optikG, [new THREE.Vector3(0, AXY+h, 0), new THREE.Vector3(-f2, AXY, 0)], 0xF87171, true);
+        }
+      }
+    } else if (mod === 2) {
+      // prizma + beyaz ışık → tayf
+      const pri = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.5, 3),
+        new THREE.MeshStandardMaterial({ color:0xCFE8FF, transparent:true, opacity:0.35, roughness:0.05 }));
+      pri.rotation.x = Math.PI/2; pri.position.set(0, AXY, 0);
+      optikG.add(pri);
+      ln(optikG, [new THREE.Vector3(-2.6, AXY+0.25, 0), new THREE.Vector3(-0.25, AXY+0.05, 0)], 0xFFFFFF);
+      // ekran + renkler (mor en çok kırılır)
+      for (let i=0; i<6; i++) {
+        const sap = 0.22 + i*0.085;
+        ln(optikG, [new THREE.Vector3(-0.25, AXY+0.05, 0), new THREE.Vector3(2.4, AXY+0.05 - sap*1.6, 0)],
+          new THREE.Color(TAYF[i]).multiplyScalar(1.5));
+        const seg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.14, 0.3),
+          new THREE.MeshStandardMaterial({ color:0x000000, emissive:TAYF[i], emissiveIntensity:1.8, roughness:1 }));
+        seg.position.set(2.42, AXY+0.05 - sap*1.6, 0);
+        optikG.add(seg);
+      }
+      const ekran = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.5, 0.6),
+        new THREE.MeshStandardMaterial({ color:0x223052, roughness:0.5 }));
+      ekran.position.set(2.5, AXY-0.4, 0);
+      optikG.add(ekran);
+    } else {
+      // düz ayna: gelme = yansıma
+      const ayna = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.4, 1.0),
+        new THREE.MeshStandardMaterial({ color:0xCFE8FF, roughness:0.05, metalness:0.9 }));
+      ayna.position.set(0.8, AXY, 0);
+      optikG.add(ayna);
+      const rad = aci*Math.PI/180;
+      const hit = new THREE.Vector3(0.77, AXY, 0);
+      const gel = hit.clone().add(new THREE.Vector3(-Math.cos(rad)*2.2, Math.sin(rad)*2.2, 0));
+      const yan = hit.clone().add(new THREE.Vector3(-Math.cos(rad)*2.2, -Math.sin(rad)*2.2, 0));
+      ln(optikG, [gel, hit], lazer);
+      ln(optikG, [hit, yan], new THREE.Color(0xFFD27F).multiplyScalar(1.5));
+      ln(optikG, [hit, hit.clone().add(new THREE.Vector3(-1.4, 0, 0))], 0x64748B, true);   // normal
+    }
+    optikG.position.y = TY2;
+    stG.add(optikG);
+  }
+  const st = addStation({
+    id:'optik3d', zone:'fizik',
+    x:OX, z:OZ, short:'🔍 Optik Masa', color:'#7DD3FC', radius:6.5, labelY:5.2,
+    title:'🔍 Optik Masa — Işığın Üç Hali',
+    formula:'1/f = 1/d₀ + 1/dᵢ · gelme açısı = yansıma açısı',
+    desc:'Dört düzenek tek masada: <span class="key">ince/kalın mercek</span> ışınları toplar/dağıtır, <span class="key">prizma</span> beyaz ışığı tayfa ayırır (mor en çok kırılır!), <span class="key">ayna</span> gelme-yansıma eşitliğini gösterir. YKS optik ünitesinin tamamı gözünün önünde.',
+    params:[
+      { key:'f', label:'Odak uzaklığı |f| (mercek)', min:0.8, max:2.4, step:0.05, get:()=>f2, set:v=>{ f2=v; rebuildOptik(st.group); }, fmt:v=>v.toFixed(2)+' m' },
+      { key:'a', label:'Gelme açısı (ayna)', min:10, max:70, step:1, get:()=>aci, set:v=>{ aci=v; rebuildOptik(st.group); }, fmt:v=>v.toFixed(0)+'°' },
+    ],
+    actions:[ { label:() => '🔁 ' + MODLAR[mod], fn(){ mod = (mod+1) % 4; rebuildOptik(st.group); } } ],
+    update(){
+      const M = [`Paralel ışınlar odakta (${f2.toFixed(2)} m) kesişiyor — yakınsak`,
+        `Işınlar sanal odaktan (−${f2.toFixed(2)} m) dağılıyor — kesikli uzantıya bak`,
+        'Beyaz ışık = tüm renkler · MOR en çok, KIRMIZI en az kırılır',
+        `Gelme ${aci}° = yansıma ${aci}° — normale göre ölçülür`][mod];
+      setMeter(`<b>${MODLAR[mod]}</b><br>${M}`);
+    },
+    build(g){
+      const top = new THREE.Mesh(new THREE.BoxGeometry(6, 0.1, 2.6),
+        new THREE.MeshStandardMaterial({ color:0x16241c, roughness:0.35, metalness:0.55 }));
+      top.position.y = TY2; if (Q.shadow) top.castShadow = true; g.add(top);
+      const tb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(OX, TY2/2, OZ));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(3, TY2/2+0.05, 1.3), tb);
+      // lazer kaynağı
+      const src = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.3),
+        new THREE.MeshStandardMaterial({ color:0x223052, emissive:0x1ee06f, emissiveIntensity:0.6, roughness:0.3, metalness:0.7 }));
+      src.position.set(-2.8, TY2+AXY, 0); g.add(src);
+      rebuildOptik(g);
+    }
+  });
+  st._api = { mod:m=>{ mod=m%4; rebuildOptik(st.group); }, setF:v=>{ f2=v; rebuildOptik(st.group); }, hangi:() => MODLAR[mod] };
+}
+
+// — 17. Mevsimler (en ünlü kavram yanılgısını kıran istasyon) —
+{
+  const SVX = FZ.cx+4, SVZ = 22, ORB = 4.2, SY = 2.6;
+  let gun = 172, oynat2 = false, earthG = null, ray1 = null, bar1 = null, bar2 = null;
+  function dekl() { return 23.44 * Math.sin(2*Math.PI*(gun-81)/365) * Math.PI/180; }
+  function gunduzSaat(enlemDeg) {
+    const phi = enlemDeg*Math.PI/180, d = dekl();
+    const x = -Math.tan(phi)*Math.tan(d);
+    if (x <= -1) return 24; if (x >= 1) return 0;
+    return 24/Math.PI*Math.acos(x);
+  }
+  function tarihAd() {
+    const aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+    const kum = [31,28,31,30,31,30,31,31,30,31,30,31];
+    let g2 = Math.round(gun), ay = 0;
+    while (g2 > kum[ay]) { g2 -= kum[ay]; ay++; }
+    return g2 + ' ' + aylar[Math.min(ay, 11)];
+  }
+  function uygulaSezon() {
+    if (!earthG) return;
+    const a = 2*Math.PI*(gun/365);
+    // HAFİF eliptik: Dünya OCAK başında günberi (en yakın)! — efsaneyi kıran detay
+    const rr = ORB * (1 + 0.034*Math.cos(2*Math.PI*((gun+10)/365)));
+    earthG.position.set(Math.cos(a)*rr, SY, Math.sin(a)*rr);
+    // ışınım barları (öğle, 40° enlem)
+    const d = dekl();
+    const kyk = Math.max(0, Math.cos((40*Math.PI/180) - d));
+    const gyk = Math.max(0, Math.cos((40*Math.PI/180) + d));
+    bar1.scale.y = Math.max(0.05, kyk*1.6);
+    bar2.scale.y = Math.max(0.05, gyk*1.6);
+    ray1.geometry.dispose();
+    ray1.geometry = new THREE.BufferGeometry().setFromPoints(
+      [new THREE.Vector3(0, SY, 0), earthG.position.clone()]);
+  }
+  tickers.push(() => {
+    if (oynat2) { gun += 24*STEP; if (gun > 365) gun = 1; uygulaSezon(); }
+    if (earthG) earthG.rotation.y += 1.6*STEP;
+  });
+  const st = addStation({
+    id:'mevsimler', zone:'fizik',
+    x:SVX, z:SVZ, short:'🌞 Mevsimler', color:'#FFD27F', radius:7.5, labelY:6,
+    title:'🌞 Mevsimler — Neden Yaz, Neden Kış?',
+    formula:'sebep: 23.44° EKSEN EĞİKLİĞİ (mesafe DEĞİL!)',
+    desc:'En yaygın yanılgı: "yazın Güneş\'e yakınız." <span class="key">YANLIŞ</span> — Dünya Güneş\'e en yakın konumuna <span class="key">OCAK başında</span> gelir! Günü kaydır: eğik eksen yüzünden ışınların geliş açısı değişir; barlar yarıkürelerin aldığı enerjiyi gösterir. Aralıkta KYK\'ya yan gelen ışık = kış.',
+    params:[
+      { key:'g', label:'Yılın günü', min:1, max:365, step:1, get:()=>gun, set:v=>{ gun=v; oynat2=false; uygulaSezon(); }, fmt:v=>{ const t = gun; return tarihAd(); } },
+    ],
+    actions:[ { label:() => oynat2 ? '⏸ Durdur' : '▶️ Yılı oynat', fn(){ oynat2 = !oynat2; } } ],
+    update(){
+      const d = dekl()*180/Math.PI;
+      const gd = gunduzSaat(40);
+      const yakin = (gun < 20 || gun > 350);
+      setMeter(`<b>${tarihAd()}</b> · Güneş dikliği ${d >= 0 ? '+' : ''}${d.toFixed(1)}° · 40° enlemde gündüz <b>${gd.toFixed(1)} saat</b><br>${yakin ? '🔥 Dünya şu an Güneş\'e EN YAKIN — ama KYK\'da KIŞ! Eğiklik kazanır.' : 'Mesafe neredeyse sabit — açı her şeydir.'}`);
+    },
+    build(g){
+      // güneş
+      const sunM = new THREE.Mesh(new THREE.SphereGeometry(0.7, 20, 20),
+        new THREE.MeshStandardMaterial({ color:0xFFD27F, emissive:0xFFB347, emissiveIntensity:2, roughness:0.4 }));
+      sunM.position.y = SY; g.add(sunM);
+      // yörünge
+      const opts = [];
+      for (let i=0; i<=72; i++) {
+        const a = i/72*Math.PI*2, rr = ORB*(1 + 0.034*Math.cos(2*Math.PI*((i/72*365+10)/365)));
+        opts.push(new THREE.Vector3(Math.cos(a)*rr, SY, Math.sin(a)*rr));
+      }
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(opts),
+        new THREE.LineBasicMaterial({ color:0x64748B, transparent:true, opacity:0.5 })));
+      // dünya grubu: küre + eğik eksen + ekvator
+      earthG = new THREE.Group();
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 20),
+        new THREE.MeshStandardMaterial({ color:0x4A90D9, roughness:0.55, emissive:0x16345e, emissiveIntensity:0.4 }));
+      earthG.add(e);
+      const eksen = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.3, 6),
+        new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xF87171, emissiveIntensity:1.6, roughness:1 }));
+      earthG.add(eksen);
+      const ekv = new THREE.Mesh(new THREE.TorusGeometry(0.43, 0.015, 6, 32),
+        new THREE.MeshBasicMaterial({ color:0x1ee06f, transparent:true, opacity:0.7 }));
+      ekv.rotation.x = Math.PI/2;
+      earthG.add(ekv);
+      earthG.rotation.z = -23.44*Math.PI/180;          // eksen eğikliği — yıl boyu AYNI yöne bakar
+      g.add(earthG);
+      // güneş ışını çizgisi
+      ray1 = new THREE.Line(new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial({ color:new THREE.Color(0xFFD27F).multiplyScalar(1.5), transparent:true, opacity:0.8 }));
+      g.add(ray1);
+      // ışınım barları (KYK yeşil, GYK mor) + mini pano
+      const mkBar = (x2, c2) => {
+        const geo = new THREE.BoxGeometry(0.45, 1, 0.45); geo.translate(0, 0.5, 0);
+        const b = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color:0x000000, emissive:c2, emissiveIntensity:1.3, roughness:1 }));
+        b.position.set(x2, 0.06, ORB + 1.6); g.add(b);
+        return b;
+      };
+      bar1 = mkBar(-0.5, 0x1ee06f); bar2 = mkBar(0.5, 0xA78BFA);
+      const l1 = makeLabel('KYK', '#1ee06f', 96, 34); l1.scale.set(0.8, 0.4, 1); l1.position.set(-0.5, 2.2, ORB+1.6); g.add(l1);
+      const l2 = makeLabel('GYK', '#A78BFA', 96, 34); l2.scale.set(0.8, 0.4, 1); l2.position.set(0.5, 2.2, ORB+1.6); g.add(l2);
+      const pb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(SVX, SY, SVZ));
+      world.createCollider(RAPIER.ColliderDesc.ball(0.8), pb);
+      uygulaSezon();
+    }
+  });
+  st._api = { setGun:v=>{ gun=v; uygulaSezon(); }, gunduz:enlem=>+gunduzSaat(enlem).toFixed(2), dekl:()=>+(dekl()*180/Math.PI).toFixed(2) };
+}
+
 // ════════════════ MATEMATİK ODASI (merkez -400,0) ════════════════
 const MT = ZONES.mat;
 
@@ -2466,6 +2686,156 @@ const MT = ZONES.mat;
     }
   });
   st._api = { setTheta:v=>{ theta = v*Math.PI/180; updateTrig(); }, spin:v=>{ spin=v; }, vals:() => ({ sin:+Math.sin(theta).toFixed(3), cos:+Math.cos(theta).toFixed(3) }) };
+}
+
+// — Katı Cisimler Atölyesi (hacim sezgisi: 3 koni = 1 silindir) —
+{
+  const KCX = MT.cx-14, KCZ = 24;
+  let kr = 1.0, kh = 2.0, deney = null, konSu = null, silSu = null, koniM = null, silM = null;
+  function rebuildKati(stG) {
+    for (const m of [koniM, silM, konSu, silSu]) if (m) stG.remove(m);
+    koniM = new THREE.Mesh(new THREE.ConeGeometry(kr, kh, 28),
+      new THREE.MeshStandardMaterial({ color:0xA78BFA, transparent:true, opacity:0.3, roughness:0.2 }));
+    koniM.position.set(-1.6, 0.6 + kh/2, 0); stG.add(koniM);
+    silM = new THREE.Mesh(new THREE.CylinderGeometry(kr, kr, kh, 28, 1, true),
+      new THREE.MeshStandardMaterial({ color:0x1ee06f, transparent:true, opacity:0.25, roughness:0.2, side:THREE.DoubleSide }));
+    silM.position.set(1.6, 0.6 + kh/2, 0); stG.add(silM);
+    // su gövdeleri (scale.y ile dolar)
+    const suMat = () => new THREE.MeshStandardMaterial({ color:0x2E86C1, transparent:true, opacity:0.75, roughness:0.15 });
+    konSu = new THREE.Mesh(new THREE.ConeGeometry(kr*0.97, kh, 24), suMat());
+    konSu.position.copy(koniM.position); konSu.scale.set(0.97, 0.001, 0.97); stG.add(konSu);
+    const silGeo = new THREE.CylinderGeometry(kr*0.95, kr*0.95, kh, 24);
+    silGeo.translate(0, kh/2, 0);
+    silSu = new THREE.Mesh(silGeo, suMat());
+    silSu.position.set(1.6, 0.6, 0); silSu.scale.y = 0.001; stG.add(silSu);
+    deney = null;
+  }
+  function deneyBaslat() { deney = { faz:0, t:0, dolum:0 }; }
+  tickers.push(() => {
+    if (!deney || !konSu) return;
+    deney.t += STEP;
+    if (deney.faz % 2 === 0) {            // koni doluyor
+      const k = Math.min(1, deney.t/1.2);
+      // koni hacmi taban-yukarı: doluluk oranı h³ ile — görsel basitlik: scale tüm koni
+      konSu.scale.y = Math.max(0.001, k);
+      konSu.position.y = koniM.position.y - (1-k)*kh/2;
+      if (k >= 1) { deney.faz++; deney.t = 0; }
+    } else {                               // koniden silindire boşalt
+      const k = Math.min(1, deney.t/1.2);
+      konSu.scale.y = Math.max(0.001, 1-k);
+      konSu.position.y = koniM.position.y - k*kh/2;
+      silSu.scale.y = Math.max(0.001, (deney.dolum + k)/3);
+      if (k >= 1) {
+        deney.dolum++; deney.t = 0; deney.faz++;
+        if (deney.dolum >= 3) deney = { faz:-1, bitti:true };
+      }
+    }
+  });
+  const st = addStation({
+    id:'kati', zone:'mat',
+    x:KCX, z:KCZ, short:'🧊 Katı Cisimler', color:'#A78BFA', radius:6.5, labelY:5.6,
+    title:'🧊 Katı Cisimler — Hacim Suyla Kanıtlanır',
+    formula:'V(koni) = ⅓·π·r²·h · V(silindir) = π·r²·h',
+    desc:'Aynı taban, aynı yükseklik: koniyi suyla doldurup silindire boşalt — <span class="key">tam 3 koni</span> silindiri doldurur. ⅓ katsayısı formülde ezber, burada DENEY. r ve h\'yi değiştir: oran asla şaşmaz. YKS geometri katı cisimlerin sezgisi.',
+    params:[
+      { key:'r', label:'Taban yarıçapı r', min:0.5, max:1.4, step:0.05, get:()=>kr, set:v=>{ kr=v; rebuildKati(st.group); }, fmt:v=>v.toFixed(2)+' m' },
+      { key:'h', label:'Yükseklik h', min:1, max:2.6, step:0.05, get:()=>kh, set:v=>{ kh=v; rebuildKati(st.group); }, fmt:v=>v.toFixed(2)+' m' },
+    ],
+    actions:[ { label:'💧 Su deneyini başlat', fn(){ rebuildKati(st.group); deneyBaslat(); } } ],
+    update(){
+      const vk = Math.PI*kr*kr*kh/3, vs = Math.PI*kr*kr*kh;
+      const durum = deney ? (deney.bitti ? '— <b>3 koni = 1 silindir ✓ KANITLANDI</b>' : `— dökülen koni: ${Math.min(3, (deney.dolum ?? 0) + 1)}/3`) : '';
+      setMeter(`V(koni) = <b>${vk.toFixed(2)} m³</b> · V(silindir) = <b>${vs.toFixed(2)} m³</b> · oran = ${(vs/vk).toFixed(2)} ${durum}`);
+    },
+    build(g){
+      const taban = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.5, 3),
+        new THREE.MeshStandardMaterial({ color:0x223052, roughness:0.35, metalness:0.7 }));
+      taban.position.y = 0.3; if (Q.shadow) taban.castShadow = true; g.add(taban);
+      const tb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(KCX, 0.3, KCZ));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(2.7, 0.3, 1.5), tb);
+      rebuildKati(g);
+    }
+  });
+  st._api = { set:(r,h)=>{ if(r!=null)kr=r; if(h!=null)kh=h; rebuildKati(st.group); }, deney:deneyBaslat,
+    hacimler:() => ({ koni:+(Math.PI*kr*kr*kh/3).toFixed(3), silindir:+(Math.PI*kr*kr*kh).toFixed(3) }) };
+}
+
+// — Pisagor Panosu (alan ile görsel ispat) —
+{
+  const PGX = MT.cx+8, PGZ = 28;
+  let pa = 3, pb2 = 4, pisaG = null;
+  function kare(stG, p1, p2, color) {
+    // p1→p2 kenarına dışa doğru kare çiz
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const nx = dy, ny = -dx;                       // dışa normal
+    const p3 = { x:p2.x + nx, y:p2.y + ny }, p4 = { x:p1.x + nx, y:p1.y + ny };
+    const shape = new THREE.Shape();
+    shape.moveTo(p1.x, p1.y); shape.lineTo(p2.x, p2.y); shape.lineTo(p3.x, p3.y); shape.lineTo(p4.x, p4.y);
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(shape),
+      new THREE.MeshStandardMaterial({ color, transparent:true, opacity:0.4, side:THREE.DoubleSide,
+        emissive:color, emissiveIntensity:0.35 }));
+    pisaG.add(m);
+    const kenar = Math.hypot(dx, dy);
+    const merkez = { x:(p1.x+p2.x+p3.x+p4.x)/4, y:(p1.y+p2.y+p3.y+p4.y)/4 };
+    const lbl = makeLabel((kenar*kenar).toFixed(1), '#FFFFFF', 96, 36);
+    lbl.scale.set(0.9, 0.45, 1);
+    lbl.position.set(merkez.x, merkez.y, 0.1);
+    pisaG.add(lbl);
+  }
+  function rebuildPisa(stG) {
+    if (pisaG) stG.remove(pisaG);
+    pisaG = new THREE.Group();
+    const S = 0.55;                                 // ölçek
+    const A = { x:0, y:0 }, B = { x:pa*S, y:0 }, C = { x:0, y:pb2*S };
+    // üçgen
+    const tri = new THREE.Shape();
+    tri.moveTo(A.x, A.y); tri.lineTo(B.x, B.y); tri.lineTo(C.x, C.y);
+    const triM = new THREE.Mesh(new THREE.ShapeGeometry(tri),
+      new THREE.MeshStandardMaterial({ color:0xE2E8F0, transparent:true, opacity:0.25, side:THREE.DoubleSide }));
+    pisaG.add(triM);
+    // dik açı işareti
+    const dik = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2),
+      new THREE.MeshBasicMaterial({ color:0xFFFFFF, transparent:true, opacity:0.7 }));
+    dik.position.set(0.13, 0.13, 0.02);
+    pisaG.add(dik);
+    kare(pisaG, B, A, 0x1ee06f);                    // a² (taban, aşağı)
+    kare(pisaG, A, C, 0xA78BFA);                    // b² (dikey, sola)
+    kare(pisaG, C, B, 0xFFD27F);                    // c² (hipotenüs, dışa)
+    pisaG.position.set(-1.0, 2.4, 0.15);
+    stG.add(pisaG);
+  }
+  const st = addStation({
+    id:'pisagor', zone:'mat',
+    x:PGX, z:PGZ, short:'📐 Pisagor Panosu', color:'#1ee06f', radius:6.5, labelY:6.6,
+    title:'📐 Pisagor — Alanlarla Görsel İspat',
+    formula:'a² + b² = c²',
+    desc:'Kenarları kaydır: dik kenarların üzerine kurulan <span class="key">yeşil + mor karelerin alanı</span>, hipotenüsteki <span class="key">sarı karenin alanına</span> her zaman eşit. 2500 yıllık teorem, ezbersiz — alanları topla, kendin gör. (3-4-5 üçgenini dene!)',
+    params:[
+      { key:'a', label:'Dik kenar a', min:1.5, max:5, step:0.1, get:()=>pa, set:v=>{ pa=v; rebuildPisa(st.group); }, fmt:v=>v.toFixed(1) },
+      { key:'b', label:'Dik kenar b', min:1.5, max:5, step:0.1, get:()=>pb2, set:v=>{ pb2=v; rebuildPisa(st.group); }, fmt:v=>v.toFixed(1) },
+    ],
+    actions:[ { label:'⭐ 3-4-5 üçgeni', fn(){ pa = 3; pb2 = 4; rebuildPisa(st.group); } } ],
+    update(){
+      const c = Math.hypot(pa, pb2);
+      setMeter(`a² + b² = ${(pa*pa).toFixed(1)} + ${(pb2*pb2).toFixed(1)} = <b>${(pa*pa+pb2*pb2).toFixed(1)}</b> · c² = ${c.toFixed(2)}² = <b>${(c*c).toFixed(1)}</b> ✓`);
+    },
+    build(g){
+      g.rotation.y = Math.PI;                       // odanın merkezine bak
+      const board = new THREE.Mesh(new THREE.BoxGeometry(9.4, 8.4, 0.18),
+        new THREE.MeshStandardMaterial({ color:0x101a30, roughness:0.5, metalness:0.5 }));
+      board.position.set(0, 4.4, -0.1); g.add(board);
+      const bb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(PGX, 4.4, PGZ));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(4.8, 4.2, 0.25), bb);
+      const frameMat = new THREE.MeshStandardMaterial({ color:0x000000, emissive:0x1ee06f, emissiveIntensity:1.3, roughness:1 });
+      for (const [w2, h2, px3, py3] of [[9.6,0.1,0,8.66],[9.6,0.1,0,0.14],[0.1,8.4,-4.76,4.4],[0.1,8.4,4.76,4.4]]) {
+        const t = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, 0.12), frameMat);
+        t.position.set(px3, py3, -0.05); g.add(t);
+      }
+      rebuildPisa(g);
+    }
+  });
+  st._api = { set:(a,b)=>{ if(a!=null)pa=a; if(b!=null)pb2=b; rebuildPisa(st.group); },
+    kontrol:() => ({ a2b2:+(pa*pa+pb2*pb2).toFixed(2), c2:+(pa*pa+pb2*pb2).toFixed(2) }) };
 }
 
 // ════════════════ KİMYA ODASI (merkez 0,400) ════════════════
@@ -3011,123 +3381,261 @@ const KM = ZONES.kimya;
   st._api = { basla, reset:resetRad, setLam:v=>{ lam2=v; }, kalan, olculenT:() => olcT ? +olcT.toFixed(2) : null };
 }
 
-// — Periyodik Tablo Duvarı (etkileşimli + 3D Bohr modeli) —
+// — Periyodik Tablo Duvarı v2 (118 ELEMENTİN TAMAMI + 3D Bohr modeli) —
 {
-  const PTX = 0, PTZ = KM.cz + 30;     // kuzey duvarına yakın, merkeze bakar
-  // [Z, sembol, ad, kütle, grup, periyot, kategori, dizilim, not]
-  const ELEMS = [
-    [1,'H','Hidrojen',1.008,1,1,'ametal',[1],'evrenin %75\'i'],
-    [2,'He','Helyum',4.003,18,1,'soygaz',[2],'güneş enerjisinin külü'],
-    [3,'Li','Lityum',6.94,1,2,'alkali',[2,1],'telefonunun pili'],
-    [4,'Be','Berilyum',9.012,2,2,'toprak alkali',[2,2],'uzay aynalarında'],
-    [5,'B','Bor',10.81,13,2,'yarımetal',[2,3],'Türkiye dünya lideri'],
-    [6,'C','Karbon',12.011,14,2,'ametal',[2,4],'yaşamın iskeleti'],
-    [7,'N','Azot',14.007,15,2,'ametal',[2,5],'havanın %78\'i'],
-    [8,'O','Oksijen',15.999,16,2,'ametal',[2,6],'her nefeste'],
-    [9,'F','Flor',18.998,17,2,'halojen',[2,7],'en elektronegatif'],
-    [10,'Ne','Neon',20.18,18,2,'soygaz',[2,8],'kırmızı tabela ışığı'],
-    [11,'Na','Sodyum',22.99,1,3,'alkali',[2,8,1],'suya atma — patlar'],
-    [12,'Mg','Magnezyum',24.305,2,3,'toprak alkali',[2,8,2],'klorofilin kalbi'],
-    [13,'Al','Alüminyum',26.982,13,3,'metal',[2,8,3],'folyo + uçak gövdesi'],
-    [14,'Si','Silisyum',28.085,14,3,'yarımetal',[2,8,4],'her çipin içinde'],
-    [15,'P','Fosfor',30.974,15,3,'ametal',[2,8,5],'DNA omurgası + ATP'],
-    [16,'S','Kükürt',32.06,16,3,'ametal',[2,8,6],'volkan kokusu'],
-    [17,'Cl','Klor',35.45,17,3,'halojen',[2,8,7],'havuz dezenfektanı'],
-    [18,'Ar','Argon',39.948,18,3,'soygaz',[2,8,8],'ampul dolgu gazı'],
-    [19,'K','Potasyum',39.098,1,4,'alkali',[2,8,8,1],'sinir iletimi + muz'],
-    [20,'Ca','Kalsiyum',40.078,2,4,'toprak alkali',[2,8,8,2],'kemik + diş'],
-    [26,'Fe','Demir',55.845,8,4,'geçiş metali',[2,8,14,2],'kanında + yıldız küllerinde'],
-    [29,'Cu','Bakır',63.546,11,4,'geçiş metali',[2,8,18,1],'her kabloda'],
-    [30,'Zn','Çinko',65.38,12,4,'geçiş metali',[2,8,18,2],'bağışıklık + pil'],
-    [47,'Ag','Gümüş',107.87,11,5,'geçiş metali',[2,8,18,18,1],'en iyi iletken'],
-    [79,'Au','Altın',196.97,11,6,'geçiş metali',[2,8,18,32,18,1],'yıldız çarpışmasında doğdu'],
-    [82,'Pb','Kurşun',207.2,14,6,'metal',[2,8,18,32,18,4],'radyasyon zırhı'],
-    [92,'U','Uranyum',238.03,3,7,'aktinit',[2,8,18,32,21,9,2],'nükleer yakıt'],
-  ];
+  const PTX = 0, PTZ = KM.cz + 30;
+  const ADLAR = ('Hidrojen,Helyum,Lityum,Berilyum,Bor,Karbon,Azot,Oksijen,Flor,Neon,Sodyum,Magnezyum,Alüminyum,Silisyum,Fosfor,Kükürt,Klor,Argon,Potasyum,Kalsiyum,'
+    + 'Skandiyum,Titanyum,Vanadyum,Krom,Mangan,Demir,Kobalt,Nikel,Bakır,Çinko,Galyum,Germanyum,Arsenik,Selenyum,Brom,Kripton,Rubidyum,Stronsiyum,İtriyum,Zirkonyum,'
+    + 'Niyobyum,Molibden,Teknesyum,Rutenyum,Rodyum,Paladyum,Gümüş,Kadmiyum,İndiyum,Kalay,Antimon,Tellür,İyot,Ksenon,Sezyum,Baryum,Lantan,Seryum,Praseodim,Neodim,'
+    + 'Prometyum,Samaryum,Evropiyum,Gadolinyum,Terbiyum,Disprosyum,Holmiyum,Erbiyum,Tulyum,İterbiyum,Lutesyum,Hafniyum,Tantal,Volfram,Renyum,Osmiyum,İridyum,Platin,Altın,Cıva,'
+    + 'Talyum,Kurşun,Bizmut,Polonyum,Astatin,Radon,Fransiyum,Radyum,Aktinyum,Toryum,Protaktinyum,Uranyum,Neptünyum,Plütonyum,Amerikyum,Küriyum,Berkelyum,Kaliforniyum,Aynştaynyum,Fermiyum,'
+    + 'Mendelevyum,Nobelyum,Lorensiyum,Rutherfordyum,Dubniyum,Seaborgiyum,Bohriyum,Hassiyum,Meitneriyum,Darmstadtiyum,Röntgenyum,Kopernikyum,Nihonyum,Flerovyum,Moskovyum,Livermoryum,Tennessin,Oganesson').split(',');
+  const SEMBOL = ('H,He,Li,Be,B,C,N,O,F,Ne,Na,Mg,Al,Si,P,S,Cl,Ar,K,Ca,Sc,Ti,V,Cr,Mn,Fe,Co,Ni,Cu,Zn,Ga,Ge,As,Se,Br,Kr,Rb,Sr,Y,Zr,'
+    + 'Nb,Mo,Tc,Ru,Rh,Pd,Ag,Cd,In,Sn,Sb,Te,I,Xe,Cs,Ba,La,Ce,Pr,Nd,Pm,Sm,Eu,Gd,Tb,Dy,Ho,Er,Tm,Yb,Lu,Hf,Ta,W,Re,Os,Ir,Pt,Au,Hg,'
+    + 'Tl,Pb,Bi,Po,At,Rn,Fr,Ra,Ac,Th,Pa,U,Np,Pu,Am,Cm,Bk,Cf,Es,Fm,Md,No,Lr,Rf,Db,Sg,Bh,Hs,Mt,Ds,Rg,Cn,Nh,Fl,Mc,Lv,Ts,Og').split(',');
+  const KUTLE = [1.0,4.0,6.9,9.0,10.8,12.0,14.0,16.0,19.0,20.2,23.0,24.3,27.0,28.1,31.0,32.1,35.5,39.9,39.1,40.1,
+    45.0,47.9,50.9,52.0,54.9,55.8,58.9,58.7,63.5,65.4,69.7,72.6,74.9,79.0,79.9,83.8,85.5,87.6,88.9,91.2,
+    92.9,95.9,98,101.1,102.9,106.4,107.9,112.4,114.8,118.7,121.8,127.6,126.9,131.3,132.9,137.3,138.9,140.1,140.9,144.2,
+    145,150.4,152.0,157.3,158.9,162.5,164.9,167.3,168.9,173.0,175.0,178.5,180.9,183.8,186.2,190.2,192.2,195.1,197.0,200.6,
+    204.4,207.2,209.0,209,210,222,223,226,227,232.0,231.0,238.0,237,244,243,247,247,251,252,257,
+    258,259,266,267,268,269,270,277,278,281,282,285,286,289,290,293,294,294];
+  // Bohr kabuk dizilimleri (K-L-M-N-O-P-Q) — standart tablo
+  const KABUK = ('1|2|2,1|2,2|2,3|2,4|2,5|2,6|2,7|2,8|2,8,1|2,8,2|2,8,3|2,8,4|2,8,5|2,8,6|2,8,7|2,8,8|2,8,8,1|2,8,8,2|'
+    + '2,8,9,2|2,8,10,2|2,8,11,2|2,8,13,1|2,8,13,2|2,8,14,2|2,8,15,2|2,8,16,2|2,8,18,1|2,8,18,2|2,8,18,3|2,8,18,4|2,8,18,5|2,8,18,6|2,8,18,7|2,8,18,8|'
+    + '2,8,18,8,1|2,8,18,8,2|2,8,18,9,2|2,8,18,10,2|2,8,18,12,1|2,8,18,13,1|2,8,18,13,2|2,8,18,15,1|2,8,18,16,1|2,8,18,18|2,8,18,18,1|2,8,18,18,2|2,8,18,18,3|2,8,18,18,4|2,8,18,18,5|2,8,18,18,6|2,8,18,18,7|2,8,18,18,8|'
+    + '2,8,18,18,8,1|2,8,18,18,8,2|2,8,18,18,9,2|2,8,18,19,9,2|2,8,18,21,8,2|2,8,18,22,8,2|2,8,18,23,8,2|2,8,18,24,8,2|2,8,18,25,8,2|2,8,18,25,9,2|2,8,18,27,8,2|2,8,18,28,8,2|2,8,18,29,8,2|2,8,18,30,8,2|2,8,18,31,8,2|2,8,18,32,8,2|2,8,18,32,9,2|'
+    + '2,8,18,32,10,2|2,8,18,32,11,2|2,8,18,32,12,2|2,8,18,32,13,2|2,8,18,32,14,2|2,8,18,32,15,2|2,8,18,32,17,1|2,8,18,32,18,1|2,8,18,32,18,2|2,8,18,32,18,3|2,8,18,32,18,4|2,8,18,32,18,5|2,8,18,32,18,6|2,8,18,32,18,7|2,8,18,32,18,8|'
+    + '2,8,18,32,18,8,1|2,8,18,32,18,8,2|2,8,18,32,18,9,2|2,8,18,32,18,10,2|2,8,18,32,20,9,2|2,8,18,32,21,9,2|2,8,18,32,22,9,2|2,8,18,32,24,8,2|2,8,18,32,25,8,2|2,8,18,32,25,9,2|2,8,18,32,27,8,2|2,8,18,32,28,8,2|2,8,18,32,29,8,2|2,8,18,32,30,8,2|'
+    + '2,8,18,32,31,8,2|2,8,18,32,32,8,2|2,8,18,32,32,8,3|2,8,18,32,32,10,2|2,8,18,32,32,11,2|2,8,18,32,32,12,2|2,8,18,32,32,13,2|2,8,18,32,32,14,2|2,8,18,32,32,15,2|2,8,18,32,32,16,2|2,8,18,32,32,17,2|2,8,18,32,32,18,2|2,8,18,32,32,18,3|2,8,18,32,32,18,4|2,8,18,32,32,18,5|2,8,18,32,32,18,6|2,8,18,32,32,18,7|2,8,18,32,32,18,8')
+    .split('|').map(s2 => s2.split(',').map(Number));
+  const NOTLAR = {
+    1:"evrenin %75'i", 2:'güneş enerjisinin külü', 3:'telefonunun pili', 5:'Türkiye dünya lideri', 6:'yaşamın iskeleti',
+    7:"havanın %78'i", 8:'her nefeste', 9:'en elektronegatif', 10:'kırmızı tabela ışığı', 11:'suya atma — patlar',
+    12:'klorofilin kalbi', 13:'folyo + uçak gövdesi', 14:'her çipin içinde', 15:'DNA omurgası + ATP', 16:'volkan kokusu',
+    17:'havuz dezenfektanı', 19:'sinir iletimi + muz', 20:'kemik + diş', 22:'uçak ve protez metali', 24:'paslanmaz çeliğin sırrı',
+    26:'kanında + yıldız küllerinde', 29:'her kabloda', 30:'bağışıklık + pil', 35:'oda sıcaklığında SIVI ametal',
+    38:'havai fişeğin kırmızısı', 47:'en iyi iletken', 53:'tiroit hormonu', 54:'araba farı + iyon motoru',
+    74:'en yüksek erime noktası (3422°C)', 78:'katalitik konvertör', 79:'nötron yıldızı çarpışmasında doğdu',
+    80:'oda sıcaklığında SIVI metal', 82:'radyasyon zırhı', 86:'evlerdeki doğal radyasyon', 88:"Curie'lerin keşfi",
+    92:'nükleer yakıt', 94:'uzay sondalarının pili', 118:'sadece ~5 atom üretildi'
+  };
+  const YARIM = new Set([5,14,32,33,51,52]), AMETAL = new Set([1,6,7,8,15,16,34]);
+  const HALOJEN = new Set([9,17,35,53,85,117]), SOYGAZ = new Set([2,10,18,36,54,86,118]);
+  const PBLOK = new Set([13,31,49,50,81,82,83,84,113,114,115,116]);
+  function kategori(Z) {
+    if (Z >= 57 && Z <= 71) return 'lantanit';
+    if (Z >= 89 && Z <= 103) return 'aktinit';
+    if (SOYGAZ.has(Z)) return 'soygaz';
+    if (HALOJEN.has(Z)) return 'halojen';
+    if (AMETAL.has(Z)) return 'ametal';
+    if (YARIM.has(Z)) return 'yarımetal';
+    if (PBLOK.has(Z)) return 'metal';
+    const yer = yerlesim(Z);
+    if (yer.col === 1) return 'alkali';
+    if (yer.col === 2) return 'toprak alkali';
+    return 'geçiş metali';
+  }
+  function yerlesim(Z) {       // gerçek tablo konumu (satır 1-7 ana, 9-10 f-blok)
+    if (Z >= 57 && Z <= 71)  return { row:9,  col:Z-57+3 };
+    if (Z >= 89 && Z <= 103) return { row:10, col:Z-89+3 };
+    const BREAK = [0,2,10,18,36,54,86,118];
+    let p = 1; while (Z > BREAK[p]) p++;
+    const o = Z - BREAK[p-1];
+    if (p === 1) return { row:1, col:o === 1 ? 1 : 18 };
+    if (p <= 3)  return { row:p, col:o <= 2 ? o : o + 10 };
+    if (p <= 5)  return { row:p, col:o };
+    // p6/p7: 1-2 → s-blok; f-blok ayrı satırda; kalan d/p → col = o-14
+    return { row:p, col:o <= 2 ? o : o - 14 };
+  }
   const KAT_RENK = { 'alkali':0xF87171, 'toprak alkali':0xF5A35C, 'geçiş metali':0xFFD27F, 'metal':0x9aa7c4,
-    'yarımetal':0x7DD3FC, 'ametal':0x1ee06f, 'halojen':0xA78BFA, 'soygaz':0xCE93D8, 'aktinit':0xE57373 };
-  let sec = 5, tiles = null, hi = null, bohrG = null;
+    'yarımetal':0x7DD3FC, 'ametal':0x1ee06f, 'halojen':0xA78BFA, 'soygaz':0xCE93D8, 'lantanit':0x80CBC4, 'aktinit':0xE57373 };
+  let sec = 25, tiles = null, hi = null, bohrG = null;     // başlangıç: Fe
   const dummyP = new THREE.Object3D();
-  const TS = 0.92;                       // karo adımı
-  function tilePos(e) { return { x:(e[4] - 9.5) * TS, y: 6.4 - e[5] * TS }; }
+  const TS = 0.6;
+  function tilePos(Z) {
+    const y2 = yerlesim(Z);
+    return { x:(y2.col - 9.5) * TS, y: 7.0 - y2.row * TS - (y2.row >= 9 ? 0.25 : 0) };
+  }
   function rebuildBohr(stG) {
     if (bohrG) stG.remove(bohrG);
     bohrG = new THREE.Group();
-    const e = ELEMS[sec];
-    const nuc = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 14),
-      new THREE.MeshStandardMaterial({ color:0x000000, emissive:KAT_RENK[e[6]], emissiveIntensity:1.6, roughness:1 }));
+    const Z = sec + 1, kat = kategori(Z);
+    const nuc = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 14),
+      new THREE.MeshStandardMaterial({ color:0x000000, emissive:KAT_RENK[kat], emissiveIntensity:1.6, roughness:1 }));
     bohrG.add(nuc);
-    e[7].forEach((cnt, si) => {
-      const r = 0.55 + si*0.42;
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.018, 6, 40),
+    KABUK[sec].forEach((cnt, si) => {
+      const r = 0.45 + si*0.33;
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.015, 6, 40),
         new THREE.MeshBasicMaterial({ color:0x64748B, transparent:true, opacity:0.6 }));
       bohrG.add(ring);
-      for (let k=0; k<Math.min(cnt, 18); k++) {
-        const a = k/Math.min(cnt, 18)*Math.PI*2;
-        const el = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8),
+      const gosterim = Math.min(cnt, 16);                 // görsel sınır; sayı kartta tam
+      for (let k=0; k<gosterim; k++) {
+        const a = k/gosterim*Math.PI*2;
+        const el = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8),
           new THREE.MeshStandardMaterial({ color:0x000000, emissive:0x1ee06f, emissiveIntensity:2, roughness:1 }));
         el.position.set(Math.cos(a)*r, Math.sin(a)*r, 0);
         bohrG.add(el);
       }
     });
-    bohrG.position.set(10.6, 3.6, 0.6);
+    bohrG.position.set(8.4, 3.5, 0.6);
     stG.add(bohrG);
-    const tp = tilePos(e);
+    const tp = tilePos(sec + 1);
     hi.position.set(tp.x, tp.y, 0.42);
   }
   const st = addStation({
     id:'periyodik', zone:'kimya',
-    x:PTX, z:PTZ, short:'🧪 Periyodik Tablo', color:'#34D399', radius:10, labelY:8.2,
-    title:'🧪 Periyodik Tablo — Elementlerin Haritası',
+    x:PTX, z:PTZ, short:'🧪 Periyodik Tablo', color:'#34D399', radius:11, labelY:8.2,
+    title:'🧪 Periyodik Tablo — 118 Elementin Tamamı',
     formula:'periyot = katman sayısı · grup = değerlik deseni',
-    desc:'27 işaretli element: kaydır, seç — yanda <span class="key">3D Bohr modeli</span> katman katman kurulur, kartta kimlik bilgisi. Renkler kategori: kırmızı alkali, mor halojen, yeşil ametal… Aynı GRUPTAKİLERİN son katmanı hep aynı — kimyanın bütün sırrı bu desende.',
+    desc:'Hidrojenden Oganesson\'a <span class="key">eksiksiz 118 element</span> — lantanit/aktinit blokları dahil. Kaydır: yanda <span class="key">3D Bohr modeli</span> katman katman kurulur, kartta kimlik + günlük hayat notu. Aynı sütundakilerin son katmanı hep aynı — kimyanın bütün deseni bu duvarda.',
     params:[
-      { key:'s', label:'Element seç', min:0, max:ELEMS.length-1, step:1, get:()=>sec, set:v=>{ sec=Math.round(v); rebuildBohr(st.group); }, fmt:v=>ELEMS[Math.round(v)][1]+' ('+ELEMS[Math.round(v)][0]+')' },
+      { key:'s', label:'Element seç', min:0, max:117, step:1, get:()=>sec, set:v=>{ sec=Math.round(v); rebuildBohr(st.group); }, fmt:v=>SEMBOL[Math.round(v)]+' ('+(Math.round(v)+1)+')' },
     ],
     actions:[
-      { label:'⬅️', fn(){ sec = (sec-1+ELEMS.length) % ELEMS.length; rebuildBohr(st.group); } },
-      { label:'➡️', fn(){ sec = (sec+1) % ELEMS.length; rebuildBohr(st.group); } },
+      { label:'⬅️', fn(){ sec = (sec-1+118) % 118; rebuildBohr(st.group); } },
+      { label:'➡️', fn(){ sec = (sec+1) % 118; rebuildBohr(st.group); } },
     ],
     update(){
-      const e = ELEMS[sec];
-      setMeter(`<b>${e[2]} (${e[1]})</b> · Z=${e[0]} · A≈${e[3]}<br>${e[5]}. periyot · ${e[4]}. grup · <b>${e[6]}</b> · dizilim ${e[7].join('-')}<br>💡 ${e[8]}`);
+      const Z = sec + 1, kat = kategori(Z), yer = yerlesim(Z);
+      const not = NOTLAR[Z] || ({'lantanit':'nadir toprak elementi — mıknatıs/lazer teknolojisi',
+        'aktinit':'radyoaktif ağır element', 'geçiş metali':'d-blok metali — alaşım ve katalizör dünyası',
+        'soygaz':'tepkimeye girmek istemez — tam katman', 'halojen':'tuz yapıcı — son katmanda 7 elektron',
+        'alkali':'suya dokunma! — tek değerlik elektronu', 'toprak alkali':'2 değerlik elektronu',
+        'metal':'p-blok metali', 'ametal':'ametal', 'yarımetal':'metalle ametal arası — yarı iletken adayı'}[kat]);
+      setMeter(`<b>${ADLAR[sec]} (${SEMBOL[sec]})</b> · Z=${Z} · A≈${KUTLE[sec]}<br>${yer.row <= 7 ? yer.row + '. periyot · ' + yer.col + '. grup' : (kat === 'lantanit' ? '6. periyot f-blok' : '7. periyot f-blok')} · <b>${kat}</b> · katmanlar ${KABUK[sec].join('-')}<br>💡 ${not}`);
     },
     build(g){
-      g.rotation.y = Math.PI;              // merkeze bak (güneye)
-      // duvar panosu
-      const board = new THREE.Mesh(new THREE.BoxGeometry(19, 7.6, 0.2),
+      g.rotation.y = Math.PI;
+      const board = new THREE.Mesh(new THREE.BoxGeometry(12.2, 6.9, 0.2),
         new THREE.MeshStandardMaterial({ color:0x0a140d, roughness:0.5, metalness:0.5 }));
-      board.position.set(0, 3.9, 0); g.add(board);
-      const bb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(PTX, 3.9, PTZ));
-      world.createCollider(RAPIER.ColliderDesc.cuboid(9.6, 3.8, 0.3), bb);
-      // karolar
-      tiles = new THREE.InstancedMesh(new THREE.BoxGeometry(TS-0.1, TS-0.1, 0.1),
-        new THREE.MeshStandardMaterial({ roughness:0.45, metalness:0.3, emissive:0xffffff, emissiveIntensity:0.35 }), ELEMS.length);
-      for (let i=0; i<ELEMS.length; i++) {
-        const tp = tilePos(ELEMS[i]);
+      board.position.set(0, 3.6, 0); g.add(board);
+      const bb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(PTX, 3.6, PTZ));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(6.2, 3.5, 0.3), bb);
+      tiles = new THREE.InstancedMesh(new THREE.BoxGeometry(TS-0.07, TS-0.07, 0.08),
+        new THREE.MeshStandardMaterial({ roughness:0.45, metalness:0.3, emissive:0xffffff, emissiveIntensity:0.35 }), 118);
+      for (let i=0; i<118; i++) {
+        const tp = tilePos(i + 1);
         dummyP.position.set(tp.x, tp.y, 0.18);
         dummyP.updateMatrix();
         tiles.setMatrixAt(i, dummyP.matrix);
-        tiles.setColorAt(i, new THREE.Color(KAT_RENK[ELEMS[i][6]]).multiplyScalar(0.55));
+        tiles.setColorAt(i, new THREE.Color(KAT_RENK[kategori(i+1)]).multiplyScalar(0.55));
       }
       g.add(tiles);
-      // sembol etiketleri
-      for (const e of ELEMS) {
-        const tp = tilePos(e);
-        const lbl = makeLabel(e[1], '#FFFFFF', 96, 40);
-        lbl.scale.set(0.72, 0.36, 1);
-        lbl.position.set(tp.x, tp.y, 0.34);
+      for (let i=0; i<118; i++) {
+        const tp = tilePos(i + 1);
+        const lbl = makeLabel(SEMBOL[i], '#FFFFFF', 96, 44);
+        lbl.scale.set(0.46, 0.23, 1);
+        lbl.position.set(tp.x, tp.y, 0.32);
         g.add(lbl);
       }
-      // seçim çerçevesi
-      hi = new THREE.Mesh(new THREE.BoxGeometry(TS+0.06, TS+0.06, 0.06),
+      hi = new THREE.Mesh(new THREE.BoxGeometry(TS+0.05, TS+0.05, 0.05),
         new THREE.MeshStandardMaterial({ color:0x000000, emissive:0x1ee06f, emissiveIntensity:2.2, roughness:1, transparent:true, opacity:0.85 }));
       g.add(hi);
       tickers.push(() => { if (bohrG) bohrG.rotation.z = simTime*0.5; if (hi) hi.material.emissiveIntensity = 1.8 + Math.sin(simTime*4)*0.6; });
       rebuildBohr(g);
     }
   });
-  st._api = { sec:i=>{ sec = i % ELEMS.length; rebuildBohr(st.group); }, secili:() => ({ sym:ELEMS[sec][1], Z:ELEMS[sec][0] }) };
+  st._api = { sec:i=>{ sec = ((i % 118) + 118) % 118; rebuildBohr(st.group); },
+    secili:() => ({ sym:SEMBOL[sec], Z:sec+1, ad:ADLAR[sec], kat:kategori(sec+1), kabuk:KABUK[sec].join('-') }) };
+}
+
+// — Molekül Kurucu (Lewis bağları — atomları birleştir, okteti tamamla) —
+{
+  const MKX = -28, MKZ = KM.cz + 2;
+  // tarifler: atomlar [el, x, y, z], bağlar [i, j, derece], ortaklanmamış çiftler {atomIdx: adet}
+  const TARIF = [
+    { ad:'H₂O', atom:[['O',0,0,0],['H',-0.85,-0.55,0],['H',0.85,-0.55,0]], bag:[[0,1,1],[0,2,1]], lp:{0:2}, not:'kırık doğru — O üstünde 2 ortaklanmamış çift' },
+    { ad:'CO₂', atom:[['C',0,0,0],['O',-1.2,0,0],['O',1.2,0,0]], bag:[[0,1,2],[0,2,2]], lp:{1:2,2:2}, not:'iki İKİLİ bağ — doğrusal, apolar' },
+    { ad:'O₂',  atom:[['O',-0.65,0,0],['O',0.65,0,0]], bag:[[0,1,2]], lp:{0:2,1:2}, not:'ikili bağ — soluduğun molekül' },
+    { ad:'N₂',  atom:[['N',-0.6,0,0],['N',0.6,0,0]], bag:[[0,1,3]], lp:{0:1,1:1}, not:'ÜÇLÜ bağ — doğanın en sağlamlarından' },
+    { ad:'CH₄', atom:[['C',0,0,0],['H',0.75,0.75,0.75],['H',0.75,-0.75,-0.75],['H',-0.75,0.75,-0.75],['H',-0.75,-0.75,0.75]], bag:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]], lp:{}, not:'4 tekli bağ — düzgün dörtyüzlü 109.5°' },
+    { ad:'NH₃', atom:[['N',0,0.2,0],['H',-0.8,-0.45,0.45],['H',0.8,-0.45,0.45],['H',0,-0.45,-0.9]], bag:[[0,1,1],[0,2,1],[0,3,1]], lp:{0:1}, not:'piramit — N tepesinde 1 ortaklanmamış çift' },
+    { ad:'HCl', atom:[['Cl',0.3,0,0],['H',-0.95,0,0]], bag:[[0,1,1]], lp:{0:3}, not:'polar kovalent — Cl elektronları kendine çeker' },
+  ];
+  const EL_GORSEL = { H:{ r:0.22, c:0xE8EAEE }, O:{ r:0.34, c:0xF87171 }, C:{ r:0.32, c:0x4a5568 }, N:{ r:0.32, c:0x4A90D9 }, Cl:{ r:0.38, c:0x1ee06f } };
+  let ti = 0, adim = 0, kurG = null;
+  function rebuildKur(stG) {
+    if (kurG) stG.remove(kurG);
+    kurG = new THREE.Group();
+    const t = TARIF[ti], S = 1.5;
+    t.atom.forEach((a, i) => {
+      if (i >= adim) return;
+      const g2 = EL_GORSEL[a[0]];
+      const m = new THREE.Mesh(new THREE.SphereGeometry(g2.r*S*0.65, 18, 18),
+        new THREE.MeshStandardMaterial({ color:g2.c, roughness:0.3, metalness:0.25, emissive:g2.c, emissiveIntensity:0.15 }));
+      m.position.set(a[1]*S, a[2]*S, a[3]*S);
+      kurG.add(m);
+      const lbl = makeLabel(a[0], '#FFFFFF', 64, 36);
+      lbl.scale.set(0.5, 0.5, 1);
+      lbl.position.set(a[1]*S, a[2]*S + g2.r*S*0.65 + 0.25, a[3]*S);
+      kurG.add(lbl);
+    });
+    for (const [i, j, der] of t.bag) {
+      if (i >= adim || j >= adim) continue;
+      const A = t.atom[i], B = t.atom[j];
+      for (let d=0; d<der; d++) {
+        const off = (d - (der-1)/2) * 0.12;
+        const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 8),
+          new THREE.MeshStandardMaterial({ color:0x94A3B8, roughness:0.4, metalness:0.6 }));
+        updateRod(rod, { x:A[1]*S, y:A[2]*S + off, z:A[3]*S }, { x:B[1]*S, y:B[2]*S + off, z:B[3]*S });
+        kurG.add(rod);
+      }
+    }
+    // ortaklanmamış elektron çiftleri (tamamlanınca görünür)
+    if (adim >= t.atom.length) {
+      for (const [ai, adet] of Object.entries(t.lp)) {
+        const A = t.atom[+ai], g2 = EL_GORSEL[A[0]];
+        for (let k=0; k<adet; k++) {
+          const a2 = Math.PI*0.25 + k/Math.max(1, adet)*Math.PI*1.5;
+          for (const eps of [-0.06, 0.06]) {
+            const dot = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8),
+              new THREE.MeshStandardMaterial({ color:0x000000, emissive:0x1ee06f, emissiveIntensity:2.2, roughness:1 }));
+            dot.position.set(A[1]*S + Math.cos(a2)*(g2.r*S*0.65+0.28) + eps,
+              A[2]*S + Math.sin(a2)*(g2.r*S*0.65+0.28), A[3]*S);
+            kurG.add(dot);
+          }
+        }
+      }
+    }
+    kurG.position.y = 3.0;
+    stG.add(kurG);
+  }
+  const st = addStation({
+    id:'kurucu', zone:'kimya',
+    x:MKX, z:MKZ, short:'🔨 Molekül Kurucu', color:'#FFD27F', radius:7, labelY:6,
+    title:'🔨 Molekül Kurucu — Lewis Bağları',
+    formula:'oktet kuralı: son katman 8 (H için 2)',
+    desc:'Hedef molekülü seç, atomları <span class="key">tek tek ekle</span>: bağlar kurulur — tekli mi, <span class="key">ikili mi, üçlü mü</span> gör. Tamamlanınca <span class="key">ortaklanmamış elektron çiftleri</span> (yeşil noktalar) belirir: molekül geometrisini onlar büker. Lewis formülü kâğıttan kalkıp 3 boyuta.',
+    params:[],
+    actions:[
+      { label:() => `🎯 ${TARIF[ti].ad}`, fn(){ ti = (ti+1) % TARIF.length; adim = 0; rebuildKur(st.group); } },
+      { label:() => adim < TARIF[ti].atom.length ? `➕ Atom ekle (${adim}/${TARIF[ti].atom.length})` : '↺ Yeniden kur', fn(){
+        adim = adim < TARIF[ti].atom.length ? adim + 1 : 0;
+        rebuildKur(st.group);
+      } },
+    ],
+    update(){
+      const t = TARIF[ti];
+      const tamam = adim >= t.atom.length;
+      const derAd = ['', 'tekli', 'İKİLİ', 'ÜÇLÜ'];
+      const enB = Math.max(...t.bag.map(b => b[2]));
+      setMeter(tamam
+        ? `<b>${t.ad} TAMAM — OKTET ✓</b> · en güçlü bağ: ${derAd[enB]}<br>${t.not}`
+        : `${t.ad}: ${adim}/${t.atom.length} atom yerleşti — eklemeye devam`);
+    },
+    build(g){
+      const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.8, 0.5, 24),
+        new THREE.MeshStandardMaterial({ color:0x223052, roughness:0.3, metalness:0.8 }));
+      ped.position.y = 0.25; if (Q.shadow) ped.castShadow = true; g.add(ped);
+      const pb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(MKX, 0.25, MKZ));
+      world.createCollider(RAPIER.ColliderDesc.cylinder(0.25, 1.6), pb);
+      tickers.push(() => { if (kurG) kurG.rotation.y = simTime*0.3; });
+      rebuildKur(g);
+    }
+  });
+  st._api = { hedef:i=>{ ti = i % TARIF.length; adim = 0; rebuildKur(st.group); },
+    ekle:() => { adim = Math.min(TARIF[ti].atom.length, adim+1); rebuildKur(st.group); return adim; },
+    durum:() => ({ molekul:TARIF[ti].ad, adim, toplam:TARIF[ti].atom.length }) };
 }
 
 // ════════════════ BİYOLOJİ ODASI (merkez 0,-400) ════════════════
@@ -3638,6 +4146,123 @@ const BIO = ZONES.bio;
     }
   });
   st._api = { setEvre:v=>{ evre=v; uygula(v/100); }, evre:() => evreAdi(evre/100).ad, oynat:v=>{ oynat=v; } };
+}
+
+// — Aksiyon Potansiyeli (ya hep ya hiç — sinir iletimi) —
+{
+  const APX = BIO.cx-32, APZ = BIO.cz, AKL = 7, AKY = 2.2;
+  let siddet = 40, ESIK = 55, dalga = null, trace2 = [], traceLine2 = null, sonSonuc = '';
+  let impulsHalka = null, aksonMat = null;
+  function uyar() {
+    if (siddet < ESIK) {
+      sonSonuc = `şiddet ${siddet} < eşik ${ESIK} → <b>HİÇ</b> (yerel sönümlü titreşim, impuls YOK)`;
+      dalga = { x:-AKL/2, hiz:0, sonum:true, t:0 };
+    } else {
+      sonSonuc = `şiddet ${siddet} ≥ eşik ${ESIK} → <b>HEP!</b> İmpuls TAM boyda — 60'ta da 100'de de AYNI`;
+      dalga = { x:-AKL/2, hiz:3.4, sonum:false, t:0 };
+    }
+    trace2 = [];
+  }
+  tickers.push(() => {
+    if (!impulsHalka) return;
+    if (dalga) {
+      dalga.t += STEP;
+      if (dalga.sonum) {
+        impulsHalka.position.x = APX - AKL/2 + 0.2;
+        impulsHalka.material.opacity = Math.max(0, 0.9 - dalga.t*1.8);
+        if (dalga.t > 0.6) dalga = null;
+      } else {
+        dalga.x += dalga.hiz*STEP;
+        impulsHalka.position.x = APX + dalga.x;
+        impulsHalka.material.opacity = 0.95;
+        if (dalga.x > AKL/2) { dalga = null; impulsHalka.material.opacity = 0; }
+      }
+    } else if (impulsHalka.material.opacity > 0) {
+      impulsHalka.material.opacity = Math.max(0, impulsHalka.material.opacity - STEP*2);
+    }
+    // membran potansiyeli izi (board)
+    let v = -70;
+    if (dalga && !dalga.sonum) {
+      const faz = dalga.t % 1;
+      v = dalga.t < 0.25 ? -70 + (dalga.t/0.25)*100 : (dalga.t < 0.5 ? 30 - ((dalga.t-0.25)/0.25)*110 : Math.min(-70, -80 + (dalga.t-0.5)*20));
+    } else if (dalga && dalga.sonum) {
+      v = -70 + Math.max(0, 12 - dalga.t*30);
+    }
+    trace2.push(v);
+    if (trace2.length > 200) trace2.shift();
+    if (traceLine2 && trace2.length > 2 && (trace2.length % 4 === 0)) {
+      const pts = trace2.map((vv, i) => new THREE.Vector3(-2 + i/200*4, 3.4 + (vv+70)/100*1.8, 0.03));
+      traceLine2.geometry.dispose();
+      traceLine2.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+    }
+  });
+  const st = addStation({
+    id:'sinir', zone:'bio',
+    x:APX, z:APZ, short:'⚡ Aksiyon Potansiyeli', color:'#FFD27F', radius:7.5, labelY:5.8,
+    title:'⚡ Aksiyon Potansiyeli — Ya Hep Ya Hiç',
+    formula:'eşik ≈ −55 mV · depolarizasyon: Na⁺ içeri · repolarizasyon: K⁺ dışarı',
+    desc:'Uyarı şiddetini kaydır, ⚡ bas: eşiğin <span class="key">altında HİÇBİR ŞEY</span> olmaz; üstünde <span class="key">tam boy impuls</span> aksonda koşar — 60 da versen 100 de versen impuls AYNI. Beyin şiddeti impuls BÜYÜKLÜĞÜYLE değil <span class="key">FREKANSIYLA</span> kodlar. Paneldeki -70→+30 sivrilmesine bak.',
+    params:[
+      { key:'s', label:'Uyarı şiddeti', min:10, max:100, step:1, get:()=>siddet, set:v=>{ siddet=v; }, fmt:v=>v.toFixed(0) + (v >= ESIK ? ' (eşik üstü ✓)' : ' (eşik altı)') },
+    ],
+    actions:[ { label:'⚡ Uyar', fn(){ uyar(); } } ],
+    update(){ setMeter(sonSonuc || `Eşik = ${ESIK} · şiddeti ayarla ve ⚡ uyar — iki farklı eşik-üstü şiddeti karşılaştır`); },
+    build(g){
+      // akson gövdesi
+      aksonMat = new THREE.MeshStandardMaterial({ color:0xD9B38C, roughness:0.5, emissive:0x8a6b4a, emissiveIntensity:0.2 });
+      const akson = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, AKL, 14), aksonMat);
+      akson.rotation.z = Math.PI/2; akson.position.y = AKY; g.add(akson);
+      // hücre gövdesi (soma) + dendritler
+      const soma = new THREE.Mesh(new THREE.SphereGeometry(0.7, 18, 18), aksonMat);
+      soma.position.set(-AKL/2 - 0.5, AKY, 0); g.add(soma);
+      for (let i=0; i<5; i++) {
+        const a = i/5*Math.PI*2;
+        const den = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.08, 1.1, 6), aksonMat);
+        den.position.set(-AKL/2 - 0.9 - Math.abs(Math.cos(a))*0.4, AKY + Math.sin(a)*0.8, Math.cos(a)*0.5);
+        den.rotation.z = Math.PI/2 - Math.sin(a)*0.7;
+        g.add(den);
+      }
+      // miyelin kılıfları + Ranvier boğumları
+      for (let i=0; i<4; i++) {
+        const mye = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 1.1, 12),
+          new THREE.MeshStandardMaterial({ color:0xE8EAEE, roughness:0.4 }));
+        mye.rotation.z = Math.PI/2;
+        mye.position.set(-AKL/2 + 1.1 + i*1.55, AKY, 0);
+        g.add(mye);
+      }
+      // sinaps uçları
+      for (const dz2 of [-0.5, 0, 0.5]) {
+        const uc = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10),
+          new THREE.MeshStandardMaterial({ color:0x000000, emissive:0xA78BFA, emissiveIntensity:1.2, roughness:1 }));
+        uc.position.set(AKL/2 + 0.5, AKY + dz2*0.6, dz2);
+        g.add(uc);
+      }
+      // impuls halkası (dalga)
+      impulsHalka = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.09, 10, 24),
+        new THREE.MeshBasicMaterial({ color:new THREE.Color(0xFFD27F).multiplyScalar(1.7), transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false }));
+      impulsHalka.rotation.y = Math.PI/2;
+      impulsHalka.position.set(APX - AKL/2, AKY, APZ);
+      scene.add(impulsHalka);
+      // potansiyel panosu
+      const board = new THREE.Mesh(new THREE.BoxGeometry(4.6, 3.2, 0.14),
+        new THREE.MeshStandardMaterial({ color:0x140a0d, roughness:0.5, metalness:0.5 }));
+      board.position.set(0, 3.9, -2.2); g.add(board);
+      const bb = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(APX, 3.9, APZ-2.2));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(2.3, 1.6, 0.2), bb);
+      const esikLn = new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        [new THREE.Vector3(-2, 3.4 + 15/100*1.8, 0.02), new THREE.Vector3(2, 3.4 + 15/100*1.8, 0.02)]),
+        new THREE.LineDashedMaterial({ color:0xF87171, dashSize:0.1, gapSize:0.08 }));
+      esikLn.computeLineDistances();
+      esikLn.position.z = -2.12; g.add(esikLn);
+      traceLine2 = new THREE.Line(new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial({ color:new THREE.Color(0x1ee06f).multiplyScalar(1.6) }));
+      traceLine2.position.z = -2.1; g.add(traceLine2);
+      // akson kaide collider
+      const ab = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(APX, AKY, APZ));
+      world.createCollider(RAPIER.ColliderDesc.cuboid(AKL/2, 0.4, 0.4), ab);
+    }
+  });
+  st._api = { setSiddet:v=>{ siddet=v; }, uyar, sonuc:() => sonSonuc.replace(/<[^>]+>/g, '') };
 }
 
 // ── Oda içi yürüme yolları: oda merkezinden her istasyon kaidesine ──
