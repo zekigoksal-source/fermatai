@@ -1,6 +1,22 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-R (Fable 5): FERMATRIX 3D DÜNYA — mat/kimya/bio odaları büyütüldü (half 38-40→52) + 6 yeni üniv-seviye 3D istasyon (Konik Kesitler, Vektör, Kristal Kafes, Elektroliz, Atan Kalp, Akciğer), oda dengesi 7→9 — CANLI**
+> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-S (Fable 5): FERMATRIX 3D — DEVASA İNTERAKTİF İNSAN ANATOMİSİ (sistem seç→şeffaflaş) + Hücre Lab (canlı organel, hayvan/bitki) + 6 bilgi-kartlı istasyon (trig 3D, asit-baz, orbital, sığaç, normal dağılım, besin piramidi). Odalar half→64/58. Çocukça kalp/akciğer kaldırıldı → anatomiye devredildi — CANLI**
+>
+> ## 🧬 11 Haz (25.58-S) — ANATOMİ LAB + HÜCRE LAB + BİLGİ-KARTLI İSTASYONLAR (Neo: "ayrı kalp/akciğer çocukça → devasa insan modeli sistem seçilsin diğerleri şeffaflaşsın anatomi-lab gibi; hayvan/bitki hücre canlı organel; her branş bilgi kartı+kavram yanılgısı+parametre; ~20/oda; evreni büyüt sıkışık olmasın")
+> **8 yeni istasyon + 2 çocukça kaldırıldı (kalp,akciger). Odalar büyütüldü: mat/kimya/bio half 52→64, fizik 46→58. Oda dağılımı: fizik 18, kimya 11, mat 11, bio 10, toplam 51. Her yeni istasyonda akademik bilgi + KAVRAM YANILGISI kartı.**
+> - **🧍 İnsan Anatomisi (MEGA, headline):** Devasa insansı model. 7 sistem butonu (Deri/İskelet/Kas/Dolaşım/Solunum/Sindirim/Sinir). Seçilen sistem PARLAR, deri kabuğu ŞEFFAFLAŞIR (opacity 0.55→0.08) — anatomi atlası gibi içine bak. Her sistem: kafatası+omurga+kaburga+leğen+kemikler / kalp+damarlar / akciğer+trakea / mide+bağırsak / beyin+omurilik. Bilgi kartı + yanılgı (örn "Kemik cansız değil, CANLI doku"). GÖRSEL DOĞRULANDI: iskelet seçili+deri şeffaf A++.
+> - **🔬 Hücre Lab (headline):** Yeşil zar küresi içinde CANLI organeller (sitoplazma akışı — yavaş drift). Çekirdek+nükleolus, mitokondri, ER (torusknot), golgi, ribozom, koful, kloroplast, sentrozom. **Hayvan↔bitki toggle** (kloroplast/çeper/dev koful belirir-kaybolur). "Sonraki organel" odak + 9 organel bilgi kartı + yanılgı. GÖRSEL DOĞRULANDI A++.
+> - **🔺 Besin Piramidi (bio):** 4 trofik basamak, %10 enerji kuralı, yükselen enerji parçacığı, yanılgı "avcılar bol olmaz piramit daralır".
+> - **📐 Trigonometri 3D (mat):** Birim çember→nokta (cosθ,sinθ)→açılan sinüs+kosinüs dalgası 3D. İzdüşüm çizgileri, 4 özdeşlik bilgi kartı (temel/iki-kat/yarım açı/tanjant).
+> - **🔔 Normal Dağılım (mat):** 3D Gauss çan yüzeyi (vertex-renkli), σ slider sivri↔yayvan, 68-95-99.7 kuralı + yanılgı "her veri çan değil".
+> - **⚗️ Asit-Baz pH (kimya):** 3D beher, evrensel indikatör rengi (pH 0-14), pH skala çubuğu, 5 madde preset (limon..çamaşır suyu), yanılgı "güçlü≠derişik".
+> - **⚛️ Elektron Orbitalleri (kimya):** s/p/d olasılık bulutu (1400 nokta, rejection sampling: p halter, d dört lob), kapasite 2/6/10, yanılgı "elektron gezegen gibi dönmez".
+> - **🔌 Paralel Levha Sığaç (fizik):** İki levha (+kırmızı/−mavi), E alanı okları (voltajla parlar), voltaj+mesafe slider, E=V/d, C∝A/d, ½CV², yanılgı "sığaçta sürekli akım akmaz, yük birikir".
+> - **KRİTİK FIX:** anatomi'deki `const V=(x,y,z)=>Vector3` helper'ı hücre lab'da da kullanılmış ama ayrı IIFE kapsamı → "V is not defined" tüm init'i kilitledi (loadMsg "inşa ediliyor"da takılı, __fz hiç oluşmadı). Tespit: <head>'e geçici `window.__boot` error-capture script enjekte → satır+mesaj yakaladı. Çözüm: hücre lab'da `new THREE.Vector3` doğrudan. Ders: IIFE-yerel helper başka bloğa SIZMAZ; node --check yakalamaz (geçerli ama runtime-undefined).
+> - **Ayrıca:** hucrelab (-46)↔sinir(-32) yakınlık çakışması → hucrelab -54'e taşındı. Boot-capture script deploy öncesi kaldırıldı.
+> - **AÇIK:** Neo ~20/oda istiyor; şu an 18/11/11/10. Sonraki tur: kimya yanma/iletkenlik, bio sindirim-detay/beyin-bölge/protein-sentezi, mat fonksiyon-dönüşümleri/karmaşık-sayı, fizik bobinler/RLC-3D/Newton-beşiği. Odalar 64 yarıçap — bolca yer var. External API (PubChem zaten bağlı, NASA) ile veri-zengin içerik eklenebilir.
+>
+> ## 🏛️ 11 Haz (25.58-R) — 3D DÜNYA GENİŞLEME: ODA DENGELEME + 6 YENİ İSTASYON (Neo: "3d fermatrix evrenini büyüt, alanları büyüt simetrik yerleştir, modelleri arttır; fizik kapsamlı diğerleri geride")
 >
 > ## 🏛️ 11 Haz (25.58-R) — 3D DÜNYA GENİŞLEME: ODA DENGELEME + 6 YENİ İSTASYON (Neo: "3d fermatrix evrenini büyüt, alanları büyüt simetrik yerleştir, modelleri arttır; fizik kapsamlı diğerleri geride")
 > **mat/kimya/bio odaları half 38-40 → 52 büyütüldü, return portallar + entry spawn yeni duvara taşındı. Her odaya 2 yeni üniversite-seviye 3D istasyon, hub-bakan şeride simetrik çiftler (entry portalı flanklıyor). Oda dağılımı: fizik 17, mat/kimya/bio artık 9'ar (önce 7), toplam 45 istasyon.**
