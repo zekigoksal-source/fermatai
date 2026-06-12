@@ -1,6 +1,17 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-Q (Fable 5): FERMATRIX SİMÜLATÖR 35→51 — astrofizik+kimya+bio+mat dengeleme, üniversite-seviye popüler bilim (yıldız ömrü→karadelik, bileşik oluşturucu, dolaşım, evrim), Nexus→Merkez rebrand, profesyonel açılış geçişi — CANLI**
+> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-R (Fable 5): FERMATRIX 3D DÜNYA — mat/kimya/bio odaları büyütüldü (half 38-40→52) + 6 yeni üniv-seviye 3D istasyon (Konik Kesitler, Vektör, Kristal Kafes, Elektroliz, Atan Kalp, Akciğer), oda dengesi 7→9 — CANLI**
+>
+> ## 🏛️ 11 Haz (25.58-R) — 3D DÜNYA GENİŞLEME: ODA DENGELEME + 6 YENİ İSTASYON (Neo: "3d fermatrix evrenini büyüt, alanları büyüt simetrik yerleştir, modelleri arttır; fizik kapsamlı diğerleri geride")
+> **mat/kimya/bio odaları half 38-40 → 52 büyütüldü, return portallar + entry spawn yeni duvara taşındı. Her odaya 2 yeni üniversite-seviye 3D istasyon, hub-bakan şeride simetrik çiftler (entry portalı flanklıyor). Oda dağılımı: fizik 17, mat/kimya/bio artık 9'ar (önce 7), toplam 45 istasyon.**
+> - **📐 Mat +2:** **Konik Kesitler** (çift koni + eğimli kesen düzlem → çember/elips/parabol/hiperbol, dış merkezlik e canlı, 4 preset) · **Vektör Uzayı** (3D a+b paralelkenar, nokta çarpım |a||b|cosθ + vektörel çarpım |a||b|sinθ, dik/paralel preset).
+> - **🧪 Kimya +2:** **Kristal Kafes** (NaCl iyonik kafes, Na⁺ turuncu + Cl⁻ yeşil alternan kübik ızgara, koordinasyon 6, n×n×n slider, dönen) · **Elektroliz Hücresi** (cam beher + 2 elektrot, voltajla hızlanan H₂/O₂ kabarcık 2:1, min 1.23V redoks).
+> - **🫀 Bio +2 (insan sistemleri — Neo'nun istediği):** **Atan Kalp** (nabızla ölçekli atan stilize kalp + aort/pulmoner damar, çift pompa, dinlenme/egzersiz preset) · **Akciğer/Solunum** (nefesle genişleyen akciğer + trakea/bronş + inip kalkan diyafram, O₂/CO₂ gaz değişimi).
+> - **Yerleşim:** mat konik(-360,-24)+vektor(-360,24) · kimya kristal(-24,360)+elektroliz3d(24,360) · bio kalp(-24,-360)+akciger(24,-360). Hepsi yeni hub-duvarı şeridinde, entry portalı simetrik flanklıyor, yürüme yolu+göbek otomatik kapsıyor (splice 4280 öncesi).
+> - **Doğrulama:** node --check temiz · `__fz.stations()` 45 istasyon, 6 yeni kayıtlı, oda dağılımı 17/9/9/9/1 · 6 update() hatasız · konsol temiz (tickers 4s sorunsuz) · GÖRSEL: Kristal Kafes (alternan iyon kürLeri) + Konik Kesitler (çift koni) mobilde A++ render, Fermatrix markası doğru (Nexus yok).
+> - **AÇIK:** odalar artık 52 yarıçap, dış halkada hâlâ yer var — sonraki turda her odaya +3-4 istasyon daha (fizik 17 seviyesine). `f.stations` bir FONKSİYON (f.stations()), dizi değil — test ederken çağır.
+>
+> ## 🌌 11 Haz (25.58-Q) — SİMÜLATÖR 51 SİM: BRANŞ DENGELEME + ÜNİVERSİTE-SEVİYE POPÜLER BİLİM (Neo: "fizik kapsamlı, diğer branşlar geride; üniv seviyesini öğrenci diline çevir; karadelik/yıldız ömrü/bileşik oluşturma/evrim; Nexus kelimesi kalksın")
 >
 > ## 🌌 11 Haz (25.58-Q) — SİMÜLATÖR 51 SİM: BRANŞ DENGELEME + ÜNİVERSİTE-SEVİYE POPÜLER BİLİM (Neo: "fizik kapsamlı, diğer branşlar geride; üniv seviyesini öğrenci diline çevir; karadelik/yıldız ömrü/bileşik oluşturma/evrim; Nexus kelimesi kalksın")
 > **35 → 51 sim · 9 kategori (Astrofizik YENİ) · dengeli dağılım: Kimya 7, Bio 6, Mat 6 artık fizikle yarışıyor · "Nexus" → "Merkez" + evren adı Fermatrix.**
