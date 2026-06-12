@@ -2074,8 +2074,32 @@ async def send_wa_message(to: str, text: str, *, _outreach: bool = False, _reaso
                         return True
                 logger.error(f"WA Token yenileme başarısız: {r.text[:200]}")
                 return False
+            elif r.status_code >= 500:
+                # Geçici Meta-tarafı hata (500/502/503) → kısa bekleyip 1 kez retry
+                logger.warning(f"⚠️ WA API geçici hata {r.status_code}, 1.5s sonra retry: {r.text[:300]}")
+                await asyncio.sleep(1.5)
+                r3 = await client.post(
+                    WA_API_URL,
+                    headers={"Authorization": f"Bearer {WA_ACCESS_TOKEN}",
+                             "Content-Type": "application/json"},
+                    json=payload,
+                )
+                if r3.status_code == 200:
+                    logger.success(f"✅ WA mesaj gönderildi (retry) → {to}")
+                    return True
+                logger.error(f"WA API retry sonrası hata {r3.status_code}: {r3.text[:500]}")
+                return False
             else:
-                logger.error(f"WA API hata {r.status_code}: {r.text[:200]}")
+                # Tam hata metnini logla (önceden [:200] kırpıyordu → teşhis zorlaşıyordu)
+                _full = r.text[:600]
+                logger.error(f"WA API hata {r.status_code}: {_full}")
+                # Meta İşletme Doğrulaması / LIMITED kaynaklı bilinen hatalar → net, eyleme dönük ipucu
+                if any(c in _full for c in ("131005", "131042", "131049", "131056",
+                                            "business verification", "not verified", "LIMITED")):
+                    logger.error("🚩 WA GÖNDERİM KISITLI (Meta hesap seviyesi): İşletme Doğrulaması "
+                                 "(Business Verification) eksik veya görünen ad onaysız → öğrencilere mesaj "
+                                 "gidemiyor. ÇÖZÜM: business.facebook.com → Ayarlar → İşletme Bilgileri/"
+                                 "Güvenlik Merkezi → Doğrulamayı başlat (kod değişikliği değil, Meta paneli işi).")
                 return False
         except Exception as e:
             logger.error(f"WA gönderme hatası: {e}")
