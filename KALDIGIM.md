@@ -1,6 +1,15 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-S (Fable 5): FERMATRIX 3D — DEVASA İNTERAKTİF İNSAN ANATOMİSİ (sistem seç→şeffaflaş) + Hücre Lab (canlı organel, hayvan/bitki) + 6 bilgi-kartlı istasyon (trig 3D, asit-baz, orbital, sığaç, normal dağılım, besin piramidi). Odalar half→64/58. Çocukça kalp/akciğer kaldırıldı → anatomiye devredildi — CANLI**
+> **Son güncelleme:** 12 Haziran 2026 → **OTURUM 25.58-T (Fable 5): FİX-LOOP + FERMATRIX HARİTA — query_analytics halüsinasyon SQL düzeltmesi (web_sessions/soz_no/phone-nitele/sinav_hata_yuzdesi), Groq TPD cooldown, Fermatrix harita/ışınlanma overlay (M tuşu + 🗺️ buton, 51 istasyon navigasyonu) — CANLI**
+>
+> ## 🔧 12 Haz (25.58-T) — FİX-LOOP (production hataları) + FERMATRIX HARİTA MVP (Neo: "sentry/kullanıcı hataları fix-loop + fermatrix MVP ileri + her şey güncel")
+> **VPS 48h log taraması → 4 tür production hatası tespit + düzeltildi, hepsi query_analytics halüsinasyon SQL kökenli. + Fermatrix'e harita/ışınlanma overlay.**
+> - **DB halüsinasyon SQL fix (system_prompts.py):** Claude query_analytics'te olmayan ad uyduruyordu → `web_access_codes` (gerçek: web_sessions), `student_id` (gerçek: soz_no), `hata_orani` (gerçek: sinav_hata_yuzdesi), çıplak `phone` (ambiguous — s.phone/acl_users.phone nitele). "DOĞRU İSİMLER" bloğu + emin değilse information_schema doğrula kuralı eklendi. Bu hatalar öğrenciyi cevapsız bırakıyordu (6+6+2+2 olay/48h).
+> - **Groq TPD cooldown (llm_router.py):** Günlük token limiti (413/rate_limit) aşılınca her mesajda boşuna Groq deneniyordu (5+ ardışık fail + log gürültüsü). `_groq_cd_until` instance attr → limit aşılınca 1 saat Groq'u atla, direkt Claude. chat_groq_with_tools entry-check + exception-set.
+> - **🗺️ Fermatrix Harita/Işınlanma (bilim-evreni.html, MVP+):** M tuşu (desktop) + 🗺️ Harita butonu (HUD, mobil) → tam ekran overlay, 51 istasyon odaya göre gruplu (Merkez/Fizik 18/Mat 11/Kimya 11/Bio 10), tıkla→gotoZone ile o istasyonun önüne ışınlan (istasyona bakar konumda). 51 istasyonda yürüyerek arama derdi bitti. Matrix-yeşili tema, kart hover. DOM JS ile üretiliyor (HTML splice yok). Doğrulama: buton açılış 5 oda+51 kart, trig3d ışınlanma (0,13)→(-400,-40) mat zone ✓, harita auto-close ✓.
+> - **Doğrulama:** 3 dosya (system_prompts.py, llm_router.py ast-parse temiz; bilim-evreni.html node --check temiz). Harita görsel A++ mobilde.
+>
+> ## 🧬 11 Haz (25.58-S) — ANATOMİ LAB + HÜCRE LAB + BİLGİ-KARTLI İSTASYONLAR (Neo: "ayrı kalp/akciğer çocukça → devasa insan modeli sistem seçilsin diğerleri şeffaflaşsın anatomi-lab gibi; hayvan/bitki hücre canlı organel; her branş bilgi kartı+kavram yanılgısı+parametre; ~20/oda; evreni büyüt sıkışık olmasın")
 >
 > ## 🧬 11 Haz (25.58-S) — ANATOMİ LAB + HÜCRE LAB + BİLGİ-KARTLI İSTASYONLAR (Neo: "ayrı kalp/akciğer çocukça → devasa insan modeli sistem seçilsin diğerleri şeffaflaşsın anatomi-lab gibi; hayvan/bitki hücre canlı organel; her branş bilgi kartı+kavram yanılgısı+parametre; ~20/oda; evreni büyüt sıkışık olmasın")
 > **8 yeni istasyon + 2 çocukça kaldırıldı (kalp,akciger). Odalar büyütüldü: mat/kimya/bio half 52→64, fizik 46→58. Oda dağılımı: fizik 18, kimya 11, mat 11, bio 10, toplam 51. Her yeni istasyonda akademik bilgi + KAVRAM YANILGISI kartı.**

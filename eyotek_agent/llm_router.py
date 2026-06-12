@@ -1967,7 +1967,11 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
             ya da None (herhangi bir hata / guvensiz durum).
         """
         import json as _json
+        import time as _t
         if not (self._groq_available and self._groq_client):
+            return None
+        # Günlük token limiti (TPD 413) aşıldıysa cooldown — boşuna deneme yapma, direkt Claude
+        if _t.time() < getattr(self, "_groq_cd_until", 0.0):
             return None
 
         # 1) Tool allowlist kontrolu — beyaz liste disi tool varsa iptal
@@ -2066,7 +2070,12 @@ FORMATLAMA: *bold*, liste, emoji az, akici paragraflar, soru sor."""
                 "has_tool_calls": False,
             }
         except Exception as e:
-            logger.warning(f"[GROQ-TOOLS] beklenmeyen hata, Claude'a fallback: {e}")
+            _msg = str(e)
+            if any(k in _msg for k in ("rate_limit", "tokens per day", "TPD", "429", "413", "queue_exceeded")):
+                self._groq_cd_until = _t.time() + 3600.0  # 1 saat Groq'u atla
+                logger.warning("[GROQ-TOOLS] günlük/anlık limit aşıldı → 1 saat cooldown, Claude'a düşülüyor")
+            else:
+                logger.warning(f"[GROQ-TOOLS] beklenmeyen hata, Claude'a fallback: {e}")
             return None
 
     @property

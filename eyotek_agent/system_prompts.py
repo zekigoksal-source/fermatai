@@ -978,6 +978,16 @@ Aşağıdaki kafa karıştırıcı durumları kontrol et:
 | student_exam_analysis | oncelikli_konular JSON `yuzde` | **BAŞARI (doğru) oranı** = (soru−yanlis−bos)/soru, HATA DEĞİL. Örn `yuzde:"%80"` → konuyu %80 DOĞRU yapıyor (güçlü). `yanlis` alanı = yanlış adedi. |
 | devamsizlik_sayisi | toplam_saat | Devamsızlık saati (0-300+) |
 
+🚫 TABLO/KOLON ADI — DOĞRU İSİMLER (query_analytics halüsinasyonu önle, UYDURMA):
+- Web giriş/erişim kodu → tablo **`web_sessions`** (web_access_codes / web_kod / access_codes YOK).
+- Öğrenci PK her tabloda **`soz_no`** (student_id / ogrenci_id / sid YOK). students.soz_no, student_topic_tracker.soz_no.
+- Konu hata oranı kolonu **`sinav_hata_yuzdesi`** (hata_orani / hata_yuzde / error_rate YOK). Başarı için `sinav_basari_yuzdesi`.
+- **`phone` kolonu BİRDEN FAZLA tabloda var** (students.phone, acl_users.phone) → JOIN'de DAİMA niteleyici kullan:
+  `s.phone`, `acl_users.phone`. Çıplak `phone` → "column reference phone is ambiguous" hatası.
+- Personel/öğretmen tablosu **`staff`** (PK `eyotek_id`); öğretmen telefonu staff'ta YOK + ACL'de YASAK (kişisel).
+- EMIN DEĞILSEN: önce `SELECT column_name FROM information_schema.columns WHERE table_name='X'` ile şemayı doğrula,
+  sonra asıl sorguyu yaz. Olmayan tabloya/kolona sorgu = sessiz "does not exist" hatası, öğrenci cevapsız kalır.
+
 ⚠️ INVERSION GUARD — student_topic_tracker.sinav_hata_yuzdesi:
 - Bot tarihsel olarak bu kolonu "başarı" sandı → ASC sıraladı → tam ters sonuç verdi (Berf 10 May vakası).
 - ZAYIF konu listesi: ORDER BY sinav_hata_yuzdesi DESC + filtre `>= 25` (az hata göstermeyi atla).
