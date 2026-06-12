@@ -85,6 +85,12 @@
   .simCard .kat{font-size:10.5px;color:var(--accent2);letter-spacing:1px;text-transform:uppercase}
   .simCard p{margin:6px 0 0;font-size:12px;color:#94A3B8;line-height:1.45}
   #simStage{flex:1;display:none;position:relative;min-height:0}
+  #simStage.simIn{animation:simReveal .45s cubic-bezier(.2,.9,.25,1)}
+  @keyframes simReveal{0%{opacity:0;transform:scale(.965) translateY(8px);filter:blur(6px)}100%{opacity:1;transform:none;filter:none}}
+  #simCtl.simIn{animation:ctlSlide .5s .12s cubic-bezier(.2,.9,.25,1) backwards}
+  @keyframes ctlSlide{0%{opacity:0;transform:translateX(24px)}100%{opacity:1;transform:none}}
+  .simCard{animation:cardPop .35s backwards}
+  @keyframes cardPop{0%{opacity:0;transform:translateY(14px) scale(.97)}100%{opacity:1;transform:none}}
   #simCanvas{position:absolute;inset:0;width:100%;height:100%}
   #simCtl{position:absolute;right:12px;top:12px;width:min(310px,86vw);background:rgba(13,19,38,.92);border:1px solid rgba(199,111,62,.35);
     border-radius:14px;padding:12px 14px;backdrop-filter:blur(8px);max-height:calc(100% - 24px);overflow-y:auto}
@@ -150,7 +156,7 @@
 <div id="hud">
   <div id="cross"></div>
   <div id="aimHint"></div>
-  <div id="topbar">🟢 <b id="zoneName">Nexus</b> · Fermatrix</div>
+  <div id="topbar">🟢 <b id="zoneName">Merkez</b> · Fermatrix</div>
   <div id="fpsBox">— fps</div>
   <div id="exitBtn">✕ Çık</div>
   <div id="hintBar">V kamera · Esc panel · Shift koş · tıkla tut/fırlat</div>
@@ -455,7 +461,7 @@ function makeLabel(text, color='#C76F3E', w=256, fs=26) {
 
 // ════════════════ Bölge (oda) sistemi ════════════════
 const ZONES = {
-  hub:   { name:'Nexus',           color:0x1ee06f, cx:0,    cz:0,    half:26 },
+  hub:   { name:'Merkez',           color:0x1ee06f, cx:0,    cz:0,    half:26 },
   fizik: { name:'Fizik Odası',     color:0xC76F3E, cx:400,  cz:0,    half:46 },
   mat:   { name:'Matematik Odası', color:0xA78BFA, cx:-400, cz:0,    half:38 },
   kimya: { name:'Kimya Odası',     color:0x34D399, cx:0,    cz:400,  half:38 },
@@ -631,13 +637,13 @@ tickers.push(() => {
 
 // portal çiftleri: hub ↔ odalar
 addPortal({ x:20,  z:0,   ry:-Math.PI/2, color:0xC76F3E, label:'⚛️ Fizik',     destZone:'fizik', destSpawn:{ x:364,  z:0,    yaw:-Math.PI/2 } });
-addPortal({ x:360, z:0,   ry: Math.PI/2, color:0xC76F3E, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:16,   z:0,    yaw: Math.PI/2 } });
+addPortal({ x:360, z:0,   ry: Math.PI/2, color:0xC76F3E, label:'🌌 Merkez',     destZone:'hub',   destSpawn:{ x:16,   z:0,    yaw: Math.PI/2 } });
 addPortal({ x:-20, z:0,   ry: Math.PI/2, color:0xA78BFA, label:'📐 Matematik', destZone:'mat',   destSpawn:{ x:-372, z:0,    yaw: Math.PI/2 } });
-addPortal({ x:-368,z:0,   ry:-Math.PI/2, color:0xA78BFA, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:-16,  z:0,    yaw:-Math.PI/2 } });
+addPortal({ x:-368,z:0,   ry:-Math.PI/2, color:0xA78BFA, label:'🌌 Merkez',     destZone:'hub',   destSpawn:{ x:-16,  z:0,    yaw:-Math.PI/2 } });
 addPortal({ x:0,   z:20,  ry: Math.PI,   color:0x34D399, label:'🧪 Kimya',     destZone:'kimya', destSpawn:{ x:0,    z:372,  yaw: Math.PI } });
-addPortal({ x:0,   z:368, ry: 0,         color:0x34D399, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:0,    z:16,   yaw: 0 } });
+addPortal({ x:0,   z:368, ry: 0,         color:0x34D399, label:'🌌 Merkez',     destZone:'hub',   destSpawn:{ x:0,    z:16,   yaw: 0 } });
 addPortal({ x:0,   z:-20, ry: 0,         color:0xF87171, label:'🌱 Biyoloji',  destZone:'bio',   destSpawn:{ x:0,    z:-370, yaw: 0 } });
-addPortal({ x:0,   z:-366,ry: Math.PI,   color:0xF87171, label:'🌌 Nexus',     destZone:'hub',   destSpawn:{ x:0,    z:-16,  yaw: Math.PI } });
+addPortal({ x:0,   z:-366,ry: Math.PI,   color:0xF87171, label:'🌌 Merkez',     destZone:'hub',   destSpawn:{ x:0,    z:-16,  yaw: Math.PI } });
 
 // hub: portallara giden yol noktaları
 {
@@ -4579,6 +4585,59 @@ function SIMS_phCalc(s) {
   }
 }
 
+// ── SİMÜLATÖR GLOBAL YARDIMCILARI (atari havuzu) ────────────
+// Periyodik tablo Z=1..20 (sim'ler için kompakt; istasyon kendi tam tablosunu kullanır)
+const S_SEMBOLLER = ['','H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca'];
+const S_ADLAR2 = ['','Hidrojen','Helyum','Lityum','Berilyum','Bor','Karbon','Azot','Oksijen','Flor','Neon','Sodyum','Magnezyum','Alüminyum','Silisyum','Fosfor','Kükürt','Klor','Argon','Potasyum','Kalsiyum'];
+const S_KABUKLAR = [[],[1],[2],[2,1],[2,2],[2,3],[2,4],[2,5],[2,6],[2,7],[2,8],[2,8,1],[2,8,2],[2,8,3],[2,8,4],[2,8,5],[2,8,6],[2,8,7],[2,8,8],[2,8,8,1],[2,8,8,2]];
+const S_METALLER = new Set([3,4,11,12,13,19,20]);   // Li,Be,Na,Mg,Al,K,Ca (didaktik)
+const S_SOYGAZ = new Set([2,10,18]);
+function S_SEM(z){ return S_SEMBOLLER[z] || '?'; }
+function S_AD(z){ return S_ADLAR2[z] || '?'; }
+function S_EL(z){ return S_SEM(z)+' ('+S_AD(z)+')'; }
+function S_kabukDagilim(z){ return (S_KABUKLAR[z]||[1]).slice(); }
+function S_kabukSay(z){ return (S_KABUKLAR[z]||[1]).length; }
+function S_valans(z){ const k=S_KABUKLAR[z]||[1]; return k[k.length-1]; }
+function S_metalMi(z){ return S_METALLER.has(z); }
+function S_alt(n){ return String(n).replace(/[0-9]/g, d=>'₀₁₂₃₄₅₆₇₈₉'[+d]); }
+function S_gcd(a,b){ a=Math.abs(a);b=Math.abs(b); while(b){[a,b]=[b,a%b];} return a||1; }
+function S_bilesik_info(z1, z2){
+  if (S_SOYGAZ.has(z1) || S_SOYGAZ.has(z2)){
+    const sg = S_SOYGAZ.has(z1)?z1:z2;
+    return `<b>${S_SEM(sg)}</b> bir SOY GAZ — son katmanı dolu (oktet), normalde bileşik OLUŞTURMAZ (kararlı)`;
+  }
+  const m1=S_metalMi(z1), m2=S_metalMi(z2);
+  const v1=S_valans(z1), v2=S_valans(z2);
+  if (m1 && m2){
+    return `<b>${S_SEM(z1)} + ${S_SEM(z2)}</b> → her ikisi de METAL · <b>METALİK BAĞ</b><br>değerlik elektronları ortak "elektron denizi"nde serbest dolaşır → iletkenlik, parlaklık`;
+  }
+  if (m1 !== m2){    // iyonik
+    const mz = m1?z1:z2, az = m1?z2:z1;        // metal / ametal
+    const catQ = S_valans(mz);                  // 1,2,3
+    const anQ = 8 - S_valans(az);               // 1,2,3,4
+    const g = S_gcd(catQ, anQ);
+    const catN = anQ/g, anN = catQ/g;
+    const f = S_SEM(mz)+(catN>1?S_alt(catN):'')+S_SEM(az)+(anN>1?S_alt(anN):'');
+    return `<b>İYONİK BAĞ</b> · ${S_SEM(mz)} ${catQ}e⁻ verir (+${catQ}) , ${S_SEM(az)} ${8-S_valans(az)}e⁻ alır (−${anQ})<br>çapraz oranlama → formül: <b>${f}</b>`;
+  }
+  // kovalent (ametal+ametal)
+  if (z1===1 || z2===1){
+    const o = z1===1?z2:z1;
+    const HID = {6:'CH₄',7:'NH₃',8:'H₂O',9:'HF',15:'PH₃',16:'H₂S',17:'HCl',1:'H₂'};
+    const f = HID[o] || ('H'+(8-S_valans(o)>1?S_alt(8-S_valans(o)):'')+S_SEM(o));
+    return `<b>KOVALENT BAĞ</b> · ametal+ametal, elektronlar PAYLAŞILIR (oktet/dublet)<br>${S_SEM(o)} ${8-S_valans(o)} bağ yapar → formül: <b>${f}</b>`;
+  }
+  return `<b>KOVALENT BAĞ</b> · ${S_SEM(z1)} + ${S_SEM(z2)} (ametal+ametal)<br>ortak elektron çiftleriyle her atom oktete ulaşır (moleküler bileşik)`;
+}
+// Kübik bezier üzerinde tek koordinat (dolaşım sim'i)
+function bez(p0,p1,p2,p3,t){ const u=1-t; return u*u*u*p0 + 3*u*u*t*p1 + 3*u*t*t*p2 + t*t*t*p3; }
+// Matematik: türev sim fonksiyonları + türevleri
+function S_mfn(i){ return [x=>x*x, x=>x*x*x, x=>Math.sin(x)][i]; }
+function S_mdfn(i){ return [x=>2*x, x=>3*x*x, x=>Math.cos(x)][i]; }
+// İntegral sim: pozitif fonksiyonlar + ters türevleri (kapalı form)
+function S_ifn(i){ return [x=>x*x+0.5, x=>Math.sin(x)+1.5, x=>x*x/2+Math.cos(x)+1][i]; }
+function S_iIF(i){ return [x=>x*x*x/3+0.5*x, x=>-Math.cos(x)+1.5*x, x=>x*x*x/6+Math.sin(x)+x][i]; }
+
 const SIMS = [
 // ── 1. OPTİK TEZGAH ──────────────────────────────────────────
 {
@@ -6279,7 +6338,7 @@ const SIMS = [
   params:[
     { key:'n', label:'Harmonik sayısı', min:1, max:20, step:1, get:s=>s.n, set:(s,v)=>{ s.n=Math.round(v); }, fmt:v=>v.toFixed(0)+' terim' },
   ],
-  actions:[ { label:() => ['🔁 Kare dalga','🔁 Testere','🔁 Üçgen'][s.tip], fn:s=>{ s.tip=(s.tip+1)%3; } } ],
+  actions:[ { label:(s) => ['🔁 Kare dalga','🔁 Testere','🔁 Üçgen'][s.tip], fn:s=>{ s.tip=(s.tip+1)%3; } } ],
   meter(s){
     const ad = ['kare dalga: Σ sin((2k-1)x)/(2k-1)', 'testere: Σ sin(kx)/k', 'üçgen: Σ cos((2k-1)x)/(2k-1)²'][s.tip];
     return `${s.n} sinüs toplandı → <b>${['kare','testere','üçgen'][s.tip]} dalga</b> oluşuyor<br>${ad} · terim ↑ → köşeler keskinleşir (sonsuzda tam)`;
@@ -6325,7 +6384,7 @@ const SIMS = [
   params:[
     { key:'d', label:'Özyineleme derinliği', min:0, max:6, step:1, get:s=>s.derinlik, set:(s,v)=>{ s.derinlik=Math.round(v); }, fmt:v=>v.toFixed(0)+'. seviye' },
   ],
-  actions:[ { label:() => ['❄️ Koch','🌳 Ağaç'][s.tip], fn:s=>{ s.tip=(s.tip+1)%2; } } ],
+  actions:[ { label:(s) => ['❄️ Koch','🌳 Ağaç'][s.tip], fn:s=>{ s.tip=(s.tip+1)%2; } } ],
   meter(s){
     if (s.tip === 0) {
       const kenar = 3 * Math.pow(4, s.derinlik);
@@ -6408,6 +6467,893 @@ const SIMS = [
     ctx.fillText('r →', mx+mw-30, my+18);
   }
 },
+// ── ASTROFİZİK & POPÜLER BİLİM PAKETİ ───────────────────────
+{
+  id:'yildizomru', grup:'astro', ico:'⭐', ad:'Bir Yıldızın Ömrü', kat:'Astrofizik · Popüler Bilim',
+  desc:'Kütleyi seç: yıldız doğar, yaşar, ölür. KADERİ kütlesine bağlı — beyaz cüce mi, nötron yıldızı mı, KARA DELİK mi? Zamanı ileri sar.',
+  init(){ return { kutle:1, faz:0, t:0, ileri:false }; },
+  params:[
+    { key:'m', label:'Doğum kütlesi (Güneş=1)', min:0.2, max:40, step:0.2, get:s=>s.kutle, set:(s,v)=>{ s.kutle=v; s.faz=0; s.t=0; }, fmt:v=>v.toFixed(1)+' M☉' },
+  ],
+  actions:[ { label:(s) => s.ileri ? '⏸ Zamanı durdur' : '▶ Zamanı ilerlet', fn:s=>{ s.ileri = !s.ileri; } } ],
+  meter(s){
+    const m = s.kutle;
+    const omur = (10000 * Math.pow(m, -2.5)).toFixed(0);   // milyon yıl ~ M^-2.5
+    let kader, sebep;
+    if (m < 0.5)      { kader='Kırmızı Cüce → (çok yavaş) Beyaz Cüce'; sebep='düşük kütle, çok uzun ömür (trilyonlarca yıl)'; }
+    else if (m < 8)   { kader='Kırmızı Dev → Gezegenimsi Bulutsu → BEYAZ CÜCE'; sebep='çekirdek C-O, Chandrasekhar (1.4 M☉) altında'; }
+    else if (m < 20)  { kader='Süpernova → NÖTRON YILDIZI'; sebep='çekirdek > 1.4 M☉ ama < 3 M☉ (TOV limiti)'; }
+    else              { kader='Süpernova → KARA DELİK 🕳️'; sebep='çekirdek > 3 M☉, hiçbir kuvvet çökmeyi durduramaz'; }
+    const evre = ['Ana Kol (H→He füzyonu)','Şişip soğuyor (Kırmızı Dev)','Dış katman atılıyor','SON'][Math.min(3,s.faz)];
+    return `ana kol ömrü ≈ <b>${(omur/1000).toFixed(omur<1000?2:0)} milyar yıl</b> · şu an: <b>${evre}</b><br>🏁 Kader: <b>${kader}</b> · ${sebep}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    if (s.ileri) s.t += 1/60;
+    const m = s.kutle;
+    s.faz = Math.min(3, Math.floor(s.t/2.2));
+    const cx = W2/2, cy = H/2;
+    // evreye göre yıldız: renk + boyut
+    let R, col, glow;
+    if (s.faz === 0) {                       // ana kol — renk kütleye bağlı (sıcaklık)
+      R = 30 + Math.log2(m+1)*12;
+      const hue = m < 0.5 ? 15 : m < 1.5 ? 50 : m < 6 ? 200 : 230;
+      col = `hsl(${hue},85%,${60+Math.min(20,m)}%)`; glow = col;
+    } else if (s.faz === 1) {                 // kırmızı dev — büyük, kırmızı
+      R = 60 + Math.log2(m+1)*30 + Math.sin(s.t*2)*6;
+      col = '#F8704D'; glow = '#F8704D';
+    } else if (s.faz === 2) {                 // katman atılıyor / süpernova
+      R = 40 + Math.sin(s.t*8)*20;
+      col = m >= 8 ? '#FFFFFF' : '#FFD27F'; glow = col;
+      // patlama halkası
+      const pr = ((s.t*60) % 300);
+      ctx.strokeStyle = `rgba(255,210,127,${Math.max(0,1-pr/300)})`; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(cx, cy, pr, 0, 7); ctx.stroke();
+    } else {                                   // kalıntı
+      if (m < 8) { R = 14; col = '#CFE8FF'; glow = '#7DD3FC'; }           // beyaz cüce
+      else if (m < 20) { R = 8; col = '#E0E7FF'; glow = '#A78BFA'; }       // nötron yıldızı
+      else { R = 22; col = '#000'; glow = '#A78BFA'; }                     // kara delik
+    }
+    // kara delik özel: accretion disk + ışık halkası
+    if (s.faz === 3 && m >= 20) {
+      for (let i=0;i<3;i++){ ctx.strokeStyle=`rgba(245,163,92,${0.35-i*0.1})`; ctx.lineWidth=5-i;
+        ctx.beginPath(); ctx.ellipse(cx,cy,R*2.4+i*9,(R*2.4+i*9)*0.32,0,0,7); ctx.stroke(); }
+      ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.fill();
+      ctx.strokeStyle='#A78BFA'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.stroke();
+    } else {
+      ctx.shadowColor = glow; ctx.shadowBlur = 40;
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+      // nötron yıldızı: pulsar ışınları
+      if (s.faz === 3 && m >= 8 && m < 20) {
+        ctx.strokeStyle = 'rgba(167,139,250,0.6)'; ctx.lineWidth = 3;
+        const a = s.t*6;
+        for (const sgn of [0, Math.PI]) {
+          ctx.beginPath(); ctx.moveTo(cx, cy);
+          ctx.lineTo(cx+Math.cos(a+sgn)*200, cy+Math.sin(a+sgn)*200); ctx.stroke();
+        }
+      }
+    }
+    // zaman çizelgesi şeridi (altta)
+    const evreler = ['Doğum','Ana Kol','Kırmızı Dev','Ölüm'];
+    const fx = 40, fw = W2-80, fy = H-30;
+    ctx.strokeStyle = '#33524a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx+fw, fy); ctx.stroke();
+    for (let i=0;i<4;i++){
+      const px = fx + i/3*fw;
+      ctx.fillStyle = i <= s.faz+0 ? '#1ee06f' : '#3a4a5a';
+      ctx.beginPath(); ctx.arc(px, fy, 6, 0, 7); ctx.fill();
+      ctx.fillStyle = '#94A3B8'; ctx.font = '11px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(evreler[i], px, fy-12); ctx.textAlign='left';
+    }
+    if (!s.ileri && s.t===0){ ctx.fillStyle='#FFD27F'; ctx.font='13px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('▶ "Zamanı ilerlet" ile yıldızın kaderini izle', cx, 40); ctx.textAlign='left'; }
+  }
+},
+{
+  id:'fuzyon', grup:'astro', ico:'☀️', ad:'Yıldız Çekirdeği — Füzyon', kat:'Astrofizik · Nükleer',
+  desc:'Yıldız neden parlar? Çekirdekte 4 hidrojen birleşip helyuma dönüşür, kaybolan kütle E=mc² ile ENERJİ olur.',
+  init(){ return { sicaklik:15, parts:[], t:0, uretilen:0 }; },
+  params:[
+    { key:'t', label:'Çekirdek sıcaklığı', min:4, max:40, step:1, get:s=>s.sicaklik, set:(s,v)=>{ s.sicaklik=v; }, fmt:v=>v.toFixed(0)+' milyon K' },
+  ],
+  actions:[],
+  meter(s){
+    const hiz = Math.max(0, (s.sicaklik-4)/36);
+    const calisir = s.sicaklik >= 10;
+    return `${calisir ? '🔥 Füzyon AKTİF' : '❄️ çok soğuk — füzyon başlamaz (min ~10 milyon K)'} · oran: %${(hiz*100).toFixed(0)}<br>4 ¹H → ⁴He + 2e⁺ + enerji · kaybolan kütlenin %0.7\'si E=mc² ile ışır (Güneş: sn\'de 4 milyon ton)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const cx = W2/2, cy = H/2;
+    const hiz = Math.max(0, (s.sicaklik-4)/36);
+    // çekirdek yoğunluk gradyanı
+    const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, 200);
+    g.addColorStop(0, `rgba(255,210,127,${0.15+hiz*0.2})`); g.addColorStop(1, 'rgba(255,210,127,0)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W2,H);
+    // protonlar hareket — sıcakça hızlı
+    if (!s.parts.length) for (let i=0;i<24;i++) s.parts.push({ x:Math.random()*W2, y:Math.random()*H, a:Math.random()*7, He:false });
+    for (const p of s.parts) {
+      const v = 0.5 + hiz*4;
+      p.x += Math.cos(p.a)*v; p.y += Math.sin(p.a)*v;
+      if (p.x<0||p.x>W2) p.a = Math.PI - p.a;
+      if (p.y<0||p.y>H) p.a = -p.a;
+      ctx.fillStyle = p.He ? '#34D399' : '#7DD3FC';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.He?7:4, 0, 7); ctx.fill();
+    }
+    // füzyon olayı: rastgele iki proton birleşir → parıltı
+    if (s.sicaklik >= 10 && Math.random() < hiz*0.4) {
+      const fx = cx + (Math.random()*200-100), fy = cy + (Math.random()*160-80);
+      s.uretilen++;
+      ctx.fillStyle = `rgba(255,255,255,0.9)`; ctx.shadowColor='#FFD27F'; ctx.shadowBlur=20;
+      ctx.beginPath(); ctx.arc(fx, fy, 12, 0, 7); ctx.fill(); ctx.shadowBlur=0;
+      // enerji ışını dışarı
+      ctx.strokeStyle = 'rgba(255,210,127,0.6)'; ctx.lineWidth=2;
+      for (let k=0;k<4;k++){ const a=k/4*7+s.t; ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(fx+Math.cos(a)*25,fy+Math.sin(a)*25); ctx.stroke(); }
+    }
+    ctx.fillStyle = '#64748B'; ctx.font='12px sans-serif';
+    ctx.fillText('🔵 hidrojen çekirdeği · 🟢 helyum (füzyon ürünü) · ışıma = E=mc²', 16, H-14);
+  }
+},
+{
+  id:'hrdiagram', grup:'astro', ico:'📊', ad:'H-R Diyagramı', kat:'Astrofizik · Yıldız Sınıfı',
+  desc:'Astronominin haritası: yıldızları sıcaklık-parlaklığa göre diz. Ana kol, devler, cüceler nerede? Güneş\'i bul.',
+  init(){ return { secili:5 }; },
+  params:[
+    { key:'s', label:'Yıldız seç', min:0, max:8, step:1, get:s=>s.secili, set:(s,v)=>{ s.secili=Math.round(v); }, fmt:v=>['Proksima','Barnard','GÜNEŞ','Sirius A','Vega','Arcturus','Betelgeuse','Rigel','Aldebaran'][Math.round(v)] },
+  ],
+  actions:[],
+  meter(s){
+    const Y = [
+      {ad:'Proksima Cen',t:3000,L:0.0017,sinif:'M5 Kırmızı Cüce'},
+      {ad:'Barnard',t:3100,L:0.0035,sinif:'M4 Kırmızı Cüce'},
+      {ad:'GÜNEŞ',t:5778,L:1,sinif:'G2 Ana Kol (biz buradayız)'},
+      {ad:'Sirius A',t:9940,L:25,sinif:'A1 Ana Kol'},
+      {ad:'Vega',t:9600,L:40,sinif:'A0 Ana Kol'},
+      {ad:'Arcturus',t:4290,L:170,sinif:'K0 Kırmızı Dev'},
+      {ad:'Betelgeuse',t:3500,L:90000,sinif:'M1 Kırmızı Süperdev'},
+      {ad:'Rigel',t:12100,L:120000,sinif:'B8 Mavi Süperdev'},
+      {ad:'Aldebaran',t:3900,L:440,sinif:'K5 Turuncu Dev'},
+    ][s.secili];
+    return `<b>${Y.ad}</b> · sıcaklık ${Y.t} K · parlaklık ${Y.L < 1 ? Y.L.toFixed(4) : Y.L.toLocaleString('tr')}× Güneş<br>sınıf: <b>${Y.sinif}</b>`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const mx=60, my=H-50, mw=W2-110, mh=H-90;
+    // eksenler (sıcaklık TERS: sıcak solda)
+    ctx.strokeStyle='#33524a'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx+mw,my); ctx.moveTo(mx,my); ctx.lineTo(mx,my-mh); ctx.stroke();
+    ctx.fillStyle='#94A3B8'; ctx.font='12px sans-serif';
+    ctx.fillText('← sıcak           Sıcaklık (K)           soğuk →', mx+30, my+22);
+    ctx.save(); ctx.translate(mx-22, my-mh/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Parlaklık (Güneş=1, log)', -60, 0); ctx.restore();
+    // koordinat: x = sıcaklık (40000→2500 ters log), y = parlaklık log
+    const px = t => mx + (Math.log10(40000)-Math.log10(t))/(Math.log10(40000)-Math.log10(2500))*mw;
+    const py = L => my - (Math.log10(L)+4)/(Math.log10(1e6)+4)*mh;
+    // ana kol şeridi (köşegen)
+    ctx.strokeStyle='rgba(125,211,252,0.25)'; ctx.lineWidth=24; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(px(35000),py(80000)); ctx.lineTo(px(3000),py(0.001)); ctx.stroke(); ctx.lineCap='butt';
+    ctx.fillStyle='rgba(125,211,252,0.5)'; ctx.font='italic 12px sans-serif';
+    ctx.fillText('Ana Kol', px(8000), py(8));
+    ctx.fillText('Devler', px(4000)-20, py(300));
+    ctx.fillText('Cüceler', px(20000), py(0.05));
+    const Y = [
+      {t:3000,L:0.0017},{t:3100,L:0.0035},{t:5778,L:1},{t:9940,L:25},{t:9600,L:40},
+      {t:4290,L:170},{t:3500,L:90000},{t:12100,L:120000},{t:3900,L:440}
+    ];
+    Y.forEach((y,i)=>{
+      const x=px(y.t), yy=py(y.L);
+      const hue = y.t>10000?230:y.t>7500?200:y.t>6000?60:y.t>5000?50:y.t>3700?30:0;
+      ctx.fillStyle = `hsl(${hue},85%,60%)`;
+      const sel = i===s.secili;
+      if (sel){ ctx.shadowColor=ctx.fillStyle; ctx.shadowBlur=18; }
+      ctx.beginPath(); ctx.arc(x, yy, sel?9:5+Math.log10(y.L+10), 0, 7); ctx.fill(); ctx.shadowBlur=0;
+      if (sel){ ctx.fillStyle='#fff'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+        ctx.fillText('◄ seçili', x+40, yy+4); ctx.textAlign='left'; }
+    });
+  }
+},
+{
+  id:'gunessistemi', grup:'astro', ico:'🪐', ad:'Güneş Sistemi Gezgini', kat:'Astrofizik · Kepler',
+  desc:'Gezegenleri yörüngede izle: iç gezegenler hızlı, dış gezegenler yavaş. Kepler-3: T² ∝ a³. Hızı ayarla.',
+  init(){ return { hiz:1, t:0, secili:2 }; },
+  params:[
+    { key:'h', label:'Zaman hızı', min:0, max:5, step:0.25, get:s=>s.hiz, set:(s,v)=>{ s.hiz=v; }, fmt:v=>v.toFixed(1)+'×' },
+    { key:'s', label:'Gezegene odaklan', min:0, max:7, step:1, get:s=>s.secili, set:(s,v)=>{ s.secili=Math.round(v); }, fmt:v=>['Merkür','Venüs','Dünya','Mars','Jüpiter','Satürn','Uranüs','Neptün'][Math.round(v)] },
+  ],
+  actions:[],
+  meter(s){
+    const P = [{ad:'Merkür',a:0.39,T:0.24},{ad:'Venüs',a:0.72,T:0.62},{ad:'Dünya',a:1,T:1},{ad:'Mars',a:1.52,T:1.88},{ad:'Jüpiter',a:5.2,T:11.9},{ad:'Satürn',a:9.5,T:29.5},{ad:'Uranüs',a:19.2,T:84},{ad:'Neptün',a:30,T:165}][s.secili];
+    const kepler = (P.T*P.T)/(P.a*P.a*P.a);
+    return `<b>${P.ad}</b> · yörünge yarıçapı ${P.a} AB · yıl uzunluğu ${P.T} Dünya yılı<br>Kepler-3 kontrol: T²/a³ = <b>${kepler.toFixed(2)}</b> (tüm gezegenler için ≈1!)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += s.hiz/60;
+    const cx = W2/2, cy = H/2;
+    // Güneş
+    ctx.shadowColor='#FFD27F'; ctx.shadowBlur=30; ctx.fillStyle='#FDB813';
+    ctx.beginPath(); ctx.arc(cx, cy, 16, 0, 7); ctx.fill(); ctx.shadowBlur=0;
+    const P = [
+      {ad:'Merkür',a:0.39,T:0.24,c:'#9C8A7A',r:2.5},{ad:'Venüs',a:0.72,T:0.62,c:'#E8B96A',r:4},
+      {ad:'Dünya',a:1,T:1,c:'#4A90D9',r:4.3},{ad:'Mars',a:1.52,T:1.88,c:'#C1440E',r:3.4},
+      {ad:'Jüpiter',a:5.2,T:11.9,c:'#D8A47F',r:10},{ad:'Satürn',a:9.5,T:29.5,c:'#E3CDA4',r:8.5},
+      {ad:'Uranüs',a:19.2,T:84,c:'#9FE3E0',r:6},{ad:'Neptün',a:30,T:165,c:'#3D5EF0',r:6}
+    ];
+    // logaritmik yarıçap ölçeği (hepsi sığsın)
+    const scaleR = a => 34 + Math.log10(a+1)/Math.log10(31)*(Math.min(W2,H)/2-44);
+    P.forEach((p,i)=>{
+      const R = scaleR(p.a);
+      // yörünge
+      ctx.strokeStyle = i===s.secili ? 'rgba(30,224,111,0.5)' : 'rgba(125,211,252,0.12)';
+      ctx.lineWidth = i===s.secili ? 2 : 1;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.stroke();
+      const ang = s.t/p.T*2*Math.PI + i;
+      const x = cx+Math.cos(ang)*R, y = cy+Math.sin(ang)*R;
+      ctx.fillStyle = p.c;
+      if (i===s.secili){ ctx.shadowColor=p.c; ctx.shadowBlur=14; }
+      ctx.beginPath(); ctx.arc(x, y, p.r, 0, 7); ctx.fill(); ctx.shadowBlur=0;
+      // Satürn halkası
+      if (i===5){ ctx.strokeStyle='rgba(227,205,164,0.7)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.ellipse(x,y,p.r+5,(p.r+5)*0.4,ang,0,7); ctx.stroke(); }
+      if (i===s.secili){ ctx.fillStyle='#fff'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+        ctx.fillText(p.ad, x, y-p.r-6); ctx.textAlign='left'; }
+    });
+  }
+},
+{
+  id:'gelgit', grup:'astro', ico:'🌊', ad:'Gelgit & Roche Sınırı', kat:'Astrofizik · Kütleçekim',
+  desc:'Ay neden gelgit yaratır? Yakın taraf uzaktan daha çok çekilir → su şişer. Çok yaklaşırsa uydu parçalanır (Roche).',
+  init(){ return { mesafe:60, t:0 }; },
+  params:[
+    { key:'d', label:'Ay uzaklığı', min:18, max:100, step:1, get:s=>s.mesafe, set:(s,v)=>{ s.mesafe=v; }, fmt:v=>v.toFixed(0)+' birim' },
+  ],
+  actions:[],
+  meter(s){
+    const roche = 24;
+    const gelgitKuvvet = (60/s.mesafe)**3;
+    if (s.mesafe < roche) return `⚠️ ROCHE SINIRI içinde! gelgit kuvveti uydunun kendi çekiminden büyük → <b>PARÇALANIR</b> (Satürn halkaları böyle oluştu)`;
+    return `gelgit kuvveti ∝ 1/d³ → şu an <b>${gelgitKuvvet.toFixed(2)}×</b> (referans) · Roche sınırı: ${roche} birim<br>yakın-uzak yüz çekim FARKI suyu çift tümsek yapar → günde 2 gelgit`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const cx = W2*0.38, cy = H/2;
+    // Dünya
+    ctx.fillStyle='#2563EB'; ctx.beginPath(); ctx.arc(cx, cy, 50, 0, 7); ctx.fill();
+    // okyanus gelgit şişmesi: Ay yönüne ve tersine elips
+    const ax = cx + s.mesafe*3, ay = cy;
+    const dir = Math.atan2(ay-cy, ax-cx);
+    const bulge = Math.min(28, (60/s.mesafe)**3*10);
+    ctx.strokeStyle='rgba(125,211,252,0.7)'; ctx.lineWidth=3;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(dir);
+    ctx.beginPath(); ctx.ellipse(0, 0, 56+bulge, 50, 0, 0, 7); ctx.stroke(); ctx.restore();
+    // gelgit kuvvet okları (yakın yüz dışa, uzak yüz dışa)
+    ctx.strokeStyle='#FFD27F'; ctx.lineWidth=2;
+    for (const sgn of [1,-1]){
+      const ox=cx+Math.cos(dir)*sgn*56, oy=cy+Math.sin(dir)*sgn*56;
+      ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+Math.cos(dir)*sgn*bulge, oy+Math.sin(dir)*sgn*bulge); ctx.stroke();
+    }
+    // Ay (Roche içinde parçalanır)
+    const roche = 24;
+    if (s.mesafe < roche){
+      for (let i=0;i<14;i++){ const a=i/14*7+s.t; const rr=10+i;
+        ctx.fillStyle='#9C8A7A'; ctx.beginPath(); ctx.arc(ax+Math.cos(a)*rr, ay+Math.sin(a)*rr*0.3, 2.5, 0, 7); ctx.fill(); }
+      ctx.fillStyle='#F87171'; ctx.font='bold 13px sans-serif'; ctx.fillText('PARÇALANDI', ax-30, ay-30);
+    } else {
+      ctx.fillStyle='#9C8A7A'; ctx.beginPath(); ctx.arc(ax, ay, 13, 0, 7); ctx.fill();
+    }
+    // Roche sınırı işareti
+    ctx.strokeStyle='rgba(248,113,113,0.5)'; ctx.setLineDash([5,5]); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, roche*3, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#64748B'; ctx.font='12px sans-serif';
+    ctx.fillText('🔴 kesikli = Roche sınırı · 🟡 gelgit kuvvet okları', 16, H-14);
+  }
+},
+// ── KİMYA 2 PAKETİ — bağ, iyon, enerjetik, redoks ───────────
+{
+  id:'bilesik', grup:'kimya', ico:'⚗️', ad:'Bileşik Oluşturucu', kat:'Kimya · Kimyasal Bağ (TYT+AYT)',
+  desc:'İki element seç → atomlar bağ kurar. Metal+ametal=İYONİK, ametal+ametal=KOVALENT. Formül + bağ tipi canlı.',
+  init(){ return { e1:11, e2:17, t:0 }; },   // varsayılan NaCl (klasik iyonik)
+  params:[
+    { key:'a', label:'1. element (atom no)', min:1, max:20, step:1, get:s=>s.e1, set:(s,v)=>{ s.e1=Math.round(v); }, fmt:v=>S_EL(Math.round(v)) },
+    { key:'b', label:'2. element (atom no)', min:1, max:20, step:1, get:s=>s.e2, set:(s,v)=>{ s.e2=Math.round(v); }, fmt:v=>S_EL(Math.round(v)) },
+  ],
+  actions:[],
+  meter(s){ return S_bilesik_info(s.e1, s.e2); },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const cx = W2/2, cy = H/2;
+    const z1 = s.e1, z2 = s.e2;
+    // soy gaz: bağ kurmaz
+    if (S_SOYGAZ.has(z1) || S_SOYGAZ.has(z2)) {
+      const sg = S_SOYGAZ.has(z1) ? z1 : z2;
+      ctx.fillStyle = '#A78BFA'; ctx.beginPath(); ctx.arc(cx, cy, 30, 0, 7); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(S_SEM(sg), cx, cy+6);
+      ctx.fillStyle = '#A78BFA'; ctx.font = 'bold 15px sans-serif';
+      ctx.fillText('SOY GAZ — bağ kurmaz (kararlı)', cx, 40);
+      ctx.fillStyle = '#64748B'; ctx.font = '12px sans-serif';
+      ctx.fillText('son katmanı dolu (oktet) → tepkimeye girmez', cx, H-26);
+      ctx.textAlign = 'left';
+      return;
+    }
+    const v1 = S_valans(z1), v2 = S_valans(z2);
+    const metal1 = S_metalMi(z1), metal2 = S_metalMi(z2);
+    const iyonik = metal1 !== metal2;
+    // iki atom
+    const r1 = 24+S_kabukSay(z1)*4, r2 = 24+S_kabukSay(z2)*4;
+    const ax = cx-90, bx = cx+90;
+    const cizAtom = (x, z, r, col) => {
+      // kabuklar
+      ctx.strokeStyle='rgba(125,211,252,0.3)'; ctx.lineWidth=1;
+      const ks = S_kabukDagilim(z);
+      ks.forEach((e,i)=>{ ctx.beginPath(); ctx.arc(x, cy, 14+i*9, 0, 7); ctx.stroke();
+        for (let k=0;k<e;k++){ const a=k/e*7+s.t*(0.3+i*0.1); ctx.fillStyle='#FFD27F';
+          ctx.beginPath(); ctx.arc(x+Math.cos(a)*(14+i*9), cy+Math.sin(a)*(14+i*9), 2.6, 0, 7); ctx.fill(); } });
+      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x, cy, 11, 0, 7); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(S_SEM(z), x, cy+5); ctx.textAlign='left';
+    };
+    cizAtom(ax, z1, r1, metal1?'#F5A35C':'#34D399');
+    cizAtom(bx, z2, r2, metal2?'#F5A35C':'#34D399');
+    // bağ gösterimi
+    if (iyonik){
+      // elektron transferi oku
+      ctx.strokeStyle='#1ee06f'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.moveTo(ax+30, cy-30);
+      ctx.quadraticCurveTo(cx, cy-60, bx-30, cy-30); ctx.stroke();
+      ctx.fillStyle='#1ee06f'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('e⁻ transfer', cx, cy-50);
+      ctx.fillText(metal1?'+ katyon':'− anyon', ax, cy+r1+18);
+      ctx.fillText(metal2?'+ katyon':'− anyon', bx, cy+r2+18); ctx.textAlign='left';
+    } else {
+      // ortak elektron çifti
+      ctx.fillStyle='#FFD27F';
+      for (let k=-1;k<=1;k+=2){ ctx.beginPath(); ctx.arc(cx, cy+k*6, 4, 0, 7); ctx.fill(); }
+      ctx.strokeStyle='rgba(255,210,127,0.5)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(ax+12,cy); ctx.lineTo(bx-12,cy); ctx.stroke();
+      ctx.fillStyle='#FFD27F'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('ortak elektron çifti', cx, cy-26); ctx.textAlign='left';
+    }
+    ctx.fillStyle = iyonik?'#F5A35C':'#34D399'; ctx.font='bold 16px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(iyonik?'İYONİK BAĞ':'KOVALENT BAĞ', cx, 40); ctx.textAlign='left';
+  }
+},
+{
+  id:'iyon', grup:'kimya', ico:'🔋', ad:'İyon Oluşumu — Oktet', kat:'Kimya · Periyodik (TYT+AYT)',
+  desc:'Atom neden elektron alır/verir? Hedef: soy gaz kararlılığı (oktet). Metaller verir (+), ametaller alır (−).',
+  init(){ return { z:11, t:0 }; },
+  params:[
+    { key:'z', label:'Element (atom no)', min:1, max:20, step:1, get:s=>s.z, set:(s,v)=>{ s.z=Math.round(v); }, fmt:v=>S_EL(Math.round(v)) },
+  ],
+  actions:[],
+  meter(s){
+    const z = s.z, son = S_kabukDagilim(z).slice(-1)[0];
+    const verir = son <= 3 && z>2, yuk = verir ? son : (son>=4 ? -(8-son) : 0);
+    const hedef = verir ? 'önceki soy gaz' : 'sonraki soy gaz';
+    if (z===2||z===10||z===18) return `<b>${S_SEM(z)}</b> zaten SOY GAZ — oktet tam, tepkimeye girmez (kararlı)`;
+    return `<b>${S_SEM(z)}</b> son katmanda ${son} e⁻ · ${verir ? son+' e⁻ VERİR → '+son+'+ katyon' : (8-son)+' e⁻ ALIR → '+(8-son)+'− anyon'}<br>hedef: ${hedef} dizilimi (oktet kuralı) · yük = <b>${yuk>0?'+'+yuk:yuk}</b>`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const z = s.z;
+    const ks = S_kabukDagilim(z);
+    const son = ks[ks.length-1];
+    const verir = son <= 3 && z>2;
+    // sol: nötr atom, sağ: iyon
+    const drawAtom = (cx, dizilim, baslik, renk) => {
+      ctx.fillStyle='#94A3B8'; ctx.font='13px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(baslik, cx, 44);
+      dizilim.forEach((e,i)=>{
+        ctx.strokeStyle='rgba(125,211,252,0.3)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.arc(cx, H/2, 22+i*16, 0, 7); ctx.stroke();
+        for (let k=0;k<e;k++){ const a=k/Math.max(1,e)*7+s.t*(0.3+i*0.08);
+          ctx.fillStyle='#FFD27F'; ctx.beginPath(); ctx.arc(cx+Math.cos(a)*(22+i*16), H/2+Math.sin(a)*(22+i*16), 3.2, 0, 7); ctx.fill(); }
+      });
+      ctx.fillStyle=renk; ctx.beginPath(); ctx.arc(cx, H/2, 16, 0, 7); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(S_SEM(z), cx, H/2+5); ctx.textAlign='left';
+    };
+    drawAtom(W2*0.28, ks, 'Nötr atom ('+z+' e⁻)', '#4A90D9');
+    // iyon dizilimi
+    let iyonDiz = ks.slice();
+    let yuk;
+    if (verir){ iyonDiz = iyonDiz.slice(0,-1); yuk = son; }
+    else { iyonDiz = iyonDiz.slice(); iyonDiz[iyonDiz.length-1] = 8; yuk = -(8-son); }
+    if (z===2||z===10||z===18){ drawAtom(W2*0.72, ks, 'Soy gaz (kararlı)', '#A78BFA'); }
+    else {
+      drawAtom(W2*0.72, iyonDiz, `İyon (${yuk>0?'+'+yuk:yuk})`, verir?'#F5A35C':'#34D399');
+      // transfer oku
+      ctx.strokeStyle='#1ee06f'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(W2*0.42, H/2-70);
+      ctx.lineTo(W2*0.58, H/2-70); ctx.stroke();
+      ctx.fillStyle='#1ee06f'; ctx.beginPath();
+      ctx.moveTo(W2*0.58, H/2-70); ctx.lineTo(W2*0.58-10, H/2-75); ctx.lineTo(W2*0.58-10, H/2-65); ctx.fill();
+      ctx.font='12px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(verir?son+' e⁻ verir':(8-son)+' e⁻ alır', W2/2, H/2-80); ctx.textAlign='left';
+    }
+  }
+},
+{
+  id:'tepkimeenerji', grup:'kimya', ico:'🔥', ad:'Tepkime Enerjisi — Endo/Ekzo', kat:'Kimya · Termokimya (AYT)',
+  desc:'Tepkime enerji yutar mı verir mi? Aktivasyon engelini, katalizör etkisini, ΔH işaretini canlı gör.',
+  init(){ return { tip:0, katalizor:false, ilerleme:0, yon:1 }; },
+  params:[
+    { key:'i', label:'Tepkime ilerlemesi', min:0, max:100, step:1, get:s=>s.ilerleme, set:(s,v)=>{ s.ilerleme=v; }, fmt:v=>'%'+v.toFixed(0) },
+  ],
+  actions:[
+    { label:(s) => s.tip===0 ? '🔁 Ekzotermik' : '🔁 Endotermik', fn:s=>{ s.tip=(s.tip+1)%2; } },
+    { label:(s) => s.katalizor ? '✓ Katalizör VAR' : '⊘ Katalizör YOK', fn:s=>{ s.katalizor=!s.katalizor; } },
+  ],
+  meter(s){
+    const ekzo = s.tip===0;
+    const Ea = s.katalizor ? 'düşük (katalizör yolu açtı)' : 'yüksek';
+    return `<b>${ekzo?'EKZOTERMİK':'ENDOTERMİK'}</b> · ΔH ${ekzo?'< 0 (ısı AÇIĞA çıkar, ürün daha kararlı)':'> 0 (ısı SOĞURULUR, ürün daha enerjik)'}<br>aktivasyon enerjisi: ${Ea} · katalizör ΔH\'yi DEĞİŞTİRMEZ, sadece engeli düşürür`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const ekzo = s.tip===0;
+    const mx=60, my=H-60, mw=W2-110, mh=H-130;
+    ctx.strokeStyle='#33524a'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx,my-mh); ctx.moveTo(mx,my); ctx.lineTo(mx+mw,my); ctx.stroke();
+    ctx.fillStyle='#94A3B8'; ctx.font='12px sans-serif';
+    ctx.save(); ctx.translate(mx-20, my-mh/2); ctx.rotate(-Math.PI/2); ctx.fillText('Potansiyel Enerji', -40, 0); ctx.restore();
+    ctx.fillText('Tepkime ilerlemesi →', mx+mw-140, my+24);
+    // enerji profili
+    const yReak = ekzo ? my-mh*0.55 : my-mh*0.25;
+    const yUrun = ekzo ? my-mh*0.22 : my-mh*0.58;
+    const Eak = s.katalizor ? 0.18 : 0.34;
+    const yPeak = my - mh*(ekzo?0.55:0.58) - mh*Eak;
+    ctx.strokeStyle='#1ee06f'; ctx.lineWidth=2.5;
+    ctx.beginPath();
+    for (let i=0;i<=mw;i++){
+      const x=i/mw;
+      let y;
+      if (x<0.3) y = yReak;
+      else if (x<0.6){ const u=(x-0.3)/0.3; y = yReak + (yPeak-yReak)*Math.sin(u*Math.PI/2)**1; }
+      else if (x<0.7){ const u=(x-0.6)/0.1; y = yPeak + (yUrun-yPeak)*0.0 - (yPeak-yReak)*0 ; y = yPeak + (yUrun-yPeak)*(u*0.0); y=yPeak; }
+      else { const u=(x-0.7)/0.3; y = yPeak + (yUrun-yPeak)*Math.sin(u*Math.PI/2); }
+      ctx.lineTo(mx+i, y);
+    }
+    ctx.stroke();
+    // ilerleme topu
+    const xp = s.ilerleme/100;
+    let yb; const x=xp;
+    if (x<0.3) yb=yReak; else if (x<0.6){ const u=(x-0.3)/0.3; yb=yReak+(yPeak-yReak)*Math.sin(u*Math.PI/2);} else if (x<0.7) yb=yPeak; else { const u=(x-0.7)/0.3; yb=yPeak+(yUrun-yPeak)*Math.sin(u*Math.PI/2);}
+    ctx.fillStyle='#FFD27F'; ctx.beginPath(); ctx.arc(mx+xp*mw, yb, 7, 0, 7); ctx.fill();
+    // etiketler
+    ctx.fillStyle='#7DD3FC'; ctx.font='12px sans-serif';
+    ctx.fillText('Reaktifler', mx+8, yReak-8);
+    ctx.fillStyle='#34D399'; ctx.fillText('Ürünler', mx+mw-60, yUrun-8);
+    // Ea oku
+    ctx.strokeStyle='rgba(248,113,113,0.6)'; ctx.setLineDash([4,3]); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(mx+mw*0.5, yReak); ctx.lineTo(mx+mw*0.5, yPeak); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#F87171'; ctx.fillText('Ea', mx+mw*0.5+6, (yReak+yPeak)/2);
+    // ΔH oku
+    ctx.strokeStyle='rgba(167,139,250,0.7)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(mx+mw*0.84, yReak); ctx.lineTo(mx+mw*0.84, yUrun); ctx.stroke();
+    ctx.fillStyle='#A78BFA'; ctx.fillText('ΔH', mx+mw*0.84+6, (yReak+yUrun)/2);
+    if (s.katalizor){ ctx.fillStyle='#1ee06f'; ctx.font='italic 12px sans-serif'; ctx.fillText('⚡ katalizörlü (alçak engel)', mx+mw*0.3, yPeak-10); }
+    ctx.fillStyle = ekzo?'#F5A35C':'#7DD3FC'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(ekzo?'EKZOTERMİK (ısı verir 🔥)':'ENDOTERMİK (ısı yutar ❄️)', W2/2, 30); ctx.textAlign='left';
+  }
+},
+{
+  id:'elektroliz', grup:'kimya', ico:'🔌', ad:'Elektroliz — Redoks', kat:'Kimya · Elektrokimya (AYT)',
+  desc:'Elektrik akımı suyu/tuzu ayrıştırır. Katotta indirgenme (e⁻ alır), anotta yükseltgenme (e⁻ verir). İyonlar göç eder.',
+  init(){ return { voltaj:5, t:0, h2:0, o2:0 }; },
+  params:[
+    { key:'v', label:'Uygulanan voltaj', min:0, max:12, step:0.5, get:s=>s.voltaj, set:(s,v)=>{ s.voltaj=v; }, fmt:v=>v.toFixed(1)+' V' },
+  ],
+  actions:[],
+  meter(s){
+    const calisir = s.voltaj >= 1.23;
+    return `${calisir ? '⚡ Elektroliz AKTİF' : 'voltaj yetersiz — suyun ayrışması min 1.23 V ister'} · akım ∝ voltaj<br>Katot (−): 2H⁺+2e⁻→H₂ (indirgenme) · Anot (+): 2O²⁻→O₂+4e⁻ (yükseltgenme) · oran H₂:O₂ = <b>2:1</b>`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const calisir = s.voltaj >= 1.23;
+    // kap
+    const kx=W2*0.2, ky=H*0.25, kw=W2*0.6, kh=H*0.55;
+    ctx.fillStyle='rgba(125,211,252,0.12)'; ctx.fillRect(kx, ky+kh*0.15, kw, kh*0.85);
+    ctx.strokeStyle='#7DD3FC'; ctx.lineWidth=2; ctx.strokeRect(kx, ky, kw, kh);
+    // elektrotlar
+    const katX = kx+kw*0.25, anoX = kx+kw*0.75;
+    ctx.fillStyle='#94A3B8'; ctx.fillRect(katX-7, ky-30, 14, kh*0.8);
+    ctx.fillStyle='#94A3B8'; ctx.fillRect(anoX-7, ky-30, 14, kh*0.8);
+    ctx.fillStyle='#7DD3FC'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Katot (−)', katX, ky+kh+22);
+    ctx.fillStyle='#F87171'; ctx.fillText('Anot (+)', anoX, ky+kh+22); ctx.textAlign='left';
+    // güç kaynağı
+    ctx.strokeStyle = calisir?'#1ee06f':'#64748B'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(katX, ky-30); ctx.lineTo(katX, ky-50); ctx.lineTo(anoX, ky-50); ctx.lineTo(anoX, ky-30); ctx.stroke();
+    ctx.fillStyle = calisir?'#1ee06f':'#64748B'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(`🔋 ${s.voltaj.toFixed(1)}V`, W2/2, ky-54); ctx.textAlign='left';
+    if (calisir){
+      const rate = (s.voltaj-1.23)/10;
+      // iyon göçü
+      for (let i=0;i<8;i++){
+        const ph=(s.t*rate*60 + i*40)%(kw*0.5);
+        ctx.fillStyle='#F87171'; // H+ → katoda
+        ctx.beginPath(); ctx.arc(katX+kw*0.25-ph, ky+kh*0.4+Math.sin(i)*30, 3, 0, 7); ctx.fill();
+        ctx.fillStyle='#34D399'; // O2- → anoda
+        ctx.beginPath(); ctx.arc(anoX-kw*0.25+ph, ky+kh*0.6+Math.cos(i)*30, 3, 0, 7); ctx.fill();
+      }
+      // kabarcıklar (katotta 2×, anotta 1×)
+      for (const [ex,n,col] of [[katX,8,'#7DD3FC'],[anoX,4,'#FFD27F']]){
+        for (let i=0;i<n;i++){ const yy=ky+kh-((s.t*40*rate*4+i*30)%(kh*0.8));
+          ctx.fillStyle=col; ctx.globalAlpha=0.7; ctx.beginPath(); ctx.arc(ex+(i%2?6:-6), yy, 3, 0, 7); ctx.fill(); ctx.globalAlpha=1; }
+      }
+      ctx.fillStyle='#7DD3FC'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('H₂ ↑↑ (2 hacim)', katX, ky-2);
+      ctx.fillStyle='#FFD27F'; ctx.fillText('O₂ ↑ (1 hacim)', anoX, ky-2); ctx.textAlign='left';
+    }
+  }
+},
+// ── BİYOLOJİ 2 PAKETİ — sistemler, evrim, kalıtım, enerji ────
+{
+  id:'dolasim', grup:'bio', ico:'🫀', ad:'Dolaşım Sistemi', kat:'Biyoloji · İnsan Sistemleri (TYT)',
+  desc:'Kalp çift pompa: sağ→akciğer (küçük dolaşım), sol→vücut (büyük dolaşım). Kanın O₂/CO₂ yolculuğunu izle.',
+  init(){ return { nabiz:75, t:0, hucreler:[] }; },
+  params:[
+    { key:'n', label:'Nabız (kalp atışı)', min:40, max:180, step:5, get:s=>s.nabiz, set:(s,v)=>{ s.nabiz=v; }, fmt:v=>v.toFixed(0)+' /dk' },
+  ],
+  actions:[],
+  meter(s){
+    const debi = (s.nabiz*70/1000).toFixed(1);
+    const durum = s.nabiz<60?'bradikardi (yavaş)':s.nabiz>100?'taşikardi (hızlı — egzersiz/heyecan)':'normal dinlenme';
+    return `dakika hacmi ≈ <b>${debi} L/dk</b> (nabız × atım hacmi) · durum: ${durum}<br>🔴 oksijenli kan (sol→vücut) · 🔵 oksijensiz kan (sağ→akciğer) · küçük + büyük dolaşım`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += s.nabiz/60/60;
+    const cx = W2/2, cy = H/2;
+    const beat = Math.max(0, Math.sin(s.t*Math.PI*2)**8);
+    // kalp (iki karıncık)
+    const hs = 1 + beat*0.12;
+    ctx.save(); ctx.translate(cx, cy*0.65); ctx.scale(hs, hs);
+    ctx.fillStyle='#B91C1C';
+    ctx.beginPath();
+    ctx.moveTo(0,18); ctx.bezierCurveTo(-30,-12,-14,-34,0,-14); ctx.bezierCurveTo(14,-34,30,-12,0,18); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle='#fff'; ctx.font='11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('KALP', cx, cy*0.65+34); ctx.textAlign='left';
+    // akciğer (üst) + vücut (alt) döngü yolları
+    const cizYol = (col, yTop, yBot, etiket, sagSol) => {
+      ctx.strokeStyle=col; ctx.lineWidth=8;
+      ctx.beginPath();
+      ctx.moveTo(cx+sagSol*16, cy*0.65);
+      ctx.bezierCurveTo(cx+sagSol*140, yTop, cx+sagSol*140, yBot, cx+sagSol*16, cy*0.65+20);
+      ctx.stroke();
+    };
+    cizYol('#3B82F6', 40, 130, 'akciğer', -1);     // küçük dolaşım (mavi giden)
+    cizYol('#DC2626', H-130, H-40, 'vücut', 1);     // büyük dolaşım (kırmızı giden)
+    // akan kan hücreleri
+    if (!s.hucreler.length) for (let i=0;i<20;i++) s.hucreler.push({ p:i/20, dolasim:i%2 });
+    s.hucreler.forEach(h=>{
+      h.p = (h.p + s.nabiz/60/600) % 1;
+      const sag = h.dolasim? 1 : -1;
+      const tt = h.p;
+      // bezier üzerinde nokta
+      const y0 = cy*0.65, y3 = cy*0.65+20;
+      const yTop = h.dolasim? H-130:40, yBot = h.dolasim? H-40:130;
+      const x = bez(cx+sag*16, cx+sag*140, cx+sag*140, cx+sag*16, tt);
+      const y = bez(y0, yTop, yBot, y3, tt);
+      // akciğerden dönen = kırmızı, vücuttan dönen = mavi
+      const o2 = h.dolasim ? (tt<0.5) : (tt>0.5);
+      ctx.fillStyle = (h.dolasim ? (tt>0.5?'#DC2626':'#3B82F6') : (tt>0.5?'#3B82F6':'#DC2626'));
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill();
+    });
+    ctx.fillStyle='#3B82F6'; ctx.font='12px sans-serif'; ctx.fillText('🫁 Akciğer (CO₂→O₂)', 14, 26);
+    ctx.fillStyle='#DC2626'; ctx.fillText('💪 Vücut dokuları (O₂→CO₂)', 14, H-14);
+  }
+},
+{
+  id:'dogalsecilim', grup:'bio', ico:'🦋', ad:'Doğal Seçilim', kat:'Biyoloji · Evrim (AYT)',
+  desc:'Sanayi devrimi kelebekleri: koyu ağaçta açık kelebek avlanır, koyu olan saklanır. Nesiller boyu popülasyon kayar.',
+  init(){ return { zemin:0.8, populasyon:null, nesil:0, t:0, oran:0.5 }; },
+  params:[
+    { key:'z', label:'Ağaç kabuğu koyuluğu', min:0, max:1, step:0.05, get:s=>s.zemin, set:(s,v)=>{ s.zemin=v; }, fmt:v=>v<0.3?'açık (temiz hava)':v>0.7?'koyu (kurum)':'orta' },
+  ],
+  actions:[ { label:'🐦 Bir nesil avlan', fn:s=>{ s.avla=true; } } ],
+  meter(s){
+    const koyuOran = (s.oran*100).toFixed(0);
+    return `nesil ${s.nesil} · KOYU kelebek oranı: <b>%${koyuOran}</b> · açık: %${(100-koyuOran).toFixed(0)}<br>kamuflajı iyi olan hayatta kalır → üreyip çoğalır → popülasyon zemine uyum sağlar (Darwin)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    // ağaç zemini
+    const g = Math.round(180*(1-s.zemin)+30);
+    ctx.fillStyle=`rgb(${g},${Math.round(g*0.8)},${Math.round(g*0.6)})`;
+    ctx.fillRect(0, 40, W2, H-40);
+    // ilk popülasyon
+    if (!s.populasyon){ s.populasyon=[]; for (let i=0;i<40;i++) s.populasyon.push({ koyu:Math.random()<0.5, x:30+Math.random()*(W2-60), y:60+Math.random()*(H-90) }); }
+    // avlanma olayı
+    if (s.avla){ s.avla=false; s.nesil++;
+      // kamuflaj uyumsuz olanlar avlanır
+      s.populasyon = s.populasyon.filter(b=>{
+        const uyum = b.koyu ? s.zemin : (1-s.zemin);
+        return Math.random() < 0.3 + uyum*0.6;     // uyumlu yaşar
+      });
+      // hayatta kalanlar ürer (popülasyonu 40'a tamamla, ebeveyn tipinde)
+      const n = s.populasyon.length || 1;
+      while (s.populasyon.length < 40){ const ebe = s.populasyon[Math.floor(Math.random()*n)] || {koyu:Math.random()<0.5};
+        s.populasyon.push({ koyu: Math.random()<0.92?ebe.koyu:!ebe.koyu, x:30+Math.random()*(W2-60), y:60+Math.random()*(H-90) }); }
+    }
+    const koyu = s.populasyon.filter(b=>b.koyu).length;
+    s.oran += (koyu/s.populasyon.length - s.oran)*0.1;
+    // kelebekler
+    s.populasyon.forEach((b,i)=>{
+      const wob = Math.sin(s.t*3+i)*3;
+      ctx.fillStyle = b.koyu ? '#1a1a1a' : '#f0f0f0';
+      ctx.strokeStyle = b.koyu ? '#000' : '#888'; ctx.lineWidth=0.5;
+      for (const sgn of [-1,1]){
+        ctx.beginPath(); ctx.ellipse(b.x+sgn*5, b.y+wob, 6, 4, sgn*0.5, 0, 7); ctx.fill(); ctx.stroke();
+      }
+    });
+    // oran çubuğu
+    ctx.fillStyle='rgba(13,19,38,0.8)'; ctx.fillRect(0,0,W2,40);
+    ctx.fillStyle='#1a1a1a'; ctx.fillRect(14, 12, (W2-28)*s.oran, 16);
+    ctx.fillStyle='#f0f0f0'; ctx.fillRect(14+(W2-28)*s.oran, 12, (W2-28)*(1-s.oran), 16);
+    ctx.strokeStyle='#64748B'; ctx.strokeRect(14,12,W2-28,16);
+    ctx.fillStyle='#fff'; ctx.font='11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(`Koyu %${(s.oran*100).toFixed(0)}`, W2*0.25, 24);
+    ctx.fillText(`Açık %${((1-s.oran)*100).toFixed(0)}`, W2*0.75, 24); ctx.textAlign='left';
+  }
+},
+{
+  id:'mendel', grup:'bio', ico:'🧬', ad:'Mendel Kalıtımı — Punnett', kat:'Biyoloji · Genetik (AYT)',
+  desc:'İki ebeveyni çaprazla: baskın/çekinik alleller nasıl dağılır? Punnett karesi + 3:1 oranı canlı.',
+  init(){ return { p1:1, p2:1, t:0 }; },   // 0=resesif (aa), 1=heterozigot (Aa), 2=dominant (AA)
+  params:[
+    { key:'a', label:'Ebeveyn 1', min:0, max:2, step:1, get:s=>s.p1, set:(s,v)=>{ s.p1=Math.round(v); }, fmt:v=>['aa (çekinik)','Aa (taşıyıcı)','AA (saf baskın)'][Math.round(v)] },
+    { key:'b', label:'Ebeveyn 2', min:0, max:2, step:1, get:s=>s.p2, set:(s,v)=>{ s.p2=Math.round(v); }, fmt:v=>['aa (çekinik)','Aa (taşıyıcı)','AA (saf baskın)'][Math.round(v)] },
+  ],
+  actions:[],
+  meter(s){
+    const g = p => p===0?['a','a']:p===2?['A','A']:['A','a'];
+    const g1=g(s.p1), g2=g(s.p2);
+    let AA=0,Aa=0,aa=0;
+    for (const x of g1) for (const y of g2){ const c=[x,y].sort().join(''); if(c==='AA')AA++; else if(c==='aa')aa++; else Aa++; }
+    const baskinFen = AA+Aa, cekinikFen = aa;
+    return `Genotip — AA:${AA} Aa:${Aa} aa:${aa} (4\'te) · Fenotip — <b>baskın ${baskinFen} : çekinik ${cekinikFen}</b><br>${AA===0&&aa===0?'':''}${(s.p1===1&&s.p2===1)?'klasik Aa×Aa → 3:1 fenotip oranı (Mendel)':''}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const g = p => p===0?['a','a']:p===2?['A','A']:['A','a'];
+    const g1=g(s.p1), g2=g(s.p2);
+    // Punnett 2x2
+    const cs = Math.min(W2,H)*0.18, ox=W2/2-cs, oy=H/2-cs*0.6;
+    ctx.font='bold 20px sans-serif'; ctx.textAlign='center';
+    // üst başlık (ebeveyn 1 gametleri)
+    g1.forEach((al,i)=>{ ctx.fillStyle='#7DD3FC'; ctx.fillText(al, ox+cs/2+i*cs, oy-14); });
+    // sol başlık (ebeveyn 2)
+    g2.forEach((al,j)=>{ ctx.fillStyle='#F5A35C'; ctx.fillText(al, ox-22, oy+cs/2+j*cs+7); });
+    for (let i=0;i<2;i++) for (let j=0;j<2;j++){
+      const c=[g1[i],g2[j]].sort().join('');
+      const baskin = c.includes('A');
+      ctx.fillStyle = baskin ? 'rgba(30,224,111,0.18)' : 'rgba(248,113,113,0.18)';
+      ctx.fillRect(ox+i*cs, oy+j*cs, cs, cs);
+      ctx.strokeStyle='#46587f'; ctx.lineWidth=1.5; ctx.strokeRect(ox+i*cs, oy+j*cs, cs, cs);
+      ctx.fillStyle = baskin?'#1ee06f':'#F87171'; ctx.font='bold 22px sans-serif';
+      ctx.fillText(c, ox+i*cs+cs/2, oy+j*cs+cs/2+8);
+    }
+    // fenotip bezelye görseli (baskın=sarı/düz, çekinik=yeşil/buruşuk)
+    let baskinN=0, cekinikN=0;
+    for (const x of g1) for (const y of g2){ if([x,y].includes('A')) baskinN++; else cekinikN++; }
+    ctx.font='30px sans-serif'; ctx.textAlign='center';
+    for (let i=0;i<baskinN;i++) ctx.fillText('🟡', W2*0.3+i*30, H-40);
+    for (let i=0;i<cekinikN;i++) ctx.fillText('🟢', W2*0.3+baskinN*30+i*30, H-40);
+    ctx.fillStyle='#94A3B8'; ctx.font='12px sans-serif';
+    ctx.fillText('🟡 baskın fenotip   🟢 çekinik fenotip', W2/2, H-12);
+    ctx.textAlign='left';
+  }
+},
+{
+  id:'solunum', grup:'bio', ico:'🌿', ad:'Fotosentez ↔ Solunum', kat:'Biyoloji · Enerji (TYT+AYT)',
+  desc:'Hayatın iki yarısı: bitki güneşle glikoz+O₂ üretir, hücreler glikoz+O₂ ile ATP üretir. Birbirinin tersi döngü.',
+  init(){ return { isik:0.7, t:0 }; },
+  params:[
+    { key:'i', label:'Işık şiddeti', min:0, max:1, step:0.05, get:s=>s.isik, set:(s,v)=>{ s.isik=v; }, fmt:v=>v<0.1?'karanlık':v<0.5?'loş':'güneşli' },
+  ],
+  actions:[],
+  meter(s){
+    const foto = s.isik;
+    return `☀️ Fotosentez: 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂ (ışık enerjisini glikoza depolar)<br>🔥 Solunum: C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + ATP · ${foto<0.1?'karanlıkta sadece solunum (net CO₂ verir)':'fotosentez hızı ışıkla artar'}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    s.t += 1/60;
+    const cx = W2/2, cy = H/2;
+    // sol: yaprak (fotosentez) sağ: mitokondri/hücre (solunum)
+    // güneş
+    ctx.fillStyle=`rgba(253,184,19,${0.3+s.isik*0.6})`; ctx.shadowColor='#FDB813'; ctx.shadowBlur=20*s.isik;
+    ctx.beginPath(); ctx.arc(W2*0.18, 50, 18, 0, 7); ctx.fill(); ctx.shadowBlur=0;
+    // ışık ışınları → yaprak
+    if (s.isik>0.05){ ctx.strokeStyle=`rgba(253,184,19,${s.isik})`; ctx.lineWidth=2;
+      for (let i=0;i<5;i++){ const yy=80+i*16; ctx.beginPath(); ctx.moveTo(W2*0.18, 70); ctx.lineTo(W2*0.3, yy+((s.t*30)%16)); ctx.stroke(); } }
+    // yaprak
+    ctx.fillStyle='#15803D'; ctx.beginPath(); ctx.ellipse(W2*0.3, cy, 50, 70, 0.3, 0, 7); ctx.fill();
+    ctx.strokeStyle='#0a4020'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(W2*0.3-30,cy+40); ctx.lineTo(W2*0.3+30,cy-50); ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.fillText('YAPRAK', W2*0.3, cy+86);
+    // hücre/mitokondri
+    ctx.fillStyle='#B45309'; ctx.beginPath(); ctx.ellipse(W2*0.72, cy, 55, 45, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle='#78350F'; ctx.lineWidth=2;
+    for (let i=0;i<4;i++){ ctx.beginPath(); ctx.ellipse(W2*0.72, cy-25+i*16, 40, 6, 0, 0, Math.PI); ctx.stroke(); }
+    ctx.fillStyle='#fff'; ctx.fillText('HÜCRE', W2*0.72, cy+72); ctx.textAlign='left';
+    // döngü okları: O2 (yaprak→hücre), CO2 (hücre→yaprak)
+    const akan = (y, sag, col, lbl, hiz) => {
+      ctx.strokeStyle=col; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(W2*0.38, y); ctx.lineTo(W2*0.64, y); ctx.stroke();
+      const dir = sag?1:-1;
+      const px = sag ? W2*0.38+((s.t*hiz*40)%(W2*0.26)) : W2*0.64-((s.t*hiz*40)%(W2*0.26));
+      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(px, y, 5, 0, 7); ctx.fill();
+      ctx.font='12px sans-serif'; ctx.fillText(lbl, W2/2-14, y-8);
+    };
+    akan(cy-30, true, '#34D399', 'O₂ →', Math.max(0.15,s.isik));      // O2 üretimi ışıkla
+    akan(cy+30, false, '#94A3B8', '← CO₂', 0.6);                       // CO2 sürekli
+    ctx.fillStyle='#FDB813'; ctx.font='12px sans-serif'; ctx.fillText('☀️ Fotosentez', W2*0.22, H-14);
+    ctx.fillStyle='#F5A35C'; ctx.fillText('🔥 Solunum (ATP)', W2*0.62, H-14);
+  }
+},
+// ── MATEMATİK 2 PAKETİ — analiz + olasılık ──────────────────
+{
+  id:'turev', grup:'mat', ico:'📈', ad:'Türev — Anlık Eğim', kat:'Matematik · Analiz (AYT)',
+  desc:'Türev nedir? İki noktadan geçen kesen doğruyu yaklaştır: h→0 olunca TEĞET olur. Eğim = anlık değişim hızı.',
+  init(){ return { x0:1.2, h:1.5, fn:0 }; },
+  params:[
+    { key:'x', label:'Nokta x₀', min:-2.5, max:2.5, step:0.1, get:s=>s.x0, set:(s,v)=>{ s.x0=v; }, fmt:v=>v.toFixed(1) },
+    { key:'h', label:'Δx (h → 0 yaklaştır)', min:0.02, max:2, step:0.02, get:s=>s.h, set:(s,v)=>{ s.h=v; }, fmt:v=>v.toFixed(2) },
+  ],
+  actions:[ { label:(s) => '🔁 f(x) = '+['x²','x³','sin x'][s.fn], fn:s=>{ s.fn=(s.fn+1)%3; } } ],
+  meter(s){
+    const f = S_mfn(s.fn), df = S_mdfn(s.fn);
+    const kesen = (f(s.x0+s.h)-f(s.x0))/s.h;
+    const tegt = df(s.x0);
+    return `kesen doğru eğimi = [f(x₀+h)−f(x₀)]/h = <b>${kesen.toFixed(3)}</b><br>gerçek türev f′(${s.x0.toFixed(1)}) = <b>${tegt.toFixed(3)}</b> · h küçüldükçe kesen → teğete yakınsıyor (fark: ${Math.abs(kesen-tegt).toFixed(3)})`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const f = S_mfn(s.fn), df = S_mdfn(s.fn);
+    const cx=W2/2, cy=H/2, sc=Math.min(W2,H)/7;
+    // eksenler
+    ctx.strokeStyle='#33524a'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W2,cy); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+    // f(x)
+    ctx.strokeStyle='#7DD3FC'; ctx.lineWidth=2;
+    ctx.beginPath();
+    for (let px=0;px<W2;px++){ const x=(px-cx)/sc; ctx.lineTo(px, cy-f(x)*sc); }
+    ctx.stroke();
+    const X0=s.x0, X1=s.x0+s.h;
+    const P0={x:cx+X0*sc, y:cy-f(X0)*sc}, P1={x:cx+X1*sc, y:cy-f(X1)*sc};
+    // kesen doğru: y = f(x0) + m·(x−x0)
+    const m=(f(X1)-f(X0))/s.h, kx0=-3, kx1=3;
+    ctx.strokeStyle='#FFD27F'; ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(cx+kx0*sc, cy-(f(X0)+m*(kx0-X0))*sc);
+    ctx.lineTo(cx+kx1*sc, cy-(f(X0)+m*(kx1-X0))*sc);
+    ctx.stroke();
+    // gerçek teğet (yeşil)
+    const mt=df(X0);
+    ctx.strokeStyle='rgba(30,224,111,0.55)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+    ctx.beginPath();
+    ctx.moveTo(cx+kx0*sc, cy-(f(X0)+mt*(kx0-X0))*sc);
+    ctx.lineTo(cx+kx1*sc, cy-(f(X0)+mt*(kx1-X0))*sc);
+    ctx.stroke(); ctx.setLineDash([]);
+    // iki nokta
+    ctx.fillStyle='#FFD27F'; ctx.beginPath(); ctx.arc(P0.x,P0.y,6,0,7); ctx.fill();
+    ctx.fillStyle='#F87171'; ctx.beginPath(); ctx.arc(P1.x,P1.y,5,0,7); ctx.fill();
+    // h göstergesi (dik üçgen)
+    ctx.strokeStyle='rgba(167,139,250,0.5)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(P0.x,P0.y); ctx.lineTo(P1.x,P0.y); ctx.lineTo(P1.x,P1.y); ctx.stroke();
+    ctx.fillStyle='#A78BFA'; ctx.font='11px sans-serif'; ctx.fillText('Δx', (P0.x+P1.x)/2-6, P0.y+14);
+    ctx.fillStyle='#64748B'; ctx.font='12px sans-serif';
+    ctx.fillText('🟡 kesen (eğim≈ortalama hız) · 🟢 kesikli = gerçek teğet (türev)', 14, 24);
+  }
+},
+{
+  id:'integral', grup:'mat', ico:'📐', ad:'İntegral — Eğri Altı Alan', kat:'Matematik · Analiz (AYT)',
+  desc:'İntegral = alan. Dikdörtgenlerle (Riemann) yaklaş: dilim arttıkça gerçek alana yakınsar. Sonsuz dilim = tam değer.',
+  init(){ return { n:6, a:-1.5, b:1.8, fn:0 }; },
+  params:[
+    { key:'n', label:'Dilim sayısı', min:1, max:80, step:1, get:s=>s.n, set:(s,v)=>{ s.n=Math.round(v); }, fmt:v=>v.toFixed(0)+' dikdörtgen' },
+    { key:'a', label:'Alt sınır a', min:-3, max:0, step:0.1, get:s=>s.a, set:(s,v)=>{ s.a=v; }, fmt:v=>v.toFixed(1) },
+    { key:'b', label:'Üst sınır b', min:0, max:3, step:0.1, get:s=>s.b, set:(s,v)=>{ s.b=v; }, fmt:v=>v.toFixed(1) },
+  ],
+  actions:[ { label:(s) => '🔁 f(x) = '+['x²+0.5','sin x+1.5','½x²+cos x+1'][s.fn], fn:s=>{ s.fn=(s.fn+1)%3; } } ],
+  meter(s){
+    const f = S_ifn(s.fn), F = S_iIF(s.fn);
+    const dx=(s.b-s.a)/s.n; let riemann=0;
+    for (let i=0;i<s.n;i++) riemann += f(s.a+(i+0.5)*dx)*dx;
+    const gercek = F(s.b)-F(s.a);
+    return `Riemann toplamı (${s.n} dilim) = <b>${riemann.toFixed(3)}</b><br>gerçek integral ∫f dx = <b>${gercek.toFixed(3)}</b> · hata: ${Math.abs(riemann-gercek).toFixed(4)} (dilim ↑ → hata ↓)`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const f = S_ifn(s.fn);
+    const cx=W2/2, cy=H*0.62, sc=Math.min(W2,H)/7;
+    ctx.strokeStyle='#33524a'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W2,cy); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+    // dikdörtgenler
+    const dx=(s.b-s.a)/s.n;
+    for (let i=0;i<s.n;i++){
+      const xm=s.a+(i+0.5)*dx, fv=f(xm);
+      ctx.fillStyle='rgba(30,224,111,0.22)'; ctx.strokeStyle='rgba(30,224,111,0.6)'; ctx.lineWidth=1;
+      const rx=cx+(s.a+i*dx)*sc, rw=dx*sc, rh=fv*sc;
+      ctx.fillRect(rx, cy-rh, rw, rh); ctx.strokeRect(rx, cy-rh, rw, rh);
+    }
+    // f(x)
+    ctx.strokeStyle='#7DD3FC'; ctx.lineWidth=2.5;
+    ctx.beginPath();
+    for (let px=0;px<W2;px++){ const x=(px-cx)/sc; ctx.lineTo(px, cy-f(x)*sc); }
+    ctx.stroke();
+    // sınırlar
+    ctx.strokeStyle='#F87171'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    for (const xx of [s.a,s.b]){ ctx.beginPath(); ctx.moveTo(cx+xx*sc,0); ctx.lineTo(cx+xx*sc,H); ctx.stroke(); }
+    ctx.setLineDash([]);
+    ctx.fillStyle='#F87171'; ctx.font='12px sans-serif';
+    ctx.fillText('a', cx+s.a*sc-4, cy+16); ctx.fillText('b', cx+s.b*sc-4, cy+16);
+    ctx.fillStyle='#64748B';
+    ctx.fillText('🟩 dikdörtgenler (yaklaşık) · 🔵 eğri · alan = integral', 14, 24);
+  }
+},
+{
+  id:'olasilik', grup:'mat', ico:'🎲', ad:'Olasılık — Merkezi Limit', kat:'Matematik · Olasılık (TYT+AYT)',
+  desc:'Tek zar düz dağılır. Ama 3 zarın TOPLAMI çan eğrisine döner! Bağımsız rastgelelikler toplanınca normal dağılım çıkar.',
+  init(){ return { zarSayi:2, atislar:[], t:0 }; },
+  params:[
+    { key:'z', label:'Zar sayısı (toplanan)', min:1, max:5, step:1, get:s=>s.zarSayi, set:(s,v)=>{ s.zarSayi=Math.round(v); s.atislar=[]; }, fmt:v=>v.toFixed(0)+' zar' },
+  ],
+  actions:[
+    { label:'🎲 100 kez at', fn:s=>{ for(let k=0;k<100;k++){ let t=0; for(let z=0;z<s.zarSayi;z++) t+=1+Math.floor(Math.random()*6); s.atislar.push(t);} } },
+    { label:'↺ Temizle', fn:s=>{ s.atislar=[]; } },
+  ],
+  meter(s){
+    const n=s.atislar.length;
+    if (!n) return `${s.zarSayi} zar · henüz atış yok — "100 kez at" butonuna bas<br>tek zar = DÜZ dağılım · zar sayısı arttıkça TOPLAM → çan eğrisi (merkezi limit teoremi)`;
+    const mean=s.atislar.reduce((a,b)=>a+b,0)/n;
+    return `${n} atış · ortalama toplam = <b>${mean.toFixed(2)}</b> (teorik ${(s.zarSayi*3.5).toFixed(1)})<br>${s.zarSayi===1?'tek zar → her yüz eşit (düz)':'toplam → ortada yığılır, uçlar seyrek = ÇAN EĞRİSİ'}`;
+  },
+  draw(ctx, W2, H, s){
+    simBG(ctx, W2, H);
+    const minV=s.zarSayi, maxV=s.zarSayi*6;
+    // histogram
+    const sayac={}; for (const v of s.atislar) sayac[v]=(sayac[v]||0)+1;
+    const mx=50, my=H-50, mw=W2-90, mh=H-110;
+    ctx.strokeStyle='#33524a'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx+mw,my); ctx.moveTo(mx,my); ctx.lineTo(mx,my-mh); ctx.stroke();
+    const bars=maxV-minV+1, bw=mw/bars;
+    let maxC=1; for (const k in sayac) maxC=Math.max(maxC,sayac[k]);
+    for (let v=minV;v<=maxV;v++){
+      const c=sayac[v]||0, x=mx+(v-minV)*bw;
+      ctx.fillStyle='rgba(30,224,111,0.55)';
+      ctx.fillRect(x+2, my-c/maxC*mh, bw-4, c/maxC*mh);
+      if (bars<=20){ ctx.fillStyle='#94A3B8'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+        ctx.fillText(v, x+bw/2, my+14); ctx.textAlign='left'; }
+    }
+    // teorik çan eğrisi (n>=2)
+    if (s.zarSayi>=2 && s.atislar.length>20){
+      const mean=s.zarSayi*3.5, sd=Math.sqrt(s.zarSayi*35/12);
+      ctx.strokeStyle='#F87171'; ctx.lineWidth=2;
+      ctx.beginPath();
+      for (let v=minV;v<=maxV;v+=0.1){
+        const g=Math.exp(-(((v-mean)/sd)**2)/2);
+        const x=mx+(v-minV)*bw+bw/2;
+        ctx.lineTo(x, my - g*mh*0.92);
+      }
+      ctx.stroke();
+      ctx.fillStyle='#F87171'; ctx.font='12px sans-serif'; ctx.fillText('🔴 teorik normal dağılım', mx+mw-160, my-mh+4);
+    }
+    // zar görseli
+    ctx.fillStyle='#94A3B8'; ctx.font='12px sans-serif';
+    ctx.fillText(`${s.zarSayi} zar toplamı (${minV}–${maxV})`, mx, 24);
+  }
+},
 ];
 
 const SIM_GRUPLAR = [
@@ -6416,6 +7362,7 @@ const SIM_GRUPLAR = [
   { id:'em',      ad:'⚡ Elektrik-Manyetizma' },
   { id:'dalga',   ad:'🌊 Dalga-Optik' },
   { id:'modern',  ad:'⚛️ Modern-Kuantum' },
+  { id:'astro',   ad:'🌌 Astrofizik' },
   { id:'kimya',   ad:'🧪 Kimya' },
   { id:'bio',     ad:'🌱 Biyoloji' },
   { id:'mat',     ad:'📐 Matematik' },
@@ -6432,7 +7379,10 @@ function buildSimMenu() {
     filtreli.map(o =>
       `<div class="simCard" data-i="${o.i}"><div class="ico">${o.s.ico}</div><div class="kat">${o.s.kat}</div><h3>${o.s.ad}</h3><p>${o.s.desc}</p></div>`).join('');
   simMenuEl.querySelectorAll('.simChip').forEach(c => { c.onclick = () => { simFiltre = c.dataset.g; buildSimMenu(); }; });
-  simMenuEl.querySelectorAll('.simCard').forEach(c => { c.onclick = () => startSim(SIMS[+c.dataset.i]); });
+  simMenuEl.querySelectorAll('.simCard').forEach((c, idx) => {
+    c.style.animationDelay = Math.min(idx * 18, 400) + 'ms';
+    c.onclick = () => startSim(SIMS[+c.dataset.i]);
+  });
 }
 function buildSimCtl(sim) {
   let html = `<h4>${sim.ico} ${sim.ad}</h4><div class="desc">${sim.desc}</div>`;
@@ -6487,6 +7437,10 @@ function startSim(sim) {
   simResize();
   requestAnimationFrame(() => { if (activeSim === sim) simResize(); });   // layout aktıktan sonra düzelt
   buildSimCtl(sim);
+  // profesyonel açılış geçişi (reflow ile yeniden tetikle)
+  simStageEl.classList.remove('simIn'); simCtl.classList.remove('simIn');
+  void simStageEl.offsetWidth;
+  simStageEl.classList.add('simIn'); simCtl.classList.add('simIn');
   simRAF = requestAnimationFrame(simLoop);
 }
 function stopActiveSim() {

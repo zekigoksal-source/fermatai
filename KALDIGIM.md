@@ -1,6 +1,19 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-P (Fable 5): FERMATRIX SİMÜLATÖR HAVUZU 6→35 — atari terminaline 29 yeni tam ekran bilim sim (Neo arşiv esinli: tünelleme/Compton/karacisim/karadelik/LED/Hubble), 7 kategori filtreli menü — CANLI**
+> **Son güncelleme:** 11 Haziran 2026 → **OTURUM 25.58-Q (Fable 5): FERMATRIX SİMÜLATÖR 35→51 — astrofizik+kimya+bio+mat dengeleme, üniversite-seviye popüler bilim (yıldız ömrü→karadelik, bileşik oluşturucu, dolaşım, evrim), Nexus→Merkez rebrand, profesyonel açılış geçişi — CANLI**
+>
+> ## 🌌 11 Haz (25.58-Q) — SİMÜLATÖR 51 SİM: BRANŞ DENGELEME + ÜNİVERSİTE-SEVİYE POPÜLER BİLİM (Neo: "fizik kapsamlı, diğer branşlar geride; üniv seviyesini öğrenci diline çevir; karadelik/yıldız ömrü/bileşik oluşturma/evrim; Nexus kelimesi kalksın")
+> **35 → 51 sim · 9 kategori (Astrofizik YENİ) · dengeli dağılım: Kimya 7, Bio 6, Mat 6 artık fizikle yarışıyor · "Nexus" → "Merkez" + evren adı Fermatrix.**
+> - **🌌 Astrofizik (YENİ kategori, 5):** **Yıldız Ömrü** (Neo'nun tam örneği: kütle slider → Güneş=beyaz cüce, 12M☉=nötron yıldızı [TOV], 30M☉=KARA DELİK ✓ + zaman ilerlet animasyonu) · Füzyon (E=mc², neden parlar) · **H-R Diyagramı** (9 gerçek yıldız, ana kol/dev/cüce bölgeleri) · Güneş Sistemi Gezgini (Kepler-3 T²/a³≈1 ✓) · Gelgit & Roche (Ay parçalanması).
+> - **🧪 Kimya +4 (→7):** **Bileşik Oluşturucu** (element seç → İYONİK/KOVALENT, NaCl/MgO/Al₂O₃/H₂O formülleri ✓, soy gaz kontrolü) · **İyon Oluşumu** (oktet, Na→+1, O→−2 ✓ elektron transfer animasyonu) · **Endo/Ekzotermik** (enerji profili, Ea, katalizör, ΔH) · Elektroliz (redoks, H₂:O₂=2:1 ✓).
+> - **🌱 Biyoloji +4 (→6):** **Dolaşım Sistemi** (kalp çift pompa, küçük/büyük dolaşım, O₂/CO₂ kan akışı) · **Doğal Seçilim** (sanayi kelebekleri, kamuflaj → nesiller boyu popülasyon kayar, Darwin) · **Mendel Punnett** (Aa×Aa→3:1 ✓) · Fotosentez↔Solunum döngüsü.
+> - **📐 Matematik +3 (→6):** **Türev** (kesen→teğet, h→0 yakınsama: h=0.02'de 2.020 vs 2.000 ✓) · **İntegral** (Riemann dikdörtgenleri→alan, 60 dilim hata 0.0002 ✓) · Olasılık/Merkezi Limit (zar toplamı→çan eğrisi).
+> - **Altyapı:** global `S_*` periyodik helper (Z=1-20, bilimsel-doğru bağ/formül/oktet) + `bez()` bezier + `S_mfn/S_ifn` analiz fonksiyonları (kapalı-form ters türev) · SIM_GRUPLAR'a astro · **profesyonel açılış geçişi** (simReveal fade+scale+blur, ctlSlide, kart staggered cardPop).
+> - **KRİTİK FIX:** ilk splice'ın `rfind("];")` SIM_GRUPLAR kapanışını bulup 16 yeni sim'i yanlışlıkla kategori dizisine soktu (syntax bozulmadı, sessiz kaçtı, SIMS 35'te kaldı). Tespit: `f.sim.liste().length===35`. Çözüm: sim'ler içindeki `const arr=[];` yüzünden "ilk/son `];`" güvenilmez → `let simFiltre` öncesi son `];` + regex `\];\s*const SIM_GRUPLAR` ile cerrahi taşıma. Ders: SIMS sonuna splice marker'ı kırılgan, sim içi diziler `];` üretiyor.
+> - **Ayrıca FIX:** fourier+fraktal action label `()=>s.tip` (s tanımsız, panel açılınca patlar) → `(s)=>` (önceki deploy'da latent bug'dı).
+> - **Doğrulama:** 14 sim `__fz.sim.test()` ile bilim birebir ✓ · NaCl/yıldız ömrü/H-R görsel A++ mobilde · node --check temiz.
+>
+> ## 🕹️ 11 Haz (25.58-P) — SİMÜLATÖR HAVUZU PATLAMASI (Neo: "atari içine 30-40 ayrı çalışma, oPhysics/PhET seviyesi, arşivimden esinlen")
 >
 > ## 🕹️ 11 Haz (25.58-P) — SİMÜLATÖR HAVUZU PATLAMASI (Neo: "atari içine 30-40 ayrı çalışma, oPhysics/PhET seviyesi, arşivimden esinlen")
 > **Simülatör Terminali (atari) 6 → 35 tam ekran sim · 7 kategori filtreli menü (sayaçlı chip'ler) · Neo'nun render arşivi (user_archive, 53 kayıt) incelendi → kuantum/astro favorileri sim'e dönüştü.**
