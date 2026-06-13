@@ -1,6 +1,15 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 12 Haziran 2026 → **OTURUM 25.58-T (Fable 5): FİX-LOOP + FERMATRIX HARİTA — query_analytics halüsinasyon SQL düzeltmesi (web_sessions/soz_no/phone-nitele/sinav_hata_yuzdesi), Groq TPD cooldown, Fermatrix harita/ışınlanma overlay (M tuşu + 🗺️ buton, 51 istasyon navigasyonu) — CANLI**
+> **Son güncelleme:** 13 Haziran 2026 → **OTURUM 25.58-U (Fable 5): KRİTİK FİX-LOOP — model-404 (premium katman fable-5 erişimi yok → agent komple çöküyordu) + query_analytics şema-geri-besleme. Önce 25.58-T: Groq TPD cooldown + Fermatrix harita — HEPSİ CANLI**
+>
+> ## 🚨 13 Haz (25.58-U) — KRİTİK FİX-LOOP (Sentry/log taraması — agent çöküşü) (Neo: "sentry + UX hatalarını fix-loop")
+> **VPS log (36-48h) taraması → 2 ciddi production hatası, ikisi de öğrenciyi CEVAPSIZ bırakıyordu. Sentry entegre (sentry-sdk 2.58, DSN+API_TOKEN var, sentry_monitor.py).**
+> - **🔴 KRİTİK — model 404 (agent komple fail):** 25.58-C premium katmanı (`MODEL_PREMIUM`) varsayılan `claude-fable-5` idi ama **production hesabında Fable 5 ERİŞİMİ YOK** ("Claude Fable 5 is not available. Please use Opus 4.8"). render-değerli web üretiminde her premium çağrı 404 → stream + sync ikisi de fail → öğrenci cevapsız (13+ olay/36h). Test: opus-4-8 ✓, sonnet-4-6 ✓, fable-5 ✗. **FIX:** varsayılan → `claude-opus-4-8` (premium kaliteyi korur, erişilebilir) + **MODEL-FALLBACK** (stream VE sync yolunda `not_found`/404 → base MODEL'e düş, asla hard-fail yok). .env'de override yok, default geçerli.
+> - **🟠 query_analytics "does not exist" (70/24h):** prompt-only fix (25.58-T) yetmedi (deploy sonrası hâlâ vardı). **Deterministik şema-geri-besleme:** hata anında sorgudaki tabloların GERÇEK kolonları `information_schema`'dan çekilip hata mesajına eklenir → Claude doğru kolonla retry eder (TÜM halüsinasyonlar generic çözülür, güvenli). + prompt düzeltme: `student_id` 6 tabloda (academic_snapshots, chat_sessions, escalations, etut_plans, pedagogical_signals, attendance_log) GERÇEKTEN var — önceki "her yerde soz_no" YANLIŞTI → soz_no-tabloları vs student_id-tabloları net ayrıldı.
+> - **Doğrulama:** 3 dosya ast-parse temiz, VPS restart health 200, restart sonrası hata yok, premium model opus-4-8 doğrulandı.
+> - **AÇIK:** sentry_monitor.get_summary boş döndü (org slug / cache?) — izleme aracı, kullanıcı-etkisi yok; asıl hatalar journalctl'den bulundu. İleride bakılabilir.
+>
+> ## 🔧 12 Haz (25.58-T) — FİX-LOOP (Groq TPD cooldown + web_sessions/phone) + FERMATRIX HARİTA MVP
 >
 > ## 🔧 12 Haz (25.58-T) — FİX-LOOP (production hataları) + FERMATRIX HARİTA MVP (Neo: "sentry/kullanıcı hataları fix-loop + fermatrix MVP ileri + her şey güncel")
 > **VPS 48h log taraması → 4 tür production hatası tespit + düzeltildi, hepsi query_analytics halüsinasyon SQL kökenli. + Fermatrix'e harita/ışınlanma overlay.**
