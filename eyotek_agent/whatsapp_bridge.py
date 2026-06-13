@@ -4213,12 +4213,16 @@ async def process_message(phone: str, text: str, audio_bytes: bytes | None = Non
     if getattr(agent, '_needs_history_load', False):
         try:
             from db_pool import db_fetch as _db_fetch_h
+            # 25.58-W: LIMIT 10 → 18 (çok-turlu bağlam sürekliliği). Arda diyalogu:
+            # "favori rengim ne söylemiştim" ~15 mesaj önceydi, 10'luk pencereden düşüp
+            # bağlam kayboluyordu. 18 = ~9 alışveriş, hem Cerebras hem Claude faydalanır.
+            # Token maliyeti ihmal (öğrenci mesajları kısa, ~150 tok/mesaj).
             rows = await _db_fetch_h("""
                 SELECT message_role, content FROM agent_conversations
                 WHERE phone = $1 AND message_role IN ('user','assistant')
                   AND content NOT LIKE '[tool_calls%'
                   AND created_at >= NOW() - INTERVAL '24 hours'
-                ORDER BY created_at DESC LIMIT 10
+                ORDER BY created_at DESC LIMIT 18
             """, phone)
             if rows:
                 for r in reversed(rows):

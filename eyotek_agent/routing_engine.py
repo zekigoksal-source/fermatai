@@ -115,10 +115,13 @@ def detect_duygu_psikoloji(message: str) -> bool:
     return any(kw in msg_lower for kw in _DUYGU_PSIKOLOJI_KEYWORDS)
 
 
-# 25.58-V STICKY ESCALATION durumu: phone → son frustration zamanı (epoch).
-# Frustration sonrası ~10dk tüm mesajlar Claude'da kalır (bağlam kopmasın, Cerebras'a sekme yok).
-_recent_frustration: dict[str, float] = {}
-_STICKY_FRUSTRATION_SEC = 600  # 10 dakika
+# 25.58-W STICKY ESCALATION: phone → frustration sonrası Claude'da kalacak KALAN mesaj sayısı.
+# 25.58-V'de 10dk zaman-bazlıydı → Claude'a aşırı yük + hibrit maliyet dengesi bozuluyordu (Neo).
+# Artık SAYI-bazlı (2 mesaj): düzeltme + anlık takip Claude'da, sonra hibrit devam.
+# Asıl çözüm history penceresinin 18'e çıkması (Cerebras artık bağlamı koruyor) — bu sadece
+# anlık düzeltme turu için ince emniyet. Sayı doğal drenajla biter (zaman-staleness yok).
+_recent_frustration: dict[str, int] = {}
+_STICKY_FRUSTRATION_TURNS = 2  # frustration sonrası kaç mesaj Claude'da kalsın
 
 
 def detect_frustration(message: str) -> bool:
@@ -165,26 +168,24 @@ def decide_route(
     """
     msg_lower = message.lower().strip()
 
-    # ── 0-STICKY (25.58-V): yakın zamanda frustration yaşayan kullanıcı → Claude'da kal ──
-    # Arda diyalogu: frustration→Claude tek mesaj çözüyordu ama sonraki turda Cerebras'a
-    # geri sekip bağlamı YİNE kaybediyordu. Frustration sonrası 10dk tüm mesajlar Claude.
-    import time as _t_fr
+    # ── 0-STICKY (25.58-W): frustration sonrası KALAN tur sayısı kadar Claude'da kal ──
+    # Düzeltme turu (+anlık takip) Claude'da çözülsün, sonra hibrit devam. Sayı-bazlı →
+    # doğal drenaj, Claude'a aşırı yük yok (Neo: hibrit maliyet dengesi korunsun).
     if phone:
-        _last_fr = _recent_frustration.get(phone)
-        if _last_fr is not None:
-            if _t_fr.time() - _last_fr < _STICKY_FRUSTRATION_SEC:
-                _recent_frustration[phone] = _t_fr.time()  # aktif thread → süreyi tazele
-                return "claude"
-            else:
-                _recent_frustration.pop(phone, None)  # süre doldu, temizle
+        _left = _recent_frustration.get(phone, 0)
+        if _left > 0:
+            _recent_frustration[phone] = _left - 1
+            if _recent_frustration[phone] <= 0:
+                _recent_frustration.pop(phone, None)
+            return "claude"
 
     # ── 0. FRUSTRATION INTERCEPT (22.1n-toplanti TOP#1) ─────────────────────
     # Bot tespit: "chatgpt'ye gidiyom" Ollama'da kaybolmuştu.
     # Artık her rolde frustration keyword → ZORLA Claude (empati + eskalasyon için).
     if detect_frustration(message):
-        # 25.58-V: sticky escalation için frustration zamanını kaydet
+        # 25.58-W: bu mesaj + sonraki N tur Claude'da kalsın (sayı-bazlı sticky)
         if phone:
-            _recent_frustration[phone] = _t_fr.time()
+            _recent_frustration[phone] = _STICKY_FRUSTRATION_TURNS
         # Brief #6 — Kapı 6: V2 agent'a frustration sinyali yay (sync→async fire-forget)
         # Try/except içinde: bus yoksa veya hata olursa routing kararını ETKILEMESIN
         try:
