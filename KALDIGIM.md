@@ -2,6 +2,16 @@
 
 > **Son güncelleme:** 13 Haziran 2026 → **OTURUM 25.58-U (Fable 5): KRİTİK FİX-LOOP — model-404 (premium katman fable-5 erişimi yok → agent komple çöküyordu) + query_analytics şema-geri-besleme. Önce 25.58-T: Groq TPD cooldown + Fermatrix harita — HEPSİ CANLI**
 >
+> ## 💬 13 Haz (25.58-V) — BUGÜNKÜ ÖĞRENCİ DİYALOG ANALİZİ + UX FİX-LOOP (Neo: "bugünkü öğrenci diyaloglarını incele, problem varsa düzelt")
+> **Bugün 8 öğrenci / 333 mesaj. En yoğun ARDA AKMAN (225 mesaj) — derinlemesine okundu, ciddi UX sorunu çıktı.**
+> - **🔴 Bağlam-kaybı + konu-bulaşması:** Arda "vektörde normalising" soruyor, bot ısrarla **Bernoulli/olasılık** cevabı veriyor; 5+ düzeltmeye ("alakası yok, Bernoulli'yi unut, hala anlatıyorsun, boşver") rağmen ısrar. Ayrıca "favori rengim ne söylemiştim" memory testinde bağlam kaybı. **Kaynak:** routing_stats cerebras_120b 42 / claude 23 — düzeltme sinyalleri Cerebras'ta kaçıp orada kalıyor, Cerebras çok-turlu bağlamı koruyamıyor. (Arda sonunda botla kendi bug raporunu yazdırdı — keskin öğrenci.)
+> - **FIX 1 (routing_engine.py):** `_FRUSTRATION_KEYWORDS` +20 düzeltme/bağlam-kaybı kalıbı (alakası yok / boşver / söylemiştim / hala anlatıyor / bağlantı kuramıyor / devam ediyorsun / tanım sormuyorum / sorduğumla). Birim test 8/8 yakaladı, 4/4 normal soru yanlış-pozitif YOK.
+> - **FIX 2 (routing_engine.py) — STICKY ESCALATION:** frustration sonrası 10dk TÜM mesajlar Claude'da kalır (`_recent_frustration` dict, her aktif turda süre tazelenir) → Cerebras'a geri sekip bağlamı YİNE kaybetme sorunu biter. Kök çözüm.
+> - **FIX 3 (system_prompts.py):** (a) build_study_plan_context guard — kavramsal "X nedir"/"zayıf konularım" → tool ÇAĞIRMA (Arda'da "Bernoulli nedir"→çalışma planı dönüyordu). (b) KONU GEÇİŞİ kuralı: "X'i unut/alakası yok/boşver" → anında bırak, eski konuyu karıştırma.
+> - **NOT:** Arda 17:45'teki "Mesajini islerken sorun" = bu oturum düzelttiğim model-404 (fable-5) idi → fix sonrası bitti.
+> - **Doğrulama:** 2 dosya ast temiz, canlı VPS frustration test geçti (alakası yok→True, boşver→True, türev nedir→False), restart health 200.
+> - **AÇIK (sonraki):** Cerebras'ın çok-turlu bağlam zayıflığı mimari — sticky-escalation palyatif ama kök; uzun vadede local model context-window/history yönetimi gözden geçirilmeli.
+>
 > ## 🚨 13 Haz (25.58-U) — KRİTİK FİX-LOOP (Sentry/log taraması — agent çöküşü) (Neo: "sentry + UX hatalarını fix-loop")
 > **VPS log (36-48h) taraması → 2 ciddi production hatası, ikisi de öğrenciyi CEVAPSIZ bırakıyordu. Sentry entegre (sentry-sdk 2.58, DSN+API_TOKEN var, sentry_monitor.py).**
 > - **🔴 KRİTİK — model 404 (agent komple fail):** 25.58-C premium katmanı (`MODEL_PREMIUM`) varsayılan `claude-fable-5` idi ama **production hesabında Fable 5 ERİŞİMİ YOK** ("Claude Fable 5 is not available. Please use Opus 4.8"). render-değerli web üretiminde her premium çağrı 404 → stream + sync ikisi de fail → öğrenci cevapsız (13+ olay/36h). Test: opus-4-8 ✓, sonnet-4-6 ✓, fable-5 ✗. **FIX:** varsayılan → `claude-opus-4-8` (premium kaliteyi korur, erişilebilir) + **MODEL-FALLBACK** (stream VE sync yolunda `not_found`/404 → base MODEL'e düş, asla hard-fail yok). .env'de override yok, default geçerli.
