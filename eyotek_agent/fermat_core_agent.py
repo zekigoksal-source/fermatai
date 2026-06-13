@@ -52,6 +52,10 @@ MODEL         = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
 # öğrenci cevapsız kalıyordu. claude-opus-4-8 hesapta doğrulandı (✓), premium kaliteyi korur.
 MODEL_PREMIUM = os.getenv("FERMAT_MODEL_PREMIUM", "claude-opus-4-8")
 
+# 25.58-X: Cerebras local path için konuşma-özeti cache (per-phone). Uzun thread'lerde
+# özet 6 mesajda bir yenilenir → her mesajda LLM çağrısı YOK (token yakımı amorti).
+_LOCAL_SUMMARY_CACHE: dict[str, tuple[str, int]] = {}  # phone → (summary, msg_count)
+
 
 # Arac Tanimlari (22.1n-split: tool_definitions.py modulune tasindi)
 from tool_definitions import TOOLS, TOOLS_ACTIVE, get_tools
@@ -3404,7 +3408,11 @@ class FermatCoreAgent:
             from conversation_memory import get_student_context, build_context_prompt
             ctx = await get_student_context(caller_phone)
             if ctx:
-                dynamic_context += build_context_prompt(ctx)
+                _ctx_block = build_context_prompt(ctx)
+                dynamic_context += _ctx_block
+                # 25.58-X: öğrenci profili Cerebras local path'e de aktarılsın (Neo:
+                # "öğrenciyi tanıyarak sohbet"). Sadece bu blok (~1K char), tüm dynamic_context değil.
+                self._student_ctx_block = _ctx_block
                 # Decision trace: hangi context sinyalleri aktif
                 try:
                     self.last_prompt_blocks.append("conversation_memory")
@@ -4423,6 +4431,35 @@ class FermatCoreAgent:
                     logger.info("  [YEREL] Akademik derinlik addon eklendi (doyurucu uzun cevap)")
             except Exception:
                 pass
+            # (e) 25.58-X — ÖĞRENCİ PROFİLİ (Neo: "öğrenciyi tanıyarak sohbet et").
+            # Cerebras sohbet-ağırlıklı yükü taşıyor → öğrenciyi tanıması kritik. build_context_prompt
+            # (isim/sınıf/son deneme/zayıf konu/duygu/son konuşulan konular) DETERMİNİSTİK DB,
+            # ucuz (~1K char/~250 tok). Claude alıyordu, Cerebras almıyordu → boşluk kapatıldı.
+            _stu_ctx = getattr(self, "_student_ctx_block", "")
+            if _stu_ctx and _stu_ctx.strip():
+                _lane_tail += "\n\n═══ ÖĞRENCİ PROFİLİ (TANIYARAK, SICAK SOHBET ET) ═══\n" + _stu_ctx.strip()
+
+            # (f) 25.58-X — UZUN THREAD KONUŞMA ÖZETİ (diyalog sürecine hakimiyet).
+            # should_compact GATE: sadece gerçekten uzun/verbose thread (>~3000 tok). Kısa
+            # thread'lerde pencere-18 yeter → özet ÜRETİLMEZ (token yakımı yok). Per-phone cache:
+            # 6 mesajda bir yenilenir → maliyet amorti. Cerebras kapasitesini (131K) zorlamaz.
+            try:
+                from context_compactor import should_compact as _sc, compact_history_for_claude as _ch
+                if _sc(self.history).get("should"):
+                    _mc = len([m for m in self.history if m.get("role") in ("user", "assistant")])
+                    _cached = _LOCAL_SUMMARY_CACHE.get(caller_phone or "")
+                    if _cached and (_mc - _cached[1]) < 6:
+                        _summ = _cached[0]
+                    else:
+                        _summ = await _ch(self.history, user_msg=user_input or "")
+                        if _summ and caller_phone:
+                            _LOCAL_SUMMARY_CACHE[caller_phone] = (_summ, _mc)
+                    if _summ:
+                        _lane_tail += "\n\n═══ ÖNCEKİ KONUŞMA ÖZETİ (DEVAMLILIK İÇİN) ═══\n" + _summ
+                        logger.info(f"  [YEREL] Konuşma özeti Cerebras'a eklendi (uzun thread, +{len(_summ)} char)")
+            except Exception as _sm_err:
+                logger.debug(f"  [YEREL] özet skip: {_sm_err}")
+
             # TEK [LANE TALIMATI] marker — kuyruk varsa chat_local_async Cerebras'a taşır
             if _lane_tail:
                 _lane_system = _lane_system + "\n\n[LANE TALIMATI]\n" + _lane_tail
