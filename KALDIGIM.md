@@ -1,6 +1,14 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 13 Haziran 2026 → **OTURUM 25.58-U (Fable 5): KRİTİK FİX-LOOP — model-404 (premium katman fable-5 erişimi yok → agent komple çöküyordu) + query_analytics şema-geri-besleme. Önce 25.58-T: Groq TPD cooldown + Fermatrix harita — HEPSİ CANLI**
+> **Son güncelleme:** 13 Haziran 2026 → **OTURUM 25.58-W (Fable 5): KÖK MİMARİ FİX — Cerebras bağlam zayıflığı çözüldü (history penceresi 10→18, Cerebras artık çok-turlu bağlam tutuyor) + sticky escalation 10dk→2 mesaj (hibrit maliyet dengesi korundu). Önce: 25.58-V UX diyalog fix, 25.58-U model-404, 25.58-T Groq cooldown+harita — HEPSİ CANLI**
+>
+> ## 🏗️ 13 Haz (25.58-W) — KÖK MİMARİ FİX: Cerebras bağlam zayıflığı (Neo: "sticky maliyet dağılımını bozar, hibrit felsefe korunsun, kök neden çözülsün — Claude'a yığma değil")
+> **25.58-V'deki sticky-escalation (10dk Claude) palyatifti + Claude'a aşırı yük. Asıl kök neden bulunup çözüldü, sticky minimal emniyete indirildi.**
+> - **KÖK NEDEN:** agent konuşma history'si DB'den `whatsapp_bridge.py:4221` **LIMIT 10** ile yükleniyordu (5 alışveriş). Arda'nın "favori rengim ne söylemiştim" ~15 mesaj önceydi → 10'luk pencereden düşüp bağlam kayboluyordu. Cerebras `chat_local_async`'te tam `self.history` alıyor AMA pencere küçük; ayrıca Cerebras Claude'un aldığı compact-summary'i almıyor → daha kötü etkileniyor. 3-worker'da thread dağılınca her worker kısmi 10-msg history.
+> - **FIX 1 (whatsapp_bridge.py): history penceresi 10→18** (~9 alışveriş). Hem Cerebras hem Claude çok-turlu bağlamı TUTAR. Token maliyeti ihmal (öğrenci mesajı ~150 tok, 18 msg ≈ 2.7K tok, Cerebras 131K limitin yanında hiç). **Cerebras artık bağlam-yetkin → Claude'a devretmeye gerek yok.**
+> - **FIX 2 (routing_engine.py): sticky 10dk zaman-bazlı → 2 mesaj sayı-bazlı** (`_recent_frustration` artık kalan-tur sayısı). Frustration sonrası sadece düzeltme+anlık takip Claude'da, sonra HİBRİT DEVAM. Maliyet dengesi korunur, doğal drenaj (zaman-staleness yok). Canlı test: türev→local, "alakası yok"→claude, +2 takip→claude, sonraki→local ✓.
+> - **Felsefe korundu:** routing değerli kalır, Cerebras kavramsal/sohbette birincil, Claude sadece hassas/yazma/tool + anlık düzeltme. A+++ kalite + verimli hibrit.
+> - **AÇIK (ileride, opsiyonel):** Cerebras'a Claude'un compact-summary'sini de geçmek (daha uzun-thread için) — ama LLM-summary ek latency; pencere-18 mevcut sorunu çözdü, gerekirse sonra.
 >
 > ## 💬 13 Haz (25.58-V) — BUGÜNKÜ ÖĞRENCİ DİYALOG ANALİZİ + UX FİX-LOOP (Neo: "bugünkü öğrenci diyaloglarını incele, problem varsa düzelt")
 > **Bugün 8 öğrenci / 333 mesaj. En yoğun ARDA AKMAN (225 mesaj) — derinlemesine okundu, ciddi UX sorunu çıktı.**
