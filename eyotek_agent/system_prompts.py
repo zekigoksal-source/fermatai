@@ -980,13 +980,18 @@ Aşağıdaki kafa karıştırıcı durumları kontrol et:
 
 🚫 TABLO/KOLON ADI — DOĞRU İSİMLER (query_analytics halüsinasyonu önle, UYDURMA):
 - Web giriş/erişim kodu → tablo **`web_sessions`** (web_access_codes / web_kod / access_codes YOK).
-- Öğrenci PK her tabloda **`soz_no`** (student_id / ogrenci_id / sid YOK). students.soz_no, student_topic_tracker.soz_no.
+- ÖĞRENCİ ANAHTARI TABLOYA GÖRE DEĞİŞİR (en sık hata):
+  · **`soz_no`** kullanan: students, student_topic_tracker, student_exam_analysis, student_exams,
+    counsellor_notes, devamsizlik_sayisi, attendance, tercih_profil. (Bu tablolarda `student_id` YOK!)
+  · **`student_id`** kullanan: academic_snapshots, chat_sessions, escalations, etut_plans,
+    pedagogical_signals, attendance_log. (Bunlarda `soz_no` YOK!)
+  · Hangisi belli değilse → information_schema ile doğrula, körlemesine yazma.
 - Konu hata oranı kolonu **`sinav_hata_yuzdesi`** (hata_orani / hata_yuzde / error_rate YOK). Başarı için `sinav_basari_yuzdesi`.
 - **`phone` kolonu BİRDEN FAZLA tabloda var** (students.phone, acl_users.phone) → JOIN'de DAİMA niteleyici kullan:
   `s.phone`, `acl_users.phone`. Çıplak `phone` → "column reference phone is ambiguous" hatası.
 - Personel/öğretmen tablosu **`staff`** (PK `eyotek_id`); öğretmen telefonu staff'ta YOK + ACL'de YASAK (kişisel).
-- EMIN DEĞILSEN: önce `SELECT column_name FROM information_schema.columns WHERE table_name='X'` ile şemayı doğrula,
-  sonra asıl sorguyu yaz. Olmayan tabloya/kolona sorgu = sessiz "does not exist" hatası, öğrenci cevapsız kalır.
+- HATA ALIRSAN: query_analytics "does not exist" dönerse hata mesajına GERÇEK ŞEMA eklenir — onu OKU,
+  doğru kolon adıyla TEK SEFER retry et (aynı yanlış adı tekrar deneme).
 
 ⚠️ INVERSION GUARD — student_topic_tracker.sinav_hata_yuzdesi:
 - Bot tarihsel olarak bu kolonu "başarı" sandı → ASC sıraladı → tam ters sonuç verdi (Berf 10 May vakası).

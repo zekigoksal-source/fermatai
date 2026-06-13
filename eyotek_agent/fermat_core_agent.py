@@ -47,7 +47,10 @@ MODEL         = os.getenv("FERMAT_MODEL", "claude-sonnet-4-6")
 # çıktısını ana model yazar, kalite=model kalitesi). Hesapta erişim /v1/models ile
 # doğrulandı. Düşük hacim (web+render-değerli ~birkaç çağrı/gün) → maliyet sınırlı.
 # Kapatmak için: FERMAT_MODEL_PREMIUM="" (boş string → katman devre dışı).
-MODEL_PREMIUM = os.getenv("FERMAT_MODEL_PREMIUM", "claude-fable-5")
+# 25.58-U FIX: varsayılan claude-fable-5 idi ama production hesabında ERİŞİM YOK
+# ("Claude Fable 5 is not available. Please use Opus 4.8") → her premium çağrı 404 →
+# öğrenci cevapsız kalıyordu. claude-opus-4-8 hesapta doğrulandı (✓), premium kaliteyi korur.
+MODEL_PREMIUM = os.getenv("FERMAT_MODEL_PREMIUM", "claude-opus-4-8")
 
 
 # Arac Tanimlari (22.1n-split: tool_definitions.py modulune tasindi)
@@ -226,7 +229,31 @@ async def tool_query_analytics(sql: str, explanation: str = "", use_cache: str =
             result["row_count"] = 0
             result["data"] = []
     except Exception as e:
-        result["error"] = str(e)
+        err_msg = str(e)
+        result["error"] = err_msg
+        # 25.58-U ŞEMA GERİ BESLEME: "does not exist" hatasında sorgudaki tabloların GERÇEK
+        # kolonlarını hataya ekle → Claude bir sonraki turda doğru kolonla retry eder (kolon UYDURMA çözümü).
+        if "does not exist" in err_msg.lower():
+            try:
+                import re as _re_sch
+                tbls = set(_re_sch.findall(r"(?:from|join)\s+([a-z_][a-z0-9_]*)", sql, _re_sch.IGNORECASE))
+                if tbls:
+                    from analytics_cache import get_pool as _gp
+                    _pool = await _gp()
+                    schema_lines = []
+                    async with _pool.acquire() as _c:
+                        for _t in list(tbls)[:6]:
+                            cols = await _c.fetch(
+                                "SELECT column_name FROM information_schema.columns "
+                                "WHERE table_name=$1 ORDER BY ordinal_position", _t)
+                            schema_lines.append(
+                                f"{_t}({', '.join(r['column_name'] for r in cols)})" if cols
+                                else f"{_t}→TABLO YOK")
+                    if schema_lines:
+                        result["error"] = (err_msg + " | GERÇEK ŞEMA (bunları kullan, kolon/tablo UYDURMA, "
+                                           "aynı isimle tekrar deneme): " + " ; ".join(schema_lines))
+            except Exception:
+                pass  # şema geri besleme başarısızsa ham hata kalır (mevcut davranış)
 
     # 22.1n-neo: Finans sorgusu BASARILI ise audit log
     if _neo_finans_success and result.get("success"):
@@ -5114,14 +5141,30 @@ class FermatCoreAgent:
                 except Exception as _stream_err:
                     # Stream başarısızsa sync fallback
                     logger.warning(f"Native stream hatası, sync'e düştü: {_stream_err}")
+                    # 25.58-U MODEL-FALLBACK: premium/override model erişilemezse (404 not_found)
+                    # base MODEL'e düş → öğrenci ASLA cevapsız kalmaz.
+                    if "not_found" in str(_stream_err).lower() and _request_params.get("model") != MODEL:
+                        logger.warning(f"  [MODEL-FALLBACK] {_request_params.get('model')} erişilemez → {MODEL}")
+                        _request_params["model"] = MODEL
                     response = await asyncio.to_thread(
                         self.client.messages.create, **_request_params
                     )
             else:
                 # SYNC YOLU — asyncio.to_thread ile bloke etmez
-                response = await asyncio.to_thread(
-                    self.client.messages.create, **_request_params
-                )
+                try:
+                    response = await asyncio.to_thread(
+                        self.client.messages.create, **_request_params
+                    )
+                except Exception as _sync_err:
+                    # 25.58-U MODEL-FALLBACK: override model erişilemezse base MODEL ile tekrar
+                    if "not_found" in str(_sync_err).lower() and _request_params.get("model") != MODEL:
+                        logger.warning(f"  [MODEL-FALLBACK] {_request_params.get('model')} erişilemez → {MODEL}")
+                        _request_params["model"] = MODEL
+                        response = await asyncio.to_thread(
+                            self.client.messages.create, **_request_params
+                        )
+                    else:
+                        raise
 
             # Araç çağrıları varsa çalıştır
             tool_calls = [b for b in response.content if b.type == "tool_use"]
