@@ -1,6 +1,14 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 13 Haziran 2026 → **OTURUM 25.58-X (Fable 5): Cerebras'a ÖĞRENCİ PROFİLİ + uzun-thread KONUŞMA ÖZETİ — "öğrenciyi tanıyarak sohbet" (Neo). Önce 25.58-W kök fix (pencere 10→18 + sticky 2msg), 25.58-V UX, 25.58-U model-404 — HEPSİ CANLI**
+> **Son güncelleme:** 13 Haziran 2026 → **OTURUM 25.58-Y (Fable 5): Fermatrix İnsan Anatomisi Lab profesyonel geometri yeniden inşa (Neo: balon/çubuk zayıftı). Önce 25.58-X Cerebras öğrenci-farkındalığı, 25.58-W kök fix — HEPSİ CANLI**
+>
+> ## 🧍 13 Haz (25.58-Y) — FERMATRIX İNSAN ANATOMİSİ PROFESYONELLEŞTİRME (Neo: "şekiller balon/çubuk gibi, detaylar basit, profesyonel hale getir")
+> **bilim-evreni.html anatomi istasyonu — 7 sistem baştan modellendi (primitif silindir/küre → anatomik geometri). Bilgi kartları/yanılgılar/sistem-seç-şeffaflaşma mantığı korundu.**
+> - Yeni yardımcılar: `curveTube` (CatmullRom→TubeGeometry), `lathe` (LatheGeometry), `ball`, `cap` (CapsuleGeometry — yuvarlak uçlu uzuvlar).
+> - DERİ: lathe gövde silüeti + kapsül uzuvlar + yüzlü baş/çene/burun + deltoid omuz + el/ayak + MeshPhysical (clearcoat+sheen) cilt. İSKELET: kafatası+çene, S-eğrili omurga (24 omur+disk), eğrisel kaburga kafesi+sternum, leğen kasesi, eklem toplu uzun kemikler. KAS: pektoral/deltoid/biseps/triseps/rektus/gluteus/kuadriseps/gastroknemius. DOLAŞIM: odacıklı kalp+aort kavsi+atar/toplardamar ağı. SOLUNUM: loblu akciğer (3/2)+bronş ağacı+diyafram. SİNDİRİM: mide-J+karaciğer+serpantin ince bağırsak+kalın bağırsak çerçevesi. SİNİR: beyin hemisferleri+girus+beyincik+omurilik+brakial/siyatik.
+> - Animasyon (kalp atışı/nefes) heartG/lungG grup referansıyla korundu.
+> - Doğrulama: node --check OK (467KB modül), canlı yükleme SIFIR konsol hatası (7 sistem build hatasız), deri kabuğu screenshot profesyonel insan oranı teyitli. VPS c85c499, oyun dosyası HTTP 200 (493KB), health 200.
+> - NOT: preview_screenshot bu ağır WebGL sahnesinde ilk kareden sonra GPU readback'te takılıyor (ortamsal, kod değil) — doğrulama syntax+sıfır-hata+ilk-screenshot ile yapıldı.
 >
 > ## 🧠 13 Haz (25.58-X) — CEREBRAS ÖĞRENCİ-FARKINDALIĞI (Neo: "Cerebras sohbet-ağırlıklı görevi taşıyor, öğrenciyi+diyaloğu tanıması kritik; token/kapasiteyi dramatik artırmadan compact-summary'den faydalansın")
 > **Kök: chat_local_async tam prompt'u atıyor → Cerebras öğrenci-profil context'ini ALMIYORDU (Claude alıyordu). Boşluk kapatıldı, _lane_tail kuyruğuna (e)+(f) eklendi.**
