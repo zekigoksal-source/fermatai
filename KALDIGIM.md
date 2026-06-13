@@ -1,6 +1,15 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 13 Haziran 2026 → **OTURUM 25.58-W (Fable 5): KÖK MİMARİ FİX — Cerebras bağlam zayıflığı çözüldü (history penceresi 10→18, Cerebras artık çok-turlu bağlam tutuyor) + sticky escalation 10dk→2 mesaj (hibrit maliyet dengesi korundu). Önce: 25.58-V UX diyalog fix, 25.58-U model-404, 25.58-T Groq cooldown+harita — HEPSİ CANLI**
+> **Son güncelleme:** 13 Haziran 2026 → **OTURUM 25.58-X (Fable 5): Cerebras'a ÖĞRENCİ PROFİLİ + uzun-thread KONUŞMA ÖZETİ — "öğrenciyi tanıyarak sohbet" (Neo). Önce 25.58-W kök fix (pencere 10→18 + sticky 2msg), 25.58-V UX, 25.58-U model-404 — HEPSİ CANLI**
+>
+> ## 🧠 13 Haz (25.58-X) — CEREBRAS ÖĞRENCİ-FARKINDALIĞI (Neo: "Cerebras sohbet-ağırlıklı görevi taşıyor, öğrenciyi+diyaloğu tanıması kritik; token/kapasiteyi dramatik artırmadan compact-summary'den faydalansın")
+> **Kök: chat_local_async tam prompt'u atıyor → Cerebras öğrenci-profil context'ini ALMIYORDU (Claude alıyordu). Boşluk kapatıldı, _lane_tail kuyruğuna (e)+(f) eklendi.**
+> - **(e) ÖĞRENCİ PROFİLİ (asıl kazanım):** `build_context_prompt` çıktısı (`self._student_ctx_block`) artık Cerebras local path'e de gidiyor. İçerik DOĞRULANDI (Arda, ~789 tok): isim/sınıf/son deneme/devamsızlık/son konu **+ "SEN AZ ÖNCE BUNLARI YAZDIN" (bot'un son cevapları) + "Hangi X? deme" guard'ı**. DETERMİNİSTİK DB, ekstra LLM YOK. Hem "tanıma" hem "diyalog sürekliliği" tek blokta. Her local mesajda eklenir — makul (~789 tok, Cerebras 131K kapasite, Neo'nun #1 önceliği).
+> - **(f) KONUŞMA ÖZETİ:** `should_compact` GATE (sadece >3000 tok uzun/verbose thread) + per-phone cache (`_LOCAL_SUMMARY_CACHE`, 6 mesajda bir yenilenir). Kısa thread'de özet ÜRETİLMEZ (token yakımı yok, pencere-18 yeter). Uzun thread'de Cerebras LLM özeti → diyalog sürekliliği. Maliyet amorti, kapasite zorlanmaz.
+> - **Sonuç:** Cerebras artık öğrenciyi tanıyarak, son konuşmaya hakim, sıcak sohbet eder — Claude'a devretmeden. Hibrit A+++ + verimli (Neo felsefesi korundu). routing zayıflığı + teknik borç KAPANDI.
+> - **Doğrulama:** ast temiz, VPS restart health 200, hata yok, Arda profil bloğu 789 tok zengin içerik üretti (canlı test).
+>
+> ## 🏗️ 13 Haz (25.58-W) — KÖK MİMARİ FİX: Cerebras bağlam zayıflığı (Neo: "sticky maliyet dağılımını bozar, hibrit felsefe korunsun, kök neden çözülsün — Claude'a yığma değil")
 >
 > ## 🏗️ 13 Haz (25.58-W) — KÖK MİMARİ FİX: Cerebras bağlam zayıflığı (Neo: "sticky maliyet dağılımını bozar, hibrit felsefe korunsun, kök neden çözülsün — Claude'a yığma değil")
 > **25.58-V'deki sticky-escalation (10dk Claude) palyatifti + Claude'a aşırı yük. Asıl kök neden bulunup çözüldü, sticky minimal emniyete indirildi.**
