@@ -1,6 +1,16 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 13 Haziran 2026 → **OTURUM 25.58-Y (Fable 5): Fermatrix İnsan Anatomisi Lab profesyonel geometri yeniden inşa (Neo: balon/çubuk zayıftı). Önce 25.58-X Cerebras öğrenci-farkındalığı, 25.58-W kök fix — HEPSİ CANLI**
+> **Son güncelleme:** 14 Haziran 2026 → **OTURUM 25.58-Z (Fable 5): KRİTİK — Anthropic kredisi bitti → sistem 'off' görünüyordu. Claude erişilemezse Cerebras'a ACİL FALLBACK eklendi (canlı test PASS). Önce 25.58-Y anatomi, 25.58-X Cerebras context — HEPSİ CANLI**
+>
+> ## 🚨 14 Haz (25.58-Z) — KRİTİK: ANTHROPIC KREDİ BİTTİ → ACİL FALLBACK (Neo: "Sentry hatası aldım sistem off gibi")
+> **KÖK NEDEN: Anthropic API kredi bakiyesi tükenmiş → her Claude çağrısı 400 'credit balance too low' → hata kullanıcıya sızıyordu (servis ayakta+health 200 ama Claude path çöküyordu). KOD HATASI DEĞİL, BILLING.**
+> - 🔴 **NEO AKSİYONU (tam işlev için):** console.anthropic.com → Plans & Billing → kredi yükle. Tool-calling/yazma/analiz Claude gerektirir.
+> - 🛡️ **FIX (25.58-Z): Claude erişilemezse Cerebras'a acil fallback.** `fermat_core_agent.run()` Claude çağrı bloğu try ile sarıldı; erişim hatası (credit/overload/rate_limit/auth/5xx) gelince RAISE yerine `chat_local_async` (Cerebras) ile cevap üretip döner. Öğrenci ASLA ham hata görmez. İçerik/bad-request hataları aynen raise. Cerebras de düşerse nazik 'birkaç dk sonra' mesajı. Emergency prompt'a Türkçe-zorunlu kuralı.
+> - **CANLI TEST PASS:** Claude gerçekten kredisizken CLI testi → `✅ Yanıt (emergency Cerebras fallback) | gpt-oss-120b 1608ms` → öğrenci tam kaliteli integral/türev cevabı aldı (hata değil).
+> - **Etki:** Kredi bitse bile sohbet/kavramsal (~%75 trafik zaten fast+cerebras, +%25 Claude artık cerebras'a düşüyor) → ~%100 cevaplanır. Sadece yazma/tool degrade (kredi gelene kadar).
+> - VPS f9efb9b, health 200. Commit: 25.58-Z fallback + Türkçe-zorunlu.
+>
+> ## 🧍 13 Haz (25.58-Y) — FERMATRIX İNSAN ANATOMİSİ PROFESYONELLEŞTİRME (Neo: balon/çubuk zayıftı) [bkz aşağı]
 >
 > ## 🧍 13 Haz (25.58-Y) — FERMATRIX İNSAN ANATOMİSİ PROFESYONELLEŞTİRME (Neo: "şekiller balon/çubuk gibi, detaylar basit, profesyonel hale getir")
 > **bilim-evreni.html anatomi istasyonu — 7 sistem baştan modellendi (primitif silindir/küre → anatomik geometri). Bilgi kartları/yanılgılar/sistem-seç-şeffaflaşma mantığı korundu.**
