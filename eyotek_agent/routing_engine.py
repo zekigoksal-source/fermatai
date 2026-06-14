@@ -272,6 +272,18 @@ def decide_route(
     ):
         return "claude"
 
+    # ── 3a. ÇALIŞMA PLANI/PROGRAMI KURMA → ZORLA Claude (25.58-AA, KALİTE KORUMA) ──
+    # Plan kurma build_study_plan_context tool'u + 4-adımlı protokol gerektirir; Cerebras
+    # tool çağıramaz → boş/generic plan üretir (kalite düşer). Lane/complexity'den ÖNCE
+    # yakala ki Cerebras'a kaçmasın. ("aynı kalite" — Neo).
+    if role in ("ogrenci", "ogretmen", "rehber") and re.search(
+        r'(çalışma\s*program|calisma\s*program|ders\s*program[ıi]\s*(yap|haz[ıi]rla|olu[sş]tur)|'
+        r'program\s*(yap|haz[ıi]rla|olu[sş]tur)|plan\s*(yap|haz[ıi]rla|olu[sş]tur|[ıi]rla)|'
+        r'günlük\s*program|gunluk\s*program|haftalık\s*program|haftalik\s*program)',
+        msg_lower
+    ):
+        return "claude"
+
     # ── 3b. CEREBRAS-SAFE LANE KONTROLU (Oturum 25.29 — Cerebras tuning) ──
     # Production verisinden: Claude'a giden trafiğin %50'si yerel-safe.
     # 7 lane: kavramsal_kisa, sohbet, meta_direktif, kibarlik, egitim_icerik,
