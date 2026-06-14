@@ -1,6 +1,18 @@
 # 📍 FermatAI — Kaldığım Yer (Session Continuity)
 
-> **Son güncelleme:** 14 Haziran 2026 → **OTURUM 25.58-Z (Fable 5): KRİTİK — Anthropic kredisi bitti → sistem 'off' görünüyordu. Claude erişilemezse Cerebras'a ACİL FALLBACK eklendi (canlı test PASS). Önce 25.58-Y anatomi, 25.58-X Cerebras context — HEPSİ CANLI**
+> **Son güncelleme:** 14 Haziran 2026 → **OTURUM 25.58-AA (Fable 5): ROUTING MALİYET OPTİMİZASYONU — 30g analiz + backtest, öğrenci Claude payı %39→%24 (kalite korunarak). Önce 25.58-Z kredi/fallback, 25.58-Y anatomi — HEPSİ CANLI**
+>
+> ## 💸 14 Haz (25.58-AA) — ROUTING VERİMİ + MALİYET (Neo: "Claude'a anlamsız kayan diyaloglar varsa aynı kalitede daha ucuza, hibrit routing + intent yakalamayı güçlendir")
+> **30 günlük gerçek trafik analizi + decide_route backtest (routing_stats.message üzerinden). Sonuç: öğrenci Claude payı %39→%24, ~114 mesaj/30g Cerebras'a kaydı, KALİTE KORUNDU.**
+> - **Analiz:** 30g Claude 513 (~%52). Öğrenci→Claude 285'in 213'ü TOOL KULLANMADAN saf metin (Cerebras yapabilir). Backtest: yarısı zaten local'e gidiyordu (eski veri); gerçek mis-route = **bare-topic/doğal kavramsal sorular** ("Besinlerin kimyasal sindirimi", "Antikor açıkla", "kütleçekim itmez mi") intent=None olunca Claude'a kaçıyordu.
+> - **FIX 1 (intent_classifier):** kavram_aciklama regex'e doğal ifadeler (ne işe yarar/neden olur/nasıl oluşur/farkı ne).
+> - **FIX 2 (routing_engine cloud dalı):** intent=None + kısa + kişisel-değil + KEEP_CLAUDE-guard (net/deneme/puan/yanlış/plan/öner/küfür hariç) → Cerebras. Saf kavramsal local'e, veri/plan/küfür Claude'da.
+> - **FIX 3 (routing_engine, KALİTE KORUMA):** çalışma planı/program KURMA ("planı yap/program hazırla") → ZORLA Claude (build_study_plan_context tool gerekir, Cerebras tool çağıramaz). Lane/complexity'den önce yakalanır.
+> - **Doğrulama (probe + backtest):** kavramsal→local ✓, "Netler düşüşte"/"Bana deneme öner"/"plan yap"→claude ✓, "ders programım ne" (görüntüle)→local ✓. Net: 754 öğrenci mesajı claude 292→178 (%39→%24).
+> - **Açık bulgular (ileride):** (a) küfür mid-thread auto→local'e kaçıyor, fast_response profanity guard'ı genişletilmeli; (b) tek SAT/yurtdışı öğrencisi yüksek Claude hacmi (meşru karmaşık danışmanlık).
+> - VPS 05249c4, health 200.
+>
+> ## 🚨 14 Haz (25.58-Z) — KRİTİK: ANTHROPIC KREDİ BİTTİ → ACİL FALLBACK (Neo: "Sentry hatası aldım sistem off gibi") [bkz aşağı]
 >
 > ## 🚨 14 Haz (25.58-Z) — KRİTİK: ANTHROPIC KREDİ BİTTİ → ACİL FALLBACK (Neo: "Sentry hatası aldım sistem off gibi")
 > **KÖK NEDEN: Anthropic API kredi bakiyesi tükenmiş → her Claude çağrısı 400 'credit balance too low' → hata kullanıcıya sızıyordu (servis ayakta+health 200 ama Claude path çöküyordu). KOD HATASI DEĞİL, BILLING.**
