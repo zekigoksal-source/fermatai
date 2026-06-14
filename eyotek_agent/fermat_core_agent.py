@@ -5168,7 +5168,8 @@ class FermatCoreAgent:
                 messages=self.history,
                 compact_summary=_compact_summary,  # 25.43-FAZ-2
             )
-            if self._stream_queue is not None and self.async_client:
+            try:
+              if self._stream_queue is not None and self.async_client:
                 # STREAMING YOLU — AsyncAnthropic native streaming
                 try:
                     async with self.async_client.messages.stream(**_request_params) as stream:
@@ -5186,7 +5187,7 @@ class FermatCoreAgent:
                     response = await asyncio.to_thread(
                         self.client.messages.create, **_request_params
                     )
-            else:
+              else:
                 # SYNC YOLU — asyncio.to_thread ile bloke etmez
                 try:
                     response = await asyncio.to_thread(
@@ -5202,6 +5203,44 @@ class FermatCoreAgent:
                         )
                     else:
                         raise
+            except Exception as _claude_unavail:
+                # 25.58-Z EMERGENCY FALLBACK: Claude erişilemez (kredi bitti / overload /
+                # rate_limit / auth) → Cerebras'a düş. Öğrenci ASLA ham hata/sessizlik görmesin.
+                # Hibrit dayanıklılık: bir sağlayıcı çökse sistem ayakta kalır.
+                _emsg = str(_claude_unavail).lower()
+                _avail_err = any(s in _emsg for s in [
+                    "credit balance", "credit_balance", "too low", "billing",
+                    "overloaded", "rate_limit", "rate limit", "529", "503",
+                    "authentication", "permission_error", "insufficient_quota",
+                ])
+                if not _avail_err:
+                    raise
+                logger.error(f"  [EMERGENCY-FALLBACK] Claude erişilemez → Cerebras'a düşülüyor: {_claude_unavail}")
+                _emerg = None
+                try:
+                    _emerg_sys = (
+                        "Sen Fermat Eğitim Kurumları'nın yapay zeka asistanısın. "
+                        f"Arayan: {caller_name or 'öğrenci'} ({role}). "
+                        "Türkçe, sıcak, öğretici ve net cevap ver. Kişisel/akademik veri UYDURMA."
+                    )
+                    if hasattr(self.router, "chat_local_async"):
+                        _emerg = await self.router.chat_local_async(
+                            messages=self.history, system=_emerg_sys,
+                            intent="", channel=getattr(self, "_channel", "whatsapp"),
+                        )
+                except Exception as _emerg_err:
+                    logger.error(f"  [EMERGENCY-FALLBACK] Cerebras de başarısız: {_emerg_err}")
+                if not _emerg or len(str(_emerg).strip()) < 2:
+                    _emerg = ("Şu an kısa bir yoğunluk var 🙏 Birkaç dakika sonra tekrar yazar mısın? "
+                              "Hemen ilgileniyoruz.")
+                answer = _emerg if getattr(self, "_channel", "whatsapp") == "web" else _clean_response(_emerg)
+                self.history.append({"role": "assistant", "content": answer})
+                try:
+                    await _log_conversation(self.session_id, caller_phone, role, "assistant", answer, [])
+                except Exception:
+                    pass
+                logger.success("✅ Yanıt (emergency Cerebras fallback)")
+                return answer
 
             # Araç çağrıları varsa çalıştır
             tool_calls = [b for b in response.content if b.type == "tool_use"]
