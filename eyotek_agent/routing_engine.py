@@ -277,8 +277,9 @@ def decide_route(
     # tool çağıramaz → boş/generic plan üretir (kalite düşer). Lane/complexity'den ÖNCE
     # yakala ki Cerebras'a kaçmasın. ("aynı kalite" — Neo).
     if role in ("ogrenci", "ogretmen", "rehber") and re.search(
-        r'(çalışma\s*program|calisma\s*program|ders\s*program[ıi]\s*(yap|haz[ıi]rla|olu[sş]tur)|'
-        r'program\s*(yap|haz[ıi]rla|olu[sş]tur)|plan\s*(yap|haz[ıi]rla|olu[sş]tur|[ıi]rla)|'
+        r'(çalışma\s*program|calisma\s*program|'
+        r'program[ıi]?\s*(yap|haz[ıi]rla|olu[sş]tur)|'
+        r'plan[ıi]?\s*(yap|haz[ıi]rla|olu[sş]tur)|'
         r'günlük\s*program|gunluk\s*program|haftalık\s*program|haftalik\s*program)',
         msg_lower
     ):
