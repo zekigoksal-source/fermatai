@@ -202,7 +202,12 @@ _INTENT_PATTERNS = [
         r'(\bnedir\??|ne\s+demek|nasıl\s+çalış|nasil\s+calis|'
         r'\b(açıkla|acikla|anlat|öğret|ogret)|kısaca\s+anlat|kisaca\s+anlat|'
         r'tanım[ıi]?|tanim[ıi]?|formul[üu]?|formül[üu]?|'
-        r'kuralı?|kanunu?|teoremi?|prensibi?|özellik|ozellik)',
+        r'kuralı?|kanunu?|teoremi?|prensibi?|özellik|ozellik|'
+        # 25.58-AA: doğal ifadeli kavramsal sorular (açık "nedir/anlat" yok ama
+        # saf kavram sorusu — kişisel/veri guard yukarıda korur → güvenli Cerebras)
+        r'ne\s+i[sş]e\s+yarar|neden\s+olu[rs]|neden\s+gerçekle|neden\s+gerceklesir|'
+        r'nas[iı]l\s+olu[sş]|nas[iı]l\s+gerçekle|nas[iı]l\s+gerceklesir|nas[iı]l\s+meydana|'
+        r'fark[ıi]\s+ne(dir)?|ne\s+gibi|hangi\s+durumda|ne\s+zaman\s+olu[rs])',
         re.I,
     )),
     ("ornek_iste", re.compile(
