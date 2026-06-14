@@ -340,6 +340,14 @@ def decide_route(
                 }
                 if _intent in text_only_safe_intents:
                     return "local"
+                # 25.58-AA (routing maliyet): tanımsız-intent + kısa + kişisel-değil → Cerebras.
+                # Backtest: bare-topic/doğal kavramsal sorular ('Besinlerin kimyasal sindirimi',
+                # 'Kütleçekim ... itmez mi', 'X ilgimi çekiyor') intent=None olduğu için Claude'a
+                # kaçıyordu. Tool-gerektiren mesajlar TANINAN intent alır (data_sorgu/plan_yap/
+                # kaynak_iste/soru_iste/foto_soru/programa_ekle...) → onlar Claude'da kalır.
+                # Kişisel-veri guard yukarıda zaten korur. Uzun (>160) nüanslı danışmanlık Claude'da.
+                if (not _intent or _intent in ("diger", "belirsiz", "genel")) and len(msg_lower) <= 160:
+                    return "local"
             return "claude"
         if complexity == "local":
             return "local"
