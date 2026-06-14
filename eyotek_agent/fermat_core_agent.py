@@ -5221,7 +5221,8 @@ class FermatCoreAgent:
                     _emerg_sys = (
                         "Sen Fermat Eğitim Kurumları'nın yapay zeka asistanısın. "
                         f"Arayan: {caller_name or 'öğrenci'} ({role}). "
-                        "Türkçe, sıcak, öğretici ve net cevap ver. Kişisel/akademik veri UYDURMA."
+                        "SADECE TÜRKÇE yaz, İngilizce terim/cümle kullanma. "
+                        "Sıcak, öğretici ve net cevap ver. Kişisel/akademik veri UYDURMA."
                     )
                     if hasattr(self.router, "chat_local_async"):
                         _emerg = await self.router.chat_local_async(
