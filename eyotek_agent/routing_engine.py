@@ -340,13 +340,24 @@ def decide_route(
                 }
                 if _intent in text_only_safe_intents:
                     return "local"
-                # 25.58-AA (routing maliyet): tanımsız-intent + kısa + kişisel-değil → Cerebras.
-                # Backtest: bare-topic/doğal kavramsal sorular ('Besinlerin kimyasal sindirimi',
-                # 'Kütleçekim ... itmez mi', 'X ilgimi çekiyor') intent=None olduğu için Claude'a
-                # kaçıyordu. Tool-gerektiren mesajlar TANINAN intent alır (data_sorgu/plan_yap/
-                # kaynak_iste/soru_iste/foto_soru/programa_ekle...) → onlar Claude'da kalır.
-                # Kişisel-veri guard yukarıda zaten korur. Uzun (>160) nüanslı danışmanlık Claude'da.
-                if (not _intent or _intent in ("diger", "belirsiz", "genel")) and len(msg_lower) <= 160:
+                # 25.58-AA (routing maliyet): SAF kavramsal bare-topic → Cerebras.
+                # Backtest: 'Besinlerin kimyasal sindirimi','Antikor albumin acikla','Peroksizom
+                # yapar mi','kütleçekim itmez mi' gibi açık explain-verb içermeyen kavram soruları
+                # intent=None olduğu için Claude'a kaçıyordu — Cerebras A-grade yapar.
+                # KORUMA: veri/analiz/plan/öneri/küfür işaretçisi olanları HARİÇ tut (classify_intent
+                # bunlara da None verebiliyor → kaliteyi korumak için açık keyword guard). Kişisel-veri
+                # guard zaten yukarıda. Uzun (>160) nüanslı danışmanlık Claude'da kalır.
+                _KEEP_CLAUDE = (
+                    "net", "deneme", "puan", "yanlış", "yanlis", "doğru", "dogru",
+                    "sırala", "sirala", "öner", "oner", "plan", "program", "kitap",
+                    "tablo", "kaç", "kac", "saat", "günde", "gunde", "düş", "dus",
+                    "ortalama", "hedef", "sat", "bocconi", "üniv", "univ", "oran",
+                    "hız", "hiz", "birleştir", "birlestir", "çıkart", "cikart",
+                    "amına", "amina", "oç", "salaksın", "salaksin", "köle", "kole",
+                )
+                if ((not _intent or _intent in ("diger", "belirsiz", "genel"))
+                        and len(msg_lower) <= 160
+                        and not any(k in msg_lower for k in _KEEP_CLAUDE)):
                     return "local"
             return "claude"
         if complexity == "local":
